@@ -2,6 +2,10 @@ import type { SyllabusBankMaterialRef } from "@teacher-os/api/material-contracts
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { MaterialPicker } from "@/components/materials/material-picker";
 import { Button } from "@/components/ui/button";
+import {
+	DatePickerInput,
+	TimeInput24h,
+} from "@/components/ui/date-picker-input";
 import { Field, Input } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { parseSchedule } from "@/lib/format-schedule";
@@ -85,11 +89,24 @@ export function AddClassSessionModal({
 	cls,
 	existingDateISOs = [],
 }: AddClassSessionModalProps) {
-	const [date, setDate] = useState("");
-	const [time, setTime] = useState("19:00");
-	const [dur, setDur] = useState("90");
+	const [date, setDate] = useState(
+		() =>
+			suggestNextSessionDate(cls.schedule, cls.startDate, existingDateISOs)
+				.date,
+	);
+	const [time, setTime] = useState(
+		() =>
+			suggestNextSessionDate(cls.schedule, cls.startDate, existingDateISOs)
+				.time,
+	);
+	const [dateInvalid, setDateInvalid] = useState(false);
+	const [timeInvalid, setTimeInvalid] = useState(false);
+	const [dur, setDur] = useState(() =>
+		String(
+			suggestNextSessionDate(cls.schedule, cls.startDate, existingDateISOs).dur,
+		),
+	);
 	const [topic, setTopic] = useState("");
-	const [zoom, setZoom] = useState("");
 	// Tài liệu ngân hàng chọn cho buổi mới (#655) — projection an toàn, chỉ
 	// materialIds đi lên payload.
 	const [bankMaterials, setBankMaterials] = useState<SyllabusBankMaterialRef[]>(
@@ -98,7 +115,7 @@ export function AddClassSessionModal({
 	const { saving, error, setError, notice, submitBlocked, run, reconcile } =
 		useKernelFormSubmit();
 
-	const wasOpenRef = useRef(false);
+	const wasOpenRef = useRef(open);
 	useEffect(() => {
 		if (open && !wasOpenRef.current) {
 			const suggestion = suggestNextSessionDate(
@@ -108,9 +125,10 @@ export function AddClassSessionModal({
 			);
 			setDate(suggestion.date);
 			setTime(suggestion.time);
+			setDateInvalid(false);
+			setTimeInvalid(false);
 			setDur(String(suggestion.dur));
 			setTopic("");
-			setZoom("");
 			setBankMaterials([]);
 			setError(undefined);
 		}
@@ -118,8 +136,9 @@ export function AddClassSessionModal({
 	}, [open, cls.schedule, cls.startDate, existingDateISOs, setError]);
 
 	function resetForm() {
+		setDateInvalid(false);
+		setTimeInvalid(false);
 		setTopic("");
-		setZoom("");
 		setBankMaterials([]);
 		setError(undefined);
 	}
@@ -128,11 +147,15 @@ export function AddClassSessionModal({
 		e.preventDefault();
 		if (saving) return;
 
-		if (!date.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(date.trim())) {
-			setError("Vui lòng chọn ngày học hợp lệ (YYYY-MM-DD).");
+		if (
+			dateInvalid ||
+			!date.trim() ||
+			!/^\d{4}-\d{2}-\d{2}$/.test(date.trim())
+		) {
+			setError("Vui lòng chọn ngày học hợp lệ (dd/mm/yyyy).");
 			return;
 		}
-		if (!time.trim() || !/^\d{2}:\d{2}$/.test(time.trim())) {
+		if (timeInvalid || !time.trim() || !/^\d{2}:\d{2}$/.test(time.trim())) {
 			setError("Vui lòng chọn giờ học hợp lệ (HH:mm).");
 			return;
 		}
@@ -159,7 +182,6 @@ export function AddClassSessionModal({
 				time: time.trim(),
 				dur: durNum,
 				topic: topic.trim(),
-				zoom: zoom.trim(),
 				// Chỉ gửi khi có chọn — thiếu key, server default [] (#655).
 				...(bankMaterials.length > 0
 					? { materialIds: bankMaterials.map((m) => m.id) }
@@ -187,38 +209,43 @@ export function AddClassSessionModal({
 			title="Thêm buổi học thủ công"
 		>
 			<form noValidate onSubmit={submit} className="flex flex-col gap-4">
+				<Field label="Ngày học *">
+					<DatePickerInput
+						value={date}
+						todayISO={todayISOVietnam()}
+						onChange={(nextIso) => {
+							setDate(nextIso);
+							setError(undefined);
+						}}
+						onInvalidChange={setDateInvalid}
+						disabled={saving}
+					/>
+				</Field>
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-					<Field label="Ngày học *" error={error}>
-						<Input
-							type="date"
-							value={date}
-							onChange={(e) => setDate(e.target.value)}
+					<Field label="Giờ học *">
+						<TimeInput24h
+							presets={[]}
+							className="w-full sm:w-full"
+							value={time}
+							onChange={(nextTime) => {
+								setTime(nextTime);
+								setError(undefined);
+							}}
+							onInvalidChange={setTimeInvalid}
 							disabled={saving}
-							required
 						/>
 					</Field>
-					<div className="grid grid-cols-2 gap-2">
-						<Field label="Giờ học *">
-							<Input
-								type="time"
-								value={time}
-								onChange={(e) => setTime(e.target.value)}
-								disabled={saving}
-								required
-							/>
-						</Field>
-						<Field label="Thời lượng (phút)">
-							<Input
-								type="number"
-								min={15}
-								max={360}
-								step={15}
-								value={dur}
-								onChange={(e) => setDur(e.target.value)}
-								disabled={saving}
-							/>
-						</Field>
-					</div>
+					<Field label="Thời lượng (phút)">
+						<Input
+							type="number"
+							min={15}
+							max={360}
+							step={15}
+							value={dur}
+							onChange={(e) => setDur(e.target.value)}
+							disabled={saving}
+						/>
+					</Field>
 				</div>
 
 				<Field label="Chủ đề buổi học *">
@@ -228,15 +255,6 @@ export function AddClassSessionModal({
 						placeholder="VD: Writing Task 1: Line Chart"
 						disabled={saving}
 						required
-					/>
-				</Field>
-
-				<Field label="Link Zoom / Học online (tùy chọn)">
-					<Input
-						value={zoom}
-						onChange={(e) => setZoom(e.target.value)}
-						placeholder="https://zoom.us/j/..."
-						disabled={saving}
 					/>
 				</Field>
 
@@ -260,6 +278,16 @@ export function AddClassSessionModal({
 						disabled={saving}
 					/>
 				</div>
+
+				{error && (
+					<p
+						role="alert"
+						aria-live="polite"
+						className="text-destructive text-xs"
+					>
+						{error}
+					</p>
+				)}
 
 				{notice && (
 					<KernelSubmitNotice

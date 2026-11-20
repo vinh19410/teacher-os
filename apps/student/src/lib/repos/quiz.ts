@@ -21,6 +21,8 @@ import { z } from "zod";
 import {
 	HttpError,
 	healStudentOrgMismatch,
+	isTeacherOnStudentPortalError,
+	redirectToLoginForWrongRole,
 	studentQueryClient,
 } from "@/lib/query-client";
 import { getApiBaseUrl, getStudentHeaders } from "@/lib/repos/student";
@@ -68,6 +70,18 @@ async function parseErrorBody(res: Response): Promise<{ code?: string }> {
 	}
 }
 
+function createQuizHttpError(
+	status: number,
+	message: string,
+	options?: { code?: string; sentOrgId?: string },
+): HttpError {
+	const error = new HttpError(status, message, options);
+	if (isTeacherOnStudentPortalError(error)) {
+		redirectToLoginForWrongRole();
+	}
+	return error;
+}
+
 async function request<T>(
 	path: string,
 	init: RequestInit & { keepalive?: boolean },
@@ -101,7 +115,7 @@ async function request<T>(
 				});
 				if (!res.ok) {
 					({ code } = await parseErrorBody(res));
-					throw new HttpError(
+					throw createQuizHttpError(
 						res.status,
 						`Request failed with status ${res.status}`,
 						{ code },
@@ -109,7 +123,7 @@ async function request<T>(
 				}
 			} else {
 				healStudentOrgMismatch();
-				throw new HttpError(
+				throw createQuizHttpError(
 					res.status,
 					`Request failed with status ${res.status}`,
 					{
@@ -119,7 +133,7 @@ async function request<T>(
 				);
 			}
 		} else {
-			throw new HttpError(
+			throw createQuizHttpError(
 				res.status,
 				`Request failed with status ${res.status}`,
 				{
@@ -400,10 +414,14 @@ export function uploadQuizMedia(
 				healStudentOrgMismatch();
 			}
 			reject(
-				new HttpError(xhr.status, `Upload failed with status ${xhr.status}`, {
-					code,
-					sentOrgId,
-				}),
+				createQuizHttpError(
+					xhr.status,
+					`Upload failed with status ${xhr.status}`,
+					{
+						code,
+						sentOrgId,
+					},
+				),
 			);
 		};
 		xhr.onerror = () => {
@@ -469,14 +487,14 @@ export async function fetchQuizMediaObjectUrl(
 			});
 			if (!res.ok) {
 				({ code } = await parseErrorBody(res));
-				throw new HttpError(
+				throw createQuizHttpError(
 					res.status,
 					`Request failed with status ${res.status}`,
 					{ code },
 				);
 			}
 		} else {
-			throw new HttpError(
+			throw createQuizHttpError(
 				res.status,
 				`Request failed with status ${res.status}`,
 				{
@@ -495,15 +513,10 @@ export async function fetchQuizMediaObjectUrl(
 	return URL.createObjectURL(blob);
 }
 
-/**
- * Tải audio Listening từ `/api/student/assignments/:assignmentId/audio` về blob
- * URL (#702) — giữ CSP `media-src 'self' blob:` và truyền header `x-student-org-id`.
- */
-export async function fetchAssignmentAudioObjectUrl(
-	assignmentId: string,
+async function fetchStudentAudioObjectUrl(
+	url: string,
 	signal?: AbortSignal,
 ): Promise<string> {
-	const url = `${getApiBaseUrl()}/api/student/assignments/${encodeURIComponent(assignmentId)}/audio`;
 	const headers = getStudentHeaders({ Accept: "audio/*" });
 	const sentOrgId = headers["x-student-org-id"];
 	let res = await fetch(url, {
@@ -534,14 +547,14 @@ export async function fetchAssignmentAudioObjectUrl(
 			});
 			if (!res.ok) {
 				({ code } = await parseErrorBody(res));
-				throw new HttpError(
+				throw createQuizHttpError(
 					res.status,
 					`Request failed with status ${res.status}`,
 					{ code },
 				);
 			}
 		} else {
-			throw new HttpError(
+			throw createQuizHttpError(
 				res.status,
 				`Request failed with status ${res.status}`,
 				{
@@ -560,7 +573,31 @@ export async function fetchAssignmentAudioObjectUrl(
 	return URL.createObjectURL(blob);
 }
 
-export function useAssignmentAudioObjectUrl(assignmentId: string | null): {
+/**
+ * Tải audio Listening từ `/api/student/assignments/:assignmentId/audio` về blob
+ * URL (#702) — giữ CSP `media-src 'self' blob:` và truyền header `x-student-org-id`.
+ */
+export async function fetchAssignmentAudioObjectUrl(
+	assignmentId: string,
+	signal?: AbortSignal,
+): Promise<string> {
+	const url = `${getApiBaseUrl()}/api/student/assignments/${encodeURIComponent(assignmentId)}/audio`;
+	return fetchStudentAudioObjectUrl(url, signal);
+}
+
+/**
+ * Tải audio Listening của đề tự luyện từ `/api/student/practice/:testId/audio`
+ * về blob URL — cùng cơ chế CSP + org-mismatch retry với luồng assignment.
+ */
+export async function fetchPracticeAudioObjectUrl(
+	testId: string,
+	signal?: AbortSignal,
+): Promise<string> {
+	const url = `${getApiBaseUrl()}/api/student/practice/${encodeURIComponent(testId)}/audio`;
+	return fetchStudentAudioObjectUrl(url, signal);
+}
+
+export function useQuizAudioObjectUrl(source: QuizTakeSource | null): {
 	audioSrc: string | null;
 	audioLoading: boolean;
 	audioError: boolean;
@@ -569,9 +606,17 @@ export function useAssignmentAudioObjectUrl(assignmentId: string | null): {
 	const [audioLoading, setAudioLoading] = useState(false);
 	const [audioError, setAudioError] = useState(false);
 
+	const sourceKind = source?.kind ?? null;
+	const sourceId =
+		source === null
+			? null
+			: source.kind === "assignment"
+				? source.id
+				: source.testId;
+
 	useEffect(() => {
 		setAudioSrc(null);
-		if (!assignmentId) {
+		if (!sourceKind || !sourceId) {
 			setAudioLoading(false);
 			setAudioError(false);
 			return;
@@ -581,7 +626,12 @@ export function useAssignmentAudioObjectUrl(assignmentId: string | null): {
 		setAudioLoading(true);
 		setAudioError(false);
 
-		void fetchAssignmentAudioObjectUrl(assignmentId, controller.signal)
+		const load =
+			sourceKind === "assignment"
+				? fetchAssignmentAudioObjectUrl(sourceId, controller.signal)
+				: fetchPracticeAudioObjectUrl(sourceId, controller.signal);
+
+		void load
 			.then((url) => {
 				if (controller.signal.aborted) {
 					URL.revokeObjectURL(url);
@@ -609,9 +659,19 @@ export function useAssignmentAudioObjectUrl(assignmentId: string | null): {
 				URL.revokeObjectURL(objectUrl);
 			}
 		};
-	}, [assignmentId]);
+	}, [sourceKind, sourceId]);
 
 	return { audioSrc, audioLoading, audioError };
+}
+
+export function useAssignmentAudioObjectUrl(assignmentId: string | null): {
+	audioSrc: string | null;
+	audioLoading: boolean;
+	audioError: boolean;
+} {
+	return useQuizAudioObjectUrl(
+		assignmentId ? { kind: "assignment", id: assignmentId } : null,
+	);
 }
 
 /**

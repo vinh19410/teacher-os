@@ -15,7 +15,7 @@ import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test } from "vitest";
-import { buildApp, type Db, type ServerApp } from "../app";
+import { buildApp, type Db, type MediaStore, type ServerApp } from "../app";
 import {
 	extractAudioName,
 	loadStudyPackItemDetail,
@@ -93,6 +93,28 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 	let app: ServerApp;
 	let db: Db;
 	const fetchedAudioUrls: string[] = [];
+	const libraryAudioObjects = new Map<
+		string,
+		{ bytes: Uint8Array; contentType: string }
+	>();
+	const libraryAudioStore: MediaStore = {
+		async put(key, body, { contentType }) {
+			const bytes = new Uint8Array(await new Response(body).arrayBuffer());
+			libraryAudioObjects.set(key, { bytes, contentType });
+		},
+		async get(key) {
+			const object = libraryAudioObjects.get(key);
+			if (!object) return null;
+			return {
+				body: new Response(object.bytes).body as ReadableStream<Uint8Array>,
+				contentType: object.contentType,
+				size: object.bytes.byteLength,
+			};
+		},
+		async delete(key) {
+			libraryAudioObjects.delete(key);
+		},
+	};
 
 	beforeAll(async () => {
 		const client = createClient({ url: "file::memory:" });
@@ -285,6 +307,7 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 			authHandler: () => new Response(null, { status: 404 }),
 			corsOrigin: CORS_ORIGINS,
 			getSessionUser: sessionFor,
+			getLibraryAudioStore: () => libraryAudioStore,
 			fetchExternalAudio: async (input, init) => {
 				const url = typeof input === "string" ? input : input.toString();
 				fetchedAudioUrls.push(url);
@@ -1942,5 +1965,315 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 		expect(
 			fetchedAudioUrls.some((url) => url.includes("evil.example.com")),
 		).toBe(false);
+	});
+
+	test("streams R2 audioKey across exercise, item, materialized prompt & student assignment (#814)", async () => {
+		const r2Key = "study-packs/first-step-gt2/sysex-r2-listen-814.mp3";
+		const r2Bytes = new Uint8Array([0xff, 0xfb, 0x10, 0xc4, 0xaa, 0xbb]);
+		libraryAudioObjects.set(r2Key, {
+			bytes: r2Bytes,
+			contentType: "audio/mpeg",
+		});
+
+		await db.insert(schema.libraryExercise).values([
+			{
+				id: "lex-r2-listen-814",
+				skill: "listening",
+				part: "s1",
+				type: "notes",
+				title: "R2 Listening Exercise 814",
+				band: "5.5",
+				level: "IELTS First Step",
+				intro: "Listen and fill in the blank.",
+				passage: "",
+				audioUrl: "",
+				audioKey: r2Key,
+				transcript: "Transcript text for 814.",
+				questions: JSON.stringify([
+					{
+						stem: "The ticket costs ____ pounds.",
+						opts: null,
+						answer: "12",
+						alts: "",
+					},
+				]),
+				optionBank: "[]",
+				note: "",
+				status: "ready",
+			},
+			{
+				id: "lex-r2-missing-814",
+				skill: "listening",
+				part: "s1",
+				type: "notes",
+				title: "R2 Missing Audio 814",
+				band: "5.5",
+				level: "IELTS First Step",
+				intro: "Listen.",
+				passage: "",
+				audioUrl: "",
+				audioKey: "study-packs/first-step-gt2/missing-814.mp3",
+				transcript: "Transcript.",
+				questions: JSON.stringify([
+					{ stem: "Q1 ____", opts: null, answer: "yes", alts: "" },
+				]),
+				optionBank: "[]",
+				note: "",
+				status: "ready",
+			},
+		]);
+
+		await db.insert(schema.studyPack).values({
+			id: "sys-pack-r2-814",
+			orgId: null,
+			title: "R2 Pack 814",
+			description: "",
+			level: "IELTS First Step",
+			status: "ready",
+		});
+		await db.insert(schema.studyPackItem).values([
+			{
+				id: "item-r2-814-1",
+				packId: "sys-pack-r2-814",
+				dayIndex: 1,
+				position: 0,
+				sourceKind: "library_exercise",
+				sourceId: "lex-r2-listen-814",
+				note: "",
+			},
+			{
+				id: "item-r2-814-missing",
+				packId: "sys-pack-r2-814",
+				dayIndex: 2,
+				position: 0,
+				sourceKind: "library_exercise",
+				sourceId: "lex-r2-missing-814",
+				note: "",
+			},
+		]);
+
+		// Detail exposes hasAudio + audioName, never audioKey
+		const detailRes = await app.request(
+			"/api/study-packs/sys-pack-r2-814/items/item-r2-814-1",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(detailRes.status).toBe(200);
+		const detailBody = (await detailRes.json()) as {
+			item: StudyPackItemDetailView;
+		};
+		expect(detailBody.item.hasAudio).toBe(true);
+		expect(detailBody.item.audioName).toBe("sysex-r2-listen-814.mp3");
+		expect(JSON.stringify(detailBody)).not.toContain(r2Key);
+
+		// Exercise & item audio stream R2 bytes
+		for (const path of [
+			"/api/study-packs/exercises/lex-r2-listen-814/audio",
+			"/api/study-packs/sys-pack-r2-814/items/item-r2-814-1/audio",
+		]) {
+			const res = await app.request(path, {
+				headers: { "x-test-user": "teacher-1" },
+			});
+			expect(res.status).toBe(200);
+			expect(res.headers.get("content-type")).toBe("audio/mpeg");
+			expect(res.headers.get("cross-origin-resource-policy")).toBe("same-site");
+			expect(new Uint8Array(await res.arrayBuffer())).toEqual(r2Bytes);
+		}
+
+		// Missing R2 object -> 404
+		const missingObjRes = await app.request(
+			"/api/study-packs/exercises/lex-r2-missing-814/audio",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(missingObjRes.status).toBe(404);
+
+		// Assign pack to class -> materializes assignment_prompt with audioKey
+		const assignRes = await app.request("/api/classes/class-1/study-packs", {
+			method: "POST",
+			headers: teacherHeaders(),
+			body: JSON.stringify({
+				packId: "sys-pack-r2-814",
+				startDate: "2025-01-01",
+				releaseTime: "06:00",
+				dueTime: "17:00",
+			}),
+		});
+		expect(assignRes.status).toBe(201);
+		const assignBody = (await assignRes.json()) as ClassStudyPacksResponse;
+		const day1Assign = assignBody.packs[0]?.assignments.find(
+			(a) => a.dayIndex === 1,
+		);
+		expect(day1Assign).toBeDefined();
+		if (!day1Assign) return;
+
+		const [caRow] = await db
+			.select({ promptId: schema.classAssignment.promptId })
+			.from(schema.classAssignment)
+			.where(eq(schema.classAssignment.id, day1Assign.assignmentId));
+		expect(caRow?.promptId).toBeDefined();
+		if (!caRow) return;
+
+		const [promptRow] = await db
+			.select({ audioKey: schema.assignmentPrompt.audioKey })
+			.from(schema.assignmentPrompt)
+			.where(eq(schema.assignmentPrompt.id, caRow.promptId));
+		expect(promptRow?.audioKey).toBe(r2Key);
+
+		// Teacher prompt audio endpoint streams R2 bytes
+		const promptAudioRes = await app.request(
+			`/api/assignments/prompts/${caRow.promptId}/audio`,
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(promptAudioRes.status).toBe(200);
+		expect(new Uint8Array(await promptAudioRes.arrayBuffer())).toEqual(r2Bytes);
+
+		// Student quiz detail + audio endpoint stream R2 bytes (without leaking audioKey)
+		const studentQuizRes = await app.request(
+			`/api/student/assignments/${day1Assign.assignmentId}/quiz`,
+			{ headers: { "x-test-user": "student-1" } },
+		);
+		expect(studentQuizRes.status).toBe(200);
+		const studentQuizBody = (await studentQuizRes.json()) as {
+			hasAudio?: boolean;
+			audioName?: string;
+		};
+		expect(studentQuizBody.hasAudio).toBe(true);
+		expect(studentQuizBody.audioName).toBe("sysex-r2-listen-814.mp3");
+		expect(JSON.stringify(studentQuizBody)).not.toContain(r2Key);
+
+		const studentAudioRes = await app.request(
+			`/api/student/assignments/${day1Assign.assignmentId}/audio`,
+			{ headers: { "x-test-user": "student-1" } },
+		);
+		expect(studentAudioRes.status).toBe(200);
+		expect(studentAudioRes.headers.get("content-type")).toBe("audio/mpeg");
+		expect(new Uint8Array(await studentAudioRes.arrayBuffer())).toEqual(
+			r2Bytes,
+		);
+
+		// App without getLibraryAudioStore -> 503 on R2 audio
+		const noStoreApp = buildApp({
+			getDb: () => db,
+			authHandler: () => new Response(null, { status: 404 }),
+			corsOrigin: CORS_ORIGINS,
+			getSessionUser: sessionFor,
+		});
+		const unavailableRes = await noStoreApp.request(
+			"/api/study-packs/exercises/lex-r2-listen-814/audio",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(unavailableRes.status).toBe(503);
+	});
+
+	test("teacher can update and delete system pack directly (#829)", async () => {
+		// 1. Seed a system study pack
+		await db.insert(schema.studyPack).values({
+			id: "sys-pack-test-829",
+			orgId: null,
+			title: "Bộ đề hệ thống gốc 829",
+			description: "Mô tả ban đầu",
+			level: "A2",
+			status: "ready",
+		});
+		await db.insert(schema.studyPackItem).values({
+			id: "sys-item-829-1",
+			packId: "sys-pack-test-829",
+			dayIndex: 1,
+			position: 0,
+			sourceKind: "library_exercise",
+			sourceId: "lex-vocab-1",
+			note: "Note 1",
+		});
+
+		// 2. Teacher updates system study pack
+		const updateRes = await app.request("/api/study-packs/sys-pack-test-829", {
+			method: "PUT",
+			headers: teacherHeaders("teacher-1"),
+			body: JSON.stringify({
+				title: "Bộ đề hệ thống đã sửa bởi giáo viên",
+				description: "Mô tả cập nhật",
+				level: "B1",
+				status: "ready",
+				items: [
+					{
+						dayIndex: 1,
+						sourceKind: "library_exercise",
+						sourceId: "lex-vocab-1",
+						note: "Note cập nhật",
+					},
+					{
+						dayIndex: 2,
+						sourceKind: "org_prompt",
+						sourceId: "pr-grammar-1",
+						note: "Thêm ngày 2",
+					},
+				],
+			}),
+		});
+		expect(updateRes.status).toBe(200);
+		const updated = (await updateRes.json()) as { pack: StudyPackDetailView };
+		expect(updated.pack.title).toBe("Bộ đề hệ thống đã sửa bởi giáo viên");
+		expect(updated.pack.level).toBe("B1");
+		expect(updated.pack.dayCount).toBe(2);
+		expect(updated.pack.itemCount).toBe(2);
+		expect(updated.pack.scope).toBe("system");
+		expect(updated.pack.orgId).toBeNull();
+
+		// 3. Seed another system study pack to test deletion
+		await db.insert(schema.studyPack).values({
+			id: "sys-pack-del-829",
+			orgId: null,
+			title: "Bộ đề hệ thống cần xoá 829",
+			description: "Sắp bị xoá",
+			level: "A1",
+			status: "ready",
+		});
+		await db.insert(schema.studyPackItem).values({
+			id: "sys-item-del-829",
+			packId: "sys-pack-del-829",
+			dayIndex: 1,
+			position: 0,
+			sourceKind: "library_exercise",
+			sourceId: "lex-vocab-1",
+		});
+
+		const deleteRes = await app.request("/api/study-packs/sys-pack-del-829", {
+			method: "DELETE",
+			headers: teacherHeaders("teacher-1"),
+		});
+		expect(deleteRes.status).toBe(200);
+
+		// Verify it is gone
+		const getDeleted = await app.request("/api/study-packs/sys-pack-del-829", {
+			headers: { "x-test-user": "teacher-1" },
+		});
+		expect(getDeleted.status).toBe(404);
+
+		// 4. Assigned system pack cannot be deleted (409)
+		await db.insert(schema.studyPack).values({
+			id: "sys-pack-assigned-829",
+			orgId: null,
+			title: "Bộ đề hệ thống đã gán 829",
+			status: "ready",
+		});
+		await db.insert(schema.classStudyPack).values({
+			id: "csp-sys-829",
+			orgId: "org-1",
+			classId: "class-1",
+			packId: "sys-pack-assigned-829",
+			title: "Bộ đề hệ thống đã gán 829",
+			status: "active",
+			startDate: "2026-11-20",
+			releaseTime: "06:00",
+			dueTime: "17:00",
+		});
+
+		const conflictDelRes = await app.request(
+			"/api/study-packs/sys-pack-assigned-829",
+			{
+				method: "DELETE",
+				headers: teacherHeaders("teacher-1"),
+			},
+		);
+		expect(conflictDelRes.status).toBe(409);
 	});
 });

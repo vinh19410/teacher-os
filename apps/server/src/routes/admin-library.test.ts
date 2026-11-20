@@ -5,6 +5,7 @@ import {
 	LIBRARY_READING_TYPES,
 	type LibraryPartInput,
 	libraryPartUpsertSchema,
+	libraryTestListItemSchema,
 	validatePartForReady,
 } from "@teacher-os/api/library-contracts";
 import * as schema from "@teacher-os/db/schema/index";
@@ -410,7 +411,7 @@ describe("admin library CRUD (/api/admin/library)", () => {
 		expect(missing.status).toBe(404);
 	});
 
-	test("PATCH status ready khi đề thiếu → 400 NOT_READY kèm lý do theo part", async () => {
+	test("PATCH status ready khi đề rỗng (0 part) → 400 NOT_READY với issue parts", async () => {
 		const res = await makeRequest(
 			app,
 			"PATCH",
@@ -425,13 +426,10 @@ describe("admin library CRUD (/api/admin/library)", () => {
 			issues?: Array<{ path: string; message: string }>;
 		};
 		expect(payload.code).toBe("NOT_READY");
-		const paths = new Set((payload.issues ?? []).map((i) => i.path));
-		// Listening cần đủ 4 slot — thiếu slot báo đúng theo part.
-		for (const slot of ["s1", "s2", "s3", "s4"]) {
-			expect(paths.has(`parts.${slot}`), `missing path parts.${slot}`).toBe(
-				true,
-			);
-		}
+		expect(payload.issues).toContainEqual({
+			path: "parts",
+			message: "at least one part is required",
+		});
 		const [row] = await db
 			.select()
 			.from(libraryTest)
@@ -526,6 +524,187 @@ describe("admin library CRUD (/api/admin/library)", () => {
 			.from(libraryTest)
 			.where(eq(libraryTest.id, "lt-skill"));
 		expect(row2?.status).toBe("draft");
+	});
+
+	test("PATCH status ready đề reading chỉ có 1 part hợp lệ (p1 only hoặc p2 only) → 200 ready", async () => {
+		for (const slot of ["p1", "p2"] as const) {
+			const testId = `lt-read-1part-${slot}`;
+			await db.insert(libraryTest).values({
+				id: testId,
+				title: `Reading 1-part (${slot})`,
+				skill: "reading",
+				status: "draft",
+				createdBy: "u-admin",
+			});
+			const putRes = await makeRequest(
+				app,
+				"PUT",
+				`/api/admin/library/tests/${testId}/parts/${slot}`,
+			)({
+				user: "admin",
+				body: {
+					part: slot,
+					type: "tfng",
+					title: `Passage ${slot}`,
+					band: "6.5",
+					source: "",
+					intro: "",
+					passage: "<p>Valid reading passage</p>",
+					transcript: "",
+					imageUrl: "",
+					questions: [{ stem: "Statement 1", answer: "TRUE", alts: "" }],
+					optionBank: [],
+					note: "",
+				},
+			});
+			expect(putRes.status, `PUT ${slot}`).toBe(200);
+
+			const readyRes = await makeRequest(
+				app,
+				"PATCH",
+				`/api/admin/library/tests/${testId}`,
+			)({
+				user: "admin",
+				body: { status: "ready" },
+			});
+			expect(readyRes.status, `PATCH ready ${slot}`).toBe(200);
+			const detail = (await readyRes.json()) as { status?: string };
+			expect(detail.status).toBe("ready");
+
+			const [row] = await db
+				.select()
+				.from(libraryTest)
+				.where(eq(libraryTest.id, testId));
+			expect(row?.status).toBe("ready");
+		}
+	});
+
+	test("PATCH status ready đề listening chỉ có 1 part hợp lệ (s1 + audio + câu hỏi) → 200 ready", async () => {
+		const testId = "lt-listen-1part-s1";
+		await db.insert(libraryTest).values({
+			id: testId,
+			title: "Listening 1-part (s1)",
+			skill: "listening",
+			status: "draft",
+			createdBy: "u-admin",
+		});
+		const putRes = await makeRequest(
+			app,
+			"PUT",
+			`/api/admin/library/tests/${testId}/parts/s1`,
+		)({
+			user: "admin",
+			body: validPartBody("s1"),
+		});
+		expect(putRes.status).toBe(200);
+		await db
+			.update(libraryTestPart)
+			.set({
+				audioKey: `library/${testId}/s1/seed`,
+				audioName: "s1.mp3",
+				audioContentType: "audio/mpeg",
+				audioSize: 1,
+			})
+			.where(
+				and(eq(libraryTestPart.testId, testId), eq(libraryTestPart.part, "s1")),
+			);
+
+		const readyRes = await makeRequest(
+			app,
+			"PATCH",
+			`/api/admin/library/tests/${testId}`,
+		)({
+			user: "admin",
+			body: { status: "ready" },
+		});
+		expect(readyRes.status).toBe(200);
+		const detail = (await readyRes.json()) as { status?: string };
+		expect(detail.status).toBe("ready");
+
+		const [row] = await db
+			.select()
+			.from(libraryTest)
+			.where(eq(libraryTest.id, testId));
+		expect(row?.status).toBe("ready");
+	});
+
+	test("PATCH status ready đề reading có p1 hợp lệ + p2 thiếu passage → 400 NOT_READY với parts.p2.passage", async () => {
+		const testId = "lt-read-partial-invalid";
+		await db.insert(libraryTest).values({
+			id: testId,
+			title: "Reading partial invalid",
+			skill: "reading",
+			status: "draft",
+			createdBy: "u-admin",
+		});
+		const p1Res = await makeRequest(
+			app,
+			"PUT",
+			`/api/admin/library/tests/${testId}/parts/p1`,
+		)({
+			user: "admin",
+			body: {
+				part: "p1",
+				type: "tfng",
+				title: "Passage 1",
+				band: "6.5",
+				source: "",
+				intro: "",
+				passage: "<p>Valid passage 1</p>",
+				transcript: "",
+				imageUrl: "",
+				questions: [{ stem: "Q1", answer: "TRUE", alts: "" }],
+				optionBank: [],
+				note: "",
+			},
+		});
+		expect(p1Res.status).toBe(200);
+
+		const p2Res = await makeRequest(
+			app,
+			"PUT",
+			`/api/admin/library/tests/${testId}/parts/p2`,
+		)({
+			user: "admin",
+			body: {
+				part: "p2",
+				type: "tfng",
+				title: "Passage 2",
+				band: "6.5",
+				source: "",
+				intro: "",
+				passage: "",
+				transcript: "",
+				imageUrl: "",
+				questions: [{ stem: "Q2", answer: "FALSE", alts: "" }],
+				optionBank: [],
+				note: "",
+			},
+		});
+		expect(p2Res.status).toBe(200);
+
+		const readyRes = await makeRequest(
+			app,
+			"PATCH",
+			`/api/admin/library/tests/${testId}`,
+		)({
+			user: "admin",
+			body: { status: "ready" },
+		});
+		expect(readyRes.status).toBe(400);
+		const payload = (await readyRes.json()) as {
+			code?: string;
+			issues?: Array<{ path: string; message: string }>;
+		};
+		expect(payload.code).toBe("NOT_READY");
+		expect((payload.issues ?? []).map((i) => i.path)).toContain(
+			"parts.p2.passage",
+		);
+		const [row] = await db
+			.select()
+			.from(libraryTest)
+			.where(eq(libraryTest.id, testId));
+		expect(row?.status).toBe("draft");
 	});
 
 	test("PATCH status ready với cột questions corrupt → 400 NOT_READY kèm lý do, không 500", async () => {
@@ -1207,7 +1386,7 @@ describe("groups corrupt guard (#425)", () => {
 		expect(await groupsColumn("lt-gc-ready")).toBe("{broken json");
 	});
 
-	test("publish đề có part corrupt → 409 GROUPS_CORRUPT; sửa part xong guard nhường chỗ luật slot", async () => {
+	test("publish đề có part corrupt → 409 GROUPS_CORRUPT; sửa part xong publish ready thành công", async () => {
 		await seedGuardFixture("lt-gc-publish");
 		const patch = makeRequest(
 			app,
@@ -1228,26 +1407,16 @@ describe("groups corrupt guard (#425)", () => {
 			...guardPartBody({ groups: [] }),
 			discardCorruptGroups: true,
 		});
-		// Guard corrupt không còn chặn: lỗi duy nhất còn lại là thiếu các
-		// slot preset khác (p2, p3) — luật ready riêng, không phải corrupt.
+		// Guard corrupt không còn chặn và p1 đã hợp lệ → đề 1-part publish ready được.
 		const afterFix = await patch({ user: "admin", body: { status: "ready" } });
-		expect(afterFix.status).toBe(400);
-		const afterPayload = (await afterFix.json()) as {
-			code?: string;
-			issues?: Array<{ path: string; message: string }>;
-		};
-		expect(afterPayload.code).toBe("NOT_READY");
-		expect(
-			afterPayload.issues?.some((issue) => issue.message.includes("corrupt")),
-		).toBe(false);
-		expect(
-			afterPayload.issues?.every((issue) => issue.path.startsWith("parts.")),
-		).toBe(true);
+		expect(afterFix.status).toBe(200);
+		const afterDetail = (await afterFix.json()) as { status?: string };
+		expect(afterDetail.status).toBe("ready");
 		const [statusAfter] = await db
 			.select({ status: libraryTest.status })
 			.from(libraryTest)
 			.where(eq(libraryTest.id, "lt-gc-publish"));
-		expect(statusAfter?.status).toBe("draft");
+		expect(statusAfter?.status).toBe("ready");
 	});
 });
 
@@ -2170,5 +2339,584 @@ describe("15 IELTS Reading types & validation (#762)", () => {
 			body: readingPartBody("diagram", "p2", { imageUrl: "" }),
 		});
 		expect(missingImage.status).toBe(400);
+	});
+});
+
+describe("GET /api/admin/library/tests D1 limits & resilience", () => {
+	const D1_MAX_BOUND_PARAMS = 100;
+	let app: ServerApp;
+	let db: Db;
+	let rawClient: ReturnType<typeof createClient>;
+	let guardEnabled = false;
+	let executeCalls = 0;
+	let batchCalls = 0;
+	const observedQueries: Array<{
+		sql: string;
+		paramCount: number;
+		mode: "execute" | "batch";
+	}> = [];
+
+	function resetQueryStats(): void {
+		executeCalls = 0;
+		batchCalls = 0;
+		observedQueries.length = 0;
+	}
+
+	function countStmtParams(stmt: unknown): { sql: string; paramCount: number } {
+		if (typeof stmt === "string") return { sql: stmt, paramCount: 0 };
+		if (stmt && typeof stmt === "object" && "sql" in stmt) {
+			const record = stmt as { sql: string; args?: unknown };
+			const args = record.args;
+			const paramCount = Array.isArray(args)
+				? args.length
+				: args && typeof args === "object"
+					? Object.keys(args).length
+					: 0;
+			return { sql: record.sql, paramCount };
+		}
+		return { sql: "", paramCount: 0 };
+	}
+
+	function inspectStatement(stmt: unknown, mode: "execute" | "batch"): void {
+		if (!guardEnabled) return;
+		const info = countStmtParams(stmt);
+		observedQueries.push({ ...info, mode });
+		if (info.paramCount > D1_MAX_BOUND_PARAMS) {
+			throw new Error(
+				`D1_ERROR: too many SQL variables (${info.paramCount} > ${D1_MAX_BOUND_PARAMS})`,
+			);
+		}
+	}
+
+	beforeAll(async () => {
+		rawClient = createClient({ url: "file::memory:" });
+		const origExecute = rawClient.execute.bind(rawClient);
+		const origBatch = rawClient.batch.bind(rawClient);
+
+		const guardedClient = new Proxy(rawClient, {
+			get(target, prop, receiver) {
+				if (prop === "execute") {
+					return (stmt: Parameters<typeof origExecute>[0]) => {
+						if (guardEnabled) executeCalls += 1;
+						inspectStatement(stmt, "execute");
+						return origExecute(stmt);
+					};
+				}
+				if (prop === "batch") {
+					return (
+						stmts: Parameters<typeof origBatch>[0],
+						mode?: Parameters<typeof origBatch>[1],
+					) => {
+						if (guardEnabled) batchCalls += 1;
+						for (const stmt of stmts) inspectStatement(stmt, "batch");
+						return origBatch(stmts, mode);
+					};
+				}
+				const value = Reflect.get(target, prop, receiver);
+				return typeof value === "function" ? value.bind(target) : value;
+			},
+		});
+
+		const libsql = drizzle(guardedClient, { schema });
+		await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
+		db = libsql as unknown as Db;
+
+		// Seed 125 đề (> 100 giới hạn bound-param của Cloudflare D1):
+		// - 110 đề reading ready ("BatchTest Reading N") có part p1 (2 câu)
+		// - 10 đề listening draft/ready: 1 đề đủ 4 audio, 1 đề thiếu audio, 8 đề 0 part
+		// - 5 đề edge case: corrupt questions mix, non-array questions, wildcard/backslash literal, unknown skill, part title mismatch
+		const testRows: Array<typeof libraryTest.$inferInsert> = [];
+		const partRows: Array<typeof libraryTestPart.$inferInsert> = [];
+		for (let i = 0; i < 110; i++) {
+			const id = `lt-bulk-r-${String(i).padStart(3, "0")}`;
+			testRows.push({
+				id,
+				title: `BatchTest Reading ${i}`,
+				description: "bulk reading",
+				skill: "reading",
+				status: "ready",
+				createdBy: "u-admin",
+				updatedAt: new Date(10_000 + i),
+			});
+			partRows.push({
+				id: `ltp-bulk-r-${i}`,
+				testId: id,
+				part: "p1",
+				type: "tfng",
+				title: "Passage 1",
+				passage: "Very long passage text ".repeat(50),
+				questions: JSON.stringify([
+					{ stem: "Q1", answer: "TRUE", alts: "" },
+					{ stem: "Q2", answer: "FALSE", alts: "" },
+				]),
+				updatedAt: new Date(10_000 + i),
+			});
+		}
+
+		// Listening full audio (4/4 slots)
+		testRows.push({
+			id: "lt-listen-full",
+			title: "Listening Full Audio",
+			skill: "listening",
+			status: "ready",
+			createdBy: "u-admin",
+			updatedAt: new Date(20_000),
+		});
+		for (const slot of ["s1", "s2", "s3", "s4"]) {
+			partRows.push({
+				id: `ltp-lf-${slot}`,
+				testId: "lt-listen-full",
+				part: slot,
+				type: "form",
+				title: `Section ${slot}`,
+				transcript: "Long transcript ".repeat(50),
+				questions: JSON.stringify([{ stem: "Q", answer: "a", alts: "" }]),
+				audioKey: `library/lt-listen-full/${slot}/audio.mp3`,
+				audioName: `${slot}.mp3`,
+				audioContentType: "audio/mpeg",
+				audioSize: 100,
+				updatedAt: new Date(20_000),
+			});
+		}
+
+		// Listening partial audio (1/4 slots)
+		testRows.push({
+			id: "lt-listen-partial",
+			title: "Listening Partial Audio",
+			skill: "listening",
+			status: "draft",
+			createdBy: "u-admin",
+			updatedAt: new Date(20_001),
+		});
+		partRows.push({
+			id: "ltp-lp-s1",
+			testId: "lt-listen-partial",
+			part: "s1",
+			type: "form",
+			title: "Section 1",
+			questions: JSON.stringify([{ stem: "Q", answer: "a", alts: "" }]),
+			audioKey: "library/lt-listen-partial/s1/audio.mp3",
+			updatedAt: new Date(20_001),
+		});
+
+		// 8 đề 0 part
+		for (let i = 0; i < 8; i++) {
+			testRows.push({
+				id: `lt-empty-${i}`,
+				title: `Empty Test ${i}`,
+				skill: i % 2 === 0 ? "reading" : "listening",
+				status: "draft",
+				createdBy: "u-admin",
+				updatedAt: new Date(20_010 + i),
+			});
+		}
+
+		// Edge case 1: mix part hợp lệ + part corrupt JSON trên cùng 1 đề
+		testRows.push({
+			id: "lt-corrupt-mix",
+			title: "Corrupt Mix Test",
+			skill: "reading",
+			status: "draft",
+			createdBy: "u-admin",
+			updatedAt: new Date(21_000),
+		});
+		partRows.push(
+			{
+				id: "ltp-cm-p1",
+				testId: "lt-corrupt-mix",
+				part: "p1",
+				questions: JSON.stringify([
+					{ stem: "Q1", answer: "A", alts: "" },
+					{ stem: "Q2", answer: "B", alts: "" },
+				]),
+				updatedAt: new Date(21_000),
+			},
+			{
+				id: "ltp-cm-p2",
+				testId: "lt-corrupt-mix",
+				part: "p2",
+				questions: "{not-valid-json",
+				updatedAt: new Date(21_000),
+			},
+			{
+				id: "ltp-cm-p3",
+				testId: "lt-corrupt-mix",
+				part: "p3",
+				questions: '{"not":"an-array"}',
+				updatedAt: new Date(21_000),
+			},
+		);
+
+		// Edge case 2: JSON5 trailing comma + primitive + null + empty
+		testRows.push({
+			id: "lt-corrupt-shapes",
+			title: "Corrupt Shapes Test",
+			skill: "listening",
+			status: "draft",
+			createdBy: "u-admin",
+			updatedAt: new Date(21_001),
+		});
+		partRows.push(
+			{
+				id: "ltp-cs-s1",
+				testId: "lt-corrupt-shapes",
+				part: "s1",
+				questions: "[1, 2,]",
+				updatedAt: new Date(21_001),
+			},
+			{
+				id: "ltp-cs-s2",
+				testId: "lt-corrupt-shapes",
+				part: "s2",
+				questions: "123",
+				updatedAt: new Date(21_001),
+			},
+			{
+				id: "ltp-cs-s3",
+				testId: "lt-corrupt-shapes",
+				part: "s3",
+				questions: "null",
+				updatedAt: new Date(21_001),
+			},
+			{
+				id: "ltp-cs-s4",
+				testId: "lt-corrupt-shapes",
+				part: "s4",
+				questions: "",
+				updatedAt: new Date(21_001),
+			},
+		);
+
+		// Edge case 3: tiêu đề chứa ký tự đặc biệt %, _, \ và cụm tiếng Việt dài > 50 bytes
+		testRows.push({
+			id: "lt-wildcard-literal",
+			title:
+				"Score 100%_\\Literal Bộ đề IELTS Reading tổng hợp nâng cao thực hành",
+			skill: "reading",
+			status: "draft",
+			createdBy: "u-admin",
+			updatedAt: new Date(21_002),
+		});
+
+		// Edge case 4: part title khớp từ khóa nhưng header KHÔNG khớp
+		testRows.push({
+			id: "lt-part-title-only",
+			title: "Header Without Keyword",
+			skill: "reading",
+			status: "draft",
+			createdBy: "u-admin",
+			updatedAt: new Date(21_003),
+		});
+		partRows.push({
+			id: "ltp-pto-p1",
+			testId: "lt-part-title-only",
+			part: "p1",
+			title: "PartOnlySecretNeedle",
+			questions: JSON.stringify([{ stem: "Q1", answer: "A", alts: "" }]),
+			updatedAt: new Date(21_003),
+		});
+
+		// Edge case 5: unknown skill trong DB
+		testRows.push({
+			id: "lt-unknown-skill",
+			title: "Unknown Skill Row",
+			skill: "writing",
+			status: "draft",
+			createdBy: "u-admin",
+			updatedAt: new Date(21_004),
+		});
+
+		for (let i = 0; i < testRows.length; i += 8) {
+			await db.insert(libraryTest).values(testRows.slice(i, i + 8));
+		}
+		for (let i = 0; i < partRows.length; i += 4) {
+			await db.insert(libraryTestPart).values(partRows.slice(i, i + 4));
+		}
+
+		app = buildApp({
+			getDb: () => db,
+			authHandler: () => new Response(null, { status: 404 }),
+			corsOrigin: [TEACHER_ORIGIN],
+			getSessionUser: async (headers) => {
+				const key = headers.get("x-test-user");
+				return key ? (SESSIONS[key] ?? null) : null;
+			},
+			adminEmails: ADMIN_EMAILS,
+			adminOrigins: [ADMIN_ORIGIN],
+		});
+		guardEnabled = true;
+	});
+
+	test("125 bộ đề không vượt giới hạn 100 bound params của D1 và không kéo cột nặng của library_test_part", async () => {
+		resetQueryStats();
+		const res = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests",
+		)({
+			user: "admin",
+		});
+		expect(res.status).toBe(200);
+
+		const payload = (await res.json()) as { tests: unknown[] };
+		expect(payload.tests).toHaveLength(125);
+		const parsedTests = payload.tests.map((item) =>
+			libraryTestListItemSchema.parse(item),
+		);
+
+		// Chạy đúng 1 D1 batch gồm 2 statement (không tách 2 execute rời).
+		expect(batchCalls).toBe(1);
+		expect(executeCalls).toBe(0);
+		expect(observedQueries).toHaveLength(2);
+		for (const q of observedQueries) {
+			expect(q.paramCount).toBe(0);
+		}
+
+		const headerQueries = observedQueries.filter(
+			(q) =>
+				q.sql.toLowerCase().includes('from "library_test"') &&
+				!q.sql.toLowerCase().includes("library_test_part"),
+		);
+		expect(headerQueries).toHaveLength(1);
+		for (const hq of headerQueries) {
+			const lower = hq.sql.toLowerCase();
+			expect(lower).not.toMatch(/select\s+\*/);
+			expect(lower).not.toContain("created_by");
+		}
+
+		const partQueries = observedQueries.filter((q) =>
+			q.sql.toLowerCase().includes("library_test_part"),
+		);
+		expect(partQueries).toHaveLength(1);
+		for (const pq of partQueries) {
+			const lower = pq.sql.toLowerCase();
+			expect(lower).not.toMatch(/select\s+\*/);
+			for (const heavyCol of [
+				"passage",
+				"transcript",
+				"groups",
+				"option_bank",
+				"image_url",
+				"intro",
+				"note",
+				"source",
+			]) {
+				expect(lower).not.toContain(heavyCol);
+			}
+			// Cột questions chỉ được đọc trong json_valid / json_array_length, không select trần.
+			const stripped = lower
+				.replace(/json_valid\([^)]*questions[^)]*\)/g, "")
+				.replace(/json_array_length\([^)]*questions[^)]*\)/g, "");
+			expect(stripped).not.toContain("questions");
+		}
+
+		const listenFull = parsedTests.find((t) => t.id === "lt-listen-full");
+		expect(listenFull).toMatchObject({
+			partCount: 4,
+			questionCount: 4,
+			hasAllAudio: true,
+		});
+		const listenPartial = parsedTests.find((t) => t.id === "lt-listen-partial");
+		expect(listenPartial).toMatchObject({
+			partCount: 1,
+			questionCount: 1,
+			hasAllAudio: false,
+		});
+		const corruptMix = parsedTests.find((t) => t.id === "lt-corrupt-mix");
+		expect(corruptMix).toMatchObject({
+			partCount: 3,
+			questionCount: 2,
+			hasAllAudio: true,
+		});
+		const corruptShapes = parsedTests.find((t) => t.id === "lt-corrupt-shapes");
+		expect(corruptShapes).toMatchObject({
+			partCount: 4,
+			questionCount: 0,
+			hasAllAudio: false,
+		});
+		const unknownSkill = parsedTests.find((t) => t.id === "lt-unknown-skill");
+		expect(unknownSkill?.hasAllAudio).toBe(false);
+	});
+
+	test("lọc > 100 đề dùng <= 6 params, khớp literal %/_/\\ + UTF-8 > 50 bytes và không ăn nhầm part.title", async () => {
+		resetQueryStats();
+		const bulkFiltered = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?skill=reading&status=ready&q=BatchTest",
+		)({ user: "admin" });
+		expect(bulkFiltered.status).toBe(200);
+		const bulkBody = (await bulkFiltered.json()) as {
+			tests: Array<{ id: string; partCount: number; questionCount: number }>;
+		};
+		expect(bulkBody.tests).toHaveLength(110);
+		expect(bulkBody.tests[0]?.partCount).toBe(1);
+		expect(bulkBody.tests[0]?.questionCount).toBe(2);
+		expect(batchCalls).toBe(1);
+		expect(executeCalls).toBe(0);
+		expect(observedQueries).toHaveLength(2);
+		for (const q of observedQueries) {
+			expect(q.paramCount).toBeLessThanOrEqual(6);
+			expect(q.sql.toLowerCase()).not.toContain(" like ");
+		}
+
+		// Ký tự %, _, \ được khớp nguyên văn (không bị coi là wildcard)
+		const wildcardRes = await makeRequest(
+			app,
+			"GET",
+			`/api/admin/library/tests?q=${encodeURIComponent("100%_\\")}`,
+		)({ user: "admin" });
+		expect(wildcardRes.status).toBe(200);
+		const wildcardBody = (await wildcardRes.json()) as {
+			tests: Array<{ id: string }>;
+		};
+		expect(wildcardBody.tests.map((t) => t.id)).toEqual([
+			"lt-wildcard-literal",
+		]);
+
+		// Chuỗi tiếng Việt > 50 bytes UTF-8 (vượt D1 LIKE 50-byte cap nếu dùng LIKE) vẫn trả 200
+		const longViQuery = "Bộ đề IELTS Reading tổng hợp nâng cao thực hành";
+		expect(Buffer.byteLength(longViQuery, "utf8")).toBeGreaterThan(50);
+		const viRes = await makeRequest(
+			app,
+			"GET",
+			`/api/admin/library/tests?q=${encodeURIComponent(longViQuery)}`,
+		)({ user: "admin" });
+		expect(viRes.status).toBe(200);
+		const viBody = (await viRes.json()) as { tests: Array<{ id: string }> };
+		expect(viBody.tests.map((t) => t.id)).toEqual(["lt-wildcard-literal"]);
+
+		// Từ khóa chỉ nằm ở library_test_part.title không được khớp header
+		const partTitleRes = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?q=PartOnlySecretNeedle",
+		)({ user: "admin" });
+		expect(partTitleRes.status).toBe(200);
+		const partTitleBody = (await partTitleRes.json()) as {
+			tests: Array<{ id: string }>;
+		};
+		expect(partTitleBody.tests).toEqual([]);
+
+		// ?q= dài quá 200 ký tự trả 400
+		const tooLongQ = "a".repeat(201);
+		const tooLongRes = await makeRequest(
+			app,
+			"GET",
+			`/api/admin/library/tests?q=${tooLongQ}`,
+		)({ user: "admin" });
+		expect(tooLongRes.status).toBe(400);
+	});
+
+	test("timestamp hỏng trong DB không gây 500 ở GET /tests và GET /tests/:id; audioUploadedAt null trả rỗng không log lỗi", async () => {
+		const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		try {
+			// Trước khi corrupt: audio_uploaded_at là NULL → trả "" và KHÔNG log lỗi.
+			const cleanDetailRes = await makeRequest(
+				app,
+				"GET",
+				"/api/admin/library/tests/lt-listen-partial",
+			)({ user: "admin" });
+			expect(cleanDetailRes.status).toBe(200);
+			const cleanDetail = (await cleanDetailRes.json()) as {
+				parts: Array<{ audio: { uploadedAt: string } | null }>;
+			};
+			expect(cleanDetail.parts[0]?.audio?.uploadedAt).toBe("");
+			expect(errSpy).not.toHaveBeenCalled();
+
+			guardEnabled = false;
+			await rawClient.execute({
+				sql: "UPDATE library_test SET updated_at = 'not-a-date', created_at = 8640000000000001 WHERE id = 'lt-listen-partial'",
+			});
+			await rawClient.execute({
+				sql: "UPDATE library_test_part SET updated_at = 'not-a-date', audio_uploaded_at = 'not-a-date' WHERE id = 'ltp-lp-s1'",
+			});
+			guardEnabled = true;
+
+			const listRes = await makeRequest(
+				app,
+				"GET",
+				"/api/admin/library/tests?q=Listening%20Partial",
+			)({ user: "admin" });
+			expect(listRes.status).toBe(200);
+			const listBody = (await listRes.json()) as { tests: unknown[] };
+			const [item] = listBody.tests.map((t) =>
+				libraryTestListItemSchema.parse(t),
+			);
+			expect(item?.createdAt).toBe("1970-01-01T00:00:00.000Z");
+			expect(item?.updatedAt).toBe("1970-01-01T00:00:00.000Z");
+
+			const detailRes = await makeRequest(
+				app,
+				"GET",
+				"/api/admin/library/tests/lt-listen-partial",
+			)({ user: "admin" });
+			expect(detailRes.status).toBe(200);
+			const detail = (await detailRes.json()) as {
+				createdAt: string;
+				updatedAt: string;
+				parts: Array<{
+					updatedAt: string;
+					audio: { uploadedAt: string } | null;
+				}>;
+			};
+			expect(detail.createdAt).toBe("1970-01-01T00:00:00.000Z");
+			expect(detail.updatedAt).toBe("1970-01-01T00:00:00.000Z");
+			expect(detail.parts[0]?.updatedAt).toBe("1970-01-01T00:00:00.000Z");
+			expect(detail.parts[0]?.audio?.uploadedAt).toBe("");
+			expect(errSpy).toHaveBeenCalled();
+		} finally {
+			guardEnabled = false;
+			await rawClient.execute({
+				sql: "UPDATE library_test SET created_at = 20001, updated_at = 20001 WHERE id = 'lt-listen-partial'",
+			});
+			await rawClient.execute({
+				sql: "UPDATE library_test_part SET updated_at = 20001, audio_uploaded_at = NULL WHERE id = 'ltp-lp-s1'",
+			});
+			guardEnabled = true;
+			errSpy.mockRestore();
+		}
+	});
+
+	test("router.onError trả JSON 500 an toàn, log cause và không rò rỉ SQL params hay lỗi nội bộ", async () => {
+		const failingApp = buildApp({
+			getDb: () => {
+				const drizzleErr = new Error(
+					"Failed query: select * from library_test\nparams: secret-token-value",
+					{ cause: new Error("D1_ERROR: simulated backend failure") },
+				);
+				throw drizzleErr;
+			},
+			authHandler: () => new Response(null, { status: 404 }),
+			corsOrigin: [TEACHER_ORIGIN],
+			getSessionUser: async (headers) => {
+				const key = headers.get("x-test-user");
+				return key ? (SESSIONS[key] ?? null) : null;
+			},
+			adminEmails: ADMIN_EMAILS,
+			adminOrigins: [ADMIN_ORIGIN],
+		});
+
+		const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		try {
+			const res = await makeRequest(
+				failingApp,
+				"GET",
+				"/api/admin/library/tests",
+			)({ user: "admin" });
+			expect(res.status).toBe(500);
+			const text = await res.text();
+			expect(JSON.parse(text)).toEqual({ error: "internal server error" });
+			expect(text).not.toContain("secret-token-value");
+			expect(text).not.toContain("D1_ERROR");
+			expect(errSpy).toHaveBeenCalledWith("[admin-library] unhandled error", {
+				method: "GET",
+				path: "/api/admin/library/tests",
+				message: "Failed query",
+				cause: "D1_ERROR: simulated backend failure",
+			});
+		} finally {
+			errSpy.mockRestore();
+		}
 	});
 });

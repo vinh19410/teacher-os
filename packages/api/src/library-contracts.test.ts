@@ -11,6 +11,7 @@ import {
 	LIBRARY_AUDIO_MIME,
 	LIBRARY_CLOZE_TYPES,
 	LIBRARY_ERROR_CODES,
+	LIBRARY_LISTENING_TYPES,
 	LIBRARY_OPTION_BANK_TYPES,
 	LIBRARY_READING_TYPES,
 	LIBRARY_SKILLS,
@@ -213,21 +214,42 @@ describe("validatePartForReady", () => {
 });
 
 describe("validateTestReady", () => {
-	test("reading cần đủ 3 slot p1..p3 và từng part đạt", () => {
-		const issues = validateTestReady("reading", [
-			readingPart(),
-			readingPart({ part: "p2" }),
+	test("reading cần tối thiểu 1 part hợp lệ và từng part hiện có đạt", () => {
+		expect(validateTestReady("reading", [])).toEqual([
+			{ path: "parts", message: "at least one part is required" },
 		]);
-		expect(issues.some((issue) => issue.path === "parts.p3")).toBe(true);
+
+		expect(validateTestReady("reading", [readingPart()])).toEqual([]);
+		expect(validateTestReady("reading", [readingPart({ part: "p2" })])).toEqual(
+			[],
+		);
 
 		const broken = validateTestReady("reading", [
 			readingPart(),
 			readingPart({ part: "p2", passage: "" }),
-			readingPart({ part: "p3" }),
 		]);
-		expect(broken.some((issue) => issue.path === "parts.p2.passage")).toBe(
-			true,
-		);
+		expect(broken).toEqual([
+			{ path: "parts.p2.passage", message: "passage required" },
+		]);
+
+		const orderedIssues = validateTestReady("reading", [
+			readingPart({ part: "s1" }),
+			readingPart({ part: "p3", passage: "" }),
+			readingPart({ part: "p1", passage: "" }),
+		]);
+		expect(orderedIssues.map((issue) => issue.path)).toEqual([
+			"parts.p1.passage",
+			"parts.p3.passage",
+			"parts.s1.part",
+		]);
+
+		const duplicates = validateTestReady("reading", [
+			readingPart(),
+			readingPart({ part: "p1" }),
+		]);
+		expect(duplicates).toEqual([
+			{ path: "parts.p1", message: "duplicate part p1" },
+		]);
 
 		expect(
 			validateTestReady("reading", [
@@ -247,21 +269,26 @@ describe("validateTestReady", () => {
 		).toEqual([]);
 	});
 
-	test("listening cần đủ 4 slot s1..s4, mỗi part có audio + câu", () => {
-		const issues = validateTestReady("listening", [
-			listeningPart(),
-			listeningPart({ part: "s2" }),
-			listeningPart({ part: "s3" }),
+	test("listening cần tối thiểu 1 part hợp lệ có audio + câu", () => {
+		expect(validateTestReady("listening", [])).toEqual([
+			{ path: "parts", message: "at least one part is required" },
 		]);
-		expect(issues.some((issue) => issue.path === "parts.s4")).toBe(true);
+
+		expect(validateTestReady("listening", [listeningPart()])).toEqual([]);
 
 		const noAudio = validateTestReady("listening", [
-			listeningPart(),
-			listeningPart({ part: "s2", audioName: "" }),
-			listeningPart({ part: "s3" }),
-			listeningPart({ part: "s4" }),
+			listeningPart({ audioName: "" }),
 		]);
-		expect(noAudio.some((issue) => issue.path === "parts.s2.audio")).toBe(true);
+		expect(noAudio.some((issue) => issue.path === "parts.s1.audio")).toBe(true);
+
+		expect(
+			validateTestReady("listening", [
+				listeningPart(),
+				listeningPart({ part: "s2" }),
+				listeningPart({ part: "s3" }),
+				listeningPart({ part: "s4" }),
+			]),
+		).toEqual([]);
 	});
 });
 
@@ -596,6 +623,7 @@ describe("Issue #762 — 15 IELTS Reading types & validation rules", () => {
 		]);
 		expect(LIBRARY_READING_TYPES).toHaveLength(15);
 		expect(librarySkillTypes("reading")).toEqual(LIBRARY_READING_TYPES);
+		expect(librarySkillTypes("listening")).toEqual(LIBRARY_LISTENING_TYPES);
 		expect(librarySkillTypes("listening")).toEqual([
 			"form",
 			"mcq1",
@@ -605,6 +633,7 @@ describe("Issue #762 — 15 IELTS Reading types & validation rules", () => {
 			"flow",
 			"notes",
 			"sent4",
+			"mcq_many",
 		]);
 		for (const legacy of ["note", "tablecomp", "flowchart"]) {
 			const issues = validatePartForReady(
@@ -1045,5 +1074,112 @@ describe("mcq 3 or 4 options in library part contracts", () => {
 				(issue) => issue.path === "questions.0.answer",
 			),
 		).toBe(true);
+	});
+});
+
+describe("listening mcq_many in library part contracts", () => {
+	test("chấp nhận listening s4 có nhóm notes + mcq_many ở upsert, validatePartForReady và validateTestReady", () => {
+		const listeningS4: LibraryPartInput = {
+			part: "s4",
+			type: "notes",
+			title: "Section 4: Talking about the history of bikes",
+			band: "7.0",
+			source: "",
+			intro: "",
+			passage: "",
+			transcript: "Good afternoon, ladies and gentlemen.",
+			imageUrl: "",
+			questions: [
+				{
+					stem: "1830s — Advantage: need ____ than walking",
+					opts: null,
+					answer: "less effort",
+					alts: "",
+					type: "notes",
+					pin: null,
+				},
+				{
+					stem: "Which THREE of the following were affected?",
+					opts: [
+						"Wheel size",
+						"Balance",
+						"Rate of speed",
+						"The back wheel",
+						"Safety",
+						"Downhill travel",
+					],
+					answer: "C",
+					alts: "",
+					type: "mcq_many",
+					pin: null,
+					answerSet: "g2",
+				},
+				{
+					stem: "Which THREE of the following were affected?",
+					opts: [
+						"Wheel size",
+						"Balance",
+						"Rate of speed",
+						"The back wheel",
+						"Safety",
+						"Downhill travel",
+					],
+					answer: "D",
+					alts: "",
+					type: "mcq_many",
+					pin: null,
+					answerSet: "g2",
+				},
+				{
+					stem: "Which THREE of the following were affected?",
+					opts: [
+						"Wheel size",
+						"Balance",
+						"Rate of speed",
+						"The back wheel",
+						"Safety",
+						"Downhill travel",
+					],
+					answer: "F",
+					alts: "",
+					type: "mcq_many",
+					pin: null,
+					answerSet: "g2",
+				},
+			],
+			optionBank: [],
+			note: "",
+			audioName: "talking-about-the-history-of-bikes.mp3",
+			groups: [
+				{
+					id: "grp-notes",
+					type: "notes",
+					instruction: "<p>Complete the notes below.</p>",
+					startIndex: 0,
+					count: 1,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+				{
+					id: "grp-mcq-many",
+					type: "mcq_many",
+					instruction: "<p>Choose THREE letters, A–F.</p>",
+					startIndex: 1,
+					count: 3,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+			],
+		};
+
+		const parsed = libraryPartUpsertSchema.safeParse(listeningS4);
+		expect(parsed.success).toBe(true);
+		if (!parsed.success) return;
+		expect(validatePartForReady("listening", parsed.data)).toEqual([]);
+		expect(validateTestReady("listening", [parsed.data])).toEqual([]);
 	});
 });

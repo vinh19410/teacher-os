@@ -203,6 +203,7 @@ export const server = Cloudflare.Worker("server", {
 		date: WORKER_COMPATIBILITY_DATE,
 		flags: ["nodejs_compat"],
 	},
+	crons: ["*/10 * * * *"],
 	...(topology && { domain: topology.apiHost, workersDev: false }),
 	env: {
 		DB: db,
@@ -232,6 +233,20 @@ export const server = Cloudflare.Worker("server", {
 			: "",
 		GOOGLE_CLIENT_ID: Config.String("GOOGLE_CLIENT_ID"),
 		GOOGLE_CLIENT_SECRET: Config.Redacted("GOOGLE_CLIENT_SECRET"),
+		// Zoom Server-to-Server OAuth. Rỗng ⇒ tính năng Zoom tắt (ZOOM_NOT_CONFIGURED).
+		// Plain string vì redacted không combine được với withDefault (cùng mẫu RESEND_API_KEY).
+		ZOOM_ACCOUNT_ID: Config.String("ZOOM_ACCOUNT_ID").pipe(
+			Config.withDefault(""),
+		),
+		ZOOM_CLIENT_ID: Config.String("ZOOM_CLIENT_ID").pipe(
+			Config.withDefault(""),
+		),
+		ZOOM_CLIENT_SECRET: Config.String("ZOOM_CLIENT_SECRET").pipe(
+			Config.withDefault(""),
+		),
+		ZOOM_HOST_USER: Config.String("ZOOM_HOST_USER").pipe(
+			Config.withDefault("me"),
+		),
 		AUTH_ASSUME_EMAIL_VERIFIED: assumeEmailVerified ? "true" : "",
 		MAILER_IMPL: Config.String("MAILER_IMPL").pipe(Config.withDefault("log")),
 		MAIL_FROM: Config.String("MAIL_FROM").pipe(

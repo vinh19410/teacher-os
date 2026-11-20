@@ -4,10 +4,36 @@ import type {
 	StudentClass,
 	StudentScheduleLesson,
 } from "@teacher-os/api/contracts";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { ZOOM_JOIN_ERROR_CODES } from "@teacher-os/api/zoom-window";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { requestStudentZoomJoin } from "@/lib/repos/student";
 import { StudentScheduleView } from "./student-schedule-view";
+
+vi.mock("sonner", () => ({
+	toast: {
+		info: vi.fn(),
+		error: vi.fn(),
+		success: vi.fn(),
+	},
+}));
+
+vi.mock("@/lib/repos/student", async (importOriginal) => {
+	const mod = await importOriginal<typeof import("@/lib/repos/student")>();
+	return {
+		...mod,
+		requestStudentZoomJoin: vi.fn(),
+	};
+});
 
 vi.mock("@tanstack/react-router", () => ({
 	Link: ({
@@ -150,7 +176,15 @@ const MOCK_LESSONS: StudentScheduleLesson[] = [
 const FIXED_NOW = new Date("2026-11-04T05:00:00Z");
 
 describe("StudentScheduleView component", () => {
+	let openSpy: ReturnType<typeof vi.spyOn>;
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		openSpy = vi.spyOn(window, "open");
+	});
+
 	afterEach(() => {
+		openSpy.mockRestore();
 		cleanup();
 	});
 
@@ -397,5 +431,331 @@ describe("StudentScheduleView component", () => {
 		);
 		expect(pausedRow.textContent).toContain("Tạm hoãn");
 		expect(pausedRow.textContent).not.toContain("Đã kết thúc");
+	});
+
+	it("12. Hiển thị nút Zoom trên thẻ lớp và buổi upcoming (ẩn khi paused/ended/cancelled/holiday), kiểm tra khung giờ khi bấm", async () => {
+		const classesWithMeet: StudentClass[] = [
+			{
+				...MOCK_CLASSES[0],
+				nextSession: {
+					date: "2026-11-10",
+					time: "18:00",
+					dur: 90,
+					topic: "Reading Task 1",
+					hasZoom: true,
+				},
+			},
+			{
+				...MOCK_CLASSES[1],
+				status: "paused",
+				nextSession: {
+					date: "2026-11-12",
+					time: "09:00",
+					dur: 90,
+					topic: "Paused class next",
+					hasZoom: true,
+				},
+			},
+		];
+
+		const lessonsWithMeet: StudentScheduleLesson[] = [
+			// Upcoming hợp lệ -> hiện nút Zoom
+			{
+				...MOCK_LESSONS[2],
+				hasZoom: true,
+			},
+			// Upcoming nhưng lớp paused -> ẩn nút Zoom
+			{
+				...MOCK_LESSONS[3],
+				hasZoom: true,
+			},
+			// Upcoming nhưng đã qua giờ kết thúc (ended) -> ẩn nút Zoom
+			{
+				id: "les-ended-meet",
+				classId: "cls-1",
+				className: "IELTS 6.5A",
+				date: "2026-11-03",
+				day: 2,
+				time: "18:00",
+				dur: 90,
+				status: "upcoming",
+				topic: "Ended session",
+				hasZoom: true,
+			},
+			// Cancelled có hasZoom -> ẩn nút Zoom
+			{
+				...MOCK_LESSONS[4],
+				hasZoom: true,
+			},
+			// Holiday tương lai có hasZoom -> ẩn nút Zoom
+			{
+				id: "les-holiday-meet",
+				classId: "cls-1",
+				className: "IELTS 6.5A",
+				date: "2026-11-18",
+				day: 3,
+				time: "18:00",
+				dur: 90,
+				status: "holiday",
+				topic: "Holiday session",
+				hasZoom: true,
+			},
+		];
+
+		const tooEarlyMsg =
+			"Chưa đến giờ vào lớp. Link Zoom chỉ mở từ 17:30 đến 19:30 ngày 10/11/2026 (được vào sớm 30 phút).";
+		vi.mocked(requestStudentZoomJoin)
+			.mockResolvedValueOnce({
+				ok: false,
+				status: 403,
+				error: {
+					error: tooEarlyMsg,
+					code: ZOOM_JOIN_ERROR_CODES.TOO_EARLY,
+				},
+			})
+			.mockResolvedValueOnce({
+				ok: false,
+				status: 403,
+				error: {
+					error: tooEarlyMsg,
+					code: ZOOM_JOIN_ERROR_CODES.TOO_EARLY,
+				},
+			});
+
+		render(
+			<StudentScheduleView
+				classes={classesWithMeet}
+				lessons={lessonsWithMeet}
+				now={FIXED_NOW}
+				selectedTab="all"
+			/>,
+		);
+
+		// Card lớp active hiện nút Zoom; card lớp paused ẩn nút Zoom
+		const card1 = screen.getByTestId("class-schedule-card-cls-1");
+		const card1Meet = within(card1).getByRole("button", {
+			name: "Vào lớp (Zoom)",
+		});
+		fireEvent.click(card1Meet);
+		await waitFor(() => {
+			expect(requestStudentZoomJoin).toHaveBeenCalledWith(
+				"cls-1",
+				"2026-11-10",
+			);
+			expect(toast.info).toHaveBeenCalledWith(tooEarlyMsg);
+		});
+
+		const card2 = screen.getByTestId("class-schedule-card-cls-2");
+		expect(
+			within(card2).queryByRole("button", { name: "Vào lớp (Zoom)" }),
+		).toBeNull();
+
+		// Row upcoming hợp lệ hiện nút Zoom và cũng gọi server khi bấm
+		const upcomingRow = screen.getByTestId("session-row-les-upcoming-next");
+		const rowMeet = within(upcomingRow).getByRole("button", {
+			name: "Vào lớp (Zoom)",
+		});
+		fireEvent.click(rowMeet);
+		await waitFor(() => {
+			expect(requestStudentZoomJoin).toHaveBeenCalledTimes(2);
+			expect(toast.info).toHaveBeenCalledTimes(2);
+		});
+		expect(openSpy).not.toHaveBeenCalled();
+
+		// Các row paused / ended / cancelled / holiday KHÔNG hiện nút Zoom
+		for (const rowId of [
+			"session-row-les-upcoming-future",
+			"session-row-les-ended-meet",
+			"session-row-les-cancelled",
+			"session-row-les-holiday-meet",
+		]) {
+			const row = screen.getByTestId(rowId);
+			expect(
+				within(row).queryByRole("button", { name: "Vào lớp (Zoom)" }),
+			).toBeNull();
+		}
+	});
+
+	it("12b. Mở Zoom ở cả thẻ lớp định kỳ và danh sách buổi học khi trong khung giờ", async () => {
+		const fakeWin1 = {
+			opener: window as Window | null,
+			closed: false,
+			close: vi.fn(),
+			location: { assign: vi.fn() },
+		};
+		const fakeWin2 = {
+			opener: window as Window | null,
+			closed: false,
+			close: vi.fn(),
+			location: { assign: vi.fn() },
+		};
+		openSpy
+			.mockReturnValueOnce(fakeWin1 as unknown as Window)
+			.mockReturnValueOnce(fakeWin2 as unknown as Window);
+
+		vi.mocked(requestStudentZoomJoin)
+			.mockResolvedValueOnce({
+				ok: true,
+				data: {
+					joinUrl: "https://zoom.us/j/111222333",
+					openAt: "2026-11-10T10:30:00.000Z",
+					closeAt: "2026-11-10T12:30:00.000Z",
+				},
+			})
+			.mockResolvedValueOnce({
+				ok: true,
+				data: {
+					joinUrl: "https://zoom.us/j/111222333",
+					openAt: "2026-11-10T10:30:00.000Z",
+					closeAt: "2026-11-10T12:30:00.000Z",
+				},
+			});
+
+		// 17:45 VN ngày 10/11/2026 (trong cửa sổ 17:30–19:30 VN)
+		const insideNow = new Date("2026-11-10T10:45:00Z");
+		render(
+			<StudentScheduleView
+				classes={[
+					{
+						...MOCK_CLASSES[0],
+						nextSession: {
+							date: "2026-11-10",
+							time: "18:00",
+							dur: 90,
+							topic: "Reading Task 1",
+							hasZoom: true,
+						},
+					},
+				]}
+				lessons={[
+					{
+						...MOCK_LESSONS[2],
+						hasZoom: true,
+					},
+				]}
+				now={insideNow}
+				selectedTab="upcoming"
+			/>,
+		);
+
+		const card1 = screen.getByTestId("class-schedule-card-cls-1");
+		fireEvent.click(
+			within(card1).getByRole("button", { name: "Vào lớp (Zoom)" }),
+		);
+		await waitFor(() => {
+			expect(fakeWin1.location.assign).toHaveBeenCalledWith(
+				"https://zoom.us/j/111222333",
+			);
+		});
+
+		const upcomingRow = screen.getByTestId("session-row-les-upcoming-next");
+		fireEvent.click(
+			within(upcomingRow).getByRole("button", { name: "Vào lớp (Zoom)" }),
+		);
+		await waitFor(() => {
+			expect(fakeWin2.location.assign).toHaveBeenCalledWith(
+				"https://zoom.us/j/111222333",
+			);
+		});
+	});
+
+	it("13. Hiển thị nút 'Xem recording' hoặc badge 'Đang chờ recording' đúng điều kiện", () => {
+		const lessonsWithRecordings: StudentScheduleLesson[] = [
+			// Completed có recordingUrl -> hiện "Xem recording"
+			{
+				...MOCK_LESSONS[0],
+				recordingUrl: "https://drive.google.com/file/d/rec-1/view",
+				recordingStatus: "ready",
+			},
+			// Absent không có recordingUrl, recordingStatus=pending -> hiện "Đang chờ recording"
+			{
+				...MOCK_LESSONS[1],
+				recordingUrl: null,
+				recordingStatus: "pending",
+			},
+			// Ended (upcoming quá giờ) không có recordingUrl, recordingStatus=pending -> hiện "Đang chờ recording"
+			{
+				id: "les-ended-pending",
+				classId: "cls-1",
+				className: "IELTS 6.5A",
+				date: "2026-11-03",
+				day: 2,
+				time: "18:00",
+				dur: 90,
+				status: "upcoming",
+				topic: "Ended pending rec",
+				recordingUrl: null,
+				recordingStatus: "pending",
+			},
+			// Upcoming chưa diễn ra có recordingStatus=pending -> KHÔNG hiện badge chờ
+			{
+				...MOCK_LESSONS[2],
+				recordingUrl: null,
+				recordingStatus: "pending",
+			},
+			// Cancelled có recordingUrl + recordingStatus=pending -> KHÔNG hiện nút hay badge
+			{
+				...MOCK_LESSONS[4],
+				recordingUrl: "https://drive.google.com/file/d/rec-cancelled/view",
+				recordingStatus: "pending",
+			},
+			// Holiday có recordingUrl -> KHÔNG hiện nút
+			{
+				id: "les-holiday-rec",
+				classId: "cls-1",
+				className: "IELTS 6.5A",
+				date: "2026-11-18",
+				day: 3,
+				time: "18:00",
+				dur: 90,
+				status: "holiday",
+				topic: "Holiday rec",
+				recordingUrl: "https://drive.google.com/file/d/rec-holiday/view",
+				recordingStatus: "ready",
+			},
+		];
+
+		render(
+			<StudentScheduleView
+				classes={MOCK_CLASSES}
+				lessons={lessonsWithRecordings}
+				now={FIXED_NOW}
+				selectedTab="all"
+			/>,
+		);
+
+		const pastRow = screen.getByTestId("session-row-les-past-1");
+		const recLink = within(pastRow).getByRole("link", {
+			name: "Xem recording",
+		});
+		expect(recLink.getAttribute("href")).toBe(
+			"https://drive.google.com/file/d/rec-1/view",
+		);
+		expect(recLink.getAttribute("target")).toBe("_blank");
+		expect(recLink.getAttribute("rel")).toBe("noopener noreferrer");
+		expect(within(pastRow).queryByText("Đang chờ recording")).toBeNull();
+
+		const absentRow = screen.getByTestId("session-row-les-past-absent");
+		expect(within(absentRow).getByText("Đang chờ recording")).toBeTruthy();
+		expect(
+			within(absentRow).queryByRole("link", { name: "Xem recording" }),
+		).toBeNull();
+
+		const endedRow = screen.getByTestId("session-row-les-ended-pending");
+		expect(within(endedRow).getByText("Đang chờ recording")).toBeTruthy();
+
+		const upcomingRow = screen.getByTestId("session-row-les-upcoming-next");
+		expect(within(upcomingRow).queryByText("Đang chờ recording")).toBeNull();
+
+		const cancelledRow = screen.getByTestId("session-row-les-cancelled");
+		expect(
+			within(cancelledRow).queryByRole("link", { name: "Xem recording" }),
+		).toBeNull();
+		expect(within(cancelledRow).queryByText("Đang chờ recording")).toBeNull();
+
+		const holidayRow = screen.getByTestId("session-row-les-holiday-rec");
+		expect(
+			within(holidayRow).queryByRole("link", { name: "Xem recording" }),
+		).toBeNull();
 	});
 });

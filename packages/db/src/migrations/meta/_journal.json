@@ -526,6 +526,62 @@
       "when": 1794980278820,
       "tag": "0074_greedy_thanos",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "6",
+      "when": 1795013473440,
+      "tag": "0075_pretty_cammi",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "6",
+      "when": 1795020383654,
+      "tag": "0076_study_pack_audio_key",
+      "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "6",
+      "when": 1795027598845,
+      "tag": "0077_small_moon_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "6",
+      "when": 1795029616786,
+      "tag": "0078_optimal_fenris",
+      "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "6",
+      "when": 1795060781157,
+      "tag": "0079_parallel_midnight",
+      "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "6",
+      "when": 1795073130189,
+      "tag": "0080_modern_iron_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "6",
+      "when": 1795078042102,
+      "tag": "0081_pink_harry_osborn",
+      "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "6",
+      "when": 1795078045373,
+      "tag": "0082_material_vargas",
+      "breakpoints": true
     }
   ]
 }

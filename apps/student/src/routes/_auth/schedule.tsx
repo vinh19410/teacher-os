@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { ACCOUNT_ERROR_CODES } from "@teacher-os/api/contracts";
 import { StudentPageGate } from "@/components/layout/student-page-gate";
 import Loader from "@/components/loader";
 import { StudentErrorView } from "@/components/overview/student-error-view";
@@ -74,6 +75,9 @@ function StudentSchedulePage() {
 				if (scheduleQuery.error) {
 					const err = scheduleQuery.error;
 					const code = isHttpError(err) ? err.code : undefined;
+					if (code === ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL) {
+						return <Loader />;
+					}
 					return (
 						<StudentErrorView
 							code={code}

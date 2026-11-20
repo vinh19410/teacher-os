@@ -1,5 +1,9 @@
 import { Navigate } from "@tanstack/react-router";
-import { STUDENT_ERROR_CODES, type StudentMe } from "@teacher-os/api/contracts";
+import {
+	ACCOUNT_ERROR_CODES,
+	STUDENT_ERROR_CODES,
+	type StudentMe,
+} from "@teacher-os/api/contracts";
 import type { ReactNode } from "react";
 import { StudentShell } from "@/components/layout/student-shell";
 import Loader from "@/components/loader";
@@ -29,6 +33,9 @@ export function StudentPageGate({
 	if (meQuery.error) {
 		const err = meQuery.error;
 		const code = isHttpError(err) ? err.code : undefined;
+		if (code === ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL) {
+			return <Loader />;
+		}
 		if (code === STUDENT_ERROR_CODES.NOT_LINKED) {
 			return (
 				<StudentShell userEmail={sessionEmail}>

@@ -1,5 +1,8 @@
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
-import { STUDENT_ERROR_CODES } from "@teacher-os/api/contracts";
+import {
+	ACCOUNT_ERROR_CODES,
+	STUDENT_ERROR_CODES,
+} from "@teacher-os/api/contracts";
 import { authClient } from "@/lib/auth-client";
 import {
 	clearActiveStudentOrgId,
@@ -38,6 +41,16 @@ export function isStudentOrgMismatchError(error: unknown): error is HttpError {
 	);
 }
 
+export function isTeacherOnStudentPortalError(
+	error: unknown,
+): error is HttpError {
+	return (
+		isHttpError(error) &&
+		error.status === 403 &&
+		error.code === ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL
+	);
+}
+
 export function healStudentOrgMismatch(
 	client: QueryClient = studentQueryClient,
 ): void {
@@ -46,6 +59,7 @@ export function healStudentOrgMismatch(
 }
 
 let reauthing = false;
+let redirectingForWrongRole = false;
 let lastAuthenticatedUserId: string | null = null;
 
 /**
@@ -77,9 +91,17 @@ export function resetStudentSessionUserForTests(): void {
 	lastAuthenticatedUserId = null;
 }
 
+export function resetRedirectGuardsForTests(): void {
+	reauthing = false;
+	redirectingForWrongRole = false;
+}
+
 if (typeof window !== "undefined") {
 	window.addEventListener("pageshow", (event) => {
-		if (event.persisted) reauthing = false;
+		if (event.persisted) {
+			reauthing = false;
+			redirectingForWrongRole = false;
+		}
 	});
 }
 
@@ -88,6 +110,21 @@ export function reauth(): void {
 	reauthing = true;
 	syncStudentSessionUser(null);
 	void authClient.signOut().catch(() => undefined);
+	const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+	const returnUrl = validateReturnUrl(current);
+	window.location.assign(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+}
+
+export function redirectToLoginForWrongRole(
+	client: QueryClient = studentQueryClient,
+): void {
+	syncStudentSessionUser(null, client);
+	client.clear();
+	authClient.clearSessionCache?.();
+	if (typeof window === "undefined") return;
+	if (window.location.pathname === "/login") return;
+	if (redirectingForWrongRole) return;
+	redirectingForWrongRole = true;
 	const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 	const returnUrl = validateReturnUrl(current);
 	window.location.assign(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
@@ -132,6 +169,10 @@ export function createStudentQueryClient(): QueryClient {
 					reauth();
 					return;
 				}
+				if (isTeacherOnStudentPortalError(error)) {
+					redirectToLoginForWrongRole(client);
+					return;
+				}
 				if (isStudentOrgMismatchError(error) && error.sentOrgId) {
 					healStudentOrgMismatch(client);
 				}
@@ -141,6 +182,10 @@ export function createStudentQueryClient(): QueryClient {
 			onError: (error) => {
 				if (isHttpError(error) && error.status === 401) {
 					reauth();
+					return;
+				}
+				if (isTeacherOnStudentPortalError(error)) {
+					redirectToLoginForWrongRole(client);
 					return;
 				}
 				if (isStudentOrgMismatchError(error)) {

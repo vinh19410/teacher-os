@@ -13,7 +13,6 @@ import {
 	Check,
 	ChevronLeft,
 	ChevronRight,
-	Copy,
 	Pencil,
 	RefreshCw,
 	Search,
@@ -36,11 +35,7 @@ import { Input } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
-import {
-	cloneStudyPack,
-	deleteStudyPack,
-	fetchStudyPackDetail,
-} from "@/lib/repos/study-pack";
+import { deleteStudyPack, fetchStudyPackDetail } from "@/lib/repos/study-pack";
 
 export interface PackDetailSearch {
 	skill?: string;
@@ -140,7 +135,6 @@ export function StudyPackDetailRoute() {
 	const [editorOpen, setEditorOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [deleteError, setDeleteError] = useState<string | null>(null);
-	const [cloning, setCloning] = useState(false);
 	const [deleting, setDeleting] = useState(false);
 
 	// Sync external ?q= updates (back/forward or shared links) into input state.
@@ -292,25 +286,6 @@ export function StudyPackDetailRoute() {
 		updateSearch({ item: itemId });
 	}
 
-	async function handleClone() {
-		if (!pack) return;
-		setCloning(true);
-		try {
-			const res = await cloneStudyPack(pack.id);
-			toast.success("Đã nhân bản bộ đề về trung tâm.");
-			queryClient.setQueryData(["study-pack-detail", res.pack.id], res);
-			await navigate({
-				to: "/assignments/packs/$packId",
-				params: { packId: res.pack.id },
-				search: {},
-			});
-		} catch {
-			toast.error("Không thể nhân bản bộ đề. Vui lòng thử lại.");
-		} finally {
-			setCloning(false);
-		}
-	}
-
 	async function handleConfirmDelete() {
 		if (!pack) return;
 		setDeleteError(null);
@@ -440,14 +415,12 @@ export function StudyPackDetailRoute() {
 								{pack.scope === "system" ? "Hệ thống" : "Trung tâm"}
 							</Badge>
 							{pack.level && <Badge variant="secondary">{pack.level}</Badge>}
-							{pack.scope === "org" && (
-								<Badge
-									variant={pack.status === "ready" ? "success" : "secondary"}
-									dot
-								>
-									{pack.status === "ready" ? "Sẵn sàng" : "Nháp"}
-								</Badge>
-							)}
+							<Badge
+								variant={pack.status === "ready" ? "success" : "secondary"}
+								dot
+							>
+								{pack.status === "ready" ? "Sẵn sàng" : "Nháp"}
+							</Badge>
 							<Badge variant="outline" className="tabular-nums">
 								{pack.dayCount} ngày · {pack.itemCount} bài tập
 							</Badge>
@@ -472,34 +445,20 @@ export function StudyPackDetailRoute() {
 									Gán cho lớp
 								</Button>
 							)}
-							{pack.scope === "system" && (
-								<Button
-									variant="outline"
-									disabled={cloning}
-									onClick={() => void handleClone()}
-								>
-									<Copy className="size-4" />
-									{cloning ? "Đang nhân bản…" : "Nhân bản về trung tâm"}
-								</Button>
-							)}
-							{pack.scope === "org" && (
-								<>
-									<Button variant="outline" onClick={() => setEditorOpen(true)}>
-										<Pencil className="size-4" />
-										Chỉnh sửa
-									</Button>
-									<Button
-										variant="danger"
-										onClick={() => {
-											setDeleteError(null);
-											setDeleteOpen(true);
-										}}
-									>
-										<Trash2 className="size-4" />
-										Xoá
-									</Button>
-								</>
-							)}
+							<Button variant="outline" onClick={() => setEditorOpen(true)}>
+								<Pencil className="size-4" />
+								Chỉnh sửa
+							</Button>
+							<Button
+								variant="danger"
+								onClick={() => {
+									setDeleteError(null);
+									setDeleteOpen(true);
+								}}
+							>
+								<Trash2 className="size-4" />
+								Xoá
+							</Button>
 						</div>
 					)}
 				</div>
@@ -511,11 +470,11 @@ export function StudyPackDetailRoute() {
 						Bộ đề chưa có bài tập nào
 					</h2>
 					<p className="mx-auto max-w-md text-muted-foreground text-sm">
-						{pack.scope === "org" && canManagePacks
+						{canManagePacks
 							? "Nhấn Chỉnh sửa để thêm bài tập theo ngày cho bộ đề này."
 							: "Các buổi học trong bộ đề sẽ hiển thị tại đây khi được cập nhật."}
 					</p>
-					{pack.scope === "org" && canManagePacks && (
+					{canManagePacks && (
 						<div className="pt-1">
 							<Button variant="outline" onClick={() => setEditorOpen(true)}>
 								<Pencil className="size-4" />

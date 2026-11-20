@@ -133,6 +133,13 @@ import {
 	MAX_IMPORT_NODES,
 	selectTemplateTree,
 } from "../lib/syllabus-curriculum";
+import {
+	autoProvisionMeetingsForNewClass,
+	ensureSessionMeeting,
+	syncZoomOnSessionCancelOrDelete,
+	syncZoomOnSessionEdit,
+} from "../lib/zoom/session-zoom-service";
+import type { ZoomClient, ZoomConfig } from "../lib/zoom/zoom-client";
 import { assignmentRoutes } from "./assignments";
 import { bankLinkRoutes } from "./bank-link";
 import { dailyAttendanceRoutes } from "./daily-attendance";
@@ -155,6 +162,7 @@ import { studyPackRoutes } from "./study-pack";
 import { backfillStuckEnrollments, syllabusRoutes } from "./syllabus";
 import { vocabLibraryRoutes } from "./vocab-library";
 import { vocabTeacherRoutes } from "./vocab-teacher";
+import { runZoomSyncTask, zoomDepsFrom } from "./zoom-meeting";
 
 // Re-export để giữ import path cũ của test (kernel.test.ts) sau khi helper
 // chuyển sang enrollment-activation.ts.
@@ -190,6 +198,9 @@ export function kernelRoutes(deps: {
 	aiRetryDelaysMs?: number[];
 	aiGradingTimeoutMs?: number;
 	fetchExternalAudio?: typeof fetch;
+	zoom?: ZoomConfig;
+	zoomFetch?: typeof fetch;
+	getZoomClient?: () => ZoomClient;
 	now?: () => Date;
 }) {
 	const kernel = new Hono<Env>();
@@ -2035,6 +2046,10 @@ export function kernelRoutes(deps: {
 		const schedulingMode =
 			input.templateId !== "" ? "auto" : (input.schedulingMode ?? "manual");
 
+		const scheduleJson = JSON.stringify({
+			...input.schedule,
+			days: [...new Set(input.schedule.days)].sort((a, b) => a - b),
+		});
 		const classInsert = db.insert(classTable).values({
 			id: classId,
 			orgId: ctx.orgId,
@@ -2044,10 +2059,7 @@ export function kernelRoutes(deps: {
 			skills: JSON.stringify(input.skills),
 			mode: input.mode,
 			syllabusId: imported?.copyId ?? null,
-			schedule: JSON.stringify({
-				...input.schedule,
-				days: [...new Set(input.schedule.days)].sort((a, b) => a - b),
-			}),
+			schedule: scheduleJson,
 			sessionsTotal: schedulingMode === "manual" ? 0 : input.sessionsTotal,
 			sessionsDone: 0,
 			status: "active",
@@ -2060,6 +2072,22 @@ export function kernelRoutes(deps: {
 			? [...imported.statements, classInsert]
 			: [classInsert];
 		await db.batch(statements);
+		if (
+			schedulingMode === "auto" &&
+			input.mode === "Online" &&
+			input.sessionsTotal > 0
+		) {
+			await runZoomSyncTask(deps, () =>
+				autoProvisionMeetingsForNewClass(zoomDepsFrom(deps), {
+					orgId: ctx.orgId,
+					classId,
+					mode: input.mode,
+					schedule: scheduleJson,
+					startDate: input.startDate,
+					sessionsTotal: input.sessionsTotal,
+				}),
+			);
+		}
 		return c.json({ id: classId } satisfies CreatedResponse, 201);
 	});
 
@@ -2647,6 +2675,24 @@ export function kernelRoutes(deps: {
 				}),
 			]);
 		}
+		if (nextStatus === "cancelled" && row.date !== null) {
+			const cancelledDate = row.date;
+			await runZoomSyncTask(deps, async () => {
+				const counts = await bucketCounts(
+					db,
+					row.classId,
+					cancelledDate,
+					ctx.orgId,
+				);
+				if (counts.upcoming === 0) {
+					await syncZoomOnSessionCancelOrDelete(zoomDepsFrom(deps), {
+						orgId: ctx.orgId,
+						classId: row.classId,
+						dateISO: cancelledDate,
+					});
+				}
+			});
+		}
 		return c.json({ ok: true });
 	}
 
@@ -2743,6 +2789,19 @@ export function kernelRoutes(deps: {
 					}),
 				);
 			}
+			const editedDate = pre.date;
+			await runZoomSyncTask(deps, () =>
+				syncZoomOnSessionEdit(zoomDepsFrom(deps), {
+					orgId: ctx.orgId,
+					classId: pre.classId,
+					oldDateISO: editedDate,
+					newDateISO: editedDate,
+					time: body.data.time,
+					dur: body.data.dur,
+					topic: body.data.topic,
+					...(body.data.zoom !== pre.zoom ? { zoom: body.data.zoom } : {}),
+				}),
+			);
 			return c.json({ ok: true });
 		}
 
@@ -3097,6 +3156,18 @@ export function kernelRoutes(deps: {
 					}),
 				);
 			}
+			await runZoomSyncTask(deps, () =>
+				syncZoomOnSessionEdit(zoomDepsFrom(deps), {
+					orgId: ctx.orgId,
+					classId,
+					oldDateISO: dateISO,
+					newDateISO: moveDateISO ?? dateISO,
+					time: body.data.time,
+					dur: body.data.dur,
+					topic: body.data.topic,
+					...(body.data.zoom !== undefined ? { zoom: body.data.zoom } : {}),
+				}),
+			);
 			return c.json({
 				updated: Math.max(rows.length, existingClassSession.length),
 				skipped: Math.max(0, before.total - rows.length),
@@ -3364,6 +3435,15 @@ export function kernelRoutes(deps: {
 			}
 			throw err;
 		}
+		if (cls.mode === "Online" && body.data.zoom.trim() === "") {
+			await runZoomSyncTask(deps, async () => {
+				await ensureSessionMeeting(zoomDepsFrom(deps), {
+					orgId: kernelCtx.orgId,
+					classId,
+					dateISO,
+				});
+			});
+		}
 		return c.json({ ok: true, id: newId, date: dateISO }, 201);
 	});
 
@@ -3538,6 +3618,14 @@ export function kernelRoutes(deps: {
 			}
 			throw err;
 		}
+		await runZoomSyncTask(deps, () =>
+			syncZoomOnSessionCancelOrDelete(zoomDepsFrom(deps), {
+				orgId: ctx.orgId,
+				classId,
+				dateISO,
+				deleteMeetingRow: true,
+			}),
+		);
 		return c.json({ ok: true, deleted: true, date: dateISO });
 	});
 
@@ -3600,6 +3688,15 @@ export function kernelRoutes(deps: {
 					date: dateISO,
 					editedAtMs: Date.now(),
 					studentIds: notifyStudentIds,
+				}),
+			);
+		}
+		if (nextStatus === "cancelled" && rows.length > 0) {
+			await runZoomSyncTask(deps, () =>
+				syncZoomOnSessionCancelOrDelete(zoomDepsFrom(deps), {
+					orgId,
+					classId,
+					dateISO,
 				}),
 			);
 		}

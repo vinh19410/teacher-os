@@ -33,9 +33,15 @@ export async function seedGoogleAccount(email: string): Promise<void> {
 			args: [userId as string],
 		});
 		await client.execute({
-			sql: `INSERT INTO account (id, account_id, provider_id, user_id, created_at, updated_at)
-				VALUES (?, 'google-e2e-1', 'google', ?, ?, ?)`,
-			args: [randomUUID(), userId, Date.now(), Date.now()],
+			sql: `INSERT INTO account (id, account_id, provider_id, user_id, refresh_token, scope, created_at, updated_at)
+				VALUES (?, 'google-e2e-1', 'google', ?, NULL, ?, ?, ?)`,
+			args: [
+				randomUUID(),
+				userId,
+				"openid email profile",
+				Date.now(),
+				Date.now(),
+			],
 		});
 	} finally {
 		client.close();

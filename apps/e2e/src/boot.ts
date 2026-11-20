@@ -24,6 +24,8 @@ import { createFakeAiGrader } from "server/lib/ai-grading/fake-grader";
 import { createFakeExamExtractor } from "server/lib/exam-import/fake-extractor";
 import { createFakePlacementAiGrader } from "server/lib/placement-ai/fake-grader";
 import { isAllowedStudyPackAudioUrl } from "server/lib/study-pack-audio";
+import { createFakeZoom } from "server/lib/zoom/fake-zoom-client";
+import { runRecordingSyncCron } from "server/lib/zoom/session-zoom-service";
 import { getSessionUser } from "server/session";
 import { createFakeBankHub } from "./fake-bank-hub";
 import { createFsMediaStore } from "./fs-media-store";
@@ -198,6 +200,9 @@ const fakeBankHub = createFakeBankHub({
 });
 
 const placementAiGrader = createFakePlacementAiGrader();
+const fakeZoom = createFakeZoom();
+// Đồng hồ máy chủ có thể dịch chuyển tạm thời trong E2E (luôn reset về null ở finally).
+let runtimeNowMs: number | null = null;
 
 const app = buildApp({
 	getDb: () => libsql as unknown as Db,
@@ -218,6 +223,8 @@ const app = buildApp({
 	// #730: grader placement fake (rubric 3, lỗi = từ đầu tiên, transcript
 	// cố định) — E2E chấm nháp Writing/Speaking offline, không gọi OpenAI.
 	getPlacementAiGrader: () => placementAiGrader,
+	getZoomClient: () => fakeZoom.client,
+	now: () => (runtimeNowMs !== null ? new Date(runtimeNowMs) : new Date()),
 	adminEmails: ADMIN_EMAILS,
 	teacherEmails: runtimeTeacherEmails,
 	adminOrigins: [
@@ -342,6 +349,53 @@ app.post("/__e2e/teacher-emails", async (c) => {
 	}
 	runtimeTeacherEmails.splice(0, runtimeTeacherEmails.length, ...emails);
 	return c.json({ ok: true, teacherEmails: [...runtimeTeacherEmails] });
+});
+
+app.post("/__e2e/zoom-recording", async (c) => {
+	const raw: unknown = await c.req.json().catch(() => null);
+	const ready = Boolean(
+		raw && typeof raw === "object" && "ready" in raw && raw.ready === true,
+	);
+	fakeZoom.setRecordingReady(ready);
+	return c.json({ ok: true, ready });
+});
+
+app.post("/__e2e/run-recording-cron", async (c) => {
+	const raw: unknown = await c.req.json().catch(() => null);
+	const nowIso =
+		raw &&
+		typeof raw === "object" &&
+		"nowIso" in raw &&
+		typeof raw.nowIso === "string"
+			? raw.nowIso
+			: undefined;
+	const res = await runRecordingSyncCron({
+		db: libsql as unknown as Db,
+		getZoomClient: () => fakeZoom.client,
+		now: () => (nowIso ? new Date(nowIso) : new Date()),
+	});
+	return c.json(res);
+});
+
+// E2E-only helper: đặt hoặc khôi phục đồng hồ máy chủ cho các spec cần kiểm thử
+// ranh giới thời gian (như khung giờ mở link Zoom) mà không phải chờ đồng hồ thật.
+app.post("/__e2e/clock", async (c) => {
+	const raw: unknown = await c.req.json().catch(() => null);
+	if (!raw || typeof raw !== "object" || !("nowIso" in raw)) {
+		return c.json({ error: "invalid-now-iso" }, 400);
+	}
+	if (raw.nowIso === null) {
+		runtimeNowMs = null;
+		return c.json({ ok: true, nowIso: null });
+	}
+	if (typeof raw.nowIso === "string") {
+		const ms = Date.parse(raw.nowIso);
+		if (Number.isFinite(ms)) {
+			runtimeNowMs = ms;
+			return c.json({ ok: true, nowIso: new Date(ms).toISOString() });
+		}
+	}
+	return c.json({ error: "invalid-now-iso" }, 400);
 });
 
 // Fake SePay hosted-link pages (#320) ride the same API server — the iframe

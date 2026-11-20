@@ -28,12 +28,17 @@ import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
-import type { Db, KernelCtx } from "../app";
+import type { AppDeps, Db, KernelCtx } from "../app";
 import {
 	emitNotifications,
 	notificationDepsFrom,
 } from "../lib/notifications/emit";
 import { holidayCreatedEvents } from "../lib/notifications/templates";
+import {
+	syncZoomOnSessionCancelOrDelete,
+	syncZoomOnSessionEdit,
+} from "../lib/zoom/session-zoom-service";
+import { runZoomSyncTask, zoomDepsFrom } from "./zoom-meeting";
 
 /** Chia nhỏ inArray theo ngưỡng 50 để tránh trần bind parameter của D1 (#366 RT-F2). */
 const D1_IN_ARRAY_CHUNK = 50;
@@ -351,7 +356,7 @@ function shiftStatements(
 					attendance: sql`null`.as("attendance"),
 					attendanceNote: sql`null`.as("attendance_note"),
 					topic: sql<string>`''`.as("topic"),
-					zoom: sql<string>`''`.as("zoom"),
+					zoom: lesson.zoom,
 					createdAt: sql`(cast(unixepoch('subsecond') * 1000 as integer))`.as(
 						"created_at",
 					),
@@ -455,6 +460,9 @@ export function holidayRoutes(deps: {
 	studentOrigin?: Parameters<typeof emitNotifications>[0]["studentOrigin"];
 	/** #463: khoảng chờ giữa các lượt retry email thông báo (test/E2E truyền [0, 0]). */
 	notificationRetryDelaysMs?: number[];
+	zoom?: AppDeps["zoom"];
+	zoomFetch?: AppDeps["zoomFetch"];
+	getZoomClient?: AppDeps["getZoomClient"];
 }) {
 	const holiday = new Hono<Env>();
 
@@ -671,6 +679,24 @@ export function holidayRoutes(deps: {
 			cancelledCount: plan.cancellations.length,
 			classCount: plan.preview.affectedClassCount,
 		};
+		await runZoomSyncTask(deps, async () => {
+			const gDeps = zoomDepsFrom(deps);
+			for (const shift of plan.shifts) {
+				await syncZoomOnSessionEdit(gDeps, {
+					orgId: ctx.orgId,
+					classId: shift.classId,
+					oldDateISO: shift.originalDate,
+					newDateISO: shift.makeupDate,
+				});
+			}
+			for (const cancel of plan.cancellations) {
+				await syncZoomOnSessionCancelOrDelete(gDeps, {
+					orgId: ctx.orgId,
+					classId: cancel.classId,
+					dateISO: cancel.date,
+				});
+			}
+		});
 		// #454 D9: notify=true → holiday_created cho học viên ACTIVE của các
 		// lớp bị ảnh hưởng; emit tự fail-open nên không đổi response 200.
 		if (input.notify) {
@@ -1048,6 +1074,18 @@ export function holidayRoutes(deps: {
 			}
 			throw err;
 		}
+
+		await runZoomSyncTask(deps, async () => {
+			const gDeps = zoomDepsFrom(deps);
+			for (const { shift } of shiftCounts) {
+				await syncZoomOnSessionEdit(gDeps, {
+					orgId: ctx.orgId,
+					classId: shift.classId,
+					oldDateISO: shift.makeupDate,
+					newDateISO: shift.originalDate,
+				});
+			}
+		});
 
 		return c.json({
 			restoredCount,

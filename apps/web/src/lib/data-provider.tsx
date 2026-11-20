@@ -29,6 +29,7 @@ import {
 	createKernelCommandBus,
 	type KernelCommandBus,
 	type KernelCommandResult,
+	type KernelCommandRunOptions,
 	type KernelSlice,
 	kernelQueryKey,
 	kernelQueryOptions,
@@ -49,7 +50,10 @@ interface DataStore {
 	 * Kernel writes go through the serialized command bus and resolve the
 	 * truthful outcome — only `refreshed` permits close/reset/navigate.
 	 */
-	dispatch(action: KernelAction): Promise<KernelCommandResult>;
+	dispatch(
+		action: KernelAction,
+		options?: KernelCommandRunOptions,
+	): Promise<KernelCommandResult>;
 	/**
 	 * Reconcile path for `committed`/`outcome-unknown` results: fetches and
 	 * applies the latest snapshot behind the bus queue. Resolves false when
@@ -63,6 +67,10 @@ interface DataStore {
 	classById(id: string): ClassGroup | undefined;
 	syllabusById(id: string): Syllabus | undefined;
 	classesForSyllabus(id: string): ClassGroup[];
+	sessionMeetingByClassDate(
+		classId: string,
+		dateISO: string,
+	): import("@teacher-os/api/contracts").KernelSessionMeetingRow | undefined;
 }
 
 const DataContext = createContext<DataStore | null>(null);
@@ -125,12 +133,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
 	}, [baseUrl, queryClient]);
 
 	const dispatch = useCallback(
-		(action: KernelAction): Promise<KernelCommandResult> => {
-			const result = getBus().run(action);
+		(
+			action: KernelAction,
+			options?: KernelCommandRunOptions,
+		): Promise<KernelCommandResult> => {
+			const result = getBus().run(action, options);
 			// Outcome surfacing is caller-owned (modal notice / direct-action
 			// toast); the provider only logs non-happy paths for diagnosis.
 			void result.then((r) => {
-				if (r.kind !== "refreshed") {
+				if (
+					r.kind !== "refreshed" &&
+					!(options?.skipRefresh && r.kind === "committed")
+				) {
 					console.warn(`[kernel] ${action.type} → ${r.kind}`);
 				}
 			});
@@ -163,6 +177,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 					.templateUsage.get(id)
 					?.map((classId) => data.classes.find((c) => c.id === classId))
 					.filter((c) => c !== undefined) ?? [],
+			sessionMeetingByClassDate: (classId, dateISO) =>
+				(data.sessionMeetings ?? []).find(
+					(m) => m.classId === classId && m.date === dateISO,
+				),
 		};
 	}, [data, dispatch, refresh]);
 

@@ -6,6 +6,7 @@ import type {
 import { formatSchedule } from "@teacher-os/api/format-schedule";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { TeacherAvatar } from "@/components/class/teacher-avatar";
+import { ZoomJoinButton } from "@/components/class/zoom-join-button";
 import { deriveAssignmentStatus } from "@/lib/assignment-status";
 import { cn } from "@/lib/cn";
 import { formatVietnamDateFromISO } from "@/lib/vietnam-display-date";
@@ -20,6 +21,8 @@ export interface ClassCardProps {
 	assignments?: StudentAssignment[];
 	todayISO?: string;
 	nowMs?: number;
+	/** Chỉ dùng trong unit test để cố định đồng hồ cục bộ cho ZoomJoinButton. */
+	zoomNowMs?: number;
 }
 
 export function ClassCard({
@@ -29,6 +32,7 @@ export function ClassCard({
 	assignments,
 	todayISO,
 	nowMs,
+	zoomNowMs,
 }: ClassCardProps) {
 	const isInvited = cls.enrollmentStatus === "invited";
 	const isPaused = cls.status === "paused";
@@ -125,6 +129,22 @@ export function ClassCard({
 						<p className="mt-3 truncate font-mono text-[12px] text-foreground">
 							{nextSessionText}
 						</p>
+
+						{!isPaused &&
+							cls.nextSession &&
+							Boolean(cls.nextSession.hasZoom ?? cls.nextSession.joinUrl) && (
+								<ZoomJoinButton
+									classId={cls.id}
+									date={cls.nextSession.date}
+									time={cls.nextSession.time}
+									dur={cls.nextSession.dur}
+									variant="default"
+									size="default"
+									iconClassName="size-4"
+									className="relative z-10 mt-3 w-full"
+									nowMs={zoomNowMs}
+								/>
+							)}
 					</>
 				)}
 			</div>

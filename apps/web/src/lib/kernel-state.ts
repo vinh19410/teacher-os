@@ -14,10 +14,12 @@ export const emptyKernelData: KernelHydratedData = {
 	enrollments: [],
 	classAssignments: [],
 	assignmentTests: [],
+	vocabGroups: [],
 	vocabDecks: [],
 	vocabSuggestions: [],
 	holidays: [],
 	holidayShifts: [],
 	holidayCancels: [],
 	events: [],
+	sessionMeetings: [],
 };

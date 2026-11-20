@@ -357,6 +357,90 @@ describe("Điều chỉnh buổi (whole-class occurrence)", () => {
 		).toBeTruthy();
 		expect(server.writes).toEqual([]);
 	});
+
+	it("omits the Link Zoom input from the session edit form", async () => {
+		server = startKernelServer(mondayClass(["st-1", "st-2"]));
+		await openSessionsTab();
+		const dialog = await openAdjust("19/10");
+		expect(within(dialog).queryByLabelText(/Link Zoom/i)).toBeNull();
+	});
+
+	it("accepts dd/mm/yyyy in Dời sang ngày and submits the ISO moveDate", async () => {
+		server = startKernelServer(mondayClass(["st-1", "st-2"]));
+		await openSessionsTab();
+		const dialog = await openAdjust("19/10");
+		const moveInput = within(dialog).getByLabelText(
+			"Dời sang ngày",
+		) as HTMLInputElement;
+		expect(moveInput.type).toBe("text");
+		expect(moveInput.placeholder).toBe("dd/mm/yyyy");
+
+		fireEvent.change(moveInput, { target: { value: "26/10/2026" } });
+		expect(
+			(
+				within(dialog).getByRole("button", {
+					name: "Hủy buổi",
+				}) as HTMLButtonElement
+			).disabled,
+		).toBe(true);
+		expect(
+			(
+				within(dialog).getByRole("button", {
+					name: "Xóa buổi học",
+				}) as HTMLButtonElement
+			).disabled,
+		).toBe(true);
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Lưu thay đổi" }),
+		);
+		await waitFor(() => expect(server.writes).toHaveLength(1));
+		expect(server.writes[0]).toMatchObject({
+			path: `/api/classes/cl-1/sessions/${NEXT_WEEK}/edit`,
+			body: { moveDate: "2026-10-26" },
+		});
+	});
+
+	it("blocks submit with an inline alert and disables session actions on an invalid move date", async () => {
+		server = startKernelServer(mondayClass(["st-1", "st-2"]));
+		await openSessionsTab();
+		const dialog = await openAdjust("12/10");
+		const moveInput = within(dialog).getByLabelText("Dời sang ngày");
+
+		fireEvent.change(moveInput, { target: { value: "31/02/2026" } });
+		expect(
+			(
+				within(dialog).getByRole("button", {
+					name: "Hoàn thành buổi",
+				}) as HTMLButtonElement
+			).disabled,
+		).toBe(true);
+		expect(
+			(
+				within(dialog).getByRole("button", {
+					name: "Hủy buổi",
+				}) as HTMLButtonElement
+			).disabled,
+		).toBe(true);
+		expect(
+			(
+				within(dialog).getByRole("button", {
+					name: "Xóa buổi học",
+				}) as HTMLButtonElement
+			).disabled,
+		).toBe(true);
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Lưu thay đổi" }),
+		);
+		expect(within(dialog).getByRole("alert").textContent).toContain(
+			"dd/mm/yyyy",
+		);
+		expect(server.writes).toEqual([]);
+
+		fireEvent.change(moveInput, { target: { value: "" } });
+		expect(within(dialog).queryByRole("alert")).toBeNull();
+	});
 });
 
 describe("class notes", () => {

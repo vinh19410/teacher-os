@@ -27,6 +27,8 @@ import {
 	type StudentQuizDetail,
 	type StudentScheduleLesson,
 	type StudentScheduleResponse,
+	type StudentZoomJoinError,
+	type StudentZoomJoinResponse,
 	studentOnboardingPayloadSchema,
 } from "@teacher-os/api/contracts";
 import { essayToPlain } from "@teacher-os/api/lib/essay-plain";
@@ -41,6 +43,12 @@ import {
 	quizMediaExtensionMatches,
 	sanitizeMediaFileName,
 } from "@teacher-os/api/lib/quiz-media";
+import { parseStartDateStrict } from "@teacher-os/api/skeleton";
+import {
+	evaluateZoomJoinWindow,
+	formatZoomJoinWindowMessage,
+	ZOOM_JOIN_ERROR_CODES,
+} from "@teacher-os/api/zoom-window";
 import {
 	assignment,
 	assignmentPrompt,
@@ -48,6 +56,7 @@ import {
 	assignmentTestPart,
 	classAssignment,
 	classAssignmentTarget,
+	classSessionMeeting,
 	classTable,
 	enrollment,
 	invoice,
@@ -64,6 +73,7 @@ import {
 	asc,
 	desc,
 	eq,
+	inArray,
 	isNotNull,
 	isNull,
 	notLike,
@@ -88,18 +98,20 @@ import {
 	toPlainAnnotation,
 } from "../lib/quiz-annotation";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
-import { streamStudyPackAudio } from "../lib/study-pack-audio";
+import { serveStudyPackAudio } from "../lib/study-pack-audio";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
 import { activateEnrollment } from "./enrollment-activation";
 import { parsePin } from "./snapshot";
 import {
+	isValidZoomJoinUrl,
 	loadClassAssignmentItems,
 	loadNextSession,
 	loadOrgTeacher,
 	orderStudentLessons,
 	studentClassColumns,
 	toStudentClass,
+	toStudentClassLessonWithMeeting,
 } from "./student-class";
 import { registerVocabRoutes } from "./vocab";
 
@@ -115,8 +127,12 @@ export interface StudentRouteDeps {
 	getAiGrader?(): AiGrader | undefined;
 	/** #702: injectable fetch cho audio proxy của listening study-pack prompts. */
 	fetchExternalAudio?: typeof fetch;
+	/** #814: kho audio R2 dùng chung cho study-pack prompts. */
+	getLibraryAudioStore?(): MediaStore | undefined;
 	/** Allowlist email giáo viên để định tuyến auto-join single-org (#716). */
 	teacherEmails?: string[];
+	/** Đồng hồ server có thể inject cho test/E2E (mặc định `() => new Date()`). */
+	now?: () => Date;
 }
 
 export interface StudentContext {
@@ -792,6 +808,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	router.use("/me", requireStudent);
 	router.use("/overview", requireStudent);
 	router.use("/classes/:classId", requireStudent);
+	router.use("/classes/:classId/sessions/:date/zoom-join", requireStudent);
 	router.use("/onboarding", requireStudent);
 	router.use("/enrollments/:enrollmentId/accept", requireStudent);
 
@@ -1053,7 +1070,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	router.get("/overview", async (c) => {
 		const { student: s, orgId } = c.get("studentCtx");
 		const db = deps.getDb();
-		const now = new Date();
+		const now = deps.now ? deps.now() : new Date();
 
 		const [enrollmentRows, teacher] = await Promise.all([
 			db
@@ -1069,8 +1086,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			enrollmentRows.map(async (cls) =>
 				toStudentClass(
 					cls,
-					cls.status === "active"
-						? await loadNextSession(db, orgId, cls.id, now)
+					cls.status === "active" && cls.enrollmentStatus === "active"
+						? await loadNextSession(db, orgId, cls.id, now, cls.enrollmentId)
 						: null,
 					teacher,
 				),
@@ -1139,40 +1156,66 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			.limit(1);
 		if (!row) return c.json({ error: "class not found" }, 404);
 
-		const now = new Date();
-		const [teacher, nextSession, lessons, assignments] = await Promise.all([
-			loadOrgTeacher(db, orgId),
-			row.status === "active"
-				? loadNextSession(db, orgId, row.id, now)
-				: Promise.resolve(null),
-			// Lọc theo enrollment (không theo lớp) để trạng thái riêng như
-			// "vắng" là của chính học viên. `date` null theo cả lớp nên không
-			// cần NULLS LAST; lớp legacy được sắp lại bởi orderStudentLessons.
-			db
-				.select({
-					id: lesson.id,
-					date: lesson.date,
-					day: lesson.day,
-					time: lesson.time,
-					dur: lesson.dur,
-					status: lesson.status,
-					topic: lesson.topic,
-				})
-				.from(lesson)
-				.where(
-					and(
-						eq(lesson.orgId, orgId),
-						eq(lesson.enrollmentId, row.enrollmentId),
+		const now = deps.now ? deps.now() : new Date();
+		const [teacher, nextSession, lessonRows, meetingRows, assignments] =
+			await Promise.all([
+				loadOrgTeacher(db, orgId),
+				row.status === "active"
+					? loadNextSession(db, orgId, row.id, now, row.enrollmentId)
+					: Promise.resolve(null),
+				// Lọc theo enrollment (không theo lớp) để trạng thái riêng như
+				// "vắng" là của chính học viên. `date` null theo cả lớp nên không
+				// cần NULLS LAST; lớp legacy được sắp lại bởi orderStudentLessons.
+				db
+					.select({
+						id: lesson.id,
+						date: lesson.date,
+						day: lesson.day,
+						time: lesson.time,
+						dur: lesson.dur,
+						status: lesson.status,
+						topic: lesson.topic,
+						zoom: lesson.zoom,
+					})
+					.from(lesson)
+					.where(
+						and(
+							eq(lesson.orgId, orgId),
+							eq(lesson.enrollmentId, row.enrollmentId),
+						),
+					)
+					.orderBy(
+						asc(lesson.date),
+						asc(lesson.day),
+						asc(lesson.time),
+						asc(lesson.id),
 					),
-				)
-				.orderBy(
-					asc(lesson.date),
-					asc(lesson.day),
-					asc(lesson.time),
-					asc(lesson.id),
-				),
-			loadClassAssignmentItems(db, orgId, s.id, row.id),
-		]);
+				db
+					.select({
+						classId: classSessionMeeting.classId,
+						date: classSessionMeeting.date,
+						joinUrl: classSessionMeeting.joinUrl,
+						recordingUrl: classSessionMeeting.recordingUrl,
+						recordingPassword: classSessionMeeting.recordingPassword,
+						recordingStatus: classSessionMeeting.recordingStatus,
+					})
+					.from(classSessionMeeting)
+					.where(
+						and(
+							eq(classSessionMeeting.orgId, orgId),
+							eq(classSessionMeeting.classId, row.id),
+						),
+					),
+				loadClassAssignmentItems(db, orgId, s.id, row.id),
+			]);
+
+		const meetingByDate = new Map(meetingRows.map((m) => [m.date, m]));
+		const lessons = lessonRows.map((l) =>
+			toStudentClassLessonWithMeeting(
+				l,
+				l.date ? meetingByDate.get(l.date) : undefined,
+			),
+		);
 
 		const response: StudentClassDetail = {
 			class: {
@@ -1183,6 +1226,233 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			assignments,
 		};
 		return c.json(response);
+	});
+
+	/**
+	 * GET /api/student/classes/:classId/sessions/:date/zoom-join
+	 *
+	 * Kiểm tra cửa sổ tham gia Zoom phía server `[start - 30 phút, end)` theo
+	 * giờ Việt Nam (UTC+7). Chỉ trả raw `joinUrl` khi học viên có enrollment
+	 * `active`, lớp `active`, buổi chưa bị hủy/nghỉ lễ, có link `https://` hợp
+	 * lệ và đang trong khung giờ mở lớp.
+	 */
+	router.get("/classes/:classId/sessions/:date/zoom-join", async (c) => {
+		c.header("Cache-Control", "no-store");
+
+		const { student: s, orgId } = c.get("studentCtx");
+		const classId = c.req.param("classId");
+		const date = parseStartDateStrict(c.req.param("date") ?? "");
+		if (!date) {
+			const body: StudentZoomJoinError = {
+				error: formatZoomJoinWindowMessage({ status: "invalid" }),
+				code: ZOOM_JOIN_ERROR_CODES.INVALID_SCHEDULE,
+			};
+			return c.json(body, 400);
+		}
+
+		const db = deps.getDb();
+		const [cls] = await db
+			.select({
+				id: classTable.id,
+				status: classTable.status,
+				enrollmentId: enrollment.id,
+			})
+			.from(enrollment)
+			.innerJoin(classTable, eq(enrollment.classId, classTable.id))
+			.where(
+				and(
+					eq(enrollment.orgId, orgId),
+					eq(classTable.orgId, orgId),
+					eq(enrollment.studentId, s.id),
+					eq(enrollment.classId, classId),
+					eq(enrollment.status, "active"),
+				),
+			)
+			.limit(1);
+
+		if (!cls) {
+			const body: StudentZoomJoinError = {
+				error: "Không tìm thấy lớp học.",
+				code: "CLASS_NOT_FOUND",
+			};
+			return c.json(body, 404);
+		}
+
+		if (cls.status === "paused") {
+			const body: StudentZoomJoinError = {
+				error: "Lớp học đang tạm dừng.",
+				code: CLASS_ERROR_CODES.CLASS_PAUSED,
+			};
+			return c.json(body, 409);
+		}
+
+		const rows = await db
+			.select({
+				id: lesson.id,
+				date: lesson.date,
+				time: lesson.time,
+				dur: lesson.dur,
+				status: lesson.status,
+				zoom: lesson.zoom,
+			})
+			.from(lesson)
+			.where(
+				and(
+					eq(lesson.orgId, orgId),
+					eq(lesson.enrollmentId, cls.enrollmentId),
+					eq(lesson.classId, cls.id),
+					eq(lesson.date, date),
+				),
+			)
+			.orderBy(asc(lesson.time), asc(lesson.id));
+
+		if (rows.length === 0) {
+			const body: StudentZoomJoinError = {
+				error: "Không tìm thấy buổi học.",
+				code: ZOOM_JOIN_ERROR_CODES.NOT_AVAILABLE,
+			};
+			return c.json(body, 404);
+		}
+
+		const activeRows = rows.filter(
+			(r) => r.status !== "cancelled" && r.status !== "holiday",
+		);
+		const firstActive = activeRows[0];
+		if (!firstActive) {
+			const body: StudentZoomJoinError = {
+				error: "Buổi học đã bị hủy hoặc dời lịch nghỉ lễ.",
+				code: ZOOM_JOIN_ERROR_CODES.SESSION_INACTIVE,
+			};
+			return c.json(body, 409);
+		}
+
+		const now = deps.now ? deps.now() : new Date();
+		const nowMs = now.getTime();
+
+		const [meeting] = await db
+			.select({ joinUrl: classSessionMeeting.joinUrl })
+			.from(classSessionMeeting)
+			.where(
+				and(
+					eq(classSessionMeeting.orgId, orgId),
+					eq(classSessionMeeting.classId, cls.id),
+					eq(classSessionMeeting.date, date),
+				),
+			)
+			.limit(1);
+		const meetingJoinUrl = meeting?.joinUrl?.trim() ?? "";
+
+		const evaluatedRows = activeRows.map((row) => {
+			const joinUrl = row.zoom.trim() || meetingJoinUrl;
+			return {
+				row,
+				joinUrl,
+				hasValidZoom: isValidZoomJoinUrl(joinUrl),
+				windowResult: evaluateZoomJoinWindow({
+					date: row.date,
+					time: row.time,
+					dur: row.dur,
+					nowMs,
+				}),
+			};
+		});
+
+		// Khi cùng ngày có nhiều buổi active (vd sáng 08:00 và tối 19:00), chọn theo
+		// thứ tự ưu tiên: (1) buổi đang mở (ưu tiên buổi có link Zoom hợp lệ),
+		// (2) buổi sắp tới gần nhất (`too_early`, ưu tiên có link Zoom — khớp nút UI),
+		// (3) buổi vừa kết thúc gần nhất (`ended`), rồi fallback buổi đầu tiên.
+		const picked =
+			evaluatedRows.find(
+				(e) => e.windowResult.status === "open" && e.hasValidZoom,
+			) ??
+			evaluatedRows.find((e) => e.windowResult.status === "open") ??
+			evaluatedRows.find(
+				(e) => e.windowResult.status === "too_early" && e.hasValidZoom,
+			) ??
+			evaluatedRows.find((e) => e.windowResult.status === "too_early") ??
+			[...evaluatedRows]
+				.reverse()
+				.find((e) => e.windowResult.status === "ended" && e.hasValidZoom) ??
+			[...evaluatedRows]
+				.reverse()
+				.find((e) => e.windowResult.status === "ended") ??
+			evaluatedRows[0];
+
+		if (!picked) {
+			const body: StudentZoomJoinError = {
+				error: "Không tìm thấy buổi học.",
+				code: ZOOM_JOIN_ERROR_CODES.NOT_AVAILABLE,
+			};
+			return c.json(body, 404);
+		}
+
+		const { row: target, joinUrl, windowResult } = picked;
+
+		if (!isValidZoomJoinUrl(joinUrl)) {
+			const body: StudentZoomJoinError = {
+				error: "Buổi học chưa có link Zoom.",
+				code: ZOOM_JOIN_ERROR_CODES.NOT_AVAILABLE,
+			};
+			return c.json(body, 404);
+		}
+
+		if (windowResult.status === "invalid") {
+			const body: StudentZoomJoinError = {
+				error: formatZoomJoinWindowMessage({ status: "invalid" }),
+				code: ZOOM_JOIN_ERROR_CODES.INVALID_SCHEDULE,
+			};
+			return c.json(body, 409);
+		}
+
+		const openAt = new Date(windowResult.openMs).toISOString();
+		const closeAt = new Date(windowResult.closeMs).toISOString();
+
+		if (windowResult.status === "too_early") {
+			const body: StudentZoomJoinError = {
+				error: formatZoomJoinWindowMessage({
+					status: "too_early",
+					date: target.date,
+					time: target.time,
+					dur: target.dur,
+					openAt,
+					closeAt,
+				}),
+				code: ZOOM_JOIN_ERROR_CODES.TOO_EARLY,
+				date: target.date ?? date,
+				time: target.time,
+				dur: target.dur,
+				openAt,
+				closeAt,
+			};
+			return c.json(body, 403);
+		}
+
+		if (windowResult.status === "ended") {
+			const body: StudentZoomJoinError = {
+				error: formatZoomJoinWindowMessage({
+					status: "ended",
+					date: target.date,
+					time: target.time,
+					dur: target.dur,
+					openAt,
+					closeAt,
+				}),
+				code: ZOOM_JOIN_ERROR_CODES.ENDED,
+				date: target.date ?? date,
+				time: target.time,
+				dur: target.dur,
+				openAt,
+				closeAt,
+			};
+			return c.json(body, 403);
+		}
+
+		const response: StudentZoomJoinResponse = {
+			joinUrl,
+			openAt,
+			closeAt,
+		};
+		return c.json(response, 200);
 	});
 
 	/**
@@ -1217,12 +1487,13 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			return c.json(emptyResponse);
 		}
 
-		const now = new Date();
+		const now = deps.now ? deps.now() : new Date();
+		const classIds = classRows.map((r) => r.id);
 		const [teacher, ...nextSessions] = await Promise.all([
 			loadOrgTeacher(db, orgId),
 			...classRows.map((r) =>
 				r.status === "active"
-					? loadNextSession(db, orgId, r.id, now)
+					? loadNextSession(db, orgId, r.id, now, r.enrollmentId)
 					: Promise.resolve(null),
 			),
 		]);
@@ -1231,35 +1502,58 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			toStudentClass(row, nextSessions[index] ?? null, teacher),
 		);
 
-		const lessonRows = await db
-			.select({
-				id: lesson.id,
-				classId: lesson.classId,
-				className: classTable.name,
-				enrollmentId: lesson.enrollmentId,
-				date: lesson.date,
-				day: lesson.day,
-				time: lesson.time,
-				dur: lesson.dur,
-				status: lesson.status,
-				topic: lesson.topic,
-			})
-			.from(lesson)
-			.innerJoin(enrollment, eq(lesson.enrollmentId, enrollment.id))
-			.innerJoin(classTable, eq(lesson.classId, classTable.id))
-			.where(
-				and(
-					eq(lesson.orgId, orgId),
-					eq(enrollment.studentId, s.id),
-					eq(enrollment.status, "active"),
+		const [lessonRows, meetingRows] = await Promise.all([
+			db
+				.select({
+					id: lesson.id,
+					classId: lesson.classId,
+					className: classTable.name,
+					enrollmentId: lesson.enrollmentId,
+					date: lesson.date,
+					day: lesson.day,
+					time: lesson.time,
+					dur: lesson.dur,
+					status: lesson.status,
+					topic: lesson.topic,
+					zoom: lesson.zoom,
+				})
+				.from(lesson)
+				.innerJoin(enrollment, eq(lesson.enrollmentId, enrollment.id))
+				.innerJoin(classTable, eq(lesson.classId, classTable.id))
+				.where(
+					and(
+						eq(lesson.orgId, orgId),
+						eq(enrollment.studentId, s.id),
+						eq(enrollment.status, "active"),
+					),
+				)
+				.orderBy(
+					asc(lesson.date),
+					asc(lesson.day),
+					asc(lesson.time),
+					asc(lesson.id),
 				),
-			)
-			.orderBy(
-				asc(lesson.date),
-				asc(lesson.day),
-				asc(lesson.time),
-				asc(lesson.id),
-			);
+			db
+				.select({
+					classId: classSessionMeeting.classId,
+					date: classSessionMeeting.date,
+					joinUrl: classSessionMeeting.joinUrl,
+					recordingUrl: classSessionMeeting.recordingUrl,
+					recordingPassword: classSessionMeeting.recordingPassword,
+					recordingStatus: classSessionMeeting.recordingStatus,
+				})
+				.from(classSessionMeeting)
+				.where(
+					and(
+						eq(classSessionMeeting.orgId, orgId),
+						inArray(classSessionMeeting.classId, classIds),
+					),
+				),
+		]);
+
+		const meetingByKey = new Map(
+			meetingRows.map((m) => [`${m.classId}|${m.date}`, m]),
+		);
 
 		// Gom bài học theo từng lớp để giữ đúng heuristic orderStudentLessons cho lớp legacy
 		const lessonsByClass = new Map<string, typeof lessonRows>();
@@ -1282,15 +1576,12 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			if (rawClassLessons.length === 0) continue;
 
 			const ordered = orderStudentLessons(
-				rawClassLessons.map((l) => ({
-					id: l.id,
-					date: l.date,
-					day: l.day,
-					time: l.time,
-					dur: l.dur,
-					status: l.status,
-					topic: l.topic,
-				})),
+				rawClassLessons.map((l) =>
+					toStudentClassLessonWithMeeting(
+						l,
+						l.date ? meetingByKey.get(`${classRow.id}|${l.date}`) : undefined,
+					),
+				),
 			);
 
 			for (const lessonItem of ordered) {
@@ -1509,7 +1800,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			cueTopic: prompt.cueTopic,
 			cuePoints: prompt.cuePoints,
 			audioName: prompt.audioName,
-			...(prompt.audioUrl ? { hasAudio: true } : {}),
+			...(prompt.audioUrl || prompt.audioKey ? { hasAudio: true } : {}),
 			imageUrl: prompt.imageUrl,
 			optionBank: parseQuizOptionBank(prompt.optionBank),
 			// Speaking (#305) không có đáp án — "Hướng dẫn thêm" là hướng dẫn
@@ -1556,7 +1847,11 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const assignmentId = c.req.param("assignmentId");
 		const [row] = await deps
 			.getDb()
-			.select({ audioUrl: assignmentPrompt.audioUrl })
+			.select({
+				audioUrl: assignmentPrompt.audioUrl,
+				audioKey: assignmentPrompt.audioKey,
+				audioName: assignmentPrompt.audioName,
+			})
 			.from(classAssignment)
 			.innerJoin(
 				classAssignmentTarget,
@@ -1581,10 +1876,16 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				),
 			)
 			.limit(1);
-		if (!row?.audioUrl) {
+		if (!row || (!row.audioUrl && !row.audioKey)) {
 			return c.json({ error: "audio not found" }, 404);
 		}
-		return streamStudyPackAudio(row.audioUrl, deps.fetchExternalAudio);
+		return serveStudyPackAudio({
+			audioKey: row.audioKey,
+			audioUrl: row.audioUrl,
+			audioName: row.audioName,
+			getLibraryAudioStore: deps.getLibraryAudioStore,
+			fetchExternalAudio: deps.fetchExternalAudio,
+		});
 	});
 
 	/**
@@ -2255,6 +2556,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 						skill: assignmentTest.skill,
 						part: assignmentPrompt.part,
 						audioUrl: assignmentPrompt.audioUrl,
+						audioKey: assignmentPrompt.audioKey,
 						transcript: assignmentPrompt.transcript,
 					})
 					.from(assignmentTest)
@@ -2288,6 +2590,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 						skill: assignmentPrompt.skill,
 						part: assignmentPrompt.part,
 						audioUrl: assignmentPrompt.audioUrl,
+						audioKey: assignmentPrompt.audioKey,
 						transcript: assignmentPrompt.transcript,
 						writingPart: assignmentPrompt.writingPart,
 						writingType: assignmentPrompt.writingType,
@@ -2328,7 +2631,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			promptType: header[0]?.type ?? "",
 			skill: header[0]?.skill ?? "",
 			part: header[0]?.part ?? "",
-			hasAudio: Boolean(header[0]?.audioUrl),
+			hasAudio: Boolean(header[0]?.audioUrl || header[0]?.audioKey),
 			transcript: header[0]?.transcript ?? "",
 			writing:
 				attempt.mode !== "practice" &&

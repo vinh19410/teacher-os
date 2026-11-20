@@ -26,8 +26,6 @@ const mockFetchStudyPackDetail =
 const mockGetStudyPackItemDetail =
 	vi.fn<(packId: string, itemId: string) => Promise<StudyPackItemDetailView>>();
 const mockFetchStudyPackItemAudio = vi.fn<() => Promise<string>>();
-const mockCloneStudyPack =
-	vi.fn<(packId: string) => Promise<{ pack: StudyPackDetailView }>>();
 const mockDeleteStudyPack = vi.fn<(packId: string) => Promise<{ ok: true }>>();
 const mockUpdateStudyPack =
 	vi.fn<() => Promise<{ pack: StudyPackDetailView }>>();
@@ -44,7 +42,6 @@ vi.mock("@/lib/repos/study-pack", () => ({
 	getStudyPackItemDetail: (packId: string, itemId: string) =>
 		mockGetStudyPackItemDetail(packId, itemId),
 	fetchStudyPackItemAudio: () => mockFetchStudyPackItemAudio(),
-	cloneStudyPack: (packId: string) => mockCloneStudyPack(packId),
 	deleteStudyPack: (packId: string) => mockDeleteStudyPack(packId),
 	updateStudyPack: () => mockUpdateStudyPack(),
 	createStudyPack: () => mockCreateStudyPack(),
@@ -207,7 +204,6 @@ beforeEach(() => {
 	mockStore.data.viewer = { role: "teacher" };
 	mockFetchStudyPackDetail.mockReset();
 	mockGetStudyPackItemDetail.mockReset();
-	mockCloneStudyPack.mockReset();
 	mockDeleteStudyPack.mockReset();
 	mockGetStudyPackItemDetail.mockImplementation(async (_packId, itemId) => {
 		const found = systemPack.items.find((it) => it.id === itemId);
@@ -225,11 +221,8 @@ afterEach(() => {
 });
 
 describe("StudyPackDetailRoute (/assignments/packs/$packId)", () => {
-	it("renders system pack actions, selects first item, and navigates to cloned org pack", async () => {
+	it("renders system pack actions with edit/delete controls and selects first item", async () => {
 		mockFetchStudyPackDetail.mockResolvedValue({ pack: systemPack });
-		mockCloneStudyPack.mockResolvedValue({
-			pack: { ...orgPack, id: "org-clone-99" },
-		});
 
 		renderDetailRoute();
 
@@ -238,28 +231,16 @@ describe("StudyPackDetailRoute (/assignments/packs/$packId)", () => {
 		).toBeTruthy();
 		expect(screen.getByText("Hệ thống")).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Gán cho lớp" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Chỉnh sửa" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Xoá" })).toBeTruthy();
 		expect(
-			screen.getByRole("button", { name: "Nhân bản về trung tâm" }),
-		).toBeTruthy();
-		expect(screen.queryByRole("button", { name: "Chỉnh sửa" })).toBeNull();
-		expect(screen.queryByRole("button", { name: "Xoá" })).toBeNull();
+			screen.queryByRole("button", { name: "Nhân bản về trung tâm" }),
+		).toBeNull();
 
 		// First item auto-selected and rendered in StudyPackItemViewer
 		expect(
 			await screen.findByText("Nội dung của Reading: Climate Change"),
 		).toBeTruthy();
-
-		fireEvent.click(
-			screen.getByRole("button", { name: "Nhân bản về trung tâm" }),
-		);
-		await waitFor(() => {
-			expect(mockCloneStudyPack).toHaveBeenCalledWith("sys-pack-1");
-			expect(routerState.navigate).toHaveBeenCalledWith({
-				to: "/assignments/packs/$packId",
-				params: { packId: "org-clone-99" },
-				search: {},
-			});
-		});
 	});
 
 	it("renders org pack edit/delete controls and handles 409 + confirm delete", async () => {

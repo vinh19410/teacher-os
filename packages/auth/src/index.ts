@@ -244,6 +244,7 @@ export function createAuth(input: CreateAuthInput) {
 				try {
 					await input.mailer.send({
 						to: user.email,
+						fromName: BRAND_NAME,
 						subject: `Đặt lại mật khẩu ${BRAND_NAME} của bạn`,
 						html,
 						text,
@@ -269,6 +270,7 @@ export function createAuth(input: CreateAuthInput) {
 				try {
 					await input.mailer.send({
 						to: user.email,
+						fromName: BRAND_NAME,
 						subject: `Xác thực email ${BRAND_NAME} của bạn`,
 						html,
 						text,

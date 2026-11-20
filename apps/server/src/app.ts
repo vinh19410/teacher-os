@@ -14,6 +14,7 @@ import type { ExamExtractor } from "./lib/exam-import/extractor";
 import type { MediaStore } from "./lib/media-store";
 import type { PlacementAiGrader } from "./lib/placement-ai/grader";
 import { createAdminMeRoutes } from "./lib/require-admin";
+import type { ZoomClient, ZoomConfig } from "./lib/zoom/zoom-client";
 import { redactResetToken } from "./log-redaction";
 import { adminLibraryRoutes } from "./routes/admin-library";
 import { bankHubMockRoutes } from "./routes/bank-hub-mock";
@@ -32,6 +33,7 @@ import { studentHistoryRoutes } from "./routes/student-history";
 import { studentMaterialRoutes } from "./routes/student-materials";
 import { studentPlacementTestRoutes } from "./routes/student-placement-test";
 import { studentPracticeRoutes } from "./routes/student-practice";
+import { zoomMeetingRoutes } from "./routes/zoom-meeting";
 import type { SessionUser } from "./session";
 
 export type Db = DrizzleD1Database<Record<string, never>>;
@@ -200,6 +202,12 @@ export interface AppDeps {
 	 * — production dùng `fetch` mặc định, E2E/test inject mock offline.
 	 */
 	fetchExternalAudio?: typeof fetch;
+	/** Zoom Server-to-Server OAuth; test/E2E inject fake client. */
+	zoom?: ZoomConfig;
+	zoomFetch?: typeof fetch;
+	getZoomClient?: () => ZoomClient;
+	/** Đồng hồ server có thể inject cho test/E2E (mặc định `() => new Date()`). */
+	now?: () => Date;
 }
 
 /** Better-Auth handles its own session bootstrapping under /api/auth. */
@@ -491,6 +499,7 @@ export function buildApp(deps: AppDeps) {
 	// để path riêng không bị kernel nuốt; guard 401/403 tự gắn trong router.
 	app.route("/api", examImportRoutes(deps));
 	app.route("/api", creditRoutes(deps));
+	app.route("/api", zoomMeetingRoutes(deps));
 	// TOS-33 (#481): grader + retry delays xuống routes chấm (ai-retry).
 	app.route("/api", kernelRoutes(deps));
 

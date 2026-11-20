@@ -49,7 +49,7 @@ import {
 	studyPack,
 	studyPackItem,
 } from "@teacher-os/db/schema/study-pack";
-import { and, asc, desc, eq, inArray, isNull, like, or } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, or, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
@@ -245,6 +245,32 @@ function toPartInput(row: PartRow): LibraryPartInput {
 	};
 }
 
+const EPOCH_ISO = new Date(0).toISOString();
+const MAX_LIST_QUERY_LENGTH = 200;
+
+function formatTimestamp(
+	value: Date | null | undefined,
+	ctx: { entity: string; id: string; field: string },
+): string {
+	if (value instanceof Date && !Number.isNaN(value.getTime())) {
+		return value.toISOString();
+	}
+	console.error("[admin-library] invalid timestamp", ctx);
+	return EPOCH_ISO;
+}
+
+function formatOptionalTimestamp(
+	value: Date | null | undefined,
+	ctx: { entity: string; id: string; field: string },
+): string {
+	if (value === null || value === undefined) return "";
+	if (value instanceof Date && !Number.isNaN(value.getTime())) {
+		return value.toISOString();
+	}
+	console.error("[admin-library] invalid timestamp", ctx);
+	return "";
+}
+
 function toPartDto(row: PartRow): LibraryPartDto {
 	const groupsState = parseGroups(row.groups, {
 		testId: row.testId,
@@ -274,15 +300,21 @@ function toPartDto(row: PartRow): LibraryPartDto {
 						name: row.audioName ?? "",
 						type: row.audioContentType ?? "",
 						size: row.audioSize ?? 0,
-						uploadedAt: row.audioUploadedAt
-							? row.audioUploadedAt.toISOString()
-							: "",
+						uploadedAt: formatOptionalTimestamp(row.audioUploadedAt, {
+							entity: "library_test_part",
+							id: row.id,
+							field: "audioUploadedAt",
+						}),
 					},
-		updatedAt: row.updatedAt.toISOString(),
+		updatedAt: formatTimestamp(row.updatedAt, {
+			entity: "library_test_part",
+			id: row.id,
+			field: "updatedAt",
+		}),
 	};
 }
 
-function headerFields(row: LibraryRow) {
+function headerFields(row: Omit<LibraryRow, "createdBy">) {
 	return {
 		id: row.id,
 		title: row.title,
@@ -292,8 +324,16 @@ function headerFields(row: LibraryRow) {
 		collection: row.collection,
 		testGroup: row.testGroup,
 		status: row.status,
-		createdAt: row.createdAt.toISOString(),
-		updatedAt: row.updatedAt.toISOString(),
+		createdAt: formatTimestamp(row.createdAt, {
+			entity: "library_test",
+			id: row.id,
+			field: "createdAt",
+		}),
+		updatedAt: formatTimestamp(row.updatedAt, {
+			entity: "library_test",
+			id: row.id,
+			field: "updatedAt",
+		}),
 	};
 }
 
@@ -321,13 +361,40 @@ function toLibraryExerciseView(
 		optionBank: parseStringArray(row.optionBank),
 		note: row.note,
 		status: row.status === "ready" ? "ready" : "draft",
-		createdAt: row.createdAt.toISOString(),
-		updatedAt: row.updatedAt.toISOString(),
+		createdAt: formatTimestamp(row.createdAt, {
+			entity: "library_exercise",
+			id: row.id,
+			field: "createdAt",
+		}),
+		updatedAt: formatTimestamp(row.updatedAt, {
+			entity: "library_exercise",
+			id: row.id,
+			field: "updatedAt",
+		}),
 	};
 }
 
 export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 	const router = new Hono<AdminEnv>();
+	router.onError((error, c) => {
+		const causeMessage =
+			error instanceof Error && error.cause !== undefined
+				? error.cause instanceof Error
+					? error.cause.message
+					: String(error.cause)
+				: undefined;
+		const rawMessage = error instanceof Error ? error.message : String(error);
+		const safeMessage = rawMessage.startsWith("Failed query:")
+			? "Failed query"
+			: rawMessage;
+		console.error("[admin-library] unhandled error", {
+			method: c.req.method,
+			path: c.req.path,
+			message: safeMessage,
+			...(causeMessage ? { cause: causeMessage } : {}),
+		});
+		return c.json({ error: "internal server error" }, 500);
+	});
 	// Lazy: `getDb` có thể ném (binding D1 thiếu — readiness test build app
 	// với getDb ném lỗi) — chỉ gọi ở request thật sự chạm DB, như kernel.
 	let dbRef: Db | undefined;
@@ -425,34 +492,63 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 		}
 		const q = c.req.query("q")?.trim();
 		if (q) {
-			const needle = `%${q}%`;
+			if (q.length > MAX_LIST_QUERY_LENGTH) {
+				return c.json({ error: "invalid query" }, 400);
+			}
+			// Dùng instr(lower(...)) thay vì LIKE: Cloudflare D1 siết trần
+			// SQLITE_MAX_LIKE_PATTERN_LENGTH = 50 bytes (tiếng Việt/tiêu đề dài
+			// dễ nổ 500 LIKE pattern too complex), đồng thời khớp literal %/_.
 			conditions.push(
 				or(
-					like(libraryTest.title, needle),
-					like(libraryTest.description, needle),
-					like(libraryTest.collection, needle),
-					like(libraryTest.testGroup, needle),
+					sql`instr(lower(${libraryTest.title}), lower(${q})) > 0`,
+					sql`instr(lower(${libraryTest.description}), lower(${q})) > 0`,
+					sql`instr(lower(${libraryTest.collection}), lower(${q})) > 0`,
+					sql`instr(lower(${libraryTest.testGroup}), lower(${q})) > 0`,
 				),
 			);
 		}
-		const rows = await withDb()
-			.select()
-			.from(libraryTest)
-			.where(conditions.length > 0 ? and(...conditions) : undefined)
-			.orderBy(desc(libraryTest.updatedAt));
-		const partRows =
-			rows.length > 0
-				? await withDb()
-						.select()
-						.from(libraryTestPart)
-						.where(
-							inArray(
-								libraryTestPart.testId,
-								rows.map((row) => row.id),
-							),
-						)
-				: [];
-		const partsByTest = new Map<string, PartRow[]>();
+		const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+		// Gom header + tóm tắt parts vào 1 batch D1 (1 snapshot, 1 round-trip,
+		// <= 6 bound params) để tránh vượt trần 100 SQL variables của D1 khi
+		// bảng vượt 100 đề và tránh kéo passage/transcript/questions nguyên khối.
+		const [rows, partRows] = await withDb().batch([
+			withDb()
+				.select({
+					id: libraryTest.id,
+					title: libraryTest.title,
+					description: libraryTest.description,
+					skill: libraryTest.skill,
+					timeLimitSeconds: libraryTest.timeLimitSeconds,
+					collection: libraryTest.collection,
+					testGroup: libraryTest.testGroup,
+					status: libraryTest.status,
+					createdAt: libraryTest.createdAt,
+					updatedAt: libraryTest.updatedAt,
+				})
+				.from(libraryTest)
+				.where(whereClause)
+				.orderBy(desc(libraryTest.updatedAt)),
+			withDb()
+				.select({
+					testId: libraryTestPart.testId,
+					part: libraryTestPart.part,
+					hasAudio:
+						sql<number>`CASE WHEN ${libraryTestPart.audioKey} IS NOT NULL THEN 1 ELSE 0 END`
+							.mapWith(Number)
+							.as("has_audio"),
+					questionCount:
+						sql<number>`CASE WHEN json_valid(${libraryTestPart.questions}) = 1 THEN COALESCE(json_array_length(${libraryTestPart.questions}), 0) ELSE 0 END`
+							.mapWith(Number)
+							.as("question_count"),
+				})
+				.from(libraryTestPart)
+				.innerJoin(libraryTest, eq(libraryTestPart.testId, libraryTest.id))
+				.where(whereClause),
+		]);
+		const partsByTest = new Map<
+			string,
+			Array<{ part: string; hasAudio: number; questionCount: number }>
+		>();
 		for (const part of partRows) {
 			const bucket = partsByTest.get(part.testId) ?? [];
 			bucket.push(part);
@@ -467,14 +563,15 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 					: skill !== null &&
 						presetParts(skill).every(
 							(slot) =>
-								(parts.find((part) => part.part === slot)?.audioKey ?? null) !==
-								null,
+								Number(parts.find((part) => part.part === slot)?.hasAudio) ===
+								1,
 						);
 			return {
 				...headerFields(row),
 				partCount: parts.length,
 				questionCount: parts.reduce(
-					(sum, part) => sum + parseJsonArray(part.questions).length,
+					(sum, part) =>
+						sum + Math.max(0, Math.trunc(Number(part.questionCount) || 0)),
 					0,
 				),
 				hasAllAudio,

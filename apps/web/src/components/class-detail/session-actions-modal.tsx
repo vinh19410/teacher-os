@@ -1,7 +1,12 @@
-import { CLASS_ERROR_CODES } from "@teacher-os/api/contracts";
+import {
+	CLASS_ERROR_CODES,
+	type KernelSessionMeetingRow,
+} from "@teacher-os/api/contracts";
 import { useState } from "react";
+import { SessionZoomPanel } from "@/components/schedule/session-zoom-panel";
 import { Button } from "@/components/ui/button";
-import { Field, Input, Textarea } from "@/components/ui/field";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
+import { Field, Input } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import {
 	type ClassSession,
@@ -46,7 +51,10 @@ export type OccurrenceEditPayload = Partial<{
 }>;
 
 export interface SessionActionsModalProps {
+	classId?: string;
 	session: ClassSession | null;
+	meeting?: KernelSessionMeetingRow;
+	onRefreshed?: () => Promise<boolean>;
 	studentById: (id: string) => { name: string } | undefined;
 	isPaused?: boolean;
 	onClose: () => void;
@@ -66,7 +74,10 @@ function bucketHead(
 }
 
 export function SessionActionsModal({
+	classId,
 	session,
+	meeting,
+	onRefreshed,
 	studentById,
 	isPaused = false,
 	onClose,
@@ -94,10 +105,10 @@ export function SessionActionsModal({
 	const baseZoom = head?.zoom ?? session?.zoom ?? "";
 
 	const [topic, setTopic] = useState(baseTopic);
-	const [zoom, setZoom] = useState(baseZoom);
 	const [time, setTime] = useState(baseTime);
 	const [durText, setDurText] = useState(baseDur);
 	const [moveDate, setMoveDate] = useState("");
+	const [moveDateInvalid, setMoveDateInvalid] = useState(false);
 
 	if (session === null) {
 		return (
@@ -157,11 +168,12 @@ export function SessionActionsModal({
 		if (topic !== baseTopic) payload.topic = topic;
 		if (time !== baseTime) payload.time = time;
 		if (durText !== "" && durText !== baseDur) payload.dur = Number(durText); // empty text never mints dur:0 -> 400 noise
-		if (zoom !== baseZoom) payload.zoom = zoom;
 		if (moveDate !== "" && moveDate !== session.dateISO)
 			payload.moveDate = moveDate;
 		return payload;
 	};
+
+	const moveDatePending = moveDate !== "" || moveDateInvalid;
 
 	return (
 		<Modal
@@ -211,7 +223,7 @@ export function SessionActionsModal({
 								pending ||
 								!eligible ||
 								targets.length === 0 ||
-								moveDate !== ""
+								moveDatePending
 							}
 							onClick={() => setConfirming("complete")}
 						>
@@ -221,7 +233,7 @@ export function SessionActionsModal({
 							type="button"
 							variant="danger"
 							size="sm"
-							disabled={pending || targets.length === 0 || moveDate !== ""}
+							disabled={pending || targets.length === 0 || moveDatePending}
 							onClick={() => setConfirming("cancel")}
 						>
 							Hủy buổi
@@ -234,7 +246,7 @@ export function SessionActionsModal({
 								className="border-danger/30 text-danger hover:bg-danger/10 hover:text-danger"
 								disabled={
 									pending ||
-									moveDate !== "" ||
+									moveDatePending ||
 									session.rows.some((r) => r.status === "completed")
 								}
 								onClick={() => setConfirming("delete")}
@@ -316,6 +328,25 @@ export function SessionActionsModal({
 				</section>
 
 				<section className="space-y-3 border-border border-t pt-4">
+					{classId && (
+						<SessionZoomPanel
+							classId={classId}
+							dateISO={session.dateISO}
+							zoom={baseZoom}
+							status={
+								session.rows.some((r) => r.status === "holiday")
+									? "holiday"
+									: session.rows.length > 0 &&
+											session.rows.every((r) => r.status === "cancelled")
+										? "cancelled"
+										: session.rows.some((r) => r.status === "completed")
+											? "completed"
+											: "upcoming"
+							}
+							meeting={meeting}
+							onRefreshed={() => onRefreshed?.() ?? Promise.resolve(true)}
+						/>
+					)}
 					<h3 className="font-medium text-sm">Chỉnh sửa buổi</h3>
 					<Field label="Chủ đề">
 						<Input
@@ -343,20 +374,17 @@ export function SessionActionsModal({
 						</Field>
 					</div>
 					<Field label="Dời sang ngày">
-						<Input
-							type="date"
+						<DatePickerInput
 							value={moveDate}
-							onChange={(e) => setMoveDate(e.target.value)}
-							disabled={pending}
-						/>
-					</Field>
-					<Field label="Link Zoom">
-						<Textarea
-							rows={2}
-							className="min-h-16"
-							value={zoom}
-							onChange={(e) => setZoom(e.target.value)}
-							placeholder="https://…"
+							todayISO={today}
+							onChange={(nextIso) => {
+								setMoveDate(nextIso);
+								setFormError(null);
+							}}
+							onInvalidChange={(invalid) => {
+								setMoveDateInvalid(invalid);
+								if (!invalid) setFormError(null);
+							}}
 							disabled={pending}
 						/>
 					</Field>
@@ -372,6 +400,12 @@ export function SessionActionsModal({
 						onClick={() => {
 							setNotice(null);
 							setFormError(null);
+							if (moveDateInvalid) {
+								setFormError(
+									"Ngày dời không hợp lệ — nhập theo định dạng dd/mm/yyyy.",
+								);
+								return;
+							}
 							const payload = editPayload();
 							if (Object.keys(payload).length === 0) {
 								setNotice("Chưa có thay đổi nào để lưu.");

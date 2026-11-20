@@ -9,6 +9,9 @@ import type {
 	InvoicePaymentCreate,
 	StudentCreateInput,
 	SyllabusModuleContent,
+	VocabDeckCsvImportItem,
+	VocabEntryType,
+	VocabWordImportItem,
 } from "@teacher-os/api/contracts";
 import type { Scores, SyllabusLesson } from "./mock-data";
 
@@ -317,14 +320,48 @@ export type KernelAction =
 			payload: AssignmentPromptUpdate;
 	  }
 	| {
-			/** Student Vocab SRS (#359, #363): tạo bộ từ vựng cho lớp hoặc độc lập (classId = null). */
-			type: "create-vocab-deck";
-			payload: { classId: string | null; title: string; lang?: string };
+			/** Tạo nhóm bộ từ vựng ở cấp org. */
+			type: "create-vocab-group";
+			payload: {
+				name: string;
+			};
 	  }
 	| {
-			/** Đổi tên (và ngôn ngữ) bộ từ vựng. */
+			/** Đổi tên nhóm bộ từ vựng. */
+			type: "rename-vocab-group";
+			payload: {
+				groupId: string;
+				name: string;
+			};
+	  }
+	| {
+			/** Xoá nhóm bộ từ vựng (bộ từ thuộc nhóm được giữ lại với groupId = null). */
+			type: "delete-vocab-group";
+			groupId: string;
+	  }
+	| {
+			/** Student Vocab SRS (#359, #363): tạo bộ từ vựng cho lớp hoặc độc lập (classId = null). */
+			type: "create-vocab-deck";
+			payload: {
+				classId: string | null;
+				title: string;
+				groupId?: string | null;
+				lessonNumber?: number | null;
+				topic?: string | null;
+				lang?: string;
+			};
+	  }
+	| {
+			/** Đổi tên (và metadata) bộ từ vựng. */
 			type: "rename-vocab-deck";
-			payload: { deckId: string; title: string; lang?: string };
+			payload: {
+				deckId: string;
+				title: string;
+				groupId?: string | null;
+				lessonNumber?: number | null;
+				topic?: string | null;
+				lang?: string;
+			};
 	  }
 	| {
 			/** Xoá bộ từ vựng (deck + words + cards trong 1 db.batch server-side). */
@@ -338,10 +375,28 @@ export type KernelAction =
 				deckId: string;
 				id?: string;
 				word: string;
+				entryType?: VocabEntryType;
 				ipa?: string | null;
+				pos?: string | null;
 				translation?: string;
+				example?: string | null;
 				sortOrder?: number;
 			};
+	  }
+	| {
+			/** Import bộ từ vựng từ file CSV (tạo một hoặc nhiều bộ từ kèm từ/cụm từ). */
+			type: "import-vocab-csv-decks";
+			payload: {
+				classId: string | null;
+				groupId?: string | null;
+				decks: VocabDeckCsvImportItem[];
+			};
+	  }
+	| {
+			/** Import thêm từ/cụm từ vào một bộ từ đã có. */
+			type: "import-vocab-deck-words";
+			deckId: string;
+			words: VocabWordImportItem[];
 	  }
 	| {
 			/** Xoá một từ vựng (cards của từ cũng bị xoá server-side). */
@@ -351,6 +406,11 @@ export type KernelAction =
 	| {
 			/** Built-in Vocab Library (#361, #363): clone các bài từ thư viện về lớp hoặc hub (classId = null). */
 			type: "clone-vocab-library-decks";
+			payload: { classId: string | null; deckIds: string[] };
+	  }
+	| {
+			/** Clone các bộ từ đã tạo bởi giáo viên về lớp đích hoặc hub (classId = null). */
+			type: "clone-vocab-teacher-decks";
 			payload: { classId: string | null; deckIds: string[] };
 	  }
 	| {

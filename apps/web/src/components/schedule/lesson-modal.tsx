@@ -5,6 +5,7 @@ import {
 	LessonEditForm,
 	type LessonEditValues,
 } from "@/components/schedule/lesson-edit-form";
+import { SessionZoomPanel } from "@/components/schedule/session-zoom-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -25,7 +26,8 @@ export function LessonModal({
 	dateIso: string | null;
 	onClose: () => void;
 }) {
-	const { lessonById, studentById } = useData();
+	const { lessonById, studentById, refresh, sessionMeetingByClassDate } =
+		useData();
 	const { run, isPending, busy } = useDirectKernelAction();
 	const {
 		saving,
@@ -141,16 +143,18 @@ export function LessonModal({
 							<Badge variant="accent">Sắp tới</Badge>
 						)}
 					</div>
-					{lesson.zoom && (
-						<div className="flex flex-col gap-1">
-							<span className="font-medium text-muted-foreground text-xs">
-								Link Zoom/Meet
-							</span>
-							<div className="break-all text-muted-foreground text-xs">
-								{lesson.zoom}
-							</div>
-						</div>
-					)}
+					<SessionZoomPanel
+						classId={lesson.classId}
+						dateISO={lesson.date}
+						zoom={lesson.zoom}
+						status={lesson.status}
+						meeting={
+							lesson.date
+								? sessionMeetingByClassDate?.(lesson.classId, lesson.date)
+								: undefined
+						}
+						onRefreshed={() => refresh?.() ?? Promise.resolve(true)}
+					/>
 					<div className="flex justify-end gap-2 border-border border-t border-solid pt-4">
 						{lesson.status === "upcoming" ? (
 							<>

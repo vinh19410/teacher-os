@@ -10,6 +10,30 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-11-20
+
+### Added
+- **Tích hợp Zoom Pro qua API thay Google Meet cho buổi học (`packages/db`, `apps/server`, `apps/web`, `apps/student`):** migration chuyển `class_session_meeting` sang cột Zoom, tạo/đồng bộ link Zoom theo từng buổi, docs secret theo environment và cảnh báo chỉ một meeting chạy tại một thời điểm (#831).
+- **Chỉ cho học viên mở link Zoom trong khung giờ buổi học (`apps/server`, `apps/student`) (#842).**
+- **Nhóm bộ từ vựng (`vocab_group`) (`packages/db`, `packages/api`, `apps/server`, `apps/web`):** quản lý nhóm, chọn nhóm inline, lọc bộ từ theo nhóm, import CSV có cột nhóm và nhân bản hàng loạt vào nhóm; xử lý xoá nhóm đồng thời và lỗi từng phần của batch (#832).
+- **Chọn và nhân bản bộ từ vựng do giáo viên tạo (#825); đồng bộ bộ First Step/GT2 kèm audio R2 và CLI promote lên production (#814, #817); import CSV từ vựng theo định dạng bài học kèm metadata `entryType`, `pos`, ví dụ (#815).**
+- **Gộp "bộ đề của tôi" và thư viện hệ thống thành một danh sách dùng chung (#829).**
+- **Cho phép xuất bản bài thi thư viện khi có ít nhất 1 phần hợp lệ (#810)** và đồng bộ bài đã xuất bản vào catalog luyện tập của học viên (#812).
+- **Link Google Meet theo từng buổi kèm đồng bộ recording (#819)** — sau đó được thay bằng Zoom (#831).
+
+### Changed
+- Nâng cỡ chữ gốc từ `14px` lên `16px` và đồng bộ các assertion e2e (#766, #805).
+- Đồng bộ tên thương hiệu `Cô Mỹ Dạy Tiếng Anh` cho `MAIL_FROM`, better-auth và thông báo release; đổi địa chỉ gửi sang `no-reply@msmy.io.vn` (#806, #808).
+
+### Fixed
+- Học viên bị đăng nhập nhầm vai trò (hoặc nhận `403 ACCOUNT_TEACHER_ROLE`) giờ được chuyển về `/login` thay vì kẹt ở trang lỗi (#839).
+- Sửa HTTP 500 của `GET /api/admin/library/tests` do giới hạn Cloudflare D1 (#824); dùng liệt kê prefix R2 thay `HEAD` trong `headR2Object` (#814).
+- Sửa input ngày/giờ và căn chỉnh trong `AddClassSessionModal` (#822); dùng `Input` primitive cho ngày của `OrgEventModal`, `DatePickerInput` cho `moveDate` và đưa icon lịch native về mép phải (#821).
+- Hiển thị đúng lỗi đăng nhập admin cho mã gate/OAuth và cho phép preamble inline của Vite dev trong CSP worker.
+
+### CI/Infra
+- Thêm script và workflow dọn dữ liệu staging Step IELTS (`assignment_prompt`).
+
 ## 2026-11-18
 
 ### Added

@@ -26,6 +26,7 @@ import {
 	classAssignmentTarget,
 } from "@teacher-os/db/schema/class-assignment";
 import { classSession } from "@teacher-os/db/schema/class-session";
+import { classSessionMeeting } from "@teacher-os/db/schema/class-session-meeting";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
@@ -49,6 +50,7 @@ import {
 } from "@teacher-os/db/schema/syllabus";
 import {
 	vocabDeck,
+	vocabGroup,
 	vocabSuggestion,
 	vocabWord,
 } from "@teacher-os/db/schema/vocab";
@@ -254,6 +256,7 @@ export async function loadSnapshot(
 		commentBankRows,
 		assignmentTestRows,
 		assignmentTestPartRows,
+		vocabGroupRows,
 		vocabDeckRows,
 		vocabWordDeckIds,
 		vocabSuggestionRows,
@@ -262,6 +265,7 @@ export async function loadSnapshot(
 		holidayCancelRows,
 		eventRows,
 		classSessionRows,
+		classSessionMeetingRows,
 		bankMaterialLinkRows,
 	] = await Promise.all([
 		db
@@ -384,6 +388,11 @@ export async function loadSnapshot(
 			.orderBy(asc(assignmentTestPart.position)),
 		db
 			.select()
+			.from(vocabGroup)
+			.where(eq(vocabGroup.orgId, orgId))
+			.orderBy(asc(vocabGroup.createdAt), asc(vocabGroup.id)),
+		db
+			.select()
 			.from(vocabDeck)
 			.where(eq(vocabDeck.orgId, orgId))
 			.orderBy(asc(vocabDeck.createdAt), asc(vocabDeck.id)),
@@ -443,6 +452,11 @@ export async function loadSnapshot(
 			.from(classSession)
 			.where(eq(classSession.orgId, orgId))
 			.orderBy(asc(classSession.date)),
+		db
+			.select()
+			.from(classSessionMeeting)
+			.where(eq(classSessionMeeting.orgId, orgId))
+			.orderBy(asc(classSessionMeeting.date)),
 		// #655: links tài liệu ngân hàng trên bài học giáo trình — đọc một lần
 		// cho cả template lẫn copy của lớp, projection teacher-safe.
 		db
@@ -835,14 +849,24 @@ export async function loadSnapshot(
 			status: row.status,
 			parts: partsByTest.get(row.id) ?? [],
 		})),
+		vocabGroups: vocabGroupRows.map((row) => ({
+			id: row.id,
+			name: row.name,
+			createdAt: row.createdAt.toISOString(),
+			updatedAt: row.updatedAt.toISOString(),
+		})),
 		vocabDecks: vocabDeckRows.map((row) => ({
 			id: row.id,
 			classId: row.classId,
+			groupId: row.groupId ?? null,
 			title: row.title,
+			lessonNumber: row.lessonNumber ?? null,
+			topic: row.topic ?? null,
 			lang: row.lang,
 			wordCount: vocabWordDeckIds.filter((w) => w.deckId === row.id).length,
 			createdAt: row.createdAt.toISOString(),
 			sourceLibraryDeckId: row.sourceLibraryDeckId ?? null,
+			sourceDeckId: row.sourceDeckId ?? null,
 		})),
 		vocabSuggestions: vocabSuggestionRows.map((row) => ({
 			id: row.id,
@@ -874,5 +898,19 @@ export async function loadSnapshot(
 			role: viewerRole,
 			canAccessFinance: financeAllowed,
 		},
+		sessionMeetings: classSessionMeetingRows.map((row) => ({
+			id: row.id,
+			classId: row.classId,
+			date: row.date,
+			joinUrl: row.joinUrl,
+			zoomMeetingId: row.zoomMeetingId ?? null,
+			recordingPassword: row.recordingPassword ?? null,
+			recordingUrl: row.recordingUrl,
+			recordingStatus: row.recordingStatus,
+			recordingError: row.recordingError ?? null,
+			recordingSyncedAt: row.recordingSyncedAt
+				? row.recordingSyncedAt.toISOString()
+				: null,
+		})),
 	};
 }

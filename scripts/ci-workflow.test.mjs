@@ -1056,3 +1056,54 @@ test("audit-663.yml triggers only on manual workflow_dispatch, is read-only, and
 		"audit-663.yml may only reference the two Cloudflare environment secrets",
 	);
 });
+
+test("cleanup-step-ielts.yml triggers only on manual workflow_dispatch, grants read permissions, and shares staging concurrency", () => {
+	const raw = readFileSync(
+		join(repoRoot, ".github/workflows/cleanup-step-ielts.yml"),
+		"utf8",
+	);
+	const code = stripComments(raw);
+
+	assert.doesNotMatch(
+		code,
+		/\bpush:/,
+		"cleanup-step-ielts.yml must never trigger automatically on push",
+	);
+	assert.doesNotMatch(
+		code,
+		/\bpull_request:/,
+		"cleanup-step-ielts.yml must never trigger on pull_request",
+	);
+	assert.match(
+		code,
+		/\bworkflow_dispatch:/,
+		"cleanup-step-ielts.yml must trigger only on workflow_dispatch",
+	);
+	assertReadOnlyWorkflowPermissions(code, "cleanup-step-ielts.yml");
+	assert.match(
+		code,
+		/group:\s*deploy-staging/,
+		"cleanup-step-ielts.yml must share deploy-staging concurrency group",
+	);
+	assert.match(
+		code,
+		/cancel-in-progress:\s*false/,
+		"cleanup-step-ielts.yml must never cancel in-progress runs",
+	);
+	assert.match(
+		code,
+		/environment:\s*staging/,
+		"cleanup-step-ielts.yml must target staging environment",
+	);
+	assert.doesNotMatch(
+		code,
+		/actions\/upload-artifact/,
+		"cleanup-step-ielts.yml must never upload artifacts containing sensitive data",
+	);
+	const secretRefs = [...new Set(code.match(/secrets\.[A-Z_]+/g) ?? [])];
+	assert.deepEqual(
+		secretRefs.sort(),
+		["secrets.CLOUDFLARE_ACCOUNT_ID", "secrets.CLOUDFLARE_API_TOKEN"],
+		"cleanup-step-ielts.yml may only reference the two Cloudflare environment secrets",
+	);
+});

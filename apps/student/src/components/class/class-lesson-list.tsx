@@ -1,7 +1,10 @@
 import type { StudentClassLesson } from "@teacher-os/api/contracts";
 import { vietnamSessionEndMs } from "@teacher-os/api/vietnam-date";
-import { Check, CircleDashed, Clock, X } from "lucide-react";
+import { buttonVariants } from "@teacher-os/ui/components/button";
+import { Check, CircleDashed, Clock, PlayCircle, X } from "lucide-react";
 import { LessonMaterialsDisclosure } from "@/components/class/lesson-materials";
+import { RecordingPassword } from "@/components/class/recording-password";
+import { ZoomJoinButton } from "@/components/class/zoom-join-button";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
@@ -95,12 +98,15 @@ export function ClassLessonList({
 	lessons,
 	todayISO,
 	now,
+	zoomNowMs,
 }: {
 	classId: string;
 	isPaused?: boolean;
 	lessons: StudentClassLesson[];
 	todayISO: string;
 	now: Date;
+	/** Chỉ dùng trong unit test để cố định đồng hồ cục bộ cho ZoomJoinButton. */
+	zoomNowMs?: number;
 }) {
 	if (lessons.length === 0) {
 		return (
@@ -119,12 +125,28 @@ export function ClassLessonList({
 			<ol className="relative">
 				{lessons.map((lesson, i) => {
 					const isNext = lesson.id === nextId;
+					const isEnded = isLessonEnded(lesson, now);
 					const displayStatus =
 						isPaused && lesson.status === "upcoming"
 							? "paused_upcoming"
-							: isLessonEnded(lesson, now)
+							: isEnded
 								? "ended"
 								: lesson.status;
+					const showZoomLink =
+						displayStatus === "upcoming" &&
+						Boolean(lesson.hasZoom ?? lesson.joinUrl);
+					const canShowRecording =
+						lesson.status !== "cancelled" && lesson.status !== "holiday";
+					const showRecordingLink =
+						canShowRecording && Boolean(lesson.recordingUrl);
+					const showPendingRecording =
+						!lesson.recordingUrl &&
+						lesson.recordingStatus === "pending" &&
+						(isEnded ||
+							lesson.status === "completed" ||
+							lesson.status === "absent");
+					const hasActions =
+						showZoomLink || showRecordingLink || showPendingRecording;
 					const future =
 						nextId !== null &&
 						displayStatus === "upcoming" &&
@@ -212,6 +234,55 @@ export function ClassLessonList({
 									<Badge variant={status.variant} className={status.badgeClass}>
 										{status.label}
 									</Badge>
+								)}
+								{hasActions && (
+									<div className="mt-2 flex w-full min-w-0 flex-wrap items-center gap-2">
+										{showZoomLink && (
+											<ZoomJoinButton
+												classId={classId}
+												date={lesson.date}
+												time={lesson.time}
+												dur={lesson.dur}
+												variant={isNext ? "default" : "outline"}
+												size="sm"
+												className="max-w-full"
+												nowMs={zoomNowMs}
+											/>
+										)}
+										{showRecordingLink && lesson.recordingUrl && (
+											<a
+												href={lesson.recordingUrl}
+												target="_blank"
+												rel="noopener noreferrer"
+												className={cn(
+													buttonVariants({
+														variant: "outline",
+														size: "sm",
+													}),
+													"max-w-full whitespace-normal text-center focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-0",
+												)}
+											>
+												<PlayCircle aria-hidden="true" className="size-3.5" />
+												Xem recording
+											</a>
+										)}
+										{showRecordingLink &&
+											lesson.recordingUrl &&
+											lesson.recordingPassword && (
+												<RecordingPassword
+													password={lesson.recordingPassword}
+												/>
+											)}
+										{showPendingRecording && (
+											<Badge
+												variant="outline"
+												className="text-muted-foreground"
+											>
+												<Clock aria-hidden="true" className="size-3" />
+												Đang chờ recording
+											</Badge>
+										)}
+									</div>
 								)}
 								{lesson.date != null &&
 									lesson.status !== "holiday" &&

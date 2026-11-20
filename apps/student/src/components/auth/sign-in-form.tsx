@@ -40,6 +40,7 @@ export function SignInForm({
 					toast.error(authErrorMessage(error, AUTH_FAILED));
 					return;
 				}
+				authClient.clearSessionCache?.();
 
 				let session: { user?: { id: string } } | null = null;
 				try {

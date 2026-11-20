@@ -1,6 +1,8 @@
 import {
 	type ClassStatus,
 	type EnrollmentStatus,
+	RECORDING_STATUSES,
+	type RecordingStatus,
 	type StudentAssignment,
 	type StudentClass,
 	type StudentClassLesson,
@@ -13,10 +15,12 @@ import {
 	vietnamSessionEndMs,
 	vietnamTodayISO,
 } from "@teacher-os/api/vietnam-date";
+import { isValidZoomJoinUrl } from "@teacher-os/api/zoom-window";
 import {
 	assignmentPrompt,
 	classAssignment,
 	classAssignmentTarget,
+	classSessionMeeting,
 	classTable,
 	enrollment,
 	lesson,
@@ -75,17 +79,23 @@ export async function loadOrgTeacher(
 	return row ? { name: row.name, email: row.email, image: row.image } : null;
 }
 
+export { isValidZoomJoinUrl };
+
 /**
  * Buổi tới của lớp: buổi có ngày đầu tiên từ hôm nay (giờ VN) trở đi mà
  * CHƯA qua giờ kết thúc (date + time + dur). Bỏ qua buổi hôm nay đã qua giờ
  * (#395, đồng bộ `isLessonEnded` client #393 — predicate thuần thời gian,
  * không lọc `status`). Lớp legacy (`date` null) không có Buổi tới.
+ *
+ * Không bao giờ trả raw `joinUrl` — chỉ gắn `hasZoom: true` và `dur` để client
+ * gọi endpoint `/zoom-join` kiểm tra khung giờ ở server.
  */
 export async function loadNextSession(
 	db: Db,
 	orgId: string,
 	classId: string,
 	now: Date,
+	enrollmentId?: string,
 ): Promise<StudentNextSession | null> {
 	const todayISO = vietnamTodayISO(now);
 	const rows = await db
@@ -94,12 +104,15 @@ export async function loadNextSession(
 			time: lesson.time,
 			dur: lesson.dur,
 			topic: lesson.topic,
+			status: lesson.status,
+			zoom: lesson.zoom,
 		})
 		.from(lesson)
 		.where(
 			and(
 				eq(lesson.orgId, orgId),
 				eq(lesson.classId, classId),
+				...(enrollmentId ? [eq(lesson.enrollmentId, enrollmentId)] : []),
 				isNotNull(lesson.date),
 				gte(lesson.date, todayISO),
 			),
@@ -111,7 +124,34 @@ export async function loadNextSession(
 		// time lệch format (end == null) → không đoán, coi là chưa kết thúc
 		// (phòng thủ invariant vỡ, nhất quán NaN→false với client #393).
 		if (end == null || end > now.getTime()) {
-			return { date: row.date, time: row.time, topic: row.topic };
+			let rawJoinUrl = "";
+			if (row.status !== "cancelled" && row.status !== "holiday") {
+				const lessonZoom = row.zoom?.trim() ?? "";
+				if (lessonZoom) {
+					rawJoinUrl = lessonZoom;
+				} else {
+					const [meeting] = await db
+						.select({ joinUrl: classSessionMeeting.joinUrl })
+						.from(classSessionMeeting)
+						.where(
+							and(
+								eq(classSessionMeeting.orgId, orgId),
+								eq(classSessionMeeting.classId, classId),
+								eq(classSessionMeeting.date, row.date),
+							),
+						)
+						.limit(1);
+					rawJoinUrl = meeting?.joinUrl?.trim() ?? "";
+				}
+			}
+			const hasZoom = isValidZoomJoinUrl(rawJoinUrl);
+			return {
+				date: row.date,
+				time: row.time,
+				...(row.dur > 0 ? { dur: row.dur } : {}),
+				topic: row.topic,
+				...(hasZoom ? { hasZoom: true } : {}),
+			};
 		}
 	}
 	return null;
@@ -278,4 +318,67 @@ export function orderStudentLessons(
 		}
 	}
 	return result;
+}
+
+export interface ClassSessionMeetingProjection {
+	classId: string;
+	date: string;
+	joinUrl: string;
+	recordingUrl: string;
+	recordingPassword: string | null;
+	recordingStatus: string;
+}
+
+const VALID_RECORDING_STATUSES = new Set<string>(RECORDING_STATUSES);
+
+/**
+ * Gắn `hasZoom` (kiểm tra `lesson.zoom`, fallback `class_session_meeting.joinUrl` —
+ * không bao giờ trả raw `joinUrl` trên payload danh sách/chi tiết) và
+ * `recordingUrl` / `recordingPassword` / `recordingStatus` vào item buổi học của học viên.
+ * Buổi đã `cancelled` hoặc `holiday`, hoặc buổi legacy chưa gắn ngày (`date == null`),
+ * không đánh dấu `hasZoom`.
+ */
+export function toStudentClassLessonWithMeeting(
+	row: {
+		id: string;
+		date: string | null;
+		day: number;
+		time: string;
+		dur: number;
+		status: string;
+		topic: string;
+		zoom?: string;
+	},
+	meeting?: ClassSessionMeetingProjection,
+): StudentClassLesson {
+	const isInactive = row.status === "cancelled" || row.status === "holiday";
+	const rawJoinUrl = !isInactive
+		? row.zoom?.trim() || meeting?.joinUrl?.trim() || ""
+		: "";
+	const hasZoom = row.date != null && isValidZoomJoinUrl(rawJoinUrl);
+	const recordingUrl = !isInactive ? meeting?.recordingUrl || "" : "";
+	const recordingPassword =
+		recordingUrl && meeting?.recordingPassword ? meeting.recordingPassword : "";
+	const rawRecStatus = meeting?.recordingStatus;
+	const recordingStatus =
+		!isInactive &&
+		rawRecStatus &&
+		rawRecStatus !== "none" &&
+		VALID_RECORDING_STATUSES.has(rawRecStatus)
+			? (rawRecStatus as RecordingStatus)
+			: undefined;
+
+	return {
+		id: row.id,
+		date: row.date,
+		day: row.day,
+		time: row.time,
+		dur: row.dur,
+		status: row.status,
+		topic: row.topic,
+		...(hasZoom ? { hasZoom: true } : {}),
+		...(recordingUrl ? { recordingUrl } : {}),
+		...(recordingPassword ? { recordingPassword } : {}),
+		...(recordingStatus ? { recordingStatus } : {}),
+	};
 }

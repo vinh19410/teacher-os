@@ -26,7 +26,6 @@ vi.mock("@/lib/repos/study-pack", () => ({
 	createStudyPack: vi.fn(),
 	updateStudyPack: vi.fn(),
 	deleteStudyPack: (id: string) => mockDeleteStudyPack(id),
-	cloneStudyPack: vi.fn(),
 }));
 
 const mockStore = vi.hoisted(() => ({
@@ -92,30 +91,63 @@ afterEach(() => {
 });
 
 describe("StudyPacksRoute (/assignments/packs/)", () => {
-	it("links org pack cards to /assignments/packs/$packId via Xem chi tiết and title link", async () => {
+	it("renders both org and system packs in unified list with badges and action buttons", async () => {
 		routerState.search = {};
 		renderPacksRoute();
 
-		const detailLink = (await screen.findByRole("link", {
-			name: "Xem chi tiết",
-		})) as HTMLAnchorElement;
-		expect(detailLink.getAttribute("href")).toBe("/assignments/packs/org-1");
+		// Both cards are present
+		expect(
+			await screen.findByRole("heading", { name: "Bộ đề Trung tâm B1" }),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("heading", { name: "Bộ đề Hệ thống IELTS" }),
+		).toBeTruthy();
 
-		const titleLink = screen.getByRole("link", {
-			name: "Bộ đề Trung tâm B1",
-		}) as HTMLAnchorElement;
-		expect(titleLink.getAttribute("href")).toBe("/assignments/packs/org-1");
+		// Scope filter chips & card badges
+		expect(screen.getByRole("button", { name: "Trung tâm" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Hệ thống" })).toBeTruthy();
+		expect(screen.getAllByText("Trung tâm")).toHaveLength(2);
+		expect(screen.getAllByText("Hệ thống")).toHaveLength(2);
+
+		// Detail links
+		const detailLinks = screen.getAllByRole("link", {
+			name: "Xem chi tiết",
+		}) as HTMLAnchorElement[];
+		expect(detailLinks).toHaveLength(2);
+		expect(detailLinks[0]?.getAttribute("href")).toBe(
+			"/assignments/packs/org-1",
+		);
+		expect(detailLinks[1]?.getAttribute("href")).toBe(
+			"/assignments/packs/sys-1",
+		);
+
+		// Both cards have Edit and Delete buttons (no Clone button)
+		const editButtons = screen.getAllByRole("button", { name: "Chỉnh sửa" });
+		expect(editButtons).toHaveLength(2);
+		const deleteButtons = screen.getAllByRole("button", { name: "Xoá" });
+		expect(deleteButtons).toHaveLength(2);
+		expect(
+			screen.queryByRole("button", { name: "Nhân bản về trung tâm" }),
+		).toBeNull();
 	});
 
-	it("links system pack cards to /assignments/packs/$packId instead of opening legacy modal", async () => {
-		routerState.search = { scope: "system" };
+	it("filters by scope using ChipFilter", async () => {
+		routerState.search = {};
 		renderPacksRoute();
 
-		const detailLink = (await screen.findByRole("link", {
-			name: "Xem chi tiết",
-		})) as HTMLAnchorElement;
-		expect(detailLink.getAttribute("href")).toBe("/assignments/packs/sys-1");
-		expect(screen.queryByRole("button", { name: "Xem chi tiết" })).toBeNull();
+		await screen.findByText("Bộ đề Trung tâm B1");
+
+		// Click "Hệ thống" chip in Nguồn bộ đề group
+		const systemChip = screen.getByRole("button", {
+			name: "Hệ thống",
+		});
+		fireEvent.click(systemChip);
+
+		expect(routerState.navigate).toHaveBeenCalledWith({
+			to: "/assignments/packs",
+			search: { scope: "system" },
+			replace: true,
+		});
 	});
 
 	it("requires delete confirmation modal and surfaces 409 error on assigned pack", async () => {
@@ -125,8 +157,10 @@ describe("StudyPacksRoute (/assignments/packs/)", () => {
 		routerState.search = {};
 		renderPacksRoute();
 
-		const deleteBtn = await screen.findByRole("button", { name: "Xoá" });
-		fireEvent.click(deleteBtn);
+		const deleteButtons = await screen.findAllByRole("button", { name: "Xoá" });
+		const firstDeleteBtn = deleteButtons[0];
+		expect(firstDeleteBtn).toBeDefined();
+		if (firstDeleteBtn) fireEvent.click(firstDeleteBtn);
 
 		expect(
 			await screen.findByText(

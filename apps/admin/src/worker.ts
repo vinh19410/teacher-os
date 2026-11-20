@@ -33,9 +33,13 @@ function applySecurityHeaders(headers: Headers): void {
 		}
 	}
 	const crossOrigin = apiOrigin ?? "'self'";
+	// Vite dev chèn script inline (preamble của @vitejs/plugin-react); chặn nó
+	// thì React không mount và trang trắng. Bản build không có script inline
+	// nên production giữ `script-src 'self'`.
+	const scriptSrc = import.meta.env.DEV ? "'self' 'unsafe-inline'" : "'self'";
 	headers.set(
 		"Content-Security-Policy",
-		`default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' ${crossOrigin}; media-src 'self' ${crossOrigin}; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com;`,
+		`default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' ${crossOrigin}; media-src 'self' ${crossOrigin}; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com;`,
 	);
 }
 

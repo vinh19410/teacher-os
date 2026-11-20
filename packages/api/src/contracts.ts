@@ -1082,6 +1082,7 @@ function validateQuestionChoices(
 		answer: string;
 	}>,
 	fallbackType: string,
+	allowExtendedBankChoices = false,
 ) {
 	for (const [index, question] of questions.entries()) {
 		const kind = answerKindByType[question.type ?? fallbackType] ?? null;
@@ -1094,10 +1095,14 @@ function validateQuestionChoices(
 				message: optsError,
 			});
 		}
-		if (
-			question.answer &&
-			!effectiveAnswerChoices(kind, question.opts).includes(question.answer)
-		) {
+		const allowed = allowExtendedBankChoices
+			? extendedAnswerChoices(kind)
+			: effectiveAnswerChoices(kind, question.opts);
+		const validChoices =
+			kind === "mcq4" || kind === "mcq3"
+				? effectiveAnswerChoices(kind, question.opts)
+				: allowed;
+		if (question.answer && !validChoices.includes(question.answer)) {
 			ctx.addIssue({
 				code: "custom",
 				path: ["questions", index, "answer"],
@@ -1303,7 +1308,12 @@ export const assignmentPromptCreateSchema =
 		}
 		// Answer-choice validation theo type HIỆU DỤNG của từng câu (type câu
 		// ?? type prompt) — đề trộn dạng chấm khớp kind của câu chứa nó.
-		validateQuestionChoices(ctx, value.questions, value.type);
+		validateQuestionChoices(
+			ctx,
+			value.questions,
+			value.type,
+			value.optionBank.length > 0,
+		);
 		// Phase-02 FR2 — option bank rules. Bankable is (skill, type)-qualified
 		// (red-team #1): writing task1 shares the `map` type id but is NOT
 		// bankable, so a bank arriving there is rejected outright. The 2..8 /
@@ -2193,6 +2203,7 @@ export interface KernelSnapshot {
 	commentBank: KernelCommentBankRow[];
 	classAssignments: KernelClassAssignmentRow[];
 	assignmentTests: KernelAssignmentTestRow[];
+	vocabGroups?: KernelVocabGroupRow[];
 	vocabDecks: KernelVocabDeckRow[];
 	vocabSuggestions?: KernelVocabSuggestionRow[];
 	/** TOS-11: lịch tuần vẽ nhãn kỳ nghỉ + "Đã dời sang dd/MM" không cần gọi thêm endpoint. Optional — fixtures cũ không gửi. */
@@ -2203,6 +2214,9 @@ export interface KernelSnapshot {
 	/** TOS-17 (#451): quyền tài chính của thành viên đang xem. Optional để
 	 * tương thích ngược với snapshot fixture cũ trong test. */
 	viewer?: KernelViewer;
+	/** Metadata Zoom & recording theo buổi (classId, date). Optional để
+	 * tương thích ngược với snapshot fixture cũ trong test. */
+	sessionMeetings?: KernelSessionMeetingRow[];
 }
 
 export interface CreatedResponse {
@@ -2382,7 +2396,10 @@ export type StudentMe = z.infer<typeof studentMeSchema>;
 export const studentNextSessionSchema = z.object({
 	date: z.string(),
 	time: z.string(),
+	dur: z.number().int().positive().optional(),
 	topic: z.string(),
+	hasZoom: z.boolean().optional(),
+	joinUrl: z.string().nullable().optional(),
 });
 export type StudentNextSession = z.infer<typeof studentNextSessionSchema>;
 
@@ -2460,6 +2477,14 @@ export const studentOverviewSchema = z.object({
 });
 export type StudentOverview = z.infer<typeof studentOverviewSchema>;
 
+export const RECORDING_STATUSES = [
+	"none",
+	"pending",
+	"ready",
+	"failed",
+] as const;
+export type RecordingStatus = (typeof RECORDING_STATUSES)[number];
+
 /** Buổi học của chính học viên trong lớp (GET /api/student/classes/:classId). */
 export const studentClassLessonSchema = z.object({
 	id: z.string(),
@@ -2471,6 +2496,11 @@ export const studentClassLessonSchema = z.object({
 	dur: z.number().int(),
 	status: z.string(),
 	topic: z.string(),
+	hasZoom: z.boolean().optional(),
+	joinUrl: z.string().nullable().optional(),
+	recordingUrl: z.string().nullable().optional(),
+	recordingPassword: z.string().nullable().optional(),
+	recordingStatus: z.enum(RECORDING_STATUSES).optional(),
 });
 export type StudentClassLesson = z.infer<typeof studentClassLessonSchema>;
 
@@ -3393,20 +3423,43 @@ export const VOCAB_ERROR_CODES = {
 	LIBRARY_DECK_NOT_FOUND: "LIBRARY_DECK_NOT_FOUND",
 	LIBRARY_CLONE_TOO_LARGE: "LIBRARY_CLONE_TOO_LARGE",
 	LIBRARY_CLONE_DUPLICATE_DECK: "LIBRARY_CLONE_DUPLICATE_DECK",
+	DECK_CLONE_TOO_LARGE: "VOCAB_DECK_CLONE_TOO_LARGE",
+	DECK_CLONE_DUPLICATE_DECK: "VOCAB_DECK_CLONE_DUPLICATE_DECK",
 	SUGGESTION_NOT_FOUND: "VOCAB_SUGGESTION_NOT_FOUND",
 	SUGGESTION_ALREADY_ACCEPTED: "VOCAB_SUGGESTION_ALREADY_ACCEPTED",
+	GROUP_NOT_FOUND: "VOCAB_GROUP_NOT_FOUND",
+	GROUP_NAME_EXISTS: "VOCAB_GROUP_NAME_EXISTS",
 } as const;
 export type VocabErrorCode =
 	(typeof VOCAB_ERROR_CODES)[keyof typeof VOCAB_ERROR_CODES];
 
+/** Chuẩn hoá tên nhóm bộ từ để kiểm tra trùng không phân biệt hoa/thường và tổ hợp dấu tiếng Việt. */
+export function normalizeVocabGroupName(name: string): string {
+	return name.trim().normalize("NFC").toLocaleLowerCase("vi");
+}
+
+export const vocabEntryTypeSchema = z.enum(["word", "chunk"]);
+export type VocabEntryType = z.infer<typeof vocabEntryTypeSchema>;
+
+export interface KernelVocabGroupRow {
+	id: string;
+	name: string;
+	createdAt: string;
+	updatedAt: string;
+}
+
 export interface KernelVocabDeckRow {
 	id: string;
 	classId: string | null;
+	groupId?: string | null;
 	title: string;
+	lessonNumber?: number | null;
+	topic?: string | null;
 	lang: string;
 	wordCount: number;
 	createdAt: string;
 	sourceLibraryDeckId: string | null;
+	sourceDeckId?: string | null;
 }
 export interface KernelVocabSuggestionRow {
 	id: string;
@@ -3415,6 +3468,29 @@ export interface KernelVocabSuggestionRow {
 	note: string | null;
 	createdAt: string;
 }
+
+export const vocabGroupCreateSchema = z
+	.object({
+		id: z.string().min(1).max(128).optional(),
+		name: z.string().trim().min(1).max(100),
+	})
+	.strict();
+export type VocabGroupCreateInput = z.infer<typeof vocabGroupCreateSchema>;
+
+export const vocabGroupRenameSchema = z
+	.object({
+		groupId: z.string().min(1),
+		name: z.string().trim().min(1).max(100),
+	})
+	.strict();
+export type VocabGroupRenameInput = z.infer<typeof vocabGroupRenameSchema>;
+
+export const vocabGroupDeleteSchema = z
+	.object({
+		groupId: z.string().min(1),
+	})
+	.strict();
+export type VocabGroupDeleteInput = z.infer<typeof vocabGroupDeleteSchema>;
 
 export const RESERVED_LIBRARY_ID_PREFIX_REGEX =
 	/^(libcourse|libdeck|libword)-/i;
@@ -3431,7 +3507,10 @@ export const vocabDeckCreateSchema = z
 			)
 			.optional(),
 		classId: z.string().min(1).nullable().optional().default(null),
+		groupId: z.string().min(1).nullable().optional(),
 		title: z.string().trim().min(1).max(200),
+		lessonNumber: z.number().int().min(1).max(9999).nullable().optional(),
+		topic: z.string().trim().max(200).nullable().optional(),
 		lang: z.string().trim().min(1).max(16).default("en"),
 	})
 	.strict();
@@ -3441,7 +3520,10 @@ export const vocabDeckRenameSchema = z
 	.object({
 		deckId: z.string().min(1),
 		title: z.string().trim().min(1).max(200),
+		lessonNumber: z.number().int().min(1).max(9999).nullable().optional(),
+		topic: z.string().trim().max(200).nullable().optional(),
 		lang: z.string().trim().min(1).max(16).optional(),
+		groupId: z.string().min(1).nullable().optional(),
 	})
 	.strict();
 export type VocabDeckRenameInput = z.infer<typeof vocabDeckRenameSchema>;
@@ -3471,8 +3553,11 @@ export const vocabWordUpsertSchema = z
 			.optional(),
 		deckId: z.string().min(1),
 		word: z.string().trim().min(1).max(200),
+		entryType: vocabEntryTypeSchema.default("word"),
 		ipa: z.string().trim().max(200).nullable().optional(),
+		pos: z.string().trim().max(100).nullable().optional(),
 		translation: z.string().trim().max(500).default(""),
+		example: z.string().trim().max(1000).nullable().optional(),
 		sortOrder: z.number().int().min(0).default(0),
 	})
 	.strict();
@@ -3490,14 +3575,99 @@ export const vocabTeacherWordSchema = z
 		id: z.string().min(1),
 		deckId: z.string().min(1),
 		word: z.string(),
+		entryType: vocabEntryTypeSchema.optional(),
 		ipa: z.string().nullable(),
+		pos: z.string().nullable().optional(),
 		translation: z.string(),
+		example: z.string().nullable().optional(),
 		audioKey: z.string().nullable(),
 		audioUrl: z.string().nullable(),
 		sortOrder: z.number().int(),
 	})
 	.strict();
 export type VocabTeacherWord = z.infer<typeof vocabTeacherWordSchema>;
+
+export const VOCAB_CSV_IMPORT_MAX_DECKS = 50;
+export const VOCAB_CSV_IMPORT_MAX_WORDS_PER_REQUEST = 500;
+
+export const vocabWordImportItemSchema = z
+	.object({
+		word: z.string().trim().min(1).max(200),
+		entryType: vocabEntryTypeSchema.default("word"),
+		ipa: z.string().trim().max(200).nullable().optional().default(null),
+		pos: z.string().trim().max(100).nullable().optional().default(null),
+		translation: z.string().trim().max(500).default(""),
+		example: z.string().trim().max(1000).nullable().optional().default(null),
+	})
+	.strict();
+export type VocabWordImportItem = z.infer<typeof vocabWordImportItemSchema>;
+
+export const vocabDeckCsvImportItemSchema = z
+	.object({
+		title: z.string().trim().min(1).max(200),
+		lessonNumber: z
+			.number()
+			.int()
+			.min(1)
+			.max(9999)
+			.nullable()
+			.optional()
+			.default(null),
+		topic: z.string().trim().max(200).nullable().optional().default(null),
+		lang: z.string().trim().min(1).max(16).default("en"),
+		words: z
+			.array(vocabWordImportItemSchema)
+			.min(1)
+			.max(VOCAB_CSV_IMPORT_MAX_WORDS_PER_REQUEST),
+	})
+	.strict();
+export type VocabDeckCsvImportItem = z.infer<
+	typeof vocabDeckCsvImportItemSchema
+>;
+
+export const vocabDeckCsvImportSchema = z
+	.object({
+		classId: z.string().min(1).nullable().optional().default(null),
+		groupId: z.string().min(1).nullable().optional(),
+		decks: z
+			.array(vocabDeckCsvImportItemSchema)
+			.min(1)
+			.max(VOCAB_CSV_IMPORT_MAX_DECKS),
+	})
+	.strict()
+	.refine(
+		(data) =>
+			data.decks.reduce((sum, d) => sum + d.words.length, 0) <=
+			VOCAB_CSV_IMPORT_MAX_WORDS_PER_REQUEST,
+		{
+			message: `Total imported words must not exceed ${VOCAB_CSV_IMPORT_MAX_WORDS_PER_REQUEST}`,
+		},
+	);
+export type VocabDeckCsvImportInput = z.infer<typeof vocabDeckCsvImportSchema>;
+
+export const vocabDeckWordsImportSchema = z
+	.object({
+		words: z
+			.array(vocabWordImportItemSchema)
+			.min(1)
+			.max(VOCAB_CSV_IMPORT_MAX_WORDS_PER_REQUEST),
+	})
+	.strict();
+export type VocabDeckWordsImportInput = z.infer<
+	typeof vocabDeckWordsImportSchema
+>;
+
+export const vocabCsvImportResponseSchema = z
+	.object({
+		id: z.string().min(1),
+		deckIds: z.array(z.string().min(1)),
+		importedDecks: z.number().int().min(0),
+		importedWords: z.number().int().min(0),
+	})
+	.strict();
+export type VocabCsvImportResponse = z.infer<
+	typeof vocabCsvImportResponseSchema
+>;
 
 export const vocabTeacherWordsResponseSchema = z
 	.object({
@@ -3589,6 +3759,14 @@ export const vocabLibraryCloneSchema = z
 	})
 	.strict();
 export type VocabLibraryCloneInput = z.infer<typeof vocabLibraryCloneSchema>;
+
+export const vocabDeckCloneSchema = z
+	.object({
+		classId: z.string().min(1).nullable().optional().default(null),
+		deckIds: z.array(z.string().min(1)).min(1).max(50),
+	})
+	.strict();
+export type VocabDeckCloneInput = z.infer<typeof vocabDeckCloneSchema>;
 
 export const vocabStudentLibraryCourseSchema = z
 	.object({
@@ -3820,6 +3998,8 @@ export const vocabSessionDeckSchema = z
 	.object({
 		id: z.string().min(1),
 		title: z.string(),
+		lessonNumber: z.number().int().nullable().optional(),
+		topic: z.string().nullable().optional(),
 		lang: z.string(),
 	})
 	.strict();
@@ -3830,8 +4010,11 @@ export const vocabSessionCardSchema = z
 		id: z.string().min(1),
 		wordId: z.string().min(1),
 		word: z.string(),
+		entryType: vocabEntryTypeSchema.optional(),
 		translation: z.string(),
 		ipa: z.string().nullable(),
+		pos: z.string().nullable().optional(),
+		example: z.string().nullable().optional(),
 		audioKey: z.string().nullable(),
 		hasAudio: z.boolean().default(false),
 		level: z.number().int().min(1).max(5),
@@ -4760,6 +4943,18 @@ export const STUDY_PACK_AUDIO_HOSTS = [
 	"www.lingua.com",
 ] as const;
 
+export const STUDY_PACK_AUDIO_KEY_PATTERN =
+	/^study-packs\/[a-z0-9-]+\/[a-z0-9-]+\.mp3$/;
+
+export function isValidStudyPackAudioKey(raw: string): boolean {
+	const trimmed = raw.trim();
+	return (
+		trimmed.length > 0 &&
+		trimmed.length <= 500 &&
+		STUDY_PACK_AUDIO_KEY_PATTERN.test(trimmed)
+	);
+}
+
 export function isAllowedStudyPackAudioUrl(raw: string): boolean {
 	const trimmed = raw.trim();
 	if (!trimmed || trimmed.length > 500) return false;
@@ -4874,7 +5069,7 @@ const libraryExerciseBaseSchema = z
 		questions: z.array(assignmentQuestionSchema).max(40).default([]),
 		optionBank: z
 			.array(z.string().trim().min(1).max(200))
-			.max(ASSIGNMENT_OPTION_BANK_MAX)
+			.max(LIBRARY_OPTION_BANK_MAX)
 			.default([]),
 		note: richTextField(2000).default(""),
 		status: z.enum(["draft", "ready"]).default("draft"),
@@ -4886,12 +5081,21 @@ const libraryExerciseBaseSchema = z
 			ctx.addIssue({ code: "custom", path: ["part"], message: "invalid part" });
 			return;
 		}
-		const partTypes = config.types[value.part] ?? [];
-		if (!partTypes.includes(value.type)) {
+		const allowedTypes = [
+			...new Set([
+				...Object.values(config.types).flat(),
+				...(value.skill === "reading"
+					? ["mcq_many", "fill_blank", "match_names", "matching"]
+					: value.skill === "listening"
+						? ["mcq_many"]
+						: []),
+			]),
+		];
+		if (!allowedTypes.includes(value.type)) {
 			ctx.addIssue({ code: "custom", path: ["type"], message: "invalid type" });
 		}
 		for (const [index, question] of value.questions.entries()) {
-			if (question.type && !partTypes.includes(question.type)) {
+			if (question.type && !allowedTypes.includes(question.type)) {
 				ctx.addIssue({
 					code: "custom",
 					path: ["questions", index, "type"],
@@ -4971,7 +5175,12 @@ const libraryExerciseBaseSchema = z
 					});
 			}
 		}
-		validateQuestionChoices(ctx, value.questions, value.type);
+		validateQuestionChoices(
+			ctx,
+			value.questions,
+			value.type,
+			value.optionBank.length > 0,
+		);
 		const bankKind = optionBankKindFor(
 			value.skill,
 			value.type,
@@ -4991,16 +5200,29 @@ const libraryExerciseBaseSchema = z
 					({ question }) =>
 						answerKindByType[question.type ?? value.type] === bankKind,
 				);
+			const reusableTypes = new Set([
+				"info",
+				"features",
+				"match_names",
+				"matching",
+				"match2",
+				"summary",
+			]);
+			const allowsBankReuse = bankQuestions.every(({ question }) =>
+				reusableTypes.has(question.type ?? value.type),
+			);
 			if (
 				value.optionBank.length < 2 ||
-				value.optionBank.length < bankQuestions.length
+				(!allowsBankReuse && value.optionBank.length < bankQuestions.length)
 			)
 				ctx.addIssue({
 					code: "custom",
 					path: ["optionBank"],
-					message: `bank must have 2–${ASSIGNMENT_OPTION_BANK_MAX} items and cover every bankable question`,
+					message: allowsBankReuse
+						? `bank must have 2–${LIBRARY_OPTION_BANK_MAX} items`
+						: `bank must have 2–${LIBRARY_OPTION_BANK_MAX} items and cover every bankable question`,
 				});
-			const labels = ASSIGNMENT_ANSWER_CHOICES[bankKind];
+			const labels = extendedAnswerChoices(bankKind);
 			for (const { question, index } of bankQuestions) {
 				if (!question.answer.trim()) continue;
 				const labelIndex = labels.indexOf(question.answer as never);
@@ -5157,3 +5379,106 @@ export interface ClassStudyPacksResponse {
 	packs: ClassStudyPackView[];
 	holidays: { date: string; name: string }[];
 }
+
+export interface KernelSessionMeetingRow {
+	id: string;
+	classId: string;
+	date: string;
+	joinUrl: string;
+	zoomMeetingId: string | null;
+	recordingPassword: string | null;
+	recordingUrl: string;
+	recordingStatus: RecordingStatus | string;
+	recordingError: string | null;
+	recordingSyncedAt: string | null;
+}
+
+export const ZOOM_ERROR_CODES = {
+	NOT_CONFIGURED: "ZOOM_NOT_CONFIGURED",
+	API_ERROR: "ZOOM_API_ERROR",
+	RATE_LIMITED: "ZOOM_RATE_LIMITED",
+} as const;
+
+export const sessionZoomCreateResponseSchema = z.object({
+	joinUrl: z.string(),
+	zoomMeetingId: z.string().nullable(),
+	warning: z.string().nullable().optional(),
+});
+export type SessionZoomCreateResponse = z.infer<
+	typeof sessionZoomCreateResponseSchema
+>;
+
+export const classZoomBulkCreateResponseSchema = z.object({
+	created: z.number().int().nonnegative(),
+	skipped: z.number().int().nonnegative(),
+	failed: z.number().int().nonnegative(),
+	errors: z.array(
+		z.object({
+			date: z.string(),
+			message: z.string(),
+		}),
+	),
+});
+export type ClassZoomBulkCreateResponse = z.infer<
+	typeof classZoomBulkCreateResponseSchema
+>;
+
+export const sessionRecordingSyncResponseSchema = z.object({
+	status: z.enum(RECORDING_STATUSES),
+	recordingUrl: z.string(),
+	recordingPassword: z.string().nullable().optional(),
+	syncedAt: z.string().nullable(),
+	message: z.string().nullable().optional(),
+});
+export type SessionRecordingSyncResponse = z.infer<
+	typeof sessionRecordingSyncResponseSchema
+>;
+
+export const sessionRecordingUpdateSchema = z
+	.object({
+		recordingUrl: z
+			.string()
+			.max(2000)
+			.refine(
+				(val) => {
+					const trimmed = val.trim();
+					if (!trimmed) return true;
+					if (/\s/.test(trimmed)) return false;
+					try {
+						const parsed = new URL(trimmed);
+						return parsed.protocol === "https:" && parsed.hostname.length > 0;
+					} catch {
+						return false;
+					}
+				},
+				{
+					message: "Link recording phải là URL https:// hợp lệ hoặc để trống",
+				},
+			),
+	})
+	.strict();
+export type SessionRecordingUpdateInput = z.infer<
+	typeof sessionRecordingUpdateSchema
+>;
+
+/** Phản hồi khi học viên lấy link Zoom trong khung giờ hợp lệ `[start - 30 phút, end)`. */
+export const studentZoomJoinResponseSchema = z.object({
+	joinUrl: z.string(),
+	openAt: z.string(),
+	closeAt: z.string(),
+});
+export type StudentZoomJoinResponse = z.infer<
+	typeof studentZoomJoinResponseSchema
+>;
+
+/** Phản hồi lỗi khi học viên không được phép mở link Zoom (ngoài khung giờ, chưa có link, buổi không hoạt động...). */
+export const studentZoomJoinErrorSchema = z.object({
+	error: z.string(),
+	code: z.string(),
+	date: z.string().optional(),
+	time: z.string().optional(),
+	dur: z.number().int().optional(),
+	openAt: z.string().optional(),
+	closeAt: z.string().optional(),
+});
+export type StudentZoomJoinError = z.infer<typeof studentZoomJoinErrorSchema>;

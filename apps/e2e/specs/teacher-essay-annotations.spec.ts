@@ -316,8 +316,8 @@ test.describe("Teacher essay annotations (#332)", () => {
 			await gradeCard.evaluate((el) => getComputedStyle(el).position),
 		).toBe("sticky");
 
-		// Sticky dính khi cuộn: ở root 14px (design v2), py-6 = 21px và
-		// max-h (100svh − 6rem = 636px) nên ở đáy trang stickyY ≈ 62.6px.
+		// Sticky dính khi cuộn: ở root 16px (design v2), py-6 = 24px và
+		// max-h = 100svh − 6rem nên ở đáy trang stickyY rơi trong band dưới.
 		// Band [56, 88] khoá cả hai mép mà không ghim con số.
 		await studentPage.evaluate(() =>
 			window.scrollTo(0, document.body.scrollHeight),

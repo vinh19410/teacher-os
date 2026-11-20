@@ -12,6 +12,38 @@ import { organization } from "./organization";
 import { student } from "./student";
 
 /**
+ * Nhóm phân loại bộ từ vựng trong phạm vi org (ví dụ "IELTS Speaking", "Giao Tiếp").
+ * - Tên duy nhất trong org theo `normalizedName` (trim + NFC + lowercase vi) qua
+ *   unique index `(org_id, normalized_name)`.
+ * - Xoá nhóm ở server phải gỡ `vocab_deck.group_id = null` và xoá `vocab_group` tường minh
+ *   trong 1 `db.batch` (không dựa vào FK `ON DELETE SET NULL` do PRAGMA foreign_keys theo connection).
+ */
+export const vocabGroup = sqliteTable(
+	"vocab_group",
+	{
+		id: text("id").primaryKey(),
+		orgId: text("org_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		name: text("name").notNull(),
+		normalizedName: text("normalized_name").notNull(),
+		createdAt: integer("created_at", { mode: "timestamp_ms" })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+		updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+	},
+	(table) => [
+		index("vocab_group_org_idx").on(table.orgId),
+		uniqueIndex("vocab_group_org_normalized_name_uq").on(
+			table.orgId,
+			table.normalizedName,
+		),
+	],
+);
+
+/**
  * Bộ từ vựng (deck) do giáo viên tạo cho một lớp học (#359) hoặc độc lập trong org (#363, `classId = null`).
  * Mỗi deck tương ứng một Course lesson trong mô hình Flinto: còn từ `state='new'`
  * thì học sinh vào vòng Learn (§3b), học xong toàn bộ từ mới thì sang vòng Review (§3).
@@ -29,13 +61,23 @@ export const vocabDeck = sqliteTable(
 		classId: text("class_id").references(() => classTable.id, {
 			onDelete: "cascade",
 		}),
+		groupId: text("group_id").references(() => vocabGroup.id, {
+			onDelete: "set null",
+		}),
 		title: text("title").notNull(),
+		lessonNumber: integer("lesson_number"),
+		topic: text("topic"),
 		lang: text("lang").notNull().default("en"),
 		/**
 		 * Con trỏ provenance tới `vocab_library_deck.id` khi bộ từ được clone từ thư viện (#361).
 		 * Chủ đích KHÔNG đặt FK để bộ từ của giáo viên sống sót kể cả khi thư viện được seed/prune lại.
 		 */
 		sourceLibraryDeckId: text("source_library_deck_id"),
+		/**
+		 * Con trỏ provenance tới `vocab_deck.id` khi bộ từ được clone từ một bộ từ khác trong org.
+		 * Chủ đích KHÔNG đặt FK để bản sao vẫn sống sót kể cả khi bộ từ gốc bị xoá.
+		 */
+		sourceDeckId: text("source_deck_id"),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),
@@ -46,7 +88,9 @@ export const vocabDeck = sqliteTable(
 	(table) => [
 		index("vocab_deck_org_idx").on(table.orgId),
 		index("vocab_deck_class_idx").on(table.classId),
+		index("vocab_deck_group_idx").on(table.groupId),
 		index("vocab_deck_source_library_idx").on(table.sourceLibraryDeckId),
+		index("vocab_deck_source_deck_idx").on(table.sourceDeckId),
 	],
 );
 
@@ -66,8 +110,14 @@ export const vocabWord = sqliteTable(
 			.notNull()
 			.references(() => vocabDeck.id, { onDelete: "cascade" }),
 		word: text("word").notNull(),
+		entryType: text("entry_type")
+			.$type<"word" | "chunk">()
+			.notNull()
+			.default("word"),
 		ipa: text("ipa"),
+		pos: text("pos"),
 		translation: text("translation").notNull().default(""),
+		example: text("example"),
 		audioKey: text("audio_key"),
 		audioUrl: text("audio_url"),
 		sortOrder: integer("sort_order").notNull().default(0),

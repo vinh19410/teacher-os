@@ -123,7 +123,7 @@ test("điều hướng từ rail: click icon Học viên tới /students và tes
 	await expect(page).toHaveURL(/\/students$/);
 	await expect(page.getByTestId("sidebar-user-email")).toBeAttached();
 
-	// Rail footer geometry (v2, rail 56px): avatar link and logout must stack
+	// Rail footer geometry (v2, rail 64px): avatar link and logout must stack
 	// vertically and stay inside the rail, not overflow horizontally.
 	const railFooter = await page.evaluate(() => {
 		const aside = document.querySelector("aside.sidebar");

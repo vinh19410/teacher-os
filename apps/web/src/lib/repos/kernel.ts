@@ -324,6 +324,21 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				method: "PATCH",
 				body: { ...action.payload },
 			};
+		case "create-vocab-group":
+			return {
+				path: "/api/kernel/vocab/groups",
+				body: { ...action.payload },
+			};
+		case "rename-vocab-group":
+			return {
+				path: "/api/kernel/vocab/groups/rename",
+				body: { ...action.payload },
+			};
+		case "delete-vocab-group":
+			return {
+				path: "/api/kernel/vocab/groups/delete",
+				body: { groupId: action.groupId },
+			};
 		case "create-vocab-deck":
 			// #359: vocabDeckCreateSchema .strict() — id optional không gửi
 			// (server tự sinh), lang default "en" server-side.
@@ -346,6 +361,16 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: "/api/kernel/vocab/words/upsert",
 				body: { ...action.payload },
 			};
+		case "import-vocab-csv-decks":
+			return {
+				path: "/api/kernel/vocab/decks/import-csv",
+				body: { ...action.payload },
+			};
+		case "import-vocab-deck-words":
+			return {
+				path: `/api/kernel/vocab/decks/${action.deckId}/words/import`,
+				body: { words: action.words },
+			};
 		case "remove-vocab-word":
 			return {
 				path: "/api/kernel/vocab/words/remove",
@@ -354,6 +379,11 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 		case "clone-vocab-library-decks":
 			return {
 				path: "/api/kernel/vocab-library/clone",
+				body: { ...action.payload },
+			};
+		case "clone-vocab-teacher-decks":
+			return {
+				path: "/api/kernel/vocab/decks/clone",
 				body: { ...action.payload },
 			};
 		case "suggest-vocab-deck":
@@ -394,6 +424,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		enrollments: mapEnrollments(snapshot),
 		classAssignments: mapClassAssignments(snapshot),
 		assignmentTests: mapAssignmentTests(snapshot),
+		vocabGroups: snapshot.vocabGroups ?? [],
 		vocabDecks: snapshot.vocabDecks ?? [],
 		vocabSuggestions: snapshot.vocabSuggestions ?? [],
 		holidays: snapshot.holidays ?? [],
@@ -401,6 +432,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		holidayCancels: snapshot.holidayCancels ?? [],
 		events: snapshot.events ?? [],
 		classSessions: snapshot.classSessions ?? [],
+		sessionMeetings: snapshot.sessionMeetings ?? [],
 		viewer: snapshot.viewer ?? { role: "teacher", canAccessFinance: true },
 	};
 }
@@ -588,6 +620,7 @@ const SNAPSHOT_COLLECTION_KEYS = [
  * verified as an array when present.
  */
 const OPTIONAL_SNAPSHOT_COLLECTION_KEYS = [
+	"vocabGroups",
 	"vocabSuggestions",
 	"holidays",
 	"holidayShifts",
@@ -596,6 +629,7 @@ const OPTIONAL_SNAPSHOT_COLLECTION_KEYS = [
 	// không làm trắng workspace, precedent vocabSuggestions #363 RT-F8.
 	"events",
 	"classSessions",
+	"sessionMeetings",
 ] as const satisfies ReadonlyArray<keyof KernelSnapshot>;
 
 // Compile-time completeness: every KernelSnapshot collection must appear in
@@ -716,8 +750,19 @@ export interface KernelCommandBusDeps {
 	onRoleBlocked?(reason?: string): void;
 }
 
+export interface KernelCommandRunOptions {
+	/**
+	 * Skip the post-write snapshot refetch so multi-batch callers can execute
+	 * sequential writes and call `refresh()` once at the end.
+	 */
+	skipRefresh?: boolean;
+}
+
 export interface KernelCommandBus {
-	run(action: KernelAction): Promise<KernelCommandResult>;
+	run(
+		action: KernelAction,
+		options?: KernelCommandRunOptions,
+	): Promise<KernelCommandResult>;
 	/**
 	 * Serialized snapshot refresh — the reconcile path callers use after a
 	 * `committed` or `outcome-unknown` result. Chaining on the write queue
@@ -768,7 +813,10 @@ export function createKernelCommandBus(
 		return result;
 	}
 
-	async function runOne(action: KernelAction): Promise<KernelCommandResult> {
+	async function runOne(
+		action: KernelAction,
+		options?: KernelCommandRunOptions,
+	): Promise<KernelCommandResult> {
 		let envelope: KernelWriteEnvelope;
 		try {
 			envelope = await deps.postCommand(action);
@@ -801,6 +849,9 @@ export function createKernelCommandBus(
 			duplicates,
 			...(inviteEmailSent !== undefined ? { inviteEmailSent } : {}),
 		};
+		if (options?.skipRefresh) {
+			return { kind: "committed", ...payload };
+		}
 		for (let attempt = 1; attempt <= REFRESH_ATTEMPTS; attempt++) {
 			try {
 				await deps.refetch();
@@ -820,11 +871,11 @@ export function createKernelCommandBus(
 	}
 
 	return {
-		run(action) {
-			const key = JSON.stringify(action);
+		run(action, options) {
+			const key = `${options?.skipRefresh ? "no-refresh:" : ""}${JSON.stringify(action)}`;
 			const pending = inFlight.get(key);
 			if (pending) return pending;
-			const result = enqueue(() => runOne(action));
+			const result = enqueue(() => runOne(action, options));
 			inFlight.set(key, result);
 			void result.finally(() => {
 				if (inFlight.get(key) === result) inFlight.delete(key);

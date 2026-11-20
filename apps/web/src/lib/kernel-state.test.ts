@@ -21,9 +21,11 @@ describe("emptyKernelData", () => {
 			"lessons",
 			"notifs",
 			"reports",
+			"sessionMeetings",
 			"students",
 			"syllabi",
 			"vocabDecks",
+			"vocabGroups",
 			"vocabSuggestions",
 		]);
 		for (const collection of Object.values(emptyKernelData)) {

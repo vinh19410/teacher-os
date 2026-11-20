@@ -9,7 +9,11 @@ import {
 } from "@teacher-os/api/placement-test-contracts";
 import { useSyncExternalStore } from "react";
 import { resolveSpeakingUploadMeta } from "@/lib/placement-test-helpers";
-import { HttpError } from "@/lib/query-client";
+import {
+	HttpError,
+	isTeacherOnStudentPortalError,
+	redirectToLoginForWrongRole,
+} from "@/lib/query-client";
 import { getApiBaseUrl, getStudentHeaders } from "@/lib/repos/student";
 import {
 	getActiveStudentOrgId,
@@ -51,7 +55,11 @@ async function throwPlacementHttpError(
 	} catch {
 		// Non-JSON body
 	}
-	throw new HttpError(res.status, message, { code, sentOrgId });
+	const error = new HttpError(res.status, message, { code, sentOrgId });
+	if (isTeacherOnStudentPortalError(error)) {
+		redirectToLoginForWrongRole();
+	}
+	throw error;
 }
 
 export async function fetchStudentPlacementStatus(): Promise<StudentPlacementStatusResponse> {

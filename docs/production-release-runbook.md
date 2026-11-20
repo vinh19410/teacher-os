@@ -85,6 +85,7 @@ loads `packages/infra/.env` first — a value there wins over the same name in
 | `CLOUDFLARE_API_TOKEN` | Deploy operator | operator env | Cloudflare dashboard → My Profile → API Tokens → roll, update `.env` |
 | `BETTER_AUTH_SECRET` | Deploy operator | operator env → Worker binding | per-stage values (staging ≠ prod): generate, update that stage's `.env`, redeploy that stage; invalidates its sessions |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google Cloud project owner | Google Cloud console → Credentials | console → rotate secret → update `.env` → redeploy. One OAuth client may serve both stages by registering each stage's callback URI (preflight 4) |
+| `ZOOM_ACCOUNT_ID` / `ZOOM_CLIENT_ID` / `ZOOM_CLIENT_SECRET` | Zoom account owner (Pro) | GitHub **per-environment** secret (`production`; để trống ở `staging` trừ khi có app Zoom riêng — không đặt mức Repository vì staging sẽ dùng chung quota/license với prod) → Worker binding; optional variable `ZOOM_HOST_USER` (default `me`) | Zoom Marketplace → Server-to-Server OAuth app → regenerate secret → `gh secret set` → redeploy; blank = Zoom feature off (graceful). Setup, scopes and limits: README "Zoom (Server-to-Server OAuth)" |
 | D1 database IDs | Deploy operator | Cloudflare dashboard / alchemy state | n/a (identifiers); never paste into issues |
 | `SEPAY_BANKHUB_CLIENT_ID` / `SEPAY_BANKHUB_CLIENT_SECRET` | SePay Bank Hub merchant owner (operator requests from SePay) | operator env → Worker binding (#320) | request new pair from SePay, update `.env`, redeploy; feature degrades to 503 BANKHUB_DISABLED while blank |
 | `SEPAY_BANKHUB_IPN_API_KEY` | SePay (issued per merchant) | operator env → Worker binding | request reissue from SePay; IPN rejects with 401 while mismatched — reconcile button covers the gap |
@@ -671,7 +672,7 @@ Cột `enrollment.status` là forward-only; không xóa cột hay sửa file mig
 
 1. **Cấu hình Domain trên Resend**:
    - Tạo tài khoản hoặc đăng nhập vào [Resend Dashboard](https://resend.com/domains).
-   - Thêm domain (ví dụ: `teacheros.io.vn`) và cấu hình các bản ghi DNS (DKIM, SPF, MX) theo hướng dẫn trên Cloudflare DNS.
+   - Thêm domain (ví dụ: `msmy.io.vn`) và cấu hình các bản ghi DNS (DKIM, SPF, MX) theo hướng dẫn trên Cloudflare DNS.
    - Chờ trạng thái domain chuyển sang `Verified`.
 2. **Cấu hình Secret**:
    - Tạo API Key tại Resend Dashboard với quyền `Sending access`.
@@ -679,10 +680,11 @@ Cột `enrollment.status` là forward-only; không xóa cột hay sửa file mig
      ```bash
      gh secret set RESEND_API_KEY --env production
      gh variable set MAILER_IMPL --env production --body "resend"
-     gh variable set MAIL_FROM --env production --body '"Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>'
+     gh variable set MAIL_FROM --env production --body '"Cô Mỹ Dạy Tiếng Anh" <no-reply@msmy.io.vn>'
+     gh variable set MAIL_FROM --env staging --body '"Cô Mỹ Dạy Tiếng Anh" <no-reply@msmy.io.vn>'
      ```
    - `MAIL_FROM` phải đủ cặp `< >`; thiếu `>` thì Resend từ chối địa chỉ người gửi.
-   - Staging làm tương tự với `--env staging`; để trống thì worker staging chạy log-only.
+   - Staging làm tương tự với `--env staging` (đã đặt `MAIL_FROM` đồng bộ thương hiệu Cô Mỹ Dạy Tiếng Anh).
 3. **Deploy & Kiểm tra**:
    - Deploy server worker.
    - Đăng ký thử 1 tài khoản học viên thật trên student portal (`https://student.<domain>` — portal origin derive từ `APP_DOMAIN`, xem bảng topology trên).
@@ -1017,3 +1019,9 @@ gọi cùng endpoint phải 403 `ACCOUNT_NOT_ADMIN`.
 - **Binding bắt buộc:** R2 bucket `materials` (binding `MATERIALS`, xem bảng binding ở "Admin console go-live") được tạo cùng deploy; khi `dry_run` kiểm plan không replace/delete bucket này.
 - **Rollback:** không `DROP` tay các bảng/cột trên D1 khi lùi Worker (sổ cái `d1_migrations` đã ghi nhận, deploy sau sẽ không chạy lại). Ưu tiên forward-fix; Worker cũ không đọc `class_session`/`lesson_material` nên buổi thủ công và tài liệu theo buổi sẽ không hiển thị cho tới khi deploy lại bản mới.
 - **Audit `lesson_material` mồ côi do holiday shift trước fix #659/#662:** chạy tay workflow `.github/workflows/audit-663.yml` (`workflow_dispatch`, chọn `staging`/`prod`; read-only, chỉ in số tổng hợp). Cleanup (`--apply`) không nằm trong workflow — chạy cục bộ theo hướng dẫn ở đầu `packages/db/scripts/audit-663-orphan-materials.ts`, và trên prod chỉ khi owner đã duyệt số liệu audit.
+
+## Zoom thay Google Meet, nhóm bộ từ vựng (migrations 0075–0082) — issue #831/#832/#842
+
+- **Hình dạng migration:** `0075`–`0077`, `0079`, `0080`, `0082` chỉ thêm cột/bảng/index (`0080` tạo `vocab_group` và cột `vocab_deck.group_id` `ON DELETE set null`). `0078` tạo `class_session_meeting` theo cột Google Meet, rồi `0081` recreate bảng đó (`PRAGMA foreign_keys=OFF → __new_class_session_meeting → INSERT SELECT → DROP → RENAME`) để bỏ các cột Google; `0082` thêm cột Zoom. Prod chưa từng có `0078` nên cả chuỗi chạy trên bảng rỗng; trên staging, dữ liệu link/ghi hình Google Meet cũ bị bỏ — dọn tay theo README "Zoom (Server-to-Server OAuth)". Nguồn sự thật là các file trong `packages/db/src/migrations/`.
+- **Secret:** đặt `ZOOM_*` ở environment `production` trước khi deploy nếu muốn bật Zoom ngay (xem "Secret inventory"); thiếu secret thì Worker vẫn lên, tính năng Zoom tắt êm.
+- **Rollback:** không lùi riêng Worker về bản trước `0075`. Probe `/readyz` (`apps/server/src/routes/readiness.ts`) so khớp **chính xác** tổng số cột của schema trong bundle, nên Worker cũ chạy trên D1 đã có cột mới sẽ trả `503`. Không `DROP` tay bảng/cột trên D1 (sổ cái `d1_migrations` đã ghi nhận); ưu tiên forward-fix.

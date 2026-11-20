@@ -29,6 +29,21 @@ describe("formatIssue (dịch lý do sang tiếng Việt)", () => {
 			formatIssue({ path: "passage", message: "weird rule" }, "reading"),
 		).toBe("Passage — weird rule");
 	});
+
+	it("dịch lỗi thiếu tối thiểu 1 part và lỗi trùng part (đề xuất bản từng phần)", () => {
+		expect(
+			formatIssue(
+				{ path: "parts", message: "at least one part is required" },
+				"reading",
+			),
+		).toBe("Cần ít nhất 1 part có nội dung để xuất bản bộ đề.");
+		expect(
+			formatIssue(
+				{ path: "parts.p1", message: "duplicate part p1" },
+				"reading",
+			),
+		).toBe("Passage 1 — Part bị trùng lặp trong bộ đề.");
+	});
 });
 
 describe("PublishBar (render tĩnh)", () => {
@@ -47,6 +62,9 @@ describe("PublishBar (render tĩnh)", () => {
 		expect(html).toContain("Xuất bản");
 		expect(html).toContain("Hạ về nháp");
 		expect(html).toContain("disabled");
+		expect(html).toContain(
+			"Xuất bản yêu cầu tối thiểu 1 part và mỗi part đã tạo đạt điều kiện",
+		);
 	});
 
 	it("ready: nút Xuất bản khóa, badge Đã xuất bản", () => {
