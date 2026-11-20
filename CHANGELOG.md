@@ -13,21 +13,39 @@ Quy ước khi cập nhật:
 ## 2026-11-18
 
 ### Added
+- **Chuyển chấm bài và kết quả bài kiểm tra đầu vào (Writing/Speaking) sang thang điểm IELTS band 0.0–9.0 (`packages/db`, `packages/api`, `apps/server`, `apps/web`, `apps/student`, `apps/profile`):**
+  - Migration `0074_greedy_thanos.sql` bổ sung 2 cột nullable `writing_band` và `speaking_band` (`real`) trên `placement_test_submission`; giữ tương thích đọc/hiển thị dữ liệu cũ chấm theo `/15`, `/20` và dọn điểm legacy khi giáo viên chốt lại theo thang IELTS.
+  - AI chấm nháp (`openai-grader`, `grader`) chỉ trích xuất danh sách lỗi tiếng Việt (`{ errors }`), không chấm điểm thay giáo viên; giáo viên chấm từng tiêu chí IELTS và xem kết quả cập nhật trên portal học viên + link công khai (#800).
+- **Chuyển mục kiểm tra đầu vào của học viên sang chuông thông báo và bổ sung thông báo nộp bài (`apps/student`, `apps/server`):** gỡ mục kiểm tra đầu vào khỏi sidemenu cổng học viên, phát thông báo in-app khi học viên nộp bài kiểm tra đầu vào và tự làm mới hộp thư thông báo (#781).
+- **Gửi tóm tắt kết quả HTML kèm nút xem chi tiết trong email bài kiểm tra đầu vào (`apps/server`):** bổ sung bảng điểm từng kỹ năng, CEFR, khóa học gợi ý (đồng bộ nhãn `Grammar & Vocabulary`), và nút `Xem chi tiết kết quả` trỏ về Student Portal khi tài khoản học viên đã xác thực trong cùng org hoặc fallback về link kết quả công khai (#778, #786).
 - **Hỗ trợ tùy chọn 3 hoặc 4 lựa chọn cho dạng bài `mcq` (`packages/api`, `packages/ui`, `apps/admin`, `apps/web`, `apps/server`):**
   - Thêm nút chuyển `3 lựa chọn` / `4 lựa chọn` trực tiếp trên từng câu `mcq` trong `AnswerKeyGrid` (mặc định giữ 4 lựa chọn `A–D`; thu về 3 lựa chọn cắt `opts` còn 3 phần tử `A–C`, xóa đáp án `"D"` nếu đang chọn, bỏ qua `Enter` trên nút chuyển và tự kế thừa 3 lựa chọn khi bấm `Thêm câu`).
   - Đồng bộ `BulkKeyPaste` (hỗ trợ cả `item.type` từng câu), `questionSummary`, `QuizPaper` (instruction tự động `A, B or C` / trung tính khi trộn 3 và 4 lựa chọn), panel `Soát đáp án` (`test-answer-key.ts`, `answers-checking-panel.tsx`) và save-gate ở `apps/web` (`composer-transitions.ts`, `new.tsx`, `test-builder-shell.tsx`).
   - Đồng bộ helper `effectiveAnswerChoices` và `mcqOptionsIssue` trên `contracts.ts`, `library-contracts.ts` (cả bản nháp lẫn xuất bản) và `assignments/index.ts` (#792).
 
 ### Fixed
-- Khắc phục lỗi chuyển menu sidebar cổng học viên (`apps/student`) bị trễ: `/_auth.beforeLoad` gọi `authClient.getSession()` không cache ở mỗi lượt chuyển trang (và mỗi lượt hover do `defaultPreload: "intent"`), khiến mỗi cú bấm chờ một round-trip `/api/auth/get-session` truy vấn D1. Port cơ chế của cổng giáo viên (#575): `getCachedSession` cache 10 giây, gộp request đồng thời, timeout 5 giây, dọn cache khi đăng xuất/`reauth()`; router đặt `defaultPendingMs: 200` + `defaultPendingComponent: Loader` để hiện loader thay vì đứng hình.
+- Khắc phục lỗi chuyển menu sidebar cổng học viên (`apps/student`) bị trễ: `/_auth.beforeLoad` gọi `authClient.getSession()` không cache ở mỗi lượt chuyển trang (và mỗi lượt hover do `defaultPreload: "intent"`), khiến mỗi cú bấm chờ một round-trip `/api/auth/get-session` truy vấn D1. Port cơ chế của cổng giáo viên (#575): `getCachedSession` cache 10 giây, gộp request đồng thời, timeout 5 giây, dọn cache khi đăng xuất/`reauth()`; router đặt `defaultPendingMs: 200` + `defaultPendingComponent: Loader` để hiện loader thay vì đứng hình (#790).
+- Khắc phục lỗi tràn và lệch căn chỉnh sidemenu trong `AdminShell` (`apps/admin`) (#787).
+- Bỏ cụm chữ `"gợi ý"` dư thừa trong đồng hồ đếm bài kiểm tra đầu vào (#795).
+- Khôi phục cỡ chữ gốc `16px` mặc định trình duyệt (`1rem = 16px`) thay cho override `14px`, giúp input `text-base` trên mobile không bị iOS Safari tự zoom khi focus.
 
 ### Changed
+- **Chuyển font sans-serif chính của giao diện sang `Be Vietnam Pro` (`packages/ui`)** (#768).
 - **Thu gọn preview inline tài liệu PDF/ảnh sang thumbnail `96×72px` đặt ở đầu hàng (`packages/ui`, `apps/web`, `apps/student`):** bổ sung `BlobDocumentThumbnail` (PDF trang đầu không toolbar / ảnh `object-cover`), cập nhật `InlineDocumentPreview` thành nút thumbnail `w-24 h-[72px]` thay thế icon tĩnh ở `/materials`, modal «Tài liệu buổi …» (cả tài liệu gắn trực tiếp lẫn giáo trình) và `LessonMaterials`; bấm thumbnail vẫn mở modal xem đầy đủ dùng lại `blob:` URL không tải lại (#801).
 - **Chuyển xem trước tài liệu PDF/ảnh sang hiển thị inline trực tiếp ngay trong từng item tài liệu ở cả `apps/web` (`/materials` và modal «Tài liệu buổi …`) lẫn cổng học viên `apps/student` (`LessonMaterials`):** dùng chung `BlobDocumentView` và `InlineDocumentPreview` trong `@teacher-os/ui` (lazy-load qua `IntersectionObserver`, giới hạn tối đa 3 lượt tải song song, nút tải tại chỗ cho file >10 MiB, kẹp kích thước canvas chống OOM, xác thực `Content-Type` allowlist trước khi tạo `blob:` URL, giữ nút «Mở rộng» tái sử dụng `blob:` URL qua modal/portal, tự hồi phục `401`/`403 STUDENT_ORG_MISMATCH` và bổ sung `Content-Security-Policy` cho `apps/student/src/worker.ts`) (#797).
 - **Bắt buộc hoàn thành phần Speaking bài kiểm tra đầu vào (Entry Test) ở cả API (`packages/api`, `apps/server`), trang công khai `/kiem-tra-dau-vao/` (`apps/profile`) và cổng học viên `/placement-test` (`apps/student`):** loại bỏ `"skipped"` khỏi `studentPlacementSubmitSchema` và `placementPublicSubmitSchema`, trả HTTP 400 `PLACEMENT_SPEAKING_REQUIRED` nếu đề có câu Speaking mà gửi `speakingMode !== "upload"` (và `PLACEMENT_SUBMIT_INVALID` ở chiều ngược lại); gỡ bỏ nút `Bỏ qua phần Speaking` và lối đi `"Vẫn nộp bài ngay"` khi chưa có bản ghi âm Speaking hợp lệ trên UI, bổ sung nút `Xóa bản ghi & ghi lại` khi file vượt quá 50 MB, giữ nguyên nút `Kết thúc phần Speaking` sớm khi đã ghi ít nhất 1 câu và giữ tương thích hiển thị lịch sử `speakingStatus === "skipped"` (#788).
 - **Tinh gọn giao diện Speaking bài kiểm tra đầu vào (`apps/student`, `apps/profile`), bổ sung retry tối đa 2 lần/câu và tách nút Kết thúc phần Speaking:** bỏ đoạn mô tả dài ở header, danh sách 3 bước hướng dẫn (`<ol>`) và câu nhắc dài ở pha chuẩn bị; đưa bộ đếm giây chuẩn bị ra giữa màn hình; hiển thị nút tròn với icon Pause ở giữa màn hình khi đang ghi âm để dừng câu hiện tại, cho phép bấm `Ghi lại câu này` tối đa 2 lần/câu rồi tự ghép các segment cuối thành 1 file audio duy nhất (bỏ nút `Ghi lại từ đầu`); tách nút `Kết thúc phần Speaking` xuống footer riêng dưới đường kẻ phân cách kèm xác nhận ngắn trước khi kết thúc sớm (#780).
 
 ## 2026-11-17
+
+### Added
+- **Bài kiểm tra đầu vào trong Student Portal** (`apps/student`, `apps/web`, `apps/server`): sau onboarding, học viên được gợi ý làm bài kiểm tra đầu vào miễn phí (có highlight trên nav khi chưa làm, ẩn được gợi ý) và làm đủ 5 kỹ năng ngay trong portal; giáo viên chấm bài nộp ở trang chi tiết học viên. Migration `0073` dựng lại bảng `placement_test_submission` để `lead_id` được phép null và thêm `student_id`, kèm cột `student.placement_prompt_dismissed_at` (#748).
+
+### Changed
+- Đồng bộ toàn diện bài entry test theo bản HTML gốc: seed đề và audio, rubric 5/3/1 cho Writing/Speaking, điểm thập phân, thẻ kết quả tạm tính trên `apps/profile` và `apps/student`, hướng dẫn rubric và nút nhập lại đề + phát hành một lần bấm tại `/placement-test` trong `apps/web` (#754).
+
+### CI/Infra
+- `deploy-staging.yml` đặt `PROFILE_MAINTENANCE: "false"` để staging luôn bật trang profile đầy đủ, trong khi production vẫn giữ trang bảo trì theo `apps/profile/maintenance.json`; smoke check profile của cả hai workflow đọc chế độ bảo trì qua `isProfileMaintenanceEnabled()` (#756).
 
 ### Changed
 - **Wizard onboarding portal học viên (`apps/student`, `packages/api`, `apps/server`) chỉ còn hai hướng học: IELTS và Giao Tiếp**; bỏ TOEIC khỏi lựa chọn mới. Giao Tiếp dùng thang CEFR (trình độ hiện tại A1–C1+, mục tiêu A2–C2). `POST /api/student/onboarding` từ chối `toeic`; học viên đã lưu TOEIC trước đây vẫn hiển thị đúng trình độ/mục tiêu trên dashboard, không migration DB (#767).
