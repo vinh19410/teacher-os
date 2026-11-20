@@ -8,15 +8,23 @@ import {
 import {
 	buildPlacementZaloText,
 	computePlacementFinal,
+	emptySpeakingCriterionComments,
+	emptyWritingCriterionComments,
 	isIeltsSpeakingRubric,
 	isIeltsWritingRubric,
 	locatePlacementErrors,
+	PLACEMENT_CRITERION_COMMENT_MAX,
 	PLACEMENT_SPEAKING_RUBRIC,
 	PLACEMENT_TEACHER_FEEDBACK_MAX,
 	PLACEMENT_WRITING_RUBRIC,
-	type PlacementError,
+	type PlacementErrorCategory,
+	type PlacementErrorSkill,
+	type PlacementSpeakingCriterionComments,
+	type PlacementSpeakingError,
 	type PlacementSubmissionDetail,
 	type PlacementTeacherGrade,
+	type PlacementWritingCriterionComments,
+	type PlacementWritingError,
 } from "@teacher-os/api/placement-test-contracts";
 import { Check, Copy, FileDown, RefreshCw } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
@@ -24,7 +32,7 @@ import { toast } from "sonner";
 import { StatusTag } from "@/components/assignments/status-tag";
 import { BandSlider } from "@/components/grading/band-slider";
 import { Button } from "@/components/ui/button";
-import { inputCls, Select } from "@/components/ui/field";
+import { inputCls, Select, Textarea } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import { isHttpError } from "@/lib/kernel-load-state";
 import { reauth } from "@/lib/reauth";
@@ -50,6 +58,11 @@ import {
 } from "@/lib/repos/student-placement";
 import { PlacementAiStatusBanner } from "./placement-ai-status-banner";
 import { PlacementErrorHighlighter } from "./placement-error-highlighter";
+import {
+	normalizePlacementErrorsForSkill,
+	type PlacementErrorCategoryStyle,
+	placementErrorStyle,
+} from "./placement-error-utils";
 
 /** Chu kỳ poll khi AI đang phân tích lỗi (#730, #800). */
 export const PLACEMENT_AI_POLL_MS = 4000;
@@ -105,23 +118,75 @@ function formatStudentAnswer(
 	return String(studentAnswer);
 }
 
+function hydrateWritingCriterionComments(
+	comments: PlacementWritingCriterionComments | null | undefined,
+): PlacementWritingCriterionComments {
+	const empty = emptyWritingCriterionComments();
+	if (!comments) return empty;
+	return {
+		task: comments.task ?? "",
+		coherence: comments.coherence ?? "",
+		lexical: comments.lexical ?? "",
+		grammar: comments.grammar ?? "",
+	};
+}
+
+function hydrateSpeakingCriterionComments(
+	comments: PlacementSpeakingCriterionComments | null | undefined,
+): PlacementSpeakingCriterionComments {
+	const empty = emptySpeakingCriterionComments();
+	if (!comments) return empty;
+	return {
+		fluency: comments.fluency ?? "",
+		lexical: comments.lexical ?? "",
+		grammar: comments.grammar ?? "",
+		pronunciation: comments.pronunciation ?? "",
+	};
+}
+
+function trimWritingCriterionComments(
+	comments: PlacementWritingCriterionComments,
+): PlacementWritingCriterionComments {
+	return {
+		task: comments.task.trim(),
+		coherence: comments.coherence.trim(),
+		lexical: comments.lexical.trim(),
+		grammar: comments.grammar.trim(),
+	};
+}
+
+function trimSpeakingCriterionComments(
+	comments: PlacementSpeakingCriterionComments,
+): PlacementSpeakingCriterionComments {
+	return {
+		fluency: comments.fluency.trim(),
+		lexical: comments.lexical.trim(),
+		grammar: comments.grammar.trim(),
+		pronunciation: comments.pronunciation.trim(),
+	};
+}
+
 type GradingState = {
 	writingRubric: NullablePlacementWritingRubric;
 	writingScore: number | null;
+	writingCriterionComments: PlacementWritingCriterionComments;
 	speakingRubric: NullablePlacementSpeakingRubric;
 	speakingScore: number | null;
+	speakingCriterionComments: PlacementSpeakingCriterionComments;
 	includeSpeaking: boolean;
-	writingErrors: PlacementError[];
-	speakingErrors: PlacementError[];
+	writingErrors: PlacementWritingError[];
+	speakingErrors: PlacementSpeakingError[];
 };
 
 /**
- * Trạng thái chấm khởi tạo (#730, #800):
+ * Trạng thái chấm khởi tạo:
  * - Lỗi: đã chốt (`writingErrors !== null`) → lấy lỗi đã lưu; chưa chốt → lấy
- *   lỗi từ nháp AI (nếu có). Lỗi luôn được định vị lại theo văn bản nguồn.
+ *   lỗi từ nháp AI (nếu có). Lỗi luôn được định vị lại và chuẩn hóa theo 4
+ *   tiêu chí IELTS của từng kỹ năng.
  * - Điểm IELTS: chỉ prefill khi bài đã chấm theo rubric IELTS; bài chưa chấm
  *   hoặc bài cũ (thang legacy /15, /20) luôn khởi tạo rỗng (`null`) để giáo
  *   viên tự chấm theo thang IELTS 0–9.
+ * - Nhận xét từng tiêu chí: lấy từ submission nếu đã lưu, ngược lại khởi tạo rỗng.
  */
 export function initialPlacementGrading(
 	submission: PlacementSubmissionDetail,
@@ -145,6 +210,9 @@ export function initialPlacementGrading(
 				}
 			: emptyWritingRubric(),
 		writingScore: ieltsWriting ? (submission.writingScore ?? null) : null,
+		writingCriterionComments: hydrateWritingCriterionComments(
+			submission.writingCriterionComments,
+		),
 		speakingRubric: ieltsSpeaking
 			? {
 					fluency: ieltsSpeaking.fluency,
@@ -154,17 +222,26 @@ export function initialPlacementGrading(
 				}
 			: emptySpeakingRubric(),
 		speakingScore: ieltsSpeaking ? (submission.speakingScore ?? null) : null,
+		speakingCriterionComments: hydrateSpeakingCriterionComments(
+			submission.speakingCriterionComments,
+		),
 		includeSpeaking:
 			submission.gradedAt !== null
 				? submission.speakingRubric !== null
 				: submission.speakingStatus === "uploaded",
-		writingErrors: locatePlacementErrors(
-			submission.writingText,
-			aiWriting?.errors ?? submission.writingErrors ?? [],
+		writingErrors: normalizePlacementErrorsForSkill(
+			locatePlacementErrors(
+				submission.writingText,
+				aiWriting?.errors ?? submission.writingErrors ?? [],
+			),
+			"writing",
 		),
-		speakingErrors: locatePlacementErrors(
-			submission.speakingTranscript,
-			aiSpeaking?.errors ?? submission.speakingErrors ?? [],
+		speakingErrors: normalizePlacementErrorsForSkill(
+			locatePlacementErrors(
+				submission.speakingTranscript,
+				aiSpeaking?.errors ?? submission.speakingErrors ?? [],
+			),
+			"speaking",
 		),
 	};
 }
@@ -200,6 +277,10 @@ function IeltsBandField({
 	onChange,
 	sliderId,
 	inputTestId,
+	fieldTestId,
+	criterionKey,
+	criterionStyle,
+	commentProps,
 	highlight = false,
 }: {
 	label: string;
@@ -208,6 +289,16 @@ function IeltsBandField({
 	onChange: (next: number | null) => void;
 	sliderId: string;
 	inputTestId: string;
+	fieldTestId?: string;
+	criterionKey?: string;
+	criterionStyle?: PlacementErrorCategoryStyle;
+	commentProps?: {
+		id: string;
+		testId: string;
+		value: string;
+		onChange: (next: string) => void;
+		maxLength: number;
+	};
 	highlight?: boolean;
 }) {
 	const [draft, setDraft] = useState(() =>
@@ -223,18 +314,30 @@ function IeltsBandField({
 
 	return (
 		<div
-			className={
+			data-criterion-key={criterionKey}
+			data-testid={fieldTestId}
+			className={cn(
 				highlight
 					? "space-y-1.5 rounded-md border border-primary/30 bg-muted/50 px-3 py-2.5"
-					: "space-y-1 rounded-md border border-border bg-muted/30 px-3 py-2"
-			}
+					: "space-y-1.5 rounded-md border border-border bg-muted/30 px-3 py-2",
+				criterionStyle?.borderLeftCls,
+			)}
 		>
 			<div className="flex flex-wrap items-baseline justify-between gap-2">
 				<label
 					htmlFor={sliderId}
-					className="font-medium text-foreground text-xs"
+					className="inline-flex items-center gap-1.5 font-medium text-foreground text-xs"
 				>
-					{label}
+					{criterionStyle && (
+						<span
+							aria-hidden="true"
+							className={cn(
+								"inline-block size-2.5 shrink-0 rounded-full",
+								criterionStyle.dotCls,
+							)}
+						/>
+					)}
+					<span>{label}</span>
 				</label>
 				{desc && <span className="text-muted-foreground text-xs">{desc}</span>}
 			</div>
@@ -244,6 +347,7 @@ function IeltsBandField({
 						id={sliderId}
 						value={value}
 						hideValue
+						className={criterionStyle?.sliderAccentCls}
 						onChange={(band) => onChange(band)}
 					/>
 				</div>
@@ -297,45 +401,75 @@ function IeltsBandField({
 					)}
 				/>
 			</div>
+			{commentProps && (
+				<Textarea
+					id={commentProps.id}
+					data-testid={commentProps.testId}
+					rows={2}
+					maxLength={commentProps.maxLength}
+					aria-label={`Nhận xét cho ${label}`}
+					placeholder={`Nhận xét cho ${label} (tuỳ chọn)…`}
+					value={commentProps.value}
+					onChange={(e) => commentProps.onChange(e.target.value)}
+					className="h-auto min-h-14 bg-background py-1.5 dark:bg-input/30"
+				/>
+			)}
 		</div>
 	);
 }
 
-/** Khối nhập 4 tiêu chí IELTS + điểm tổng IELTS cho Writing hoặc Speaking. */
+/** Khối nhập 4 tiêu chí IELTS (kèm nhận xét tùy chọn) + điểm tổng IELTS cho Writing hoặc Speaking. */
 function IeltsSkillGradingSection({
 	skill,
 	criteria,
 	rubric,
+	criterionComments,
 	overall,
 	overallLabel,
 	onCriterionChange,
+	onCriterionCommentChange,
 	onOverallChange,
 }: {
-	skill: "writing" | "speaking";
+	skill: PlacementErrorSkill;
 	criteria: readonly {
-		readonly key: string;
+		readonly key: PlacementErrorCategory;
 		readonly label: string;
 		readonly desc: string;
 	}[];
 	rubric: Record<string, number | null>;
+	criterionComments: Record<string, string>;
 	overall: number | null;
 	overallLabel: string;
 	onCriterionChange: (key: string, next: number | null) => void;
+	onCriterionCommentChange: (key: string, next: string) => void;
 	onOverallChange: (next: number | null) => void;
 }) {
 	return (
 		<div className="space-y-1.5">
-			{criteria.map((item) => (
-				<IeltsBandField
-					key={item.key}
-					label={item.label}
-					desc={item.desc}
-					value={rubric[item.key] ?? null}
-					sliderId={`${skill}-${item.key}-slider`}
-					inputTestId={`${skill}-${item.key}-input`}
-					onChange={(next) => onCriterionChange(item.key, next)}
-				/>
-			))}
+			{criteria.map((item) => {
+				const style = placementErrorStyle(item.key, skill);
+				return (
+					<IeltsBandField
+						key={item.key}
+						label={item.label}
+						desc={item.desc}
+						value={rubric[item.key] ?? null}
+						sliderId={`${skill}-${item.key}-slider`}
+						inputTestId={`${skill}-${item.key}-input`}
+						fieldTestId={`${skill}-${item.key}-field`}
+						criterionKey={item.key}
+						criterionStyle={style}
+						commentProps={{
+							id: `${skill}-${item.key}-comment`,
+							testId: `${skill}-${item.key}-comment`,
+							value: criterionComments[item.key] ?? "",
+							onChange: (next) => onCriterionCommentChange(item.key, next),
+							maxLength: PLACEMENT_CRITERION_COMMENT_MAX,
+						}}
+						onChange={(next) => onCriterionChange(item.key, next)}
+					/>
+				);
+			})}
 			<IeltsBandField
 				label={overallLabel}
 				desc="Tự động tính khi đủ 4 tiêu chí · có thể chỉnh tay"
@@ -459,6 +593,10 @@ function PlacementSubmissionBody({
 	const [writingScore, setWritingScore] = useState<number | null>(
 		initial.writingScore,
 	);
+	const [writingCriterionComments, setWritingCriterionComments] =
+		useState<PlacementWritingCriterionComments>(
+			initial.writingCriterionComments,
+		);
 	const [includeSpeaking, setIncludeSpeaking] = useState<boolean>(
 		initial.includeSpeaking,
 	);
@@ -467,12 +605,16 @@ function PlacementSubmissionBody({
 	const [speakingScore, setSpeakingScore] = useState<number | null>(
 		initial.speakingScore,
 	);
-	const [writingErrors, setWritingErrors] = useState<PlacementError[]>(
+	const [speakingCriterionComments, setSpeakingCriterionComments] =
+		useState<PlacementSpeakingCriterionComments>(
+			initial.speakingCriterionComments,
+		);
+	const [writingErrors, setWritingErrors] = useState<PlacementWritingError[]>(
 		initial.writingErrors,
 	);
-	const [speakingErrors, setSpeakingErrors] = useState<PlacementError[]>(
-		initial.speakingErrors,
-	);
+	const [speakingErrors, setSpeakingErrors] = useState<
+		PlacementSpeakingError[]
+	>(initial.speakingErrors);
 	const [teacherFeedback, setTeacherFeedback] = useState(
 		() => submission.teacherFeedback,
 	);
@@ -527,9 +669,11 @@ function PlacementSubmissionBody({
 		const next = initialPlacementGrading(submission);
 		setWritingRubric(next.writingRubric);
 		setWritingScore(next.writingScore);
+		setWritingCriterionComments(next.writingCriterionComments);
 		setIncludeSpeaking(next.includeSpeaking);
 		setSpeakingRubric(next.speakingRubric);
 		setSpeakingScore(next.speakingScore);
+		setSpeakingCriterionComments(next.speakingCriterionComments);
 		setWritingErrors(next.writingErrors);
 		setSpeakingErrors(next.speakingErrors);
 		setTeacherFeedback(submission.teacherFeedback);
@@ -540,17 +684,23 @@ function PlacementSubmissionBody({
 	const applyAiDraft = () => {
 		if (submission.aiWriting) {
 			setWritingErrors(
-				locatePlacementErrors(
-					submission.writingText,
-					submission.aiWriting.errors,
+				normalizePlacementErrorsForSkill(
+					locatePlacementErrors(
+						submission.writingText,
+						submission.aiWriting.errors,
+					),
+					"writing",
 				),
 			);
 		}
 		if (submission.aiSpeaking) {
 			setSpeakingErrors(
-				locatePlacementErrors(
-					submission.speakingTranscript,
-					submission.aiSpeaking.errors,
+				normalizePlacementErrorsForSkill(
+					locatePlacementErrors(
+						submission.speakingTranscript,
+						submission.aiSpeaking.errors,
+					),
+					"speaking",
 				),
 			);
 		}
@@ -658,6 +808,22 @@ function PlacementSubmissionBody({
 		}
 	};
 
+	const handleWritingCriterionCommentChange = (key: string, next: string) => {
+		touch();
+		setWritingCriterionComments((prev) => ({
+			...prev,
+			[key]: next,
+		}));
+	};
+
+	const handleSpeakingCriterionCommentChange = (key: string, next: string) => {
+		touch();
+		setSpeakingCriterionComments((prev) => ({
+			...prev,
+			[key]: next,
+		}));
+	};
+
 	const hasCompleteWriting =
 		writingRubric.task !== null &&
 		writingRubric.coherence !== null &&
@@ -728,6 +894,9 @@ function PlacementSubmissionBody({
 					grammar: writingRubric.grammar as number,
 				},
 				writingScore: writingScore as number,
+				writingCriterionComments: trimWritingCriterionComments(
+					writingCriterionComments,
+				),
 				speakingRubric: includeSpeaking
 					? {
 							fluency: speakingRubric.fluency as number,
@@ -737,10 +906,18 @@ function PlacementSubmissionBody({
 						}
 					: null,
 				speakingScore: includeSpeaking ? (speakingScore as number) : null,
+				speakingCriterionComments: includeSpeaking
+					? trimSpeakingCriterionComments(speakingCriterionComments)
+					: null,
 				courseId: selectedCourseId.trim(),
 				teacherFeedback: teacherFeedback.trim(),
-				writingErrors,
-				speakingErrors: includeSpeaking ? speakingErrors : [],
+				writingErrors: normalizePlacementErrorsForSkill(
+					writingErrors,
+					"writing",
+				),
+				speakingErrors: includeSpeaking
+					? normalizePlacementErrorsForSkill(speakingErrors, "speaking")
+					: [],
 			};
 			return subject.kind === "student"
 				? gradeStudentPlacementSubmission(subject.id, payload)
@@ -1020,16 +1197,18 @@ function PlacementSubmissionBody({
 					errors={writingErrors}
 					onChange={(next) => {
 						touch();
-						setWritingErrors(next);
+						setWritingErrors(normalizePlacementErrorsForSkill(next, "writing"));
 					}}
 				/>
 				<IeltsSkillGradingSection
 					skill="writing"
 					criteria={PLACEMENT_WRITING_RUBRIC}
 					rubric={writingRubric}
+					criterionComments={writingCriterionComments}
 					overall={writingScore}
 					overallLabel="Điểm tổng Writing (IELTS Band)"
 					onCriterionChange={handleWritingCriterionChange}
+					onCriterionCommentChange={handleWritingCriterionCommentChange}
 					onOverallChange={(next) => {
 						touch();
 						setWritingScore(next);
@@ -1137,7 +1316,9 @@ function PlacementSubmissionBody({
 							errors={speakingErrors}
 							onChange={(next) => {
 								touch();
-								setSpeakingErrors(next);
+								setSpeakingErrors(
+									normalizePlacementErrorsForSkill(next, "speaking"),
+								);
 							}}
 						/>
 					</div>
@@ -1148,9 +1329,11 @@ function PlacementSubmissionBody({
 						skill="speaking"
 						criteria={PLACEMENT_SPEAKING_RUBRIC}
 						rubric={speakingRubric}
+						criterionComments={speakingCriterionComments}
 						overall={speakingScore}
 						overallLabel="Điểm tổng Speaking (IELTS Band)"
 						onCriterionChange={handleSpeakingCriterionChange}
+						onCriterionCommentChange={handleSpeakingCriterionCommentChange}
 						onOverallChange={(next) => {
 							touch();
 							setSpeakingScore(next);

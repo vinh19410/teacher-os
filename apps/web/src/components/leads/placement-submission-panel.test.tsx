@@ -135,8 +135,10 @@ function makeSub(
 		speakingDurationSec: 30,
 		writingRubric: null,
 		writingScore: null,
+		writingCriterionComments: null,
 		speakingRubric: null,
 		speakingScore: null,
+		speakingCriterionComments: null,
 		teacherFeedback: "",
 		finalBandLevel: null,
 		finalCourseId: null,
@@ -305,6 +307,12 @@ describe("initialPlacementGrading", () => {
 			grammar: null,
 		});
 		expect(init.writingScore).toBeNull();
+		expect(init.writingCriterionComments).toEqual({
+			task: "",
+			coherence: "",
+			lexical: "",
+			grammar: "",
+		});
 		expect(init.speakingRubric).toEqual({
 			fluency: null,
 			lexical: null,
@@ -312,6 +320,12 @@ describe("initialPlacementGrading", () => {
 			pronunciation: null,
 		});
 		expect(init.speakingScore).toBeNull();
+		expect(init.speakingCriterionComments).toEqual({
+			fluency: "",
+			lexical: "",
+			grammar: "",
+			pronunciation: "",
+		});
 		expect(init.writingErrors[0]).toMatchObject({
 			id: "w1",
 			start: WRITING.indexOf("goes"),
@@ -325,6 +339,12 @@ describe("initialPlacementGrading", () => {
 			gradedAt: "2026-11-15T10:00:00.000Z",
 			writingRubric: { task: 6, coherence: 6.5, lexical: 6, grammar: 5.5 },
 			writingScore: 6.5,
+			writingCriterionComments: {
+				task: "Trả lời đủ ý.",
+				coherence: "",
+				lexical: "Từ vựng khá.",
+				grammar: "",
+			},
 			speakingRubric: {
 				fluency: 7,
 				lexical: 6.5,
@@ -332,6 +352,12 @@ describe("initialPlacementGrading", () => {
 				pronunciation: 7,
 			},
 			speakingScore: 6.5,
+			speakingCriterionComments: {
+				fluency: "Nói tự nhiên.",
+				lexical: "",
+				grammar: "",
+				pronunciation: "Rõ âm cuối.",
+			},
 			writingErrors: [],
 			speakingErrors: [err("s9", "football")],
 		});
@@ -342,6 +368,12 @@ describe("initialPlacementGrading", () => {
 			grammar: 5.5,
 		});
 		expect(init.writingScore).toBe(6.5);
+		expect(init.writingCriterionComments).toEqual({
+			task: "Trả lời đủ ý.",
+			coherence: "",
+			lexical: "Từ vựng khá.",
+			grammar: "",
+		});
 		expect(init.speakingRubric).toEqual({
 			fluency: 7,
 			lexical: 6.5,
@@ -349,6 +381,12 @@ describe("initialPlacementGrading", () => {
 			pronunciation: 7,
 		});
 		expect(init.speakingScore).toBe(6.5);
+		expect(init.speakingCriterionComments).toEqual({
+			fluency: "Nói tự nhiên.",
+			lexical: "",
+			grammar: "",
+			pronunciation: "Rõ âm cuối.",
+		});
 		expect(init.writingErrors).toEqual([]);
 		expect(init.speakingErrors.map((e) => e.id)).toEqual(["s9"]);
 		expect(init.includeSpeaking).toBe(true);
@@ -372,6 +410,12 @@ describe("initialPlacementGrading", () => {
 			grammar: null,
 		});
 		expect(init.writingScore).toBeNull();
+		expect(init.writingCriterionComments).toEqual({
+			task: "",
+			coherence: "",
+			lexical: "",
+			grammar: "",
+		});
 		expect(init.speakingRubric).toEqual({
 			fluency: null,
 			lexical: null,
@@ -379,6 +423,12 @@ describe("initialPlacementGrading", () => {
 			pronunciation: null,
 		});
 		expect(init.speakingScore).toBeNull();
+		expect(init.speakingCriterionComments).toEqual({
+			fluency: "",
+			lexical: "",
+			grammar: "",
+			pronunciation: "",
+		});
 		expect(init.includeSpeaking).toBe(true);
 	});
 });
@@ -644,7 +694,7 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 			"friend",
 		]);
 		expect(speakingMarks[1]?.getAttribute("aria-label")).toContain(
-			"Lỗi 2: Phát âm",
+			"Lỗi 2: Pronunciation",
 		);
 
 		const saveBtn = screen.getByTestId(
@@ -727,8 +777,10 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 		const sent = patchBody as unknown as {
 			writingRubric: unknown;
 			writingScore: number;
+			writingCriterionComments: unknown;
 			speakingRubric: unknown;
 			speakingScore: number;
+			speakingCriterionComments: unknown;
 			courseId: string;
 			teacherFeedback: string;
 			writingErrors: PlacementError[];
@@ -741,6 +793,12 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 			grammar: 6.5,
 		});
 		expect(sent.writingScore).toBe(7);
+		expect(sent.writingCriterionComments).toEqual({
+			task: "",
+			coherence: "",
+			lexical: "",
+			grammar: "",
+		});
 		expect(sent.speakingRubric).toEqual({
 			fluency: 6,
 			lexical: 6.5,
@@ -748,6 +806,12 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 			pronunciation: 6.5,
 		});
 		expect(sent.speakingScore).toBe(6.5);
+		expect(sent.speakingCriterionComments).toEqual({
+			fluency: "",
+			lexical: "",
+			grammar: "",
+			pronunciation: "",
+		});
 		expect(sent.courseId).toBe("course-ielts-1");
 		expect(sent.teacherFeedback).toBe("Nói khá trôi chảy.");
 		expect(sent.writingErrors).toEqual([
@@ -1269,5 +1333,236 @@ describe("PlacementSubmissionPanel — PDF result export", () => {
 		fireEvent.click(screen.getByTestId("export-result-pdf-btn"));
 		await waitFor(() => expect(exportPdfMock).toHaveBeenCalledWith(studentSub));
 		expect(toastMock.success).toHaveBeenCalledWith("Đã tải phiếu kết quả PDF.");
+	});
+});
+
+describe("PlacementSubmissionPanel — synced criterion colors & per-criterion comments", () => {
+	it("applies synced --class-* accent/border styles to the 4 criterion sliders while keeping overall sliders neutral", async () => {
+		stubFetch((url, method) => (isGet(url, method) ? DRAFTED : undefined));
+		renderPanel();
+		await screen.findByTestId("placement-submission-panel");
+
+		const writingExpected = [
+			["task", "border-l-class-3", "accent-class-3"],
+			["coherence", "border-l-class-4", "accent-class-4"],
+			["lexical", "border-l-class-1", "accent-class-1"],
+			["grammar", "border-l-class-5", "accent-class-5"],
+		] as const;
+		for (const [key, borderCls, accentCls] of writingExpected) {
+			const field = screen.getByTestId(`writing-${key}-field`);
+			expect(field.className).toContain("border-l-4");
+			expect(field.className).toContain(borderCls);
+			expect(field.dataset.criterionKey).toBe(key);
+			const slider = document.getElementById(
+				`writing-${key}-slider`,
+			) as HTMLInputElement;
+			expect(slider.className).toContain(accentCls);
+		}
+		const writingOverallSlider = document.getElementById(
+			"writing-overall-slider",
+		) as HTMLInputElement;
+		expect(writingOverallSlider.className).not.toMatch(/accent-class-/);
+
+		const speakingExpected = [
+			["fluency", "border-l-class-4", "accent-class-4"],
+			["lexical", "border-l-class-1", "accent-class-1"],
+			["grammar", "border-l-class-5", "accent-class-5"],
+			["pronunciation", "border-l-class-2", "accent-class-2"],
+		] as const;
+		for (const [key, borderCls, accentCls] of speakingExpected) {
+			const field = screen.getByTestId(`speaking-${key}-field`);
+			expect(field.className).toContain("border-l-4");
+			expect(field.className).toContain(borderCls);
+			expect(field.dataset.criterionKey).toBe(key);
+			const slider = document.getElementById(
+				`speaking-${key}-slider`,
+			) as HTMLInputElement;
+			expect(slider.className).toContain(accentCls);
+		}
+		const speakingOverallSlider = document.getElementById(
+			"speaking-overall-slider",
+		) as HTMLInputElement;
+		expect(speakingOverallSlider.className).not.toMatch(/accent-class-/);
+	});
+
+	it("hydrates per-criterion comments, marks dirty on edit, submits trimmed values, and keeps Zalo & teacherFeedback unchanged", async () => {
+		let patchBody: Record<string, unknown> | null = null;
+		const savedSub = makeSub({
+			status: "graded",
+			gradedAt: "2026-11-15T10:00:00.000Z",
+			writingRubric: { task: 6, coherence: 6.5, lexical: 6, grammar: 6 },
+			writingScore: 6,
+			writingCriterionComments: {
+				task: "Đủ ý chính.",
+				coherence: "",
+				lexical: "Dùng từ ổn.",
+				grammar: "",
+			},
+			speakingRubric: {
+				fluency: 6.5,
+				lexical: 6,
+				grammar: 6,
+				pronunciation: 6.5,
+			},
+			speakingScore: 6.5,
+			speakingCriterionComments: {
+				fluency: "Nói đều nhịp.",
+				lexical: "",
+				grammar: "",
+				pronunciation: "Chú ý âm cuối.",
+			},
+			teacherFeedback: "Tổng quan tốt.",
+			finalCourseId: "course-ielts-1",
+			finalDisplayCourse: "IELTS - Foundation",
+			writingErrors: [],
+			speakingErrors: [],
+		});
+		stubFetch((url, method, body) => {
+			if (isGet(url, method)) return savedSub;
+			if (url.endsWith("/placement-submission") && method === "PATCH") {
+				patchBody = body as Record<string, unknown>;
+				return {
+					...savedSub,
+					gradedAt: "2026-11-15T12:00:00.000Z",
+				};
+			}
+			return undefined;
+		});
+		renderPanel();
+
+		const taskComment = (await screen.findByTestId(
+			"writing-task-comment",
+		)) as HTMLTextAreaElement;
+		expect(taskComment.value).toBe("Đủ ý chính.");
+		expect(taskComment.rows).toBe(2);
+		expect(taskComment.maxLength).toBe(1000);
+		expect(
+			(screen.getByTestId("writing-lexical-comment") as HTMLTextAreaElement)
+				.value,
+		).toBe("Dùng từ ổn.");
+		expect(
+			(screen.getByTestId("speaking-fluency-comment") as HTMLTextAreaElement)
+				.value,
+		).toBe("Nói đều nhịp.");
+		expect(
+			(
+				screen.getByTestId(
+					"speaking-pronunciation-comment",
+				) as HTMLTextAreaElement
+			).value,
+		).toBe("Chú ý âm cuối.");
+		expect(screen.queryByTestId("placement-pdf-dirty-warning")).toBeNull();
+
+		// Editing a criterion comment marks dirty -> triggers PDF dirty warning
+		fireEvent.change(taskComment, {
+			target: { value: "  Đủ ý chính, nên thêm ví dụ cụ thể.  " },
+		});
+		fireEvent.change(screen.getByTestId("speaking-grammar-comment"), {
+			target: { value: "  Cần luyện thì quá khứ.  " },
+		});
+		expect(screen.getByTestId("placement-pdf-dirty-warning")).toBeTruthy();
+
+		// Zalo text stays unchanged (does not leak per-criterion comments; keeps teacherFeedback)
+		const localClipboardWrite = vi
+			.fn<(text: string) => Promise<void>>()
+			.mockResolvedValue(undefined);
+		Object.defineProperty(navigator, "clipboard", {
+			configurable: true,
+			value: { writeText: localClipboardWrite },
+		});
+		fireEvent.click(screen.getByTestId("copy-zalo-result-btn"));
+		await waitFor(() => expect(localClipboardWrite).toHaveBeenCalled());
+		const copiedZalo = String(localClipboardWrite.mock.lastCall?.[0] ?? "");
+		expect(copiedZalo).toContain("Tổng quan tốt.");
+		expect(copiedZalo).not.toContain("nên thêm ví dụ cụ thể");
+
+		// Save sends trimmed per-criterion comments
+		const courseSelect = (await screen.findByTestId(
+			"placement-course-select",
+		)) as HTMLSelectElement;
+		await waitFor(() => expect(courseSelect.disabled).toBe(false));
+		fireEvent.click(screen.getByTestId("save-placement-grade-btn"));
+
+		await waitFor(() => expect(patchBody).not.toBeNull());
+		const sent = patchBody as unknown as Record<string, unknown>;
+		expect(sent.writingCriterionComments).toEqual({
+			task: "Đủ ý chính, nên thêm ví dụ cụ thể.",
+			coherence: "",
+			lexical: "Dùng từ ổn.",
+			grammar: "",
+		});
+		expect(sent.speakingCriterionComments).toEqual({
+			fluency: "Nói đều nhịp.",
+			lexical: "",
+			grammar: "Cần luyện thì quá khứ.",
+			pronunciation: "Chú ý âm cuối.",
+		});
+		expect(sent.teacherFeedback).toBe("Tổng quan tốt.");
+	});
+
+	it("omits speaking criterion comments when includeSpeaking is unchecked and preserves comments on applyAiDraft", async () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		let server = makeSub({ aiStatus: "processing" });
+		let patchBody: Record<string, unknown> | null = null;
+		stubFetch((url, method, body) => {
+			if (isGet(url, method)) return server;
+			if (url.endsWith("/placement-submission") && method === "PATCH") {
+				patchBody = body as Record<string, unknown>;
+				return {
+					...server,
+					status: "graded",
+					gradedAt: "2026-11-16T09:00:00.000Z",
+				};
+			}
+			return undefined;
+		});
+		renderPanel();
+		await screen.findByTestId("placement-ai-status");
+
+		const writingCoherenceComment = screen.getByTestId(
+			"writing-coherence-comment",
+		) as HTMLTextAreaElement;
+		fireEvent.change(writingCoherenceComment, {
+			target: { value: "  Liên kết đoạn ổn.  " },
+		});
+		fireEvent.change(screen.getByTestId("speaking-fluency-comment"), {
+			target: { value: "Ghi chú speaking nháp" },
+		});
+
+		// AI draft arrives while editing -> applyAiDraft keeps criterion comments intact
+		server = DRAFTED;
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(PLACEMENT_AI_POLL_MS + 50);
+		});
+		await waitFor(() =>
+			expect(screen.getByTestId("placement-ai-apply-draft-btn")).toBeTruthy(),
+		);
+		fireEvent.click(screen.getByTestId("placement-ai-apply-draft-btn"));
+		expect(writingCoherenceComment.value).toBe("  Liên kết đoạn ổn.  ");
+
+		// Uncheck Speaking -> hides Speaking comment textareas and submits speakingCriterionComments: null
+		fireEvent.click(screen.getByTestId("toggle-speaking-grading"));
+		expect(screen.queryByTestId("speaking-fluency-comment")).toBeNull();
+
+		setBandInput("writing-task-input", "6.5");
+		setBandInput("writing-coherence-input", "6.5");
+		setBandInput("writing-lexical-input", "6.5");
+		setBandInput("writing-grammar-input", "6.5");
+		const courseSelect = (await screen.findByTestId(
+			"placement-course-select",
+		)) as HTMLSelectElement;
+		await waitFor(() => expect(courseSelect.disabled).toBe(false));
+		fireEvent.change(courseSelect, { target: { value: "course-ielts-1" } });
+
+		fireEvent.click(screen.getByTestId("save-placement-grade-btn"));
+		await waitFor(() => expect(patchBody).not.toBeNull());
+		const sent = patchBody as unknown as Record<string, unknown>;
+		expect(sent.writingCriterionComments).toEqual({
+			task: "",
+			coherence: "Liên kết đoạn ổn.",
+			lexical: "",
+			grammar: "",
+		});
+		expect(sent.speakingCriterionComments).toBeNull();
 	});
 });

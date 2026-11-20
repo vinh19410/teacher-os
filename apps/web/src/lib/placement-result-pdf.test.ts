@@ -124,7 +124,7 @@ function makeIeltsSubmission(
 	const writingErrors: PlacementError[] = [
 		{
 			id: "w-err-2",
-			category: "spelling",
+			category: "lexical",
 			quote: "frend",
 			start: writingText.indexOf("frend"),
 			end: writingText.indexOf("frend") + "frend".length,
@@ -153,7 +153,7 @@ function makeIeltsSubmission(
 	const speakingErrors: PlacementError[] = [
 		{
 			id: "s-err-1",
-			category: "vocabulary",
+			category: "lexical",
 			quote: "very like",
 			start: speakingTranscript.indexOf("very like"),
 			end: speakingTranscript.indexOf("very like") + "very like".length,
@@ -219,6 +219,12 @@ function makeIeltsSubmission(
 			grammar: 6.5,
 		},
 		writingScore: 6.5,
+		writingCriterionComments: {
+			task: "Trả lời đủ ý trọng tâm → nên thêm ví dụ cụ thể.",
+			coherence: "",
+			lexical: "Từ vựng tự nhiên.",
+			grammar: "",
+		},
 		speakingRubric: {
 			fluency: 6.0,
 			lexical: 6.0,
@@ -226,6 +232,12 @@ function makeIeltsSubmission(
 			pronunciation: 6.5,
 		},
 		speakingScore: 6.0,
+		speakingCriterionComments: {
+			fluency: "Nói khá trôi chảy, ít ngập ngừng.",
+			lexical: "",
+			grammar: "",
+			pronunciation: "Âm cuối rõ ràng.",
+		},
 		teacherFeedback:
 			"Con viết mạch lạc, ý tưởng rõ ràng → cần chú ý chia động từ quá khứ! 🎓",
 		finalBandLevel: "B1+",
@@ -345,12 +357,23 @@ describe("buildPlacementResultPdfModel", () => {
 		expect(model.writing.criteria).toHaveLength(4);
 		expect(model.writing.criteria?.[0]?.label).toBe("Task Response");
 		expect(model.writing.criteria?.[0]?.valueText).toBe("6.5/9");
+		expect(model.writing.criteria?.[0]?.comment).toBe(
+			"Trả lời đủ ý trọng tâm -> nên thêm ví dụ cụ thể.",
+		);
+		expect(model.writing.criteria?.[1]?.comment).toBe("");
+		expect(model.writing.criteria?.[2]?.comment).toBe("Từ vựng tự nhiên.");
+		expect(model.writing.criteria?.[3]?.comment).toBe("");
 		expect(
-			model.writing.errors.map((e) => [e.number, e.quote, e.located]),
+			model.writing.errors.map((e) => [
+				e.number,
+				e.quote,
+				e.categoryLabel,
+				e.located,
+			]),
 		).toEqual([
-			[1, "go to school", true],
-			[2, "frend", true],
-			[3, "Missing closing greeting", false],
+			[1, "go to school", "Grammatical Range & Accuracy", true],
+			[2, "frend", "Lexical Resource", true],
+			[3, "Missing closing greeting", "Coherence & Cohesion", false],
 		]);
 		expect(model.writing.segments.map((s) => s.text).join("")).toBe(
 			submission.writingText,
@@ -362,8 +385,14 @@ describe("buildPlacementResultPdfModel", () => {
 		expect(model.speaking.isIelts).toBe(true);
 		expect(model.speaking.totalText).toBe("Band 6.0/9");
 		expect(model.speaking.criteria).toHaveLength(4);
+		expect(model.speaking.criteria?.[0]?.comment).toBe(
+			"Nói khá trôi chảy, ít ngập ngừng.",
+		);
+		expect(model.speaking.criteria?.[1]?.comment).toBe("");
+		expect(model.speaking.criteria?.[3]?.comment).toBe("Âm cuối rõ ràng.");
 		expect(model.speaking.errors).toHaveLength(1);
 		expect(model.speaking.errors[0]?.quote).toBe("very like");
+		expect(model.speaking.errors[0]?.categoryLabel).toBe("Lexical Resource");
 
 		// Feedback blocks include teacherFeedback (sanitized), resolved bandAdvice, finalNote
 		expect(model.feedbackBlocks.map((b) => b.key)).toEqual([
@@ -485,7 +514,7 @@ describe("buildPlacementResultPdfModel", () => {
 				},
 				{
 					id: "e2-overlap",
-					category: "vocabulary",
+					category: "lexical",
 					quote: "home early",
 					start: goStart + 3,
 					end: goStart + "go home early".length,
@@ -494,7 +523,7 @@ describe("buildPlacementResultPdfModel", () => {
 				},
 				{
 					id: "e3-oob",
-					category: "spelling",
+					category: "task",
 					quote: "out of bounds",
 					start: 999,
 					end: 1005,
@@ -539,6 +568,93 @@ describe("buildPlacementResultPdfModel", () => {
 		expect(docJson).not.toContain('"3. Speaking"');
 		expect(docJson).toContain('"3. Nhận xét & Lộ trình"');
 	});
+
+	it("emits skill-specific 4-item English legends, synced rubric colors, and omits empty criterion comments", () => {
+		const submission = makeIeltsSubmission();
+		const model = buildPlacementResultPdfModel(submission);
+		const docDef = buildPlacementResultDocDefinition(model);
+		const content = Array.isArray(docDef.content) ? docDef.content : [];
+
+		// Find both legend blocks (first = Writing, second = Speaking)
+		const legendBlocks = content.filter((node) => {
+			if (!node || typeof node !== "object" || !("text" in node)) return false;
+			return JSON.stringify(node.text).includes("Chú giải loại lỗi:");
+		});
+		expect(legendBlocks).toHaveLength(2);
+		const writingLegendJson = JSON.stringify(legendBlocks[0]);
+		const speakingLegendJson = JSON.stringify(legendBlocks[1]);
+
+		// Writing legend has 4 Writing IELTS labels and no Speaking/legacy labels
+		expect(writingLegendJson).toContain("Task Response");
+		expect(writingLegendJson).toContain("Coherence & Cohesion");
+		expect(writingLegendJson).toContain("Lexical Resource");
+		expect(writingLegendJson).toContain("Grammatical Range & Accuracy");
+		expect(writingLegendJson).not.toContain("Pronunciation");
+		expect(writingLegendJson).not.toContain("Fluency & Coherence");
+		expect(writingLegendJson).not.toContain("Chính tả");
+		expect(writingLegendJson).not.toContain("Ngữ pháp");
+
+		// Speaking legend has 4 Speaking IELTS labels and no Writing/legacy labels
+		expect(speakingLegendJson).toContain("Fluency & Coherence");
+		expect(speakingLegendJson).toContain("Lexical Resource");
+		expect(speakingLegendJson).toContain("Grammatical Range & Accuracy");
+		expect(speakingLegendJson).toContain("Pronunciation");
+		expect(speakingLegendJson).not.toContain("Task Response");
+		expect(speakingLegendJson).not.toContain("Coherence & Cohesion");
+
+		// Rubric tables carry synced hex palette accents
+		const fullJson = JSON.stringify(docDef);
+		expect(fullJson).toContain("#b45309"); // task
+		expect(fullJson).toContain("#7e22ce"); // coherence & fluency
+		expect(fullJson).toContain("#1d4ed8"); // lexical
+		expect(fullJson).toContain("#be123c"); // grammar
+		expect(fullJson).toContain("#0f766e"); // pronunciation
+
+		// Empty comments omit "Nhận xét:" completely from rubric tables
+		const emptyCommentsDoc = buildPlacementResultDocDefinition(
+			buildPlacementResultPdfModel(
+				makeIeltsSubmission({
+					writingCriterionComments: null,
+					speakingCriterionComments: null,
+				}),
+			),
+		);
+		expect(JSON.stringify(emptyCommentsDoc)).not.toContain('"Nhận xét: "');
+	});
+
+	it("normalizes legacy error categories safely when building PDF model", () => {
+		const submission = makeIeltsSubmission({
+			writingCriterionComments: null,
+			speakingCriterionComments: null,
+			writingErrors: [
+				{
+					id: "legacy-1",
+					category: "spelling" as unknown as PlacementError["category"],
+					quote: "frend",
+					start: null,
+					end: null,
+					correction: "friend",
+					explanation: "",
+				},
+			],
+			speakingErrors: [
+				{
+					id: "legacy-2",
+					category: "vocabulary" as unknown as PlacementError["category"],
+					quote: "very like",
+					start: null,
+					end: null,
+					correction: "really enjoy",
+					explanation: "",
+				},
+			],
+		});
+		const model = buildPlacementResultPdfModel(submission);
+		expect(model.writing.errors[0]?.category).toBe("lexical");
+		expect(model.writing.errors[0]?.categoryLabel).toBe("Lexical Resource");
+		expect(model.speaking.errors[0]?.category).toBe("lexical");
+		expect(model.speaking.errors[0]?.categoryLabel).toBe("Lexical Resource");
+	});
 });
 
 describe("generatePlacementResultPdfBytes (real PDF binary + pdfjs-dist extraction)", () => {
@@ -572,12 +688,14 @@ describe("generatePlacementResultPdfBytes (real PDF binary + pdfjs-dist extracti
 		expect(text).toContain("15/20 (75%)");
 		expect(text).toContain("7/10 (70%)");
 
-		// Writing IELTS band, rubric, inline error markers, error cards (located & unlocated)
+		// Writing IELTS band, rubric, per-criterion comments, inline error markers, error cards (located & unlocated)
 		expect(text).toContain("Band 6.5/9");
 		expect(text).toContain("Task Response");
 		expect(text).toContain("Coherence & Cohesion");
 		expect(text).toContain("Lexical Resource");
 		expect(text).toContain("Grammatical Range & Accuracy");
+		expect(text).toContain("Trả lời đủ ý trọng tâm -> nên thêm ví dụ cụ thể.");
+		expect(text).toContain("Từ vựng tự nhiên.");
 		expect(text).toContain("go to school");
 		expect(text).toContain("went to school");
 		expect(text).toContain("Sai thì quá khứ đơn");
@@ -586,9 +704,12 @@ describe("generatePlacementResultPdfBytes (real PDF binary + pdfjs-dist extracti
 		expect(text).toContain("Missing closing greeting");
 		expect(text).toContain("Best regards, Duong");
 
-		// Speaking IELTS band, rubric, transcript, error card
+		// Speaking IELTS band, rubric, per-criterion comments, transcript, error card
 		expect(text).toContain("Band 6.0/9");
 		expect(text).toContain("Fluency & Coherence");
+		expect(text).toContain("Pronunciation");
+		expect(text).toContain("Nói khá trôi chảy, ít ngập ngừng.");
+		expect(text).toContain("Âm cuối rõ ràng.");
 		expect(text).toContain("very like");
 		expect(text).toContain("really enjoy");
 

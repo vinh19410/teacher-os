@@ -379,8 +379,10 @@ describe("màn /leads (#506 phase 4)", () => {
 			speakingDurationSec: 42,
 			writingRubric: null,
 			writingScore: null,
+			writingCriterionComments: null,
 			speakingRubric: null,
 			speakingScore: null,
+			speakingCriterionComments: null,
 			teacherFeedback: "",
 			finalBandLevel: null,
 			finalCourseId: null,
@@ -582,6 +584,12 @@ describe("màn /leads (#506 phase 4)", () => {
 		expect(gradePatchBody).toEqual({
 			writingRubric: { task: 9, coherence: 9, lexical: 9, grammar: 9 },
 			writingScore: 9,
+			writingCriterionComments: {
+				task: "",
+				coherence: "",
+				lexical: "",
+				grammar: "",
+			},
 			speakingRubric: {
 				fluency: 0,
 				lexical: 0,
@@ -589,6 +597,12 @@ describe("màn /leads (#506 phase 4)", () => {
 				pronunciation: 0,
 			},
 			speakingScore: 0,
+			speakingCriterionComments: {
+				fluency: "",
+				lexical: "",
+				grammar: "",
+				pronunciation: "",
+			},
 			courseId: "course-comm-1",
 			teacherFeedback: "Cần luyện nói thêm",
 			writingErrors: [],
