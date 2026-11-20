@@ -424,11 +424,11 @@ export function PlacementErrorHighlighter({
 										>
 											{circledNumber(number)}
 										</button>
-										<span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 font-medium text-foreground">
+										<span className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 font-medium text-foreground">
 											<span
 												aria-hidden="true"
 												className={cn(
-													"inline-block size-2.5 rounded-full border",
+													"inline-block size-2.5 shrink-0 rounded-full border",
 													style.swatchCls,
 												)}
 											/>
