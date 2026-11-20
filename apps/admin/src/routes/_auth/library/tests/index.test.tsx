@@ -167,7 +167,7 @@ describe("LibraryTestsRoute (phân trang phía server)", () => {
 		});
 		expect(navigateMock).toHaveBeenCalledWith({
 			to: "/library/tests",
-			search: { page: "2" },
+			search: { page: 2 },
 			replace: false,
 		});
 		expect(scrollIntoView).toHaveBeenCalledWith({
@@ -177,7 +177,7 @@ describe("LibraryTestsRoute (phân trang phía server)", () => {
 	});
 
 	it("đổi bộ lọc hoặc pageSize trên trang 2 sẽ reset về page 1 với replace: true", async () => {
-		currentSearch = { page: "2", pageSize: "10" };
+		currentSearch = { page: 2, pageSize: 10 };
 		const payload: LibraryTestListPageResponse = {
 			tests: [makeTestItem("t11", "Reading Test 11")],
 			total: 25,
@@ -207,7 +207,7 @@ describe("LibraryTestsRoute (phân trang phía server)", () => {
 		});
 		expect(navigateMock).toHaveBeenLastCalledWith({
 			to: "/library/tests",
-			search: { skill: "listening", pageSize: "10" },
+			search: { skill: "listening", pageSize: 10 },
 			replace: true,
 		});
 
@@ -223,13 +223,13 @@ describe("LibraryTestsRoute (phân trang phía server)", () => {
 		});
 		expect(navigateMock).toHaveBeenLastCalledWith({
 			to: "/library/tests",
-			search: { pageSize: "50" },
+			search: { pageSize: 50 },
 			replace: true,
 		});
 	});
 
 	it("trang vượt totalPages sẽ tự kẹp về totalPages với replace: true và không nháy empty state", async () => {
-		currentSearch = { page: "5", skill: "reading" };
+		currentSearch = { page: 5, skill: "reading" };
 		const payload: LibraryTestListPageResponse = {
 			tests: [],
 			total: 25,
@@ -247,7 +247,7 @@ describe("LibraryTestsRoute (phân trang phía server)", () => {
 		await waitUntil(() => {
 			expect(navigateMock).toHaveBeenCalledWith({
 				to: "/library/tests",
-				search: { skill: "reading", page: "2" },
+				search: { skill: "reading", page: 2 },
 				replace: true,
 			});
 		});
@@ -257,8 +257,69 @@ describe("LibraryTestsRoute (phân trang phía server)", () => {
 		expect(container.textContent).not.toContain("Chưa có bộ đề nào.");
 	});
 
+	it("xóa bộ đề cuối cùng ở trang cuối → refetch thấy trang rỗng và tự lùi về trang trước", async () => {
+		currentSearch = { page: 2, pageSize: 10 };
+		let deleted = false;
+		fetchMock.mockImplementation((_url: string, init?: RequestInit) => {
+			if (init?.method === "DELETE") {
+				deleted = true;
+				return Promise.resolve(jsonResponse(200, { ok: true }));
+			}
+			const payload: LibraryTestListPageResponse = deleted
+				? {
+						tests: [],
+						total: 10,
+						page: 2,
+						pageSize: 10,
+						totalPages: 1,
+						counts: {
+							skill: { reading: 10, listening: 0 },
+							status: { draft: 0, ready: 10 },
+						},
+					}
+				: {
+						tests: [makeTestItem("t11", "Last Test On Page 2")],
+						total: 11,
+						page: 2,
+						pageSize: 10,
+						totalPages: 2,
+						counts: {
+							skill: { reading: 11, listening: 0 },
+							status: { draft: 0, ready: 11 },
+						},
+					};
+			return Promise.resolve(jsonResponse(200, payload));
+		});
+
+		mountRoute();
+		await waitUntil(() => {
+			expect(container.textContent).toContain("Last Test On Page 2");
+		});
+
+		const deleteBtn = Array.from(container.querySelectorAll("button")).find(
+			(btn) => btn.textContent === "Xóa",
+		);
+		act(() => {
+			deleteBtn?.click();
+		});
+		const confirmBtn = Array.from(container.querySelectorAll("button")).find(
+			(btn) => btn.textContent === "Xóa bộ đề",
+		);
+		act(() => {
+			confirmBtn?.click();
+		});
+
+		await waitUntil(() => {
+			expect(navigateMock).toHaveBeenCalledWith({
+				to: "/library/tests",
+				search: { pageSize: 10 },
+				replace: true,
+			});
+		});
+	});
+
 	it("khi không có kết quả với bộ lọc đang bật → hiện Xóa bộ lọc và làm sạch input + URL", async () => {
-		currentSearch = { skill: "listening", q: "missing", pageSize: "10" };
+		currentSearch = { skill: "listening", q: "missing", pageSize: 10 };
 		const payload: LibraryTestListPageResponse = {
 			tests: [],
 			total: 0,

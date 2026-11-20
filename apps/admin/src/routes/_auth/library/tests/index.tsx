@@ -78,13 +78,12 @@ export function LibraryTestsRoute() {
 
 	const deleteMutation = useMutation({
 		mutationFn: (testId: string) => deleteLibraryTest(testId),
-		onSuccess: (_data, testId) => {
+		onSuccess: () => {
 			setDeleting(null);
 			toast.success("Đã xóa bộ đề.");
 			void queryClient.invalidateQueries({
 				queryKey: ["admin", "library", "tests"],
 			});
-			if (deleting?.id === testId) setDeleting(null);
 		},
 		onError: (error) => {
 			toast.error(libraryErrorMessage(error));
@@ -196,6 +195,7 @@ export function LibraryTestsRoute() {
 					<Input
 						id="library-test-search"
 						type="search"
+						maxLength={200}
 						value={queryInput}
 						placeholder="Theo tiêu đề, bộ sưu tập, nhóm đề…"
 						onChange={(event) => setQueryInput(event.target.value)}
@@ -276,8 +276,8 @@ export function LibraryTestsRoute() {
 						/>
 					</div>
 					<PaginationBar
-						page={filters.page}
-						pageSize={filters.pageSize}
+						page={query.data.page}
+						pageSize={query.data.pageSize}
 						total={total}
 						totalPages={totalPages}
 						isFetching={isUpdating}

@@ -37,7 +37,7 @@ describe("PaginationBar (render tĩnh)", () => {
 		});
 		expect(html).toContain("Hiển thị 1–8 / 8 bộ đề");
 		expect(html).toContain('aria-label="Phân trang bộ đề"');
-		expect(html).toContain('aria-label="Số bộ đề mỗi trang"');
+		expect(html).toContain('aria-label="Số dòng mỗi trang"');
 		expect(html).toContain("Trang 1 / 1");
 		expect(html).not.toContain("aria-live");
 	});

@@ -54,7 +54,7 @@ export function PaginationBar({
 					</label>
 					<Select
 						id={selectId}
-						aria-label="Số bộ đề mỗi trang"
+						aria-label="Số dòng mỗi trang"
 						value={String(pageSize)}
 						onChange={(event) => {
 							const next = parseLibraryTestPageSizeParam(event.target.value);
@@ -80,6 +80,7 @@ export function PaginationBar({
 				<button
 					type="button"
 					disabled={page <= 1}
+					aria-label="Trang trước"
 					onClick={() => {
 						if (page > 1) onPageChange(page - 1);
 					}}
@@ -90,7 +91,10 @@ export function PaginationBar({
 					})}
 				>
 					<ChevronLeft aria-hidden="true" className="size-4" />
-					Trang trước
+					<span className="hidden sm:inline">Trang trước</span>
+					<span aria-hidden="true" className="sm:hidden">
+						Trước
+					</span>
 				</button>
 
 				<div className="hidden items-center gap-1 sm:flex">
@@ -131,6 +135,7 @@ export function PaginationBar({
 				<button
 					type="button"
 					disabled={page >= totalPages}
+					aria-label="Trang sau"
 					onClick={() => {
 						if (page < totalPages) onPageChange(page + 1);
 					}}
@@ -140,7 +145,10 @@ export function PaginationBar({
 						className: "px-2.5 sm:px-3",
 					})}
 				>
-					Trang sau
+					<span className="hidden sm:inline">Trang sau</span>
+					<span aria-hidden="true" className="sm:hidden">
+						Sau
+					</span>
 					<ChevronRight aria-hidden="true" className="size-4" />
 				</button>
 			</nav>

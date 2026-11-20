@@ -2,7 +2,6 @@ import {
 	DEFAULT_LIBRARY_TEST_PAGE_SIZE,
 	type LibrarySkill,
 	type LibraryTestListCounts,
-	type LibraryTestListItem,
 	type LibraryTestPageSize,
 	parseLibraryTestPageParam,
 	parseLibraryTestPageSizeParam,
@@ -29,8 +28,8 @@ export type LibrarySearchParams = {
 	skill?: string;
 	status?: string;
 	q?: string;
-	page?: string;
-	pageSize?: string;
+	page?: number;
+	pageSize?: LibraryTestPageSize;
 };
 
 export const DEFAULT_FILTERS: LibraryTestFilters = {
@@ -77,19 +76,23 @@ function toParamString(value: unknown): string | undefined {
 }
 
 /**
- * `validateSearch` của route: chấp nhận cả string lẫn số hữu hạn cho
- * `page`/`pageSize`/`q` (TanStack Router có thể parse query số thành number),
- * chuẩn hóa sâu hơn ở `normalizeFilters`.
+ * `validateSearch` của route: giữ `page` và `pageSize` dạng `number` để
+ * TanStack Router serialize URL sạch (`?page=2&pageSize=10`, không bọc dấu
+ * ngoặc kép `%22`), đồng thời chấp nhận cả string lẫn number khi đọc vào.
  */
 export function parseLibrarySearch(
 	input: Record<string, unknown>,
 ): LibrarySearchParams {
+	const rawPage = toParamString(input.page);
+	const rawPageSize = toParamString(input.pageSize);
+	const parsedPage = parseLibraryTestPageParam(rawPage);
+	const parsedPageSize = parseLibraryTestPageSizeParam(rawPageSize);
 	return {
 		skill: typeof input.skill === "string" ? input.skill : undefined,
 		status: typeof input.status === "string" ? input.status : undefined,
 		q: toParamString(input.q),
-		page: toParamString(input.page),
-		pageSize: toParamString(input.pageSize),
+		page: parsedPage ?? undefined,
+		pageSize: parsedPageSize ?? undefined,
 	};
 }
 
@@ -100,17 +103,21 @@ const isStatusFilter = (value: string): value is StatusFilter =>
 	STATUS_CHIPS.some((chip) => chip.id === value);
 
 /** Giá trị lạ → mặc định; q trim; page/pageSize parse theo contract. */
-export function normalizeFilters(
-	search: LibrarySearchParams,
-): LibraryTestFilters {
+export function normalizeFilters(search: {
+	skill?: string;
+	status?: string;
+	q?: string;
+	page?: number | string;
+	pageSize?: number | string;
+}): LibraryTestFilters {
 	return {
 		skill: search.skill && isSkillFilter(search.skill) ? search.skill : "all",
 		status:
 			search.status && isStatusFilter(search.status) ? search.status : "all",
 		q: typeof search.q === "string" ? search.q.trim() : "",
-		page: parseLibraryTestPageParam(search.page) ?? 1,
+		page: parseLibraryTestPageParam(toParamString(search.page)) ?? 1,
 		pageSize:
-			parseLibraryTestPageSizeParam(search.pageSize) ??
+			parseLibraryTestPageSizeParam(toParamString(search.pageSize)) ??
 			DEFAULT_LIBRARY_TEST_PAGE_SIZE,
 	};
 }
@@ -123,9 +130,9 @@ export function filtersToSearch(
 		...(filters.skill !== "all" ? { skill: filters.skill } : {}),
 		...(filters.status !== "all" ? { status: filters.status } : {}),
 		...(filters.q.trim() !== "" ? { q: filters.q.trim() } : {}),
-		...(filters.page > 1 ? { page: String(filters.page) } : {}),
+		...(filters.page > 1 ? { page: filters.page } : {}),
 		...(filters.pageSize !== DEFAULT_LIBRARY_TEST_PAGE_SIZE
-			? { pageSize: String(filters.pageSize) }
+			? { pageSize: filters.pageSize }
 			: {}),
 	};
 }
@@ -221,67 +228,6 @@ export function pageItemRange(
 		start: (page - 1) * pageSize + 1,
 		end: Math.min(page * pageSize, total),
 	};
-}
-
-/** Tìm kiếm theo tiêu đề / bộ sưu tập / nhóm, không phân biệt hoa thường. */
-export function matchesQuery(item: LibraryTestListItem, q: string): boolean {
-	const needle = q.trim().toLowerCase();
-	if (needle === "") return true;
-	return (
-		item.title.toLowerCase().includes(needle) ||
-		(item.collection ?? "").toLowerCase().includes(needle) ||
-		(item.testGroup ?? "").toLowerCase().includes(needle)
-	);
-}
-
-export function matchesFilters(
-	item: LibraryTestListItem,
-	filters: Pick<LibraryTestFilters, "skill" | "status" | "q">,
-): boolean {
-	if (filters.skill !== "all" && item.skill !== filters.skill) return false;
-	if (filters.status !== "all" && item.status !== filters.status) return false;
-	return matchesQuery(item, filters.q);
-}
-
-/**
- * Đếm chip: đếm theo một chiều trong khi giữ các chiều còn lại — cùng cách
- * `/assignments` tính `matchCounts` để badge phản ánh "bấm chip này sẽ có
- * bao nhiêu đề". `dimension` là chiều cần đếm.
- */
-export function countBy(
-	items: LibraryTestListItem[],
-	filters: Pick<LibraryTestFilters, "skill" | "status" | "q">,
-	dimension: "skill" | "status",
-): Record<string, number> {
-	const counts: Record<string, number> = {};
-	for (const item of items) {
-		const matchesOther =
-			dimension === "skill"
-				? matchesQuery(item, filters.q) &&
-					(filters.status === "all" || item.status === filters.status)
-				: matchesQuery(item, filters.q) &&
-					(filters.skill === "all" || item.skill === filters.skill);
-		if (!matchesOther) continue;
-		const key = dimension === "skill" ? item.skill : item.status;
-		counts[key] = (counts[key] ?? 0) + 1;
-	}
-	return counts;
-}
-
-/** Chip counts keyed theo nhãn hiển thị cho `ChipFilter.counts`. */
-export function chipCounts(
-	items: LibraryTestListItem[],
-	filters: Pick<LibraryTestFilters, "skill" | "status" | "q">,
-	dimension: "skill" | "status",
-): Record<string, number> {
-	const byId = countBy(items, filters, dimension);
-	const chips = dimension === "skill" ? SKILL_CHIPS : STATUS_CHIPS;
-	const counts: Record<string, number> = {};
-	for (const chip of chips) {
-		if (chip.id === "all") continue;
-		counts[chip.label] = byId[chip.id] ?? 0;
-	}
-	return counts;
 }
 
 /** "02/10/2026 14:30" — ngày cập nhật trong bảng. */

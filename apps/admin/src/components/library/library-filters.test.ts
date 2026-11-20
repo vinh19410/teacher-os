@@ -1,40 +1,19 @@
-import type { LibraryTestListItem } from "@teacher-os/api/library-contracts";
 import { describe, expect, it } from "vitest";
 import {
 	buildPageItems,
-	chipCounts,
-	countBy,
 	countsToChipCounts,
 	DEFAULT_FILTERS,
 	filtersToSearch,
 	fmtDateTime,
 	hasActiveFilters,
 	type LibraryTestFilters,
-	matchesFilters,
 	normalizeFilters,
 	pageItemRange,
 	parseLibrarySearch,
 } from "./library-filters";
 
-const item = (overrides: Partial<LibraryTestListItem> = {}) => ({
-	id: "t1",
-	title: "IELTS Reading Mock 01",
-	description: null,
-	skill: "reading",
-	timeLimitSeconds: 3600,
-	collection: "Cambridge 18",
-	testGroup: "TEST 1",
-	status: "draft",
-	createdAt: "2026-10-01T00:00:00.000Z",
-	updatedAt: "2026-10-02T02:30:00.000Z",
-	partCount: 3,
-	questionCount: 40,
-	hasAllAudio: true,
-	...overrides,
-});
-
 describe("parseLibrarySearch (validateSearch)", () => {
-	it("giữ nguyên string, chuyển số hữu hạn của page/pageSize/q thành string và bỏ giá trị không hợp lệ", () => {
+	it("parse page/pageSize sang number hợp lệ để TanStack Router serialize URL sạch và bỏ giá trị sai", () => {
 		expect(
 			parseLibrarySearch({
 				skill: "reading",
@@ -47,8 +26,8 @@ describe("parseLibrarySearch (validateSearch)", () => {
 			skill: "reading",
 			status: "draft",
 			q: "cam",
-			page: "2",
-			pageSize: "10",
+			page: 2,
+			pageSize: 10,
 		});
 		expect(
 			parseLibrarySearch({
@@ -60,8 +39,8 @@ describe("parseLibrarySearch (validateSearch)", () => {
 			skill: undefined,
 			status: undefined,
 			q: "18",
-			page: "3",
-			pageSize: "50",
+			page: 3,
+			pageSize: 50,
 		});
 		expect(
 			parseLibrarySearch({
@@ -70,6 +49,12 @@ describe("parseLibrarySearch (validateSearch)", () => {
 				page: Number.NaN,
 				pageSize: Number.POSITIVE_INFINITY,
 				q: {},
+			}),
+		).toEqual({});
+		expect(
+			parseLibrarySearch({
+				page: "0",
+				pageSize: "15",
 			}),
 		).toEqual({});
 		expect(parseLibrarySearch({})).toEqual({});
@@ -92,8 +77,8 @@ describe("normalizeFilters", () => {
 				skill: "listening",
 				status: "ready",
 				q: " mock ",
-				page: "3",
-				pageSize: "50",
+				page: 3,
+				pageSize: 50,
 			}),
 		).toEqual({
 			skill: "listening",
@@ -115,7 +100,7 @@ describe("filtersToSearch", () => {
 		expect(filtersToSearch({ ...DEFAULT_FILTERS, page: 0 })).toEqual({});
 	});
 
-	it("chỉ mang filter và trang khác mặc định — round-trip qua parse + normalize giữ nguyên", () => {
+	it("chỉ mang filter và trang khác mặc định dạng số — round-trip qua parse + normalize giữ nguyên", () => {
 		const filters: LibraryTestFilters = {
 			skill: "listening",
 			status: "ready",
@@ -128,15 +113,23 @@ describe("filtersToSearch", () => {
 			skill: "listening",
 			status: "ready",
 			q: "cam 18",
-			page: "4",
-			pageSize: "10",
+			page: 4,
+			pageSize: 10,
 		});
 		expect(normalizeFilters(parseLibrarySearch(serialized))).toEqual(filters);
 	});
 
-	it("round-trip khi TanStack Router chuyển page/pageSize sang kiểu number", () => {
-		const parsed = parseLibrarySearch({ page: 2, pageSize: 50 });
-		expect(normalizeFilters(parsed)).toEqual({
+	it("round-trip khi TanStack Router truyền page/pageSize dạng number hoặc string", () => {
+		expect(
+			normalizeFilters(parseLibrarySearch({ page: 2, pageSize: 50 })),
+		).toEqual({
+			...DEFAULT_FILTERS,
+			page: 2,
+			pageSize: 50,
+		});
+		expect(
+			normalizeFilters(parseLibrarySearch({ page: "2", pageSize: "50" })),
+		).toEqual({
 			...DEFAULT_FILTERS,
 			page: 2,
 			pageSize: 50,
@@ -249,70 +242,6 @@ describe("pageItemRange", () => {
 		expect(pageItemRange(3, 20, 45)).toEqual({ start: 41, end: 45 });
 		expect(pageItemRange(4, 20, 45)).toEqual({ start: 0, end: 0 });
 		expect(pageItemRange(0, 20, 45)).toEqual({ start: 0, end: 0 });
-	});
-});
-
-describe("matchesFilters", () => {
-	const rows: LibraryTestListItem[] = [
-		item(),
-		item({
-			id: "t2",
-			title: "Listening Section Practice",
-			skill: "listening",
-			status: "ready",
-			collection: null,
-			testGroup: null,
-		}),
-	];
-
-	it("lọc theo skill + status + q đồng thời", () => {
-		expect(
-			rows.filter((row) =>
-				matchesFilters(row, { skill: "listening", status: "all", q: "" }),
-			),
-		).toEqual([rows[1]]);
-		expect(
-			rows.filter((row) =>
-				matchesFilters(row, { skill: "all", status: "ready", q: "" }),
-			),
-		).toEqual([rows[1]]);
-		expect(
-			rows.filter((row) =>
-				matchesFilters(row, { skill: "all", status: "all", q: "cambridge" }),
-			),
-		).toEqual([rows[0]]);
-		expect(
-			rows.filter((row) =>
-				matchesFilters(row, { skill: "all", status: "all", q: "test 1" }),
-			),
-		).toEqual([rows[0]]);
-	});
-});
-
-describe("chipCounts", () => {
-	const rows: LibraryTestListItem[] = [
-		item(),
-		item({ id: "t2", skill: "listening", status: "ready" }),
-		item({ id: "t3", skill: "listening", status: "ready", title: "Khác" }),
-	];
-
-	it("đếm skill giữ nguyên chiều status + q", () => {
-		expect(
-			chipCounts(rows, { skill: "all", status: "ready", q: "" }, "skill"),
-		).toEqual({ Reading: 0, Listening: 2 });
-	});
-
-	it("đếm status giữ nguyên chiều skill + q", () => {
-		expect(
-			chipCounts(rows, { skill: "listening", status: "all", q: "" }, "status"),
-		).toEqual({ Nháp: 0, "Đã xuất bản": 2 });
-	});
-
-	it("countBy trả key thô theo id", () => {
-		expect(countBy(rows, DEFAULT_FILTERS, "skill")).toEqual({
-			reading: 1,
-			listening: 2,
-		});
 	});
 });
 
