@@ -101,6 +101,7 @@ function makeStudentSubmission(
 		speakingScore: null,
 		teacherFeedback: "",
 		finalBandLevel: null,
+		finalCourseId: null,
 		finalCourse: null,
 		finalDisplayCourse: null,
 		finalScorePct: null,
@@ -247,6 +248,37 @@ describe("student detail", () => {
 			(req, srv) => {
 				if (
 					req.method === "GET" &&
+					req.path === "/api/courses?activeOnly=true"
+				) {
+					return {
+						status: 200,
+						body: {
+							categories: [
+								{
+									id: "cat-ielts",
+									name: "IELTS",
+									sortOrder: 0,
+									isActive: true,
+									createdAt: "2026-11-01T00:00:00.000Z",
+									updatedAt: "2026-11-01T00:00:00.000Z",
+									courses: [
+										{
+											id: "course-ielts-1",
+											categoryId: "cat-ielts",
+											name: "Foundation",
+											sortOrder: 0,
+											isActive: true,
+											createdAt: "2026-11-01T00:00:00.000Z",
+											updatedAt: "2026-11-01T00:00:00.000Z",
+										},
+									],
+								},
+							],
+						},
+					};
+				}
+				if (
+					req.method === "GET" &&
 					req.path === "/api/students/st-1/placement-submission"
 				) {
 					return { status: 200, body: submission };
@@ -320,6 +352,11 @@ describe("student detail", () => {
 		fireEvent.change(screen.getByLabelText("Nhận xét bài kiểm tra đầu vào"), {
 			target: { value: "Nền tảng tốt" },
 		});
+		const courseSelect = (await screen.findByTestId(
+			"placement-course-select",
+		)) as HTMLSelectElement;
+		await waitFor(() => expect(courseSelect.disabled).toBe(false));
+		fireEvent.change(courseSelect, { target: { value: "course-ielts-1" } });
 
 		fireEvent.click(screen.getByTestId("save-placement-grade-btn"));
 
@@ -335,6 +372,7 @@ describe("student detail", () => {
 				writingScore: 7,
 				speakingRubric: null,
 				speakingScore: null,
+				courseId: "course-ielts-1",
 				teacherFeedback: "Nền tảng tốt",
 				writingErrors: [],
 				speakingErrors: [],

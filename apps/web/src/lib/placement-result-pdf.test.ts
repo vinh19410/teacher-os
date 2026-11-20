@@ -229,6 +229,7 @@ function makeIeltsSubmission(
 		teacherFeedback:
 			"Con viết mạch lạc, ý tưởng rõ ràng → cần chú ý chia động từ quá khứ! 🎓",
 		finalBandLevel: "B1+",
+		finalCourseId: "course-ielts-foundation",
 		finalCourse: "ielts-foundation",
 		finalDisplayCourse: "IELTS Foundation 5.5+",
 		finalScorePct: 74.4,

@@ -584,6 +584,7 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 			pronunciation: 6,
 		},
 		speakingScore: 6,
+		courseId: "org-1:course:comm-level-2",
 		teacherFeedback: "Cố gắng chia động từ đúng.",
 		writingErrors,
 		speakingErrors,
@@ -762,6 +763,7 @@ describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
 			pronunciation: 6,
 		},
 		speakingScore: 6,
+		courseId: "org-1:course:comm-level-2",
 		teacherFeedback: "",
 		writingErrors: [],
 		speakingErrors: [],
@@ -836,7 +838,7 @@ describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
 		// Tóm tắt khớp kết quả đã chốt (cùng nguồn với portal).
 		expect(graded.finalBandLevel).toBe("A2");
 		expect(mail?.html).toContain(">A2<");
-		expect(mail?.html).toContain("Communication English Level 2");
+		expect(mail?.html).toContain("Giao Tiếp - Communication English Level 2");
 		expect(mail?.html).toContain(`>${graded.finalScorePct}%<`);
 		for (const row of [
 			"Listening",
@@ -1060,6 +1062,7 @@ const finalGrade = {
 		pronunciation: 6,
 	},
 	speakingScore: 6,
+	courseId: "org-1:course:comm-level-2",
 	teacherFeedback: "Cố gắng chia động từ đúng.",
 	writingErrors: [],
 	speakingErrors: [],

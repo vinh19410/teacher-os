@@ -558,6 +558,9 @@ test.describe
 						.getByTestId("speaking-pronunciation-input")
 						.fill("6.5");
 				}
+				await teacherPage
+					.getByTestId("placement-course-select")
+					.selectOption({ label: "Foundation" });
 				await expect(
 					teacherPage.getByTestId("save-placement-grade-btn"),
 				).toBeEnabled();

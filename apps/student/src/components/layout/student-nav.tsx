@@ -1,4 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import { env } from "@teacher-os/env/web";
 import type {
 	NavGroup,
 	NavItem,
@@ -17,9 +18,12 @@ import {
 /**
  * "Luyện tập" (phase 10) + "Lịch sử" (phase 11, #378) đã có route — mục
  * Luyện tập gồm 5 skill con (KHÔNG có Dictation: chưa có đề trong thư viện).
+ * Mặc định tắt trên PROD (#852) vì chưa phát triển xong nội dung;
+ * bật lại bằng biến build VITE_STUDENT_PRACTICE_ENABLED=true (e2e tự bật).
  */
-const PRACTICE_ROUTES_LIVE = true;
-const HISTORY_ROUTES_LIVE = true;
+export const PRACTICE_ROUTES_LIVE =
+	env.VITE_STUDENT_PRACTICE_ENABLED === "true";
+export const HISTORY_ROUTES_LIVE = true;
 
 /** 5 skill luyện tập — thứ tự hiển thị ở nav và redirect trang chủ mục. */
 export const PRACTICE_NAV_SKILLS = [
@@ -30,7 +34,7 @@ export const PRACTICE_NAV_SKILLS = [
 	{ slug: "vocabulary", label: "Vocabulary" },
 ] as const;
 
-const PRACTICE_HISTORY_ITEMS: NavItem[] = [
+export const PRACTICE_HISTORY_ITEMS: NavItem[] = [
 	{
 		key: "practice",
 		label: "Luyện tập",

@@ -7,6 +7,7 @@ import {
 	text,
 	uniqueIndex,
 } from "drizzle-orm/sqlite-core";
+import { course } from "./course-catalog";
 import { lead } from "./lead";
 import { organization } from "./organization";
 import { student } from "./student";
@@ -165,6 +166,9 @@ export const placementTestSubmission = sqliteTable(
 		/** "sent" | "failed" | "skipped" (không có email) — lần chốt gần nhất. */
 		resultEmailStatus: text("result_email_status"),
 		finalBandLevel: text("final_band_level"),
+		finalCourseId: text("final_course_id").references(() => course.id, {
+			onDelete: "set null",
+		}),
 		finalCourse: text("final_course"),
 		finalDisplayCourse: text("final_display_course"),
 		finalScorePct: integer("final_score_pct"),

@@ -174,6 +174,7 @@ async function main() {
 				VITE_SERVER_URL: `http://localhost:${ports.api}`,
 				VITE_AI_ENABLED: "true",
 				VITE_TEACHER_SIGNUP_ENABLED: "true",
+				VITE_STUDENT_PRACTICE_ENABLED: "true",
 			}),
 		);
 		tracked.get(svc.name).child = child;
