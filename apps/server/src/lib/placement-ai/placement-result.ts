@@ -1,14 +1,17 @@
 import { formatBand } from "@teacher-os/api/lib/ielts-band";
 import {
 	locatePlacementErrors,
+	normalizePlacementErrorCategory,
+	PLACEMENT_ERRORS_MAX,
 	type PlacementAiSkillDraft,
 	type PlacementError,
+	type PlacementErrorSkill,
 	type PlacementGradingScale,
 	type PlacementSectionScore,
-	placementErrorListSchema,
+	placementSpeakingErrorSchema,
+	placementWritingErrorSchema,
 } from "@teacher-os/api/placement-test-contracts";
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
-import { z } from "zod";
 import { escapeHtml } from "../notifications/deliver";
 
 /** Đường dẫn trang kết quả công khai trên apps/profile. */
@@ -40,38 +43,83 @@ function parseJson(raw: string | null): unknown {
 	}
 }
 
-/** Danh sách lỗi đã lưu → định vị lại theo `text`; JSON hỏng → []. null khi cột null. */
+function parseNormalizedErrorArray(
+	rawErrors: unknown,
+	text: string,
+	skill: PlacementErrorSkill,
+): PlacementError[] | null {
+	if (!Array.isArray(rawErrors)) return null;
+	const itemSchema =
+		skill === "writing"
+			? placementWritingErrorSchema
+			: placementSpeakingErrorSchema;
+	const valid: PlacementError[] = [];
+	for (const rawItem of rawErrors) {
+		if (valid.length >= PLACEMENT_ERRORS_MAX) break;
+		if (
+			typeof rawItem !== "object" ||
+			rawItem === null ||
+			Array.isArray(rawItem)
+		) {
+			continue;
+		}
+		const item = rawItem as Record<string, unknown>;
+		const rawCategory = typeof item.category === "string" ? item.category : "";
+		const category = normalizePlacementErrorCategory(rawCategory, skill);
+		if (!category) continue;
+		const parsed = itemSchema.safeParse({ ...item, category });
+		if (parsed.success) {
+			valid.push(parsed.data);
+		}
+	}
+	return locatePlacementErrors(text, valid);
+}
+
+/**
+ * Danh sách lỗi đã lưu → chuẩn hóa category (kể cả key cũ trong DB) rồi định vị
+ * lại theo `text`; JSON hỏng → []. Trả null khi cột null.
+ */
 export function parseStoredErrors(
 	raw: string | null,
 	text: string,
+	skill: PlacementErrorSkill,
 ): PlacementError[] | null {
 	if (raw === null) return null;
-	const parsed = placementErrorListSchema.safeParse(parseJson(raw));
-	return parsed.success ? locatePlacementErrors(text, parsed.data) : [];
+	return parseNormalizedErrorArray(parseJson(raw), text, skill) ?? [];
 }
 
-/** Non-strict để đọc được cả nháp AI cũ trong DB (có thêm `rubric`/`feedback`). */
-const aiDraftSchema = z.object({
-	errors: placementErrorListSchema,
-});
-
+/**
+ * Đọc nháp AI đã lưu (tương thích ngược với nháp cũ có thêm `rubric`/`feedback`
+ * hoặc key category cũ như `vocabulary`/`spelling`) rồi định vị lại theo `text`.
+ */
 function parseDraft(
 	raw: string | null,
 	text: string,
+	skill: PlacementErrorSkill,
 ): PlacementAiSkillDraft | null {
-	const parsed = aiDraftSchema.safeParse(parseJson(raw));
-	if (!parsed.success) return null;
-	return {
-		errors: locatePlacementErrors(text, parsed.data.errors),
-	};
+	const rawJson = parseJson(raw);
+	if (
+		typeof rawJson !== "object" ||
+		rawJson === null ||
+		Array.isArray(rawJson)
+	) {
+		return null;
+	}
+	const errors = parseNormalizedErrorArray(
+		(rawJson as Record<string, unknown>).errors,
+		text,
+		skill,
+	);
+	if (errors === null) return null;
+	return { errors };
 }
 
 export function parseAiWritingDraft(raw: string | null, text: string) {
-	return parseDraft(raw, text);
+	return parseDraft(raw, text, "writing");
 }
 
 export function parseAiSpeakingDraft(raw: string | null, transcript: string) {
-	return parseDraft(raw, transcript);
+	return parseDraft(raw, transcript, "speaking");
 }
 
 export type PlacementResultEmailStatus = "sent" | "failed" | "skipped";

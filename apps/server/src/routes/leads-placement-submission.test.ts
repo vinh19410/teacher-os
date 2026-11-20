@@ -679,6 +679,88 @@ describe("leads placement-submission routes (#721)", () => {
 		expect(pub.writingScore).toBe(12);
 		expect(pub.speakingRubric).toEqual({ gv: 4, dm: 3, pr: 4, ic: 3 });
 		expect(pub.speakingScore).toBe(14);
+		expect(detail.writingCriterionComments).toBeNull();
+		expect(detail.speakingCriterionComments).toBeNull();
+	});
+
+	test("PATCH /placement-submission lưu nhận xét từng tiêu chí (trim, null khi không chấm Speaking, giữ nguyên zaloText)", async () => {
+		const headers = {
+			"x-test-user": "t1",
+			origin: CORS_ORIGIN,
+			"content-type": "application/json",
+		};
+
+		// Quá 1000 ký tự trên một tiêu chí -> 400
+		const tooLong = await app.request(
+			`/api/leads/${leadId}/placement-submission`,
+			{
+				method: "PATCH",
+				headers,
+				body: JSON.stringify({
+					writingRubric: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+					writingScore: 6,
+					courseId: "org-1:course:comm-level-1",
+					writingCriterionComments: {
+						task: "a".repeat(1001),
+					},
+				}),
+			},
+		);
+		expect(tooLong.status).toBe(400);
+
+		// Không chấm Speaking -> lưu speakingCriterionCommentsJson = null ngay cả khi client gửi kèm comments
+		const writingOnlyRes = await app.request(
+			`/api/leads/${leadId}/placement-submission`,
+			{
+				method: "PATCH",
+				headers,
+				body: JSON.stringify({
+					writingRubric: { task: 6.5, coherence: 6, lexical: 6.5, grammar: 6 },
+					writingScore: 6.5,
+					speakingRubric: null,
+					speakingScore: null,
+					writingCriterionComments: {
+						task: "  Đủ ý chính.  ",
+						coherence: "  Nối câu mượt. ",
+						lexical: "",
+						grammar: "  Cẩn thận chia thì.  ",
+					},
+					speakingCriterionComments: {
+						fluency: "Sẽ bị bỏ qua khi speakingRubric là null",
+					},
+					courseId: "org-1:course:comm-level-1",
+					teacherFeedback: "Nhận xét chung.",
+				}),
+			},
+		);
+		expect(writingOnlyRes.status).toBe(200);
+		const writingOnly =
+			(await writingOnlyRes.json()) as PlacementSubmissionDetail;
+		expect(writingOnly.writingCriterionComments).toEqual({
+			task: "Đủ ý chính.",
+			coherence: "Nối câu mượt.",
+			lexical: "",
+			grammar: "Cẩn thận chia thì.",
+		});
+		expect(writingOnly.speakingCriterionComments).toBeNull();
+		expect(writingOnly.zaloText).not.toContain("Đủ ý chính.");
+		expect(writingOnly.zaloText).toContain(
+			"Nhan xet cua Co My: Nhận xét chung.",
+		);
+
+		const [subRow] = await db
+			.select()
+			.from(schema.placementTestSubmission)
+			.where(eq(schema.placementTestSubmission.id, writingOnly.id));
+		expect(subRow?.writingCriterionCommentsJson).toBe(
+			JSON.stringify({
+				task: "Đủ ý chính.",
+				coherence: "Nối câu mượt.",
+				lexical: "",
+				grammar: "Cẩn thận chia thì.",
+			}),
+		);
+		expect(subRow?.speakingCriterionCommentsJson).toBeNull();
 	});
 });
 

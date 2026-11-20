@@ -1,12 +1,13 @@
 import {
 	locatePlacementErrors,
+	normalizePlacementErrorCategory,
 	PLACEMENT_AI_ERROR_CODES,
-	PLACEMENT_ERROR_CATEGORIES,
 	PLACEMENT_ERROR_EXPLANATION_MAX,
 	PLACEMENT_ERROR_QUOTE_MAX,
 	type PlacementAiSkillDraft,
 	type PlacementError,
-	placementErrorListSchema,
+	placementSpeakingErrorListSchema,
+	placementWritingErrorListSchema,
 } from "@teacher-os/api/placement-test-contracts";
 
 /**
@@ -82,10 +83,6 @@ export class PlacementAiGradingError extends Error {
 /** Mỗi lượt AI tối đa ~25 lỗi — ưu tiên lỗi quan trọng, đỡ rối học viên. */
 export const PLACEMENT_AI_ERRORS_MAX = 25;
 
-const CATEGORY_KEYS = new Set<string>(
-	PLACEMENT_ERROR_CATEGORIES.map((c) => c.key),
-);
-
 function asRecord(value: unknown): Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value)
 		? (value as Record<string, unknown>)
@@ -94,13 +91,17 @@ function asRecord(value: unknown): Record<string, unknown> {
 
 /**
  * Chuẩn hoá đầu ra LLM thành `PlacementAiSkillDraft` (chỉ danh sách lỗi):
- * kiểm tra có mảng `errors`, lọc lỗi sai loại/quote rỗng, cắt độ dài theo
- * schema, gán id ổn định (`w1`, `s1`…), validate zod rồi định vị lại offset
- * trên `sourceText`.
+ * kiểm tra có mảng `errors`, chuẩn hoá loại lỗi theo kỹ năng (loại key lạ hoặc
+ * quote rỗng), cắt độ dài theo schema, gán id ổn định (`w1`, `s1`…), validate
+ * zod theo kỹ năng rồi định vị lại offset trên `sourceText`.
  */
 export function normalizeSkillDraft(
 	raw: unknown,
-	params: { idPrefix: string; sourceText: string },
+	params: {
+		idPrefix: string;
+		sourceText: string;
+		skill: PlacementAiSkillKind;
+	},
 ): PlacementAiSkillDraft {
 	if (
 		typeof raw !== "object" ||
@@ -119,15 +120,16 @@ export function normalizeSkillDraft(
 	for (const item of rawErrors) {
 		if (errors.length >= PLACEMENT_AI_ERRORS_MAX) break;
 		const e = asRecord(item);
-		const category = typeof e.category === "string" ? e.category : "";
+		const rawCategory = typeof e.category === "string" ? e.category : "";
+		const category = normalizePlacementErrorCategory(rawCategory, params.skill);
 		const quote =
 			typeof e.quote === "string"
 				? e.quote.trim().slice(0, PLACEMENT_ERROR_QUOTE_MAX)
 				: "";
-		if (!CATEGORY_KEYS.has(category) || quote.length === 0) continue;
+		if (!category || quote.length === 0) continue;
 		errors.push({
 			id: `${params.idPrefix}${errors.length + 1}`,
-			category: category as PlacementError["category"],
+			category,
 			quote,
 			start: null,
 			end: null,
@@ -141,7 +143,11 @@ export function normalizeSkillDraft(
 					: "",
 		});
 	}
-	const parsed = placementErrorListSchema.safeParse(errors);
+	const listSchema =
+		params.skill === "writing"
+			? placementWritingErrorListSchema
+			: placementSpeakingErrorListSchema;
+	const parsed = listSchema.safeParse(errors);
 	if (!parsed.success) {
 		throw new PlacementAiGradingError(
 			PLACEMENT_AI_ERROR_CODES.FAILED,
@@ -169,5 +175,6 @@ export function normalizeKindDraft(
 	return normalizeSkillDraft(raw, {
 		idPrefix: PLACEMENT_AI_KIND_ID_PREFIX[kind],
 		sourceText,
+		skill: kind,
 	});
 }

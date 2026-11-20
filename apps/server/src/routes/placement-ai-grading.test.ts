@@ -574,6 +574,7 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 	const grade = (
 		writingErrors: unknown[] = [],
 		speakingErrors: unknown[] = [],
+		extra: Record<string, unknown> = {},
 	) => ({
 		writingRubric: { task: 6.5, coherence: 6.5, lexical: 6.5, grammar: 6.5 },
 		writingScore: 6.5,
@@ -588,6 +589,7 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 		teacherFeedback: "Cố gắng chia động từ đúng.",
 		writingErrors,
 		speakingErrors,
+		...extra,
 	});
 
 	test("chốt sinh token một lần, định vị lỗi, gửi email; kết quả công khai không lộ nháp AI", async () => {
@@ -619,24 +621,55 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 				[
 					{
 						id: "s1",
-						category: "vocabulary",
+						category: "lexical",
 						quote: "beach",
 						correction: "seaside",
 						explanation: "Gợi ý từ khác.",
 					},
 				],
+				{
+					writingCriterionComments: {
+						task: "  Trả lời đủ ý chính.  ",
+						coherence: "",
+						lexical: "  Cần đa dạng từ vựng hơn. ",
+						grammar: "",
+					},
+					speakingCriterionComments: {
+						fluency: "  Nói khá trôi chảy.  ",
+						lexical: "",
+						grammar: "",
+						pronunciation: "  Chú ý âm cuối. ",
+					},
+				},
 			),
 		);
 		expect(res.status).toBe(200);
 		const graded = (await res.json()) as PlacementSubmissionDetail;
 		expect(graded.status).toBe("graded");
 		expect(graded.writingErrors?.[0]).toMatchObject({
+			category: "grammar",
 			start: ESSAY.indexOf("I lives"),
 			end: ESSAY.indexOf("I lives") + 7,
 		});
 		expect(graded.speakingErrors?.[0]).toMatchObject({
+			category: "lexical",
 			start: FAKE_PLACEMENT_TRANSCRIPT.indexOf("beach"),
 		});
+		expect(graded.writingCriterionComments).toEqual({
+			task: "Trả lời đủ ý chính.",
+			coherence: "",
+			lexical: "Cần đa dạng từ vựng hơn.",
+			grammar: "",
+		});
+		expect(graded.speakingCriterionComments).toEqual({
+			fluency: "Nói khá trôi chảy.",
+			lexical: "",
+			grammar: "",
+			pronunciation: "Chú ý âm cuối.",
+		});
+		// Tin nhắn Zalo không chèn nhận xét từng tiêu chí.
+		expect(graded.zaloText).not.toContain("Trả lời đủ ý chính.");
+		expect(graded.zaloText).not.toContain("Nói khá trôi chảy.");
 		const match = graded.resultUrl?.match(
 			/^https:\/\/msmy\.io\.vn\/kiem-tra-dau-vao\/ket-qua\/\?t=([0-9a-f]{64})$/,
 		);
@@ -649,11 +682,44 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 		expect(sent[0]?.text).toContain("Học viên A");
 		expect(sent[0]?.text).not.toContain("0905");
 
+		// Kết quả công khai phản ánh nhận xét từng tiêu chí đã lưu.
+		const pubBeforeRegrade = await h.app.request(
+			`/public/placement-test/results/${token}`,
+			{ headers: { origin: PROFILE_ORIGIN } },
+		);
+		expect(pubBeforeRegrade.status).toBe(200);
+		const pubViewInitial =
+			(await pubBeforeRegrade.json()) as PlacementPublicResultView;
+		expect(pubViewInitial.writingCriterionComments).toEqual({
+			task: "Trả lời đủ ý chính.",
+			coherence: "",
+			lexical: "Cần đa dạng từ vựng hơn.",
+			grammar: "",
+		});
+		expect(pubViewInitial.speakingCriterionComments).toEqual({
+			fluency: "Nói khá trôi chảy.",
+			lexical: "",
+			grammar: "",
+			pronunciation: "Chú ý âm cuối.",
+		});
+
 		// Chốt lại giữ nguyên token.
 		const regrade = await teacherPost(h.app, path, grade());
 		const regraded = (await regrade.json()) as PlacementSubmissionDetail;
 		expect(regraded.resultUrl).toBe(graded.resultUrl);
 		expect(regraded.writingErrors).toEqual([]);
+		expect(regraded.writingCriterionComments).toEqual({
+			task: "",
+			coherence: "",
+			lexical: "",
+			grammar: "",
+		});
+		expect(regraded.speakingCriterionComments).toEqual({
+			fluency: "",
+			lexical: "",
+			grammar: "",
+			pronunciation: "",
+		});
 
 		// Kết quả công khai.
 		const pub = await h.app.request(`/public/placement-test/results/${token}`, {
@@ -689,6 +755,96 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 		]) {
 			expect(view).not.toHaveProperty(key);
 		}
+	});
+
+	test("từ chối category chéo kỹ năng hoặc legacy khi PATCH chấm bài, nhưng chuẩn hóa bản ghi legacy khi đọc", async () => {
+		const h = await createHarness();
+		const created = await h.submitAndUpload();
+		await h.flush();
+		const path = `/api/leads/${created.leadId}/placement-submission`;
+
+		const crossWriting = await teacherPost(
+			h.app,
+			path,
+			grade([{ id: "w1", category: "pronunciation", quote: "I lives" }]),
+		);
+		expect(crossWriting.status).toBe(400);
+
+		const legacyWriting = await teacherPost(
+			h.app,
+			path,
+			grade([{ id: "w1", category: "spelling", quote: "I lives" }]),
+		);
+		expect(legacyWriting.status).toBe(400);
+
+		const crossSpeaking = await teacherPost(
+			h.app,
+			path,
+			grade([], [{ id: "s1", category: "task", quote: "beach" }]),
+		);
+		expect(crossSpeaking.status).toBe(400);
+
+		// Bản ghi legacy có category cũ trong DB vẫn đọc chuẩn hóa được ở cả teacher detail lẫn public result.
+		const token = "d".repeat(64);
+		await h.db
+			.update(schema.placementTestSubmission)
+			.set({
+				status: "graded",
+				speakingTranscript: FAKE_PLACEMENT_TRANSCRIPT,
+				writingErrorsJson: JSON.stringify([
+					{
+						id: "w1",
+						category: "vocabulary",
+						quote: "I lives",
+						start: null,
+						end: null,
+						correction: "I live",
+						explanation: "Từ vựng cũ.",
+					},
+					{
+						id: "w2",
+						category: "spelling",
+						quote: "District",
+						start: null,
+						end: null,
+						correction: "District",
+						explanation: "Chính tả cũ.",
+					},
+				]),
+				speakingErrorsJson: JSON.stringify([
+					{
+						id: "s1",
+						category: "coherence",
+						quote: "beach",
+						start: null,
+						end: null,
+						correction: "seaside",
+						explanation: "Mạch lạc cũ.",
+					},
+				]),
+				resultToken: token,
+				resultPublishedAt: new Date(),
+				gradedAt: new Date(),
+			})
+			.where(eq(schema.placementTestSubmission.id, created.submissionId));
+
+		const detail = await h.detail(created.leadId);
+		expect(detail.writingErrors?.map((e) => e.category)).toEqual([
+			"lexical",
+			"lexical",
+		]);
+		expect(detail.speakingErrors?.map((e) => e.category)).toEqual(["fluency"]);
+
+		const pubRes = await h.app.request(
+			`/public/placement-test/results/${token}`,
+		);
+		expect(pubRes.status).toBe(200);
+		const pub = (await pubRes.json()) as PlacementPublicResultView;
+		expect(pub.writingErrors.map((e) => e.category)).toEqual([
+			"lexical",
+			"lexical",
+		]);
+		expect(pub.speakingErrors.map((e) => e.category)).toEqual(["fluency"]);
 	});
 
 	test("public results 404 khi token sai định dạng / không tồn tại / chưa chốt", async () => {
@@ -1528,7 +1684,7 @@ describe("chốt kết quả: token và email (#730)", () => {
 			errors: [
 				{
 					id: "s1",
-					category: "vocabulary",
+					category: "lexical",
 					quote: "beach",
 					start: FAKE_PLACEMENT_TRANSCRIPT.indexOf("beach"),
 					end: FAKE_PLACEMENT_TRANSCRIPT.indexOf("beach") + 5,
