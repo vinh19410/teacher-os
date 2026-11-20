@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"strict": true,
+		"esModuleInterop": true,
+		"jsx": "react-jsx",
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"noEmit": true,
+		"allowImportingTsExtensions": true,
+		"skipLibCheck": true,
+		"types": ["vite/client"],
+		"rootDirs": ["."],
+		"paths": {
+			"@/*": ["./src/*"],
+			"@teacher-os/ui/*": ["../../packages/ui/src/*"]
+		}
+	}
+}

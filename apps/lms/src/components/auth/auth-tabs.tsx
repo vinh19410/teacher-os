@@ -1,0 +1,64 @@
+import { useRef } from "react";
+import { cn } from "@/lib/cn";
+
+export type AuthMode = "signin" | "signup";
+
+interface AuthTabsProps {
+	mode: AuthMode;
+	onChange: (mode: AuthMode) => void;
+	disabled?: boolean;
+}
+
+export function AuthTabs({ mode, onChange, disabled }: AuthTabsProps) {
+	const signInTabRef = useRef<HTMLButtonElement>(null);
+	const signUpTabRef = useRef<HTMLButtonElement>(null);
+
+	function onKeyDown(event: React.KeyboardEvent) {
+		if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+		event.preventDefault();
+		const next: AuthMode = event.key === "ArrowRight" ? "signup" : "signin";
+		onChange(next);
+		(next === "signin" ? signInTabRef.current : signUpTabRef.current)?.focus();
+	}
+
+	const TABS: Array<{
+		id: AuthMode;
+		label: string;
+		ref: React.RefObject<HTMLButtonElement | null>;
+	}> = [
+		{ id: "signin", label: "Đăng nhập", ref: signInTabRef },
+		{ id: "signup", label: "Đăng ký", ref: signUpTabRef },
+	];
+
+	return (
+		<div
+			role="tablist"
+			aria-label="Đăng nhập hoặc tạo tài khoản"
+			onKeyDown={onKeyDown}
+			className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-[3px] text-muted-foreground"
+		>
+			{TABS.map((tab) => (
+				<button
+					type="button"
+					role="tab"
+					key={tab.id}
+					id={`tab-${tab.id}`}
+					ref={tab.ref}
+					disabled={disabled}
+					aria-selected={mode === tab.id}
+					aria-controls={`panel-${tab.id}`}
+					tabIndex={mode === tab.id ? 0 : -1}
+					onClick={() => onChange(tab.id)}
+					className={cn(
+						"inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md border border-transparent px-3 text-sm outline-none transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50",
+						mode === tab.id
+							? "bg-background font-medium text-foreground shadow-sm dark:border-input dark:bg-input/30"
+							: "hover:text-foreground",
+					)}
+				>
+					{tab.label}
+				</button>
+			))}
+		</div>
+	);
+}
