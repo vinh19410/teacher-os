@@ -94,6 +94,7 @@ describe("TestPreviewOverlay (#433)", () => {
 				setup1.container.querySelector("button[aria-modal], header button"),
 			);
 			expect(setup1.container.textContent).toContain("Passage 2");
+			expect(setup1.container.textContent).not.toContain("Band 7.0");
 			// Paper tab 2 render câu của tab đó với số toàn đề (qOffset=2) —
 			// stem bị ô cloze ngắt giữa chuỗi, assert từng phần.
 			expect(setup1.container.textContent).toContain("CANARY-STEM");

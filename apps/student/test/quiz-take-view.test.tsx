@@ -314,4 +314,116 @@ describe("QuizTakeView — hybrid MCQ + Writing dual-store runtime (#574)", () =
 			testId: "test-listen-1",
 		});
 	});
+
+	it("hides band on start gate for practice auto-graded quiz without hybrid writing", () => {
+		mockDetail = {
+			...mockDetail,
+			assignmentId: "",
+			skill: "listening",
+			part: "s4",
+			type: "notes",
+			band: "7.0",
+			writing: undefined,
+			attempt: null,
+		};
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const { container } = render(
+			<QueryClientProvider client={qc}>
+				<QuizTakeView
+					source={{ kind: "practice", testId: "test-listen-1" }}
+					serverAnswers={{}}
+					serverEssay=""
+				/>
+			</QueryClientProvider>,
+		);
+		expect(screen.getByText("2 câu hỏi", { exact: true })).toBeTruthy();
+		expect(container.textContent).not.toContain("Band");
+	});
+
+	it("hides band on start gate for hybrid assignment", () => {
+		mockDetail = {
+			...mockDetail,
+			band: "6.5",
+			attempt: null,
+		};
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const { container } = render(
+			<QueryClientProvider client={qc}>
+				<QuizTakeView
+					source={{ kind: "assignment", id: "ca-hyb-1" }}
+					serverAnswers={{}}
+					serverEssay=""
+				/>
+			</QueryClientProvider>,
+		);
+		expect(
+			screen.getByText("2 câu hỏi + Bài viết", { exact: true }),
+		).toBeTruthy();
+		expect(container.textContent).not.toContain("Band");
+	});
+
+	it("hides band on start gate for writing assignment", () => {
+		mockDetail = {
+			...mockDetail,
+			skill: "writing",
+			part: "task2",
+			type: "discuss",
+			band: "7.0",
+			questions: [],
+			writing: undefined,
+			attempt: null,
+		};
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const { container } = render(
+			<QueryClientProvider client={qc}>
+				<QuizTakeView
+					source={{ kind: "assignment", id: "ca-w-1" }}
+					serverAnswers={{}}
+					serverEssay=""
+				/>
+			</QueryClientProvider>,
+		);
+		expect(
+			screen.getByText("Bài viết · tối thiểu 250 từ", { exact: true }),
+		).toBeTruthy();
+		expect(container.textContent).not.toContain("Band");
+	});
+
+	it("hides band on start gate for speaking assignment", () => {
+		mockDetail = {
+			...mockDetail,
+			skill: "speaking",
+			part: "part2",
+			type: "cue",
+			band: "7.5",
+			questions: [],
+			writing: undefined,
+			attempt: null,
+		};
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const { container } = render(
+			<QueryClientProvider client={qc}>
+				<QuizTakeView
+					source={{ kind: "assignment", id: "ca-s-1" }}
+					serverAnswers={{}}
+					serverEssay=""
+				/>
+			</QueryClientProvider>,
+		);
+		expect(
+			screen.getByText(
+				"Bài nói · Part 2 · nộp 1 file audio/video (tối đa 50 MB)",
+				{ exact: true },
+			),
+		).toBeTruthy();
+		expect(container.textContent).not.toContain("Band");
+	});
 });

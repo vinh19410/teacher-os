@@ -1093,7 +1093,6 @@ function SelectedPromptPreviewContent({
 				{prompt.writing != null && <Tag>+ Writing</Tag>}
 				<Tag>{part.label}</Tag>
 				<Tag>{type?.label ?? "Chưa chọn dạng"}</Tag>
-				<Tag>{`Band ${prompt.band}`}</Tag>
 				{prompt.source.trim() && <Tag>{prompt.source.trim()}</Tag>}
 				{isAuto && <Tag>Chấm tự động</Tag>}
 				{!isEmptyRichText(prompt.note ?? "") && <Tag>Có hướng dẫn thêm</Tag>}

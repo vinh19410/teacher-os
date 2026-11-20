@@ -216,11 +216,13 @@ test("hybrid Grammar + Writing assignment: author, preview, assign, student take
 	});
 	await expect(startDialog).toBeVisible();
 	await expect(
-		studentPage.getByText("2 câu hỏi + Bài viết · Band 7.0"),
+		studentPage.getByText("2 câu hỏi + Bài viết", { exact: true }),
 	).toBeVisible();
+	await expect(studentPage.getByText(/Band 7\.0/i)).toHaveCount(0);
 	await startDialog.getByRole("button", { name: "Bắt đầu" }).click();
 
 	await expect(studentPage.getByTestId("hybrid-writing-section")).toBeVisible();
+	await expect(studentPage.getByText(/Band 7\.0/i)).toHaveCount(0);
 
 	// Q1 -> B (correct), Q2 -> A (wrong)
 	const q1Group = studentPage.getByRole("radiogroup", { name: "Câu 1" });

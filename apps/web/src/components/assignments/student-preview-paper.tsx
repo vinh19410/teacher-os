@@ -25,7 +25,7 @@ export function StudentPreviewPaper(props: {
 	part?: string;
 	type?: string;
 	title: string;
-	band: string;
+	band?: string;
 	source: string;
 	prompt: string;
 	note: string;
@@ -84,9 +84,7 @@ export function StudentPreviewPaper(props: {
 			<p className="mt-1 font-semibold text-[17px]">
 				{props.title.trim() || "Chưa đặt tên đề"}
 			</p>
-			<p className="mt-1.5 text-muted-foreground text-xs">
-				{part.spec} · Band {props.band}
-			</p>
+			<p className="mt-1.5 text-muted-foreground text-xs">{part.spec}</p>
 			{skillId === "listening" && (
 				<p className="mt-3 rounded-md rounded-md bg-muted p-3 text-sm">
 					🔊 {props.audioName?.trim() || "Chưa đính file nghe"}
@@ -207,7 +205,6 @@ export function StudentPreviewPaper(props: {
 				<Tag>{skill.name}</Tag>
 				<Tag>{part.label}</Tag>
 				<Tag>{type?.label ?? "Chưa chọn dạng"}</Tag>
-				<Tag>{`Band ${props.band}`}</Tag>
 				{props.source.trim() && <Tag>{props.source.trim()}</Tag>}
 				{isAuto && <Tag>Chấm tự động</Tag>}
 				{isAuto && props.writing != null && <Tag>+ Writing</Tag>}
