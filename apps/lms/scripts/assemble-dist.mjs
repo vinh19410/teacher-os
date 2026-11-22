@@ -111,6 +111,36 @@ export function bundleContainsServerUrl(portalDir, expectedServerUrl) {
 	return false;
 }
 
+const STUDENT_PRACTICE_ENABLED_PATTERN =
+	/VITE_STUDENT_PRACTICE_ENABLED["'`]?\s*:\s*["'`]true["'`]/;
+
+/**
+ * Verifies whether built JS assets under `<portalDir>/assets/` match the
+ * expected `VITE_STUDENT_PRACTICE_ENABLED` build flag (true = must embed the
+ * enabled flag; false = must not embed `"true"`). Prevents stale student dists
+ * or flag mismatches from shipping silently.
+ *
+ * @param {string} portalDir
+ * @param {boolean} expectedEnabled
+ * @returns {boolean}
+ */
+export function bundleMatchesStudentPracticeFlag(portalDir, expectedEnabled) {
+	const assetsDir = path.join(portalDir, "assets");
+	if (!existsSync(assetsDir)) {
+		return false;
+	}
+	const jsFiles = readdirSync(assetsDir).filter((name) => name.endsWith(".js"));
+	if (jsFiles.length === 0) {
+		return false;
+	}
+	const hasEnabledFlag = jsFiles.some((name) =>
+		STUDENT_PRACTICE_ENABLED_PATTERN.test(
+			readFileSync(path.join(assetsDir, name), "utf8"),
+		),
+	);
+	return expectedEnabled ? hasEnabledFlag : !hasEnabledFlag;
+}
+
 /**
  * Assemble built sub-portal bundles (`apps/web`, `apps/student`, `apps/admin`)
  * under `<lmsOutDir>/teacher`, `<lmsOutDir>/student`, and `<lmsOutDir>/admin`.
@@ -136,6 +166,8 @@ export function assemblePortalDists(options = {}) {
 		...(options.portalEnv ?? {}),
 	};
 	const expectedServerUrl = childEnv.VITE_SERVER_URL?.trim() ?? "";
+	const expectedStudentPractice =
+		childEnv.VITE_STUDENT_PRACTICE_ENABLED === "true";
 
 	const buildPortal =
 		options.buildPortal ??
@@ -155,8 +187,13 @@ export function assemblePortalDists(options = {}) {
 
 		const staleOrMissingEnv =
 			existsSync(portalIndex) &&
-			isValidHttpUrl(expectedServerUrl) &&
-			!bundleContainsServerUrl(portalDist, expectedServerUrl);
+			((isValidHttpUrl(expectedServerUrl) &&
+				!bundleContainsServerUrl(portalDist, expectedServerUrl)) ||
+				(pkg === "student" &&
+					!bundleMatchesStudentPracticeFlag(
+						portalDist,
+						expectedStudentPractice,
+					)));
 
 		if (rebuildPortals || !existsSync(portalIndex) || staleOrMissingEnv) {
 			if (!isValidHttpUrl(expectedServerUrl)) {
@@ -179,6 +216,15 @@ export function assemblePortalDists(options = {}) {
 		) {
 			throw new Error(
 				`[lms:assemble] Built portal "${pkg}" assets do not contain VITE_SERVER_URL "${expectedServerUrl}" — refusing to assemble broken bundle`,
+			);
+		}
+
+		if (
+			pkg === "student" &&
+			!bundleMatchesStudentPracticeFlag(portalDist, expectedStudentPractice)
+		) {
+			throw new Error(
+				`[lms:assemble] Built portal "student" assets do not match expected VITE_STUDENT_PRACTICE_ENABLED="${expectedStudentPractice ? "true" : "false"}" — refusing to assemble mismatched bundle`,
 			);
 		}
 

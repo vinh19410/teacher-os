@@ -32,6 +32,7 @@ environment — never editing this runbook.
 | Session cookies | cross-subdomain, `Domain=.<domain>`, `SameSite=None; Secure; HttpOnly` | `COOKIE_DOMAIN` binding → `crossSubDomainCookieDomain()` in `packages/auth/src/topology.ts` |
 | Auth cookie namespace | default `better-auth` on prod; `teacheros-staging` on any other member of the prod (`msmy.io.vn`) or former prod (`teacheros.io.vn`) cookie zone (staging) | `BETTER_AUTH_COOKIE_PREFIX` binding → `resolveDomainTopology().authCookiePrefix` in `packages/infra/src/topology.ts`, validated by `authCookiePrefix()` in `packages/auth/src/topology.ts` |
 | `VITE_SERVER_URL` (lms + sub-portal builds) | `https://api.<domain>` | derived from `APP_DOMAIN`; server worker URL otherwise (passed through `LMS_REBUILD_PORTALS=1` to `web`, `student`, `admin` builds) |
+| `STUDENT_PRACTICE_ENABLED` → `VITE_STUDENT_PRACTICE_ENABLED` (lms / student build) | `"true"` on staging (`deploy-staging.yml`); `"false"` default on prod (fail-closed on `PROD_APP_DOMAIN` via `resolveStudentPracticeEnabled`) | deploy-only infra env `STUDENT_PRACTICE_ENABLED` mapped inside `alchemy.run.ts` to `VITE_STUDENT_PRACTICE_ENABLED` on `Website.Vite("lms")` (validated in `assemble-dist.mjs` and `/student/` live smoke). **UI-only boundary:** hides the 2 sidebar nav entries ("Luyện tập", "Lịch sử") in `STUDENT_NAV`; does not block the home `/practice/vocabulary` CTA, direct URLs (`/practice/*`, `/history`), or `/api/student/practice/*` & `/api/student/history/*` APIs (#852) |
 | `LEAD_API_URL` (profile build) | `https://api.<domain>` | derived from `APP_DOMAIN` (`topology.apiOrigin`); server worker URL otherwise (#536) |
 | `STUDENT_PORTAL_URL` (profile build) | `https://lms.<domain>/student` | derived from `APP_DOMAIN` (`topology.studentPortalUrl`); `lmsWorker.url` otherwise, dev default `http://localhost:8001/student` |
 
@@ -179,7 +180,7 @@ cp .env.example .env         # fill non-secret values; secrets per inventory
 # data; the recreation also completes the pending 0006 empty-upgrade restage
 # below).
 pnpm alchemy destroy --stage staging    # skip if staging does not exist yet
-env APP_DOMAIN=staging.teacheros.io.vn pnpm alchemy deploy --stage staging
+env APP_DOMAIN=staging.teacheros.io.vn STUDENT_PRACTICE_ENABLED=true pnpm alchemy deploy --stage staging
 ```
 
 The deploy registers `lms.staging.teacheros.io.vn` (plus aliases `app/student/admin.staging.teacheros.io.vn`) and
@@ -231,7 +232,7 @@ allow deployments from the `develop` branch. Manual `workflow_dispatch`
 remains for migration rehearsal.
 Either way the workflow runs the
 same reusable `quality.yml` gates (`turbo-cache: false`) as CI, then
-`APP_DOMAIN=staging.teacheros.io.vn pnpm alchemy deploy --stage staging --yes`
+`APP_DOMAIN=staging.teacheros.io.vn STUDENT_PRACTICE_ENABLED=true pnpm alchemy deploy --stage staging --yes`
 with credentials from the GitHub `staging` environment (same secret names as
 production), serialized like prod (`cancel-in-progress: false`) so
 forward-only migrations never race. Its post-deploy smoke is broader than
@@ -240,7 +241,7 @@ round-trip (throwaway unified-LMS sign-up via `Origin: https://lms.staging.teach
 poisoned by a prod-shaped parent-domain session cookie — the exact shape that
 broke QC sign-in before issue #125; unknown emails auto-classify as `student` even when `TEACHER_EMAILS` is set), a check that the removed PWA service
 worker's stubs (`/sw.js`, `/registerSW.js`) are served as JavaScript with
-network-first cache headers on both `lms.` and legacy `app.`, and `Smoke check LMS & legacy 301 redirects` verifying `200 text/html` on `/login` plus `301` redirects from `app.` (`/classes` → `/teacher/classes`, `/pay/smoke-token` → `/pay/smoke-token`), `student.` (`/schedule` → `/student/schedule`), and `admin.` (`/library/tests` → `/admin/library/tests`). Throwaway smoke accounts are accepted junk rows
+network-first cache headers on both `lms.` and legacy `app.`, and `Smoke check LMS & legacy 301 redirects` verifying `200 text/html` on `/login` plus `301` redirects from `app.` (`/classes` → `/teacher/classes`, `/pay/smoke-token` → `/pay/smoke-token`), `student.` (`/schedule` → `/student/schedule`), and `admin.` (`/library/tests` → `/admin/library/tests`), as well as verifying the live `/student/` JS bundle embeds `VITE_STUDENT_PRACTICE_ENABLED` = `"true"` (while `deploy.yml` runs the mirror negative check ensuring prod `/student/` never leaks it). Throwaway smoke accounts are accepted junk rows
 in the staging D1; prod deliberately gets no signup smoke. The manual
 "Provision staging" procedure below remains the path for first provisioning
 or destroy/recreate.
