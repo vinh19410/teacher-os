@@ -309,6 +309,20 @@ export default Alchemy.Stack(
 			compatibility: { date: WORKER_COMPATIBILITY_DATE },
 			rootDir: "../../apps/lms",
 			main: "src/worker.ts",
+			memo: {
+				// Hash all 3 sub-portals and shared packages alongside apps/lms so
+				// edits inside web/student/admin always trigger a fresh composite build.
+				workspaces: [
+					{ cwd: "../web" },
+					{ cwd: "../student" },
+					{ cwd: "../admin" },
+					{ cwd: "../../packages/api" },
+					{ cwd: "../../packages/auth" },
+					{ cwd: "../../packages/config" },
+					{ cwd: "../../packages/env" },
+					{ cwd: "../../packages/ui" },
+				],
+			},
 			assets: {
 				htmlHandling: "auto-trailing-slash",
 				notFoundHandling: "none",
@@ -326,7 +340,6 @@ export default Alchemy.Stack(
 					? topology.apiOrigin
 					: serverWorker.url.as<string>(),
 				VITE_AI_ENABLED: aiEnabled,
-				LMS_REBUILD_PORTALS: "1",
 			},
 			dev: {
 				port: 8001,
