@@ -5,7 +5,10 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
-import { assemblePortalDists } from "./scripts/assemble-dist.mjs";
+import {
+	assemblePortalDists,
+	extractViteEnvFromConfig,
+} from "./scripts/assemble-dist.mjs";
 
 const rootPkg = JSON.parse(
 	await fs.readFile(
@@ -16,6 +19,7 @@ const rootPkg = JSON.parse(
 
 function assemblePortalsPlugin(): Plugin {
 	let resolvedOutDir = path.resolve(import.meta.dirname, "dist");
+	let resolvedViteEnv: Record<string, string> = {};
 	const repoRoot = path.resolve(import.meta.dirname, "../..");
 
 	return {
@@ -23,18 +27,31 @@ function assemblePortalsPlugin(): Plugin {
 		apply: "build",
 		configResolved(config) {
 			resolvedOutDir = path.resolve(config.root, config.build.outDir);
+			resolvedViteEnv = extractViteEnvFromConfig(config, process.env);
 		},
 		closeBundle() {
 			if (process.env.LMS_SKIP_PORTAL_ASSEMBLE === "1") {
 				return;
 			}
-			if (!existsSync(path.join(resolvedOutDir, "index.html"))) {
+			const envConfig = this.environment?.config;
+			const outDir = envConfig?.build?.outDir
+				? path.resolve(envConfig.root, envConfig.build.outDir)
+				: resolvedOutDir;
+			if (!existsSync(path.join(outDir, "index.html"))) {
 				return;
 			}
+			const portalEnv = {
+				...extractViteEnvFromConfig(undefined, process.env),
+				...resolvedViteEnv,
+				...(envConfig ? extractViteEnvFromConfig(envConfig, {}) : {}),
+			};
 			assemblePortalDists({
-				lmsOutDir: resolvedOutDir,
+				lmsOutDir: outDir,
 				repoRoot,
-				rebuildPortals: process.env.LMS_REBUILD_PORTALS === "1",
+				rebuildPortals:
+					process.env.LMS_REBUILD_PORTALS === "1" ||
+					process.env.ALCHEMY_CLOUDFLARE_VITE_INJECTED === "1",
+				portalEnv,
 			});
 		},
 	};

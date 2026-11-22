@@ -177,7 +177,7 @@ jobs:
             return 0
           }
           check_shell_headers() {
-            local url="$1" code
+            local url="$1" verify_bundle="${2:-false}" code asset_path found
             code=$(curl -sS --connect-timeout 5 --max-time 30 \
               -D /tmp/lms-shell-headers.txt -o /tmp/lms-shell.html -w '%{http_code}' \
               -H "Accept: text/html" \
@@ -189,14 +189,24 @@ jobs:
               || { echo "GET $url missing Strict-Transport-Security header (runWorkerFirst regression?)"; return 1; }
             grep -qi "^content-security-policy:.*media-src[^;]*${API_BASE_URL}" /tmp/lms-shell-headers.txt \
               || { echo "GET $url missing CSP media-src for $API_BASE_URL"; return 1; }
+            if [ "$verify_bundle" = "true" ]; then
+              found=""
+              for asset_path in $(grep -oE '(src|href)="(/[^"]*/assets/[^"]+\.js)"' /tmp/lms-shell.html | sed -E 's/^(src|href)="([^"]+)"$/\2/' | awk '/auth-client|\/dist-|\/index-/ { print "0 " $0; next } { print "1 " $0 }' | sort -u | cut -d' ' -f2); do
+                if curl -sS --connect-timeout 5 --max-time 30 "$LMS_ORIGIN$asset_path" | grep -Fq "$API_BASE_URL"; then
+                  found=1
+                  break
+                fi
+              done
+              [ -n "$found" ] || { echo "GET $url JS bundle missing VITE_SERVER_URL ($API_BASE_URL) — runtime env validation would white-screen"; return 1; }
+            fi
             return 0
           }
           lms_ok() {
             check_shell_headers "$LMS_ORIGIN/" || return 1
-            check_shell_headers "$LMS_ORIGIN/login" || return 1
-            check_shell_headers "$LMS_ORIGIN/teacher/" || return 1
-            check_shell_headers "$LMS_ORIGIN/student/" || return 1
-            check_shell_headers "$LMS_ORIGIN/admin/" || return 1
+            check_shell_headers "$LMS_ORIGIN/login" "true" || return 1
+            check_shell_headers "$LMS_ORIGIN/teacher/" "true" || return 1
+            check_shell_headers "$LMS_ORIGIN/student/" "true" || return 1
+            check_shell_headers "$LMS_ORIGIN/admin/" "true" || return 1
             check_redirect "$LEGACY_APP_ORIGIN/" "$LMS_ORIGIN/teacher" || return 1
             check_redirect "$LEGACY_APP_ORIGIN/classes" "$LMS_ORIGIN/teacher/classes" || return 1
             check_redirect "$LEGACY_APP_ORIGIN/pay/smoke-token" "$LMS_ORIGIN/pay/smoke-token" || return 1
