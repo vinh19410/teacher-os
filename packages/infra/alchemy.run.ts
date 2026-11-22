@@ -10,6 +10,7 @@ import {
 	resolveAssumeEmailVerified,
 	resolveDomainTopology,
 	resolveLeadOrigins,
+	resolveStudentPracticeEnabled,
 	resolveTeacherEmails,
 } from "./src/topology.ts";
 
@@ -159,6 +160,14 @@ const teacherEmails = resolveTeacherEmails(
 // gửi mail. Chặn cứng trên prod để cờ không thể lọt sang môi trường thật.
 const assumeEmailVerified = resolveAssumeEmailVerified(
 	process.env.AUTH_ASSUME_EMAIL_VERIFIED,
+	process.env.APP_DOMAIN,
+);
+
+// Staging QA (#852): bật lại menu Luyện tập & Lịch sử ở apps/student trên staging;
+// mặc định tắt và chặn fail-closed trên production. Dùng biến hạ tầng không mang
+// prefix VITE_ để apps/lms không đọc lén từ process.env bỏ qua Alchemy config.define.
+const studentPracticeEnabled = resolveStudentPracticeEnabled(
+	process.env.STUDENT_PRACTICE_ENABLED,
 	process.env.APP_DOMAIN,
 );
 
@@ -340,6 +349,7 @@ export default Alchemy.Stack(
 					? topology.apiOrigin
 					: serverWorker.url.as<string>(),
 				VITE_AI_ENABLED: aiEnabled,
+				VITE_STUDENT_PRACTICE_ENABLED: studentPracticeEnabled,
 			},
 			dev: {
 				port: 8001,

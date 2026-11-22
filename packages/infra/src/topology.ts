@@ -246,3 +246,32 @@ export function resolveLeadOrigins(
 	}
 	throw new Error("LEAD_ORIGINS must be set when deploying without APP_DOMAIN");
 }
+
+/**
+ * Cờ build-time bật menu Luyện tập & Lịch sử ở apps/student (#852).
+ * Mặc định tắt ("false") trên PROD và bị chặn fail-closed trên PROD_APP_DOMAIN
+ * trong khi nội dung/cổng bản quyền tự luyện trên PROD chưa mở.
+ * Staging (deploy-staging.yml) đặt STUDENT_PRACTICE_ENABLED="true" và
+ * alchemy.run.ts ánh xạ sang VITE_STUDENT_PRACTICE_ENABLED cho lms Worker.
+ * Fail-loud khi nhận giá trị non-empty không hợp lệ để tránh gõ nhầm âm thầm rơi về "false".
+ */
+export function resolveStudentPracticeEnabled(
+	raw: string | undefined,
+	appDomain: string | undefined,
+): "true" | "false" {
+	const value = (raw ?? "").trim();
+	if (value === "" || value === "false") {
+		return "false";
+	}
+	if (value === "true") {
+		if (appDomain?.trim() === PROD_APP_DOMAIN) {
+			throw new Error(
+				"STUDENT_PRACTICE_ENABLED must not be enabled on production",
+			);
+		}
+		return "true";
+	}
+	throw new Error(
+		`Invalid STUDENT_PRACTICE_ENABLED value "${raw}" (expected "true", "false", or empty)`,
+	);
+}

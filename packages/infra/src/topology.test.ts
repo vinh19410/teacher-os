@@ -6,6 +6,7 @@ import {
 	resolveAssumeEmailVerified,
 	resolveDomainTopology,
 	resolveLeadOrigins,
+	resolveStudentPracticeEnabled,
 	resolveTeacherEmails,
 } from "./topology";
 
@@ -301,5 +302,46 @@ describe("resolveLeadOrigins (#524, #536)", () => {
 		expect(() =>
 			resolveLeadOrigins(" , ", { topology: undefined, isDev: false }),
 		).toThrow(/LEAD_ORIGINS must be set/);
+	});
+});
+
+describe("resolveStudentPracticeEnabled", () => {
+	test("defaults to 'false' when unset, empty, whitespace, or 'false' on any domain", () => {
+		for (const domain of [
+			undefined,
+			"staging.teacheros.io.vn",
+			PROD_APP_DOMAIN,
+		]) {
+			for (const raw of [undefined, "", "   ", "false", " false "]) {
+				expect(resolveStudentPracticeEnabled(raw, domain)).toBe("false");
+			}
+		}
+	});
+
+	test("returns 'true' on staging and local dev when explicitly set to 'true'", () => {
+		expect(
+			resolveStudentPracticeEnabled("true", "staging.teacheros.io.vn"),
+		).toBe("true");
+		expect(
+			resolveStudentPracticeEnabled(" true ", "staging.teacheros.io.vn"),
+		).toBe("true");
+		expect(resolveStudentPracticeEnabled("true", undefined)).toBe("true");
+	});
+
+	test("fails closed when enabled on the production domain", () => {
+		expect(() =>
+			resolveStudentPracticeEnabled("true", PROD_APP_DOMAIN),
+		).toThrow(/STUDENT_PRACTICE_ENABLED.*production/i);
+		expect(() =>
+			resolveStudentPracticeEnabled(" true ", ` ${PROD_APP_DOMAIN} `),
+		).toThrow(/STUDENT_PRACTICE_ENABLED.*production/i);
+	});
+
+	test("fails loud on invalid non-empty values", () => {
+		for (const invalid of ["1", "0", "TRUE", "FALSE", "ture", "yes"]) {
+			expect(() =>
+				resolveStudentPracticeEnabled(invalid, "staging.teacheros.io.vn"),
+			).toThrow(/Invalid STUDENT_PRACTICE_ENABLED/);
+		}
 	});
 });

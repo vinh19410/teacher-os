@@ -34,6 +34,11 @@ export declare function bundleContainsServerUrl(
 	expectedServerUrl: string,
 ): boolean;
 
+export declare function bundleMatchesStudentPracticeFlag(
+	portalDir: string,
+	expectedEnabled: boolean,
+): boolean;
+
 export declare function assemblePortalDists(
 	options?: AssemblePortalDistsOptions,
 ): void;

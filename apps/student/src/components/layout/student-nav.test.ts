@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	ACTIVE_KEY_BY_PREFIX,
 	resolveStudentActiveKey,
@@ -45,6 +45,68 @@ describe("student-nav practice & history menu visibility (#852)", () => {
 		expect(ACTIVE_KEY_BY_PREFIX["/history"]).toBe("history");
 		expect(STUDENT_PAGE_LABEL.practice).toBe("Luyện tập");
 		expect(STUDENT_PAGE_LABEL.history).toBe("Lịch sử");
+	});
+});
+
+describe("student-nav practice & history flag toggling via VITE_STUDENT_PRACTICE_ENABLED", () => {
+	afterEach(() => {
+		vi.doUnmock("@teacher-os/env/web");
+		vi.resetModules();
+	});
+
+	it("includes Luyện tập (5 skills) and Lịch sử when VITE_STUDENT_PRACTICE_ENABLED='true'", async () => {
+		vi.resetModules();
+		vi.doMock("@teacher-os/env/web", () => ({
+			env: {
+				VITE_SERVER_URL: "http://localhost:8000",
+				VITE_STUDENT_PRACTICE_ENABLED: "true",
+			},
+		}));
+		const mod = await import("./student-nav");
+
+		expect(mod.PRACTICE_ROUTES_LIVE).toBe(true);
+		const items = mod.STUDENT_NAV.flatMap((group) => group.items);
+		expect(items).toHaveLength(7);
+		expect(items.map((item) => item.key)).toEqual([
+			"overview",
+			"classes",
+			"schedule",
+			"assignments",
+			"practice",
+			"history",
+			"tuition",
+		]);
+		const practice = items.find((item) => item.key === "practice");
+		expect(practice?.label).toBe("Luyện tập");
+		expect(practice?.children?.map((child) => child.href)).toEqual([
+			"/practice/reading",
+			"/practice/listening",
+			"/practice/writing",
+			"/practice/speaking",
+			"/practice/vocabulary",
+		]);
+		const history = items.find((item) => item.key === "history");
+		expect(history?.label).toBe("Lịch sử");
+		expect(history?.href).toBe("/history");
+	});
+
+	it("keeps practice and history hidden when VITE_STUDENT_PRACTICE_ENABLED is 'false', empty, or undefined", async () => {
+		for (const value of ["false", "", undefined]) {
+			vi.resetModules();
+			vi.doMock("@teacher-os/env/web", () => ({
+				env: {
+					VITE_SERVER_URL: "http://localhost:8000",
+					VITE_STUDENT_PRACTICE_ENABLED: value,
+				},
+			}));
+			const mod = await import("./student-nav");
+
+			expect(mod.PRACTICE_ROUTES_LIVE).toBe(false);
+			const items = mod.STUDENT_NAV.flatMap((group) => group.items);
+			expect(items).toHaveLength(5);
+			expect(items.map((item) => item.key)).not.toContain("practice");
+			expect(items.map((item) => item.key)).not.toContain("history");
+		}
 	});
 });
 

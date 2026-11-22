@@ -438,3 +438,111 @@ test("workflow PROFILE_ORIGIN and profile smoke check match resolveDomainTopolog
 		"apps/e2e/playwright.config.ts must pass STUDENT_PORTAL_URL using lmsPort + /student",
 	);
 });
+
+test("student practice nav flag is enabled on staging deploy step, wired via alchemy lms env, and blocked on production", () => {
+	const stagingYaml = read("../.github/workflows/deploy-staging.yml");
+	const stagingDeployStep = stagingYaml
+		.split("- name: Deploy to Cloudflare (stage staging)")[1]
+		?.split("- name:")[0];
+	assert.ok(
+		stagingDeployStep,
+		"Deploy to Cloudflare (stage staging) step found in deploy-staging.yml",
+	);
+	assert.match(
+		stagingDeployStep,
+		/^\s*STUDENT_PRACTICE_ENABLED:\s*"true"\s*$/m,
+		'deploy-staging.yml Deploy step must set STUDENT_PRACTICE_ENABLED: "true" so staging student nav enables Luyện tập & Lịch sử',
+	);
+	const stagingEnvKeyLines = stagingYaml
+		.split("\n")
+		.filter((line) => !/^\s*#/.test(line))
+		.join("\n");
+	const stagingTopLevel = stagingEnvKeyLines.split(/^jobs:\s*$/m)[0] ?? "";
+	assert.doesNotMatch(
+		stagingTopLevel,
+		/^\s*STUDENT_PRACTICE_ENABLED:/m,
+		"deploy-staging.yml must scope STUDENT_PRACTICE_ENABLED to the Deploy step (not top-level env)",
+	);
+	assert.doesNotMatch(
+		stagingEnvKeyLines,
+		/^\s*VITE_STUDENT_PRACTICE_ENABLED:/m,
+		"deploy-staging.yml must use STUDENT_PRACTICE_ENABLED (not VITE_STUDENT_PRACTICE_ENABLED) so process.env cannot bypass Alchemy config.define",
+	);
+
+	const prodYaml = read("../.github/workflows/deploy.yml");
+	const prodNoComments = prodYaml
+		.split("\n")
+		.filter((line) => !/^\s*#/.test(line))
+		.join("\n");
+	assert.doesNotMatch(
+		prodNoComments,
+		/^\s*VITE_STUDENT_PRACTICE_ENABLED:/m,
+		"deploy.yml must never set VITE_STUDENT_PRACTICE_ENABLED directly",
+	);
+	assert.doesNotMatch(
+		prodNoComments,
+		/^\s*STUDENT_PRACTICE_ENABLED:(?!\s*["']?false["']?\s*$)/m,
+		"deploy.yml must not enable STUDENT_PRACTICE_ENABLED or wire vars.* on production",
+	);
+	assert.doesNotMatch(
+		prodNoComments,
+		/\b(?:VITE_)?STUDENT_PRACTICE_ENABLED\s*=\s*["']?true\b/,
+		"deploy.yml must not enable STUDENT_PRACTICE_ENABLED inline in run commands",
+	);
+
+	const run = read("../packages/infra/alchemy.run.ts");
+	assert.match(
+		run,
+		/resolveStudentPracticeEnabled\(/,
+		"packages/infra/alchemy.run.ts must resolve STUDENT_PRACTICE_ENABLED via resolveStudentPracticeEnabled",
+	);
+	const lmsBlock = run
+		.split('Cloudflare.Website.Vite("lms"')[1]
+		?.split('Cloudflare.Website.StaticSite("landing"')[0];
+	assert.ok(lmsBlock, 'Website.Vite("lms") block found in alchemy.run.ts');
+	assert.match(
+		lmsBlock,
+		/VITE_STUDENT_PRACTICE_ENABLED:\s*studentPracticeEnabled/,
+		'Website.Vite("lms") env must wire VITE_STUDENT_PRACTICE_ENABLED so Alchemy tracks it in state/memo and injects config.define',
+	);
+
+	const stagingSmokeStep = stagingYaml
+		.split("- name: Smoke check LMS & legacy 301 redirects")[1]
+		?.split("- name:")[0];
+	assert.ok(stagingSmokeStep, "staging LMS smoke step found");
+	assert.match(
+		stagingSmokeStep,
+		/practice_flag_regex=.*VITE_STUDENT_PRACTICE_ENABLED/,
+		"deploy-staging.yml LMS smoke must define practice_flag_regex for VITE_STUDENT_PRACTICE_ENABLED",
+	);
+	assert.match(
+		stagingSmokeStep,
+		/check_shell_headers "\$LMS_ORIGIN\/student\/" "true" "\$practice_flag_regex"/,
+		"deploy-staging.yml LMS smoke must verify /student/ bundle embeds enabled VITE_STUDENT_PRACTICE_ENABLED",
+	);
+	assert.match(
+		stagingSmokeStep,
+		/found_required/,
+		"deploy-staging.yml LMS smoke must track found_required independently across chunks",
+	);
+
+	const prodSmokeStep = prodYaml
+		.split("- name: Smoke check LMS & legacy 301 redirects")[1]
+		?.split("- name:")[0];
+	assert.ok(prodSmokeStep, "prod LMS smoke step found");
+	assert.match(
+		prodSmokeStep,
+		/forbidden_practice_regex=.*VITE_STUDENT_PRACTICE_ENABLED/,
+		"deploy.yml LMS smoke must define forbidden_practice_regex for VITE_STUDENT_PRACTICE_ENABLED",
+	);
+	assert.match(
+		prodSmokeStep,
+		/check_shell_headers "\$LMS_ORIGIN\/student\/" "true" "\$forbidden_practice_regex"/,
+		"deploy.yml LMS smoke must reject any /student/ bundle leaking enabled VITE_STUDENT_PRACTICE_ENABLED on production",
+	);
+	assert.match(
+		prodSmokeStep,
+		/curl -fsS[\s\S]*leaked forbidden production flag pattern[\s\S]*failed to fetch (?:lazy )?JS chunk/,
+		"deploy.yml LMS smoke negative scan must fail closed on curl/HTTP errors and forbidden flag matches",
+	);
+});
