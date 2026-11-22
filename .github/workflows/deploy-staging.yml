@@ -275,7 +275,7 @@ jobs:
             return 0
           }
           check_shell_headers() {
-            local url="$1" verify_bundle="${2:-false}" code asset_path found
+            local url="$1" verify_bundle="${2:-false}" code asset_path asset_prefix lazy_ref found
             code=$(curl -sS --connect-timeout 5 --max-time 30 \
               -D /tmp/lms-shell-headers.txt -o /tmp/lms-shell.html -w '%{http_code}' \
               -H "Accept: text/html" \
@@ -289,12 +289,25 @@ jobs:
               || { echo "GET $url missing CSP media-src for $API_BASE_URL"; return 1; }
             if [ "$verify_bundle" = "true" ]; then
               found=""
-              for asset_path in $(grep -oE '(src|href)="(/[^"]*/assets/[^"]+\.js)"' /tmp/lms-shell.html | sed -E 's/^(src|href)="([^"]+)"$/\2/' | awk '/auth-client|\/dist-|\/index-/ { print "0 " $0; next } { print "1 " $0 }' | sort -u | cut -d' ' -f2); do
-                if curl -sS --connect-timeout 5 --max-time 30 "$LMS_ORIGIN$asset_path" | grep -Fq "$API_BASE_URL"; then
-                  found=1
-                  break
+              : > /tmp/lms-lazy-assets.txt
+              for asset_path in $( (grep -oE '(src|href)="(/([^"]*/)?assets/[^"]+\.js)"' /tmp/lms-shell.html || true) | sed -E 's/^(src|href)="([^"]+)"$/\2/' | awk '/auth-client|\/dist-|\/index-/ { print "0 " $0; next } { print "1 " $0 }' | sort -u | cut -d' ' -f2); do
+                if curl -sS --connect-timeout 5 --max-time 30 -o /tmp/lms-asset.js "$LMS_ORIGIN$asset_path"; then
+                  if grep -Fq "$API_BASE_URL" /tmp/lms-asset.js; then
+                    found=1
+                    break
+                  fi
+                  asset_prefix="${asset_path%/assets/*}"
+                  (grep -oE '"(/?([^"]*/)?assets/[^"]+\.js)"' /tmp/lms-asset.js || true) | tr -d '"' | awk -v prefix="$asset_prefix" '{ if ($0 ~ /^\//) print $0; else print prefix "/" $0 }' >> /tmp/lms-lazy-assets.txt
                 fi
               done
+              if [ -z "$found" ] && [ -s /tmp/lms-lazy-assets.txt ]; then
+                for lazy_ref in $(awk '/auth-client|\/dist-|\/index-/ { print "0 " $0; next } { print "1 " $0 }' /tmp/lms-lazy-assets.txt | sort -u | cut -d' ' -f2); do
+                  if curl -sS --connect-timeout 5 --max-time 30 -o /tmp/lms-asset.js "$LMS_ORIGIN$lazy_ref" && grep -Fq "$API_BASE_URL" /tmp/lms-asset.js; then
+                    found=1
+                    break
+                  fi
+                done
+              fi
               [ -n "$found" ] || { echo "GET $url JS bundle missing VITE_SERVER_URL ($API_BASE_URL) — runtime env validation would white-screen"; return 1; }
             fi
             return 0

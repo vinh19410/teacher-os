@@ -266,10 +266,12 @@ test("deploy workflows wire unified LMS origin, legacy 301 redirect smoke, and u
 		assert.match(lmsSmokeStep, /"\$LEGACY_STUDENT_ORIGIN\/"/);
 		assert.match(lmsSmokeStep, /"\$LEGACY_ADMIN_ORIGIN\/"/);
 		assert.match(lmsSmokeStep, /"\$LMS_ORIGIN\/"/);
+		assert.match(lmsSmokeStep, /"\$LMS_ORIGIN\/login" "true"/);
 		assert.match(lmsSmokeStep, /"\$LMS_ORIGIN\/teacher\/" "true"/);
 		assert.match(lmsSmokeStep, /"\$LMS_ORIGIN\/student\/" "true"/);
 		assert.match(lmsSmokeStep, /"\$LMS_ORIGIN\/admin\/" "true"/);
 		assert.match(lmsSmokeStep, /JS bundle missing VITE_SERVER_URL/);
+		assert.match(lmsSmokeStep, /\/\(\[\^"\]\*\/\)\?assets\//);
 		assert.match(lmsSmokeStep, /strict-transport-security:/i);
 		assert.match(lmsSmokeStep, /content-security-policy:.*media-src/i);
 		const stubsStep = yaml
