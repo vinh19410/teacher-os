@@ -9,10 +9,11 @@ import { type QuizFixture, seedQuizFixture } from "./helpers-quiz";
 import { LMS_ORIGIN, STUDENT_BASE_URL } from "./origins";
 
 /**
- * #378 — Tab "Bạn cùng lớp" trên trang chi tiết lớp: roster CHỈ gồm tên +
- * avatar chữ tắt (không email/band/học phí). Kernel rows seeded direct-DB
- * (precedent seedStudent); auth học viên là thật (portal signup + mail-log
- * verification) làm một lần trong beforeAll.
+ * Tab "Bạn cùng lớp" trên trang chi tiết lớp học viên đang được ẩn khỏi UI:
+ * thanh tab chỉ còn 3 mục ("Hành trình học", "Bài tập", "Giáo trình"), không
+ * hiển thị danh sách/tên học viên cùng lớp và không gọi API /classmates.
+ * Kernel rows seeded direct-DB (precedent seedStudent); auth học viên là thật
+ * (portal signup + mail-log verification) làm một lần trong beforeAll.
  */
 const PASSWORD = "password-8chars";
 const runToken = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -54,8 +55,8 @@ test.beforeAll(async ({ browser }) => {
 		prompts: [],
 	});
 
-	// Bạn cùng lớp: một học viên active (hiện) + một học viên chỉ `invited`
-	// (KHÔNG hiện trong roster).
+	// Seed thêm học viên cùng lớp (1 active + 1 invited) để xác minh cả hai
+	// đều KHÔNG bị lộ trên DOM khi tab "Bạn cùng lớp" bị ẩn.
 	const db = createClient({
 		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
 	});
@@ -104,9 +105,18 @@ test.beforeAll(async ({ browser }) => {
 });
 
 test.describe("Student classmates tab", () => {
-	test("hiện bạn cùng lớp chỉ với tên + chữ tắt, không lộ email", async ({
+	test("ẩn tab Bạn cùng lớp, giữ 3 tab còn lại hoạt động và không gọi API classmates", async ({
 		page,
 	}) => {
+		const classmatesRequests: string[] = [];
+		page.on("request", (req) => {
+			if (
+				/\/api\/student\/classes\/[^/]+\/classmates(?:\?|$)/.test(req.url())
+			) {
+				classmatesRequests.push(req.url());
+			}
+		});
+
 		await signIn(page);
 
 		const card = page.getByTestId("class-card").filter({ hasText: className });
@@ -115,23 +125,42 @@ test.describe("Student classmates tab", () => {
 			page.getByRole("heading", { level: 1, name: className }),
 		).toBeVisible();
 
-		await page.getByRole("tab", { name: "Bạn cùng lớp" }).click();
+		const tabs = page.getByRole("tab");
+		await expect(tabs).toHaveCount(3);
+		await expect(tabs).toHaveText(["Hành trình học", "Bài tập", "Giáo trình"]);
+		await expect(page.getByRole("tab", { name: "Bạn cùng lớp" })).toHaveCount(
+			0,
+		);
+		await expect(page.getByTestId("class-tab-classmates")).toHaveCount(0);
+		await expect(page.getByTestId("classmates-grid")).toHaveCount(0);
+		await expect(page.getByTestId("classmate-card")).toHaveCount(0);
 
-		const grid = page.getByTestId("classmates-grid");
-		await expect(grid.getByTestId("classmate-card")).toHaveCount(2);
+		const body = page.locator("body");
+		await expect(body).not.toContainText(mateName);
+		await expect(body).not.toContainText(invitedOnlyName);
 
-		// Chính mình có dấu "(bạn)"; bạn cùng lớp active có tên.
-		const mine = grid.getByTestId("classmate-card").filter({
-			hasText: studentName,
-		});
-		await expect(mine).toContainText("(bạn)");
-		await expect(
-			grid.getByTestId("classmate-card").filter({ hasText: mateName }),
-		).toBeVisible();
+		// Chuyển qua lại 3 tab còn lại (gồm cả Tab + Enter bằng bàn phím).
+		const assignmentsTab = page.getByRole("tab", { name: "Bài tập" });
+		await assignmentsTab.click();
+		await expect(assignmentsTab).toHaveAttribute("aria-selected", "true");
+		await expect(page.getByText("Chưa có bài tập nào")).toBeVisible();
 
-		// Học viên chỉ `invited` không nằm trong roster.
-		await expect(grid).not.toContainText(invitedOnlyName);
-		// Quy ước quyền riêng #378: roster không bao giờ hiển thị email.
-		await expect(grid).not.toContainText("@");
+		const syllabusTab = page.getByRole("tab", { name: "Giáo trình" });
+		await page.keyboard.press("Tab");
+		await expect(syllabusTab).toBeFocused();
+		await page.keyboard.press("Enter");
+		await expect(syllabusTab).toHaveAttribute("aria-selected", "true");
+		const syllabusItem = page
+			.getByRole("listitem")
+			.filter({ hasText: "Buổi hôm qua" });
+		await expect(syllabusItem).toBeVisible();
+		await expect(syllabusItem).toContainText("1/1 buổi");
+
+		const journeyTab = page.getByRole("tab", { name: "Hành trình học" });
+		await journeyTab.click();
+		await expect(journeyTab).toHaveAttribute("aria-selected", "true");
+		await expect(page.getByText("Đã học", { exact: true })).toBeVisible();
+
+		expect(classmatesRequests).toEqual([]);
 	});
 });
