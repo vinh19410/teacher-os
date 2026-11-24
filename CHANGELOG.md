@@ -32,6 +32,7 @@ Quy ước khi cập nhật:
 - **Gỡ hiển thị nhãn độ khó (band) trên thẻ đề và màn hình làm bài học viên (`packages/ui`, `apps/student`, `apps/web`)** (#849).
 
 ### Fixed
+- Chuyển `UserFooter` sang dùng `ShellLinkContext` (`useShellLink`) để liên kết avatar hồ sơ trong sidebar giáo viên đi đúng `/teacher/profile` trên unified LMS thay vì 404 `/profile` (`packages/ui`, `apps/web`, `apps/student`).
 - Bổ sung header `Cross-Origin-Resource-Policy: same-site` và `Referrer-Policy: no-referrer` cho endpoint `/api/student/practice/:testId/audio` (`apps/server`).
 - Giãn nhịp gửi email nền (`sendIntervalMs: 550`) trong `emitNotifications` khi chạy qua `runInBackground` để tránh lỗi HTTP 429 burst của Resend khi gửi thông báo cho lớp đông (`apps/server`).
 - Dùng ngày tương lai theo giờ Việt Nam trong test `holiday-modal` để tránh fail theo mốc thời gian (`apps/web`).

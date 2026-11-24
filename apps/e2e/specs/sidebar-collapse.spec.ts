@@ -128,10 +128,11 @@ test("điều hướng từ rail: click icon Học viên tới /students và tes
 	const railFooter = await page.evaluate(() => {
 		const aside = document.querySelector("aside.sidebar");
 		const avatarLink = aside?.querySelector<HTMLAnchorElement>(
-			'a[href="/teacher/profile"]',
+			'a[href="/teacher/profile"][aria-label="Hồ sơ cá nhân"]',
 		);
-		const btns = aside?.querySelectorAll("button");
-		const logout = btns?.[btns.length - 1];
+		const logout = aside?.querySelector<HTMLButtonElement>(
+			'button[aria-label="Đăng xuất"]',
+		);
 		if (!aside || !avatarLink || !logout) return null;
 		const a = aside.getBoundingClientRect();
 		const av = avatarLink.getBoundingClientRect();
