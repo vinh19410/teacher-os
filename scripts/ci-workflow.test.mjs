@@ -1168,3 +1168,59 @@ test("promote-vocab-prod.yml triggers only on manual workflow_dispatch, enforces
 		"promote-vocab-prod.yml may only reference the two Cloudflare environment secrets",
 	);
 });
+
+test("import-listening-staging.yml triggers only on manual workflow_dispatch, enforces staging gate, and shares staging concurrency", () => {
+	const raw = readFileSync(
+		join(repoRoot, ".github/workflows/import-listening-staging.yml"),
+		"utf8",
+	);
+	const code = stripComments(raw);
+
+	assert.doesNotMatch(
+		code,
+		/\bpush:/,
+		"import-listening-staging.yml must never trigger automatically on push",
+	);
+	assert.doesNotMatch(
+		code,
+		/\bpull_request:/,
+		"import-listening-staging.yml must never trigger on pull_request",
+	);
+	assert.match(
+		code,
+		/\bworkflow_dispatch:/,
+		"import-listening-staging.yml must trigger only on workflow_dispatch",
+	);
+	assertReadOnlyWorkflowPermissions(code, "import-listening-staging.yml");
+	assert.match(
+		code,
+		/group:\s*deploy-staging/,
+		"import-listening-staging.yml must share deploy-staging concurrency group",
+	);
+	assert.match(
+		code,
+		/cancel-in-progress:\s*false/,
+		"import-listening-staging.yml must never cancel in-progress runs",
+	);
+	assert.match(
+		code,
+		/environment:\s*staging/,
+		"import-listening-staging.yml must target staging environment only",
+	);
+	assert.match(
+		code,
+		/--public-logs/,
+		"import-listening-staging.yml must pass --public-logs",
+	);
+	assert.doesNotMatch(
+		code,
+		/actions\/upload-artifact/,
+		"import-listening-staging.yml must never upload artifacts containing sensitive data",
+	);
+	const secretRefs = [...new Set(code.match(/secrets\.[A-Z_]+/g) ?? [])];
+	assert.deepEqual(
+		secretRefs.sort(),
+		["secrets.CLOUDFLARE_ACCOUNT_ID", "secrets.CLOUDFLARE_API_TOKEN"],
+		"import-listening-staging.yml may only reference the two Cloudflare environment secrets",
+	);
+});
