@@ -1845,4 +1845,77 @@ describe("QuizPaper — inline answer inputs", () => {
 			);
 		});
 	});
+
+	describe("QuizPaper — direct streaming listening audio & retry", () => {
+		it("renders <audio> with crossOrigin and invokes onAudioError on media error", () => {
+			const onAudioError = vi.fn();
+			const { container } = render(
+				<QuizPaper
+					detail={baseDetail({
+						skill: "listening",
+						type: "form",
+						hasAudio: true,
+						audioName: "city-health-services.mp3",
+					})}
+					parts={buildQuizParts(
+						[{ stem: "Q1 ____", opts: null, pin: null, type: "form" }],
+						"form",
+						"",
+					)}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					audioSrc="https://api.example.com/api/student/practice/t1/audio"
+					audioCrossOrigin="use-credentials"
+					onAudioError={onAudioError}
+				/>,
+			);
+			const audio = container.querySelector(
+				'audio[data-testid="quiz-audio-player"]',
+			) as HTMLAudioElement | null;
+			expect(audio).not.toBeNull();
+			expect(audio?.getAttribute("src")).toBe(
+				"https://api.example.com/api/student/practice/t1/audio",
+			);
+			expect(audio?.getAttribute("crossorigin")).toBe("use-credentials");
+			expect(container.textContent).not.toContain("Đang tải file nghe…");
+
+			if (audio) fireEvent.error(audio);
+			expect(onAudioError).toHaveBeenCalledTimes(1);
+		});
+
+		it("shows error alert with retry button even when audioSrc is still present and calls onAudioRetry on click", () => {
+			const onAudioRetry = vi.fn();
+			const { container } = render(
+				<QuizPaper
+					detail={baseDetail({
+						skill: "listening",
+						type: "form",
+						hasAudio: true,
+						audioName: "city-health-services.mp3",
+					})}
+					parts={buildQuizParts(
+						[{ stem: "Q1 ____", opts: null, pin: null, type: "form" }],
+						"form",
+						"",
+					)}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					audioSrc="https://api.example.com/api/student/practice/t1/audio"
+					audioError={true}
+					onAudioRetry={onAudioRetry}
+				/>,
+			);
+			expect(
+				container.querySelector('audio[data-testid="quiz-audio-player"]'),
+			).toBeNull();
+			const alert = container.querySelector('[role="alert"]');
+			expect(alert?.textContent).toContain("Không tải được file nghe.");
+			const retryBtn = container.querySelector("button");
+			expect(retryBtn?.textContent).toBe("Thử lại");
+			if (retryBtn) fireEvent.click(retryBtn);
+			expect(onAudioRetry).toHaveBeenCalledTimes(1);
+		});
+	});
 });

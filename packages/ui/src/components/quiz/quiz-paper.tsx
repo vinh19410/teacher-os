@@ -50,7 +50,7 @@ import {
 	resolvePartInstruction,
 } from "@teacher-os/ui/lib/quiz-instruction";
 import { cn } from "@teacher-os/ui/lib/utils";
-import { useMemo } from "react";
+import { type SyntheticEvent, useMemo } from "react";
 
 /** Các field đề cần để render paper (subset của StudentQuizDetail). */
 export type QuizPaperDetail = Pick<
@@ -461,8 +461,11 @@ export function QuizPaper({
 	essay,
 	onEssayChange,
 	audioSrc,
+	audioCrossOrigin,
 	audioLoading = false,
 	audioError = false,
+	onAudioError,
+	onAudioRetry,
 	transcript,
 }: {
 	detail: QuizPaperDetail;
@@ -482,10 +485,13 @@ export function QuizPaper({
 	writingSection?: { part: string; type: string; prompt: string } | null;
 	essay?: string;
 	onEssayChange?: (value: string) => void;
-	/** Blob URL proxy cho bài nghe Listening (#702). */
+	/** URL phát bài nghe Listening (stream trực tiếp hoặc blob URL). */
 	audioSrc?: string | null;
+	audioCrossOrigin?: "anonymous" | "use-credentials";
 	audioLoading?: boolean;
 	audioError?: boolean;
+	onAudioError?: (event: SyntheticEvent<HTMLAudioElement>) => void;
+	onAudioRetry?: () => void;
 	/** Transcript bài nghe — chỉ truyền sau khi nộp bài (reviewMode). */
 	transcript?: string;
 }) {
@@ -716,20 +722,34 @@ export function QuizPaper({
 
 			{skill === "listening" && (
 				<div className="flex flex-col gap-2 rounded-md border border-border bg-muted p-3 text-sm">
-					{audioSrc ? (
+					{audioError ? (
+						<div
+							role="alert"
+							className="flex flex-wrap items-center justify-between gap-2 text-danger text-sm"
+						>
+							<span>Không tải được file nghe.</span>
+							{onAudioRetry && (
+								<button
+									type="button"
+									onClick={onAudioRetry}
+									className="rounded-md border border-border bg-background px-2.5 py-1 font-medium text-foreground text-xs hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
+								>
+									Thử lại
+								</button>
+							)}
+						</div>
+					) : audioSrc ? (
 						// biome-ignore lint/a11y/useMediaCaption: Listening exam audio; transcript unlocks after submit (#702)
 						<audio
 							controls
 							preload="metadata"
+							crossOrigin={audioCrossOrigin}
 							src={audioSrc}
 							aria-label="Bài nghe"
 							className="w-full"
 							data-testid="quiz-audio-player"
+							onError={onAudioError}
 						/>
-					) : audioError ? (
-						<p role="alert" className="text-danger text-sm">
-							Không tải được file nghe.
-						</p>
 					) : audioLoading || detail.hasAudio ? (
 						<p className="text-muted-foreground text-sm">Đang tải file nghe…</p>
 					) : (

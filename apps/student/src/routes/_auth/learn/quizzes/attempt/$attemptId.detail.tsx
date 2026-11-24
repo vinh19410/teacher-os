@@ -24,7 +24,7 @@ import {
 	type QuizTakeSource,
 	quizDetailQueryOptions,
 	useAttemptDetail,
-	useQuizAudioObjectUrl,
+	useQuizAudioStream,
 	useStudentQuizDetail,
 } from "@/lib/repos/quiz";
 
@@ -98,8 +98,13 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 					? { kind: "assignment", id: attempt.assignmentId }
 					: null
 			: null;
-	const { audioSrc, audioLoading, audioError } =
-		useQuizAudioObjectUrl(audioSource);
+	const {
+		audioSrc,
+		audioLoading,
+		audioError,
+		onAudioError,
+		retry: retryAudio,
+	} = useQuizAudioStream(audioSource);
 
 	// Attempt detail đã mang type từng câu (server resolve fallback
 	// prompt.type); promptType ở đây là fallback kép khi payload cũ thiếu.
@@ -277,6 +282,9 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 							audioSrc={audioSrc}
 							audioLoading={audioLoading}
 							audioError={audioError}
+							audioCrossOrigin="use-credentials"
+							onAudioError={onAudioError}
+							onAudioRetry={retryAudio}
 							transcript={attempt.transcript}
 						/>
 						{hybridReviewSection}
@@ -296,6 +304,9 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 							audioSrc={audioSrc}
 							audioLoading={audioLoading}
 							audioError={audioError}
+							audioCrossOrigin="use-credentials"
+							onAudioError={onAudioError}
+							onAudioRetry={retryAudio}
 							transcript={attempt.transcript}
 						/>
 						{hybridReviewSection}
