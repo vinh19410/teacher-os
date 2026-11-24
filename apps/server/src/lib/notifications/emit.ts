@@ -4,6 +4,9 @@ import { deliverNotifications, sanitizeDeliveryError } from "./deliver";
 import { type EnqueueResult, enqueueNotifications } from "./enqueue";
 import type { NotificationEvent } from "./templates";
 
+/** Khoảng giãn mặc định giữa 2 email gửi nền trên Worker để tôn trọng giới hạn 2 req/s của Resend. */
+export const DEFAULT_EMIT_SEND_INTERVAL_MS = 550;
+
 /** Deps tối thiểu để phát thông báo — route không cần biết chi tiết (D4/D6). */
 export interface NotificationDeps {
 	db: Db;
@@ -18,6 +21,8 @@ export interface NotificationDeps {
 	studentOrigin?: string;
 	/** TOS-22 (#463) D6: khoảng chờ giữa các lượt thử gửi lại (chỉ test/E2E truyền [0, 0]). */
 	retryDelaysMs?: number[];
+	/** Khoảng giãn (ms) giữa hai email liên tiếp trong cùng lô; mặc định 550ms khi chạy nền (`runInBackground`), 0ms khi await đồng bộ. */
+	sendIntervalMs?: number;
 }
 
 /**
@@ -48,6 +53,7 @@ export function notificationDepsFrom(deps: {
 	runInBackground?(promise: Promise<unknown>): void;
 	studentOrigin?: string;
 	notificationRetryDelaysMs?: number[];
+	notificationSendIntervalMs?: number;
 }): NotificationDeps {
 	return {
 		db: deps.getDb(),
@@ -55,6 +61,7 @@ export function notificationDepsFrom(deps: {
 		runInBackground: deps.runInBackground,
 		studentOrigin: deps.studentOrigin,
 		retryDelaysMs: deps.notificationRetryDelaysMs,
+		sendIntervalMs: deps.notificationSendIntervalMs,
 	};
 }
 
@@ -73,12 +80,21 @@ export async function emitNotifications(
 	try {
 		enqueued = await enqueueNotifications(deps.db, orgId, events);
 		if (enqueued.queuedEmailIds.length === 0) return enqueued;
+		const sendIntervalMs =
+			deps.sendIntervalMs ??
+			(deps.runInBackground ? DEFAULT_EMIT_SEND_INTERVAL_MS : 0);
+		const deliverOptions: {
+			retryDelaysMs?: number[];
+			sendIntervalMs?: number;
+		} = {};
+		if (deps.retryDelaysMs) deliverOptions.retryDelaysMs = deps.retryDelaysMs;
+		if (sendIntervalMs > 0) deliverOptions.sendIntervalMs = sendIntervalMs;
 		const delivery = deliverNotifications(
 			deps.db,
 			deps.mailer,
 			enqueued.queuedEmailIds,
 			deps.studentOrigin,
-			deps.retryDelaysMs ? { retryDelaysMs: deps.retryDelaysMs } : undefined,
+			Object.keys(deliverOptions).length > 0 ? deliverOptions : undefined,
 		);
 		if (deps.runInBackground) {
 			deps.runInBackground(

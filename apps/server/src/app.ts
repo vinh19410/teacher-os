@@ -339,6 +339,7 @@ export function buildApp(deps: AppDeps) {
 	for (const path of [
 		"/api/student/attempts/:attemptId/media",
 		"/api/student/assignments/:assignmentId/audio",
+		"/api/student/practice/:testId/audio",
 		"/api/grading/:attemptId/media",
 		"/api/placement-test/audio/:id",
 		"/api/student/placement-test/audio/:id",
