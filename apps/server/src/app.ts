@@ -349,6 +349,7 @@ export function buildApp(deps: AppDeps) {
 		"/api/student/vocab/audio/:wordId",
 		"/api/kernel/vocab/words/:wordId/audio",
 		"/api/materials/:id/file",
+		"/api/student/classes/:classId/materials/:materialId/file",
 		"/api/student/classes/:classId/sessions/:date/materials/:materialId/file",
 		"/api/study-packs/exercises/:id/audio",
 		"/api/study-packs/:packId/items/:itemId/audio",
