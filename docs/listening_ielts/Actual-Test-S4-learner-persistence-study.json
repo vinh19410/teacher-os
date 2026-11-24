@@ -1,0 +1,175 @@
+{
+	"id": "b4746973-d18f-4bb5-b20a-b82bafaed86c",
+	"url": "https://stepielts.com/student/listening/b4746973-d18f-4bb5-b20a-b82bafaed86c?mode=practice",
+	"title": "Learner Persistence Study",
+	"source": "Actual Test",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "31-40",
+	"audio_url": "https://audio.stepielts.com/listening-audio/6995afba-86fb-4f2a-badf-e521c8fc5826.mp3",
+	"transcript": "Speaker 1: Today, I'm going to talk about my research on learner persistence. Let me first introduce why I wanted to carry out such research. As a university teacher, I found learners' responses to certain things vary a lot. For example, some students may completely give up their degree studies because of a temporary illness, while others may overcome all kinds of difficulties and try their best to continue their studies. The latter are the students with learner persistence, and this is the group that I'm particularly interested in. To do the research, first, I selected my undergraduate students as the research sample, with a total of 200 people. All the students selected were seniors, and they had already stayed in the course very well. Although the sample was drawn from a range of ages, there were deliberately a large number of mature students. And there was one thing in common. All of those students were living at home in the local region. I wanted to maintain this element of consistency, so I didn't include those coming from outside this area. Then I designed a questionnaire that aimed to find out what their concerns had been when they began the course, and then what had made them stick at the three year studies in university. Findings from the first section pointed out that there were different concerns when they started their university studies. For example, some worried about the financial circumstances, while others were concerned about their careers after graduation. However, the research found the biggest concern for mature students tended to be the relationship with their children at home. Next, I wanted to find out what had made those students persist with their university studies. So in the second part, I designed my questionnaire under three main headings, social and environmental factors, other factors, and personal characteristics. And I included three levels of importance for each of these three headings. At the first level, those points identified by the respondents were regarded as the most important in learner persistence. Let's look at them one by one. For the first column, that's the social and environmental factors, a significant number of students said it was crucial to have effective support, whether from their tutors or friends. For other factors, students were driven not so much by high grades, but by what they regarded as a success in their studies. This was quite different from what I'd expected. Regarding personal characteristics, a sizable percentage of participants said they like to take up a challenge, which was seen as a very important factor. Then at the second level of importance, in the first category, many of the respondents regarded the life they enjoyed at school as an important social factor because this gave them good experiences. In the second column, other factors, a lot of people said that the most significant thing was decent health, which was also conducive to their persistence in the studies. And then under the third column, quite a number of respondents had the same view that they should have a range of interests in their everyday lives because this could broaden their minds and give them a sense of perspective which less persistent learners might lack. And then on to the third level of importance, under social factors, several respondents said that they had been keeping close to their tutors in their three year university studies. In the second column, for other factors, they mentioned it was very important to live in a family without any problems. And finally, under column three, they talked about the capacity for multitasking, which was the ability to simultaneously deal with different problems. From these findings, I've concluded some recommendations on how to promote students' learner persistence. Primarily, I suggest that we should distribute questionnaires to the freshmen so as to make clear of their maturity when they begin the course. This is really our most important concern. Secondly, I propose that we should find ways to offer some training sessions to the students who are selected to encourage them to play the role of advisers. The purpose of this is to make support much more approachable to other students. Thirdly, in the evening and night, when offices are closed, students may have no one to turn to for help. As a result, I think we should provide online services to those in need. Researchers have pointed out that this service is actually more accessible than traditional services. And finally, if students don't submit their assignments before the deadlines, I think we teachers should contact the students first rather than waiting for the students to come to us. So this is all I want to share on my research. Now let's turn to the next part. Are there any questions about...",
+	"question_groups": [
+		{
+			"range": "31-32",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C",
+			"questions": [
+				{
+					"number": 31,
+					"text": "participants in the learner persistence study were all drawn from the same",
+					"options": [
+						{
+							"label": "A",
+							"text": "age"
+						},
+						{
+							"label": "B",
+							"text": "geographical area"
+						},
+						{
+							"label": "C",
+							"text": "socio-economic level"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"All of those students were living at home in the local region.",
+						"And there was one thing in common."
+					]
+				},
+				{
+					"number": 32,
+					"text": "the study showed that when starting their course, older students were worried about",
+					"options": [
+						{
+							"label": "A",
+							"text": "effects on their home life"
+						},
+						{
+							"label": "B",
+							"text": "implications for their future career"
+						},
+						{
+							"label": "C",
+							"text": "financial constraints"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"However, the research found the biggest concern for mature students tended to be the relationship with their children at home."
+					]
+				}
+			]
+		},
+		{
+			"range": "33-37",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "Research findings\nSocial and Environmental Factors Other Factors Personal Characteristics\nFirst level of importance Effective support Perceived success in study Enjoyment of a [33]\nSecond level of importance Positive experience at [34] Good [35] Many [36] in daily life\nThird level of importance Good interaction with the [37] No family problems Capacity for multi-tasking",
+			"body_table": [
+				[
+					"",
+					"Social and Environmental Factors",
+					"Other Factors",
+					"Personal Characteristics"
+				],
+				[
+					"First level of importance",
+					"Effective support",
+					"Perceived success in study",
+					"Enjoyment of a [33]"
+				],
+				[
+					"Second level of importance",
+					"Positive experience at [34]",
+					"Good [35]",
+					"Many [36] in daily life"
+				],
+				[
+					"Third level of importance",
+					"Good interaction with the [37]",
+					"No family problems",
+					"Capacity for multi-tasking"
+				]
+			],
+			"body_html": "<h4><strong>Research findings</strong></h4><table><tbody><tr><td></td><td><strong>Social and Environmental Factors</strong></td><td><strong>Other Factors</strong></td><td><strong>Personal Characteristics</strong></td></tr><tr><td><strong>First level of importance</strong></td><td>Effective support</td><td>Perceived success in study</td><td>Enjoyment of a [33]</td></tr><tr><td><strong>Second level of importance</strong></td><td>Positive experience at [34]</td><td>Good [35]</td><td>Many [36] in daily life</td></tr><tr><td><strong>Third level of importance</strong></td><td>Good interaction with the [37]</td><td>No family problems</td><td>Capacity for multi-tasking</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 33,
+					"text": "Enjoyment of a [33]",
+					"answer": "challenge",
+					"quotes": [
+						"Regarding personal characteristics, a sizable percentage of participants said they like to take up a challenge, which was seen as a very important factor."
+					]
+				},
+				{
+					"number": 34,
+					"text": "Positive experience at [34]",
+					"answer": "school",
+					"quotes": [
+						"Then at the second level of importance, in the first category, many of the respondents regarded the life they enjoyed at school as an important social factor because this gave them good experiences."
+					]
+				},
+				{
+					"number": 35,
+					"text": "Good [35]",
+					"answer": "health",
+					"quotes": [
+						"In the second column, other factors, a lot of people said that the most significant thing was decent health, which was also conducive to their persistence in the studies."
+					]
+				},
+				{
+					"number": 36,
+					"text": "Many [36] in daily life",
+					"answer": "interests",
+					"quotes": [
+						"And then under the third column, quite a number of respondents had the same view that they should have a range of interests in their everyday lives because this could broaden their minds and give them a sense of perspective which less persistent learners might lack."
+					]
+				},
+				{
+					"number": 37,
+					"text": "Good interaction with the [37]",
+					"answer": "tutors",
+					"quotes": [
+						"And then on to the third level of importance, under social factors, several respondents said that they had been keeping close to their tutors in their three year university studies."
+					]
+				}
+			]
+		},
+		{
+			"range": "38-40",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "Recommendations\nAsk new students to complete questionnaires to gauge their level of [38]\nTrain the selected students to act as [39]\nOutside office hours, offer [40] help\nFollow up students who miss deadlines",
+			"body_html": "<h4><strong>Recommendations</strong></h4><table><tbody><tr><td><ul><li>Ask new students to complete questionnaires to gauge their level of [38]</li><li>Train the selected students to act as [39]</li><li>Outside office hours, offer [40] help</li><li>Follow up students who miss deadlines</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 38,
+					"text": "Ask new students to complete questionnaires to gauge their level of [38]",
+					"answer": "maturity",
+					"quotes": [
+						"Primarily, I suggest that we should distribute questionnaires to the freshmen so as to make clear of their maturity when they begin the course."
+					]
+				},
+				{
+					"number": 39,
+					"text": "Train the selected students to act as [39]",
+					"answer": "advisers",
+					"quotes": [
+						"Secondly, I propose that we should find ways to offer some training sessions to the students who are selected to encourage them to play the role of advisers."
+					]
+				},
+				{
+					"number": 40,
+					"text": "Outside office hours, offer [40] help",
+					"answer": "online",
+					"quotes": [
+						"Thirdly, in the evening and night, when offices are closed, students may have no one to turn to for help.",
+						"As a result, I think we should provide online services to those in need."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

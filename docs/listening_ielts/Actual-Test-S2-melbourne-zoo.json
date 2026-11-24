@@ -1,0 +1,182 @@
+{
+	"id": "fd6dc1da-dfab-4177-89aa-c41e60617340",
+	"url": "https://stepielts.com/student/listening/fd6dc1da-dfab-4177-89aa-c41e60617340?mode=practice",
+	"title": "Melbourne Zoo",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/591cdc8e-0e7b-4b48-a97c-7fff0aaf3b63.mp3",
+	"transcript": "Speaker 0: Part two. You will hear a man talking to a group of people about the Melbourne zoo. First, you have some time to look at questions eleven to fifteen.\nSpeaker 1: Good day, everyone. Welcome to the Melbourne Zoo. My name's Mark, and I'd like to welcome you today. If you have a moment, I'd like to give you some information about our zoo before you enter. Please feel free to ask me any questions at the end of my talk. As you know, it's November now, and that means longer days. I have some good news for you. Anyone who hates getting up early in the morning can now enter the zoo after dinner. Because of the time of year, we are offering a two hour mini tour after 7PM. Seeing the animals at a different time of day will be a fascinating experience for many of you, and I encourage you to sign up. Unfortunately, due to a fire last month, we no longer allow bonfire nights. By the way, we have been planning two parties for Christmas next month. We'll post the details on our website. It should be a lot of fun. So let me tell you a little about our residents here at the zoo. Despite what was recently reported in the media, the most popular animal around here is not the kangaroo or even the sheepdog. No. Our star animal here is without doubt the koala. They are sedentary creatures and can sleep for up to twenty hours a day, so you'll have to keep an eye out for them. You should be able to spot some of them in the treetops hiding behind branches. But if you're lucky, you might see one run across your path. Of course, we do have kangaroos. They are truly fascinating creatures. It might interest you to know that they are the only large animals that use hopping as a means of locomotion. They are generally very friendly. And while we have no problems with people feeding them, we always tell our guests that it's important to stand with an upright posture when giving them food. The kangaroos may interpret you bending over as a sign of aggression, so please be careful. Also, no matter how cute the babies are, any physical contact should be avoided. The adults are quite protective of their young while they are still in the pouch, So please refrain from the urge to give them a pat. They aren't greedy animals and will generally stop eating once they are full. So if you have some extra food, you might need to find another one to feed. As you may have heard, our wild dog pen is temporarily closed, but it should reopen soon. You'll be happy to know that our dogs are all fine and in good health, and I think they are quite excited about their new home. Right now, we are fixing the fences. They are wild animals after all, and we need to consider public safety before opening the exhibit. But please come back to see them when we are finished. Speaking of return visits, if you enjoy our zoo and want to come back, you may be interested in getting a discount ticket. We used to sell them at the entrance of the zoo as well as on our website, but the website is currently under maintenance. So the coupons are available only at the cafe near the gift shop for this year. So if you're interested, make your way over there once you are ready. Be informed. There are a lot of tourists around today, so the earlier, the better.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 16 to 20. Now listen carefully and answer questions 16 to 20.\nSpeaker 1: Now if I can bring your attention to the map of our zoo, I'll provide a brief description of the grounds so that no one gets lost. If you'd like to see some of our animals up close, then you should visit one of our shows in the arena. We have a show every half hour, so you're sure to see something. We are at the entrance. To get there, cross the bridge and go straight to the end of the path, and you'll find it to your right. For those who are looking for a quieter place to learn about the history of our zoo, in the north of the zoo, we have an educational hall ready for you. It's easy to find just to the west of the toilets. With such beautiful weather right now, I know many of you would love to spend the afternoon having a picnic. There is a great spot for you in the zoo. It's the area surrounding the Botanic Garden, and it's also facing the river. The view is fantastic there. Some of you may recall that our photo printing site was in the northeastern corner of the zoo. It has now been moved to the building next to the bridge. Finally, I'm sure you've noticed that it's quite warm today. If you're not up for walking, don't worry. We have bike sheds at different locations across the zoo, and the bikes are free for our guests. So just grab one and take it for a ride. Once you've got your bike, it's only a five minute ride to the gift shop, and the exit is just beside it. You can't miss it. Please note that cycling is only permitted on the designated paths. Alright. That is the end of my talk. I hope you have a great time visiting all the animals. Take as many pictures as you like, and don't forget to share them with your friends. Now does anyone have any questions?\nSpeaker 0: That is the end of part two. You now have thirty second.",
+	"question_groups": [
+		{
+			"range": "11-15",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "What is the new activity in the zoo in November?",
+					"options": [
+						{
+							"label": "A",
+							"text": "evening tours"
+						},
+						{
+							"label": "B",
+							"text": "bonfire nights for adults"
+						},
+						{
+							"label": "C",
+							"text": "various parties"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Because of the time of year, we are offering a two hour mini tour after 7PM."
+					]
+				},
+				{
+					"number": 12,
+					"text": "What is the most popular species in the zoo?",
+					"options": [
+						{
+							"label": "A",
+							"text": "kangaroo"
+						},
+						{
+							"label": "B",
+							"text": "koala"
+						},
+						{
+							"label": "C",
+							"text": "sheepdog"
+						}
+					],
+					"answer": "B",
+					"quotes": ["Our star animal here is without doubt the koala."]
+				},
+				{
+					"number": 13,
+					"text": "What is the key to feeding kangaroos?",
+					"options": [
+						{
+							"label": "A",
+							"text": "feeding more than one at a time"
+						},
+						{
+							"label": "B",
+							"text": "gently touching the baby kangaroos"
+						},
+						{
+							"label": "C",
+							"text": "standing up straight when feeding"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"And while we have no problems with people feeding them, we always tell our guests that it's important to stand with an upright posture when giving them food."
+					]
+				},
+				{
+					"number": 14,
+					"text": "Why is the wild dog area closed?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The wild dogs are unwell."
+						},
+						{
+							"label": "B",
+							"text": "The enclosure is under repair."
+						},
+						{
+							"label": "C",
+							"text": "The dogs have not arrived."
+						}
+					],
+					"answer": "B",
+					"quotes": ["Right now, we are fixing the fences."]
+				},
+				{
+					"number": 15,
+					"text": "Where can visitors get discount tickets this year?",
+					"options": [
+						{
+							"label": "A",
+							"text": "at the café"
+						},
+						{
+							"label": "B",
+							"text": "on the official website"
+						},
+						{
+							"label": "C",
+							"text": "at the gift shop"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"So the coupons are available only at the cafe near the gift shop for this year."
+					]
+				}
+			]
+		},
+		{
+			"range": "16-20",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below.",
+			"instructions_html": "<p>Label the map below. </p><p><br></p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/85f25989-d8d4-4347-ac74-302f97a143d6.png\" alt=\"Map/Diagram\">",
+			"options": ["A", "B", "C", "D", "E", "F", "G"],
+			"questions": [
+				{
+					"number": 16,
+					"text": "Arena",
+					"answer": "G",
+					"quotes": [
+						"If you'd like to see some of our animals up close, then you should visit one of our shows in the arena.",
+						"To get there, cross the bridge and go straight to the end of the path, and you'll find it to your right."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Educational hall",
+					"answer": "E",
+					"quotes": [
+						"For those who are looking for a quieter place to learn about the history of our zoo, in the north of the zoo, we have an educational hall ready for you.",
+						"It's easy to find just to the west of the toilets."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Picnic spot",
+					"answer": "A",
+					"quotes": [
+						"It's the area surrounding the Botanic Garden, and it's also facing the river.",
+						"With such beautiful weather right now, I know many of you would love to spend the afternoon having a picnic."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Photo printing shop",
+					"answer": "D",
+					"quotes": [
+						"It has now been moved to the building next to the bridge.",
+						"Some of you may recall that our photo printing site was in the northeastern corner of the zoo."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Gift shop",
+					"answer": "F",
+					"quotes": [
+						"Once you've got your bike, it's only a five minute ride to the gift shop, and the exit is just beside it."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/85f25989-d8d4-4347-ac74-302f97a143d6.png"
+	]
+}

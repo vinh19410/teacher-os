@@ -1,0 +1,122 @@
+{
+	"id": "ac0672f7-f8d4-435b-a631-b11ebe1722ed",
+	"url": "https://stepielts.com/student/listening/ac0672f7-f8d4-435b-a631-b11ebe1722ed?mode=practice",
+	"title": "Rental Property Application Form",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/f7a3dd37-fef0-4043-9ffe-10a94c645951.mp3",
+	"transcript": "Peter: Good morning. McMurray's Real Estate. Peter speaking. How may I help you? Susan: Hi, Peter. My name is Susan. I'm calling from Australia. I'll be moving to New Zealand soon, and I was hoping you could help me find somewhere to live in Auckland. Peter: Would be pleased to. I just need to get some information about what you want so we can find the perfect place. Susan: Sounds good. Peter: Let's start with some personal details. What's your last name? Susan: It's Smith. Peter: And your phone number? Susan: I only have a mobile. Is that okay? Peter: That's fine. Susan: {[Okay. It's 614381997. But if you want to contact me, usually, the best way is by email. ][1]} Peter: Okay. What's your email address then? Susan: {[It's susansmith@post.com. ][2]} Peter: Thanks. Now you said you're living in Australia? Susan: Right. In Brisbane. Peter: Okay. What's your address in Brisbane then? Susan: 234 Becketts, that's B E C K E, T T, S, Road, Brisbane 4054. Peter: Right. Will you be working in New Zealand? Susan: Yes. I have a job at Auckland Hospital. Peter: Oh, are you a nurse? Susan: {[Most people assume that or think I'm a doctor, but actually, I'm a chemist][3]}. Peter: Uh-huh. Sorry. Susan: That's okay. Peter: When will you need the accommodation from? Susan: Well, I don't start work until the February 25, but I'd like to give myself some time to settle in. A couple of weeks would be nice, let's say, from the February 10. Peter: At least it start from a Monday, and the Monday closest to that is the February 8. Would that suit? Susan: That's fine. Peter: Okay. Let's talk about what kind of place you'd like to rent. Susan: {[I like the outdoors, so my dream would be a house that has its own garden. ][4]} Peter: Is there anything else you'd consider? An apartment, for example? Susan: I don't know. They usually don't have an outdoor area. {[But I guess, as an alternative, if you could find me one with a large balcony, I'd be happy][5]}. Peter: How many rooms do you want? Susan: Usually, one bedroom places are too small. Two would be ideal. Peter: Now what would you like to have in the place when you move in? Susan: I'm bringing most of what I need with me. I have beds and sofas and a television, all that sort of stuff, so none of that is necessary. Peter: Sounds like you want a partially furnished house with a washing machine. Susan: Actually, I'm bringing that too. {[All I really need in the place is a fridge][6]}. I don't have one, so we'll definitely need one. Peter: Okay. Susan: Can you find something like that for around $350 a week? Peter: Well, I'll certainly try. I'll start looking for places that cost around $300 and see if there's anything suitable. {[You definitely won't need to pay more than $400 for something like that][7]}. Susan: Oh, that's good. I couldn't pay more than that. Peter: Alright. I'll see what I can find. You're working at the hospital. Do you wanna live somewhere near there? Susan: Most people think it's strange, but I don't like living close to work. {[But I'm a mad keen surfer, so it's important for me to be close to the beach][8]}. Peter: Okay. Do you need to be near public transport? Susan: No. I usually drive to work because I work a lot of shift work. {[So wherever I live, we'll need to have parking close to the door so I won't have to walk far at night][9]}. Peter: Anything else? Susan: I've heard that power bills can get quite expensive, especially in the winter. {[It'd be great if electricity was part of the rent][10]}. Peter: Okay. Just one last question for our records. Where did you hear about us? You're calling.",
+	"body": {
+		"text": "Example\nName:\nSusan Smith\nPhone number:\n[1] (mobile)\nEmail address:\nsusansmith@ [2]\nCurrent address:\n234 Becketts Road\nBrisbane, 4054\nNew Zealand Employer:\nAuckland Hospital\nOccupation:\na [3]\nRental start date:\n8th February\nPreferred property type:\nfirst preference: a house with a [4]\nsecond preference: an apartment with a big [5]\nBedrooms:\ntwo\nFurnishings:\na [6] is required\nMaximum rent:\n$[7] per week\nPreferred location:\nnear the [8]\nOther requirements:\nmust have [9] nearby\nwould like [10] included in the rent",
+		"html": "<table><tbody><tr><td>Example<br>Name:</td><td><p>Susan Smith</p></td></tr><tr><td>Phone number:</td><td>[1] (mobile)</td></tr><tr><td>Email address:</td><td>susansmith@ [2]</td></tr><tr><td>Current address:</td><td>234 Becketts Road<br>Brisbane, 4054</td></tr><tr><td>New Zealand Employer:</td><td>Auckland Hospital</td></tr><tr><td>Occupation:</td><td>a [3]</td></tr><tr><td>Rental start date:</td><td>8th February</td></tr><tr><td>Preferred property type:</td><td><p>first preference: a house with a [4]</p><p>second preference: an apartment with a big [5]</p></td></tr><tr><td>Bedrooms:</td><td>two</td></tr><tr><td>Furnishings:</td><td>a [6] is required</td></tr><tr><td>Maximum rent:</td><td>$[7] per week</td></tr><tr><td>Preferred location:</td><td>near the [8]</td></tr><tr><td>Other requirements:</td><td><p>must have [9] nearby</p><p>would like [10] included in the rent</p></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Example\nName:\nSusan Smith\nPhone number:\n[1] (mobile)\nEmail address:\nsusansmith@ [2]\nCurrent address:\n234 Becketts Road\nBrisbane, 4054\nNew Zealand Employer:\nAuckland Hospital\nOccupation:\na [3]\nRental start date:\n8th February\nPreferred property type:\nfirst preference: a house with a [4]\nsecond preference: an apartment with a big [5]\nBedrooms:\ntwo\nFurnishings:\na [6] is required\nMaximum rent:\n$[7] per week\nPreferred location:\nnear the [8]\nOther requirements:\nmust have [9] nearby\nwould like [10] included in the rent",
+			"body_table": [
+				["Example\nName:", "Susan Smith"],
+				["Phone number:", "[1] (mobile)"],
+				["Email address:", "susansmith@ [2]"],
+				["Current address:", "234 Becketts Road\nBrisbane, 4054"],
+				["New Zealand Employer:", "Auckland Hospital"],
+				["Occupation:", "a [3]"],
+				["Rental start date:", "8th February"],
+				[
+					"Preferred property type:",
+					"first preference: a house with a [4]\nsecond preference: an apartment with a big [5]"
+				],
+				["Bedrooms:", "two"],
+				["Furnishings:", "a [6] is required"],
+				["Maximum rent:", "$$[7] per week"],
+				["Preferred location:", "near the [8]"],
+				[
+					"Other requirements:",
+					"must have [9] nearby\nwould like [10] included in the rent"
+				]
+			],
+			"body_html": "<table><tbody><tr><td>Example<br>Name:</td><td><p>Susan Smith</p></td></tr><tr><td>Phone number:</td><td>[1] (mobile)</td></tr><tr><td>Email address:</td><td>susansmith@ [2]</td></tr><tr><td>Current address:</td><td>234 Becketts Road<br>Brisbane, 4054</td></tr><tr><td>New Zealand Employer:</td><td>Auckland Hospital</td></tr><tr><td>Occupation:</td><td>a [3]</td></tr><tr><td>Rental start date:</td><td>8th February</td></tr><tr><td>Preferred property type:</td><td><p>first preference: a house with a [4]</p><p>second preference: an apartment with a big [5]</p></td></tr><tr><td>Bedrooms:</td><td>two</td></tr><tr><td>Furnishings:</td><td>a [6] is required</td></tr><tr><td>Maximum rent:</td><td>$[7] per week</td></tr><tr><td>Preferred location:</td><td>near the [8]</td></tr><tr><td>Other requirements:</td><td><p>must have [9] nearby</p><p>would like [10] included in the rent</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "[1] (mobile)",
+					"answer": "614381997",
+					"quotes": ["It's 614381997."]
+				},
+				{
+					"number": 2,
+					"text": "susansmith@ [2]",
+					"answer": "post.com",
+					"quotes": ["Susan: {[It's susansmith@post.com."]
+				},
+				{
+					"number": 3,
+					"text": "a [3]",
+					"answer": "chemist",
+					"quotes": [
+						"Susan: {[Most people assume that or think I'm a doctor, but actually, I'm a chemist][3]}."
+					]
+				},
+				{
+					"number": 4,
+					"text": "first preference: a house with a [4]",
+					"answer": "garden",
+					"quotes": [
+						"Susan: {[I like the outdoors, so my dream would be a house that has its own garden."
+					]
+				},
+				{
+					"number": 5,
+					"text": "second preference: an apartment with a big [5]",
+					"answer": "balcony",
+					"quotes": [
+						"{[But I guess, as an alternative, if you could find me one with a large balcony, I'd be happy][5]}."
+					]
+				},
+				{
+					"number": 6,
+					"text": "a [6] is required",
+					"answer": "fridge",
+					"quotes": ["{[All I really need in the place is a fridge][6]}."]
+				},
+				{
+					"number": 7,
+					"text": "$[7] per week",
+					"answer": "400",
+					"quotes": [
+						"{[You definitely won't need to pay more than $400 for something like that][7]}."
+					]
+				},
+				{
+					"number": 8,
+					"text": "near the [8]",
+					"answer": "beach",
+					"quotes": [
+						"{[But I'm a mad keen surfer, so it's important for me to be close to the beach][8]}."
+					]
+				},
+				{
+					"number": 9,
+					"text": "must have [9] nearby",
+					"answer": "parking",
+					"quotes": [
+						"{[So wherever I live, we'll need to have parking close to the door so I won't have to walk far at night][9]}."
+					]
+				},
+				{
+					"number": 10,
+					"text": "would like [10] included in the rent",
+					"answer": "electricity",
+					"quotes": [
+						"{[It'd be great if electricity was part of the rent][10]}."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,154 @@
+{
+	"id": "0bf543f0-496c-46c7-85ab-4f771c32f2d1",
+	"url": "https://stepielts.com/student/listening/0bf543f0-496c-46c7-85ab-4f771c32f2d1?mode=practice",
+	"title": "The Project Proposal",
+	"source": "Forecast Quý 2-2025",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/578e9718-8b63-4a55-8dd2-5b6579908745.mp3",
+	"transcript": "Speaker 1: LINDA: Hi Mr Brown, you asked me to stay after class?\nSpeaker 0: MR. BROWN: Ah yes Linda, as you missed class yesterday I wanted to talk to you about the project proposal that was assigned.\nSpeaker 1: LINDA: Oh thank you very much, I appreciate that. My friend Rebecca told me that it’s an essay to propose a project on the topic of women as business leaders.\nSpeaker 0: MR. BROWN: That’s right, Linda. As you are a passionate advocate of women in business, I am sure you will enjoy this topic!\nSpeaker 1: LINDA: Yes, I’m excited to do some research in this area. Can I ask whether this proposal will be examined and marked?\nSpeaker 0: MR. BROWN: No, and its result won’t be added to your grades either. The proposal will just be reviewed by your professors and then given back with comments which will be helpful when it comes to undertaking the project itself.\nSpeaker 1: LINDA: That will be very helpful. So I need to come up with an idea on women as business leaders… I suppose that the main aim of the proposal is to talk about the topic, but the expected result of the research is also of great importance, so shall we place equal emphasis on these two aspects?\nSpeaker 0: MR. BROWN: You can mention both of those things, but I would say that the major purpose of the proposal is to talk about the method you will use to research the topic.\nSpeaker 1: LINDA: Alright, that’s good to know. And Rebecca mentioned the 6000-word limit…\nSpeaker 0: MR. BROWN: Yes, do not exceed it.\nSpeaker 1: LINDA: Ok. Are there any other restrictions or limitations?\nSpeaker 0: MR. BROWN: Yes there are. Some are mandatory and some are optional, but this sheet has guidelines for both the proposal and the eventual project. It’s really important that you stick to the rules, because the marks for the final project itself, which you will undertake later in the year, will be an important component of your grades.\nSpeaker 1: LINDA: So I’m wondering how much work to put into the proposal as opposed to the project itself. For example, should I talk to some women in business to get their thoughts?\nSpeaker 0: MR. BROWN: I think it would be beneficial if you did a preliminary interview with one woman, and just take a look at what’s happening in the workplace. That will give weight to your proposal without costing you a lot of time.\nSpeaker 1: LINDA: That’s a great suggestion, thank you. I’m wondering about the presentation of the proposal itself. Can I format it in any way I like?\nSpeaker 0: MR. BROWN: Ah, there are some rules around that. You can check the guidelines you have as to the formatting required, and we need you to use the right font, which is size 12 Arial.\nSpeaker 1: LINDA: Alright. And how many copies of the proposal do I need to present? I think only one printed copy was required last time, and one electronic copy. Is that correct?\nSpeaker 0: MR. BROWN: This time, apart from a soft copy, please give us one paper copy each for Professor Jones and Professor Smith who will be reviewing them, so that’s two.\nSpeaker 1: LINDA: Sure, I have noted that. And what is the deadline for the proposal?\nSpeaker 0: MR. BROWN: It is 11th April.\nSpeaker 1: LINDA: Wow, that is a really short timeframe – that’s only a week away!\nSpeaker 0: MR. BROWN: Oh I’m sorry – I forgot we’re already in April, the year is going so fast. The due date is in May of course, the 11th.\nSpeaker 1: LINDA: Great, that sounds much better. So we are going to make some changes until the final version is settled– does that mean that we can change the proposed project if there is any problem?\nSpeaker 0: MR. BROWN: We may give you permission to change the layout of the proposal, but not the topic, and only so long as there is enough time before commencing the actual project. The date for that hasn’t been set yet.\nSpeaker 1: LINDA: And how do I get permission if I need it? Do I need to send a letter or mail?\nSpeaker 0: MR. BROWN: The request should be submitted online, and it’s best to follow up with a phone call or in person, to make sure I received it.\nSpeaker 1: LINDA: Alright. So just to get it clear, my proposal needs to deal mainly with…?\nSpeaker 0: MR. BROWN: Begin with a short theory or hypothesis as to the results of the proposed project. After that, I would say that the procedure you are thinking of using is the aspect to concentrate on.\nSpeaker 1: LINDA: Alright Mr Brown, thank you very much for your time. I have a few ideas so I better get started.\nSpeaker 0: MR. BROWN: Okay Linda, see you next week.",
+	"body": {
+		"text": "Women as business leaders project\nWork required for the proposal:\nConduct an [4]\nMake a few workplace observations.\nPresenting the proposal:\nText: should be in the correct [5]\nSubmission: [6] hard copies of the assignment in addition to a soft copy.\nDue date: by [7]\nChanges to proposal:\nCan apply to make changes to the [8] if there is time.\nNeed to make change requests through [9] applications.\nContent of the proposal:\nAfter stating a hypothesis, focus on the [10] that will be used to gather data.",
+		"html": "<h2><strong>Women as business leaders project</strong></h2><h3><strong>Work required for the proposal:</strong></h3><ul><li><p>Conduct an [4]</p></li><li><p>Make a few workplace observations.</p></li></ul><h3><strong>Presenting the proposal: </strong></h3><ul><li><p>Text: should be in the correct [5]</p></li><li><p>Submission: [6] hard copies of the assignment in addition to a soft copy.</p></li><li><p>Due date: by [7]</p></li></ul><h3><strong>Changes to proposal:</strong></h3><ul><li><p>Can apply to make changes to the [8] if there is time.</p></li><li><p>Need to make change requests through [9] applications.</p></li></ul><h3><strong>Content of the proposal:</strong></h3><ul><li><p>After stating a hypothesis, focus on the [10] that will be used to gather data.</p></li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "1-3",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The project proposal will",
+					"options": [
+						{
+							"label": "A",
+							"text": "be assessed by professional editors."
+						},
+						{
+							"label": "B",
+							"text": "contribute to the final grade."
+						},
+						{
+							"label": "C",
+							"text": "be returned with feedback."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The proposal will just be reviewed by your professors and then given back with comments which will be helpful when it comes to undertaking the project itself."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What should the proposal focus on?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The topic."
+						},
+						{
+							"label": "B",
+							"text": "The approach."
+						},
+						{
+							"label": "C",
+							"text": "The outcome."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"MR. BROWN: You can mention both of those things, but I would say that the major purpose of the proposal is to talk about the method you will use to research the topic."
+					]
+				},
+				{
+					"number": 3,
+					"text": "For the proposal, Mr. Brown suggests that",
+					"options": [
+						{
+							"label": "A",
+							"text": "Linda should follow the instruction."
+						},
+						{
+							"label": "B",
+							"text": "the minimum length should be 6,000 words."
+						},
+						{
+							"label": "C",
+							"text": "the word limit can be optional."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"It’s really important that you stick to the rules, because the marks for the final project itself, which you will undertake later in the year, will be an important component of your grades."
+					]
+				}
+			]
+		},
+		{
+			"range": "4-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD AND/OR A NUMBER of each answer.",
+			"body": "Women as business leaders project\nWork required for the proposal:\nConduct an [4]\nMake a few workplace observations.\nPresenting the proposal:\nText: should be in the correct [5]\nSubmission: [6] hard copies of the assignment in addition to a soft copy.\nDue date: by [7]\nChanges to proposal:\nCan apply to make changes to the [8] if there is time.\nNeed to make change requests through [9] applications.\nContent of the proposal:\nAfter stating a hypothesis, focus on the [10] that will be used to gather data.",
+			"body_html": "<h2><strong>Women as business leaders project</strong></h2><h3><strong>Work required for the proposal:</strong></h3><ul><li><p>Conduct an [4]</p></li><li><p>Make a few workplace observations.</p></li></ul><h3><strong>Presenting the proposal: </strong></h3><ul><li><p>Text: should be in the correct [5]</p></li><li><p>Submission: [6] hard copies of the assignment in addition to a soft copy.</p></li><li><p>Due date: by [7]</p></li></ul><h3><strong>Changes to proposal:</strong></h3><ul><li><p>Can apply to make changes to the [8] if there is time.</p></li><li><p>Need to make change requests through [9] applications.</p></li></ul><h3><strong>Content of the proposal:</strong></h3><ul><li><p>After stating a hypothesis, focus on the [10] that will be used to gather data.</p></li></ul>",
+			"questions": [
+				{
+					"number": 4,
+					"text": "Conduct an [4]",
+					"answer": "interview",
+					"quotes": [
+						"MR. BROWN: I think it would be beneficial if you did a preliminary interview with one woman, and just take a look at what’s happening in the workplace."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Text: should be in the correct [5]",
+					"answer": "font",
+					"quotes": [
+						"You can check the guidelines you have as to the formatting required, and we need you to use the right font, which is size 12 Arial."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Submission: [6] hard copies of the assignment in addition to a soft copy.",
+					"answer": "two / 2",
+					"quotes": [
+						"MR. BROWN: This time, apart from a soft copy, please give us one paper copy each for Professor Jones and Professor Smith who will be reviewing them, so that’s two."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Due date: by [7]",
+					"answer": "11 May / 11th May / May 11 / May 11th",
+					"quotes": ["The due date is in May of course, the 11th."]
+				},
+				{
+					"number": 8,
+					"text": "Can apply to make changes to the [8] if there is time.",
+					"answer": "layout",
+					"quotes": [
+						"MR. BROWN: We may give you permission to change the layout of the proposal, but not the topic, and only so long as there is enough time before commencing the actual project."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Need to make change requests through [9] applications.",
+					"answer": "online",
+					"quotes": [
+						"MR. BROWN: The request should be submitted online, and it’s best to follow up with a phone call or in person, to make sure I received it."
+					]
+				},
+				{
+					"number": 10,
+					"text": "After stating a hypothesis, focus on the [10] that will be used to gather data.",
+					"answer": "procedure",
+					"quotes": [
+						"After that, I would say that the procedure you are thinking of using is the aspect to concentrate on."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

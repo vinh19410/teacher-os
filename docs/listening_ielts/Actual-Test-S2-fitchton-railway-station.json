@@ -1,0 +1,178 @@
+{
+	"id": "0a40e45c-74bf-48eb-baea-b9cbc8e6f638",
+	"url": "https://stepielts.com/student/listening/0a40e45c-74bf-48eb-baea-b9cbc8e6f638?mode=practice",
+	"title": "Fitchton Railway Station",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/70009769-aa8c-4791-919a-bf5b96bd2db3.mp3",
+	"transcript": "Speaker 0: Train driver: Dear passengers, welcome to Fitchton Railway Station. I’m sorry to inform you that the train to London is delayed. It will take off two hours later at 11:45AM. Please accept our apologies. In the meantime, allow me to introduce Fitchton Railway Station so you can make the most of your time while waiting for the train. The main entrance of the station is on Fitchton Road. If you want to take a bike ride around here, walk down Fitchton Road and pass the taxi stop. You can find a bike rack on the right. But if you just want to stay in the station, it’s okay. You can find a luggage locker when you enter the station. It’s on the left. You can put your luggage there. If you don’t feel very well or you need to buy some medicine, there’s a chemist in the farthest corner of the station opposite to the cafe. And you can have a cup of coffee at the cafe if you want. The big area near the cafe is the waiting room where you can have a seat and relax. If you want to use the toilet, make a left when you enter the station, then turn right. Go straight until you walk past Platform 2. It’s right there at the end. The news agency is in the Southeast corner of the station.\nTrain driver:\nSpeaker 0: If you don’t want to stay in the station, you can also have a look around the station, but make sure to get back in time for the train. I’m sure you don’t want to miss it. The Fitchton College is within walking distance from the station. The view is quite good there. The town library is also just down the road if you want to read. Oh, there’s also an art exhibition at the moment. You can go and check it out. The store across the street opens throughout the day, and you can find all kinds of stuff there. You don’t want to buy any gifts for your friends there, though. Most items will be difficult to carry on a bike. But our local food is something I recommend. It would be too late if you want them once you are on the train. You can buy some at the foodies shop, which is right next to the station. If you’re looking for anything to wear during the trip, you’d better go to the department store, but I’m afraid there isn’t enough time for that. You can send some postcards with local pictures on them to your friends and family. You can buy them in the community college which is near the museum. The old cinema behind the museum cannot compete against the new theater in the shopping center, so the current owner plans to make it an accommodation block instead. In the back of the train station, you can see a statue of Richard Travolt, a local government minister who is famous for completing a lot of construction projects in our city. Again, I’d like to remind you that Trane will leave at 11:45. Please get back in time, and I hope you enjoy your time at Fitchton.",
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MAP_LABELLING",
+			"instructions": "",
+			"instructions_html": "<p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/dc100fd4-7aee-46ed-90d0-443015578c80.webp\" alt=\"Youpass Ielts Listening Map of Fitchton Railway Station\"></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
+			"questions": [
+				{
+					"number": 1,
+					"text": "Bike racks",
+					"answer": "G",
+					"quotes": ["You can find a bike rack on the right."]
+				},
+				{
+					"number": 2,
+					"text": "Luggage lockers",
+					"answer": "B",
+					"quotes": [
+						"You can find a luggage locker when you enter the station. It’s on the left."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Chemist's",
+					"answer": "C",
+					"quotes": [
+						"If you don’t feel very well or you need to buy some medicine, there’s a chemist in the farthest corner of the station opposite to the cafe."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Toilet",
+					"answer": "F",
+					"quotes": [
+						"If you want to use the toilet, make a left when you enter the station, then turn right. Go straight until you walk past Platform 2. It’s right there at the end."
+					]
+				},
+				{
+					"number": 5,
+					"text": "News agency",
+					"answer": "D",
+					"quotes": [
+						"The news agency is in the Southeast corner of the station."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Where could the passengers see the exhibition?",
+					"options": [
+						{
+							"label": "A",
+							"text": "in the town library"
+						},
+						{
+							"label": "B",
+							"text": "in Fitchton college"
+						},
+						{
+							"label": "C",
+							"text": "in the station"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"The town library is also just down the road if you want to read. Oh, there’s also an art exhibition at the moment."
+					]
+				},
+				{
+					"number": 7,
+					"text": "What is the best gift for passengers to buy and bring home?",
+					"options": [
+						{
+							"label": "A",
+							"text": "local food"
+						},
+						{
+							"label": "B",
+							"text": "clothing"
+						},
+						{
+							"label": "C",
+							"text": "jewelry"
+						}
+					],
+					"answer": "A",
+					"quotes": ["But our local food is something I recommend."]
+				},
+				{
+					"number": 8,
+					"text": "Where can passengers buy souvenir postcards?",
+					"options": [
+						{
+							"label": "A",
+							"text": "in the museum"
+						},
+						{
+							"label": "B",
+							"text": "in the shop"
+						},
+						{
+							"label": "C",
+							"text": "in the college"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"You can buy them in the community college which is near the museum."
+					]
+				},
+				{
+					"number": 9,
+					"text": "What will the old cinema be converted to?",
+					"options": [
+						{
+							"label": "A",
+							"text": "a housing area"
+						},
+						{
+							"label": "B",
+							"text": "a new theatre"
+						},
+						{
+							"label": "C",
+							"text": "a shop"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"The old cinema behind the museum cannot compete against the new theater in the shopping center, so the current owner plans to make it an accommodation block instead."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Who is the statue in the train station modeled after?",
+					"options": [
+						{
+							"label": "A",
+							"text": "a poet"
+						},
+						{
+							"label": "B",
+							"text": "an engineer"
+						},
+						{
+							"label": "C",
+							"text": "a politician"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"In the back of the train station, you can see a statue of Richard Travolt, a local government minister who is famous for completing a lot of construction projects in our city."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/dc100fd4-7aee-46ed-90d0-443015578c80.webp"
+	]
+}

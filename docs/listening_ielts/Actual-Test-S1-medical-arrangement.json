@@ -1,0 +1,175 @@
+{
+	"id": "2e5becb2-a954-4ea6-b1b6-0fe0cd086b83",
+	"url": "https://stepielts.com/student/listening/2e5becb2-a954-4ea6-b1b6-0fe0cd086b83?mode=practice",
+	"title": "Medical Arrangement",
+	"source": "Actual Test",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/d0e10008-9d1c-49ca-ac20-f8c93a2b7b2d.mp3",
+	"transcript": "Speaker 1: Good morning. Doctor Smith speaking. How can I help you?\nSpeaker 2: Well, I've been getting headaches frequently, so I'd like to get some advice.\nSpeaker 1: Okay. Firstly, how did you hear about us?\nSpeaker 2: My friend, Mrs Harris, told me that you did some good work for her a couple of years ago. Do you remember?\nSpeaker 1: Oh yes, I remember Mrs. Harris. I appreciate her compliment. So tell me about your headaches.\nSpeaker 2: The headaches usually last about a week. Sometimes it is so severe that I can't continue my work. Could you tell me what is going wrong?\nSpeaker 1: Sorry to hear that. We will have to look further into this. I want to know, did you have headaches before?\nSpeaker 2: No, I didn't suffer headaches previously. I've just been having them recently, perhaps for three months or so.\nSpeaker 1: I see. Well, I suggest that you should have an optic examination first. Do you know where the local optic examination center is?\nSpeaker 2: No. I haven't been there before. Would you please tell me how to get there?\nSpeaker 1: Of course. From here, you go along Shore Lane. You will see some crossroads, but remember to take a turn on the third one. Then go straight down Bridge Street. Keep going and then turn left at the first traffic light. It is right there.\nSpeaker 2: Got it.\nSpeaker 1: Now what I'll do is fill in a form with you to find out a little bit more about your medical history and so forth.\nSpeaker 2: Okay thank you.\nSpeaker 1: So first of all can I take your name?\nSpeaker 2: It's Anu Bhatt.\nSpeaker 1: Could you spell it please?\nSpeaker 2: Yes a n u b h a t t.\nSpeaker 1: And where do you live?\nSpeaker 2: Oh, I live in my parents' house on 21 Eagle Road. That's E A G L E Road, London.\nSpeaker 1: Oh, I often go to London on weekends too. It's a lovely city. And what's the postcode there?\nSpeaker 2: AL21DY.\nSpeaker 1: Now I need to know your family medical history. Have either of your parents had any medical problems?\nSpeaker 2: Yes. My mother has shellfish allergies while my dad doesn't. Oh, right. Both of my parents have had toothache for most of their lives.\nSpeaker 1: Okay, thanks. There is one more thing I need to take care of. Have you had an allergic reaction to any medicines before?\nSpeaker 2: No, that hasn't happened before.\nSpeaker 1: Okay, I'll make a note of that. I'll write none here. I think we are finished here for now.\nSpeaker 2: Thank you. See you later.\nSpeaker 1: See you then.",
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Why does she call this doctor?",
+					"options": [
+						{
+							"label": "A",
+							"text": "He is popular among oversea students."
+						},
+						{
+							"label": "B",
+							"text": "The advertisement says he is excellent."
+						},
+						{
+							"label": "C",
+							"text": "She heard that he was a good doctor."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"My friend, Mrs Harris, told me that you did some good work for her a couple of years ago."
+					]
+				},
+				{
+					"number": 2,
+					"text": "How does the sickness affect the woman?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It interrupts work."
+						},
+						{
+							"label": "B",
+							"text": "It keeps her awake at night."
+						},
+						{
+							"label": "C",
+							"text": "It makes her feel anxious."
+						}
+					],
+					"answer": "A",
+					"quotes": ["Sometimes it is so severe that I can't continue my work."]
+				},
+				{
+					"number": 3,
+					"text": "What does the doctor want to know?",
+					"options": [
+						{
+							"label": "A",
+							"text": "how long she has suffered from the problem"
+						},
+						{
+							"label": "B",
+							"text": "whether she has suffered headaches before"
+						},
+						{
+							"label": "C",
+							"text": "what caused the headache"
+						}
+					],
+					"answer": "B",
+					"quotes": ["I want to know, did you have headaches before?"]
+				},
+				{
+					"number": 4,
+					"text": "What does the doctor suggest doing first?",
+					"options": [
+						{
+							"label": "A",
+							"text": "taking some medicine"
+						},
+						{
+							"label": "B",
+							"text": "having an optic examination"
+						},
+						{
+							"label": "C",
+							"text": "wearing glasses when using a computer"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Well, I suggest that you should have an optic examination first."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-6",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below.\nWrite NO MORE THAN THREE WORDS for each answer.",
+			"body": "In order to get to the optic examination centre, she should:\nTake a turn at the [5] crossroad.\nThen turn left at the [6]",
+			"body_html": "<table><tbody><tr><td><p>In order to get to the optic examination centre, she should:</p><ul><li>Take a turn at the [5] crossroad.</li><li>Then turn left at the [6]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Take a turn at the [5] crossroad.",
+					"answer": "third",
+					"quotes": [
+						"You will see some crossroads, but remember to take a turn on the third one."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Then turn left at the [6]",
+					"answer": "first traffic light",
+					"quotes": [
+						"Keep going and then turn left at the first traffic light."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "Personal information\nName: Anu Bhatt\nAddress: [7] Road\nPostcode: [8]\nFamily medical history\nBoth of her parents have [9]\nOther information\nMedicine Allergy: [10]",
+			"body_table": [
+				["Personal information"],
+				["Name:", "Anu Bhatt"],
+				["Address:", "[7] Road"],
+				["Postcode:", "[8]"],
+				["Family medical history"],
+				["Both of her parents have [9]"],
+				["Other information"],
+				["Medicine Allergy: [10]"]
+			],
+			"body_html": "<table><thead><tr><th colspan=\"2\">Personal information</th></tr></thead><tbody><tr><td>Name:</td><td>Anu Bhatt</td></tr><tr><td>Address:</td><td>[7] Road</td></tr><tr><td>Postcode:</td><td>[8]</td></tr><tr><td colspan=\"2\"><strong>Family medical history</strong></td></tr><tr><td colspan=\"2\">Both of her parents have [9]</td></tr><tr><td colspan=\"2\">Other information</td></tr><tr><td colspan=\"2\">Medicine Allergy: [10]</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "Address: 7 [7] Road",
+					"answer": "Eagle",
+					"quotes": ["Oh, I live in my parents' house on 21 Eagle Road."]
+				},
+				{
+					"number": 8,
+					"text": "Postcode: 8 [8]",
+					"answer": "AL21DY",
+					"quotes": ["AL21DY."]
+				},
+				{
+					"number": 9,
+					"text": "Both of her parents have 9 [9]",
+					"answer": "toothache",
+					"quotes": [
+						"Both of my parents have had toothache for most of their lives."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Medicine Allergy: 10 [10]",
+					"answer": "none",
+					"quotes": ["I'll write none here."]
+				}
+			]
+		}
+	],
+	"images": []
+}

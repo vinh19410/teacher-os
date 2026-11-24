@@ -1,0 +1,182 @@
+{
+	"id": "38990df7-077a-4c2a-9d4a-e4f2ca6a8b54",
+	"url": "https://stepielts.com/student/listening/38990df7-077a-4c2a-9d4a-e4f2ca6a8b54?mode=practice",
+	"title": "The red squirrel",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/1ff6c223-a573-41d8-adfe-1b34699376cf.mp3",
+	"transcript": "Speaker 0: Host: Welcome to today's Capturing the Moment programme. Today, we have Darren Armond here with us. He's a college student who has just won an award for his set of shots of red squirrels. Welcome, Darren. Now can you tell us a bit about this lovely creature and how you managed to take such wonderful photos?\nSpeaker 1: Darren Armond: Well, the red squirrel is Britain's only native squirrel. It's graceful and athletic. Its Latin name, Scyrrhus vulgaris, comes from the Greek words describing a common type of animal which sits in the shadow of its own tail. At first, I thought this description was funny and was kind of an exaggeration. But now I realize that this name suits them very well. Their fluffy tails under the sun normally cast a big shadow over themselves. You will be lucky to see a red squirrel in the areas where they still survive due to its timid nature and decreasing number in the wild. In the late eighteen hundreds, when gray squirrels, an exotic species, were first introduced into Britain, there were only about 20,000 red squirrels left, the majority of which lived in the North Of England. The grays carry a disease called the squirrelpox virus, which could lead to the deaths of red squirrels, but their number had already declined before the disease spread there. The shrinking population actually corresponds to decreases in the number of nuts available, the red squirrel's primary food source. I accidentally left some nuts in my garden one day, and I found that they had been eaten the next morning. It could have been rats as they have a very similar food category to red squirrels, but I knew it was red squirrels because of their different feeding habits. Rats bite a hole in the nuts, whereas red squirrels crack the nuts in half and eat the kernels. After a week or so, the red squirrels became regular visitors to my garden, making them ideal subjects for my photography project. Unfortunately, I had to shoot only in my garden, partly because I couldn't find another spot to sight red squirrels on a regular basis. Also, this could block out any outside distractions, and I could focus solely on my subject. During the shooting, other animals, like birds, got caught in the frame together sometimes. I'm more than satisfied with my photos. Even though I only practiced a few times and used just a secondhand camera from my friend, my great mentor helped me with the shooting. I got great tutorials from him and was able to shoot better photos.\nSpeaker 0: Host: Thank you, Darren. The award winning photos will be on display in a local museum for the coming month. We're looking forward to the exhibition. So tell us about the award.\nSpeaker 1: Darren Armond: Okay. I sent my portfolio for the competition hosted by a national newspaper. I wasn't expecting the third prize. So when they notified me of the result on the phone, I was really excited.\nSpeaker 0: Host: Do you have some tips for our audience to help improve their photography skills?\nSpeaker 1: Darren Armond: Of course. Here are three things I think photographers can work on to get a better shot. First of all, good composition is key to a lovely shot. Normally, an image's center of interest is placed at one of the intersections that trisect the whole picture. In order to achieve balance, a secondary object, so to speak, can be added to the scene at the opposing intersection. So for instance, in one of my shots, a red squirrel at the top left is staring at a nut at the lower right corner. This is called the rule of thirds. Lighting is another essential element if you want to be rewarded with a superb photo. The direction of the light falling on your subject is most important of all. You need to look at your subject carefully and watch how the shadows fall. If you're able to choose the time of day to shoot your pictures, lighting is most ideal in the late afternoon. Try to position yourself so that the sun hits your subject from the side. This helps create a three d effect in the picture. To further improve on your photography skills, it is advised to take detailed notes of timing, position, weather, etcetera. By doing so, it's easier to review and adjust accordingly, and there is always room for improvement.",
+	"body": {
+		"text": "the photos will be exhibited in a [16]\nDarren's photos once won a competition held by a [17]\nWays to improve photography skills:\nsome pictures need a so-called [18] in the scene\nDarren thinks the lighting is best late in the [19]\nTo take better photos, photographers should make [20]",
+		"html": "<table><tbody><tr><td><ul><li>the photos will be exhibited in a [16]</li><li>Darren's photos once won a competition held by a [17]</li></ul><p><strong>Ways to improve photography skills:</strong></p><ul><li>some pictures need a so-called [18] in the scene</li><li>Darren thinks the lighting is best late in the [19]</li><li>To take better photos, photographers should make [20]</li></ul></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "11-15",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, or C.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "What does Darren now think about the Latin name of the red squirrel?",
+					"options": [
+						{
+							"label": "A",
+							"text": "it is suitable for this species"
+						},
+						{
+							"label": "B",
+							"text": "it is meaningless"
+						},
+						{
+							"label": "C",
+							"text": "It is an amusing description"
+						}
+					],
+					"answer": "A",
+					"quotes": ["But now I realize that this name suits them very well."]
+				},
+				{
+					"number": 12,
+					"text": "The number of red squirrels is reduced due to",
+					"options": [
+						{
+							"label": "A",
+							"text": "the invasion of an exotic species"
+						},
+						{
+							"label": "B",
+							"text": "a disease brought by the exotic species"
+						},
+						{
+							"label": "C",
+							"text": "the declining food supply"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The shrinking population actually corresponds to decreases in the number of nuts available, the red squirrel's primary food source."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Darren differentiates red squirrels from rats by",
+					"options": [
+						{
+							"label": "A",
+							"text": "their food category"
+						},
+						{
+							"label": "B",
+							"text": "how the food was eaten"
+						},
+						{
+							"label": "C",
+							"text": "the way they stored food"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Rats bite a hole in the nuts, whereas red squirrels crack the nuts in half and eat the kernels."
+					]
+				},
+				{
+					"number": 14,
+					"text": "What was the restriction for Darren's photography?",
+					"options": [
+						{
+							"label": "A",
+							"text": "he could only take photos of one species at a time"
+						},
+						{
+							"label": "B",
+							"text": "he could only use one camera"
+						},
+						{
+							"label": "C",
+							"text": "he could only take photographs in a certain location"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Unfortunately, I had to shoot only in my garden, partly because I couldn't find another spot to sight red squirrels on a regular basis."
+					]
+				},
+				{
+					"number": 15,
+					"text": "Why is Darren confident about his photographs?",
+					"options": [
+						{
+							"label": "A",
+							"text": "he practiced a lot"
+						},
+						{
+							"label": "B",
+							"text": "his teacher prepared him well"
+						},
+						{
+							"label": "C",
+							"text": "he had high-quality equipment"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I got great tutorials from him and was able to shoot better photos."
+					]
+				}
+			]
+		},
+		{
+			"range": "16-20",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THAN THREE WORDS for each answer.",
+			"body": "the photos will be exhibited in a [16]\nDarren's photos once won a competition held by a [17]\nWays to improve photography skills:\nsome pictures need a so-called [18] in the scene\nDarren thinks the lighting is best late in the [19]\nTo take better photos, photographers should make [20]",
+			"body_html": "<table><tbody><tr><td><ul><li>the photos will be exhibited in a [16]</li><li>Darren's photos once won a competition held by a [17]</li></ul><p><strong>Ways to improve photography skills:</strong></p><ul><li>some pictures need a so-called [18] in the scene</li><li>Darren thinks the lighting is best late in the [19]</li><li>To take better photos, photographers should make [20]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 16,
+					"text": "the photos will be exhibited in a [16]",
+					"answer": "local museum",
+					"quotes": [
+						"The award winning photos will be on display in a local museum for the coming month."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Darren's photos once won a competition held by a [17]",
+					"answer": "national newspaper",
+					"quotes": [
+						"I sent my portfolio for the competition hosted by a national newspaper."
+					]
+				},
+				{
+					"number": 18,
+					"text": "some pictures need a so-called [18] in the scene",
+					"answer": "secondary object",
+					"quotes": [
+						"In order to achieve balance, a secondary object, so to speak, can be added to the scene at the opposing intersection."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Darren thinks the lighting is best late in the [19]",
+					"answer": "afternoon",
+					"quotes": [
+						"If you're able to choose the time of day to shoot your pictures, lighting is most ideal in the late afternoon."
+					]
+				},
+				{
+					"number": 20,
+					"text": "To take better photos, photographers should make [20]",
+					"answer": "detailed notes",
+					"quotes": [
+						"To further improve on your photography skills, it is advised to take detailed notes of timing, position, weather, etcetera."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

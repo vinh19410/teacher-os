@@ -1,0 +1,107 @@
+{
+	"id": "7bdc8c84-0878-4d30-9920-f8054343a6ed",
+	"url": "https://stepielts.com/student/listening/7bdc8c84-0878-4d30-9920-f8054343a6ed?mode=practice",
+	"title": "Automatic underwater vehicle",
+	"source": "Forecast Quý 2-2025",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/b123a8aa-0762-4df8-b514-fabf8196b711.mp3",
+	"transcript": "Speaker 1: As you are aware, the Marine Sciences department of our university has recently started a new project, trialing the use of Automatic Underwater Vehicles, or AUVs, to survey the seafloor. Many of you may not know what an AUV is. An AUV is a small, unmanned underwater vessel, which can be used for surveying terrain on the seafloor, inspection of pre-laid gas pipes, etc. The AUV our university uses is 2 metres in length and 1.5 metres wide, with a rather small weight of 52 kilograms and a shape of a mini airplane. These AUVs are “Automatic” because they are able to function without a captain on board . Similar to a robot, an AUV receives signals from a ship in distance and acts accordingly. There are many uses of an AUV. I’ve already mentioned some, but they also have some more specific applications. It can be used to measure the temperature of the water as well as to obtain data about water pressure deep down in the ocean. It is also equipped with the technology to measure the proportion of salt in the ocean. It compares that data to data from previous years, to get a more accurate picture of the impact of global warming and ice melt on seawater. For the AUV to function properly, there are some key factors that must be considered . Most importantly, the quality of the water impacts on the reliability of the data collected. Samples of deep-ocean water should carefully be kept away from any substance outside the ocean to get a more accurate idea of what is occurring down there. In the meantime, for the optimal performance of the AUV, the water temperature should not be too low, nor should the water pressure exceed its threshold. Why do we need the data about the ocean? How do we use it? Well, we can use the data to get a picture of physical and biological properties and phenomena of the sea, and the integral role it plays in sustaining all life on earth. The data collected from the AUVs also reflect how the climate affects the ocean’s ecology. The AUV has many advantages, and it has made it possible for us to get a lot of information that we couldn’t get in the past. Scientists have attempted to reach the bottom of shallower parts of the ocean without the use of modern safety equipment, and the results have been mixed. Now, we are able to see further and explore deeper than we’ve ever done before. This task is impossible for humans to carry out. Another advantage of the AUV is that no cables are needed to be attached to the vehicle, so the range of the area that the AUV can move is substantial. As with any new development, the AUV also has its drawbacks. A significant issue is the use of heavy metals in both the body and battery of the machine. These can leach into the surrounding water, which can lead to chemical contamination to the ecosystem we are working to protect. Further research is needed on saline water friendly materials that can be incorporated into the design. Our AUV works in the ocean just off the coast here, recording statistical data from the surface of the seabed, which aids us in determining how much the salinity has changed in the last few years. The AUV needs to emerge from the water regularly, for maintenance and refueling. The engine’s operation depends on the oil that is pumped into the two gas tanks. These need to be assessed each time the machine is used, to determine if there are any leaks or cracks. The messages containing the data are all sent via satellite phones by the scientists from the ship. All data we receive from the AUV as it is propelled along the sea floor are transmitted to us from the antenna which is located on the right wingtip. As you can see, the AUV is invaluable in the research we are carrying out. The use of these machines in the marine science world is growing, and we can expect to see more use of them in years to come.",
+	"body": {
+		"text": "Description\nIt looks like a small [1]\nIt is controlled remotely like a [2]\nWhat it can measure\nwater temperature\nwater pressure\nthe level of [3] in the sea\nWorking conditions\ngood water [4]\nproper water temperature and depth\nMeasurements help us know\nthe physical and biological aspects of the ocean.\nthe impacts of [5] on marine ecosystem.\nAdvantages\nIt can handle tasks that cannot be done by humans.\nIt can operate without [6]\nDisadvantage\nIt may cause [7] damage to the environment.\nWorking process\nIt collects data from the [8] of the ocean floor.\nIts engine uses [9] from the fuel tanks.\nScientists send the message by using satellite phones.\nThe antenna at the [10] wingtip transmits the message.",
+		"html": "<h3><strong>Description</strong></h3><ul><li>It looks like a small [1] </li><li>It is controlled remotely like a [2] </li></ul><h3><strong>What it can measure</strong></h3><ul><li>water temperature</li><li>water pressure</li><li>the level of [3] in the sea</li></ul><h3><strong>Working conditions</strong></h3><ul><li>good water [4] </li><li>proper water temperature and depth</li></ul><h3><strong>Measurements help us know</strong></h3><ul><li>the physical and biological aspects of the ocean.</li><li>the impacts of [5] on marine ecosystem.</li></ul><h3><strong>Advantages</strong></h3><ul><li>It can handle tasks that cannot be done by humans.</li><li>It can operate without [6] </li></ul><h3><strong>Disadvantage</strong></h3><ul><li>It may cause [7] damage to the environment.</li></ul><h3><strong>Working process</strong></h3><ul><li>It collects data from the [8] of the ocean floor.</li><li>Its engine uses [9] from the fuel tanks.</li><li>Scientists send the message by using satellite phones.</li><li>The antenna at the [10] wingtip transmits the message.</li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "Description\nIt looks like a small [1]\nIt is controlled remotely like a [2]\nWhat it can measure\nwater temperature\nwater pressure\nthe level of [3] in the sea\nWorking conditions\ngood water [4]\nproper water temperature and depth\nMeasurements help us know\nthe physical and biological aspects of the ocean.\nthe impacts of [5] on marine ecosystem.\nAdvantages\nIt can handle tasks that cannot be done by humans.\nIt can operate without [6]\nDisadvantage\nIt may cause [7] damage to the environment.\nWorking process\nIt collects data from the [8] of the ocean floor.\nIts engine uses [9] from the fuel tanks.\nScientists send the message by using satellite phones.\nThe antenna at the [10] wingtip transmits the message.",
+			"body_html": "<h3><strong>Description</strong></h3><ul><li>It looks like a small [1] </li><li>It is controlled remotely like a [2] </li></ul><h3><strong>What it can measure</strong></h3><ul><li>water temperature</li><li>water pressure</li><li>the level of [3] in the sea</li></ul><h3><strong>Working conditions</strong></h3><ul><li>good water [4] </li><li>proper water temperature and depth</li></ul><h3><strong>Measurements help us know</strong></h3><ul><li>the physical and biological aspects of the ocean.</li><li>the impacts of [5] on marine ecosystem.</li></ul><h3><strong>Advantages</strong></h3><ul><li>It can handle tasks that cannot be done by humans.</li><li>It can operate without [6] </li></ul><h3><strong>Disadvantage</strong></h3><ul><li>It may cause [7] damage to the environment.</li></ul><h3><strong>Working process</strong></h3><ul><li>It collects data from the [8] of the ocean floor.</li><li>Its engine uses [9] from the fuel tanks.</li><li>Scientists send the message by using satellite phones.</li><li>The antenna at the [10] wingtip transmits the message.</li></ul>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "It looks like a small [1]",
+					"answer": "airplane / aeroplane",
+					"quotes": [
+						"The AUV our university uses is 2 metres in length and 1.5 metres wide, with a rather small weight of 52 kilograms and a shape of a mini airplane."
+					]
+				},
+				{
+					"number": 2,
+					"text": "It is controlled remotely like a [2]",
+					"answer": "robot",
+					"quotes": [
+						"Similar to a robot, an AUV receives signals from a ship in distance and acts accordingly."
+					]
+				},
+				{
+					"number": 3,
+					"text": "the level of [3] in the sea",
+					"answer": "salt",
+					"quotes": [
+						"It is also equipped with the technology to measure the proportion of salt in the ocean."
+					]
+				},
+				{
+					"number": 4,
+					"text": "good water [4]",
+					"answer": "quality",
+					"quotes": [
+						"Most importantly, the quality of the water impacts on the reliability of the data collected."
+					]
+				},
+				{
+					"number": 5,
+					"text": "the impacts of [5] on marine ecosystem.",
+					"answer": "climate",
+					"quotes": [
+						"The data collected from the AUVs also reflect how the climate affects the ocean’s ecology."
+					]
+				},
+				{
+					"number": 6,
+					"text": "It can operate without [6]",
+					"answer": "cables",
+					"quotes": [
+						"Another advantage of the AUV is that no cables are needed to be attached to the vehicle, so the range of the area that the AUV can move is substantial."
+					]
+				},
+				{
+					"number": 7,
+					"text": "It may cause [7] damage to the environment.",
+					"answer": "chemical",
+					"quotes": [
+						"These can leach into the surrounding water, which can lead to chemical contamination to the ecosystem we are working to protect."
+					]
+				},
+				{
+					"number": 8,
+					"text": "It collects data from the [8] of the ocean floor.",
+					"answer": "surface",
+					"quotes": [
+						"Our AUV works in the ocean just off the coast here, recording statistical data from the surface of the seabed, which aids us in determining how much the salinity has changed in the last few years."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Its engine uses [9] from the fuel tanks.",
+					"answer": "oil",
+					"quotes": [
+						"The engine’s operation depends on the oil that is pumped into the two gas tanks."
+					]
+				},
+				{
+					"number": 10,
+					"text": "The antenna at the [10] wingtip transmits the message.",
+					"answer": "right",
+					"quotes": [
+						"All data we receive from the AUV as it is propelled along the sea floor are transmitted to us from the antenna which is located on the right wingtip."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

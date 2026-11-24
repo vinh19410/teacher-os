@@ -1,0 +1,150 @@
+{
+	"id": "2a01ecc8-9ad7-4cb6-8efe-6ca42c26b20f",
+	"url": "https://stepielts.com/student/listening/2a01ecc8-9ad7-4cb6-8efe-6ca42c26b20f?mode=practice",
+	"title": "Apartment in Arillas",
+	"source": "Actual Test",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/9ed4cf3c-87fa-42eb-ad5f-f886d6fd73fb.mp3",
+	"transcript": "Receptionist: Greek Island Holidays. Can I help you? Tourist: Yes, I hope so. I have a friend who's just come back from Corfu, and she recommended some apartments in Arillas. She thought they might be on your list. Receptionist: Arillas? Let me check. Can you give me the names? Tourist: Yes. The first is Rose Garden Apartments. Could you tell me a little information about the apartments, its features and prices for instance? Receptionist: Well, at Rose Garden they have a huge parking lot and it is free parking, so it can be very convenient for big families who drive there to spend holidays. Tourist: Oh that's great. Our whole family will be going. Receptionist: And there's a big swimming pool which can accommodate over 50 people. We are thinking of replacing it with an aquarium, but it's still in discussion. Tourist: That sounds exciting. What about the cost? Receptionist: $219. Tourist: That seems reasonable. I'm just jotting down some notes. Now the second one my friend mentioned was called Blue Bay. Receptionist: Blue Bay? Oh yes. In fact that's very popular and it has some special features. Tourist: Really? Receptionist: The main attraction is the large man-made lake and it's only around a kilometer from some shops. Tourist: Is it much more expensive than the first one? Receptionist: Actually it's $50 cheaper than the first one. That's mainly because they don't have a parking lot there. Moreover, we plan to install a lift, but we are currently short of funds so we don't have it at the moment. This apartment isn't really suitable for those with disabilities. Tourist: Right. Now there are just two more apartments on the list. The third one is Sunshade Apartments. Receptionist: This one is on top of a hill with a huge parking lot. Each room used to have a nice kitchen, but we have turned it into a beautiful garden since our customers don't cook much, and they have shared barbecue facilities. Tourist: Sounds great. Receptionist: Yes. It is well equipped. Tourist: How much does it cost? Receptionist: $490. Tourist: I don't think that would be within our budget, unfortunately. And the last one sounds a bit expensive too, the Grand Apartments. Receptionist: That one is quite reasonable. There's no parking lot, but parking on the street requires no charge. Many teenagers and businessmen have come here to spend their summer holiday, but children make the biggest part of our customers. There is a huge painting room for them. Tourist: Sounds lovely. Okay. I will think about which one to book with my family. Receptionist: That's fine. We've got plenty of apartments here when you come. Is there anything else you need to know about accommodation? Tourist: Oh actually, could you tell me some more details about Arillas in general? Receptionist: Sure. What would you like to know? Tourist: Well, my friend told me that Arillas was pretty, but I don't know what the best way is to see the town. Receptionist: Well, if you want to enjoy the scenery, then the blue city bus is recommended. Just a second while I check. Ah, that one is a business route mainly for commuters. The green one is a double-decker which offers a nicer view. Tourist: I also heard that the ferry boat trip is quite popular. Receptionist: Yes, if you want to immerse yourself in the magnificent sea views then the ferry boat trip is a must. The trip used to last thirty-five minutes, but we made it a little bit longer to fifty minutes in response to our customers' demands. A thirty-minute seafood dinner is included in this trip. Tourist: Okay. And one more question. I like riding bikes. Can I rent a bike and cycle around the town? Receptionist: Of course. There is a mall on Main Street, and Aurillas Bike Hire is located behind it. Tourist: Okay. I have made a note of that. Receptionist: Furthermore, I'd like to suggest three famous museums where you can learn native history and culture. Tourist: That sounds fun. Receptionist: Okay. The first one has an exhibition of interior design as well as some famous paintings and sculptures. Some of the paintings are donated by well-known scientists. Tourist: That's great. Receptionist: The second one is about something familiar to us but actually most people don't know much about it, which is fizzy drinks or soda. Visitors will see the history of famous products in this industry and how they are produced. It's interesting to know that some products have been taken to space before. Tourist: Wow, I would like to go there. Receptionist: Yes, you should. And the last one is about special phenomena outside the planet where we live. Some experts are there to unveil the mystery if visitors have questions. Various machines and equipment are displayed inside. You can't miss it. Are there any more questions for now? Tourist: No, that is all. Receptionist: I hope you have a happy journey. Tourist: Thank you.",
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "Apartments Parking Additional information\nRose Garden Apartments Example: free parking lot a large [1]\nBlue Bay no parking lot man-made lake, no [2]\nSunshade Apartments huge parking lot No [3] in the room\nGrand Apartments no charge on street most guests are [4]",
+			"body_table": [
+				["Apartments", "Parking", "Additional information"],
+				["Rose Garden Apartments", "Example: free parking lot", "a large [1]"],
+				["Blue Bay", "no parking lot", "man-made lake, no [2]"],
+				["Sunshade Apartments", "huge parking lot", "No [3] in the room"],
+				["Grand Apartments", "no charge on street", "most guests are [4]"]
+			],
+			"body_html": "<h3></h3><table><tbody><tr><td><strong>Apartments</strong></td><td><strong>Parking</strong></td><td><strong>Additional information</strong></td></tr><tr><td>Rose Garden Apartments</td><td>Example: free parking lot</td><td>a large [1]</td></tr><tr><td>Blue Bay</td><td>no parking lot</td><td>man-made lake, no [2]</td></tr><tr><td>Sunshade Apartments</td><td>huge parking lot</td><td>No [3] in the room</td></tr><tr><td>Grand Apartments</td><td>no charge on street</td><td>most guests are [4]</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Rose Garden Apartments - a large [1]",
+					"answer": "swimming pool",
+					"quotes": [
+						"Receptionist: And there's a big swimming pool which can accommodate over 50 people."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Blue Bay - man-made lake, no [2]",
+					"answer": "lift",
+					"quotes": [
+						"Moreover, we plan to install a lift, but we are currently short of funds so we don't have it at the moment."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Sunshade Apartments - No [3] in the room",
+					"answer": "kitchen",
+					"quotes": [
+						"Each room used to have a nice kitchen, but we have turned it into a beautiful garden since our customers don't cook much, and they have shared barbecue facilities."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Grand Apartments - most guests are [4]",
+					"answer": "children",
+					"quotes": [
+						"Many teenagers and businessmen have come here to spend their summer holiday, but children make the biggest part of our customers."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-7",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write NO MORE THAN THREE WORDS AND for each answer.",
+			"body": "What colour is the bus that the woman should take? [5]\nHow long is the ferry boat trip? [6]\nWhere is the Bike Hire? [7]",
+			"body_html": "<table><tbody><tr><td><ul><li>What colour is the bus that the woman should take? [5]</li><li>How long is the ferry boat trip? [6]</li><li>Where is the Bike Hire? [7]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "What colour is the bus that the woman should take?",
+					"answer": "green",
+					"quotes": [
+						"The green one is a double-decker which offers a nicer view."
+					]
+				},
+				{
+					"number": 6,
+					"text": "How long is the ferry boat trip?",
+					"answer": "fifty minutes",
+					"quotes": [
+						"The trip used to last thirty-five minutes, but we made it a little bit longer to fifty minutes in response to our customers' demands."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Where is the Bike Hire?",
+					"answer": "behind the mall",
+					"quotes": [
+						"There is a mall on Main Street, and Aurillas Bike Hire is located behind it."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-10",
+			"type": "MATCHING",
+			"instructions": "What is the theme of each of the following museums?",
+			"options": [
+				{
+					"label": "A",
+					"text": "Earth science"
+				},
+				{
+					"label": "B",
+					"text": "Astronomy science"
+				},
+				{
+					"label": "C",
+					"text": "Modern industrial history"
+				},
+				{
+					"label": "D",
+					"text": "Decoration and art"
+				},
+				{
+					"label": "E",
+					"text": "Soft drink manufacturing"
+				}
+			],
+			"body": "Museum 1: [8]\nMuseum 2: [9]\nMuseum 3: [10]",
+			"body_html": "<ul><li>Museum 1: [8]</li><li>Museum 2: [9]</li><li>Museum 3: [10]</li></ul>",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Museum 1",
+					"answer": "D",
+					"quotes": [
+						"The first one has an exhibition of interior design as well as some famous paintings and sculptures."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Museum 2",
+					"answer": "E",
+					"quotes": [
+						"Receptionist: The second one is about something familiar to us but actually most people don't know much about it, which is fizzy drinks or soda."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Museum 3",
+					"answer": "B",
+					"quotes": [
+						"And the last one is about special phenomena outside the planet where we live."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

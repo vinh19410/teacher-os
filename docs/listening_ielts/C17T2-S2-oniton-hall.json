@@ -1,0 +1,204 @@
+{
+	"id": "dc283693-c635-4ece-8e89-9181b26d4a1c",
+	"url": "https://stepielts.com/student/listening/dc283693-c635-4ece-8e89-9181b26d4a1c?mode=practice",
+	"title": "Oniton Hall",
+	"source": "C17T2",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/da78dfc1-4519-47ba-ad9e-2806652c220f.mp3",
+	"transcript": "Speaker 0: Part two. You will hear a guide at a tourist attraction called Oniton Hall talking to a group of visitors. First, you have some time to look at questions 11 to 14. Now listen carefully and answer questions 11 to 14.\nSpeaker 1: Good morning, and welcome to Oniton Hall, one of the largest estates in the area. My name's Nick, and I'm one of the guides. I'll give you a brief introduction to the estate while you're sitting down, and then we'll walk round. The estate consists of the house, gardens, parkland, and farm, and it dates back to the fourteenth century. The original house was replaced in the late seventeenth century, and, of course, it has had a large number of owners. Almost all of them have left their mark, generally by adding new rooms, like the ballroom and conservatory, or by demolishing others. The farm looks much as it's always done, although the current owner has done a great deal of work to the flower beds. In the seventeenth century, the estate was owned by a very wealthy man called sir Edward Downes. His intention was to escape from the world of politics after years as an active politician and to build a new house worthy of his big collection of books, paintings, and sculptures. He broke off contact with his former political allies and hosted meetings of creative and literary people, like painters and poets. Unusually for his time, he didn't care whether his guests were rich or poor as long as they had talent. Big houses like Oniton had dozens of servants until the nineteen twenties or thirties, and we've tried to show what their working lives were like. Photographs, of course, don't give much of an idea. So instead, as you go round the house, you'll see volunteers dressed up as nineteenth century servants going about their work. They'll explain what they're doing and tell you their recipes or what tools they're using. We've just introduced this feature to replace the audio guide we used to have available. I see there are a number of children here with you today. Well, we have several activities especially for children, like dressing up in the sorts of clothes that children wore in the past. And as it's a fine day, some of you will probably want to play in the adventure playground. Our latest edition is child sized tractors that you can drive around the grounds.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 15 to 20. Now listen and answer questions 15 to 20.\nSpeaker 1: We'll also be going into the farm that's part of the estate where there's plenty to do. Most of the buildings date from the eighteenth century, so you can really step back into an agricultural past. Until recently, the dairy was where milk from the cows was turned into cheese. It's now the place to go for lunch or afternoon tea or just a cup of coffee and a slice of homemade cake. The big stone building that dominates the farm is the large barn, and in here is our collection of agricultural tools. These were used in the past to plow the earth, sow seeds, make gates, and much more. There's a small barn also made of stone where you can groom the donkeys and horses to keep their coats clean. They really seem to enjoy having it done, and children love grooming them. The horses no longer live in the stables, which instead is the place to go to buy gifts, books, our own jams and pickles, and clothes and blankets made of wool from our sheep. Outside the shed, which is the only brick building, you can climb into a horse drawn carriage for a lovely relaxing tour of the park and farm. The carriages are well over a 100 years old. And finally, the parkland, which was laid out in the eighteenth century with a lake and trees that are now well established. You'll see types of cattle and sheep that are hardly ever found on farms these days. We're helping to preserve them to stop their numbers falling further. Okay. Well, if you'd like to come with me, we will start\nSpeaker 0: That is the end of part two. You now have half a minute to check your answers to part two.",
+	"body": {
+		"text": "Dairy [15]\nLarge barn [16]\nSmall barn [17]\nStables [18]\nShed [19]\nParkland [20]",
+		"html": "<p>Dairy  [15]</p><p>Large barn [16]</p><p>Small barn [17]</p><p>Stables [18]</p><p>Shed  [19]</p><p>Parkland [20]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "11-14",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Many past owners made changes to",
+					"options": [
+						{
+							"label": "A",
+							"text": "the gardens."
+						},
+						{
+							"label": "B",
+							"text": "the house."
+						},
+						{
+							"label": "C",
+							"text": "the farm."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Almost all of them have left their mark, generally by adding new rooms, like the ballroom and conservatory, or by demolishing others."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Sir Edward Downes built Oniton Hall because he wanted",
+					"options": [
+						{
+							"label": "A",
+							"text": "a place for discussing politics."
+						},
+						{
+							"label": "B",
+							"text": "a place to display his wealth."
+						},
+						{
+							"label": "C",
+							"text": "a place for artists and writers."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"His intention was to escape from the world of politics after years as an active politician and to build a new house worthy of his big collection of books, paintings, and sculptures. He broke off contact with his former political allies and hosted meetings of creative and literary people, like painters and poets."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Visitors can learn about the work of servants in the past from",
+					"options": [
+						{
+							"label": "A",
+							"text": "audio guides."
+						},
+						{
+							"label": "B",
+							"text": "photographs."
+						},
+						{
+							"label": "C",
+							"text": "people in costume."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"So instead, as you go round the house, you'll see volunteers dressed up as nineteenth century servants going about their work."
+					]
+				},
+				{
+					"number": 14,
+					"text": "What is new for children at Onion Hall?",
+					"options": [
+						{
+							"label": "A",
+							"text": "clothes for dressing up"
+						},
+						{
+							"label": "B",
+							"text": "mini tractors"
+						},
+						{
+							"label": "C",
+							"text": "the adventure playground"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Our latest edition is child sized tractors that you can drive around the grounds."
+					]
+				}
+			]
+		},
+		{
+			"range": "15-20",
+			"type": "MATCHING",
+			"instructions": "Which activity is offered at each of the following locations on the farm?\nChoose SIX answers from the box and write the correct letter, A-H, next to Questions 15-20.",
+			"options": [
+				{
+					"label": "A",
+					"text": "shopping"
+				},
+				{
+					"label": "B",
+					"text": "watching cows being milked"
+				},
+				{
+					"label": "C",
+					"text": "seeing old farming equipment"
+				},
+				{
+					"label": "D",
+					"text": "eating and drinking"
+				},
+				{
+					"label": "E",
+					"text": "starting a trip"
+				},
+				{
+					"label": "F",
+					"text": "seeing rare breeds of animals"
+				},
+				{
+					"label": "G",
+					"text": "helping to look after animals"
+				},
+				{
+					"label": "H",
+					"text": "using farming tools"
+				}
+			],
+			"body": "Dairy [15]\nLarge barn [16]\nSmall barn [17]\nStables [18]\nShed [19]\nParkland [20]",
+			"body_html": "<p>Dairy  [15]</p><p>Large barn [16]</p><p>Small barn [17]</p><p>Stables [18]</p><p>Shed  [19]</p><p>Parkland [20]</p>",
+			"questions": [
+				{
+					"number": 15,
+					"text": "Dairy",
+					"answer": "D",
+					"quotes": [
+						"It's now the place to go for lunch or afternoon tea or just a cup of coffee and a slice of homemade cake."
+					]
+				},
+				{
+					"number": 16,
+					"text": "Large barn",
+					"answer": "C",
+					"quotes": [
+						"The big stone building that dominates the farm is the large barn, and in here is our collection of agricultural tools."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Small barn",
+					"answer": "G",
+					"quotes": [
+						"There's a small barn also made of stone where you can groom the donkeys and horses to keep their coats clean. They really seem to enjoy having it done, and children love grooming them."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Stables",
+					"answer": "A",
+					"quotes": [
+						"The horses no longer live in the stables, which instead is the place to go to buy gifts, books, our own jams and pickles, and clothes and blankets made of wool from our sheep."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Shed",
+					"answer": "E",
+					"quotes": [
+						"Outside the shed, which is the only brick building, you can climb into a horse drawn carriage for a lovely relaxing tour of the park and farm."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Parkland",
+					"answer": "F",
+					"quotes": [
+						"You'll see types of cattle and sheep that are hardly ever found on farms these days."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,107 @@
+{
+	"id": "3cb896cc-6251-4e3b-9719-129a89b07345",
+	"url": "https://stepielts.com/student/listening/3cb896cc-6251-4e3b-9719-129a89b07345?mode=practice",
+	"title": "Technology and Education",
+	"source": "Forecast Quý 2-2025",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/de3b05a3-36ed-44ea-8785-23d48d9b089d.mp3",
+	"transcript": "Speaker 0: Hello, and welcome to today’s seminar about education. Education is a life-long process, there is no limit on when to start and stop. And we have been using technology so much these days in each and every sector of our lives, including education. Have we ever taken out a second to wonder if it’s leaving a positive impact on our work or it’s just that we have been relying on it so much that we’ve become used to it? Earlier, there was a lot of debate about technology in education amongst the faculty at our school. Everyone had their own views. At first, some believed that the use of email between students and teachers made them interact with each other less, and this was not a good thing. But, gradually as technology was embraced by more educational institutes, they realized the importance of technology in education. Technology and education are a great combination if used together with a right reason and vision. Moreover, there is a strong relationship with the local economy when it comes to the effectiveness of the use of IT in education. In the more developed areas, the schools and institutions have better access to more advanced technology, and the teachers are better trained to use the technology to improve the quality of their classes. In contrast, in some less developed regions and remote areas where technology is not so common, the effectiveness can’t be guaranteed. However, wherever they are, the most common example for teachers using technology in education is the usage of computers in their teaching methods. In most classrooms, you can see teachers using computers to present teaching notes and other materials. This year, the IT school of Westbrook University has implemented a brand-new education mode. Since its implementation, both teachers and students have been praising this new mode. It involves a kind of software which allows students as well as teachers to talk and discuss with each other more easily and they said they enjoy this way of communication. What’s more, the mode offers students a channel to post any work that they are proud of, whether it’s a nice photograph that they take, a case study they do, a song they record, or even just a great idea they have. So it gives them a chance to showcase their strength and build up their confidence. Many students use this feature to show the best of themselves. It also provides students an opportunity to choose what they learn on the internet, so they no longer have to sit in the classroom, listening to something they are bored with. And they don’t have to wait all night trying to register for their favorite elective courses. Compared with the traditional platform, it is more flexible. The open source which the new mode provides is free for students to use when they are trying to look up for online materials for their papers or researches. And the data will not be easily found on the Internet because only registered users have access to the database. By the way, all the materials are original works of teachers or scholars, so there is no need to worry about the quality of the content. And with the overwhelming amount of unwanted information on the internet, this mode gives students a new search engine they can use on campus. So information like advertisements and skeptical sources will be filtered easily. This is a perfect example of new solutions to new problems. Apart from that, students can arrange their daily activities and improve their time management skills by simply ticking the boxes in the timetable online. They can set up their own starting time and their deadline for each assignment. Based on statistics, the use of this function has a positive effect on the students who constantly procrastinate. By the end of the first term, the number of students who asked for extension for their papers had decreased by 10%, which was quite an achievement. Another feature that seems very creative to me is that students can help people who have questions or problems relating to their field of studies on a special platform. They can even have some income by providing people with good solutions.",
+	"body": {
+		"text": "Some people believed [1] failed to help students interact with teachers.\nIT in education develops a tight [2] with local economy.\nComputers are commonly used to develop teaching [3]\nThe new mode in the IT school of Westbrook University\nStudents enjoy the [4] with teachers.\nNew technology builds up greater [5] for students.\nCompared with traditional teaching, the new way is more [6].\nIt offers students quality [7] made by professionals.\nIt is seen as new solutions to new [8].\nIt nurtures [9]management skills.\nIt also provides students a source of [10].",
+		"html": "<p>Some people believed [1] failed to help students interact with teachers.</p><p>IT in education develops a tight [2] with local economy.</p><p>Computers are commonly used to develop teaching [3] </p><p><strong>The new mode in the IT school of Westbrook University</strong></p><p>Students enjoy the [4] with teachers.</p><p>New technology builds up greater  [5] for students.</p><p>Compared with traditional teaching, the new way is more [6].</p><p>It offers students quality [7] made by professionals.</p><p>It is seen as new solutions to new [8].</p><p>It nurtures [9]management skills.</p><p>It also provides students a source of [10].</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "Some people believed [1] failed to help students interact with teachers.\nIT in education develops a tight [2] with local economy.\nComputers are commonly used to develop teaching [3]\nThe new mode in the IT school of Westbrook University\nStudents enjoy the [4] with teachers.\nNew technology builds up greater [5] for students.\nCompared with traditional teaching, the new way is more [6].\nIt offers students quality [7] made by professionals.\nIt is seen as new solutions to new [8].\nIt nurtures [9]management skills.\nIt also provides students a source of [10].",
+			"body_html": "<p>Some people believed [1] failed to help students interact with teachers.</p><p>IT in education develops a tight [2] with local economy.</p><p>Computers are commonly used to develop teaching [3] </p><p><strong>The new mode in the IT school of Westbrook University</strong></p><p>Students enjoy the [4] with teachers.</p><p>New technology builds up greater  [5] for students.</p><p>Compared with traditional teaching, the new way is more [6].</p><p>It offers students quality [7] made by professionals.</p><p>It is seen as new solutions to new [8].</p><p>It nurtures [9]management skills.</p><p>It also provides students a source of [10].</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Some people believed [1] failed to help students interact with teachers.",
+					"answer": "email",
+					"quotes": [
+						"At first, some believed that the use of email between students and teachers made them interact with each other less, and this was not a good thing."
+					]
+				},
+				{
+					"number": 2,
+					"text": "IT in education develops a tight [2] with local economy.",
+					"answer": "relationship",
+					"quotes": [
+						"Moreover, there is a strong relationship with the local economy when it comes to the effectiveness of the use of IT in education."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Computers are commonly used to develop teaching [3]",
+					"answer": "methods",
+					"quotes": [
+						"However, wherever they are, the most common example for teachers using technology in education is the usage of computers in their teaching methods."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Students enjoy the [4] with teachers.",
+					"answer": "communication",
+					"quotes": [
+						"It involves a kind of software which allows students as well as teachers to talk and discuss with each other more easily and they said they enjoy this way of communication."
+					]
+				},
+				{
+					"number": 5,
+					"text": "New technology builds up greater [5] for students.",
+					"answer": "confidence",
+					"quotes": [
+						"So it gives them a chance to showcase their strength and build up their confidence."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Compared with traditional teaching, the new way is more [6].",
+					"answer": "flexible",
+					"quotes": [
+						"Compared with the traditional platform, it is more flexible."
+					]
+				},
+				{
+					"number": 7,
+					"text": "It offers students quality [7] made by professionals.",
+					"answer": "materials",
+					"quotes": [
+						"By the way, all the materials are original works of teachers or scholars, so there is no need to worry about the quality of the content."
+					]
+				},
+				{
+					"number": 8,
+					"text": "It is seen as new solutions to new [8].",
+					"answer": "problems",
+					"quotes": [
+						"This is a perfect example of new solutions to new problems."
+					]
+				},
+				{
+					"number": 9,
+					"text": "It nurtures [9]management skills.",
+					"answer": "time",
+					"quotes": [
+						"Apart from that, students can arrange their daily activities and improve their time management skills by simply ticking the boxes in the timetable online."
+					]
+				},
+				{
+					"number": 10,
+					"text": "It also provides students a source of [10].",
+					"answer": "income",
+					"quotes": [
+						"They can even have some income by providing people with good solutions."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

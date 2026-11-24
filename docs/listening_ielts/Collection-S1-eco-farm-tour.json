@@ -1,0 +1,119 @@
+{
+	"id": "ecc65222-c7fb-4529-b90f-42f55b514721",
+	"url": "https://stepielts.com/student/listening/ecc65222-c7fb-4529-b90f-42f55b514721?mode=practice",
+	"title": "Eco-farm Tour",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/4ddbc68f-b6ec-4175-8eb8-1899a098231e.mp3",
+	"transcript": "Speaker 0: Mark: Good afternoon. Lakeside Eco Farm. Mark speaking.\nSpeaker 1: Helen: Oh, good afternoon. My name is Helen. I was listening to a program the other day, and it said that you are a member of the Northern Hotel Group.\nSpeaker 0: Mark: Yes. That’s correct. Are you a member of the group?\nSpeaker 1: Helen: Yes. I am. And I would like to find out about staying with you for a week during the school holidays.\nSpeaker 0: Mark: No problem, Helen. May I have your full name?\nSpeaker 1: Helen: Helen Pennington. That’s P E N N I N G T O N.\nSpeaker 0: Mark: Thank you, Helen. And your email address?\nSpeaker 1: Helen: Helen123@email.com. No dashes or underscores. Oh, sorry. Actually, it’s probably better if I give you my work email address, which is more convenient for me. That is helen123@greenfield.com, and greenfield is one word.\nSpeaker 0: Mark: Okay. And your home address?\nSpeaker 1: Helen: It is 66 Lake Road, Sheffield.\nSpeaker 0: Mark: May I ask where you heard about us? You mentioned a programme. Is it on TV or?\nSpeaker 1: Helen: Actually, I heard about you on the radio and I thought it might be a good place to take my children during the summer holidays. What kind of activities do you have?\nSpeaker 0: Mark: Well, here we have lodges in the woods, a couple of lakes, lots of activities and great food, so I’m sure your whole family will love it. I can give you prices for all these. But first, could I have your membership number?\nSpeaker 1: Helen: Oh, yes. I think it’s UK 765042GE, but I will just check. It has been a while since I used it. Just a moment. Ah, actually, it is UK 765024 E G. Mark: That’s fine. Thank you. Helen: Can you see my information on your system?\nSpeaker 0: Mark: Yes. I found you. So regarding accommodation here at Island Eco Farm, for families I recommend our family chalets as they are large and suitable for both adults and children.\nSpeaker 1: Helen: Ah, okay, that sounds nice. But a lodge is probably too big for us, and I don’t think we have much time and energy for cleaning, so we would like to stay in a flat, preferably near the farm.\nSpeaker 0: Mark: I’m afraid there’s no accommodation near the farm. Would you want to be located near the lake? It’s got a great view.\nSpeaker 1: Helen: Actually, my daughter would prefer to stay in the forest if possible.\nSpeaker 0: Mark: That’s fine. We have some lovely log cabins with room for four people, which would suit your family.\nSpeaker 1: Helen: Yes, that’s the kind of thing we want. I hope you have a wide range of food available. My husband is a meat eater. I like seafood and my children like organic food, including plenty of vegetables.\nSpeaker 0: Mark: Yes, we cater for all different types of diet, so you can get all of those preferences here. Don’t worry.\nSpeaker 1: Helen: Great. So what is the transport situation? Can we get there by ferry or van, for instance?\nSpeaker 0: Mark: No. The best way is by train. There’s a regular service from Sheffield or there is a bike trail all the way here. It generally takes about six hours to ride here from Sheffield.\nSpeaker 1: Helen: That sounds good, but it might be difficult with our luggage. It’s a pity you don’t have vans or ferry boats, but I think we will take the train. So what activities do you have there?\nSpeaker 0: Mark: We have a gardening course on planting flowers. Would that be suitable?\nSpeaker 1: Helen: I was hoping for something a little more energetic to give us more exercise, a dance course for example.\nSpeaker 0: Mark: That is something guests requested in the past, but it’s not something we are doing at the moment. I will bear that in mind for the future though.\nSpeaker 1: Helen: Okay. That would be great. I need to get back to work, so can you email me through the prices and all the details?\nSpeaker 0: Mark: Certainly. I’ll send all the details through to your work email address right now.\nSpeaker 1: Helen: Great. Thank you.\nSpeaker 0: Mark: You’re welcome. And we hope to see you here at Lakeside Eco Farm soon.\nSpeaker 1: Helen: Thanks. Goodbye.",
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the note below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "Dates offered: 6-20 June\nName: Helen [1]\nEmail address: helen123@[2].com\nHome address: [3] Road, Sheffield\nSource of information: [4]\nMembership number: [5]",
+			"body_html": "<ul><li>Dates offered: 6-20 June</li><li>Name: Helen [1]</li><li>Email address: helen123@[2].com</li><li>Home address: [3] Road, Sheffield</li><li>Source of information: [4]</li><li>Membership number: [5]</li></ul>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Name: Helen [1]",
+					"answer": "Pennington",
+					"quotes": ["Helen: Helen Pennington."]
+				},
+				{
+					"number": 2,
+					"text": "Email address: helen123@[2].com",
+					"answer": "greenfield",
+					"quotes": [
+						"That is helen123@greenfield.com, and greenfield is one word."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Home address: [3] Road, Sheffield",
+					"answer": "66 Lake",
+					"quotes": ["Helen: It is 66 Lake Road, Sheffield."]
+				},
+				{
+					"number": 4,
+					"text": "Source of information: [4]",
+					"answer": "Radio",
+					"quotes": [
+						"Helen: Actually, I heard about you on the radio and I thought it might be a good place to take my children during the summer holidays."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Membership number: [5]",
+					"answer": "UK765024EG",
+					"quotes": ["Ah, actually, it is UK 765024 E G."]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD ONLY for each answer.",
+			"body": "Recommendations\nCustomer preferences\nAge\nFrom 16 to 62\nChildren: 6 and 4\nAccommodation type\nlodges\na [6]\nAccommodation location\nLakeside\nNear the farm or in the [7]\nFood\nA wide range of food\nMeat, seafood, and [8] food\nTransport\nTrain or [9]\nFerry and van\nCourses\nFlower planting courses\nActive courses (e.g. a [10] course)",
+			"body_table": [
+				["", "Recommendations", "Customer preferences"],
+				["Age", "From 16 to 62", "Children: 6 and 4"],
+				["Accommodation type", "lodges", "a [6]"],
+				["Accommodation location", "Lakeside", "Near the farm or in the [7]"],
+				["Food", "A wide range of food", "Meat, seafood, and [8] food"],
+				["Transport", "Train or [9]", "Ferry and van"],
+				[
+					"Courses",
+					"Flower planting courses",
+					"Active courses (e.g. a [10] course)"
+				]
+			],
+			"body_html": "<table><tbody><tr><td></td><td><strong>Recommendations</strong></td><td><strong>Customer preferences</strong></td></tr><tr><td>Age</td><td>From 16 to 62</td><td>Children: 6 and 4</td></tr><tr><td>Accommodation type</td><td>lodges</td><td>a [6]</td></tr><tr><td>Accommodation location</td><td>Lakeside</td><td>Near the farm or in the [7]</td></tr><tr><td>Food</td><td>A wide range of food</td><td>Meat, seafood, and [8] food</td></tr><tr><td>Transport</td><td>Train or [9]</td><td>Ferry and van</td></tr><tr><td>Courses</td><td>Flower planting courses</td><td>Active courses (e.g. a [10] course)</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "a [6]",
+					"answer": "flat",
+					"quotes": [
+						"But a lodge is probably too big for us, and I don’t think we have much time and energy for cleaning, so we would like to stay in a flat, preferably near the farm."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Near the farm or in the [7]",
+					"answer": "forest",
+					"quotes": [
+						"Helen: Actually, my daughter would prefer to stay in the forest if possible."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Meat, seafood, and [8] food",
+					"answer": "organic",
+					"quotes": [
+						"I like seafood and my children like organic food, including plenty of vegetables."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Train or [9]",
+					"answer": "bike",
+					"quotes": [
+						"There’s a regular service from Sheffield or there is a bike trail all the way here."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Active courses (e.g. a [10] course)",
+					"answer": "dance",
+					"quotes": [
+						"Helen: I was hoping for something a little more energetic to give us more exercise, a dance course for example."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

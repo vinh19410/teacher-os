@@ -1,0 +1,107 @@
+{
+	"id": "e4da8f60-1163-43a8-b4ca-b1100f5c1a1b",
+	"url": "https://stepielts.com/student/listening/e4da8f60-1163-43a8-b4ca-b1100f5c1a1b?mode=practice",
+	"title": "Kakapo - the endangered bird",
+	"source": "Collection",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "31-40",
+	"audio_url": "https://audio.stepielts.com/listening-audio/65126e34-c2c2-4771-a503-a0eefaad61a4.mp3",
+	"transcript": "Wildlife Expert: Time we discussed the endangered bird species in New Zealand. Now I'd like to discuss a particularly magnificent bird, the kakapo, a critically endangered species of parrot native to the country. Now first, it is vital to note that the kakapo once had a long standing relationship with humans. The Maori people who lived in New Zealand for centuries used the feathers and skin of the kakapo to make clothing. However, in ancient times, these birds were at risk not only from humans but also from eagles, which would hunt them. By 1934, the kakapo were so rare that they were mostly found in museums rather than in the wild. Since then, New Zealanders have realized that if kakapo were not tracked and protected, they might lose this beautiful parrot altogether. Thus, conservation efforts began in the nineteen forties. Early conservationists used specially trained dogs to locate these birds. Today, however, the monitoring process has evolved, and conservationists now use a modern portable black box to track the birds' movements across the landscape. These landscapes usually include forests, which are the cacapo's main habitats. To monitor them, researchers attach a small transmitter to the bird's leg. This helps them monitor the species' activities from a distance and across complex terrains. Unfortunately, however, despite the strides people have made, the cacapo still face significant challenges due to the nature in which they dwell. First, the introduction of rats caused massive declines in their numbers by preying on eggs and young birds. To tackle these, the New Zealand government once deployed a helicopter to scatter poison in affected areas to eliminate these predators. It made an effect, but the results were extremely limited. In addition, the kakapo population has suffered from respiratory disease caused by the fungus aspergillus. In an outburst in 2019, their population was further reduced by 23%. Although challenges remain, efforts to boost the bird's population are continuing. Scientists are now trying to increase kakapo's fertility rates in the laboratory to explore new ways to conserve this unique green parrot in New Zealand.",
+	"body": {
+		"text": "The History\n• The Maori people used its feathers and [31] to make clothes.\n• Early times - it was hunted by both man and the [32]\n• From 1934, kakapo was mostly seen only in [33]\nConservation Efforts\n• Kakapo were originally found using [34] that were trained for this purpose.\n• Now, Kakapo are monitored using a black box that has to be [35]\n• The Snark is placed in the [36]\n• The kakapo wears a transmitter on its [37]\nThreats and Solutions\n• Declining numbers of the birds were mainly caused by the [38]\n• A [39] was used to scatter poison to kill these animals in massive numbers.\n• Another cause for population decline is a sickness caused by a [40] Aspergillus.",
+		"html": "<table><tbody><tr><td><strong>The History</strong><br>• The Maori people used its feathers and [31] to make clothes.<br>• Early times - it was hunted by both man and the [32]<br>• From 1934, kakapo was mostly seen only in [33]<br><br><strong>Conservation Efforts</strong><br>• Kakapo were originally found using [34] that were trained for this purpose.<br>• Now, Kakapo are monitored using a black box that has to be [35]<br>• The Snark is placed in the [36]<br>• The kakapo wears a transmitter on its [37]<br><br><strong>Threats and Solutions</strong><br>• Declining numbers of the birds were mainly caused by the [38]<br>• A [39] was used to scatter poison to kill these animals in massive numbers.<br>• Another cause for population decline is a sickness caused by a [40] Aspergillus.</td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "31-40",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "The History\n• The Maori people used its feathers and [31] to make clothes.\n• Early times - it was hunted by both man and the [32]\n• From 1934, kakapo was mostly seen only in [33]\nConservation Efforts\n• Kakapo were originally found using [34] that were trained for this purpose.\n• Now, Kakapo are monitored using a black box that has to be [35]\n• The Snark is placed in the [36]\n• The kakapo wears a transmitter on its [37]\nThreats and Solutions\n• Declining numbers of the birds were mainly caused by the [38]\n• A [39] was used to scatter poison to kill these animals in massive numbers.\n• Another cause for population decline is a sickness caused by a [40] Aspergillus.",
+			"body_html": "<table><tbody><tr><td><strong>The History</strong><br>• The Maori people used its feathers and [31] to make clothes.<br>• Early times - it was hunted by both man and the [32]<br>• From 1934, kakapo was mostly seen only in [33]<br><br><strong>Conservation Efforts</strong><br>• Kakapo were originally found using [34] that were trained for this purpose.<br>• Now, Kakapo are monitored using a black box that has to be [35]<br>• The Snark is placed in the [36]<br>• The kakapo wears a transmitter on its [37]<br><br><strong>Threats and Solutions</strong><br>• Declining numbers of the birds were mainly caused by the [38]<br>• A [39] was used to scatter poison to kill these animals in massive numbers.<br>• Another cause for population decline is a sickness caused by a [40] Aspergillus.</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 31,
+					"text": "The Maori people used its feathers and [31] to make clothes.",
+					"answer": "skin",
+					"quotes": [
+						"The Maori people who lived in New Zealand for centuries used the feathers and skin of the kakapo to make clothing."
+					]
+				},
+				{
+					"number": 32,
+					"text": "Early times - it was hunted by both man and the [32]",
+					"answer": "eagles",
+					"quotes": [
+						"However, in ancient times, these birds were at risk not only from humans but also from eagles, which would hunt them."
+					]
+				},
+				{
+					"number": 33,
+					"text": "From 1934, kakapo was mostly seen only in [33]",
+					"answer": "museums",
+					"quotes": [
+						"By 1934, the kakapo were so rare that they were mostly found in museums rather than in the wild."
+					]
+				},
+				{
+					"number": 34,
+					"text": "Kakapo were originally found using [34] that were trained for this purpose.",
+					"answer": "dogs",
+					"quotes": [
+						"Early conservationists used specially trained dogs to locate these birds."
+					]
+				},
+				{
+					"number": 35,
+					"text": "Now, Kakapo are monitored using a black box that has to be [35]",
+					"answer": "portable",
+					"quotes": [
+						"Today, however, the monitoring process has evolved, and conservationists now use a modern portable black box to track the birds' movements across the landscape."
+					]
+				},
+				{
+					"number": 36,
+					"text": "The Snark is placed in the [36]",
+					"answer": "forests",
+					"quotes": [
+						"These landscapes usually include forests, which are the cacapo's main habitats."
+					]
+				},
+				{
+					"number": 37,
+					"text": "The kakapo wears a transmitter on its [37]",
+					"answer": "leg",
+					"quotes": [
+						"To monitor them, researchers attach a small transmitter to the bird's leg."
+					]
+				},
+				{
+					"number": 38,
+					"text": "Declining numbers of the birds were mainly caused by the [38]",
+					"answer": "rats",
+					"quotes": [
+						"First, the introduction of rats caused massive declines in their numbers by preying on eggs and young birds."
+					]
+				},
+				{
+					"number": 39,
+					"text": "A [39] was used to scatter poison to kill these animals in massive numbers.",
+					"answer": "helicopter",
+					"quotes": [
+						"To tackle these, the New Zealand government once deployed a helicopter to scatter poison in affected areas to eliminate these predators."
+					]
+				},
+				{
+					"number": 40,
+					"text": "Another cause for population decline is a sickness caused by a [40] Aspergillus.",
+					"answer": "fungus",
+					"quotes": [
+						"In addition, the kakapo population has suffered from respiratory disease caused by the fungus aspergillus."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,114 @@
+{
+	"id": "323ad671-1b1a-4ad5-b5db-218ea39bd52e",
+	"url": "https://stepielts.com/student/listening/323ad671-1b1a-4ad5-b5db-218ea39bd52e?mode=practice",
+	"title": "Tour Booking Enquiry",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/de748125-3cb0-4f05-8892-46db9e785d7d.mp3",
+	"transcript": "Test two. This is the IELTS listening test. You will hear a number of different recordings, and you will have to answer questions on what you hear. There will be time for you to read the instructions and questions and you will have a chance to check your work. All the recordings will be played once only. The test is in four parts. At the end of the test, you will be given ten minutes to transfer your answers to the answer sheet. Now turn to part one. Part one. You will hear a customer asking a travel agent for information about some trips. First, you have some time to look at questions one to six. Now listen carefully and answer questions one to six. Good afternoon. Good afternoon. Atlanta Travel Agency. May I help you? I saw your advert in the newspaper this morning and decided to come over for more detailed information about some trips that you currently offer. What kind of trips do you have in mind? Well, I enjoy surfing very much and want to get tanned, but all my friends suggest either mountain climbing or biking. We currently offer all the three types. Even though biking is the most popular type of holiday, it doesn't work for everyone. I think you should follow your heart. Right. What are my options for accommodation then? For this type of holiday, you can choose to stay in a hotel or a self catering apartment. Can you introduce the hotel package first? Sure. Price for our hotel package is quite reasonable compared with that of your own reservation. What does the price include? It covers the beachside hotel and free breakfast. Good. Does the hotel have any recreational facilities? Oh, rest assured. The hotel is fully equipped with a pool, a nightclub and a gym. Guests can enjoy a vibrant nightlife during their stay at the hotel. Five star ratings are common for the hotel's satisfying service. So how much does it cost? Well, it was originally €360 for an adult, but we are now offering a Labor Day promotion. You can get a discount of 12.5%. So that's €315 for now, a really good deal. Right. What about the self catering apartment? Oh, that'll be even cheaper. But you have to stay in a shared room with other guests. Each room has six bunk beds with lockers. Okay. I think the hotel is much better. Getting a good night's sleep is critical for a relaxing holiday. I can't stand sharing a room with someone who snores all night long. Can't agree more. What about the surfing equipment rental? I don't want to bring my own surfboard. You can hire a surfboard by the hour, day or week. Just book it in advance, and it will be delivered to the hotel or even directly to the beach. How much does it cost? It costs €15 for a day. But for a week's rental, it's just €75. The surf station also provides surf lessons if you're interested. That's good to know. Before you hear the rest of the conversation, you have some time to look at questions seven to 10. Now listen and answer questions seven to 10. Oh, there's one more thing you should know. Just in case of an accident during your trip, we recommend each customer to have the correct travel cover in place before leaving home. Please tell me about it. Well, we mainly offer two types of insurance. The first one is basic coverage. It costs €30. What does it include? It covers medical treatment during your trip and things like missing your flight, flight delays and cancellations. But you know, extreme sports can be quite dangerous and therefore injuries during these activities are excluded. Then how about the other one? The second one is called Premier Cover. It is more expensive at €42.50, but we highly recommend this one for regular surfers. If you receive an injury or hurt anyone else while participating in extreme sports like surfing, you are fully covered. I see. I think I'll go with the premier cover. When your flight gets in, there will be a minivan to pick you up at the airport and take you to the hotel, but you'll have to get to London Airport yourself. It's alright. I'll just take the airport shuttle. Actually, I personally suggest you take a taxi. It's much cheaper than other types of transport, including the airport shuttle. Thanks for the tip. I think I'll book a trip for next weekend. Okay. How would you like to pay? Do you accept credit cards? Yes, we do. But there will be a slight charge on that. If you pay by check, there's no extra fee. Great. I'll write you a check then. That is the end of part one. You now have one minute to check your answers to part one.",
+	"body": {
+		"text": "Type of Holiday\n[2]\n[1]\nMeal: including [2]\nFacilities: a pool, a nightclub and a [3]\nPrices: reduced from £ [4] to £315\nSelf-Catering Apartment\nStay in a [5] room\nEquipment Rental\nRental for one week: £ [6]\nTypes of Insurance\n[7] Cover: £30\nPremier Cover: £ [8]\nTransport\nThe cheapest way of going to airport: by [9]\nPayment Method\nPay by [10] : no extra fee",
+		"html": "<table><thead><tr><th colspan=\"2\">Type of Holiday</th></tr><tr><th colspan=\"2\">[2]</th></tr></thead><tbody><tr><td colspan=\"2\">[1]</td></tr><tr><td>Meal:</td><td>including [2]</td></tr><tr><td>Facilities:</td><td>a pool, a nightclub and a [3]</td></tr><tr><td>Prices:</td><td>reduced from £ [4] to £315</td></tr><tr><td colspan=\"2\">Self-Catering Apartment</td></tr><tr><td colspan=\"2\">Stay in a [5] room</td></tr><tr><td colspan=\"2\">Equipment Rental</td></tr><tr><td colspan=\"2\">Rental for one week: £ [6]</td></tr><tr><td colspan=\"2\">Types of Insurance</td></tr><tr><td colspan=\"2\">[7] Cover: £30</td></tr><tr><td colspan=\"2\">Premier Cover: £ [8]</td></tr><tr><td colspan=\"2\">Transport</td></tr><tr><td colspan=\"2\">The cheapest way of going to airport: by [9]</td></tr><tr><td colspan=\"2\">Payment Method</td></tr><tr><td colspan=\"2\">Pay by [10] : no extra fee</td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below.\nWrite ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Type of Holiday\n[2]\n[1]\nMeal: including [2]\nFacilities: a pool, a nightclub and a [3]\nPrices: reduced from £ [4] to £315\nSelf-Catering Apartment\nStay in a [5] room\nEquipment Rental\nRental for one week: £ [6]\nTypes of Insurance\n[7] Cover: £30\nPremier Cover: £ [8]\nTransport\nThe cheapest way of going to airport: by [9]\nPayment Method\nPay by [10] : no extra fee",
+			"body_table": [
+				["Type of Holiday"],
+				["[2]"],
+				["[1]"],
+				["Meal:", "including [2]"],
+				["Facilities:", "a pool, a nightclub and a [3]"],
+				["Prices:", "reduced from £ [4] to £315"],
+				["Self-Catering Apartment"],
+				["Stay in a [5] room"],
+				["Equipment Rental"],
+				["Rental for one week: £ [6]"],
+				["Types of Insurance"],
+				["[7] Cover: £30"],
+				["Premier Cover: £ [8]"],
+				["Transport"],
+				["The cheapest way of going to airport: by [9]"],
+				["Payment Method"],
+				["Pay by [10] : no extra fee"]
+			],
+			"body_html": "<table><thead><tr><th colspan=\"2\">Type of Holiday</th></tr><tr><th colspan=\"2\">[2]</th></tr></thead><tbody><tr><td colspan=\"2\">[1]</td></tr><tr><td>Meal:</td><td>including [2]</td></tr><tr><td>Facilities:</td><td>a pool, a nightclub and a [3]</td></tr><tr><td>Prices:</td><td>reduced from £ [4] to £315</td></tr><tr><td colspan=\"2\">Self-Catering Apartment</td></tr><tr><td colspan=\"2\">Stay in a [5] room</td></tr><tr><td colspan=\"2\">Equipment Rental</td></tr><tr><td colspan=\"2\">Rental for one week: £ [6]</td></tr><tr><td colspan=\"2\">Types of Insurance</td></tr><tr><td colspan=\"2\">[7] Cover: £30</td></tr><tr><td colspan=\"2\">Premier Cover: £ [8]</td></tr><tr><td colspan=\"2\">Transport</td></tr><tr><td colspan=\"2\">The cheapest way of going to airport: by [9]</td></tr><tr><td colspan=\"2\">Payment Method</td></tr><tr><td colspan=\"2\">Pay by [10] : no extra fee</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Type of Holiday",
+					"answer": "surfing",
+					"quotes": [
+						"Well, I enjoy surfing very much and want to get tanned, but all my friends suggest either mountain climbing or biking."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Hotel - Meal: including [2]",
+					"answer": "breakfast",
+					"quotes": ["It covers the beachside hotel and free breakfast."]
+				},
+				{
+					"number": 3,
+					"text": "Hotel - Facilities: a pool, a nightclub and a [3]",
+					"answer": "gym",
+					"quotes": [
+						"The hotel is fully equipped with a pool, a nightclub and a gym."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Hotel - Prices: reduced from £ [4] to £315",
+					"answer": "360",
+					"quotes": [
+						"Well, it was originally €360 for an adult, but we are now offering a Labor Day promotion."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Self-Catering Apartment - Stay in a [5] room",
+					"answer": "shared",
+					"quotes": ["But you have to stay in a shared room with other guests."]
+				},
+				{
+					"number": 6,
+					"text": "Equipment Rental - Rental for one week: £ [6]",
+					"answer": "75",
+					"quotes": ["But for a week's rental, it's just €75."]
+				},
+				{
+					"number": 7,
+					"text": "Types of Insurance - [7] Cover: £30",
+					"answer": "basic",
+					"quotes": ["The first one is basic coverage."]
+				},
+				{
+					"number": 8,
+					"text": "Types of Insurance - Premier Cover: £ [8]",
+					"answer": "42.50",
+					"quotes": [
+						"It is more expensive at €42.50, but we highly recommend this one for regular surfers."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Transport - The cheapest way of going to airport: by [9]",
+					"answer": "taxi",
+					"quotes": ["Actually, I personally suggest you take a taxi."]
+				},
+				{
+					"number": 10,
+					"text": "Payment Method - Pay by [10] : no extra fee",
+					"answer": "check / cheque",
+					"quotes": ["If you pay by check, there's no extra fee."]
+				}
+			]
+		}
+	],
+	"images": []
+}

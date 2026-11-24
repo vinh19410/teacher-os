@@ -1,0 +1,195 @@
+{
+	"id": "0d70edab-5629-47e9-9641-15d85bc3bbb6",
+	"url": "https://stepielts.com/student/listening/0d70edab-5629-47e9-9641-15d85bc3bbb6?mode=practice",
+	"title": "Gym Center",
+	"source": "Collection",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/64011ca3-59b7-4def-b896-a19580c90ef4.mp3",
+	"transcript": "Speaker 0: Manager: Welcome to the tour of our gym, nothing but fitness. No doubt you know a little of what our gym has to give in terms of fitness, but as you’ll discover, we have much more than just running machines and weights on offer. The gym’s open from 05:30AM, nice and early in the morning, to 10PM at night, so these hours give you plenty of time to fit in your workouts in our weights and cardio rooms or with your personal trainers. Now obviously, reception is open whenever the gym is. We have a child care center on-site for moms and dads wanting to fit a workout into your busy day, but it’s only open in the mornings, so you’ll need to plan your workout around that. For those of you too busy to eat properly at home, there’s a cafe on-site offering healthy and delicious meals that starts serving as soon as the gym opens and doesn’t shut until we close at night. Of course, to work out comfortably, you need suitable clothing. We have a shop here for those of you who’d like to pick up some new shoes or workout gear. The staff there will be happy to kit you out from midday onwards, so do have a look at what’s on offer. We’re a modern gym, and we’re always updating our facilities. Actually, the gym’s just replaced all our treadmills with the latest models, so if you’re a runner, try them out. After you finish your run, you might want to improve your flexibility by taking one of our yoga classes in the comfortable yoga studio, or relax in the traditional sauna. You’ll notice the change rooms when you enter the gym. They’ve just been renovated and are now very luxurious and spacious. As the gym’s in the center of the city, parking’s always a problem, even with our free passes for members. You’ll be glad to hear that an overhaul of the car parks planned for next year. Before you hear the rest of the talk, you have some time to look at questions 15 to 20. Now let’s talk about where things are. We’re standing in the entrance to the building. Some of you have meetings with your personal trainers today. To find them, walk past the right side of reception and into the cardio studio. Their office is on the right, just after you go past the manager’s office. It’s a warm day, so why not head to the pool? The easiest way to get there is from the entrance, go around the left side of reception and into the cardio studio, and then you’ll see that the third door on the left is the way into the shop. Go into the shop, and you’ll see there are two more doors. You want the one opposite you as you walk in. Go through that door, and you’ll see the pool, which runs along the west side of the building. Stretching after exercise is essential, so you’ll need the stretch area. To find it, from the entrance, head to the back of the cardio studio. You’ll see two doors facing you, and it’s the one on the right. As we’ve only got men here today, I’ll point out only where your change rooms are. From the entrance, go up the left side of the cardio studio, and you want the middle door. That’s the room just before you reach the shop. If you’re looking to bulk up, the weights room will be important. It’s easy to find. From the entrance, walk past the left side of reception and through the cardio studio to the back of the building. The weights room is through the door on the left. The first aid room is beside it, although hopefully you won’t need to go in there. After this, you might want to have a drink in our cafe. Go to this shop, and this time take the door to your right, not the one opposite, and this leads to the cafe with a nice view of the river.",
+	"question_groups": [
+		{
+			"range": "1-2",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Which TWO parts of the gym are closed for part of the day?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The cafe"
+						},
+						{
+							"label": "B",
+							"text": "The weights room"
+						},
+						{
+							"label": "C",
+							"text": "The reception desk"
+						},
+						{
+							"label": "D",
+							"text": "The childcare centre"
+						},
+						{
+							"label": "E",
+							"text": "The shop"
+						}
+					],
+					"answer": "D"
+				},
+				{
+					"number": 2,
+					"text": "Which TWO parts of the gym are closed for part of the day?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The cafe"
+						},
+						{
+							"label": "B",
+							"text": "The weights room"
+						},
+						{
+							"label": "C",
+							"text": "The reception desk"
+						},
+						{
+							"label": "D",
+							"text": "The childcare centre"
+						},
+						{
+							"label": "E",
+							"text": "The shop"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "3-4",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 3,
+					"text": "Which TWO facilities have recently been updated?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The change rooms"
+						},
+						{
+							"label": "B",
+							"text": "The sauna"
+						},
+						{
+							"label": "C",
+							"text": "The treadmills"
+						},
+						{
+							"label": "D",
+							"text": "The car park"
+						},
+						{
+							"label": "E",
+							"text": "The yoga studio"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 4,
+					"text": "Which TWO facilities have recently been updated?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The change rooms"
+						},
+						{
+							"label": "B",
+							"text": "The sauna"
+						},
+						{
+							"label": "C",
+							"text": "The treadmills"
+						},
+						{
+							"label": "D",
+							"text": "The car park"
+						},
+						{
+							"label": "E",
+							"text": "The yoga studio"
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below.",
+			"instructions_html": "<p>Label the map below.</p><p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/15847dda-2947-4bd5-8c48-5fae451aee77.png\" alt=\"Youpass Ielts Listening Plan of the Gym\"></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
+			"questions": [
+				{
+					"number": 5,
+					"text": "Personal trainers' office",
+					"answer": "F",
+					"quotes": [
+						"To find them, walk past the right side of reception and into the cardio studio. Their office is on the right, just after you go past the manager’s office."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Pool",
+					"answer": "G",
+					"quotes": [
+						"Go through that door, and you’ll see the pool, which runs along the west side of the building."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Stretch area",
+					"answer": "C",
+					"quotes": [
+						"Stretching after exercise is essential, so you’ll need the stretch area. To find it, from the entrance, head to the back of the cardio studio. You’ll see two doors facing you, and it’s the one on the right."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Men's changing room",
+					"answer": "H",
+					"quotes": [
+						"From the entrance, go up the left side of the cardio studio, and you want the middle door. That’s the room just before you reach the shop."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Weights room",
+					"answer": "B",
+					"quotes": [
+						"From the entrance, walk past the left side of reception and through the cardio studio to the back of the building. The weights room is through the door on the left."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Café",
+					"answer": "A",
+					"quotes": [
+						"Go to this shop, and this time take the door to your right, not the one opposite, and this leads to the cafe with a nice view of the river."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/15847dda-2947-4bd5-8c48-5fae451aee77.png"
+	]
+}

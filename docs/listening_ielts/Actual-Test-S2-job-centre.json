@@ -1,0 +1,184 @@
+{
+	"id": "9165c239-aae0-4130-8602-8131d79ee606",
+	"url": "https://stepielts.com/student/listening/9165c239-aae0-4130-8602-8131d79ee606?mode=practice",
+	"title": "Job Centre",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/62c447d1-ee56-4a8c-99b8-627ffd98a6e0.mp3",
+	"transcript": "Speaker 1: Manager: Hi. Thanks for coming along. My name’s Marissa, and I’m going to tell you a bit about finding part time jobs. Not everybody wants to work when they’re studying, and as this is your first year, you may feel that you’ve quite enough to do as it is. But you may change your mind or find that you need to earn some extra cash. However, if you are a student from overseas, there may be particular conditions attached to working in this country, so you should check with the staff at the centre before applying for a job. Right. Now the university has its own job centre on the campus. Well, actually, it’s not on this main, Hilston campus. It’s based in the Student Services Building on the campus called Woodside, spelled W 00 D S I D E. The center works on a drop in basis, which means that you don’t have to make an appointment. It’s open six days a week, Monday to Saturday, and nine hours a day from ten in the morning until eight at night. The center is run by other students, but a professional employment lawyer is on hand every Tuesday if you want any advice about your job. There may be a queue, in which case you will have to wait, so make sure you allow plenty of time. Part time jobs become available almost every day, and they are advertised on the university website, which you can access through the library if the computer center is closed. You should check things daily, and if you see a job which interests you, call in at the center. There’s a good variety of jobs on offer in the university itself just now. For example, they’re looking for people to check that all the vehicles using the university car parks have got up to date permits. Office jobs rarely come up, but in future the university is hoping to be able to offer jobs in the IT center. There are also recruitment open days which are held regularly during the year, when local employers come into the university to recruit students for part time work within their company. These two day events are scheduled well in advance each term and are advertised in the usual places. Of course, part time work is useful to supplement your income, but it’s also a valuable way of building up an employment record that reflects your skills and capabilities. One of the most common complaints of graduates leaving university is that many jobs require proven experience, so those applicants who have evidence of part time work on their CV often have an advantage. The Job Center advertises jobs which will give you skills such as using word processing packages, spreadsheets, or supervisory skills. So, if you have to work, use the opportunity to develop skills which will help you secure a job in the future. Now, what about the financial side of things? Well, students who work part time can no longer expect to be paid cash. An employer will deduct tax from what you earn, but depending on your own individual circumstances and how much you earn in a year, you should be able to reclaim some of this. You may also have to contribute towards an insurance scheme, but you must ask your employer about these deductions. You should also check whether you will be paid weekly or monthly, and if you work extra hours, what your overtime rate will be. It’s also necessary to make sure that your employer knows that you may only be able to work during term time. Communication between you and your employer is very important, but don’t expect all employers to use email. If you are ill or cannot get into work for whatever reason, make sure your employer knows in good time. That shouldn’t be a problem now that everyone has a mobile phone. And if you decide to leave the job, you should make sure you put this in writing. Some employers require a month’s notice even for a part time job. So what sort of work can you expect to find? Well, as I said earlier, there is a...",
+	"body": {
+		"text": "Special conditions may apply to [11] students looking for a job.\nThe university Job Centre is located on the [12] Campus.\nThe Job Centre remains open until [13] every evening.\nThe only day the employment lawyer is available is [14] .\nThe university [15] regularly advertises new jobs.",
+		"html": "<table><tbody><tr><td colspan=\"1\" rowspan=\"1\"><ul><li>\nSpecial conditions may apply to [11] students looking for a job.\n</li><li>\nThe university Job Centre is located on the [12] Campus.\n</li><li>\nThe Job Centre remains open until [13] every evening.\n</li><li>\nThe only day the employment lawyer is available is [14] .\n</li><li>\nThe university [15] regularly advertises new jobs.\n</li></ul></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "11-15",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "Special conditions may apply to [11] students looking for a job.\nThe university Job Centre is located on the [12] Campus.\nThe Job Centre remains open until [13] every evening.\nThe only day the employment lawyer is available is [14] .\nThe university [15] regularly advertises new jobs.",
+			"body_html": "<table><tbody><tr><td colspan=\"1\" rowspan=\"1\"><ul><li>\nSpecial conditions may apply to [11] students looking for a job.\n</li><li>\nThe university Job Centre is located on the [12] Campus.\n</li><li>\nThe Job Centre remains open until [13] every evening.\n</li><li>\nThe only day the employment lawyer is available is [14] .\n</li><li>\nThe university [15] regularly advertises new jobs.\n</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Special conditions may apply to [11] students looking for a job.",
+					"answer": "overseas",
+					"quotes": [
+						"However, if you are a student from overseas, there may be particular conditions attached to working in this country, so you should check with the staff at the centre before applying for a job."
+					]
+				},
+				{
+					"number": 12,
+					"text": "The university Job Centre is located on the [12] Campus.",
+					"answer": "Woodside",
+					"quotes": [
+						"It’s based in the Student Services Building on the campus called Woodside, spelled W 00 D S I D E."
+					]
+				},
+				{
+					"number": 13,
+					"text": "The Job Centre remains open until [13] every evening.",
+					"answer": "8 pm / eight / 20.00 / 8 p.m. / 8",
+					"quotes": [
+						"It’s open six days a week, Monday to Saturday, and nine hours a day from ten in the morning until eight at night."
+					]
+				},
+				{
+					"number": 14,
+					"text": "The only day the employment lawyer is available is [14] .",
+					"answer": "Tuesday",
+					"quotes": [
+						"The center is run by other students, but a professional employment lawyer is on hand every Tuesday if you want any advice about your job."
+					]
+				},
+				{
+					"number": 15,
+					"text": "The university [15] regularly advertises new jobs.",
+					"answer": "website",
+					"quotes": [
+						"Part time jobs become available almost every day, and they are advertised on the university website, which you can access through the library if the computer center is closed."
+					]
+				}
+			]
+		},
+		{
+			"range": "16-20",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 16,
+					"text": "At present, the university is offering part-time work in",
+					"options": [
+						{
+							"label": "A",
+							"text": "its offices."
+						},
+						{
+							"label": "B",
+							"text": "the IT centre."
+						},
+						{
+							"label": "C",
+							"text": "the car parks."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"For example, they’re looking for people to check that all the vehicles using the university car parks have got up to date permits."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Local employers visit the university",
+					"options": [
+						{
+							"label": "A",
+							"text": "only in the first term."
+						},
+						{
+							"label": "B",
+							"text": "twice a term."
+						},
+						{
+							"label": "C",
+							"text": "throughout the year."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"There are also recruitment open days which are held regularly during the year, when local employers come into the university to recruit students for part time work within their company."
+					]
+				},
+				{
+					"number": 18,
+					"text": "According to the speaker, a part-time job can",
+					"options": [
+						{
+							"label": "A",
+							"text": "lead to a full-time job after graduation."
+						},
+						{
+							"label": "B",
+							"text": "provide a useful work record for the future."
+						},
+						{
+							"label": "C",
+							"text": "give the chance to develop team-work skills."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Of course, part time work is useful to supplement your income, but it’s also a valuable way of building up an employment record that reflects your skills and capabilities."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Students who work part-time",
+					"options": [
+						{
+							"label": "A",
+							"text": "will be taxed."
+						},
+						{
+							"label": "B",
+							"text": "will be paid every week."
+						},
+						{
+							"label": "C",
+							"text": "will need private insurance."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"An employer will deduct tax from what you earn, but depending on your own individual circumstances and how much you earn in a year, you should be able to reclaim some of this."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Part-time student workers are advised to",
+					"options": [
+						{
+							"label": "A",
+							"text": "give notice in writing."
+						},
+						{
+							"label": "B",
+							"text": "communicate by email."
+						},
+						{
+							"label": "C",
+							"text": "have a mobile phone."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"And if you decide to leave the job, you should make sure you put this in writing."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

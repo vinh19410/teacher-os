@@ -1,0 +1,207 @@
+{
+	"id": "1e1b5b5b-3f15-4a34-82ad-b3778072368b",
+	"url": "https://stepielts.com/student/listening/1e1b5b5b-3f15-4a34-82ad-b3778072368b?mode=practice",
+	"title": "Presentation on volcanoes",
+	"source": "Actual Test",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/fd8d3a0c-5e2a-4637-88c4-4e0fa4e6d86b.mp3",
+	"transcript": "Speaker 0: Erica: Hey, Ian. How far along are you on preparing the presentation on volcanoes next week?\nSpeaker 1: Ian: Not much.\nSpeaker 0: Erica: Maybe we can straighten things out first?\nSpeaker 1: Ian: Sure. I decided to start with shield Volcano. The name derives from its similarity in shape to a warrior’s shield lying face up. The Hawaiian shield volcanoes are the most famous examples. Professor Joan mentioned that many scholars have already done quite a lot of research in this field. We could retell conclusions from published papers.\nSpeaker 0: Erica: I’m not sure. I mean, is that even allowed? I know we don’t have to use first hand data we collect, but copy in others?\nSpeaker 1: Ian: Come on. It’s not like we are using their findings as our own. The professor said it would be okay as long as we cited our sources.\nSpeaker 0: Erica: Oh, okay.\nSpeaker 1: Ian: Do you have any ideas about stratovolcanoes?\nSpeaker 0: Erica: Stratovolcanoes, also known as composite volcanoes, develop over many thousands of years through repeated eruptions and other volcanic activity. But the current information I have at hand is only very vague. Fuller descriptions are needed for this.\nSpeaker 1: Ian: I’m sure you can find them.\nSpeaker 0: Erica: Alright then. Leave that to me. Have you read anything about rhyolite caldera complexes?\nSpeaker 1: Ian: Yeah. They are the most explosive volcanoes on Earth and don’t even look like volcanoes. The origin of these volcanoes, like Yellowstone, is associated with a hot spot.\nSpeaker 0: Erica: You’ve got most of the information correct. Unfortunately, the last bit you mentioned is wrong. The origin of this type of volcano remains a mystery. The hot spot origin theory doesn’t work for most other rhyolite calderas.\nSpeaker 1: Ian: Right. I’ll change that part. What about the position on monogenetic fields?\nSpeaker 0: Erica: It’s shocking to see the photos of these immense volcanoes. There are numerous monogenetic fields in the American Southwest and Mexico, but I got all the information from a website without specifying its source. We’ll have to examine the content again later.\nSpeaker 1: Ian: Okay. I can help with that.\nSpeaker 0: Erica: Lastly, we have cinder cones. What do you have on that?\nSpeaker 1: Ian: Well, this type of volcano is usually tiny to the other volcanoes and thus sounds less attractive. Maybe we should leave it out. It seems pretty unimportant to me.\nSpeaker 0: Erica: I agree. It’s impossible to cover everything.\nSpeaker 1: Ian: Erica, can you work on the delivery part? I don’t want to do it anymore.\nSpeaker 0: Erica: I’m okay with that, but why is that?\nSpeaker 1: Ian: I was marked so low for the last presentation and didn’t even have a clue why. Maybe it’s because I didn’t include enough data on it.\nSpeaker 0: Erica: Well, I’m not sure about that. I think maybe you did not prepare the topic well enough. You tried to explain the contributing factor forming the ring of fire in the Pacific Ocean, but you just read everything out loud without fully comprehending it yourself.\nSpeaker 1: Ian: Right. That must have been it.\nSpeaker 0: Erica: We also have to look for supporting materials to illustrate the formation of different volcanoes.\nSpeaker 1: Ian: What about documentaries?\nSpeaker 0: Erica: They can be an excellent way to illustrate the volcanic eruption, but that might be too long for our presentation. We’ve only got twenty minutes.\nSpeaker 1: Ian: Have you considered adding photos to our handouts?\nSpeaker 0: Erica: That’s an option. But people may focus on these photos rather than paying attention to what we have to say. Maybe we can search online for part of a film about volcanoes and add it to the end of our presentation.\nSpeaker 1: Ian: That would be better. So how should we start our presentation?\nSpeaker 0: Erica: Maybe we can first introduce some terms like extinct volcanoes and dormant volcanoes.\nSpeaker 1: Ian: Why is that?\nSpeaker 0: Erica: Even though they are widely accepted terms among ordinary people, academia wouldn’t accept them because there are no set definitions. For example, an extinct volcano would be one nobody expects to erupt again, but there have been several eruptions from widely acknowledged extinct volcanoes.\nSpeaker 1: Ian: That’s an excellent way to start our presentation. What did the professor say about Erica’s last presentation?\nSpeaker 0: Erica: There is still room for improvement. She said that I had an in-depth analysis and provided enough statistics, but I didn’t carry on and discuss my take on it.\nSpeaker 1: Ian: Right. So maybe we could also discuss the impact volcanoes have on humans and our planet.\nSpeaker 0: Erica: Yeah. There’s little doubt that volcanoes have been instrumental in wiping out countless species during major extinction events. But volcanic activity also shapes new habitats, enriching the soil with nutrients that allow life to thrive. People haven’t realized that there are abundant mineral resources waiting to be exploited in volcanoes.\nSpeaker 1: Ian: I agree. So now we can...",
+	"body": {
+		"text": "shield volcanoes [1]\nstratovolcanoes [2]\nrhyolite caldera complexes [3]\nmonogenetic fields [4]\ncinder cones [5]",
+		"html": "<p>shield volcanoes [1]</p><p>stratovolcanoes [2]</p><p>rhyolite caldera complexes [3]</p><p>monogenetic fields [4]</p><p>cinder cones [5]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What did the students say about each of the following volcanoes for their presentation?\nType of volcanoes",
+			"options": [
+				{
+					"label": "A",
+					"text": "need more photos to support"
+				},
+				{
+					"label": "B",
+					"text": "repeat other people's studies"
+				},
+				{
+					"label": "C",
+					"text": "inaccurate information"
+				},
+				{
+					"label": "D",
+					"text": "need first-hand material"
+				},
+				{
+					"label": "E",
+					"text": "need more details"
+				},
+				{
+					"label": "F",
+					"text": "no need to talk about it"
+				},
+				{
+					"label": "G",
+					"text": "check again"
+				}
+			],
+			"body": "shield volcanoes [1]\nstratovolcanoes [2]\nrhyolite caldera complexes [3]\nmonogenetic fields [4]\ncinder cones [5]",
+			"body_html": "<p>shield volcanoes [1]</p><p>stratovolcanoes [2]</p><p>rhyolite caldera complexes [3]</p><p>monogenetic fields [4]</p><p>cinder cones [5]</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "shield volcanoes",
+					"answer": "B",
+					"quotes": ["We could retell conclusions from published papers."]
+				},
+				{
+					"number": 2,
+					"text": "stratovolcanoes",
+					"answer": "E",
+					"quotes": [
+						"But the current information I have at hand is only very vague. Fuller descriptions are needed for this."
+					]
+				},
+				{
+					"number": 3,
+					"text": "rhyolite caldera complexes",
+					"answer": "C",
+					"quotes": ["Unfortunately, the last bit you mentioned is wrong."]
+				},
+				{
+					"number": 4,
+					"text": "monogenetic fields",
+					"answer": "G",
+					"quotes": ["We’ll have to examine the content again later."]
+				},
+				{
+					"number": 5,
+					"text": "cinder cones",
+					"answer": "F",
+					"quotes": ["Maybe we should leave it out."]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 6,
+					"text": "In Erica's view, what is wrong with Ian's last presentation?",
+					"options": [
+						{
+							"label": "A",
+							"text": "He did not read loud enough."
+						},
+						{
+							"label": "B",
+							"text": "He did not understand the main reason."
+						},
+						{
+							"label": "C",
+							"text": "He did not provide enough evidence."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"You tried to explain the contributing factor forming the ring of fire in the Pacific Ocean, but you just read everything out loud without fully comprehending it yourself."
+					]
+				},
+				{
+					"number": 7,
+					"text": "What materials do the students agree to add to their presentation?",
+					"options": [
+						{
+							"label": "A",
+							"text": "a complete documentary"
+						},
+						{
+							"label": "B",
+							"text": "photographs included in the handouts"
+						},
+						{
+							"label": "C",
+							"text": "Internet video clips"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Maybe we can search online for part of a film about volcanoes and add it to the end of our presentation. Ian: That would be better."
+					]
+				},
+				{
+					"number": 8,
+					"text": "By using extinct and dormant volcanoes, the students try to",
+					"options": [
+						{
+							"label": "A",
+							"text": "distinguish between scientific and popular terms."
+						},
+						{
+							"label": "B",
+							"text": "distinguish between two different types of volcanoes."
+						},
+						{
+							"label": "C",
+							"text": "distinguish whether an eruption is about to happen."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Erica: Even though they are widely accepted terms among ordinary people, academia wouldn’t accept them because there are no set definitions."
+					]
+				},
+				{
+					"number": 9,
+					"text": "What did the professor say about Erica's last presentation?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She carried out an in-depth discussion with other students."
+						},
+						{
+							"label": "B",
+							"text": "She did not provide sufficient data."
+						},
+						{
+							"label": "C",
+							"text": "She did not fully develop a personal point."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"She said that I had an in-depth analysis and provided enough statistics, but I didn’t carry on and discuss my take on it."
+					]
+				},
+				{
+					"number": 10,
+					"text": "The students both agree that volcanoes",
+					"options": [
+						{
+							"label": "A",
+							"text": "haven't caused disastrous outcomes."
+						},
+						{
+							"label": "B",
+							"text": "cannot help to reshape the landscape."
+						},
+						{
+							"label": "C",
+							"text": "are not fully recognised for their values."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"People haven’t realized that there are abundant mineral resources waiting to be exploited in volcanoes.",
+						"Ian: I agree."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

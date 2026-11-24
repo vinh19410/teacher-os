@@ -1,0 +1,211 @@
+{
+	"id": "576467e5-2afc-4ab1-be26-9a0007f2ad85",
+	"url": "https://stepielts.com/student/listening/576467e5-2afc-4ab1-be26-9a0007f2ad85?mode=practice",
+	"title": "Laboratory Group Project",
+	"source": "Actual Test",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/f1831dbd-d124-4cd4-9775-6f860bbc483f.mp3",
+	"transcript": "Speaker 1: Bill: Oh, hi, Jen and Irene. Are you two heading to class?\nSpeaker 2: Irene: Hey, Bill. Yes. We’re just walking there now. We’re a little bit early, but we wanted to prepare our apparatus for the experiment. Do you want to walk with us?\nSpeaker 1: Bill: Yes. Sure. It’ll be good to catch up. How is everything going with your experiment? Have you decided what your test subject is yet?\nSpeaker 3: Jen: It’s going really well, and we’re conducting the test as laboratory partners. We’ve decided to test the effects of gravitational force on a series of objects with different densities.\nSpeaker 2: Irene: It’s interesting, but it’s a lot of work. I’ve been planning the experiment for the last two weeks, and I only finished yesterday.\nSpeaker 1: Bill: Gosh, Irene, I’m really impressed by how hardworking you are.\nSpeaker 2: Irene: I enjoy chemistry so much that it doesn’t feel like work. Whenever I have some free time at the weekend, I spend it in the laboratory working on it. It almost feels like a second home to me.\nSpeaker 3: Jen: How about you, Bill? Who is your laboratory partner?\nSpeaker 1: Bill: The tutor partnered me with Kim. At first, I was worried because I’ve never worked with him before, and I was worried that he wouldn’t be very good at laboratory work. But, actually, he’s very capable.\nSpeaker 2: Irene: I’ve noticed that he’s always very well dressed.\nSpeaker 1: Bill: Yes. He’s very stylish, and we share the same tastes in clothes. That doesn’t stop him from getting his hands dirty, though. He’s a very hard worker and makes a significant contribution, which I’m really grateful for.\nSpeaker 3: Jen: Ah, it’s good that you get on well with your partner. It makes the experiment so much more enjoyable when you work well together. Irene: What do you think of the other people in our group?\nSpeaker 1: Bill: A lot of the boys are really good at maths, which is really helpful with all the calculations we have to do.\nSpeaker 3: Jen: Irene is good at maths as well, which makes her contribution really useful because she can do all the equations. I take care of all the writing because Irene finds that difficult. We’d probably fail without each other’s help.\nSpeaker 2: Irene: That’s true. I’m so glad that we’re nearly finished.\nSpeaker 3: Jen: Only because you finished the data analysis.\nSpeaker 2: Irene: Oh, Jen. You give me too much credit.\nSpeaker 1: Bill: I’m so glad that I didn’t get partnered with Linda again. Jen and I were grouped with her for our last experiment, and it was a nightmare.\nSpeaker 3: Jen: Yes. She always submitted her work on time for the group work, but she never had her phone on her, so it was impossible for anyone to keep in touch with her and vice versa.\nSpeaker 1: Bill: Her attitude was pretty annoying, but in all fairness, she was a very hard worker because she realized the amount of work needed to get a high score.\nSpeaker 2: Irene: Jen is such a hard worker. In fact, she has been invited to work on the professor’s personal project.\nSpeaker 1: Bill: Wow. That’s amazing. Well done. Why were you picked?\nSpeaker 3: Jen: I thought he would pick one of the students that he’s closer to, but he told me he was impressed with me because I always complete reading the assignments in time for class.\nSpeaker 2: Irene: I bet you’ll be really popular among the other students when they find out. They’ll all want to hear about the project. Irene: You should give everyone tasks so that they have the opportunity to participate.\nSpeaker 3: Jen: That’s a really good idea, actually. Will you help me decide who to assign each task to?\nSpeaker 1: Bill: Of course. Now let’s see. Well, as Irene finds writing difficult, perhaps it would be useful for her to practice that by doing the bibliography.\nSpeaker 2: Irene: I think the bibliography is a bit long for me. I think I’d be better suited to the methodology.\nSpeaker 3: Jen: Yes. That makes sense. Bill, you’ve told us that Kim is a hard worker. So I think he should be tasked with the conclusions as there is quite a lot of effort involved.\nSpeaker 1: Bill: Okay. Sure. I know that Kyle hasn’t been feeling well, so he should take care of the abstract and the acknowledgment because there is very little work to be done for those tasks.\nSpeaker 2: Irene: Jen, do you want to review some of the literature? It’s a lot of work, but I know that you really enjoy writing, so I’m confident that you’ll do a good job. Jen: Sure. Sounds great.\nSpeaker 1: Bill: Right. So that leaves the bibliography and the discussion to assign. I think that Linda will struggle with the amount of work involved in the referencing. So perhaps I should take care of that task, and she can do the other one?\nSpeaker 2: Irene: That’s great, guys. Thanks for your help. I’ll tell the tutor when he arrives.",
+	"body": {
+		"text": "Irene [6]\nJen [7]\nKim [8]\nBill [9]\nLinda [10]",
+		"html": "<p>Irene [6]</p><p>Jen [7]</p><p>Kim [8]</p><p>Bill [9]</p><p>Linda [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "What has Irene recently done?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She has finished planning the experiment"
+						},
+						{
+							"label": "B",
+							"text": "She is not applying herself enough to her work"
+						},
+						{
+							"label": "C",
+							"text": "She spends a lot of time in the laboratory"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I’ve been planning the experiment for the last two weeks, and I only finished yesterday."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What is Bill's attitude toward Kim?",
+					"options": [
+						{
+							"label": "A",
+							"text": "He is grateful for Kim's contribution"
+						},
+						{
+							"label": "B",
+							"text": "He is not fond of Kim's tastes in clothes"
+						},
+						{
+							"label": "C",
+							"text": "He thinks Kim is not good at laboratory work"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"He’s a very hard worker and makes a significant contribution, which I’m really grateful for."
+					]
+				},
+				{
+					"number": 3,
+					"text": "What does Jen think of the other people in the group?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The boys are good at maths which is very helpful"
+						},
+						{
+							"label": "B",
+							"text": "They would fail the experiment without Irene's contribution"
+						},
+						{
+							"label": "C",
+							"text": "Irene has completed the data analysis so the experiment is nearly done"
+						}
+					],
+					"answer": "C",
+					"quotes": ["Jen: Only because you finished the data analysis."]
+				},
+				{
+					"number": 4,
+					"text": "How did Jen and Bill feel about Linda?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She was always submitted her work late for the group work"
+						},
+						{
+							"label": "B",
+							"text": "She was difficult to get in touch with"
+						},
+						{
+							"label": "C",
+							"text": "She thought it was easy to get a high score"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"She always submitted her work on time for the group work, but she never had her phone on her, so it was impossible for anyone to keep in touch with her and vice versa."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Why was Jen invited to the professor's individual project?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She was quite popular among students"
+						},
+						{
+							"label": "B",
+							"text": "She always finished reading all the assignments"
+						},
+						{
+							"label": "C",
+							"text": "She was close to the professor"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Jen: I thought he would pick one of the students that he’s closer to, but he told me he was impressed with me because I always complete reading the assignments in time for class."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "MATCHING_NAMES",
+			"instructions": "What task has been given to each person?\nPeople",
+			"options": [
+				{
+					"label": "A",
+					"text": "Abstract"
+				},
+				{
+					"label": "B",
+					"text": "Acknowledgement"
+				},
+				{
+					"label": "C",
+					"text": "Methodology"
+				},
+				{
+					"label": "D",
+					"text": "Bibliography"
+				},
+				{
+					"label": "E",
+					"text": "Literature review"
+				},
+				{
+					"label": "F",
+					"text": "Results"
+				},
+				{
+					"label": "G",
+					"text": "Discussion"
+				}
+			],
+			"body": "Irene [6]\nJen [7]\nKim [8]\nBill [9]\nLinda [10]",
+			"body_html": "<p>Irene [6]</p><p>Jen [7]</p><p>Kim [8]</p><p>Bill [9]</p><p>Linda [10]</p>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Irene",
+					"answer": "C",
+					"quotes": ["I think I’d be better suited to the methodology."]
+				},
+				{
+					"number": 7,
+					"text": "Jen",
+					"answer": "E",
+					"quotes": [
+						"Irene: Jen, do you want to review some of the literature?"
+					]
+				},
+				{
+					"number": 8,
+					"text": "Kim",
+					"answer": "F",
+					"quotes": [
+						"So I think he should be tasked with the conclusions as there is quite a lot of effort involved."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Bill",
+					"answer": "D",
+					"quotes": [
+						"So that leaves the bibliography and the discussion to assign. I think that Linda will struggle with the amount of work involved in the referencing. So perhaps I should take care of that task, and she can do the other one?",
+						"So that leaves the bibliography and the discussion to assign."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Linda",
+					"answer": "G",
+					"quotes": [
+						"So perhaps I should take care of that task, and she can do the other one?"
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

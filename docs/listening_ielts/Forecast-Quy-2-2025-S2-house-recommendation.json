@@ -1,0 +1,188 @@
+{
+	"id": "45e2fae3-8dc3-42c8-a821-dc6ff049d8cf",
+	"url": "https://stepielts.com/student/listening/45e2fae3-8dc3-42c8-a821-dc6ff049d8cf?mode=practice",
+	"title": "House Recommendation",
+	"source": "Forecast Quý 2-2025",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/225b7f09-5c21-46bc-a679-4e6fff0a088c.mp3",
+	"transcript": "Speaker 1: Hello Mr. and Mrs. Clark. I believe you are doing well. I am Tom, the sales manager of Housed Inc. and I got your mail requesting for a house that would suit your specifications. I have been able to do some work and have come up with two options that I think should fit what you are looking for. The first house is situated on Allen Street and the owner told me that he bought the house largely because of where it is located. The house was decorated a few years ago, but I think it still looks new to a large extent. Anyways, you might dislike the old-fashioned design of the house, which was modelled to the original owner’s taste. Of course, you can arrange decorations of your own. I just have to inform you beforehand. I looked through your profile and it said that you have a large family of six. I felt this house could be more appropriate for you with children than just young couples as it has eight rooms, including four bedrooms. According to your budget, although the house is a bit pricy, the price hasn’t exceeded your limit yet. It’s very reasonable though, for a house on Allen Street. The owner had initially fixed every afternoon for potential buyers to visit, then he shifted it to all weekends, but by yesterday, he informed me that he would be allowing only Wednesdays, during lunch time for visits. So, it means we have to go either tomorrow or next week. OK, onto the next house. I was able to get the layout of this building to help you understand it better. The house is situated on Pearl Street just around the corner. It is a well-planned and designed house. In the southeast of the house, you can see the master room, whereas the dining room is in the northwestern corner. There is a bathroom in the southwestern corner of the house that is modern and well-equipped. It provides adequate storage for the whole family. As for the bedroom which is kept especially for visitors, it is in the direct south of the house, just between the bathroom and the master room. You will see the kitchen to your left when you just step in the house. Of course, I should give as much information as I can so as to help you in the decision-making process. The second house has both advantages and disadvantages and you should know well about them. First, the premises are quite lovely and there is a small garden just behind the main building. Also, you do not have to manage space with other neighbours since there is a big parking lot, unlike the first house. As you can see, north of the house you have a lot of banks and to the east and west, there are a good number of companies and malls. It is very compact and easily accessible, due to its central location. Again, in contrast to the first house, there are only two bedrooms and this would have been good for a young couple with a small family size. However for a family size like yours, I really am not sure. But, if necessary, perhaps you could turn the storeroom into a bedroom, then there will be three bedrooms. The last problem is that it lacks a garage which is a very important feature for residents here as every household has at least one car and there are few public car parks in this area. This is all I have for now and …",
+	"body": {
+		"text": "The second house\nAdvantages\nhas a large [7]\nconvenient for its [8]\nDisadvantages\nonly has [9]\nno [10]",
+		"html": "<h3><strong>The second house</strong></h3><table><tbody><tr><td><p>Advantages</p></td><td><p>has a large [7] </p></td><td><p>convenient for its [8] </p></td></tr><tr><td><p>Disadvantages</p></td><td><p>only has [9] </p></td><td><p>no [10] </p></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-2",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Why does the speaker recommend the first house?",
+					"options": [
+						{
+							"label": "A",
+							"text": "good location"
+						},
+						{
+							"label": "B",
+							"text": "trendy design"
+						},
+						{
+							"label": "C",
+							"text": "low price"
+						},
+						{
+							"label": "D",
+							"text": "newly decorated"
+						},
+						{
+							"label": "E",
+							"text": "suitable for family with children"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 2,
+					"text": "Why does the speaker recommend the first house?",
+					"options": [
+						{
+							"label": "A",
+							"text": "good location"
+						},
+						{
+							"label": "B",
+							"text": "trendy design"
+						},
+						{
+							"label": "C",
+							"text": "low price"
+						},
+						{
+							"label": "D",
+							"text": "newly decorated"
+						},
+						{
+							"label": "E",
+							"text": "suitable for family with children"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "3",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter A, B or C.",
+			"questions": [
+				{
+					"number": 3,
+					"text": "When could potential buyers visit the first house?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Wednesday lunchtime"
+						},
+						{
+							"label": "B",
+							"text": "Every afternoon"
+						},
+						{
+							"label": "C",
+							"text": "All weekends"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"The owner had initially fixed every afternoon for potential buyers to visit, then he shifted it to all weekends, but by yesterday, he informed me that he would be allowing only Wednesdays, during lunch time for visits."
+					]
+				}
+			]
+		},
+		{
+			"range": "4-6",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below.",
+			"instructions_html": "<p>Label the map below.</p><p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/d6070f47-0c7d-4af9-b566-0366765a8cc5.png\" alt=\"Screenshot (414)\"></p>",
+			"options": ["A", "B", "C", "D", "E", "F"],
+			"questions": [
+				{
+					"number": 4,
+					"text": "master room",
+					"answer": "C",
+					"quotes": [
+						"In the southeast of the house, you can see the master room, whereas the dining room is in the northwestern corner."
+					]
+				},
+				{
+					"number": 5,
+					"text": "bathroom",
+					"answer": "A",
+					"quotes": [
+						"There is a bathroom in the southwestern corner of the house that is modern and well-equipped."
+					]
+				},
+				{
+					"number": 6,
+					"text": "guestroom",
+					"answer": "D",
+					"quotes": [
+						"As for the bedroom which is kept especially for visitors, it is in the direct south of the house, just between the bathroom and the master room."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THAN TWO WORDS for each answer.",
+			"body": "The second house\nAdvantages\nhas a large [7]\nconvenient for its [8]\nDisadvantages\nonly has [9]\nno [10]",
+			"body_table": [
+				["Advantages", "has a large [7]", "convenient for its [8]"],
+				["Disadvantages", "only has [9]", "no [10]"]
+			],
+			"body_html": "<h3><strong>The second house</strong></h3><table><tbody><tr><td><p>Advantages</p></td><td><p>has a large [7] </p></td><td><p>convenient for its [8] </p></td></tr><tr><td><p>Disadvantages</p></td><td><p>only has [9] </p></td><td><p>no [10] </p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "has a large [7]",
+					"answer": "parking lot",
+					"quotes": [
+						"Also, you do not have to manage space with other neighbours since there is a big parking lot, unlike the first house."
+					]
+				},
+				{
+					"number": 8,
+					"text": "convenient for its [8]",
+					"answer": "central location",
+					"quotes": [
+						"It is very compact and easily accessible, due to its central location."
+					]
+				},
+				{
+					"number": 9,
+					"text": "only has [9]",
+					"answer": "two bedrooms / 2 bedrooms",
+					"quotes": [
+						"Again, in contrast to the first house, there are only two bedrooms and this would have been good for a young couple with a small family size."
+					]
+				},
+				{
+					"number": 10,
+					"text": "no [10]",
+					"answer": "garage",
+					"quotes": [
+						"The last problem is that it lacks a garage which is a very important feature for residents here as every household has at least one car and there are few public car parks in this area."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/d6070f47-0c7d-4af9-b566-0366765a8cc5.png"
+	]
+}

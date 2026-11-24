@@ -1,0 +1,214 @@
+{
+	"id": "03a15889-31d4-4df7-be52-5f7474283d59",
+	"url": "https://stepielts.com/student/listening/03a15889-31d4-4df7-be52-5f7474283d59?mode=practice",
+	"title": "Oral History",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/28bbf74e-b13b-4c9d-887f-9e3682ab924b.mp3",
+	"transcript": "Speaker 1: Professor: Thanks, Mike, for dropping by. I’ve read the proposal for your project, which is an oral history of the local football team, particularly the time around 1983 when they won the league championship. But first, how do you define oral history?\nSpeaker 2: Student (Mike): Well, in fact, I used the definition you gave us last year in our research methodology class. I found the handout in my file. The definition says that oral histories are planned interviews or conversations about some aspect of the past which is considered historically or socially important. The interviews are with people who took part in whatever it’s about, so there’ll be a record which historians can use later for all those academic articles they write. Mhmm. And although history textbooks are mostly about famous people and important events, oral history can be about ordinary people doing ordinary things. Oral history really seems to have started in The States.\nSpeaker 1: Professor: You’re right. In fact, the first modern oral history interviews were done by a historian in New York. By that time, audio technology had improved so much that it was fairly easy to record those interviews.\nSpeaker 2: Student (Mike): I was also interested in how the Internet has contributed to oral history studies.\nSpeaker 1: Professor: Yes. It means that lots of people can access the material, and that’s great. Also, the interactive nature of the better websites means that more students get interested in oral history.\nSpeaker 2: Student (Mike): But from what I’ve read, the real contribution of the Internet is that the recording of the interviews will be preserved forever. In the old days, the tapes would just wear out. And after some years, you couldn’t really use them, but not now.\nSpeaker 1: Professor: You’re right, of course. Anyhow, let’s move on to the subject of your project. Why did you decide to study a sports team?\nSpeaker 2: Student (Mike): Well, actually, I don’t even like football very much. And some of my friends think I’m crazy to go for that subject. But my dad is a huge fan, and he might be able to help me.\nSpeaker 1: Professor: And how did you find out background about the team? You talked to the team manager, I assume.\nSpeaker 2: Student (Mike): Yes. I did manage to track him down. And I looked at all the old news stories about the team in the town newspaper office. That was where I got the most helpful information. I had high hopes that the local library would have lots of stuff, but they don’t keep many records for more than ten years.\nSpeaker 1: Professor: I know that you managed to locate 10 of the original 18 members of the team using an old fashioned method, didn’t you? Not a website or anything, just the telephone directory.\nSpeaker 2: Student (Mike): Yes. I didn’t even need to use the local team’s records.\nSpeaker 1: Professor: Okay. Now I’ve read your proposal carefully. Overall, your plans seem excellent, but I want to discuss how you might improve them. Great. I’ve read through the list of questions you’ve drafted. I felt most of them are rather complex to be processed as oral questions. You don’t have too many, which is good, but you should try to simplify them.\nSpeaker 2: Student (Mike): Right. I’ll work on them.\nSpeaker 1: Professor: And the time you’ve allotted for each interview may be too much. You want them to be tight, not going on and on. That makes for better results.\nSpeaker 2: Student (Mike): I can change the schedule. One thing I’m nervous about is the recording equipment I use. I’ve got an old recorder. It runs without making too much noise, and it isn’t complicated, but it sometimes just doesn’t seem to work. It stopped during an interview I tried out with my dad.\nSpeaker 1: Professor: Well, the important thing is just be ready if anything happens. Take some spare batteries or even an extra recorder. Now I’m a little concerned with the subjects you’ve chosen to cover. The topics seem quite general, not very specific. For example, why did they like playing for this team? You need to talk about more exact things and feelings. That way, your results will be more valuable.\nSpeaker 2: Student (Mike): I’ll try to refine them. And, you know, the plan for my report seems to be just to report back more or less what the players say, what happened, when, what they each did, and so on. But I’m not sure about that.\nSpeaker 1: Professor: Yes. Although your outline seems long enough, change it to indicate that you plan to include your own evaluation of the data you get from your interviewees. Anyhow, best of luck on your project. I look forward to seeing the results.\nSpeaker 2: Student (Mike): Thanks for your help.",
+	"body": {
+		"text": "Questions drafted [6]\nTime allotted [7]\nRecording equipment used [8]\nSubjects chosen [9]\nProposed report [10]",
+		"html": "<p>Questions drafted [6]</p><p>Time allotted [7]</p><p>Recording equipment used [8]</p><p>Subjects chosen [9]</p><p>Proposed report [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "What source did Mike use for his definition?",
+					"options": [
+						{
+							"label": "A",
+							"text": "a history textbook"
+						},
+						{
+							"label": "B",
+							"text": "an academic article"
+						},
+						{
+							"label": "C",
+							"text": "a lecture handout"
+						}
+					],
+					"answer": "C",
+					"quotes": ["I found the handout in my file."]
+				},
+				{
+					"number": 2,
+					"text": "According to Mike and his tutor, what is the most important contribution of the Internet to oral history?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the permanent preservation of recordings"
+						},
+						{
+							"label": "B",
+							"text": "an increase in student interest"
+						},
+						{
+							"label": "C",
+							"text": "wide access to the interviews by the public"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Student (Mike): But from what I’ve read, the real contribution of the Internet is that the recording of the interviews will be preserved forever."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Mike says he chose his particular topic because",
+					"options": [
+						{
+							"label": "A",
+							"text": "he is a football fan."
+						},
+						{
+							"label": "B",
+							"text": "his father loves football."
+						},
+						{
+							"label": "C",
+							"text": "his friends encouraged him"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But my dad is a huge fan, and he might be able to help me."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What does Mike say was his best source of information about the team?",
+					"options": [
+						{
+							"label": "A",
+							"text": "doing research in the local newspaper archives"
+						},
+						{
+							"label": "B",
+							"text": "speaking to the team manager"
+						},
+						{
+							"label": "C",
+							"text": "looking at materials in the local library"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"And I looked at all the old news stories about the team in the town newspaper office. That was where I got the most helpful information."
+					]
+				},
+				{
+					"number": 5,
+					"text": "How did Mike find the former players he has arranged to interview?",
+					"options": [
+						{
+							"label": "A",
+							"text": "on the internet"
+						},
+						{
+							"label": "B",
+							"text": "in the team records"
+						},
+						{
+							"label": "C",
+							"text": "in the phone book"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Professor: I know that you managed to locate 10 of the original 18 members of the team using an old fashioned method, didn’t you? Not a website or anything, just the telephone directory."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What problems with the following aspects of the proposed interviews do the speakers identify?",
+			"options": [
+				{
+					"label": "A",
+					"text": "too unreliable"
+				},
+				{
+					"label": "B",
+					"text": "too short"
+				},
+				{
+					"label": "C",
+					"text": "too noisy"
+				},
+				{
+					"label": "D",
+					"text": "too long"
+				},
+				{
+					"label": "E",
+					"text": "too formal"
+				},
+				{
+					"label": "F",
+					"text": "too factual"
+				},
+				{
+					"label": "G",
+					"text": "too complicated"
+				},
+				{
+					"label": "H",
+					"text": "too vague"
+				}
+			],
+			"body": "Questions drafted [6]\nTime allotted [7]\nRecording equipment used [8]\nSubjects chosen [9]\nProposed report [10]",
+			"body_html": "<p>Questions drafted [6]</p><p>Time allotted [7]</p><p>Recording equipment used [8]</p><p>Subjects chosen [9]</p><p>Proposed report [10]</p>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Questions drafted",
+					"answer": "G",
+					"quotes": [
+						"I felt most of them are rather complex to be processed as oral questions."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Time allotted",
+					"answer": "D",
+					"quotes": [
+						"Professor: And the time you’ve allotted for each interview may be too much."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Recording equipment used",
+					"answer": "A",
+					"quotes": [
+						"It runs without making too much noise, and it isn’t complicated, but it sometimes just doesn’t seem to work. It stopped during an interview I tried out with my dad."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Subjects chosen",
+					"answer": "H",
+					"quotes": ["The topics seem quite general, not very specific."]
+				},
+				{
+					"number": 10,
+					"text": "Proposed report",
+					"answer": "F",
+					"quotes": [
+						"And, you know, the plan for my report seems to be just to report back more or less what the players say, what happened, when, what they each did, and so on."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

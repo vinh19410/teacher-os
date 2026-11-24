@@ -1,0 +1,192 @@
+{
+	"id": "35f61809-dba1-4a14-b902-38e0d980865e",
+	"url": "https://stepielts.com/student/listening/35f61809-dba1-4a14-b902-38e0d980865e?mode=practice",
+	"title": "Cycling Consultancy",
+	"source": "Forecast Quý 2-2025",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/53267502-004a-4008-ac94-47d62a3b4b66.mp3",
+	"transcript": "Speaker 1: HELEN: Good afternoon, I am Helen, a cycling consultant and today I would be sharing some priceless pieces of information with you regarding bike purchases. Throughout my career, I’ve often been asked to organize events like this. And it’s not surprising why – many folks are unsure about what to consider when purchasing a bike. So, I thought it’d be helpful to give you a quick rundown of some prominent bike companies, what they offer, and how you can make the most of their services. Now, let’s dive in! First up on our list is Bike world. This company is known for their great customer service. The workers there are very polite and go about their work with such happiness that makes you wonder if they are being paid a million dollars. Next on our list is Travel on Bike. While they were previously recognized for their diverse selection of mountain bikes, road bikes, and hybrid bikes to meet specific needs, they now excel in providing a wide range of spare parts for repairs. Whether you purchased your bike from their store or elsewhere, they are equipped to source the necessary parts for repairs. The third company we would be examining today is Two Wheels. With their discount for every member, they are able to tailor their products to cater to those with shallow pockets. Their products are also quality too. Good Weather Bike often opens up stores near universities, offering products known for their exceptional durability and strength, surpassing that of some competitors. Instead of recommending an immediate purchase, I suggest considering the option to rent one. This allows you to experience the product firsthand and assess its suitability. If you really need a bike, but do not have the resources for a brand new one, you can get across to The Wright Brothers and they would fix you up with a very good second-hand bike. They always verify the ownership of whatever bikes that they sell. So you can be sure there would be no legal issues with whatever bike you purchase from them. Magic Cycling has recently transitioned from bike repairs to offering the up-to-date bike models in town. Despite the recent change, they have quickly become known for their innovative selection. Rest assured, you can trust in their commitment to providing top-of-the-line models for their customers. With all I have said, it is very easy to walk into any of these places and get confused by the range of products that they offer. I have experienced this a number of times. To guard against this, we have a few things to consider when we go to buy bikes which would serve as a guide for making the right choices. As an experienced salesperson, I have noticed that when customers express interest in certain models, they often inquire about the safety measures in place. However, there is no need for excessive concern as the latest manufacturing methods have effectively addressed potential safety risks. Instead of focusing on speed or cost, it is advisable to prioritize test riding a bike to ensure comfort. Additionally, it is important to assess the bike’s structure and design if you intend to modify any parts. Lastly, Cycling Geek is a great option for cyclists who lack experience in choosing new bikes or are unsure about what to prioritize. They offer a wide range of repair equipment, ensuring that your bike is well-maintained. Although they used to provide free basic training and sell a variety of gear, these services are no longer available. However, they do have a selection of secondhand options. It is worth noting that there have been some customer complaints regarding a decline in product and service quality. Again, every coin has two sides. Alright, that wraps up what I wanted to share today. If you have any questions or would like more information about bike purchases, feel free to ask.",
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MATCHING_NAMES",
+			"instructions": "What does the speaker say about each of the following bike-making companies?",
+			"options": ["A", "B", "C", "D", "E", "F", "G"],
+			"questions": [
+				{
+					"number": 1,
+					"text": "Bike World",
+					"answer": "E",
+					"quotes": [
+						"First up on our list is Bike world. This company is known for their great customer service. The workers there are very polite and go about their work with such happiness that makes you wonder if they are being paid a million dollars."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Travel on Bike",
+					"answer": "G",
+					"quotes": [
+						"While they were previously recognized for their diverse selection of mountain bikes, road bikes, and hybrid bikes to meet specific needs, they now excel in providing a wide range of spare parts for repairs."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Two Wheels",
+					"answer": "A",
+					"quotes": [
+						"The third company we would be examining today is Two Wheels. With their discount for every member, they are able to tailor their products to cater to those with shallow pockets. Their products are also quality too."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Good Weather Bike",
+					"answer": "C",
+					"quotes": [
+						"Good Weather Bike often opens up stores near universities, offering products known for their exceptional durability and strength, surpassing that of some competitors."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Wright Brothers",
+					"answer": "D",
+					"quotes": [
+						"If you really need a bike, but do not have the resources for a brand new one, you can get across to The Wright Brothers and they would fix you up with a very good second-hand bike. They always verify the ownership of whatever bikes that they sell. So you can be sure there would be no legal issues with whatever bike you purchase from them."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Magic Cycling",
+					"answer": "F",
+					"quotes": [
+						"Magic Cycling has recently transitioned from bike repairs to offering the up-to-date bike models in town. Despite the recent change, they have quickly become known for their innovative selection. Rest assured, you can trust in their commitment to providing top-of-the-line models for their customers."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-8",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 7,
+					"text": "Which TWO factors need to be considered when shopping for a new bike?",
+					"options": [
+						{
+							"label": "A",
+							"text": "speed"
+						},
+						{
+							"label": "B",
+							"text": "comfort"
+						},
+						{
+							"label": "C",
+							"text": "price"
+						},
+						{
+							"label": "D",
+							"text": "appearance"
+						},
+						{
+							"label": "E",
+							"text": "safety"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 8,
+					"text": "Which TWO factors need to be considered when shopping for a new bike?",
+					"options": [
+						{
+							"label": "A",
+							"text": "speed"
+						},
+						{
+							"label": "B",
+							"text": "comfort"
+						},
+						{
+							"label": "C",
+							"text": "price"
+						},
+						{
+							"label": "D",
+							"text": "appearance"
+						},
+						{
+							"label": "E",
+							"text": "safety"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "9-10",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 9,
+					"text": "Which TWO reasons are mentioned to explain why Cycling Geek is suitable for inexperienced cyclists?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Basic training is provided for free."
+						},
+						{
+							"label": "B",
+							"text": "There is adequate repair equipment."
+						},
+						{
+							"label": "C",
+							"text": "It sells all kinds of gear."
+						},
+						{
+							"label": "D",
+							"text": "The bikes are of great quality and appearance."
+						},
+						{
+							"label": "E",
+							"text": "It has many used bicycles."
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 10,
+					"text": "Which TWO reasons are mentioned to explain why Cycling Geek is suitable for inexperienced cyclists?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Basic training is provided for free."
+						},
+						{
+							"label": "B",
+							"text": "There is adequate repair equipment."
+						},
+						{
+							"label": "C",
+							"text": "It sells all kinds of gear."
+						},
+						{
+							"label": "D",
+							"text": "The bikes are of great quality and appearance."
+						},
+						{
+							"label": "E",
+							"text": "It has many used bicycles."
+						}
+					],
+					"answer": "E"
+				}
+			]
+		}
+	],
+	"images": []
+}

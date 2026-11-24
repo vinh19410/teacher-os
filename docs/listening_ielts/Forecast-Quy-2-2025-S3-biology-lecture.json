@@ -1,0 +1,127 @@
+{
+	"id": "8877035c-8e23-4deb-bace-45ff05b777e7",
+	"url": "https://stepielts.com/student/listening/8877035c-8e23-4deb-bace-45ff05b777e7?mode=practice",
+	"title": "Biology lecture",
+	"source": "Forecast Quý 2-2025",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/bd928edf-f2bd-4ebd-a0d3-d406c2e44c64.mp3",
+	"transcript": "Speaker 1: Mark, have you finished preparing for the biology lecture?\nSpeaker 2: I’m still working on it, Ms. Harrison. There is a lot to do. I want to make sure I have everything well-organized in mind.\nSpeaker 1: I’ve got a list of your topics here, so let’s go through them one by one. The first is biological rhythm?\nSpeaker 2: Yes. I found this to be a fascinating topic. It involves so much of what is happening behind the scenes in our body, from our hormones to daily patterns. Instead of spending too much time on sleep problems, I think the highlight should be the fact that we can train our body to be awake at different times, namely, our sleep habits. I also plan to design a chart for the audience to check if they have healthy routines.\nSpeaker 1: Hmm, I don’t think you’ll have enough time for that. The design needs to cater to different age groups, but your presentation is a week away.\nSpeaker 2: Oh, I overlooked the range of age group. I’ll try simplifying the design. What do you think of my next topic, blood pressure?\nSpeaker 1: It’s a good one, but I suggest you put your focus on heart disease.\nSpeaker 2: OK. I’d make a full list of problems that people may have in their diet, which can contribute significantly to heart disease, such as a trans-fat-rich diet. I’ll work with researchers at a local hospital to collect some data for that.\nSpeaker 1: It might be interesting to conduct non-invasive experiments on some volunteer classmates.\nSpeaker 2: That’s a great idea! Can I conduct these experiments in the school stadium?\nSpeaker 1: Hmm, it’s currently being used for the career expo, I’m afraid there won’t be enough space. Perhaps you could ask Mr. Green for permission to use the theatre hall.\nSpeaker 2: OK. As for my analysis into stress levels of different social groups, including office workers, it is progressing well.\nSpeaker 1: What tasks do you still need to complete?\nSpeaker 2: I’m still unsure about what to do with the findings.\nSpeaker 1: It’s better to compare yours with those of other students, so that you can get a more comprehensive picture of the subject.\nSpeaker 2: That’s a great idea, I’ll do that. And I’ve been looking into utilising the school gym for the purpose of conducting experiments on bodily stress. Is this feasible?\nSpeaker 1: It would be a great idea. The bad news is although the gym can be used free of charge, it is currently closed, due to extensive maintenance work being carried out. You may consider renting one of the gyms in town.\nSpeaker 2: OK. I’ll look into finding one.\nSpeaker 1: What’s for the last part of your preparation?\nSpeaker 2: I find the study of Heart Rate very interesting, particularly turbulence-related issues. I believe, if we are able to find the root causes for such a problem, then we would be closer to finding a cure.\nSpeaker 1: OK. What research method will you use? Will you conduct surveys at the hospital?\nSpeaker 2: I was thinking of that, but due to a lack of time, I may not be able to collect much data from there. A quicker alternative might be to surprise our audience with an anonymous test on the lecture day, regarding their family genetic history and predisposition to heart rate turbulence.\nSpeaker 1: Interesting, but I have some concerns about the way you’re collecting data. People may not take it seriously, and the answers could be misleading. In the end, the data you obtain for your research will not be that clear though.\nSpeaker 2: Well, I could ask them again afterwards if I find anything wrong.\nSpeaker 1: Only if you can find them in time. The students that attend your presentation come from various schools this time. To avoid further trouble in data collection, I suggest you collaborate with fellow students to share data and insights, leveraging a collective pool of resources and perspectives. Additionally, teaming up with a research professional could save you a lot of time and ensure a more thorough analysis of the data.\nSpeaker 2: If you can help me get in touch with a researcher, I would be very grateful.\nSpeaker 1: Sure, I’ll contact some and let you know.",
+	"body": {
+		"text": "Topic\nSubject to focus\nWork to do\nFeasibility\nBiological rhythm\nSleep [1]\nComplete a [2]\nNot enough [3]\nBlood pressure\nHeart disease\nList problems with [4]\nSchool stadium does not have enough [5]\nStress level\nStress of different social groups\nCompare findings with those of other [6]\nSchool gym is [7], though it’s free.\nHeart rate\nMain [8] for Heart Rate Turbulence\nConduct a surprising [9] in class\nData is not [10] enough.",
+		"html": "<table><tbody><tr><td><p>Topic</p></td><td><p>Subject to focus</p></td><td><p>Work to do</p></td><td><p>Feasibility  </p></td></tr><tr><td><p>Biological rhythm</p></td><td><p>Sleep [1]   </p></td><td><p>Complete a [2]   </p></td><td><p>Not enough [3]   </p></td></tr><tr><td><p>Blood pressure</p></td><td><p>Heart disease</p></td><td><p>List problems with [4]  </p></td><td><p>School stadium does not have enough [5]   </p></td></tr><tr><td><p>Stress level</p></td><td><p>Stress of different social groups </p></td><td><p>Compare findings with those of other [6]  </p></td><td><p>School gym is [7], though it’s free.</p></td></tr><tr><td><p>Heart rate</p></td><td><p>Main [8] for Heart Rate Turbulence</p></td><td><p>Conduct a surprising [9] in class</p></td><td><p>Data is not [10] enough.</p></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD ONLY for each answer.",
+			"body": "Topic\nSubject to focus\nWork to do\nFeasibility\nBiological rhythm\nSleep [1]\nComplete a [2]\nNot enough [3]\nBlood pressure\nHeart disease\nList problems with [4]\nSchool stadium does not have enough [5]\nStress level\nStress of different social groups\nCompare findings with those of other [6]\nSchool gym is [7], though it’s free.\nHeart rate\nMain [8] for Heart Rate Turbulence\nConduct a surprising [9] in class\nData is not [10] enough.",
+			"body_table": [
+				["Topic", "Subject to focus", "Work to do", "Feasibility"],
+				["Biological rhythm", "Sleep [1]", "Complete a [2]", "Not enough [3]"],
+				[
+					"Blood pressure",
+					"Heart disease",
+					"List problems with [4]",
+					"School stadium does not have enough [5]"
+				],
+				[
+					"Stress level",
+					"Stress of different social groups",
+					"Compare findings with those of other [6]",
+					"School gym is [7], though it’s free."
+				],
+				[
+					"Heart rate",
+					"Main [8] for Heart Rate Turbulence",
+					"Conduct a surprising [9] in class",
+					"Data is not [10] enough."
+				]
+			],
+			"body_html": "<table><tbody><tr><td><p>Topic</p></td><td><p>Subject to focus</p></td><td><p>Work to do</p></td><td><p>Feasibility  </p></td></tr><tr><td><p>Biological rhythm</p></td><td><p>Sleep [1]   </p></td><td><p>Complete a [2]   </p></td><td><p>Not enough [3]   </p></td></tr><tr><td><p>Blood pressure</p></td><td><p>Heart disease</p></td><td><p>List problems with [4]  </p></td><td><p>School stadium does not have enough [5]   </p></td></tr><tr><td><p>Stress level</p></td><td><p>Stress of different social groups </p></td><td><p>Compare findings with those of other [6]  </p></td><td><p>School gym is [7], though it’s free.</p></td></tr><tr><td><p>Heart rate</p></td><td><p>Main [8] for Heart Rate Turbulence</p></td><td><p>Conduct a surprising [9] in class</p></td><td><p>Data is not [10] enough.</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Sleep [1]",
+					"answer": "habits",
+					"quotes": [
+						"Instead of spending too much time on sleep problems, I think the highlight should be the fact that we can train our body to be awake at different times, namely, our sleep habits."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Complete a [2]",
+					"answer": "chart",
+					"quotes": [
+						"I also plan to design a chart for the audience to check if they have healthy routines."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Not enough [3]",
+					"answer": "time",
+					"quotes": ["Hmm, I don’t think you’ll have enough time for that."]
+				},
+				{
+					"number": 4,
+					"text": "List problems with [4]",
+					"answer": "diet",
+					"quotes": [
+						"I’d make a full list of problems that people may have in their diet, which can contribute significantly to heart disease, such as a trans-fat-rich diet."
+					]
+				},
+				{
+					"number": 5,
+					"text": "School stadium does not have enough [5]",
+					"answer": "space",
+					"quotes": [
+						"Hmm, it’s currently being used for the career expo, I’m afraid there won’t be enough space."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Compare findings with those of other [6]",
+					"answer": "students",
+					"quotes": [
+						"It’s better to compare yours with those of other students, so that you can get a more comprehensive picture of the subject."
+					]
+				},
+				{
+					"number": 7,
+					"text": "School gym is [7], though it’s free.",
+					"answer": "closed",
+					"quotes": [
+						"The bad news is although the gym can be used free of charge, it is currently closed, due to extensive maintenance work being carried out."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Main [8] for Heart Rate Turbulence",
+					"answer": "causes",
+					"quotes": [
+						"I believe, if we are able to find the root causes for such a problem, then we would be closer to finding a cure."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Conduct a surprising [9] in class",
+					"answer": "test",
+					"quotes": [
+						"A quicker alternative might be to surprise our audience with an anonymous test on the lecture day, regarding their family genetic history and predisposition to heart rate turbulence."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Data is not [10] enough.",
+					"answer": "clear",
+					"quotes": [
+						"In the end, the data you obtain for your research will not be that clear though."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

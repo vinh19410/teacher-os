@@ -1,0 +1,100 @@
+{
+	"id": "95d67b94-57ee-436d-8751-c5e2049d9d46",
+	"url": "https://stepielts.com/student/listening/95d67b94-57ee-436d-8751-c5e2049d9d46?mode=practice",
+	"title": "Venue Booking Form",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/ba88168d-26e9-4aff-9311-8aba2cf4de3f.mp3",
+	"transcript": "Speaker 1: Staff Member (Pete): Hi. Good morning. My name's Pete. How can I help you?\nSpeaker 0: Maria Lincoln: Hi. My name's Maria Lincoln. I understand you hire out rooms in the community center as venues for parties?\nSpeaker 1: Staff Member (Pete): Yes. We do. We vary a sized accommodation. It depends on what you're looking for, really.\nSpeaker 0: Maria Lincoln: We're looking to hold a party, a children's birthday party, and we need a room that will hold about 70 people, with space for a small disco area, games, dancing, and food.\nSpeaker 1: Staff Member (Pete): Well, we have a large room, and it would certainly hold at least a 100 people comfortably. It's used a lot for parties and things like that.\nSpeaker 0: Maria Lincoln: That sounds as if it might be suitable. I've tried various venues, and they're either booked up or they don't hold enough people.\nSpeaker 1: Staff Member (Pete): Can you tell me when you were thinking of holding the party?\nSpeaker 0: Maria Lincoln: I know it's short notice, but we wanted to hold it Saturday week. That's September 15.\nSpeaker 1: Staff Member (Pete): Let's have a look. Yes. You're in luck. The Mandela suite is free then.\nSpeaker 0: Maria Lincoln: I'll just write that down. M A N D E L A.\nSpeaker 1: Staff Member (Pete): And the time. When were you thinking of holding it?\nSpeaker 0: Maria Lincoln: In the afternoon from 3:30PM to 9PM.\nSpeaker 1: Staff Member (Pete): Yes. Okay. There is no smoking on the premises, and we're only licensed to have soft drinks.\nSpeaker 0: Maria Lincoln: That's okay. I think I'm happy to go ahead.\nSpeaker 1: Staff Member (Pete):Can you just give your postcode?\nSpeaker 0: Maria Lincoln: Yes. It's PA57GJ.\nSpeaker 1: Staff Member (Pete): Fine. And the flat and street number?\nSpeaker 0: Maria Lincoln: It's Flat Number 40, and the street number is 35.\nSpeaker 1: Staff Member (Pete): Okay. So that's Flat 4035 Beaches Street.\nSpeaker 0: Maria Lincoln: Yes. That's right.\nSpeaker 1: Staff Member (Pete): And a contact number?\nSpeaker 0: Maria Lincoln: My landline is 223279 with the code, but I'll give you my mobile number, which is 07897293381.\nSpeaker 1: Staff Member (Pete): Okay. 293381.\nSpeaker 0: Maria Lincoln: Can you tell me how much it will cost?\nSpeaker 1: Staff Member (Pete): It's quite reasonable, actually. It's a £115 for the hire of the room with tables and chairs. But if you want to hire disco equipment, we've got a basic system with speakers and other equipment for £25, but there is no technician around in case anything goes wrong. And, of course, it's optional.\nSpeaker 0: Maria Lincoln: That would save us carting something from home, but maybe we should bring a spare sound system just in case.\nSpeaker 1: Staff Member (Pete): We've never had any problem with the system, but you might not want to take any chances. What about catering?\nSpeaker 0: Maria Lincoln: Well, we had thought of getting everyone bringing something.\nSpeaker 1: Staff Member (Pete): We have someone who can do catering for £9 a head, including the cake if required.\nSpeaker 0: Maria Lincoln: That's handy, but it's a lot as we have a fairly tight budget.\nSpeaker 1: Staff Member (Pete): So you wanna go ahead with the booking?\nSpeaker 0: Maria Lincoln: Yes. Certainly.\nSpeaker 1: Staff Member (Pete): Okay. I need to take a deposit of £30, which is refundable. The balance needs to be paid two days before the event at the latest.\nSpeaker 0: Maria Lincoln: Fine.\nSpeaker 1: Staff Member (Pete): You can cancel up to two days before, but after that, you lose the deposit.\nSpeaker 0: Maria Lincoln: We don't intend to cancel, but is there any insurance we can take out? Staff Member (Pete): Yes.\nSpeaker 1: There's a a form here somewhere.\nSpeaker 0: Maria Lincoln: How much?\nSpeaker 1: Staff Member (Pete): It's oh, let me see. It's only £9 for the twenty four hour period, and that covers you for cancellation, damage, and injury.\nSpeaker 0: Maria Lincoln: Well, at least we'd better have a look at it.\nSpeaker 1: Staff Member (Pete): How would you like to pay the deposit?\nSpeaker 0: Maria Lincoln: Cash.\nSpeaker 1: Staff Member (Pete): I'll just give you a receipt.\nMaria Lincoln: Uh-huh.\nSpeaker 0: There you are. $$10, 20, 30.\nSpeaker 1: Staff Member (Pete): £30. Maria Lincoln.\nSpeaker 0: Maria Lincoln: Thank you very much. I'm really glad I found somewhere. We have been trying to book a place for the past two weeks, so thank you again and bye for now.",
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "FILL_BLANK",
+			"instructions": "Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "Number of people: approximately [1]\nDate of party [2]\nName of room: The [3]\nTime: from [4] to 9pm\nDrinks: Licensed only for soft drinks",
+			"body_html": "<table><tbody><tr><td><p><strong>Number of people:</strong> approximately [1]</p><p><strong>Date of party</strong> [2]</p><p><strong>Name of room:</strong> The [3]</p><p><strong>Time:</strong> from [4] to 9pm</p><p><strong>Drinks:</strong> Licensed only for soft drinks</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Number of people: approximately [1]",
+					"answer": "70",
+					"quotes": [
+						"Maria Lincoln: We're looking to hold a party, a children's birthday party, and we need a room that will hold about 70 people, with space for a small disco area, games, dancing, and food."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Date of party [2]",
+					"answer": "September 15",
+					"quotes": ["That's September 15."]
+				},
+				{
+					"number": 3,
+					"text": "Name of room: The [3]",
+					"answer": "Mandela suite",
+					"quotes": ["The Mandela suite is free then."]
+				},
+				{
+					"number": 4,
+					"text": "Time: from [4] to 9pm",
+					"answer": "3:30pm",
+					"quotes": ["Maria Lincoln: In the afternoon from 3:30PM to 9PM."]
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD OR A NUMBER for each answer.",
+			"body": "Contact details\nPostcode [5]\nAddress: Flat [6], 35 Beeches-street\nTelephone\nLandline: 222279\nMobile: 07897 [7]\nBooking fee\nCost of room hire £115 with [8] and chairs\nDisco system hire: Optional. Fee £25 with no technician.\nDeposit: £ [9]\nInsurance £9 for 24 hours. Covers cancellation, damage and [10]",
+			"body_html": "<table><tbody><tr><td><p><strong>Contact details</strong></p><p>Postcode [5]</p><p>Address: Flat [6], 35 Beeches-street</p><p><strong>Telephone</strong></p><p>Landline: 222279</p><p>Mobile: 07897 [7]</p><p><strong>Booking fee</strong></p><p>Cost of room hire £115 with [8] and chairs</p><p>Disco system hire: Optional. Fee £25 with no technician.</p><p>Deposit: £ [9]</p><p>Insurance £9 for 24 hours. Covers cancellation, damage and [10]</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Postcode [5]",
+					"answer": "PA57GJ",
+					"quotes": ["It's PA57GJ."]
+				},
+				{
+					"number": 6,
+					"text": "Address: Flat [6], 35 Beeches-street",
+					"answer": "40",
+					"quotes": [
+						"Maria Lincoln: It's Flat Number 40, and the street number is 35."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Mobile: 07897 [7]",
+					"answer": "293381",
+					"quotes": ["293381."]
+				},
+				{
+					"number": 8,
+					"text": "Cost of room hire £115 with [8] and chairs",
+					"answer": "tables",
+					"quotes": [
+						"It's a £115 for the hire of the room with tables and chairs."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Deposit: £ [9]",
+					"answer": "30",
+					"quotes": ["I need to take a deposit of £30, which is refundable."]
+				},
+				{
+					"number": 10,
+					"text": "Insurance £9 for 24 hours. Covers cancellation, damage and [10]",
+					"answer": "injury",
+					"quotes": [
+						"It's only £9 for the twenty four hour period, and that covers you for cancellation, damage, and injury."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

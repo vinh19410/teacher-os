@@ -1,0 +1,138 @@
+{
+	"id": "b22ec589-f012-4322-978b-950dbce7c427",
+	"url": "https://stepielts.com/student/listening/b22ec589-f012-4322-978b-950dbce7c427?mode=practice",
+	"title": "Sports Photography Course",
+	"source": "Actual Test",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/a8dcc313-266a-4e1c-b3da-707511d96c5b.mp3",
+	"transcript": "Speaker 0: Test five. This is the IELTS listening test. You will hear a number of different recordings, and you will have to answer questions on what you hear. There will be time for you to read the instructions and questions, and you will have a chance to check your work. All the recordings will be played once only. The test is in four parts. At the end of the test, you will be given ten minutes to transfer your answers to the answer sheet. Now turn to part one. Part one. You will hear a man phoning Community Learning Center to get information about the sports photography course it offers. First, you have some time to look at questions one to six. Now listen carefully and answer questions one to six. Good morning. Community Learning Centre. What can I do for you?\nSpeaker 1: Oh, hello. I'm calling about the sports photography course you offer. I learned about it from an advert somewhere in the newspaper.\nSpeaker 0: Okay. May I have your name, please?\nSpeaker 1: It's Chris Johnson.\nSpeaker 0: Thank you, mister Johnson. Is there anything in particular you would like to know?\nSpeaker 1: Yes. I'm eager to improve my photography skills. You know, my son has just joined the school football team this semester, and I want to keep a visual record of all these precious moments. But when I took shots, they were often too blurry. You see, I'm no expert, so I'd like to find out about the level of the course to see if it's suitable for me.\nSpeaker 0: Well, this course is intended for beginners only, but there will be an advanced course for experienced photographers next semester.\nSpeaker 1: That's good to know. I think this course worked for me just fine. Do I have to go for an interview to register?\nSpeaker 0: There's no need to do that. We have plenty of vacancies right now. So if you plan to register, I can sign you up over the phone.\nSpeaker 1: Great. But before that, how much does it cost?\nSpeaker 0: It was $45 last year for a single student. Luckily, this year, we have more funding, so the price has gone down to $38.\nSpeaker 1: Oh, good. So when will the next course start?\nSpeaker 0: Let me check. Just a minute. It's Monday today, so there was a course that ended just last weekend. Then there's another one starting from April 17. But if you miss this one, the next one is from May 1.\nSpeaker 1: That's too late. I'll just register for the next course then.\nSpeaker 0: May I take your phone number?\nSpeaker 1: Sure. It's 07139587302.\nSpeaker 0: Okay. I've made a note of that. When you come to take the first lesson, please bring two photos that you've taken.\nSpeaker 1: Is there any special requirements for the photos?\nSpeaker 0: Yes. You reminded me. The weather of the two shots should be different.\nSpeaker 1: Like one on a sunny day and another on a snowy day.\nSpeaker 0: Yes. Exactly. Before you hear the rest of the conversation, you have some time to look at questions seven to 10. Now listen and answer questions seven to 10.\nSpeaker 1: So apart from the photos, do I need to prepare anything else for the course?\nSpeaker 0: Nothing more.\nSpeaker 1: Do you have a syllabus for the course?\nSpeaker 0: Sure. You can download it from our website. Just key in Community Learning Centre of Pinewood. You can also come over to the centre and get a copy.\nSpeaker 1: I'll just download it online. But can you please introduce the course in detail? The course covers two days. Right?\nSpeaker 0: Yes. On Saturday morning, the instructor will explain all the basics of amateur and professional sports photography and the differences between them, followed by instructions on the use of specific equipment for various sports like long lenses and monopods for shooting football matches.\nSpeaker 1: That's exactly what I need to know. What about the rest of the course?\nSpeaker 0: On Saturday afternoon, there is normally a workshop on the technical side of things. For the photos that your classmates have brought, you'll have to work together to decide the best position to take these shots.\nSpeaker 1: Oh, that's interesting.\nSpeaker 0: On Sunday, there's a workshop taking place in a computer equipped room where you'll learn to edit different shots.\nSpeaker 1: That sounds challenging.\nSpeaker 0: Indeed, it is. There is also a section on some tricks to sell them.\nSpeaker 1: To magazines and newspapers, you mean?\nSpeaker 0: Yes. Mostly to the publishing industry.\nSpeaker 1: I'd love to.\nSpeaker 0: That is the end of part one. You now have one minute to check your answers to part one.",
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD AND/OR A NUMBER for each answer",
+			"body": "Sports Photography Course Registration\nCaller's name: Chris Johnson\nThe level of the selected course: suitable for [1]\nHow to register: no need for an [2]\nCost: [3] $\nDate available: next course, beginning [4]\nTelephone number [5]\nRequirement: bring two photos of different [6]",
+			"body_table": [
+				["Sports Photography Course Registration"],
+				["Caller's name:", "Chris Johnson"],
+				["The level of the selected course:", "suitable for [1]"],
+				["How to register:", "no need for an [2]"],
+				["Cost:", "[3] $"],
+				["Date available:", "next course, beginning [4]"],
+				["Telephone number", "[5]"],
+				["Requirement:", "bring two photos of different [6]"]
+			],
+			"body_html": "<table><tbody><tr><td colspan=\"2\"><h3><strong>Sports Photography Course Registration</strong></h3></td></tr><tr><td><strong>Caller's name:</strong></td><td>Chris Johnson</td></tr><tr><td><strong>The level of the selected course:</strong></td><td>suitable for [1]</td></tr><tr><td><strong>How to register:</strong></td><td>no need for an [2]</td></tr><tr><td><strong>Cost:</strong></td><td>[3] $</td></tr><tr><td><strong>Date available:</strong></td><td>next course, beginning [4]</td></tr><tr><td><strong>Telephone number</strong></td><td>[5]</td></tr><tr><td><strong>Requirement:</strong></td><td>bring two photos of different [6]</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The level of the selected course: suitable for [1]",
+					"answer": "beginners",
+					"quotes": [
+						"Well, this course is intended for beginners only, but there will be an advanced course for experienced photographers next semester."
+					]
+				},
+				{
+					"number": 2,
+					"text": "How to register: no need for an [2]",
+					"answer": "interview",
+					"quotes": [
+						"Do I have to go for an interview to register?",
+						"There's no need to do that."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Cost: [3] $",
+					"answer": "38",
+					"quotes": [
+						"Luckily, this year, we have more funding, so the price has gone down to $38."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Date available: next course, beginning [4]",
+					"answer": "April 17",
+					"quotes": ["Then there's another one starting from April 17."]
+				},
+				{
+					"number": 5,
+					"text": "Telephone number: [5]",
+					"answer": "07139587302",
+					"quotes": [
+						"It's 07139587302.",
+						"May I take your phone number?",
+						"Sure."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Requirement: bring two photos of different [6]",
+					"answer": "weather",
+					"quotes": [
+						"The weather of the two shots should be different.",
+						"Is there any special requirements for the photos?",
+						"Yes.",
+						"You reminded me."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD ONLY for each answer.",
+			"body": "Curriculum\nSaturday Morning - Introduction by the instructor\n- How to choose the appropriate [7]\nAfternoon Discuss the [8] to take photos\nSunday - Workshop of how to [9] pictures\n- Advice on how to [10] pictures",
+			"body_table": [
+				["Curriculum"],
+				[
+					"Saturday",
+					"Morning",
+					"- Introduction by the instructor\n- How to choose the appropriate [7]"
+				],
+				["Afternoon", "Discuss the [8] to take photos"],
+				[
+					"Sunday",
+					"",
+					"- Workshop of how to [9] pictures\n- Advice on how to [10] pictures"
+				]
+			],
+			"body_html": "<table><tbody><tr><td colspan=\"3\"><h3><strong>Curriculum</strong></h3></td></tr><tr><td rowspan=\"2\"><strong>Saturday</strong></td><td><strong>Morning</strong></td><td>- Introduction by the instructor<br>- How to choose the appropriate [7]</td></tr><tr><td><strong>Afternoon</strong></td><td>Discuss the [8] to take photos</td></tr><tr><td><strong>Sunday</strong></td><td></td><td>- Workshop of how to [9] pictures<br>- Advice on how to [10] pictures</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "How to choose the appropriate [7]",
+					"answer": "equipment",
+					"quotes": [
+						"On Saturday morning, the instructor will explain all the basics of amateur and professional sports photography and the differences between them, followed by instructions on the use of specific equipment for various sports like long lenses and monopods for shooting football matches."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Discuss the [8] to take photos",
+					"answer": "position",
+					"quotes": [
+						"For the photos that your classmates have brought, you'll have to work together to decide the best position to take these shots."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Workshop of how to [9] pictures",
+					"answer": "edit",
+					"quotes": [
+						"On Sunday, there's a workshop taking place in a computer equipped room where you'll learn to edit different shots."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Advice on how to [10] pictures",
+					"answer": "sell",
+					"quotes": ["There is also a section on some tricks to sell them."]
+				}
+			]
+		}
+	],
+	"images": []
+}

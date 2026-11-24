@@ -1,0 +1,171 @@
+{
+	"id": "77e4b851-33ef-46bc-b093-9850ba868d83",
+	"url": "https://stepielts.com/student/listening/77e4b851-33ef-46bc-b093-9850ba868d83?mode=practice",
+	"title": "Leisure Complex Plan",
+	"source": "Collection",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/d369dd9d-b010-4ad0-8a28-1bdc4ef0d5e7.mp3",
+	"transcript": "Speaker 1: Station Manager: Hello, and thank you for attending this meeting. I have called it to discuss station matters as there have been a number of changes made, and I want to ensure that you are all filled in. Well, as I’m sure you will all have heard, there are plans underway to make some alterations to the station complex. Though we did the reconstruction work that occurred last year, from the data collected this year, we have learned that our station is too small to cope with a large number of visitors passing through it on a daily basis. However, relocation is unnecessary, which means you, our staff, will be unaffected and can continue with your work as normal. We have decided that our only option is to make the area bigger by building new platforms and new facilities, such as cafes and lounge areas. We have already purchased the site on which these new facilities will be constructed. We had initially planned to build on the site of the old industrial buildings. However, tests carried out on the soil and water showed that it was too highly contaminated with waste from the industrial processes. Instead, we have purchased the site just across the road on which there used to be a lot of houses that were later converted into shops. These buildings will, of course, be demolished to make room for our new facilities. What is going to be built on this new site? I see you thinking to yourselves. There have been a lot of ideas put forward by all the parties involved. Initially, the station had planned to use the site as a car park. However, we decided this will be a very unsatisfactory way to occupy the space. Instead, we have hired an architect who has an exciting vision to transform the site into a large leisure center complete with cafes, shops, and a lounge where visitors can relax. We hope that this new complex will attract many visitors, not just from the station, but also from the apartment blocks in the nearby town center. As part of the construction works, we are also going to create new formal gardens where visitors can enjoy the greenery and sit outside in the fresh air. The new leisure complex will be located to the right of the shopping district, so these formal gardens will serve as a meeting place for pedestrians. Now I’m delighted to be able to introduce you all to the plans for our new complex. So if you could please focus your attention on the maps in front of you, we will start at the main entrance and make our way towards the cafe, which is located behind the wall that we can see directly in front of us, just next to the rear entrance. In this position, the cafe is obscured from the entrances, which will keep the space warm and also create an intimate atmosphere. Once visitors arrive at our station, they often need further transport in order to reach their homes. Therefore, we have introduced a taxi rank with its own waiting area. In order to reach these facilities, the visitors must simply leave the complex via the rear entrance and turn left. Visitors who have traveled to the station by car can leave it in the car park for a small fee, which is located just outside of the rear entrance to the right. At present, our station does not have an internal seating area for passengers, so they’re forced to wait for their trains outside on the platforms, which can be particularly unpleasant during the winter. We have, therefore, decided to introduce a passenger waiting area inside the new complex to the right of the rear entrance with comfortable seating where passengers can pass the time comfortably in the warmth. As this space is a distance away from the station, we have also proposed a waiting area for wheelchair users that is closer. As visitors enter through the main entrance, this space will be located behind the wall to their left. Finally, we have also decided that it would be a great idea to introduce a new tourist office where visitors can get maps and information on our wonderful town. We want this new office to be easily accessible so visitors entering through the main entrance will find it directly to their right. Now I think that’s all I have to tell you. Please feel free to ask any questions if you would like to know anything else.",
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "What kind of changes is the station making?",
+					"options": [
+						{
+							"label": "A",
+							"text": "relocation"
+						},
+						{
+							"label": "B",
+							"text": "reconstruction"
+						},
+						{
+							"label": "C",
+							"text": "expansion"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"We have decided that our only option is to make the area bigger by building new platforms and new facilities, such as cafes and lounge areas."
+					]
+				},
+				{
+					"number": 2,
+					"text": "The original buildings on the site were",
+					"options": [
+						{
+							"label": "A",
+							"text": "houses"
+						},
+						{
+							"label": "B",
+							"text": "industrial buildings"
+						},
+						{
+							"label": "C",
+							"text": "shops"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Instead, we have purchased the site just across the road on which there used to be a lot of houses that were later converted into shops."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Firstly the station intended to use the site as",
+					"options": [
+						{
+							"label": "A",
+							"text": "a leisure centre"
+						},
+						{
+							"label": "B",
+							"text": "a car park"
+						},
+						{
+							"label": "C",
+							"text": "a lounge"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Initially, the station had planned to use the site as a car park."
+					]
+				},
+				{
+					"number": 4,
+					"text": "The new buildings will be situated to the right side of",
+					"options": [
+						{
+							"label": "A",
+							"text": "the shopping district"
+						},
+						{
+							"label": "B",
+							"text": "the apartment blocks"
+						},
+						{
+							"label": "C",
+							"text": "the new formal gardens"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"The new leisure complex will be located to the right of the shopping district, so these formal gardens will serve as a meeting place for pedestrians."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below.",
+			"instructions_html": "Label the map below.\n<img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/b367cc84-f14a-47e6-a616-1ef89f6d5700.png\" alt=\"Youpass Listening Leisure Complex Plan (1)\">",
+			"options": ["A", "B", "C", "D", "E", "F", "G"],
+			"questions": [
+				{
+					"number": 5,
+					"text": "Café",
+					"answer": "F",
+					"quotes": [
+						"So if you could please focus your attention on the maps in front of you, we will start at the main entrance and make our way towards the cafe, which is located behind the wall that we can see directly in front of us, just next to the rear entrance."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Taxi Rank",
+					"answer": "C",
+					"quotes": [
+						"Therefore, we have introduced a taxi rank with its own waiting area. In order to reach these facilities, the visitors must simply leave the complex via the rear entrance and turn left.",
+						"Therefore, we have introduced a taxi rank with its own waiting area."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Car Park",
+					"answer": "D",
+					"quotes": [
+						"Visitors who have traveled to the station by car can leave it in the car park for a small fee, which is located just outside of the rear entrance to the right."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Passenger Waiting Area",
+					"answer": "E",
+					"quotes": [
+						"We have, therefore, decided to introduce a passenger waiting area inside the new complex to the right of the rear entrance with comfortable seating where passengers can pass the time comfortably in the warmth."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Waiting Area for Wheelchair Users",
+					"answer": "B",
+					"quotes": [
+						"As this space is a distance away from the station, we have also proposed a waiting area for wheelchair users that is closer.",
+						"As visitors enter through the main entrance, this space will be located behind the wall to their left."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Tourist Office",
+					"answer": "A",
+					"quotes": [
+						"Finally, we have also decided that it would be a great idea to introduce a new tourist office where visitors can get maps and information on our wonderful town.",
+						"We want this new office to be easily accessible so visitors entering through the main entrance will find it directly to their right."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/b367cc84-f14a-47e6-a616-1ef89f6d5700.png"
+	]
+}

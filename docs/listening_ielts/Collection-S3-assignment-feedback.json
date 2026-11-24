@@ -1,0 +1,212 @@
+{
+	"id": "f16e8a4a-b060-42f5-9211-f7e73cd02405",
+	"url": "https://stepielts.com/student/listening/f16e8a4a-b060-42f5-9211-f7e73cd02405?mode=practice",
+	"title": "Assignment Feedback",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/1840da4b-0e6c-4b20-8cfa-6bade0459b8f.mp3",
+	"transcript": "Speaker 0: Part three. You will hear a student called Karen discussing her assignment with her course tutor. First, you have some time to look at questions 21 to 27. Now listen carefully and answer questions 21 to 27.\nSpeaker 1: Oh, Karen. Hi. Come in. Take a seat. I wanted to talk to you about this assignment you've handed in. I'll give it back to you with detailed feedback. But first, there are a few things I'd like to run over, you know, pointers for next time. When you hand in your next assignment, can you ensure that you've gone through these aspects?\nSpeaker 0: Sure. Will do.\nSpeaker 1: Now the first thing is your literature review. It was not sufficient enough, so I would like to see your book reports to get your complete view. So can you submit those with your next assignment? Then I can find out which parts you've chosen to leave out.\nSpeaker 0: Oh, yes. Sorry. I didn't realize you needed them. It did cross my mind that what I've handed in is a bit thin. But then I started to work on another project and forgot to revise it.\nSpeaker 1: That's alright. And I've found some errors, just small ones where you had quoted people but not recorded the information properly at the end. Don't forget to go through and make sure that your references are accurate. They were very relevant though. Just check and revise them using the format sample that I've emailed you beforehand. Okay?\nSpeaker 0: Yes. I'll remember to check them.\nSpeaker 1: Now, you've made some good points, but it might be helpful if you could include a few other examples just to drive your point home. Don't start writing more paragraphs, just slot them in at the end of what you've already written. Now the thing you have to do if you really want to get a better mark is expand the ideas you're presenting. Then your argument becomes more valid.\nSpeaker 0: Okay. Can I talk to you about the presentation I've got to do?\nSpeaker 1: Sure. Of course.\nSpeaker 0: When shall I stage what we've studied? Am I doing it next term? I can't remember what we said.\nSpeaker 1: Well, the thing is Marco couldn't do it, so you agreed to do it at the next seminar. So how can I help?\nSpeaker 0: Actually, I'm wondering what you suggest to be the key part of the presentation. I mean, which part should I spend most of my time on?\nSpeaker 1: That's a question to the point. Well, you have very little time really, so it's absolutely essential for you to explain the experiment. Of course, you'll have a summary in the handouts you give out, but you can still start the presentation with that. It's optional though.\nSpeaker 0: And do I have to give you the abstract first or shall I just email it to all the students?\nSpeaker 1: No. I do need to see it first and see if it needs to be polished up, and then we'll get some printouts done. Now, they'll need to be done by the December 3, so I'll need to see it by the November 26, if that's okay.\nSpeaker 0: Yes. Fine.\nSpeaker 1: Oh, and I need to talk to you about where the presentation is going to be made. Given the actual number of participants and audience, we've had problems with the rooms because we'll need something bigger than usual. In our faculty, the only room available is the computer room, which is far from suitable considering the layout of the room. So we'll have to go across the road and do it in the chemistry lab. It's big enough to accommodate everyone and is equipped with the proper overhead projector in there as well.\nSpeaker 0: Okay. Right. And I get a grade for this, don't I?\nSpeaker 1: Yes. Your first one was graded by your tutor, but this one will be scored by the professor. But relax. The criteria will be consistent, and you'll get an unbiased result.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 28 to 30. Now listen and answer questions 28 to 30. Oh, and I've sorted out my modules for next year. You asked me to tell you about my choices.\nSpeaker 1: Yes. What have you decided?\nSpeaker 0: Oh, it was really hard to determine. I've already done the data collection once, so that wasn't really a choice. I couldn't make up my mind between language and society and communication skills. I've read the syllabuses, but they sound more or less the same to me. Anyway, I went for communication skills in the end because I know the lecturer. Actually, social interaction seems to cover much the same ground, so I didn't bother with that either. I thought discourse analysis looked really interesting. It studies and analyzes the text beyond the literal meaning of the sentences. It looks into the connotation beyond the sentences, and in fact, it also covers a little bit of research methodology in it. So I thought I'd do that rather than the full methodology course. Kill two birds with one stone as it were. And then I fancied something drastically different, so I thought psycholinguistics would be interesting unless you think it'll be more worthwhile for me to do the phonology course.\nSpeaker 1: No. I think you've made sensible choices. I'm glad you're organized. Okay. Let's meet again in a couple of weeks to see how you're getting on.\nSpeaker 0: Okay. Thank you. See you then. That is the end of part three. You now have thirty seconds to check your answers to part three.",
+	"question_groups": [
+		{
+			"range": "21-22",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "Assignment Feedback\nThings That Need To Be Done\nHand in book reports with the next assignment\nCheck accuracy of the [21] in the last section\nGive more [22]\nExpand ideas to improve the grade",
+			"body_html": "<table><tbody><tr><td><h4><strong>Assignment Feedback</strong></h4><p><strong>Things That Need To Be Done</strong></p><ul><li>Hand in book reports with the next assignment</li><li>Check accuracy of the [21] in the last section</li><li>Give more [22]</li><li>Expand ideas to improve the grade</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Check accuracy of the [21] in the last section",
+					"answer": "references",
+					"quotes": [
+						"Don't forget to go through and make sure that your references are accurate."
+					]
+				},
+				{
+					"number": 22,
+					"text": "Give more [22]",
+					"answer": "examples",
+					"quotes": [
+						"Now, you've made some good points, but it might be helpful if you could include a few other examples just to drive your point home."
+					]
+				}
+			]
+		},
+		{
+			"range": "23-27",
+			"type": "FILL_BLANK",
+			"instructions": "Answer the questions below. Write NO MORE THAN THREE WORDS for each answer.",
+			"body": "23 When will Karen give her presentation?\n[23]\n24 What must she do during the presentation?\n[24]\n25 By which date does she have to submit an abstract?\n[25]\n26 Where will the presentation take place?\n[26]\n27 Who will grade her presentation?\n[27]",
+			"body_html": "<p>23 When will Karen give her presentation?<br>[23]</p><p>24 What must she do during the presentation?<br>[24]</p><p>25 By which date does she have to submit an abstract?<br>[25]</p><p>26 Where will the presentation take place?<br>[26]</p><p>27 Who will grade her presentation?<br>[27]</p>",
+			"questions": [
+				{
+					"number": 23,
+					"text": "When will Karen give her presentation?",
+					"answer": "next seminar / the next seminar",
+					"quotes": [
+						"Well, the thing is Marco couldn't do it, so you agreed to do it at the next seminar."
+					]
+				},
+				{
+					"number": 24,
+					"text": "What must she do during the presentation?",
+					"answer": "explain the experiment / explain experiment / explain the experiments",
+					"quotes": [
+						"Well, you have very little time really, so it's absolutely essential for you to explain the experiment."
+					]
+				},
+				{
+					"number": 25,
+					"text": "By which date does she have to submit an abstract?",
+					"answer": "November 26 / 26th November / 26 November / November 26th",
+					"quotes": [
+						"Now, they'll need to be done by the December 3, so I'll need to see it by the November 26, if that's okay."
+					]
+				},
+				{
+					"number": 26,
+					"text": "Where will the presentation take place?",
+					"answer": "chemistry lab / the chemistry lab",
+					"quotes": [
+						"So we'll have to go across the road and do it in the chemistry lab."
+					]
+				},
+				{
+					"number": 27,
+					"text": "Who will grade her presentation?",
+					"answer": "the professor / professor / a professor",
+					"quotes": [
+						"Your first one was graded by your tutor, but this one will be scored by the professor."
+					]
+				}
+			]
+		},
+		{
+			"range": "28-30",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose THREE letters, A–H",
+			"questions": [
+				{
+					"number": 28,
+					"text": "Which THREE modules will Karen study next year?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Communication Skills"
+						},
+						{
+							"label": "B",
+							"text": "Data Collection"
+						},
+						{
+							"label": "C",
+							"text": "Discourse Analysis"
+						},
+						{
+							"label": "D",
+							"text": "Language and Society"
+						},
+						{
+							"label": "E",
+							"text": "Phonology"
+						},
+						{
+							"label": "F",
+							"text": "Psycholinguistics"
+						},
+						{
+							"label": "G",
+							"text": "Research Methodology"
+						},
+						{
+							"label": "H",
+							"text": "Social Interaction"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 29,
+					"text": "Which THREE modules will Karen study next year?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Communication Skills"
+						},
+						{
+							"label": "B",
+							"text": "Data Collection"
+						},
+						{
+							"label": "C",
+							"text": "Discourse Analysis"
+						},
+						{
+							"label": "D",
+							"text": "Language and Society"
+						},
+						{
+							"label": "E",
+							"text": "Phonology"
+						},
+						{
+							"label": "F",
+							"text": "Psycholinguistics"
+						},
+						{
+							"label": "G",
+							"text": "Research Methodology"
+						},
+						{
+							"label": "H",
+							"text": "Social Interaction"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 30,
+					"text": "Which THREE modules will Karen study next year?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Communication Skills"
+						},
+						{
+							"label": "B",
+							"text": "Data Collection"
+						},
+						{
+							"label": "C",
+							"text": "Discourse Analysis"
+						},
+						{
+							"label": "D",
+							"text": "Language and Society"
+						},
+						{
+							"label": "E",
+							"text": "Phonology"
+						},
+						{
+							"label": "F",
+							"text": "Psycholinguistics"
+						},
+						{
+							"label": "G",
+							"text": "Research Methodology"
+						},
+						{
+							"label": "H",
+							"text": "Social Interaction"
+						}
+					],
+					"answer": "F"
+				}
+			]
+		}
+	],
+	"images": []
+}

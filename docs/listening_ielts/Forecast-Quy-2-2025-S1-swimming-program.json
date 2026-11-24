@@ -1,0 +1,112 @@
+{
+	"id": "9a0370dd-4c94-45fe-92da-d606839dd88d",
+	"url": "https://stepielts.com/student/listening/9a0370dd-4c94-45fe-92da-d606839dd88d?mode=practice",
+	"title": "Swimming Program",
+	"source": "Forecast Quý 2-2025",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/e0abef79-63ef-4ce4-83e4-daeaf16359f5.mp3",
+	"transcript": "Speaker 1: Good morning. How can I help you?\nSpeaker 2: Good morning. I’m new in Bradfort town and I want to find out information about the swimming pools here. The weather’s getting hot, I really want to go swimming. Maybe I can sign up for swimming lessons to improve my skills. My swimming skills are a little rusty.\nSpeaker 1: Sure. There are three pools in town. I’m sure there will be one that suits your needs.\nSpeaker 2: What are they like?\nSpeaker 1: The first one is called Happy Summer which is mainly for young children. It was opened this May, so it’s quite new.\nSpeaker 2: Oh, how big is it?\nSpeaker 1: The pool is about 50 meters in length. So it’s big enough. There’s a café, too. You can have a cup of soft drink when you finish swimming.\nSpeaker 2: It all sounds quite nice.\nSpeaker 1: I have to tell you there is no parking lot nearby. So if you drive there, you may spend some time looking for a parking location.\nSpeaker 2: Right. That can be a problem. I don’t want to do on-street parking. It’s kind of expensive. What are the other options?\nSpeaker 1: Blue Ocean is quite good. It opens to swimmers of entry level.\nSpeaker 2: Oh, I guess I might belong at this level. How deep is the pool?\nSpeaker 1: They have areas where the water is quite deep, about 3 meters in depth. And they have changing rooms for you, so it’s quite convenient. You don’t have to change in the bathrooms.\nSpeaker 2: Good. When does it open? I only have time in the evenings.\nSpeaker 1: In the evenings? I’m afraid it opens from 9 am to 5 pm every day.\nSpeaker 2: That’s too bad. Their timetable doesn’t work with me. My daily business meetings finish at 5. And it usually takes me half an hour to get there.\nSpeaker 1: How about Water Bay? It opens from 2pm to 9pm. And it provides free lockers for your stuff.\nSpeaker 2: Is it open to beginners?\nSpeaker 1: Yes, actually it’s only accessible for adult learners who enroll in the swimming courses there.\nSpeaker 2: Oh, I might consider that. I don’t feel comfortable if I have to learn swimming with a group of kids. Are there any drawbacks?\nSpeaker 1: Usually, a lot of people take part in their training program, so the pool gets a little crowded, especially in summer. But if you take the training in winter, the situation is much better.\nSpeaker 2: I guess it’s not a big problem, and I really don’t have much of a choice.\nSpeaker 1: So, as I said, you have to sign up for their training course, if you want to go swimming there.\nSpeaker 2: Yeah, I understand. What is the course like? Do I get a personal trainer?\nSpeaker 3: Yes. Their trainers will train you 3 times a week according to your schedule. You can pick three days of a week, but you can’t change the scheduled days. Currently, there are 8 personal trainers, remember to schedule with them at least one week in advance.\nSpeaker 2: I see.\nSpeaker 1: The training sessions start at half past five on those days. So, arrive early to warm up.\nSpeaker 2: I will keep that in mind. How much is the course?\nSpeaker 1: Hmmm, it’s $1000 for a 2-month program. With their membership, you can get a discount. And if you need a transportation service to pick you up, there’s an extra cost for this. But, their membership will cover it for you.\nSpeaker 2: I don’t need that. My house is just three blocks away from Water Bay. I can ride a bicycle there.\nSpeaker 1: Alright, if you need further information, you can call Water Bay’s hotline, which is 99087668.\nSpeaker 2: Thanks for letting me know.",
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below Write NO MORE THAN TWO WORDS for each answer",
+			"body": "Brands\nTarget groups\nFacilities\nDisadvantages/advantages\nHappy Summer\n[1]\n[2]\nparking problems\nBlue Ocean\nentry level\n[3]\n[4] is hard to follow\nWater Bay\nfor [5]\nfree [6]\n[7] in summer",
+			"body_table": [
+				["Brands", "Target groups", "Facilities", "Disadvantages/advantages"],
+				["Happy Summer", "[1]", "[2]", "parking problems"],
+				["Blue Ocean", "entry level", "[3]", "[4] is hard to follow"],
+				["Water Bay", "for [5]", "free [6]", "[7] in summer"]
+			],
+			"body_html": "<p></p><table><tbody><tr><td><p>Brands</p></td><td><p>Target groups</p></td><td><p>Facilities</p></td><td><p>Disadvantages/advantages</p></td></tr><tr><td><p>Happy Summer</p></td><td><p> [1]</p></td><td><p>[2]</p></td><td><p>parking problems</p></td></tr><tr><td><p>Blue Ocean</p></td><td><p>entry level</p></td><td><p> [3]</p></td><td><p>[4]  is hard to follow</p></td></tr><tr><td><p>Water Bay</p></td><td><p>for  [5]</p></td><td><p>free  [6]</p></td><td><p>[7] in summer</p></td></tr></tbody></table><p></p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "",
+					"answer": "young children",
+					"quotes": [
+						"The first one is called Happy Summer which is mainly for young children."
+					]
+				},
+				{
+					"number": 2,
+					"text": "",
+					"answer": "a cafe / cafe / a café / café",
+					"quotes": ["There’s a café, too."]
+				},
+				{
+					"number": 3,
+					"text": "",
+					"answer": "changing room / changing rooms",
+					"quotes": [
+						"And they have changing rooms for you, so it’s quite convenient."
+					]
+				},
+				{
+					"number": 4,
+					"text": "[4] is hard to follow",
+					"answer": "timetable",
+					"quotes": ["Their timetable doesn’t work with me."]
+				},
+				{
+					"number": 5,
+					"text": "for [5]",
+					"answer": "adult learners",
+					"quotes": [
+						"Yes, actually it’s only accessible for adult learners who enroll in the swimming courses there."
+					]
+				},
+				{
+					"number": 6,
+					"text": "free [6]",
+					"answer": "lockers",
+					"quotes": ["And it provides free lockers for your stuff."]
+				},
+				{
+					"number": 7,
+					"text": "[7] in summer",
+					"answer": "crowded",
+					"quotes": [
+						"Usually, a lot of people take part in their training program, so the pool gets a little crowded, especially in summer."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below Write ONE WORD OR A NUMBER for each answer",
+			"body": "Swimming Training Program\nFrequency: [8] times a week\nTime: start from [9] p.m.\nExtra cost: for [10] service",
+			"body_html": "<h3>Swimming Training Program</h3><p>Frequency:  [8]  times a week</p><p>Time: start from [9]  p.m.</p><p>Extra cost: for [10] service</p><p></p>",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Frequency: [8] times a week",
+					"answer": "3 / three",
+					"quotes": [
+						"Their trainers will train you 3 times a week according to your schedule."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Time: start from [9] p.m.",
+					"answer": "5.30 / 5:30",
+					"quotes": [
+						"The training sessions start at half past five on those days."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Extra cost: for [10] service",
+					"answer": "transportation",
+					"quotes": [
+						"And if you need a transportation service to pick you up, there’s an extra cost for this."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

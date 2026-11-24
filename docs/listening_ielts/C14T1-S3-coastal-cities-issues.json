@@ -1,0 +1,208 @@
+{
+	"id": "7e7508d2-e50d-4159-9dc1-b1d44ffef48b",
+	"url": "https://stepielts.com/student/listening/7e7508d2-e50d-4159-9dc1-b1d44ffef48b?mode=practice",
+	"title": "Coastal Cities\" Issues",
+	"source": "C14T1",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/f14f152c-f86c-4f1d-a2ad-5be6c495c1b3.mp3",
+	"transcript": "Speaker 0: Section three. You will hear two urban planning students called Carla and Rob discussing their presentation on cities built by the sea, following instructions from their tutor. First, you have some time to look at questions 21 to 25. Now listen carefully and answer questions 21 to 25.\nSpeaker 1: Okay. So what I'd like you to do now is to talk to your partner about your presentations on urban planning. You should have done most of the reading now, so I'd like you to share your ideas and talk about the structure of your presentation and what you need to do next.\nSpeaker 2: Okay, Rob. I'm glad we chose quite a specific topic, cities built next to the sea. It made it much easier to find relevant information.\nSpeaker 3: Yeah. And cities are growing so quickly. I mean, we know that more than half the world's population lives in cities now.\nSpeaker 2: Yeah. Though that's all cities, not just ones on the coast. But most of the biggest cities are actually built by the sea. I'd not realized that before. Nor me.\nSpeaker 3: And what's more, a lot of them are built at places where rivers come out into the sea, but apparently, this can be a problem.\nSpeaker 2: Why?\nSpeaker 3: Well, as the city expands, agriculture and industry tend to spread further inland along the rivers, and so agriculture moves even further inland up the river. That's not necessarily a problem, except it means more and more pollutants are discharged into the rivers.\nSpeaker 2: So these are brought downstream to the cities?\nSpeaker 3: Right. Did you read that article about Miami on the East Coast Of The USA?\nSpeaker 2: No.\nSpeaker 3: Well, apparently, back in the nineteen fifties, they built channels to drain away the water in case of flooding.\nSpeaker 2: Sounds sensible?\nSpeaker 3: Yeah. They spent quite a lot of money on them, but what they didn't take into account was global warming. So they built the drainage channels too close to sea level, and now sea levels are rising. They're more or less useless. If there's a lot of rain, the water can't run away. There's nowhere for it to go. The whole design was faulty.\nSpeaker 2: So what are the authorities doing about it now?\nSpeaker 3: I don't know. I did read that they're aiming to stop disposing of wastewater into the ocean over the next ten years.\nSpeaker 2: But that won't help with flood prevention now, will it? No. Really, they just need to\nSpeaker 3: find the money for something to replace the drainage channels in order to protect against flooding now. But in the long term, they need to consider the whole ecosystem.\nSpeaker 2: Right. Really, though, coastal cities can't deal with their problems on their own, can they? I mean, they've got to start acting together at an international level instead of just doing their own thing.\nSpeaker 3: Absolutely. The thing is everyone knows what the problems are, and environmentalists have a pretty good idea of what we should be doing about them. So they should be able to work together to some extent. But it's going to be a long time before countries come to a decision on what principles they're prepared to abide by.\nSpeaker 2: Yeah. If they ever do.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 26 to 30. Now listen and answer questions 26 to 30.\nSpeaker 2: So I think we've probably got enough for our presentation. It's only fifteen minutes.\nSpeaker 3: Okay. So I suppose we'll begin with some general historical background about why coastal cities were established, but we don't want to spend too long on that. The other students will already know a bit about it. It's all to do with communications and so on.\nSpeaker 2: Yes. We should mention some geographical factors, things like wetlands and river estuaries and coastal erosion and so on. We could have some maps of different cities with these features marked.\nSpeaker 3: On a handout, you mean, or some slides everyone can see?\nSpeaker 2: Yeah. That'd be better.\nSpeaker 3: It'd be good to go into past mistakes in a bit more detail. Did you read that case study of the problems there were in New Orleans with flooding a few years ago?\nSpeaker 2: Yes. We could use that as the basis for that part of the talk. I don't think the other students would have read it, but they'll remember hearing about the flooding at the time.\nSpeaker 3: Okay. So that's probably enough background.\nSpeaker 2: So then we'll go on to talk about what action's been taken to deal with the problems of coastal cities.\nSpeaker 3: Okay. What else do we need to talk about? Maybe something on future risks, looking more at the long term if populations continue to grow?\nSpeaker 2: Yeah. We'll need to do a bit of work there. I haven't got much information, have you?\nSpeaker 3: No. We'll need to look at some websites. Shouldn't take too long.\nSpeaker 2: Okay. And I think we should end by talking about international implications. Maybe we could ask people in the audience. We've got people from quite a lot of different places.\nSpeaker 3: That'd be interesting if we have time. Yes. So now should we go\nSpeaker 0: That is the end of section three. You now have half a minute to check your answers.",
+	"body": {
+		"text": "Parts of the presentation\nHistorical background [26]\nGeographical factors [27]\nPast mistakes [28]\nFuture risks [29]\nInternational implications [30]",
+		"html": "<p><strong>Parts of the presentation</strong></p><p>Historical background          [26]</p><p>Geographical factors            [27]</p><p>Past mistakes                        [28]</p><p>Future risks                           [29]</p><p>International implications    [30]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-25",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Carla and Rob were surprised to learn that coastal cities",
+					"options": [
+						{
+							"label": "A",
+							"text": "contain nearly half the world’s population."
+						},
+						{
+							"label": "B",
+							"text": "include most of the world’s largest cities."
+						},
+						{
+							"label": "C",
+							"text": "are growing twice as fast as other cities."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But most of the biggest cities are actually built by the sea. I'd not realized that before. Nor me."
+					]
+				},
+				{
+					"number": 22,
+					"text": "According to Rob, building coastal cities near to rivers",
+					"options": [
+						{
+							"label": "A",
+							"text": "may bring pollution to the cities."
+						},
+						{
+							"label": "B",
+							"text": "may reduce the land available for agriculture."
+						},
+						{
+							"label": "C",
+							"text": "may mean the countryside is spoiled by industry."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Well, as the city expands, agriculture and industry tend to spread further inland along the rivers, and so agriculture moves even further inland up the river. That's not necessarily a problem, except it means more and more pollutants are discharged into the rivers. So these are brought downstream to the cities?"
+					]
+				},
+				{
+					"number": 23,
+					"text": "What mistake was made when building water drainage channels in Miami in the 1950s?",
+					"options": [
+						{
+							"label": "A",
+							"text": "There were not enough for them."
+						},
+						{
+							"label": "B",
+							"text": "They were made of unsuitable materials."
+						},
+						{
+							"label": "C",
+							"text": "They did not allow for the effects of climate change."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"They spent quite a lot of money on them, but what they didn't take into account was global warming. So they built the drainage channels too close to sea level, and now sea levels are rising."
+					]
+				},
+				{
+					"number": 24,
+					"text": "What do Rob and Carla think that the authorities in Miami should do immediately?",
+					"options": [
+						{
+							"label": "A",
+							"text": "take measures to restore ecosystems"
+						},
+						{
+							"label": "B",
+							"text": "pay for a new flood prevention system"
+						},
+						{
+							"label": "C",
+							"text": "stop disposing of waste materials into the ocean"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"find the money for something to replace the drainage channels in order to protect against flooding now."
+					]
+				},
+				{
+					"number": 25,
+					"text": "What do they agree should be the priority for international action?",
+					"options": [
+						{
+							"label": "A",
+							"text": "greater coordination of activities"
+						},
+						{
+							"label": "B",
+							"text": "more sharing of information"
+						},
+						{
+							"label": "C",
+							"text": "agreement on shared policies"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I mean, they've got to start acting together at an international level instead of just doing their own thing."
+					]
+				}
+			]
+		},
+		{
+			"range": "26-30",
+			"type": "MATCHING",
+			"instructions": "What decision do the students make about each of the following parts of their presentation? Choose FIVE answers from the box and write the correct letter, A-G, next to Questions 26-30.",
+			"options": [
+				{
+					"label": "A",
+					"text": "use visuals"
+				},
+				{
+					"label": "B",
+					"text": "keep it short"
+				},
+				{
+					"label": "C",
+					"text": "involve other students"
+				},
+				{
+					"label": "D",
+					"text": "check the information is accurate"
+				},
+				{
+					"label": "E",
+					"text": "provide a handout"
+				},
+				{
+					"label": "F",
+					"text": "focus on one example"
+				},
+				{
+					"label": "G",
+					"text": "do online research"
+				}
+			],
+			"body": "Parts of the presentation\nHistorical background [26]\nGeographical factors [27]\nPast mistakes [28]\nFuture risks [29]\nInternational implications [30]",
+			"body_html": "<p><strong>Parts of the presentation</strong></p><p>Historical background          [26]</p><p>Geographical factors            [27]</p><p>Past mistakes                        [28]</p><p>Future risks                           [29]</p><p>International implications    [30]</p>",
+			"questions": [
+				{
+					"number": 26,
+					"text": "Historical background",
+					"answer": "B",
+					"quotes": ["Okay."]
+				},
+				{
+					"number": 27,
+					"text": "Geographical factors",
+					"answer": "A",
+					"quotes": [
+						"We could have some maps of different cities with these features marked."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Past mistakes",
+					"answer": "F",
+					"quotes": [
+						"We could use that as the basis for that part of the talk."
+					]
+				},
+				{
+					"number": 29,
+					"text": "Future risk",
+					"answer": "G",
+					"quotes": ["We'll need to look at some websites."]
+				},
+				{
+					"number": 30,
+					"text": "International implications",
+					"answer": "C",
+					"quotes": ["Maybe we could ask people in the audience."]
+				}
+			]
+		}
+	],
+	"images": []
+}

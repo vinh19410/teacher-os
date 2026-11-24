@@ -1,0 +1,117 @@
+{
+	"id": "593ee384-dbca-4d4e-84ff-2f68cd2f1d63",
+	"url": "https://stepielts.com/student/listening/593ee384-dbca-4d4e-84ff-2f68cd2f1d63?mode=practice",
+	"title": "Choosing a Part-time Job",
+	"source": "Forecast Quý 2-2025",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/67fc0452-a678-4d67-bd7d-6829e7545505.mp3",
+	"transcript": "Speaker 1: Agent: Hello. Westwood Employment Office. How can I help you?\nSpeaker 2: Man: Good morning. I recently saw some part time jobs on your website. I’m here to see if there’s any good chance for me.\nSpeaker 1: Agent: That’s right. We have vacancies for 5 part-time jobs at the moment. I can give you the main details of each job if you like.\nSpeaker 2: Man: Yes, that would be great. I’d like to see which one suits me most.\nSpeaker 1: Agent: So the first one I recommend is social worker who will help disabled people during the day in the community hospital.\nSpeaker 2: Man: I’ve never done that before. I was wondering if they accept someone without any related experience?\nSpeaker 1: Agent: For this job, training before you get started is compulsory. And the training will last for a week since this is required by the government.\nSpeaker 2: Man: Okay, when do I need to attend the training?\nSpeaker 1: Agent: For people who get started this month, part of the training will be delivered this Tuesday, during the day. The rest will be given on weekend.\nSpeaker 2: Man: In that case, I don’t think I can attend as I may have some routine work to do this Tuesday, so what about the other jobs?\nSpeaker 1: Agent: There is a post for a security guard in a supermarket.\nSpeaker 2: Man: What are the hours of work?\nSpeaker 1: Agent: There’s a night shift from 8pm to 6am. And you will get a free uniform before you start the job as they don’t allow employees to dress casually.\nSpeaker 2: Man: Hmm, I’m not really keen on working night shifts. I get headache if I regularly stay up late. What are the other options?\nSpeaker 1: Agent: If you are interested in sales, you can consider this one. It is a job at a furniture store. The only thing that you might not be happy with is that the work time may be variable.\nSpeaker 2: Man: How’s the pay?\nSpeaker 1: Agent: It’s pretty good, $20 an hour. The job requires the candidate to be reliable. I think you can qualify.\nSpeaker 2: Man: Hmm, this is a hard one. I used to work for a furniture company, but the experience wasn’t satisfying, so I got to be careful this time. Is there an opportunity about working in an office?\nSpeaker 1: Agent: How about working in a local school? There is a vacancy for teaching assistant. You can work regular hours from Monday to Friday.\nSpeaker 2: Man: That sounds pretty nice. Does it require any skills?\nSpeaker 1: Agent: It says that the candidate should be good with keyboard. I think most people have that skill nowadays.\nSpeaker 2: Man: That wouldn’t be a problem, I’m pretty good at typing and using a variety of office software. Hmm I remember there is one more choice, right?\nSpeaker 1: Agent: Yes. Part time actors. A movie company needs people to work part time at Kennedy Park this Saturday. It’s just for this week, though.\nSpeaker 2: Man: That’s interesting. I might check that out.\nSpeaker 1: Agent: Yes. They offer free transport, so you don’t have to worry about how to get there. If you are good at using body language, then it’s definitely for you.\nSpeaker 2: Man: Did they say that the candidates need to be good-looking?\nSpeaker 1: Agent: Well, above average.\nSpeaker 2: Man: Thank you. I guess I can tell one of my friends who seems to have some potential in acting. But for me, I want to know more information about the teaching assistant job. I used to be my cousins’ tutor, and I use computers every day, so I guess it’s the best one. Can you give me a brochure or something?\nSpeaker 1: Agent: Yes. Here it is.",
+	"body": {
+		"text": "Job Titles\nWhere to do\nTime\nRequirement\nSocial worker\ncommunity hospital\nWork during the day\nNeeds [1]\nSecurity guard\nIn the [2]\nWork at [3]\nOffer free [4]\nSales assistant\n[5] store\n[6] time\nBeing [7]\nTeaching assistant\na [8] school\nMonday to Friday\n[9] skills\nPart-time actor\nKennedy Park\nWeekend\nGood [10] language",
+		"html": "<table><tbody><tr><td><p><strong>Job Titles</strong></p></td><td><p><strong>Where to do</strong></p></td><td><p><strong>Time</strong></p></td><td><p><strong>Requirement</strong></p></td></tr><tr><td><p><strong>Social worker</strong></p></td><td><p>community hospital</p></td><td><p>Work during the day</p></td><td><p>Needs [1]</p></td></tr><tr><td><p><strong>Security guard</strong></p></td><td><p>In the    [2]</p></td><td><p>Work at   [3]</p></td><td><p>Offer free   [4]</p></td></tr><tr><td><p><strong>Sales assistant</strong></p></td><td><p>  [5]   store</p></td><td><p>  [6]  time</p></td><td><p>Being  [7]</p></td></tr><tr><td><p><strong>Teaching assistant</strong></p></td><td><p>a  [8]  school</p></td><td><p>Monday to Friday </p></td><td><p>[9] skills</p></td></tr><tr><td><p><strong>Part-time actor</strong></p></td><td><p>Kennedy Park</p></td><td><p>Weekend </p></td><td><p>Good  [10]  language</p></td></tr></tbody></table><p></p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below Write ONE WORD ONLY for each answer.",
+			"body": "Job Titles\nWhere to do\nTime\nRequirement\nSocial worker\ncommunity hospital\nWork during the day\nNeeds [1]\nSecurity guard\nIn the [2]\nWork at [3]\nOffer free [4]\nSales assistant\n[5] store\n[6] time\nBeing [7]\nTeaching assistant\na [8] school\nMonday to Friday\n[9] skills\nPart-time actor\nKennedy Park\nWeekend\nGood [10] language",
+			"body_table": [
+				["Job Titles", "Where to do", "Time", "Requirement"],
+				[
+					"Social worker",
+					"community hospital",
+					"Work during the day",
+					"Needs [1]"
+				],
+				["Security guard", "In the [2]", "Work at [3]", "Offer free [4]"],
+				["Sales assistant", "[5] store", "[6] time", "Being [7]"],
+				[
+					"Teaching assistant",
+					"a [8] school",
+					"Monday to Friday",
+					"[9] skills"
+				],
+				["Part-time actor", "Kennedy Park", "Weekend", "Good [10] language"]
+			],
+			"body_html": "<table><tbody><tr><td><p><strong>Job Titles</strong></p></td><td><p><strong>Where to do</strong></p></td><td><p><strong>Time</strong></p></td><td><p><strong>Requirement</strong></p></td></tr><tr><td><p><strong>Social worker</strong></p></td><td><p>community hospital</p></td><td><p>Work during the day</p></td><td><p>Needs [1]</p></td></tr><tr><td><p><strong>Security guard</strong></p></td><td><p>In the    [2]</p></td><td><p>Work at   [3]</p></td><td><p>Offer free   [4]</p></td></tr><tr><td><p><strong>Sales assistant</strong></p></td><td><p>  [5]   store</p></td><td><p>  [6]  time</p></td><td><p>Being  [7]</p></td></tr><tr><td><p><strong>Teaching assistant</strong></p></td><td><p>a  [8]  school</p></td><td><p>Monday to Friday </p></td><td><p>[9] skills</p></td></tr><tr><td><p><strong>Part-time actor</strong></p></td><td><p>Kennedy Park</p></td><td><p>Weekend </p></td><td><p>Good  [10]  language</p></td></tr></tbody></table><p></p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Needs [1]",
+					"answer": "training",
+					"quotes": [
+						"Agent: For this job, training before you get started is compulsory."
+					]
+				},
+				{
+					"number": 2,
+					"text": "In the [2]",
+					"answer": "supermarket",
+					"quotes": [
+						"Agent: There is a post for a security guard in a supermarket."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Work at [3]",
+					"answer": "night",
+					"quotes": ["Agent: There’s a night shift from 8pm to 6am."]
+				},
+				{
+					"number": 4,
+					"text": "Offer free [4]",
+					"answer": "uniform",
+					"quotes": [
+						"And you will get a free uniform before you start the job as they don’t allow employees to dress casually."
+					]
+				},
+				{
+					"number": 5,
+					"text": "[5] store",
+					"answer": "furniture",
+					"quotes": ["It is a job at a furniture store."]
+				},
+				{
+					"number": 6,
+					"text": "[6] time",
+					"answer": "variable",
+					"quotes": [
+						"The only thing that you might not be happy with is that the work time may be variable."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Being [7]",
+					"answer": "reliable",
+					"quotes": ["The job requires the candidate to be reliable."]
+				},
+				{
+					"number": 8,
+					"text": "a [8] school",
+					"answer": "local",
+					"quotes": ["Agent: How about working in a local school?"]
+				},
+				{
+					"number": 9,
+					"text": "[9] skills",
+					"answer": "keyboard",
+					"quotes": [
+						"Agent: It says that the candidate should be good with keyboard."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Good [10] language",
+					"answer": "body",
+					"quotes": [
+						"If you are good at using body language, then it’s definitely for you."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

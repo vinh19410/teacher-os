@@ -1,0 +1,239 @@
+{
+	"id": "2a1e52c5-85ea-4daf-b178-dc55dcd0eee5",
+	"url": "https://stepielts.com/student/listening/2a1e52c5-85ea-4daf-b178-dc55dcd0eee5?mode=practice",
+	"title": "Talk to new kitchen assistants",
+	"source": "C12T1",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/1d701797-0ac0-4676-bcd2-70ec8c7f0642.mp3",
+	"transcript": "Speaker 0: Now turn to section two. Section two\nSpeaker 1: You will hear a restaurant manager talking to a small group of new staff who are starting work as kitchen assistants in a restaurant. First, you have some time to look at questions 11 to 16. Now listen carefully and answer questions 11 to 16.\nSpeaker 2: Good morning, everyone. My name's Joy Parkins, and I'm the restaurant manager. And I understand that none of you have had any previous experience as kitchen assistants. Well, you might be feeling a bit nervous now, but most of our kitchen assistants say they enjoy the work. Okay. They might get shouted at sometimes, but it's nothing personal. And they're pleased that they have so many different things to do, which means they never get bored. And I'll tell you straight away that if you do well, we might think about moving you up and giving you some more responsibility. Right. Well, you've all shown up on time, which is an excellent start. Now I'm glad to see none of you have unsuitable footwear, so that's good. You need to be careful as the floors can get very wet and slippery. Those of you with long hair have got it well out of the way, but some of you'll need to remove your rings and bracelets. Just put them somewhere safe for today, and remember to leave them at home tomorrow as they can be a safety hazard. Now it's going to be a busy day for you all today. We don't have any tables free for this evening and only a few for lunch. Fortunately, we've got our head chef back. He was away on holiday all last week, which meant the other chefs had extra work. Now I'll tell you a bit more about the job in a minute, but first, some general regulations. For all of you, whatever your age, there's some equipment you mustn't use until you've been properly trained, like the waste disposal system, for example, for health and safety reasons. Then I think there are two of you here who are 18. That's Emma and Jake, isn't it? Right. So for you two, the meat slicer is out of bounds. And, of course, none of you are allowed to use the electric mixer until you've been shown how it works. Now you may have heard that this can be a stressful job, and I have to say that can be true. You'll be working an eight hour day for the first week, though you'll have the chance to do overtime after that as well if you want to. But however long the hours are, you'll get a break in the middle. What you will find is that you're on your feet all day long lifting and carrying, So if you're not fit now, you soon will be. You'll find you don't have much chance to take it easy. When someone tells you to do something, you need to do it straight away. But at least we do have a very efficient air conditioning system compared with some kitchens.\nSpeaker 1: Before you hear the rest of the talk, you have some time to look at questions 17 to 20. Now listen and answer questions 17 to 20.\nSpeaker 2: Now let me tell you about some of the people you need to know. So as I said, I'm Joy Parkins, and I decide who does what during the day and how long they work for. I'll be trying to get you to work with as many different people in the kitchen as possible so that you learn while you're on the job. One person whose name you must remember is David Field. If you injure yourself at all, even if it's really minor, you must report to him, and he'll make sure the incident is recorded and you get the appropriate treatment. He's trained to give basic treatment to staff himself, or he'll send you off somewhere else if necessary. Then there's Dexter Wills. He's the person you need to see if you smash a plate or something like that. Don't just leave it and hope no one will notice. It's really important to get things noted and replaced, or there could be problems later. And finally, there's Mike Smith. He's the member of staff who takes care of all the stores of perishables. So if you notice we're getting low in flour or sugar or something, make sure you let him know so he can put in an order. Okay. Now the next thing we need to\nSpeaker 1: That is the end of section two. You now have half a minute to check your answers.",
+	"body": {
+		"text": "Joy Parkins [17]\nDavid Field [18]\nDexter Wills [19]\nMike Smith [20]",
+		"html": "<p>Joy Parkins [17]</p><p>David Field [18]</p><p>Dexter Wills [19]</p><p>Mike Smith [20]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "11-14",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "According to the manager, what do most people like about the job of kitchen assistant?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the variety of work"
+						},
+						{
+							"label": "B",
+							"text": "the friendly atmosphere"
+						},
+						{
+							"label": "C",
+							"text": "the opportunities for promotion"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"And they're pleased that they have so many different things to do, which means they never get bored."
+					]
+				},
+				{
+					"number": 12,
+					"text": "The manager is concerned about some of the new staff’s",
+					"options": [
+						{
+							"label": "A",
+							"text": "jewellery."
+						},
+						{
+							"label": "B",
+							"text": "hair styles."
+						},
+						{
+							"label": "C",
+							"text": "shoes."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Those of you with long hair have got it well out of the way, but some of you'll need to remove your rings and bracelets. Just put them somewhere safe for today, and remember to leave them at home tomorrow as they can be a safety hazard."
+					]
+				},
+				{
+					"number": 13,
+					"text": "The manager says that the day is likely to be busy for kitchen staff because",
+					"options": [
+						{
+							"label": "A",
+							"text": "it is a public holiday."
+						},
+						{
+							"label": "B",
+							"text": "the head chef is absent."
+						},
+						{
+							"label": "C",
+							"text": "the restaurant is almost fully booked."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"We don't have any tables free for this evening and only a few for lunch."
+					]
+				},
+				{
+					"number": 14,
+					"text": "Only kitchen staff who are 18 or older are allowed to use",
+					"options": [
+						{
+							"label": "A",
+							"text": "the waste disposal unit."
+						},
+						{
+							"label": "B",
+							"text": "the electric mixer."
+						},
+						{
+							"label": "C",
+							"text": "the meat slicer."
+						}
+					],
+					"answer": "C",
+					"quotes": ["So for you two, the meat slicer is out of bounds."]
+				}
+			]
+		},
+		{
+			"range": "15-16",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 15,
+					"text": "According to the manager, which TWO things can make the job of kitchen assistant stressful?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They have to follow orders immediately."
+						},
+						{
+							"label": "B",
+							"text": "The kitchen gets very hot."
+						},
+						{
+							"label": "C",
+							"text": "They may not be able to take a break."
+						},
+						{
+							"label": "D",
+							"text": "They have to do overtime."
+						},
+						{
+							"label": "E",
+							"text": "The work is physically demanding."
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 16,
+					"text": "According to the manager, which TWO things can make the job of kitchen assistant stressful?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They have to follow orders immediately."
+						},
+						{
+							"label": "B",
+							"text": "The kitchen gets very hot."
+						},
+						{
+							"label": "C",
+							"text": "They may not be able to take a break."
+						},
+						{
+							"label": "D",
+							"text": "They have to do overtime."
+						},
+						{
+							"label": "E",
+							"text": "The work is physically demanding."
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "17-20",
+			"type": "MATCHING",
+			"instructions": "What is the responsibility of each of the following restaurant staff?\nChoose FOUR answers from the box and write the correct letter, A-F, next to Questions 17 - 20",
+			"options": [
+				{
+					"label": "A",
+					"text": "training courses"
+				},
+				{
+					"label": "B",
+					"text": "food stocks"
+				},
+				{
+					"label": "C",
+					"text": "first aid"
+				},
+				{
+					"label": "D",
+					"text": "breakages"
+				},
+				{
+					"label": "E",
+					"text": "staff discounts"
+				},
+				{
+					"label": "F",
+					"text": "timetables"
+				}
+			],
+			"body": "Joy Parkins [17]\nDavid Field [18]\nDexter Wills [19]\nMike Smith [20]",
+			"body_html": "<p>Joy Parkins [17]</p><p>David Field [18]</p><p>Dexter Wills [19]</p><p>Mike Smith [20]</p>",
+			"questions": [
+				{
+					"number": 17,
+					"text": "Joy Parkins",
+					"answer": "F",
+					"quotes": [
+						"So as I said, I'm Joy Parkins, and I decide who does what during the day and how long they work for."
+					]
+				},
+				{
+					"number": 18,
+					"text": "David Field",
+					"answer": "C",
+					"quotes": [
+						"He's trained to give basic treatment to staff himself, or he'll send you off somewhere else if necessary."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Dexter Wills",
+					"answer": "D",
+					"quotes": [
+						"Then there's Dexter Wills. He's the person you need to see if you smash a plate or something like that."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Mike Smith",
+					"answer": "B",
+					"quotes": [
+						"He's the member of staff who takes care of all the stores of perishables. So if you notice we're getting low in flour or sugar or something, make sure you let him know so he can put in an order."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

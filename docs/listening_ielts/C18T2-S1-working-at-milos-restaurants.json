@@ -1,0 +1,128 @@
+{
+	"id": "f60e352a-9108-47a9-bd18-dc0af607e30d",
+	"url": "https://stepielts.com/student/listening/f60e352a-9108-47a9-bd18-dc0af607e30d?mode=practice",
+	"title": "Working at Milo’s Restaurants",
+	"source": "C18T2",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/8984a749-a8a9-4b9b-9c20-6caa6444fe0e.mp3",
+	"transcript": "Speaker 0: Test two. This is the IELTS listening test. You will hear a number of different recordings, and you will have to answer questions on what you hear. There will be time for you to read the instructions and questions, and you will have a chance to check your work. All the recordings will be played once only. The test is in four parts. At the end of the test, you will be given ten minutes to transfer your answers to an answer sheet. Now turn to part one. Part one. You will hear a woman from a job agency giving information to a man about work in a chain of restaurants. First, you have some time to look at questions one to five. Now listen carefully and answer questions one to five.\nSpeaker 1: So I understand you're interested in restaurant work.\nSpeaker 2: Yes. I've got a bit of experience, and I can provide references.\nSpeaker 1: That's good. I can check all that later. Now Milo's restaurants have some vacancies at the moment. They're a really good company to work for. Lots of benefits.\nSpeaker 2: Alright.\nSpeaker 1: Yes. They've got a very good reputation for looking after staff. For example, all employees get training, even temporary staff.\nSpeaker 2: Oh, really? That's quite unusual, isn't it?\nSpeaker 1: Certainly is.\nSpeaker 2: And do staff get free uniforms too?\nSpeaker 1: You just need to wear a white T shirt and black trousers, it says here. So I guess not. But another benefit of working for a big company like this is that you can get a discount at any of their restaurants.\nSpeaker 2: Even at weekends?\nSpeaker 1: No. But you'll be working then anyway.\nSpeaker 2: Oh, yes. I suppose so. Most of their restaurants are in the city center, aren't they? So easy to get to by bus?\nSpeaker 1: Yes. That's right. But if you have to do a late shift and finish work after midnight, the company will pay for you to get a taxi home.\nSpeaker 2: I probably won't need one. I think I'd use my bike.\nSpeaker 1: Okay. Now they do have some quite specific requirements for the kind of person they're looking for. Milo's is a young dynamic company, and they're really keen on creating a strong team. It's really important that you can fit in and get on well with everyone.\nSpeaker 2: Yep. I've got no problem with that. It sounds good, actually. The last place I worked for was quite demanding too. We had to make sure we gave a really high level of service.\nSpeaker 1: That's good to hear because that will be equally important at Milo's. I know they want people who have an eye for detail.\nSpeaker 2: That's fine. I'm very used to working in that kind of environment.\nSpeaker 1: Perfect. So the only other thing that's required is good communication skills, so you'll need to have a certificate in English.\nSpeaker 2: Sure.\nSpeaker 0: Before you hear the rest of the conversation, you have some time to look at questions six to 10. Now listen and answer questions six to 10.\nSpeaker 1: Okay. Let's have a look at the current job vacancies at Milo's. The first one is in Wivenhoe Street.\nSpeaker 2: Sorry. Where?\nSpeaker 1: Wivenhoe, W I V E N H 0 E. It's quite central, just off Cork Street. Oh, right. They're looking for a breakfast supervisor.\nSpeaker 2: That would be okay.\nSpeaker 1: So you're probably familiar with the kind of responsibilities involved. Obviously, checking that all the portions are correct, etcetera. And then things like checking all the procedures for cleaning the equipment are being followed.\nSpeaker 2: Okay. And what about the salary? In my last job, I was getting £9.50 per hour. I was hoping to get a bit more than that.\nSpeaker 1: Well, to begin with, you'd be getting £9.75, but that goes up to £11.25 after three months.\nSpeaker 2: That's not too bad. And I suppose it's a very early start.\nSpeaker 1: That's the only unattractive thing about this job. But then you have the afternoons and evenings free. So the restaurant starts serving breakfast from 7AM, and you'd have to be there at 05:30 to set everything up, but you'd be finished at 12:30.\nSpeaker 2: Well, as you say, there are advantages to that.\nSpeaker 1: Now you might also be interested in the job at the City Road branch. That's for a junior chef, so again a position of responsibility.\nSpeaker 2: I might prefer that actually.\nSpeaker 1: Right. Well, obviously, this role would involve supporting the sous chef and other senior staff, and you'd be responsible for making sure there's enough stock each week and sorting out all the deliveries.\nSpeaker 2: I've never done that before, but I imagine it's fairly straightforward once you get the hang of it.\nSpeaker 1: Yes. And you'd be working alongside more experienced staff to begin with, so I'm sure it wouldn't be a problem. The salary is slightly higher here. It's an annual salary of £23,000.\nSpeaker 2: Right.\nSpeaker 1: I know that if they like you, it's likely you'll be promoted quite quickly, so that's worth thinking about.\nSpeaker 2: Yes. It does sound interesting. What are the hours like?\nSpeaker 1: The usual, I think. There's a lot of evening and weekend work, but they're closed on Mondays. But you do get one Sunday off every four weeks. So would you like me to send off your CV?\nSpeaker 0: That is the end of part one. You now have one minute to check your answers to part one.",
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "Working at Milo’s Restaurants\nBenefits\n● [1] provided for all staff\n● [2] during weekdays at all Milo’s Restaurants\n● [3] provided after midnight\n\nPerson specification\n● must be prepared to work well in a team\n● must care about maintaining a high standard of [4]\n● must have a qualification in [5]",
+			"body_html": "<h2><strong>Working at Milo’s Restaurants</strong></h2><p><strong>Benefits</strong></p><p>●   [1] provided for all staff</p><p>●   [2] during weekdays at all Milo’s Restaurants</p><p>●   [3] provided after midnight</p><p></p><p><strong>Person specification</strong></p><p>●   must be prepared to work well in a team</p><p>●   must care about maintaining a high standard of [4]</p><p>●   must have a qualification in [5]</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "● [1] provided for all staff",
+					"answer": "training",
+					"quotes": [
+						"For example, all employees get training, even temporary staff."
+					]
+				},
+				{
+					"number": 2,
+					"text": "● [2] during weekdays at all Milo’s Restaurants",
+					"answer": "discount",
+					"quotes": [
+						"But another benefit of working for a big company like this is that you can get a discount at any of their restaurants."
+					]
+				},
+				{
+					"number": 3,
+					"text": "● [3] provided after midnight",
+					"answer": "taxi",
+					"quotes": [
+						"But if you have to do a late shift and finish work after midnight, the company will pay for you to get a taxi home."
+					]
+				},
+				{
+					"number": 4,
+					"text": "● must care about maintaining a high standard of [4]",
+					"answer": "service",
+					"quotes": [
+						"We had to make sure we gave a really high level of service."
+					]
+				},
+				{
+					"number": 5,
+					"text": "● must have a qualification in [5]",
+					"answer": "English",
+					"quotes": [
+						"So the only other thing that's required is good communication skills, so you'll need to have a certificate in English."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Location\nJob title\nResponsibilities include\nPay and conditions\n[6] Street\nBreakfast supervisor\nChecking portions, etc. are correct\n\nMaking sure [7] is clean\nStarting salary £[8] per hour\n\nStart work at 5.30 a.m.\nCity Road\nJunior chef\nSupporting senior chefs\n\nMaintaining stock and organising [9]\nAnnual salary £23,000\n\nNo work on a [10] once a month",
+			"body_table": [
+				[
+					"Location",
+					"Job title",
+					"Responsibilities include",
+					"Pay and conditions"
+				],
+				[
+					"[6] Street",
+					"Breakfast supervisor",
+					"Checking portions, etc. are correct\n\nMaking sure [7] is clean",
+					"Starting salary £[8] per hour\n\nStart work at 5.30 a.m."
+				],
+				[
+					"City Road",
+					"Junior chef",
+					"Supporting senior chefs\n\nMaintaining stock and organising [9]",
+					"Annual salary £23,000\n\nNo work on a [10] once a month"
+				]
+			],
+			"body_html": "<table><tbody><tr><td><p><strong>Location</strong></p></td><td><p><strong>Job title</strong></p></td><td><p><strong>Responsibilities include</strong></p></td><td><p><strong>Pay and conditions</strong></p></td></tr><tr><td><p>[6] Street</p></td><td><p>Breakfast supervisor</p></td><td><p>Checking portions, etc. are correct</p><p></p><p>Making sure [7] is clean</p></td><td><p>Starting salary £[8] per hour</p><p></p><p>Start work at 5.30 a.m.</p></td></tr><tr><td><p>City Road</p></td><td><p>Junior chef</p></td><td><p>Supporting senior chefs</p><p></p><p>Maintaining stock and organising [9]</p></td><td><p>Annual salary £23,000</p><p></p><p>No work on a [10] once a month</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "[6] Street",
+					"answer": "Wivenhoe",
+					"quotes": ["The first one is in Wivenhoe Street."]
+				},
+				{
+					"number": 7,
+					"text": "Making sure [7] is clean",
+					"answer": "equipment",
+					"quotes": [
+						"And then things like checking all the procedures for cleaning the equipment are being followed."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Starting salary £[8] per hour",
+					"answer": "9.75",
+					"quotes": [
+						"Well, to begin with, you'd be getting £9.75, but that goes up to £11.25 after three months."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Maintaining stock and organising [9]",
+					"answer": "deliveries",
+					"quotes": [
+						"Well, obviously, this role would involve supporting the sous chef and other senior staff, and you'd be responsible for making sure there's enough stock each week and sorting out all the deliveries."
+					]
+				},
+				{
+					"number": 10,
+					"text": "No work on a [10] once a month",
+					"answer": "Sunday",
+					"quotes": ["But you do get one Sunday off every four weeks."]
+				}
+			]
+		}
+	],
+	"images": []
+}

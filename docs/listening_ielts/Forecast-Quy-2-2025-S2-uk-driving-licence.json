@@ -1,0 +1,218 @@
+{
+	"id": "7e07b6b9-8809-4400-acbc-e2ec80cec1ad",
+	"url": "https://stepielts.com/student/listening/7e07b6b9-8809-4400-acbc-e2ec80cec1ad?mode=practice",
+	"title": "UK Driving Licence",
+	"source": "Forecast Quý 2-2025",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/8fa81821-e27c-4889-95d0-723ea992a739.mp3",
+	"transcript": "Speaker 0: Hello, I’m Edward and I’m here to tell you about road conditions in various areas of the UK. I am also going to tell you about driver’s licences in the UK. If you have never had a driver’s licence, or you have one from another country and you want to get a UK licence, you must be a UK resident. You will need to show a medical report when your UK licence needs to be renewed. If you are trying to translate your original foreign driving licence to apply for a UK licence which is a must if you want to be able to drive here, you will need to visit an official agency. These are scattered throughout the London area and are well-equipped to assist you with any questions you might have, and any services they offer are included in your licence fee. If you already have a translated licence, but need some personal information updating, you do not need to pay for the update—they’ll do it for free. When you are getting a new driving licence, you may need to have a new photo taken, as some photos are rejected. It’s actually okay if your photo is too small, since we can get it enlarged with our printer. The majority of rejected photos are the ones that were taken with a cream backdrop instead of a monotone grey background. We’ve now found that photos with the latter allow us to identify the licence holder much more easily. If you were wearing glasses on the previous photo, you don’t need to worry about it since it is still allowed. If you are not sure whether your previous licence is still valid, then the licence checking service is for you. The procedures are quite clear and you just have to follow them. Ideally, I would like to see the process going faster since it can take hours to finish. From my standpoint, it will help if all the applicants bring the necessary identification with them. Then all they have to do is just fill in the forms accordingly, step by step. I’m often asked whether I have a personal recommendation about the fastest or cheapest place to get all this done, but I think it really depends on where you are. They can all get busy at some point and when it is quiet at one branch it may be busy in another, so take your pick. All I would say is that there is absolutely no difference in price—it’s a standard fee. The only advice I would give is that the quickest way to complete an application is to fill out the form on the internet and then bring a print copy with you to the agency location of your choice. Next, people frequently ask me what I think of the road conditions in some of our cities. London is obviously the biggest and busiest, and there are lots of parking restrictions, one way systems, and so on, but on the whole, I find the traffic signs are very clear. In Edinburgh, most people use digital maps to get to know local traffic and road conditions, which can be estimated through different traffic flow lines. It is a city of lights—traffic lights—but they’re extremely efficient as they’re timed perfectly to get the traffic flowing smoothly. That’s important because pedestrian areas and crossings are always packed with people on foot, which needs strong regulation. The city of Cardiff has tackled traffic flow in a different way. It recently completed a road expansion scheme and the extra lanes of the dual-carriageway are easing congestion. It’s a similar story in Manchester, instead of going through the town center, most vehicles choose ring-roads so as to avoid the downtown congestion. It can still happen, though, so there’s a possibility that the city will introduce check points where the police can intervene to direct traffic at peak periods. And finally, they say all roads lead to Rome, and you could say that about Oxford. I like the many options for getting in and out of the city because drivers can always find alternative routes. The other cities in the UK are ...",
+	"body": {
+		"text": "London [6]\nEdinburgh [7]\nCardiff [8]\nManchester [9]\nOxford [10]",
+		"html": "<p>London [6]</p><p>Edinburgh [7]</p><p>Cardiff [8]</p><p>Manchester [9]</p><p>Oxford [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "What is the basic requirement for applying for a UK driving licence?",
+					"options": [
+						{
+							"label": "A",
+							"text": "a medical report"
+						},
+						{
+							"label": "B",
+							"text": "a valid licence from another country"
+						},
+						{
+							"label": "C",
+							"text": "current residency in the UK"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"If you have never had a driver’s licence, or you have one from another country and you want to get a UK licence, you must be a UK resident."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What is true about the translation of original licences?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Applicants need to go to a recognised organisation."
+						},
+						{
+							"label": "B",
+							"text": "It is not always necessary for foreigners when applying for a UK licence."
+						},
+						{
+							"label": "C",
+							"text": "Applicants need to pay an extra fee for translation services."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"If you are trying to translate your original foreign driving licence to apply for a UK licence which is a must if you want to be able to drive here, you will need to visit an official agency."
+					]
+				},
+				{
+					"number": 3,
+					"text": "When applying for a UK licence, which type of photos will NOT be approved?",
+					"options": [
+						{
+							"label": "A",
+							"text": "photos in which the applicant is wearing glasses"
+						},
+						{
+							"label": "B",
+							"text": "photos with a cream background"
+						},
+						{
+							"label": "C",
+							"text": "photos that are undersized"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"The majority of rejected photos are the ones that were taken with a cream backdrop instead of a monotone grey background."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What does the speaker think of the licence checking service?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The process is too slow."
+						},
+						{
+							"label": "B",
+							"text": "The application form is confusing."
+						},
+						{
+							"label": "C",
+							"text": "Some of the steps are unnecessary."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Ideally, I would like to see the process going faster since it can take hours to finish."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What does the speaker recommend about making an application?",
+					"options": [
+						{
+							"label": "A",
+							"text": "choosing a quiet location"
+						},
+						{
+							"label": "B",
+							"text": "visiting the nearest branch"
+						},
+						{
+							"label": "C",
+							"text": "completing the forms online"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The only advice I would give is that the quickest way to complete an application is to fill out the form on the internet and then bring a print copy with you to the agency location of your choice."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What is the current feature of traffic management in each of the following cities?",
+			"options": [
+				{
+					"label": "A",
+					"text": "good signage"
+				},
+				{
+					"label": "B",
+					"text": "multiple access roads"
+				},
+				{
+					"label": "C",
+					"text": "police control points"
+				},
+				{
+					"label": "D",
+					"text": "ring roads"
+				},
+				{
+					"label": "E",
+					"text": "one-way streets"
+				},
+				{
+					"label": "F",
+					"text": "effective traffic lights"
+				},
+				{
+					"label": "G",
+					"text": "additional lanes"
+				},
+				{
+					"label": "H",
+					"text": "pedestrianised areas"
+				}
+			],
+			"body": "London [6]\nEdinburgh [7]\nCardiff [8]\nManchester [9]\nOxford [10]",
+			"body_html": "<p>London [6]</p><p>Edinburgh [7]</p><p>Cardiff [8]</p><p>Manchester [9]</p><p>Oxford [10]</p>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "London",
+					"answer": "A",
+					"quotes": [
+						"London is obviously the biggest and busiest, and there are lots of parking restrictions, one way systems, and so on, but on the whole, I find the traffic signs are very clear."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Edinburgh",
+					"answer": "F",
+					"quotes": [
+						"It is a city of lights—traffic lights—but they’re extremely efficient as they’re timed perfectly to get the traffic flowing smoothly."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Cardiff",
+					"answer": "G",
+					"quotes": [
+						"It recently completed a road expansion scheme and the extra lanes of the dual-carriageway are easing congestion."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Manchester",
+					"answer": "D",
+					"quotes": [
+						"It’s a similar story in Manchester, instead of going through the town center, most vehicles choose ring-roads so as to avoid the downtown congestion."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Oxford",
+					"answer": "B",
+					"quotes": [
+						"I like the many options for getting in and out of the city because drivers can always find alternative routes."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

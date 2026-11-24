@@ -1,0 +1,203 @@
+{
+	"id": "375be32d-bd33-4787-a6e5-d1f41918b3c5",
+	"url": "https://stepielts.com/student/listening/375be32d-bd33-4787-a6e5-d1f41918b3c5?mode=practice",
+	"title": "Manham port",
+	"source": "C10T4",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/d9bbb94b-07c7-4001-b603-1a7d1252b27a.mp3",
+	"transcript": "Speaker 0: Now turn to section two. Section two. You will hear a recorded talk giving an introduction to the historical theme park of Manham Riverport in England. First, you have some time to look at questions 11 to 15. Now listen carefully and answer questions 11 to 15.\nSpeaker 1: Welcome to Manham Port, where a thousand years of history are brought to life. All the family can enjoy a day out at Manham, visit our copper mine, see models of the machinery it used, have your photo taken in nineteenth century costume, experience at firsthand how people lived at different stages throughout history, and especially how children studied, worked, and played. The Port Of Manham is located in beautiful and peaceful countryside, on a bend in the great River Avon, and developed here because it's the highest navigable point of the Avon. Boats can go no higher up this river, and proved a handy place to load and unload cargo to and from the sea, which is over 23 miles away. A small port was already established here when, about nine hundred years ago, tin was discovered nearby. Though it wasn't until the industrial revolution, when a tremendous need for metals of all kinds developed, that Manham expanded to become one of the busiest ports in the country. And because it was already so busy, prospectors began to look for other minerals, and by the end of the nineteenth century, lead, copper, manganese, and arsenic were added to the cargoes leaving Manham. In the early days, the ores had been smelted or processed in the same area they were mined. But as demand grew, the smelting process required huge factory furnaces or fires to melt the metal from the rock, and there was not enough coal in the local area, so the rocks containing minerals had to be shipped long distances. Sadly, in the twentieth century, the great port of Manham declined, and thousands of workers were forced to emigrate out of the area. The building at the port fell into disrepair, and the place became almost forgotten. But then the Manham Trust was formed to conserve the historical resources of the area. It organized scores of local volunteers to remove undergrowth to find the original outlines of the installations. It then brought in paid professionals to match installations with maps of the original port complex and to set about reconstructing it. Today, you can see the results of this ambitious program of restoration. The intention, and we believe this will be realized before the end of the year, is to return Manham Port to the condition it reached at its peak as the greatest copper port in the country.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 16 to 20. Now listen and answer questions 16 to 20.\nSpeaker 1: But what can you do and see on your visit today? Here are just a few highlights. We suggest you start with the visit to the copper mine. Travel on converted mining trains and journey into the depths of the mountain along seams once worked by hundreds of miners. Watch out especially for the great pumping machines which rid the mine of water. But please be warned that, like all mines, ours is very dark and closed in, and we do say that children under five and also dogs should not be taken into the mine. The next recommended visit is to the village school. While looking around the classrooms, take a special look at our display of games, which is one of the largest in the world. And it's recommended that you time your visit to coincide with a guided tour. This will give you the opportunity to ask lots of questions. Near the school is the beautiful old sailing catch called the George. You're welcome to board the boat and look round the cabins. Look out for the ship's wheel, which was missing until only five years ago when it was dredged out of the silt by a local fisherman. We have no idea how it got there, but it's been polished and proudly restored to its original place on the boat. Please take care going down the ladders if you wish to visit the lower deck. We don't recommend you allow young children to use them. So we hope you have a memorable visit to Manham Port and will tell your friends all about us.\nSpeaker 0: That is the end of section two. You now have half a minute to check your answers.",
+	"body": {
+		"text": "Tourist attractions in Manham\nPlace\nFeatures and activities\nAdvice\ncopper mine\nspecially adapted miners’ [16] take visitors into the mountain\nthe mine is [17] and enclosed – unsuitable for children and animals\nvillage school\nclassrooms and a special exhibition of [18]\na [19] is recommended\n‘The George’ (old sailing ship)\nthe ship’s wheel (was lost but has now been restored)\nchildren shouldn’t use the [20]",
+		"html": "<table><tbody><tr><td colspan=\"3\"><h4><strong>Tourist attractions in Manham</strong></h4></td></tr><tr><td><p><strong>Place</strong></p></td><td><p><strong>Features and activities</strong></p></td><td><p><strong>Advice</strong></p></td></tr><tr><td><p>copper mine</p></td><td><p>specially adapted miners’ [16] take visitors into the mountain</p></td><td><p>the mine is [17] and enclosed – unsuitable for children and animals</p></td></tr><tr><td><p>village school</p></td><td><p>classrooms and a special exhibition of [18]</p></td><td><p>a [19] is recommended</p></td></tr><tr><td><p>‘The George’ (old sailing ship)</p></td><td><p>the ship’s wheel (was lost but has now been restored)</p></td><td><p>children shouldn’t use the [20]</p></td></tr></tbody></table><p></p>"
+	},
+	"question_groups": [
+		{
+			"range": "11-15",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Why did a port originally develop at Manham?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It was safe from enemy attack."
+						},
+						{
+							"label": "B",
+							"text": "It was convenient for river transport."
+						},
+						{
+							"label": "C",
+							"text": "It had a good position on the sea coast."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"The Port Of Manham is located in beautiful and peaceful countryside, on a bend in the great River Avon, and developed here because it's the highest navigable point of the Avon."
+					]
+				},
+				{
+					"number": 12,
+					"text": "What caused Manham’s sudden expansion during the Industrial Revolution?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the improvement in mining techniques"
+						},
+						{
+							"label": "B",
+							"text": "the increase in demand for metals"
+						},
+						{
+							"label": "C",
+							"text": "the discovery of tin in the area"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Though it wasn't until the industrial revolution, when a tremendous need for metals of all kinds developed, that Manham expanded to become one of the busiest ports in the country."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Why did rocks have to be sent away from Manham to be processed?",
+					"options": [
+						{
+							"label": "A",
+							"text": "shortage of fuel"
+						},
+						{
+							"label": "B",
+							"text": "poor transport systems"
+						},
+						{
+							"label": "C",
+							"text": "lack of skills among local people"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But as demand grew, the smelting process required huge factory furnaces or fires to melt the metal from the rock, and there was not enough coal in the local area, so the rocks containing minerals had to be shipped long distances."
+					]
+				},
+				{
+					"number": 14,
+					"text": "What happened when the port declined in the twentieth century?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The workers went away."
+						},
+						{
+							"label": "B",
+							"text": "Traditional skills were lost."
+						},
+						{
+							"label": "C",
+							"text": "Buildings were used for new purposes."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Sadly, in the twentieth century, the great port of Manham declined, and thousands of workers were forced to emigrate out of the area."
+					]
+				},
+				{
+					"number": 15,
+					"text": "What did the Manham Trust hope to do?",
+					"options": [
+						{
+							"label": "A",
+							"text": "discover the location of the original port"
+						},
+						{
+							"label": "B",
+							"text": "provide jobs for the unemployed"
+						},
+						{
+							"label": "C",
+							"text": "rebuild the port complex"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"It then brought in paid professionals to match installations with maps of the original port complex and to set about reconstructing it."
+					]
+				}
+			]
+		},
+		{
+			"range": "16-20",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write NO MORE THAN TWO WORDS for each answer.",
+			"body": "Tourist attractions in Manham\nPlace\nFeatures and activities\nAdvice\ncopper mine\nspecially adapted miners’ [16] take visitors into the mountain\nthe mine is [17] and enclosed – unsuitable for children and animals\nvillage school\nclassrooms and a special exhibition of [18]\na [19] is recommended\n‘The George’ (old sailing ship)\nthe ship’s wheel (was lost but has now been restored)\nchildren shouldn’t use the [20]",
+			"body_table": [
+				["Tourist attractions in Manham"],
+				["Place", "Features and activities", "Advice"],
+				[
+					"copper mine",
+					"specially adapted miners’ [16] take visitors into the mountain",
+					"the mine is [17] and enclosed – unsuitable for children and animals"
+				],
+				[
+					"village school",
+					"classrooms and a special exhibition of [18]",
+					"a [19] is recommended"
+				],
+				[
+					"‘The George’ (old sailing ship)",
+					"the ship’s wheel (was lost but has now been restored)",
+					"children shouldn’t use the [20]"
+				]
+			],
+			"body_html": "<table><tbody><tr><td colspan=\"3\"><h4><strong>Tourist attractions in Manham</strong></h4></td></tr><tr><td><p><strong>Place</strong></p></td><td><p><strong>Features and activities</strong></p></td><td><p><strong>Advice</strong></p></td></tr><tr><td><p>copper mine</p></td><td><p>specially adapted miners’ [16] take visitors into the mountain</p></td><td><p>the mine is [17] and enclosed – unsuitable for children and animals</p></td></tr><tr><td><p>village school</p></td><td><p>classrooms and a special exhibition of [18]</p></td><td><p>a [19] is recommended</p></td></tr><tr><td><p>‘The George’ (old sailing ship)</p></td><td><p>the ship’s wheel (was lost but has now been restored)</p></td><td><p>children shouldn’t use the [20]</p></td></tr></tbody></table><p></p>",
+			"questions": [
+				{
+					"number": 16,
+					"text": "specially adapted miners’ [16] take visitors into the mountain",
+					"answer": "trains",
+					"quotes": [
+						"Travel on converted mining trains and journey into the depths of the mountain along seams once worked by hundreds of miners."
+					]
+				},
+				{
+					"number": 17,
+					"text": "the mine is [17] and enclosed – unsuitable for children and animals",
+					"answer": "dark / very dark",
+					"quotes": [
+						"But please be warned that, like all mines, ours is very dark and closed in, and we do say that children under five and also dogs should not be taken into the mine."
+					]
+				},
+				{
+					"number": 18,
+					"text": "classrooms and a special exhibition of [18]",
+					"answer": "games",
+					"quotes": [
+						"While looking around the classrooms, take a special look at our display of games, which is one of the largest in the world."
+					]
+				},
+				{
+					"number": 19,
+					"text": "a [19] is recommended",
+					"answer": "guided tour",
+					"quotes": [
+						"And it's recommended that you time your visit to coincide with a guided tour."
+					]
+				},
+				{
+					"number": 20,
+					"text": "children shouldn’t use the [20]",
+					"answer": "ladder / ladders",
+					"quotes": [
+						"Please take care going down the ladders if you wish to visit the lower deck."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

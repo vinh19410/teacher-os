@@ -1,0 +1,202 @@
+{
+	"id": "21bd72b5-dc24-4c8f-8424-3db52e899f11",
+	"url": "https://stepielts.com/student/listening/21bd72b5-dc24-4c8f-8424-3db52e899f11?mode=practice",
+	"title": "Radio program: Singing in the choir",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/8ea7ce4f-00b0-4f04-8cab-6e161cf02da6.mp3",
+	"transcript": "Speaker 0: Now turn to section two. Section two. You will hear a radio program about singing in a choir. First, you have some time to look at questions 11 to 15. Now listen carefully and answer questions 11 to 15. And for our regular spot on things to do in town, here's our reporter Samuel Cooper. It's been fun to write about joining some of our local choirs.\nSpeaker 1: Thank you. Well, feeling a bit apprehensive about my ability to sing in tune, I recently headed off for rehearsals at the town's three biggest choirs, Mitchell's Town Choir, the Black Bell Male Voice Choir, and the Caroline Singers. I received a very warm welcome at all three choirs. They are always on the lookout for new and enthusiastic singers. Now, obviously deciding which choir to join will depend to some extent on your taste in music. Black Bell caters for most musical taste as it has a hugely varied repertoire as does Mitchellstown. If you're after a more classical feel, the Caroline singers tend to focus on madrigals. That's unaccompanied singing without any instruments. If you want to meet people who share an interest in music, Mitchell's Town Choir is a good place to start. Apart from their own performances, they also arrange group visits to see operas and attend music festivals. So it can be a great way to make friends. But it's not just a chance to develop a skill, travel, or make friends that's on offer. You could win a gold medal too. Mitchellstown are hoping to get to the final at the Melody Competition in Atlanta, and Black Bell are the current holders of the Countermail Voice Choir Award, which was presented to them by the director of the London Opera just last month. You can also be a part of a recording deal. Mitchellstown has just joined Black Bell and Caroline Singers as recording artists for their first CD, Duin Shops in December. And if all of that isn't enough, you can also benefit the local community by helping to raise funds for good causes. Mitchellstown regularly performs its functions helping the disabled and the elderly, while Black Bell donates a percentage of its profits to certain local charities.\nSpeaker 0: Before you hear the rest of the program, you have some time to look at questions 16 to 20. Now listen and answer questions 16 to 20.\nSpeaker 1: You may feel unable to join a choir because you're worried you'd struggle to find the time to attend rehearsals because of work or family commitments. Well, there is a solution to that. Start your own choir at work. This has been done in companies large and small, and I went to find out about the one at the accountants, John White. The choir's organizer, Elizabeth Arnold, told me the reason she thinks people like the choir. She said that while the thought of a big networking opportunities might be at the back of some people's mind, it's having the opportunity to switch off and focus on something completely different, that thereafter. The people that join tend to be fairly competent singers to start with because, naturally enough, people don't want to look bad in front of their colleagues. Companies like John White encourage their employees to set up choirs at work because it can help to create a healthier working atmosphere. For example, people who previously didn't get on can find they have something in common, which is just common sense, really. Elizabeth Arnold also stresses that you don't need a lot of people to get the choir off the ground. They started off four years ago with just five people. That's now risen to 19 while their average attendance at rehearsals is 12. Many people don't have time to go to rehearsals outside work, however, they find the time to go to them while they're at work. At John White, they found the middle of the day works best because not everyone works the same hours. So scheduling early morning rehearsals can be problematic. The same is true for late afternoon. Supporting their choir is something that John White are very happy to do. Although members pay a joining fee to cover the cost of refreshments at parties and wear special concert shirts, the company organizes regular sessions with a professional vocal coach free of charge to members of the choir. So if you'd like more information about the choirs\nSpeaker 0: That is the end of section two. You now have half a minute to check your answers.",
+	"body": {
+		"text": "11 They specialise in a particular type of music [11]\n12 They organise social events [12]\n13 They have recently won a competition [13]\n14 They have recently recorded their first CD [14]\n15 They participate in charity events [15]",
+		"html": "<p><strong>11</strong> They specialise in a particular type of music [11]</p><p><strong>12</strong> They organise social events [12]</p><p><strong>13</strong> They have recently won a competition [13]</p><p><strong>14</strong> They have recently recorded their first CD [14]</p><p><strong>15</strong> They participate in charity events [15]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "11-15",
+			"type": "MATCHING",
+			"instructions": "Which choir does each of the following statements apply to?\nChoose the correct letter, A, B or C, next to questions 11-15",
+			"options": [
+				{
+					"label": "A",
+					"text": "Mitchelstown Choir"
+				},
+				{
+					"label": "B",
+					"text": "The Black Bell Male Voice Choir"
+				},
+				{
+					"label": "C",
+					"text": "The Caroline Singers"
+				}
+			],
+			"body": "11 They specialise in a particular type of music [11]\n12 They organise social events [12]\n13 They have recently won a competition [13]\n14 They have recently recorded their first CD [14]\n15 They participate in charity events [15]",
+			"body_html": "<p><strong>11</strong> They specialise in a particular type of music [11]</p><p><strong>12</strong> They organise social events [12]</p><p><strong>13</strong> They have recently won a competition [13]</p><p><strong>14</strong> They have recently recorded their first CD [14]</p><p><strong>15</strong> They participate in charity events [15]</p>",
+			"questions": [
+				{
+					"number": 11,
+					"text": "They specialise in a particular type of music",
+					"answer": "C",
+					"quotes": [
+						"If you're after a more classical feel, the Caroline singers tend to focus on madrigals."
+					]
+				},
+				{
+					"number": 12,
+					"text": "They organise social events",
+					"answer": "A",
+					"quotes": [
+						"Apart from their own performances, they also arrange group visits to see operas and attend music festivals.",
+						"If you want to meet people who share an interest in music, Mitchell's Town Choir is a good place to start."
+					]
+				},
+				{
+					"number": 13,
+					"text": "They have recently won a competition",
+					"answer": "B",
+					"quotes": [
+						"Mitchellstown are hoping to get to the final at the Melody Competition in Atlanta, and Black Bell are the current holders of the Countermail Voice Choir Award, which was presented to them by the director of the London Opera just last month."
+					]
+				},
+				{
+					"number": 14,
+					"text": "They have recently recorded their first CD",
+					"answer": "A",
+					"quotes": [
+						"Mitchellstown has just joined Black Bell and Caroline Singers as recording artists for their first CD, Duin Shops in December."
+					]
+				},
+				{
+					"number": 15,
+					"text": "They participate in charity events",
+					"answer": "B",
+					"quotes": [
+						"Mitchellstown regularly performs its functions helping the disabled and the elderly, while Black Bell donates a percentage of its profits to certain local charities."
+					]
+				}
+			]
+		},
+		{
+			"range": "16-20",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C",
+			"questions": [
+				{
+					"number": 16,
+					"text": "Elizabeth Arnold thinks people join a choir at work because it gives them a chance to",
+					"options": [
+						{
+							"label": "A",
+							"text": "have a break from work."
+						},
+						{
+							"label": "B",
+							"text": "improve their singing."
+						},
+						{
+							"label": "C",
+							"text": "make business contacts."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"She said that while the thought of a big networking opportunities might be at the back of some people's mind, it's having the opportunity to switch off and focus on something completely different, that thereafter.",
+						"The choir's organizer, Elizabeth Arnold, told me the reason she thinks people like the choir."
+					]
+				},
+				{
+					"number": 17,
+					"text": "How does a company benefit from setting up a choir?",
+					"options": [
+						{
+							"label": "A",
+							"text": "improved relationships between co-workers"
+						},
+						{
+							"label": "B",
+							"text": "less sick leave taken by employees"
+						},
+						{
+							"label": "C",
+							"text": "increased commitment to the company"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"For example, people who previously didn't get on can find they have something in common, which is just common sense, really."
+					]
+				},
+				{
+					"number": 18,
+					"text": "How many members does the John White choir have?",
+					"options": [
+						{
+							"label": "A",
+							"text": "5"
+						},
+						{
+							"label": "B",
+							"text": "12"
+						},
+						{
+							"label": "C",
+							"text": "19"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"That's now risen to 19 while their average attendance at rehearsals is 12."
+					]
+				},
+				{
+					"number": 19,
+					"text": "When do the choir have their rehearsals?",
+					"options": [
+						{
+							"label": "A",
+							"text": "before work"
+						},
+						{
+							"label": "B",
+							"text": "at lunch-time"
+						},
+						{
+							"label": "C",
+							"text": "after work"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"At John White, they found the middle of the day works best because not everyone works the same hours.",
+						"Many people don't have time to go to rehearsals outside work, however, they find the time to go to them while they're at work."
+					]
+				},
+				{
+					"number": 20,
+					"text": "How does the company support the choir",
+					"options": [
+						{
+							"label": "A",
+							"text": "by providing concert clothes"
+						},
+						{
+							"label": "B",
+							"text": "by funding social events"
+						},
+						{
+							"label": "C",
+							"text": "by paying for singing classes"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Although members pay a joining fee to cover the cost of refreshments at parties and wear special concert shirts, the company organizes regular sessions with a professional vocal coach free of charge to members of the choir.",
+						"Supporting their choir is something that John White are very happy to do."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

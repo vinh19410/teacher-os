@@ -1,0 +1,292 @@
+{
+	"id": "1402cca5-ec2b-4b0d-b903-3e1d266b806b",
+	"url": "https://stepielts.com/student/listening/1402cca5-ec2b-4b0d-b903-3e1d266b806b?mode=practice",
+	"title": "Boat trip round Tasmania",
+	"source": "C17T1",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/b945f10d-843d-4f5f-9ce0-1941241b5da2.mp3",
+	"transcript": "Speaker 0: Part two. You will hear a tour guide, Lou Miller, speaking to a group of people about a boat trip they are going to take around the Australian island of Tasmania. First, you have some time to look at questions 11 to 14. Now listen carefully and answer questions 11 to 14.\nSpeaker 1: So hello, everyone. My name's Lou Miller, and I'm going to be your tour guide today as we take this fantastic boat trip around the Tasmanian Coast. Before we set off, I just want to tell you a few things about our journey. Our boats aren't huge as you can see. We already have three staff members on board, and on top of that, we can transport a further 15 people, that's you, around the coastline. But please note, if there are more than nine people on either side of the boat, we'll move some of you over. Otherwise, all 18 of us will end up in the sea. We've recently upgraded all our boats. They used to be jet black, but our new ones now have these comfortable dark red seats and a light green exterior in order to stand out from others and help promote our company. This gives our boats a rather unique appearance, don't you think? We offer you a free lunchbox during the trip, and we have three types. Lunchbox one contains ham and tomato sandwiches. Lunchbox two contains a cheddar cheese roll, and lunchbox three is salad based and also contains eggs and tuna. All three lunchboxes also have a packet of crisps and chocolate bar inside. Please let staff know which lunchbox you prefer. I'm sure I don't have to ask you not to throw anything into the sea. We don't have any bins to put litter in, but Jess, myself or Ray, our other guide, will collect it from you after lunch and put it all in a large plastic sack.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 15 to 20. Now listen and answer questions 15 to 20.\nSpeaker 1: The engine on the boat makes quite a lot of noise. So before we head off, let me tell you a few things about what you're going to see. This area is famous for its ancient lighthouse, which you'll see from the boat as we turn past the first little island. It was built in 1838 to protect sailors as a number of shipwrecks had led to significant loss of life. The construction itself was complicated as some of the original drawings kept by the local council show. It sits right on top of the cliffs in a very isolated spot. In the nineteenth century, there were many jobs there, such as polishing the brass lamps, chopping firewood and cleaning windows that kept lighthouse keepers busy. These workers were mainly prison convicts until the middle of that century when ordinary families willing to live in such circumstances took over. Some of you have asked me what creatures we can expect to see. I know everyone loves the penguins, but they're very shy and unfortunately tend to hide from passing boats. But you might see birds in the distance such as sea eagles flying around the cliff edges where they nest. When we get to the rocky area inhabited by first seals, we'll stop and watch them swimming around the coast. They're inquisitive creatures, so don't be surprised if one pops up right in front of you. Their predators, orca whales, hunt along the coastline too, but spotting one of these is rare. Dolphins, on the other hand, can sometimes approach on their own or in groups as they ride the waves beside us. Lastly, I want to mention the caves. Tasmania is famous for its caves, and the ones we'll pass by are so amazing that people are lost for words when they see them. They can only be approached by sea, but if you feel that you want to see more than we're able to show you, then you can take a kayak into the area on another day, and one of our staff will give you more information on that. What we'll do is to go through a narrow channel past some incredible rock formations, and from there, we'll be able to see the openings to the caves, and at that point, we'll talk to you about what lies beyond.\nSpeaker 0: That is the end of part two. You now have half a minute to check your answers to part two.",
+	"question_groups": [
+		{
+			"range": "11-14",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "What is the maximum number of people who can stand on each side of the boat?",
+					"options": [
+						{
+							"label": "A",
+							"text": "9"
+						},
+						{
+							"label": "B",
+							"text": "15"
+						},
+						{
+							"label": "C",
+							"text": "18"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But please note, if there are more than nine people on either side of the boat, we'll move some of you over."
+					]
+				},
+				{
+					"number": 12,
+					"text": "What colour are the tour boats?",
+					"options": [
+						{
+							"label": "A",
+							"text": "dark red"
+						},
+						{
+							"label": "B",
+							"text": "jet black"
+						},
+						{
+							"label": "C",
+							"text": "light green"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"They used to be jet black, but our new ones now have these comfortable dark red seats and a light green exterior in order to stand out from others and help promote our company."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Which lunchbox is suitable for someone who doesn’t eat meat or fish?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Lunch box 1"
+						},
+						{
+							"label": "B",
+							"text": "Lunch box 2"
+						},
+						{
+							"label": "C",
+							"text": "Lunch box 3"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Lunchbox two contains a cheddar cheese roll, and lunchbox three is salad based and also contains eggs and tuna."
+					]
+				},
+				{
+					"number": 14,
+					"text": "What should people do with their litter?",
+					"options": [
+						{
+							"label": "A",
+							"text": "take it home"
+						},
+						{
+							"label": "B",
+							"text": "hand it to a member of staff"
+						},
+						{
+							"label": "C",
+							"text": "put it in the bins provided on the boat"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"We don't have any bins to put litter in, but Jess, myself or Ray, our other guide, will collect it from you after lunch and put it all in a large plastic sack."
+					]
+				}
+			]
+		},
+		{
+			"range": "15-16",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. Which TWO features of the lighthouse does Lou mention?",
+			"questions": [
+				{
+					"number": 15,
+					"text": "Choose TWO letters, A-E. Which TWO features of the lighthouse does Lou mention?",
+					"options": [
+						{
+							"label": "A",
+							"text": "why it was built"
+						},
+						{
+							"label": "B",
+							"text": "who built it"
+						},
+						{
+							"label": "C",
+							"text": "how long it took to build"
+						},
+						{
+							"label": "D",
+							"text": "who staffed it"
+						},
+						{
+							"label": "E",
+							"text": "what it was built with"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 16,
+					"text": "Choose TWO letters, A-E. Which TWO features of the lighthouse does Lou mention?",
+					"options": [
+						{
+							"label": "A",
+							"text": "why it was built"
+						},
+						{
+							"label": "B",
+							"text": "who built it"
+						},
+						{
+							"label": "C",
+							"text": "how long it took to build"
+						},
+						{
+							"label": "D",
+							"text": "who staffed it"
+						},
+						{
+							"label": "E",
+							"text": "what it was built with"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "17-18",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. Which TWO features of the lighthouse does Lou mention?",
+			"questions": [
+				{
+					"number": 17,
+					"text": "Choose TWO letters, A-E. Which TWO types of creature might come close to the boat?",
+					"options": [
+						{
+							"label": "A",
+							"text": "sea eagles"
+						},
+						{
+							"label": "B",
+							"text": "fur seals"
+						},
+						{
+							"label": "C",
+							"text": "dolphins"
+						},
+						{
+							"label": "D",
+							"text": "whales"
+						},
+						{
+							"label": "E",
+							"text": "penguins"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 18,
+					"text": "Choose TWO letters, A-E. Which TWO types of creature might come close to the boat?",
+					"options": [
+						{
+							"label": "A",
+							"text": "sea eagles"
+						},
+						{
+							"label": "B",
+							"text": "fur seals"
+						},
+						{
+							"label": "C",
+							"text": "dolphins"
+						},
+						{
+							"label": "D",
+							"text": "whales"
+						},
+						{
+							"label": "E",
+							"text": "penguins"
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "19-20",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. Which TWO features of the lighthouse does Lou mention?",
+			"questions": [
+				{
+					"number": 19,
+					"text": "Choose TWO letters, A-E. Which TWO points does Lou make about the caves?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Only large tourist boats can visit them."
+						},
+						{
+							"label": "B",
+							"text": "The entrances to them are often blocked."
+						},
+						{
+							"label": "C",
+							"text": "It is too dangerous for individuals to go near them."
+						},
+						{
+							"label": "D",
+							"text": "Someone will explain what is inside them."
+						},
+						{
+							"label": "E",
+							"text": "They cannot be reached on foot."
+						}
+					],
+					"answer": "D"
+				},
+				{
+					"number": 20,
+					"text": "Choose TWO letters, A-E. Which TWO points does Lou make about the caves?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Only large tourist boats can visit them."
+						},
+						{
+							"label": "B",
+							"text": "The entrances to them are often blocked."
+						},
+						{
+							"label": "C",
+							"text": "It is too dangerous for individuals to go near them."
+						},
+						{
+							"label": "D",
+							"text": "Someone will explain what is inside them."
+						},
+						{
+							"label": "E",
+							"text": "They cannot be reached on foot."
+						}
+					],
+					"answer": "E"
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,268 @@
+{
+	"id": "d4c31b8c-2855-4c97-8f1a-1a0d6f721195",
+	"url": "https://stepielts.com/student/listening/d4c31b8c-2855-4c97-8f1a-1a0d6f721195?mode=practice",
+	"title": "Veg Out - Vegan restaurant",
+	"source": "C21T3",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/c8c354e1-0570-4db1-9775-bfed0e59ee8a.mp3",
+	"transcript": "Speaker 0: Part two. You will hear a man giving a talk to people who are interested in starting their own street food business. First, you have some time to look at questions 11 to 14. Now listen carefully and answer questions 11 to 14.\nSpeaker 1: Good evening, everyone. My name's John, and I run Veg Out, a street food business selling vegan food. Since 2012, I've been travelling all around the country cooking vegan food in my converted van and selling it at all kinds of outdoor events. I'm here to give you some advice based on my experience. The good news is that there's never been a better time to start your own street food business. Street food continues to grow in popularity. I think there are a couple of reasons for this. The first is that street food is a reaction against fast food. Street food ranges from high quality burgers to vegan curries and everything in between. But while fast food is cheap and easy to find, it's not particularly good for you. It's also the same everywhere. What you get with street food, on the other hand, is something different. People like the idea of trying something they can't get anywhere else. They also like seeing food prepared in front of them and which hasn't come straight out of a freezer. You need to think about the best place to sell your street food. People always think music festivals are an obvious place to start, but the cost of renting a space can be huge, and there's always a lot of competition. Food markets, on the other hand, are great because customers are always really interested in food and give great feedback. And if you can get a spot in your local park, fantastic. Usually very relaxed, but with lots of customers passing by. Once you get established, you'll start getting asked to do parties, which can be really challenging but lots of fun. Having street food at weddings has become quite fashionable too, but you need to really know what you're doing as everything needs to be perfect.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 15 to 20. Now listen and answer questions 15 to 20.\nSpeaker 1: Setting up a street food business costs a lot less than opening a restaurant or cafe, but you'll have to buy some basic equipment. I try to get things like hobs and fridges secondhand if you can. You can replace them with better quality stuff if your business takes off. Renting is another option, but you'll end up spending more money rather than saving it. You've probably got a good idea about the food you're planning to sell. I expect you've done some research to find out if anyone else is selling a similar product, and you'll have thought about any possible allergies to nuts or eggs, etcetera. But there's one thing people don't always think about, and that's how you're going to serve it. On a plate? In a bag? Will you provide a fork? Will it all be easily recyclable or reusable? It's got to be easy to eat and look attractive, or customers won't come back. Once you get started, you should be prepared for things to go wrong. Every business faces problems, and here are a few examples from street food businesses that I know. My friends who run Thai Basil started by juggling their street food business with their day jobs in a restaurant. Their work life balance was nonexistent as they were working till midnight in the restaurant all week and then took their food truck to markets on their days off. The owners of Basque found it was hard to make a profit because the price of fish essential for some of their dishes was so high, and it was hard to charge customers a lot more for those dishes, so they had to stop focusing on fish dishes and include more vegetarian food. The owners of Lou's kitchen were making salads to order from their van, and some of their dishes were quite complicated. At one of their first events, they ended up with people standing in a long queue for more than fifteen minutes, and many of them lost patience. So make sure whatever you offer can be served quickly and efficiently. The owners of Chip Chop had found a perfect venue near a beach where there weren't any other street food trucks. But what they hadn't realized was that they'd need a special license, which individual businesses don't need at markets or festivals. It was a complicated process, and in the end they gave up. So I hope that's given you a flavor of some of the things that can hap\nSpeaker 0: That is the end of part two. You now have thirty seconds to check your answers to part two.",
+	"body": {
+		"text": "17. Thai Basil [17]\n18. Basque [18]\n19. Lou's kitchen [19]\n20. Chip Chop [20]",
+		"html": "<p>17. Thai Basil [17]</p><p>18. Basque [18]</p><p>19. Lou's kitchen [19]</p><p>20. Chip Chop [20]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "11-12",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Which TWO explanations for the popularity of street food are given?",
+					"options": [
+						{
+							"label": "A",
+							"text": "low price"
+						},
+						{
+							"label": "B",
+							"text": "locally sourced"
+						},
+						{
+							"label": "C",
+							"text": "freshly made"
+						},
+						{
+							"label": "D",
+							"text": "convenience"
+						},
+						{
+							"label": "E",
+							"text": "unusual food"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 12,
+					"text": "Which TWO explanations for the popularity of street food are given?",
+					"options": [
+						{
+							"label": "A",
+							"text": "low price"
+						},
+						{
+							"label": "B",
+							"text": "locally sourced"
+						},
+						{
+							"label": "C",
+							"text": "freshly made"
+						},
+						{
+							"label": "D",
+							"text": "convenience"
+						},
+						{
+							"label": "E",
+							"text": "unusual food"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "13-14",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 13,
+					"text": "Which TWO places are recommended for new street food businesses?",
+					"options": [
+						{
+							"label": "A",
+							"text": "music festivals"
+						},
+						{
+							"label": "B",
+							"text": "food markets"
+						},
+						{
+							"label": "C",
+							"text": "weddings"
+						},
+						{
+							"label": "D",
+							"text": "parties"
+						},
+						{
+							"label": "E",
+							"text": "parks"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 14,
+					"text": "Which TWO places are recommended for new street food businesses?",
+					"options": [
+						{
+							"label": "A",
+							"text": "music festivals"
+						},
+						{
+							"label": "B",
+							"text": "food markets"
+						},
+						{
+							"label": "C",
+							"text": "weddings"
+						},
+						{
+							"label": "D",
+							"text": "parties"
+						},
+						{
+							"label": "E",
+							"text": "parks"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "15-16",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 15,
+					"text": "What does the speaker say about getting equipment for a street food business?",
+					"options": [
+						{
+							"label": "A",
+							"text": "High quality equipment is a good investment."
+						},
+						{
+							"label": "B",
+							"text": "It's best to buy second-hand equipment."
+						},
+						{
+							"label": "C",
+							"text": "Renting equipment can be cheap."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Setting up a street food business costs a lot less than opening a restaurant or cafe, but you'll have to buy some basic equipment."
+					]
+				},
+				{
+					"number": 16,
+					"text": "What advice is given about creating a product for a street food business?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Provide information about the ingredients."
+						},
+						{
+							"label": "B",
+							"text": "It is important to have an original product."
+						},
+						{
+							"label": "C",
+							"text": "The presentation is an important factor."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But there's one thing people don't always think about, and that's how you're going to serve it.",
+						"On a plate?",
+						"In a bag?",
+						"Will you provide a fork?",
+						"Will it all be easily recyclable or reusable?",
+						"It's got to be easy to eat and look attractive, or customers won't come back.",
+						"Once you get started, you should be prepared for things to go wrong."
+					]
+				}
+			]
+		},
+		{
+			"range": "17-20",
+			"type": "MATCHING_FEATURES",
+			"instructions": "What problem did the owners of each of the following street food businesses experience?\nChoose FOUR answers from the box and choose the correct letter, A-F, next to Questions 17-20.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Some ingredients were too expensive."
+				},
+				{
+					"label": "B",
+					"text": "The meals took a long time to prepare."
+				},
+				{
+					"label": "C",
+					"text": "They had no money for marketing."
+				},
+				{
+					"label": "D",
+					"text": "It was difficult to get a permit to sell food."
+				},
+				{
+					"label": "E",
+					"text": "A competitor was selling similar food in their area."
+				},
+				{
+					"label": "F",
+					"text": "They worked very long hours."
+				}
+			],
+			"body": "17. Thai Basil [17]\n18. Basque [18]\n19. Lou's kitchen [19]\n20. Chip Chop [20]",
+			"body_html": "<p>17. Thai Basil [17]</p><p>18. Basque [18]</p><p>19. Lou's kitchen [19]</p><p>20. Chip Chop [20]</p>",
+			"questions": [
+				{
+					"number": 17,
+					"text": "Thai Basil",
+					"answer": "F",
+					"quotes": [
+						"My friends who run Thai Basil started by juggling their street food business with their day jobs in a restaurant.",
+						"Their work life balance was nonexistent as they were working till midnight in the restaurant all week and then took their food truck to markets on their days off."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Basque",
+					"answer": "A",
+					"quotes": [
+						"The owners of Basque found it was hard to make a profit because the price of fish essential for some of their dishes was so high, and it was hard to charge customers a lot more for those dishes, so they had to stop focusing on fish dishes and include more vegetarian food."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Lou's kitchen",
+					"answer": "B",
+					"quotes": [
+						"The owners of Lou's kitchen were making salads to order from their van, and some of their dishes were quite complicated.",
+						"At one of their first events, they ended up with people standing in a long queue for more than fifteen minutes, and many of them lost patience."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Chip Chop",
+					"answer": "D",
+					"quotes": [
+						"The owners of Chip Chop had found a perfect venue near a beach where there weren't any other street food trucks.",
+						"But what they hadn't realized was that they'd need a special license, which individual businesses don't need at markets or festivals.",
+						"It was a complicated process, and in the end they gave up."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

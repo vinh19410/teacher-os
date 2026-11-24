@@ -1,0 +1,106 @@
+{
+	"id": "0ae95647-e0ae-4ea1-94a4-ccc8b26f264f",
+	"url": "https://stepielts.com/student/listening/0ae95647-e0ae-4ea1-94a4-ccc8b26f264f?mode=practice",
+	"title": "Film Club",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/71062e9b-8cc9-4f24-bbe4-8043293d18c6.mp3",
+	"transcript": "Speaker 0: To find recent real exam, authentic tests, join us. Telegram channel, IELTS papers.\nSpeaker 1: IELTS listening version five six six five eight. You will hear a number of different recordings, and you will have to answer questions on what you hear. There will be time for you to read the instructions and questions, and you will have a chance to check your work. All the recordings will be played once only. The test is in four parts. Write all your answers in the listening question booklet. At the end of the test, you will be given ten minutes to transfer your answers to an answer sheet. Now turn to part one on page two of your question booklet. Part one. You will hear a teenager asking about joining a film club. First, you have some time to look at questions one to four. Now listen carefully and answer questions one to four.\nSpeaker 2: Hi. Can I help you?\nSpeaker 0: Yeah. I saw on the Internet that you have a film club here at the cinema, but there wasn't a lot about it. Can you tell me a bit more?\nSpeaker 2: Yes. We're still setting up the web page. Sorry about that. We only started the club a few months ago. It's been very popular right from the beginning. We have regular film showings, and there are lots of other benefits.\nSpeaker 0: How often does the club meet?\nSpeaker 2: Every two weeks on Thursday nights.\nSpeaker 0: Okay. And I'm 16. So could I join?\nSpeaker 2: Sure. People of any age can join.\nSpeaker 0: Right. So how much does it cost to join?\nSpeaker 2: Well, it depends. The basic charge is £24 a season. But for people eligible for concessions, it's £21.50.\nSpeaker 0: I'm a student.\nSpeaker 2: You'd get the concession rate then.\nSpeaker 0: That's good.\nSpeaker 2: That entitles you to free entry to the club films and also to £2 off tickets for all other films on at the cinema. So you'd pay £4.50 instead of £6.50.\nSpeaker 0: Great. Okay.\nSpeaker 2: Now I don't know if this applies to you, but club members are also eligible for three hours complimentary parking when there's a film on.\nSpeaker 0: Well, I don't drive, but my girlfriend does. So it might be useful. Yes. Okay. Well, I'd definitely like to join.\nSpeaker 1: Before you hear the rest of the conversation, you have some time to look at questions five to 10. Now listen and answer questions five to 10.\nSpeaker 0: Can you give me any information about the next few films you're showing?\nSpeaker 2: I'm afraid we've run out of leaflets for this season. So I'll tell you about the next few films, and hopefully, we'll have all details on the Internet soon. So the next meeting's this Thursday, October 14, and that's a film called Pablo.\nSpeaker 0: Ah, I read the reviews of that. It's set in Argentina, isn't it? Mhmm. About a child who's run away from home?\nSpeaker 2: That's right. It just came out recently.\nSpeaker 0: And the kid somehow gets on TV and he wins a dance competition or something.\nSpeaker 2: A singing competition. Yeah. I haven't seen it either, but it tells you on the posters. Yes. It sounds really good.\nSpeaker 0: Well, I definitely want to see that. What's on after that?\nSpeaker 2: On October 28, there's an American film called The Soldier. That's an old silent movie. But in this showing, we have someone who'll accompany it on the piano, just like they used to in the old cinemas, though it was sometimes an organ accompaniment in those days.\nSpeaker 0: Must be a pretty old film then. When did they release the first talkies? 1926 or '27?\nSpeaker 2: Yes. This was made in 1922, so well before. Though I think they had short feature films with sound by 1923, actually.\nSpeaker 0: So what sort of film is it?\nSpeaker 2: Well, it's billed as a comedy, though you'd think it was a war film from the title. I don't know much about the plot. We don't have much information, though you could always look it up on the Internet.\nSpeaker 0: Yeah. I'll do that.\nSpeaker 2: Then the next film after that, so that'll be let's see. The November 11 is a film about animals, and it's just called Tiger. And that's a cartoon film, which makes it sound as if it's for children, but actually, it's aimed at adults, and it's really quite frightening in places. I saw it when it first came out.\nSpeaker 0: What's it about?\nSpeaker 2: It's got no humans in it at all. It's just about the effect of environmental changes millions of years ago on the animals who lived then. It's a really strange film. There's a talk afterwards given by the director, so that should be very popular. You'll need to book early for that, I should think.\nSpeaker 0: Right. Well, thanks for all that. Now if you can give me the application form\nSpeaker 2: Sure. That\nSpeaker 1: is the end of part one. You now have one minute to check your answers to part one.",
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "FILL_BLANK",
+			"instructions": "Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Film Club\nMembership Information\nThe club meets every 2 weeks.\nNo [1] limit.\nStudent membership costs £ [2] per season.\nMembers get:\nFree entry to club films\n£ [3] reduction on other films at the cinema.\nMembers are entitled to 3 hours' free [4].",
+			"body_html": "<table><tbody><tr><td><h3>Film Club</h3><ul><li><strong>Membership Information</strong><ul><li>The club meets every 2 weeks.</li><li>No [1] limit.</li><li>Student membership costs £ [2] per season.</li></ul></li><li><strong>Members get:</strong><ul><li>Free entry to club films</li><li>£ [3] reduction on other films at the cinema.</li><li>Members are entitled to 3 hours' free [4].</li></ul></li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "No [1] limit.",
+					"answer": "age",
+					"quotes": ["People of any age can join."]
+				},
+				{
+					"number": 2,
+					"text": "Student membership costs £ [2] per season.",
+					"answer": "21.50",
+					"quotes": ["But for people eligible for concessions, it's £21.50."]
+				},
+				{
+					"number": 3,
+					"text": "£ [3] reduction on other films at the cinema.",
+					"answer": "2",
+					"quotes": [
+						"That entitles you to free entry to the club films and also to £2 off tickets for all other films on at the cinema."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Members are entitled to 3 hours' free [4].",
+					"answer": "parking",
+					"quotes": [
+						"Now I don't know if this applies to you, but club members are also eligible for three hours complimentary parking when there's a film on."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Films to be shown\nOct 14: Pablo\nAbout a child in [5] who's run away from home and wins a [6] competition on TV.\nOct 28: The Soldier\nWith live [7] accompaniment.\nMade in the year [8].\nType of film: a [9].\nNov 11: Tiger\nCartoon aimed at adults.\nFollowed by a [10] by the director.",
+			"body_html": "<table><tbody><tr><td><p><strong>Films to be shown</strong></p><p><strong>Oct 14: Pablo</strong></p><p>About a child in [5] who's run away from home and wins a [6] competition on TV.</p><p><strong>Oct 28: The Soldier</strong></p><p>With live [7] accompaniment.<br>Made in the year [8].<br>Type of film: a [9].</p><p><strong>Nov 11: Tiger</strong></p><p>Cartoon aimed at adults.<br>Followed by a [10] by the director.</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "About a child in _______ way from home and wins a _______ competition on TV.",
+					"answer": "run",
+					"quotes": [
+						"About a child who's run away from home?",
+						"It's set in Argentina, isn't it?",
+						"So the next meeting's this Thursday, October 14, and that's a film called Pablo."
+					]
+				},
+				{
+					"number": 6,
+					"text": "About a child in _______ way from home and wins a _______ competition on TV.",
+					"answer": "singing",
+					"quotes": ["A singing competition."]
+				},
+				{
+					"number": 7,
+					"text": "With live [7] accompaniment.",
+					"answer": "piano",
+					"quotes": [
+						"But in this showing, we have someone who'll accompany it on the piano, just like they used to in the old cinemas, though it was sometimes an organ accompaniment in those days."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Made in the year [8].",
+					"answer": "1922",
+					"quotes": ["This was made in 1922, so well before."]
+				},
+				{
+					"number": 9,
+					"text": "Type of film: a [9].",
+					"answer": "comedy",
+					"quotes": [
+						"Well, it's billed as a comedy, though you'd think it was a war film from the title."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Followed by a [10] by the director.",
+					"answer": "talk",
+					"quotes": [
+						"There's a talk afterwards given by the director, so that should be very popular."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,182 @@
+{
+	"id": "4a68f1fb-f2d4-4e0f-a2d3-d252b1ee281e",
+	"url": "https://stepielts.com/student/listening/4a68f1fb-f2d4-4e0f-a2d3-d252b1ee281e?mode=practice",
+	"title": "Healthy Hearing Medical Clinic And Surgery",
+	"source": "Collection",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/fc29fd27-20eb-4233-a2cd-04badd3f15c3.mp3",
+	"transcript": "Speaker 1: Hello, and welcome to the home page for the Healthy Hearing Medical Clinic and Surgery, where we’d like to share a little more information about the services we provide and more. Our hospital is one of the leading specialised hospitals in the United Kingdom, attracting the very best healthcare professionals from around the globe. Not only are we a leading medical practice, but we are also the only hospital in the United Kingdom dedicated entirely to the treatment of, and research into the curing of hearing loss. Our facilities and staff here are renowned across Europe, attracting thousands of patients a year. Our consultations can number anything up to 11,000 patients a year, however we aim to treat around 5,000 patients a year so as to maintain and ensure the quality of our services. Our patients are guaranteed the highest standard of care, as well as the use of our first class facilities. All patients requiring overnight treatment are provided with their own private room with en-suite facilities, as well as a state-of-the-art entertainment centre, which includes a flat screen LCD television and Playstation. Appointments with our healthcare professionals can be made at any time during the week, with female doctors available between 8 am and 11 am. If you need to see a doctor outside of these times, please visit the ’Out of Hours’ page of our website for more information. Our doctors are all trained to an exceptionally high standard, and practice a vast array of specialties: Mr. Robert is a fully qualified ear and throat specialist, Mr. Edwards is a pediatric hearing specialist, while Mr. Green specialises in reversing hearing loss. For more details about our people, please visit the ’Staff Members’ page on our website. During a consultation, doctors will sometimes decide medication is required, for which patients should receive a prescription. There are several pharmacies within the city; however we recommend that patients use the pharmacy housed within our health care facility. Our in-house pharmacy is well-stocked at all times, our products are competitively priced, and our pharmacists are on hand to help and advise from 8 am until 10 pm from Monday to Saturday, and from 9 am until 12 pm on Sundays. If you require any help outside of these hours, please see our ’Out of Hours’ page on the website. Since the Healthy Hearing Medical Clinic and Surgery also functions as a teaching hospital, we aim to provide our students with every opportunity to expose themselves to medicine in practice. Therefore we would like to encourage our patients to give their consent for a medical student to attend their consultations. If our patients are not comfortable with this, there will be a form at reception where patients will be able to opt out. Now, please look at the map I’ve given you of the Healthy Hearing Medical Clinic and Surgery. For those not familiar with our practice, reception can be found through the main door at the end of the corridor. If your consultation is booked with Mr. Green, you need to go through the main door and turn right by the nurses’ desk, and his office is at the end of the corridor on your left-hand side. If you need to alter any of your personal details, please visit our secretary at the Office for Medical Records, which you will find next to the therapy room. If you’re awaiting surgery, please first check in with reception, before taking the first door on the right after you enter the clinic. Finally, in the event that you feel disappointed with any of the services we have provided, or have any further questions, please locate our Manager’s Office, which can be found near the Office for Medical Records and between two closets. If you have any more questions about the Healthy Hearing Medical Clinic and Surgery, please do not hesitate to contact us on 01256 111 111. fade out",
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "How many patients does the hospital consult every year?",
+					"options": [
+						{
+							"label": "A",
+							"text": "3,000"
+						},
+						{
+							"label": "B",
+							"text": "5,000"
+						},
+						{
+							"label": "C",
+							"text": "11,000"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Our consultations can number anything up to 11,000 patients a year, however we aim to treat around 5,000 patients a year so as to maintain and ensure the quality of our services."
+					]
+				},
+				{
+					"number": 2,
+					"text": "When can patients meet the female doctor?",
+					"options": [
+						{
+							"label": "A",
+							"text": "on weekday mornings"
+						},
+						{
+							"label": "B",
+							"text": "three days a week"
+						},
+						{
+							"label": "C",
+							"text": "only on Mondays and Fridays"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Appointments with our healthcare professionals can be made at any time during the week, with female doctors available between 8 am and 11 am."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Who is the expert on treating hearing loss?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Mr. Robert"
+						},
+						{
+							"label": "B",
+							"text": "Mr. Green"
+						},
+						{
+							"label": "C",
+							"text": "Mr. Edwards"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Our doctors are all trained to an exceptionally high standard, and practice a vast array of specialties: Mr. Robert is a fully qualified ear and throat specialist, Mr. Edwards is a pediatric hearing specialist, while Mr. Green specialises in reversing hearing loss."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Where are patients recommended to buy their medicine?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the supermarket in the town"
+						},
+						{
+							"label": "B",
+							"text": "pharmacies nearby the city centre"
+						},
+						{
+							"label": "C",
+							"text": "the health care’s pharmacy"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"There are several pharmacies within the city; however we recommend that patients use the pharmacy housed within our health care facility."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What will the patients be asked about whether they are willing to do?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Letting one student attend the consultation"
+						},
+						{
+							"label": "B",
+							"text": "Asking postgraduate students to do treatment"
+						},
+						{
+							"label": "C",
+							"text": "Meeting students in group discussion"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Therefore we would like to encourage our patients to give their consent for a medical student to attend their consultations."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below.",
+			"instructions_html": "<p>Label the map below.</p><p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/da263fb4-d25c-4cd0-8f9a-9a38dea9efc3.jpg\" alt=\"Vol20 2\"></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H"],
+			"questions": [
+				{
+					"number": 6,
+					"text": "Reception",
+					"answer": "F",
+					"quotes": [
+						"For those not familiar with our practice, reception can be found through the main door at the end of the corridor."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Mr. Green’s Room",
+					"answer": "H",
+					"quotes": [
+						"If your consultation is booked with Mr. Green, you need to go through the main door and turn right by the nurses’ desk, and his office is at the end of the corridor on your left-hand side."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Medical Records Office",
+					"answer": "B",
+					"quotes": [
+						"If you need to alter any of your personal details, please visit our secretary at the Office for Medical Records, which you will find next to the therapy room."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Surgery Room",
+					"answer": "D",
+					"quotes": [
+						"If you’re awaiting surgery, please first check in with reception, before taking the first door on the right after you enter the clinic."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Manager’s Office",
+					"answer": "C",
+					"quotes": [
+						"Finally, in the event that you feel disappointed with any of the services we have provided, or have any further questions, please locate our Manager’s Office, which can be found near the Office for Medical Records and between two closets."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/da263fb4-d25c-4cd0-8f9a-9a38dea9efc3.jpg"
+	]
+}

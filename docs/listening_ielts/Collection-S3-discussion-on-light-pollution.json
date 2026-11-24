@@ -1,0 +1,260 @@
+{
+	"id": "266a4bfe-a7f3-4d8f-b3fb-0a1741507e41",
+	"url": "https://stepielts.com/student/listening/266a4bfe-a7f3-4d8f-b3fb-0a1741507e41?mode=practice",
+	"title": "Discussion on light pollution",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/e0af74de-d595-4c68-91a1-618348c49715.mp3",
+	"transcript": "Speaker 1: Jim: Jane, what did you think of professor Morgan’s lecture? I don’t know about you, but I find it incredibly difficult to believe that light influences the environment as much as he says. I’ve never seen any journal articles, websites, or anything that verifies his arguments. It’s stupid.\nSpeaker 2: Jane: On the contrary, I’ve seen a great deal of research supporting his argument from a wide range of renowned scientists. Have you looked at the recommended textbook listed on the course outline given to us at the beginning of the semester? All the information is in there. Perhaps you’ve just been looking in the wrong places.\nSpeaker 1: Jim: I never look at the course outlines. I have so many loose sheets of paper I tend to lose anything I’m given by the end of the day. What’s the textbook they recommend, and where can I get it from? I should probably go buy it soon. I’m already behind in the course.\nSpeaker 2: Jane: Yeah. You definitely should buy it, and our grades are more important this year. It’s called the influence of light on the environment. You should be able to find it in the bookshop on campus. If not, they’ll order it within two weeks. In the meantime, you should read up on Ken Simpson’s work. He argues that in order to protect natural habitats, governments should endeavor to turn off lights in cities at night.\nSpeaker 1: Jim: Well, that’s controversial. I doubt any government would be willing to do that anytime soon. I imagine roads would become quite dangerous without street lighting. For this issue, Dave Keppler suggests they could just replace the existing lights with more environmentally friendly bulbs. They could even install solar powered lights. That way, roads will be more eco friendly while maintaining safety. Although, I guess, they wouldn’t be particularly effective in colder countries, especially during the winter.\nSpeaker 2: Jane: That’s quite a good idea, actually. The price of solar power is supposed to be on par with electricity within the next few decades, and it was on the news this morning. I’ve also heard that according to Sharon Gray, in countries with more sunlight, insect eating animals tend to be smaller in size since there are fewer insects and the remaining insects produced a smaller number of eggs.\nSpeaker 1: Jim: Yeah. I think I read somewhere that sunlight also has a negative effect on the quality of water, but I’m not sure I believe it. In many hot countries, particularly developing countries, there is a lot of water pollution caused by factories rather than sunlight. Nevertheless, Maria Jackson says that in direct sunlight, the surface of the water becomes more translucent. Therefore, it affects the amount of sunlight that aquatic insects can absorb. Not much research has been undertaken to prove Jackson’s theory, but it seems to have been widely accepted anyway.\nSpeaker 2: Jane: I’ve never heard of that. I’ll have to look it up on Google. The only other theory I’ve studied is Barbara Swallow’s study on how a declined insect population adversely affects the frog population. Not that I’m complaining. I hate insects, especially spiders.\nSpeaker 1: Jim: You have arachnophobia. I never would have guessed. Didn’t your brother have a pet black widow spider?\nSpeaker 2: Jane: Yes. He did, and I hated it. It escaped from its cage once, and we never found it. I had nightmares for months. Jane: Okay. Now I’m getting goosebumps. Let’s change the subject. What’s your stance on natural and artificial light?\nSpeaker 1: Jim: Honestly, I’m not sure it makes much difference which one you use. Species will die out either way. I think the real argument we should consider is global warming and protection or replacement of finite fuels. Solar power provides us with an incredible opportunity to replace electricity, and governments should definitely increase spending on research in this field. The theories discussed in our lectures, like Simpson’s and Grays, are so vague and lack proof, so I don’t understand why we even study them.\nSpeaker 2: Jane: I see what you mean. I don’t like learning unsupported theories for exams, and I’d rather spend my time learning something else. For example, I’d be much more interested in studying the animals in safari parks than researching migratory birds, particularly the effect of tourists on the quality of life of animals. As we know, every year, thousands of visitors will drive in their own vehicles or ride in vehicles provided by the facility to observe freely roaming animals.\nSpeaker 1: Jim: Yeah. That would be really interesting, especially those animals living in more tropical countries like Borneo. Following on from that, I want to study how bringing animals over from foreign countries to put in our zoos affects their life expectancy. For example, do you remember when China sent pandas to Edinburgh Zoo? Apparently, one of the pandas became depressed, but it was never explained why. To me, obviously, you can’t take an animal out of its natural habitat and put it in a cage on the other side of the world. It just doesn’t work.",
+	"body": {
+		"text": "Ken Simpson [1]\nDave Kepler [2]\nSharon Grey [3]\nMaria Jackson [4]\nBarbara Swallow [5]",
+		"html": "<p>Ken Simpson [1]</p><p>Dave Kepler [2]</p><p>Sharon Grey [3]</p><p>Maria Jackson [4]</p><p>Barbara Swallow [5]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MATCHING_NAMES",
+			"instructions": "What is the main opinion of each of the following people?",
+			"options": [
+				{
+					"label": "A",
+					"text": "lighting restrictions"
+				},
+				{
+					"label": "B",
+					"text": "alternative lighting"
+				},
+				{
+					"label": "C",
+					"text": "reduce the number of insects"
+				},
+				{
+					"label": "D",
+					"text": "decline in the number of species"
+				},
+				{
+					"label": "E",
+					"text": "climate change"
+				},
+				{
+					"label": "F",
+					"text": "impacts on the growth of animals"
+				},
+				{
+					"label": "G",
+					"text": "impacts on water quality"
+				}
+			],
+			"body": "Ken Simpson [1]\nDave Kepler [2]\nSharon Grey [3]\nMaria Jackson [4]\nBarbara Swallow [5]",
+			"body_html": "<p>Ken Simpson [1]</p><p>Dave Kepler [2]</p><p>Sharon Grey [3]</p><p>Maria Jackson [4]</p><p>Barbara Swallow [5]</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Ken Simpson",
+					"answer": "A",
+					"quotes": [
+						"He argues that in order to protect natural habitats, governments should endeavor to turn off lights in cities at night."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Dave Kepler",
+					"answer": "B",
+					"quotes": [
+						"For this issue, Dave Keppler suggests they could just replace the existing lights with more environmentally friendly bulbs."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Sharon Grey",
+					"answer": "F",
+					"quotes": [
+						"I’ve also heard that according to Sharon Gray, in countries with more sunlight, insect eating animals tend to be smaller in size since there are fewer insects and the remaining insects produced a smaller number of eggs."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Maria Jackson",
+					"answer": "G",
+					"quotes": [
+						"Nevertheless, Maria Jackson says that in direct sunlight, the surface of the water becomes more translucent. Therefore, it affects the amount of sunlight that aquatic insects can absorb."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Barbara Swallow",
+					"answer": "D",
+					"quotes": [
+						"The only other theory I’ve studied is Barbara Swallow’s study on how a declined insect population adversely affects the frog population."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-7",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, or C",
+			"questions": [
+				{
+					"number": 6,
+					"text": "What does Jim think about the difference among species in natural and artificial light?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It makes no difference"
+						},
+						{
+							"label": "B",
+							"text": "Species will die out in natural light"
+						},
+						{
+							"label": "C",
+							"text": "Species will die out in artificial light"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Jim: Honestly, I’m not sure it makes much difference which one you use."
+					]
+				},
+				{
+					"number": 7,
+					"text": "One reason why Jim and Jane felt unsatisfied about the theories discussed in the lecture was that",
+					"options": [
+						{
+							"label": "A",
+							"text": "governments didn't increase any spending on them"
+						},
+						{
+							"label": "B",
+							"text": "most theories had nothing to do with the exam"
+						},
+						{
+							"label": "C",
+							"text": "many theories lack solid proof in the field"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The theories discussed in our lectures, like Simpson’s and Grays, are so vague and lack proof, so I don’t understand why we even study them."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-10",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose THREE letters, A-G.",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Which THREE topics are they interested in studying in the future?",
+					"options": [
+						{
+							"label": "A",
+							"text": "quality of life tourism"
+						},
+						{
+							"label": "B",
+							"text": "wildlife park animals"
+						},
+						{
+							"label": "C",
+							"text": "migration birds"
+						},
+						{
+							"label": "D",
+							"text": "animals living in rural areas"
+						},
+						{
+							"label": "E",
+							"text": "animals living in tropical climate"
+						},
+						{
+							"label": "F",
+							"text": "the impact of different environments on animals"
+						},
+						{
+							"label": "G",
+							"text": "pandas in the zoo"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 9,
+					"text": "Which THREE topics are they interested in studying in the future?",
+					"options": [
+						{
+							"label": "A",
+							"text": "quality of life tourism"
+						},
+						{
+							"label": "B",
+							"text": "wildlife park animals"
+						},
+						{
+							"label": "C",
+							"text": "migration birds"
+						},
+						{
+							"label": "D",
+							"text": "animals living in rural areas"
+						},
+						{
+							"label": "E",
+							"text": "animals living in tropical climate"
+						},
+						{
+							"label": "F",
+							"text": "the impact of different environments on animals"
+						},
+						{
+							"label": "G",
+							"text": "pandas in the zoo"
+						}
+					],
+					"answer": "E"
+				},
+				{
+					"number": 10,
+					"text": "Which THREE topics are they interested in studying in the future?",
+					"options": [
+						{
+							"label": "A",
+							"text": "quality of life tourism"
+						},
+						{
+							"label": "B",
+							"text": "wildlife park animals"
+						},
+						{
+							"label": "C",
+							"text": "migration birds"
+						},
+						{
+							"label": "D",
+							"text": "animals living in rural areas"
+						},
+						{
+							"label": "E",
+							"text": "animals living in tropical climate"
+						},
+						{
+							"label": "F",
+							"text": "the impact of different environments on animals"
+						},
+						{
+							"label": "G",
+							"text": "pandas in the zoo"
+						}
+					],
+					"answer": "F"
+				}
+			]
+		}
+	],
+	"images": []
+}

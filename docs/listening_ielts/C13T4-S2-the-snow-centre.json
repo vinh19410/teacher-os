@@ -1,0 +1,224 @@
+{
+	"id": "5e5c45e2-8ed7-41d0-8277-9576298158a0",
+	"url": "https://stepielts.com/student/listening/5e5c45e2-8ed7-41d0-8277-9576298158a0?mode=practice",
+	"title": "The Snow Centre",
+	"source": "C13T4",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/7dc5cbe0-c30a-48b4-b756-b965f11195aa.mp3",
+	"transcript": "Speaker 0: Now turn to section two. Section two You will hear a woman called Annie, who works at the Snow Centre in New Zealand, welcoming a group of visitors to the centre. First, you have some time to look at questions 11 to 16. Now listen carefully and answer questions 11 to 16.\nSpeaker 1: Hi, everyone. Welcome to the snow center. My name's Annie. I hope you enjoyed the bus trip from the airport. We've certainly got plenty of snow today. Well, you've come to New Zealand's premier snow and ski centre, and we've a whole load of activities for you during your week here. Most visitors come here for the cross country skiing, where you're on fairly flat ground for most of the time, rather than going down steep mountainsides. There are marked trails, but you can also leave these and go off on your own, and that's an experience not to be missed. You can go at your own speed. It's great aerobic exercise if you really push yourself. Or if you prefer, you can just glide gently along and enjoy the beautiful scenery. This afternoon, you'll be going on a dog sled trip. You may have seen our dogs on TV recently racing in the winter sled festival. If you want, you can have your own team for the afternoon and learn how to drive them, following behind our leader on the trail. Or if you'd prefer, you can just sit back in the sled and enjoy the ride as a passenger. At the weekend, we have the team relay event, and you're all welcome to join in. We have a local school coming along, and a lot of the teachers are taking part too. Participation rather than winning is the main focus, and there's a medal for everyone who takes part. Participants are in teams of two to four, and each team must complete four laps of the course. For your final expedition, you'll head off to Mount Frenna, wearing a pair of special snow shoes, which allow you to walk on top of the snow. This is an area where miners once searched for gold, though there are very few traces of their work left now. When the snow melts in summer, the mountain slopes are carpeted in flowers and plants. It's a long ascent, though not too steep, and walkers generally take a couple of days to get to the summit and return. You'll spend the night in our hut halfway up the mountain. That's included in your package for the stay. It's got cooking facilities, firewood, and water for drinking. For washing, we recommend you use melted snow, though, to conserve supplies. We can take your luggage up on our snowmobile for you for just $10 a person. The hut has cooking facilities, so you can make a hot meal in the evening and morning, but you need to take your own food. The weather on Mount Frenner can be very stormy. In that case, stay in the hut. Generally, the storms don't last long. Don't stress about getting back here to the centre in time to catch the airport bus. They'll probably not be running anyway. We do have an emergency locator beacon in the hut, but only use that if it's a real emergency, like if someone's ill or injured.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 17 to 20. Now listen and answer questions 17 to 20.\nSpeaker 1: Now let me tell you something about the different ski trails you can follow during your stay here. Highland Trail's directly accessible from where we are now. This trail's been designed to give first timers an experience they'll enjoy regardless of their age or skill, but it's also ideal for experts to practice their technique. Then there's Pine Trail. If you're nervous about skiing, leave this one to the experts. You follow a steep valley looking right down on the river below. Scary. But if you've fully mastered the techniques needed for hills, it's great fun. Stony Trail's a good choice once you've got a general idea of the basics. There are one or two tricky sections, but nothing too challenging. There's a shelter halfway where you can sit and take a break and enjoy the afternoon sunshine. And finally, Losers Trail. This starts off following a gentle river valley, but the last part is quite exposed, so the snow conditions can be challenging. If it's snowing or windy, check with us before you set out to make sure the trail's open that day. Right. So now if you'd like to follow me, we'll get started.\nSpeaker 0: That is the end of section two. You now have half a minute to check your answers.",
+	"body": {
+		"text": "Highland Trail [17]\nPine Trail [18]\nStony Trail [19]\nLoser's Trail [20]",
+		"html": "<p>Highland Trail [17]</p><p>Pine Trail [18]</p><p>Stony Trail [19]</p><p>Loser's Trail [20]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "11-16",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Annie recommends that when cross-country skiing, the visitors should",
+					"options": [
+						{
+							"label": "A",
+							"text": "get away from the regular trails."
+						},
+						{
+							"label": "B",
+							"text": "stop to enjoy views of the scenery."
+						},
+						{
+							"label": "C",
+							"text": "go at a slow speed at the beginning."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"There are marked trails, but you can also leave these and go off on your own, and that's an experience not to be missed."
+					]
+				},
+				{
+					"number": 12,
+					"text": "What does Annie tell the group about this afternoon’s dog-sled trip?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Those who want to can take part in a race."
+						},
+						{
+							"label": "B",
+							"text": "Anyone has the chance to drive a team of dogs."
+						},
+						{
+							"label": "C",
+							"text": "One group member will be chosen to lead the trail."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"If you want, you can have your own team for the afternoon and learn how to drive them, following behind our leader on the trail."
+					]
+				},
+				{
+					"number": 13,
+					"text": "What does Annie say about the team relay event?",
+					"options": [
+						{
+							"label": "A",
+							"text": "All participants receive a medal."
+						},
+						{
+							"label": "B",
+							"text": "The course is 4 km long."
+						},
+						{
+							"label": "C",
+							"text": "Each team is led by a teacher."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Participation rather than winning is the main focus, and there's a medal for everyone who takes part."
+					]
+				},
+				{
+					"number": 14,
+					"text": "On the snow-shoe trip, the visitors will",
+					"options": [
+						{
+							"label": "A",
+							"text": "visit an old gold mine."
+						},
+						{
+							"label": "B",
+							"text": "learn about unusual flowers."
+						},
+						{
+							"label": "C",
+							"text": "climb to the top of a mountain."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"For your final expedition, you'll head off to Mount Frenna, wearing a pair of special snow shoes, which allow you to walk on top of the snow. This is an area where miners once searched for gold, though there are very few traces of their work left now. When the snow melts in summer, the mountain slopes are carpeted in flowers and plants. It's a long ascent, though not too steep, and walkers generally take a couple of days to get to the summit and return."
+					]
+				},
+				{
+					"number": 15,
+					"text": "The cost of accommodation in the mountain hut includes",
+					"options": [
+						{
+							"label": "A",
+							"text": "a supply of drinking water."
+						},
+						{
+							"label": "B",
+							"text": "transport of visitors’ luggage."
+						},
+						{
+							"label": "C",
+							"text": "cooked meals."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"It's got cooking facilities, firewood, and water for drinking."
+					]
+				},
+				{
+					"number": 16,
+					"text": "If there is a storm while the visitors are in the hut, they should",
+					"options": [
+						{
+							"label": "A",
+							"text": "contact the bus driver."
+						},
+						{
+							"label": "B",
+							"text": "wait until the weather improves."
+						},
+						{
+							"label": "C",
+							"text": "use the emergency locator beacon."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"In that case, stay in the hut. Generally, the storms don't last long."
+					]
+				}
+			]
+		},
+		{
+			"range": "17-20",
+			"type": "MATCHING",
+			"instructions": "What information does Annie give about skiing on each of the following mountain trails?\nChoose FOUR answers from the box and write the correct letter, A-F, next to Questions 7 - 10\nMountain trails",
+			"options": [
+				{
+					"label": "A",
+					"text": "It has a good place to stop and rest."
+				},
+				{
+					"label": "B",
+					"text": "It is suitable for all abilities."
+				},
+				{
+					"label": "C",
+					"text": "It involves crossing a river."
+				},
+				{
+					"label": "D",
+					"text": "It demands a lot of skill."
+				},
+				{
+					"label": "E",
+					"text": "It may be closed in bad weather."
+				},
+				{
+					"label": "F",
+					"text": "It has some very narrow sections."
+				}
+			],
+			"body": "Highland Trail [17]\nPine Trail [18]\nStony Trail [19]\nLoser's Trail [20]",
+			"body_html": "<p>Highland Trail [17]</p><p>Pine Trail [18]</p><p>Stony Trail [19]</p><p>Loser's Trail [20]</p>",
+			"questions": [
+				{
+					"number": 17,
+					"text": "Highland Trail",
+					"answer": "B",
+					"quotes": [
+						"This trail's been designed to give first timers an experience they'll enjoy regardless of their age or skill, but it's also ideal for experts to practice their technique."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Pine Trail",
+					"answer": "D",
+					"quotes": [
+						"If you're nervous about skiing, leave this one to the experts. You follow a steep valley looking right down on the river below. Scary. But if you've fully mastered the techniques needed for hills, it's great fun."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Stony Trail",
+					"answer": "A",
+					"quotes": [
+						"There's a shelter halfway where you can sit and take a break and enjoy the afternoon sunshine."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Loser's Trail",
+					"answer": "E",
+					"quotes": [
+						"If it's snowing or windy, check with us before you set out to make sure the trail's open that day."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

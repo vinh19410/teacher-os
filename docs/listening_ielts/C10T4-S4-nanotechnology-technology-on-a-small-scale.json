@@ -1,0 +1,156 @@
+{
+	"id": "e239b0da-11eb-41cb-838c-07bff7f6be1f",
+	"url": "https://stepielts.com/student/listening/e239b0da-11eb-41cb-838c-07bff7f6be1f?mode=practice",
+	"title": "Nanotechnology: technology on a small scale",
+	"source": "C10T4",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "31-40",
+	"audio_url": "https://audio.stepielts.com/listening-audio/2cc7a8aa-89f2-493e-869e-a07b01a32d69.mp3",
+	"transcript": "Speaker 0: Now turn to section four. Section four. You will hear a woman talking to a group of first year science undergraduates about the developing science of nanotechnology. First, you have some time to look at questions 31 to 40. Now listen carefully and answer questions 31 to 40.\nSpeaker 1: Today, we're going to look at an important area of science, namely nanotechnology. So what is it? Nano means tiny, so it's science and engineering on the scale of atoms and molecules. The idea is that by controlling and rearranging atoms, you can literally create anything. However, as we'll see, the science of the small has some big implications affecting us in many ways. There's no doubt that nanotechnology promises so much for civilization. However, all new technologies have their teething problems, and with nanotechnology, society often gets the wrong idea about its capabilities. Numerous science fiction books and movies have raised people's fears about nanotechnology, with scenarios such as inserting little nanorobots into your body that monitor everything you do without you realizing it, or self replicating nanorobots that eventually take over the world. So how do we safeguard such a potentially powerful technology? Some scientists recommend that nanoparticles be treated as new chemicals, with separate safety tests and clear labeling. They believe that greater care should also be taken with nanoparticles in laboratories and factories. Others have called for a withdrawal of new nanoproducts, such as cosmetics, and a temporary halt to many kinds of nanotech research. But as far as I'm concerned, there's a need to plough ahead with the discoveries and applications of nanotechnology. I really believe that most scientists would welcome a way to guard against unethical uses of such technology. We can't go around thinking that all innovation is bad. All advancement is bad. As with the debate about any new technology, it is how you use it that's important. So let's look at some of its possible uses. Thanks to nanotechnology, there could be a major breakthrough in the field of transportation with the production of more durable metals. These could be virtually unbreakable, lighter, and much more pliable, leading to planes that are 50 times lighter than at present. Those same improved capabilities will dramatically reduce the cost of traveling into space, making it more accessible to ordinary people and opening up a totally new holiday destination. In terms of technology, the computer industry will be able to shrink computer parts down to minute sizes. We need nanotechnology in order to create a new generation of computers that will work even faster and will have a million times more memory, but will be about the size of a sugar cube. Nanotechnology could also revolutionize the way that we generate power. The cost of solar cells will be drastically reduced, so harnessing this energy will be far more economical than at present. But nanotechnology has much wider applications than this and could have an enormous impact on our environment. For instance, tiny airborne nanorobots could be programmed to actually rebuild the ozone layer, which could lessen the impact of global warming on our planet. That's a pretty amazing thought, isn't it? On a more local scale, this new technology could help with the cleanup of environmental disasters as nanotechnology will allow us to remove oil and other contaminants from the water far more effectively. And if nanotechnology progresses as expected, as a sort of building block set of about 90 atoms, then you could build anything you wanted from the bottom up. In terms of production, this means that you only use what you need, and so there wouldn't be any waste. The notion that you could create anything at all has major implications for our health. It means that we'll eventually be able to replicate anything. This would have a phenomenal effect on our society. In time, it could even lead to the eradication of famine through the introduction of machines that produce food to feed the hungry. But it's in the area of medicine that nanotechnology may have its biggest impact. How we detect disease will change as tiny biosensors are developed to analyze tests in minutes rather than days. There's even speculation nanorobots could be used to slow the aging process, lengthening life expectancy. As you can see, I'm very excited by the implications that could be available to us in the next few decades. Just how long it'll take, I honestly don't know.\nSpeaker 0: That is the end of section four. You now have half a minute to check your answers. That is the end of the listening test. In the IELTS test, you would now have ten minutes to transfer your answers to the answer sheet.",
+	"body": {
+		"text": "Uses of Nanotechnology\nTransport\n● Nanotechnology could allow the development of stronger [34]\n● Planes would be much lighter in weight.\n● [35] travel will be made available to the masses.\nTechnology\n● Computers will be even smaller, faster, and will have a greater [36].\n● [37] Energy will become more affordable.\nThe Environment\n● Nano-robots could rebuild the ozone layer.\n● Pollutants such as [38] could be removed from water\n● There will be no [39] from manufacturing.\nHealth and Medicine\n● New methods of food production could eradicate famine.\n● Analysis of medical [40] will be speeded up.\n● Life expectancy could be increased.",
+		"html": "<h4><strong>Uses of Nanotechnology</strong></h4><p><strong>Transport</strong></p><p>●   Nanotechnology could allow the development of stronger [34]</p><p>●   Planes would be much lighter in weight.</p><p><strong>●   </strong>[35] travel will be made available to the masses.</p><p><strong>Technology</strong></p><p>●   Computers will be even smaller, faster, and will have a greater [36].</p><p><strong>●   </strong>[37] Energy will become more affordable.</p><p><strong>The Environment</strong></p><p>●   Nano-robots could rebuild the ozone layer.</p><p>●   Pollutants such as [38] could be removed from water</p><p>●   There will be no [39] from manufacturing.</p><p><strong>Health and Medicine</strong></p><p>●   New methods of food production could eradicate famine.</p><p>●   Analysis of medical [40] will be speeded up.</p><p>●   Life expectancy could be increased.</p>"
+	},
+	"question_groups": [
+		{
+			"range": "31-33",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 31,
+					"text": "The speaker says that one problem with nanotechnology is that",
+					"options": [
+						{
+							"label": "A",
+							"text": "it could threaten our way of life."
+						},
+						{
+							"label": "B",
+							"text": "it could be used to spy on people."
+						},
+						{
+							"label": "C",
+							"text": "it is misunderstood by the public."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"However, all new technologies have their teething problems, and with nanotechnology, society often gets the wrong idea about its capabilities."
+					]
+				},
+				{
+					"number": 32,
+					"text": "According to the speaker, some scientists believe that nono-particles",
+					"options": [
+						{
+							"label": "A",
+							"text": "should be restricted to secure environments."
+						},
+						{
+							"label": "B",
+							"text": "should be used with more caution."
+						},
+						{
+							"label": "C",
+							"text": "should only be developed for essential products."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"They believe that greater care should also be taken with nanoparticles in laboratories and factories."
+					]
+				},
+				{
+					"number": 33,
+					"text": "In the speaker’s opinion, research into nanotechnology",
+					"options": [
+						{
+							"label": "A",
+							"text": "has yet to win popular support."
+						},
+						{
+							"label": "B",
+							"text": "could be seen as unethical."
+						},
+						{
+							"label": "C",
+							"text": "ought to be continued."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But as far as I'm concerned, there's a need to plough ahead with the discoveries and applications of nanotechnology."
+					]
+				}
+			]
+		},
+		{
+			"range": "34-40",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "Uses of Nanotechnology\nTransport\n● Nanotechnology could allow the development of stronger [34]\n● Planes would be much lighter in weight.\n● [35] travel will be made available to the masses.\nTechnology\n● Computers will be even smaller, faster, and will have a greater [36].\n● [37] Energy will become more affordable.\nThe Environment\n● Nano-robots could rebuild the ozone layer.\n● Pollutants such as [38] could be removed from water\n● There will be no [39] from manufacturing.\nHealth and Medicine\n● New methods of food production could eradicate famine.\n● Analysis of medical [40] will be speeded up.\n● Life expectancy could be increased.",
+			"body_html": "<h4><strong>Uses of Nanotechnology</strong></h4><p><strong>Transport</strong></p><p>●   Nanotechnology could allow the development of stronger [34]</p><p>●   Planes would be much lighter in weight.</p><p><strong>●   </strong>[35] travel will be made available to the masses.</p><p><strong>Technology</strong></p><p>●   Computers will be even smaller, faster, and will have a greater [36].</p><p><strong>●   </strong>[37] Energy will become more affordable.</p><p><strong>The Environment</strong></p><p>●   Nano-robots could rebuild the ozone layer.</p><p>●   Pollutants such as [38] could be removed from water</p><p>●   There will be no [39] from manufacturing.</p><p><strong>Health and Medicine</strong></p><p>●   New methods of food production could eradicate famine.</p><p>●   Analysis of medical [40] will be speeded up.</p><p>●   Life expectancy could be increased.</p>",
+			"questions": [
+				{
+					"number": 34,
+					"text": "● Nanotechnology could allow the development of stronger [34]",
+					"answer": "metal / metals",
+					"quotes": [
+						"Thanks to nanotechnology, there could be a major breakthrough in the field of transportation with the production of more durable metals."
+					]
+				},
+				{
+					"number": 35,
+					"text": "● [35] travel will be made available to the masses.",
+					"answer": "Space",
+					"quotes": [
+						"Those same improved capabilities will dramatically reduce the cost of traveling into space, making it more accessible to ordinary people and opening up a totally new holiday destination."
+					]
+				},
+				{
+					"number": 36,
+					"text": "● Computers will be even smaller, faster, and will have a greater [36].",
+					"answer": "memory",
+					"quotes": [
+						"We need nanotechnology in order to create a new generation of computers that will work even faster and will have a million times more memory, but will be about the size of a sugar cube."
+					]
+				},
+				{
+					"number": 37,
+					"text": "● [37] Energy will become more affordable.",
+					"answer": "Solar",
+					"quotes": [
+						"The cost of solar cells will be drastically reduced, so harnessing this energy will be far more economical than at present."
+					]
+				},
+				{
+					"number": 38,
+					"text": "● Pollutants such as [38] could be removed from water",
+					"answer": "oil",
+					"quotes": [
+						"On a more local scale, this new technology could help with the cleanup of environmental disasters as nanotechnology will allow us to remove oil and other contaminants from the water far more effectively."
+					]
+				},
+				{
+					"number": 39,
+					"text": "● There will be no [39] from manufacturing.",
+					"answer": "waste",
+					"quotes": [
+						"In terms of production, this means that you only use what you need, and so there wouldn't be any waste."
+					]
+				},
+				{
+					"number": 40,
+					"text": "● Analysis of medical [40] will be speeded up.",
+					"answer": "tests",
+					"quotes": [
+						"How we detect disease will change as tiny biosensors are developed to analyze tests in minutes rather than days."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

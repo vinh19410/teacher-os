@@ -1,0 +1,99 @@
+{
+	"id": "0f10a52d-2428-4499-ba40-60d1bcb55213",
+	"url": "https://stepielts.com/student/listening/0f10a52d-2428-4499-ba40-60d1bcb55213?mode=practice",
+	"title": "Product Change and Repair Report",
+	"source": "Forecast Quý 2-2025",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/a8308c1b-fce8-4b14-b998-c1cc9554b830.mp3",
+	"transcript": "Speaker 1: Man: Hello, Cozy House Home Appliance, this is sales representative Mike speaking, how may I help you?\nSpeaker 2: Woman: Hello, I bought a vacuum cleaner last month, but it doesn’t work as well as I expected, I am considering returning it.\nSpeaker 1: Man: Okay, first I need to get a few details about this item, can you give me your name, please?\nSpeaker 2: Woman: Yes, it’s Dinane Ruddick.\nSpeaker 1: Man: It’s R-U-D-D-I-C-K, right?\nSpeaker 2: Woman: Yes, that’s right.\nSpeaker 1: Man: Could you tell me your mobile number?\nSpeaker 2: Woman: It’s 4-5 double 6-3-2-1, and that’s my home number.\nSpeaker 1: Man: Got it, and your address, please?\nSpeaker 2: Woman: It’s No.42, Garden Avenue.\nSpeaker 1: Man: Right, now I need some information about the product. Do you remember when exactly you bought it last month?\nSpeaker 2: Woman: Um, let me see, there was a promotion from 26th July to 31st July, and I made the purchase on the last day.\nSpeaker 1: Man: Okay, now I need to take down a few details about the problem, is it the noise too loud or it’s broken?\nSpeaker 2: Woman: Not really, the problem lies in the handle. After I used the cleaner twice, I noticed that the handle often falls off if I use over 20 minutes. It’s just dangerous, I don’t want to get hurt. Besides, the buttons on the handle, they are not in good condition. Last night, I pressed all of them, but nothing happened. I highly doubt the quality of the item!\n!\nSpeaker 1: Man: Okay. I will make a note of that and we will see what we can do. Now I need one more thing, how much did you pay when you bought it? You mentioned you made the purchase during the promotion, right?\nSpeaker 2: Woman: Yeah, that’s right. I still got the invoice, let me check, oh, its original price was $154, but I only paid $104 for that.\nSpeaker 1: Man: Okay, according to what we have talked about just now, I suggest we repair the handle and it’s totally free.\nSpeaker 2: Woman: I don’t think this is a minor problem that can be fixed. I’m quite disappointed with the vacuum cleaner.\nSpeaker 1: Man: Umm, recently we have a new type available, if you are interested..., I can apply for some kind of discount for you.\nSpeaker 2: Woman: That works for me. Could you tell me more about the new model?\nSpeaker 1: Man: Yeah, of course, this model has a reusable bag, so you needn’t buy loads of plastic bags, and it’s more environmentally friendly.\nSpeaker 2: Woman: Yeah, that’s really an advantage for me. Hum, I guess it will be much more expensive than the one I already got, right?\nSpeaker 1: Man: Well, it can be a little bit expensive, but not that much, it’s $290 now, and the price will probably go up next month. But in your case, it’ll be $190.\nSpeaker 2: Woman: Ok, that’s acceptable, as long as it falls into the range of $100 to $200, but I can’t go beyond $200.\nSpeaker 1: Man: Great, then which color do you prefer? We have got red, pink and erm... sky blue and...\nSpeaker 2: Woman: Do you have purple or silver?\nSpeaker 1: Man: Yeah, I guess so, but you will have to wait several days for the model with both colors.\nSpeaker 2: Woman: No problem, as long as it’s not a broken one, I will go for purple.",
+	"body": {
+		"text": "Personal information\nName: Dianne [1]\n[2] telephone number: 4566321\nAddress: No.42, [3] Avenue\nOriginal Purchase\nDate of purchase: [4]\nProblem in the [5]\nPrice: $ [6] (in a sale)\nSuggestion\nFree [7]\nNew model\nIt has a: [8]\nPrice for the woman: $ [9]\nColours picked by the woman: [10]",
+		"html": "<table><tbody><tr><td><h3><strong>Personal information</strong></h3><ul><li><p>Name: Dianne [1]</p></li><li><p>[2] telephone number:  4566321</p></li><li><p>Address: No.42, [3] Avenue</p></li></ul><h3><strong>Original Purchase</strong></h3><ul><li><p>Date of purchase: [4]</p></li><li><p>Problem in the [5]</p></li><li><p>Price:  $ [6] (in a sale)</p></li></ul><h3><strong>Suggestion</strong></h3><ul><li><p>Free [7]</p></li></ul><h3><strong>New model</strong></h3><ul><li><p>It has a: [8]</p></li><li><p>Price for the woman:  $ [9]</p></li><li><p>Colours picked by the woman: [10]</p></li></ul></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "Personal information\nName: Dianne [1]\n[2] telephone number: 4566321\nAddress: No.42, [3] Avenue\nOriginal Purchase\nDate of purchase: [4]\nProblem in the [5]\nPrice: $ [6] (in a sale)\nSuggestion\nFree [7]\nNew model\nIt has a: [8]\nPrice for the woman: $ [9]\nColours picked by the woman: [10]",
+			"body_html": "<table><tbody><tr><td><h3><strong>Personal information</strong></h3><ul><li><p>Name: Dianne [1]</p></li><li><p>[2] telephone number:  4566321</p></li><li><p>Address: No.42, [3] Avenue</p></li></ul><h3><strong>Original Purchase</strong></h3><ul><li><p>Date of purchase: [4]</p></li><li><p>Problem in the [5]</p></li><li><p>Price:  $ [6] (in a sale)</p></li></ul><h3><strong>Suggestion</strong></h3><ul><li><p>Free [7]</p></li></ul><h3><strong>New model</strong></h3><ul><li><p>It has a: [8]</p></li><li><p>Price for the woman:  $ [9]</p></li><li><p>Colours picked by the woman: [10]</p></li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Name: Dianne [1]",
+					"answer": "Ruddick",
+					"quotes": ["Woman: Yes, it’s Dinane Ruddick."]
+				},
+				{
+					"number": 2,
+					"text": "[2] telephone number: 4566321",
+					"answer": "home",
+					"quotes": [
+						"Woman: It’s 4-5 double 6-3-2-1, and that’s my home number."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Address: No.42, [3] Avenue",
+					"answer": "Garden",
+					"quotes": ["Woman: It’s No.42, Garden Avenue."]
+				},
+				{
+					"number": 4,
+					"text": "Date of purchase: [4]",
+					"answer": "31st July / July 31st / 31 July / July 31",
+					"quotes": [
+						"Woman: Um, let me see, there was a promotion from 26th July to 31st July, and I made the purchase on the last day."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Problem in the [5]",
+					"answer": "handle",
+					"quotes": ["Woman: Not really, the problem lies in the handle."]
+				},
+				{
+					"number": 6,
+					"text": "Price: $ [6] (in a sale)",
+					"answer": "104",
+					"quotes": [
+						"I still got the invoice, let me check, oh, its original price was $154, but I only paid $104 for that."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Free [7]",
+					"answer": "repair",
+					"quotes": [
+						"Man: Okay, according to what we have talked about just now, I suggest we repair the handle and it’s totally free."
+					]
+				},
+				{
+					"number": 8,
+					"text": "It has a: [8]",
+					"answer": "reusable bag",
+					"quotes": [
+						"Man: Yeah, of course, this model has a reusable bag, so you needn’t buy loads of plastic bags, and it’s more environmentally friendly."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Price for the woman: $ [9]",
+					"answer": "190",
+					"quotes": ["But in your case, it’ll be $190."]
+				},
+				{
+					"number": 10,
+					"text": "Colours picked by the woman: [10]",
+					"answer": "purple",
+					"quotes": [
+						"Woman: No problem, as long as it’s not a broken one, I will go for purple."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

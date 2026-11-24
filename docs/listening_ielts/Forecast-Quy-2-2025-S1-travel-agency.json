@@ -1,0 +1,117 @@
+{
+	"id": "93c7caea-53dc-44b1-ac57-4f067931a26a",
+	"url": "https://stepielts.com/student/listening/93c7caea-53dc-44b1-ac57-4f067931a26a?mode=practice",
+	"title": "Travel Agency",
+	"source": "Forecast Quý 2-2025",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/e1a99013-d8dd-4645-a6b0-9d55a66bcc83.mp3",
+	"transcript": "Speaker 1: Woman: Hi. Can I help you?\nSpeaker 2: Man: Hi, I’ve been calling you a few times, but it seems that no one would answer the call.\nSpeaker 1: Woman: Hmm, what time were you calling?\nSpeaker 2: Man: Last time I called you at around 7pm.\nSpeaker 1: Woman: Oh, sorry, we work from 7am to 4pm, so by the time you called, we were all off work.\nSpeaker 2: Man: Oh, that’s why. Anyway, I’d like to find out about trips that families can go on together.\nSpeaker 1: Woman: Sure. There are many options. How about cycling trips? They are really popular. You and your family can ride bicycles to different places to explore beautiful scenery.\nSpeaker 2: Man: That sounds good. I’m looking at your tour site, these tours are kind of expensive, this one is $1200 and…Oh, this one is $1400. Do you have anything cheaper?\nSpeaker 1: Woman: Yes. The cheapest tour is $1100. That’s the one for a local trip, you know, visiting a couple of different towns nearby. It’s a good choice if you have very young children.\nSpeaker 2: Man: My daughter is 14, and my son is 11. They are quite good at cycling, so they can travel longer distances. How many cycling tours do you have?\nSpeaker 1: Woman: Let’s see. We offer tours in different parts of the United States, and there are 30 in total.\nSpeaker 2: Man: That’s a lot. Maybe we can choose a trip in the Rocky Mountains. My children always wanted to go there.\nSpeaker 1: Woman: Yes. We have trips there, too. It’s a perfect way to get close to nature and spend some quality time with family.\nSpeaker 2: Man: So, how long do the trips last?\nSpeaker 1: Woman: Well, a few short trips last for 2 or 3 days. And our longest one is about a month. But most trips are about a week long, in this case, you can go to a couple of places, and you won’t get exhausted.\nSpeaker 2: Man: That’s nice. So, is accommodation included in the price?\nSpeaker 1: Woman: Yes. There will be different types of accommodation for different tours. Oh, meals are included too. So you don’t have to worry about looking for restaurants.\nSpeaker 2: Man: What can we do on the trip? You know, besides cycling?\nSpeaker 1: Woman: You can also take walks. Our tours are specially designed so that visitors can enjoy beautiful landscapes and relax.\nSpeaker 2: Man: OK. That all sounds good. When is the next trip?\nSpeaker 1: Woman: Our tours set out every Tuesday. So maybe you can choose one for next week.\nSpeaker 2: Man: What tours do you have for next week?\nSpeaker 1: Woman: We have two. The first one is a cycling tour in the southern part of the U.S. You will be staying there for 5 nights. How about that?\nSpeaker 2: Man: What can I expect with this one?\nSpeaker 1: Woman: You can see the breathtaking scenery in the south. You can cycle along the river and in the forest. The air is very fresh, and you can always hear birds singing. We’ve also arranged a visit to a beautiful mountain, where there are a lot of animals.\nSpeaker 2: Man: Quite interesting. I guess my children would like that. How about the other trip?\nSpeaker 1: Woman: There are actually two places to go. You can choose either eastern part of the U.S. or California, which is in the west, but the arrangements are almost the same, I mean the length, the routes and everything.\nSpeaker 2: Man: Oh, really? What are the differences between this trip and the one you mentioned earlier?\nSpeaker 1: Woman: You will be staying for 10 nights, which is 5 nights longer than the one to the south. You can cycle along the coastal roads. So you see the ocean while you are on the bikes.\nAnd you stay at hotels at night.\nSpeaker 2: Man: Is there anything else to see? Any attractions?\nSpeaker 1: Woman: There are very nice gardens that you can visit. Our customers said they are really worth visiting. Oh, one special thing for these trips is that if you don’t want to stay in hotels, you can stay on the farm at night. It will be a very memorable experience.\nSpeaker 2: Man: That will be a lot of fun. I think I will book the one to California.",
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below Write ONE WORD OR A NUMBER for each answer.",
+			"body": "The lowest price: $ [1]\nTotal number of bicycle trips: [2]\nMost bike tours last for a [3]\nAccommodation and meals included\nOther activity: [4]\nTime: every [5]",
+			"body_html": "<p>The lowest price:  $    <strong></strong>[1]</p><p>Total number of bicycle trips:      [2]</p><p>Most bike tours last for a     [3]</p><p>Accommodation and meals included</p><p>Other activity:     [4]</p><p>Time: every     [5]</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The lowest price: $ [1]",
+					"answer": "1100",
+					"quotes": ["The cheapest tour is $1100."]
+				},
+				{
+					"number": 2,
+					"text": "Total number of bicycle trips: [2]",
+					"answer": "30 / thirty",
+					"quotes": [
+						"We offer tours in different parts of the United States, and there are 30 in total."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Most bike tours last for a [3]",
+					"answer": "week",
+					"quotes": [
+						"But most trips are about a week long, in this case, you can go to a couple of places, and you won’t get exhausted."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Other activity: [4]",
+					"answer": "walking / walks",
+					"quotes": ["Woman: You can also take walks."]
+				},
+				{
+					"number": 5,
+					"text": "Time: every [5]",
+					"answer": "Tuesday",
+					"quotes": ["Woman: Our tours set out every Tuesday."]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below Write ONE WORD OR A NUMBER for each answer",
+			"body": "Nights\nRoutes\nAttractions\nAccommodations\nSouthern USA\n[6]\nriverside and [7]\nbeautiful mountains\nhotels\nEastern USA and California\n10\n[8] roads\n[9]\nhotels and a [10]",
+			"body_table": [
+				["", "Nights", "Routes", "Attractions", "Accommodations"],
+				[
+					"Southern USA",
+					"[6]",
+					"riverside and [7]",
+					"beautiful mountains",
+					"hotels"
+				],
+				[
+					"Eastern USA and California",
+					"10",
+					"[8] roads",
+					"[9]",
+					"hotels and a [10]"
+				]
+			],
+			"body_html": "<p></p><table><tbody><tr><td><p></p></td><td><p>Nights</p></td><td><p>Routes</p></td><td><p>Attractions</p></td><td><p>Accommodations</p></td></tr><tr><td><p><strong>Southern USA</strong></p></td><td><p>[6]</p></td><td><p>riverside and  [7]</p></td><td><p>beautiful mountains</p></td><td><p>hotels</p></td></tr><tr><td><p><strong>Eastern USA and California</strong></p></td><td><p>10</p></td><td><p>[8] roads</p></td><td><p>[9] </p></td><td><p>hotels and a [10]</p></td></tr></tbody></table><p></p>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "",
+					"answer": "5 / five",
+					"quotes": [
+						"The first one is a cycling tour in the southern part of the U.S. You will be staying there for 5 nights."
+					]
+				},
+				{
+					"number": 7,
+					"text": "riverside and [7]",
+					"answer": "forest",
+					"quotes": ["You can cycle along the river and in the forest."]
+				},
+				{
+					"number": 8,
+					"text": "[8] roads",
+					"answer": "coastal",
+					"quotes": ["You can cycle along the coastal roads."]
+				},
+				{
+					"number": 9,
+					"text": "",
+					"answer": "gardens",
+					"quotes": ["Woman: There are very nice gardens that you can visit."]
+				},
+				{
+					"number": 10,
+					"text": "hotels and a [10]",
+					"answer": "farm",
+					"quotes": [
+						"Oh, one special thing for these trips is that if you don’t want to stay in hotels, you can stay on the farm at night."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

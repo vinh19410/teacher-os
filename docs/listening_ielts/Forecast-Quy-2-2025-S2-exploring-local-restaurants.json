@@ -1,0 +1,270 @@
+{
+	"id": "546573d9-fe71-41d9-bd9d-58ec2a4b146b",
+	"url": "https://stepielts.com/student/listening/546573d9-fe71-41d9-bd9d-58ec2a4b146b?mode=practice",
+	"title": "Exploring local restaurants",
+	"source": "Forecast Quý 2-2025",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/4734709c-f1a2-4114-8a81-9cfde012a727.mp3",
+	"transcript": "Speaker 1: Good afternoon, welcome to today’s program. Today, we would be examining some of our local restaurants and their features and services. We have quite a number of restaurants in the area, but only a few worth mentioning. Let’s get started. The first on our list is Hot and Spicy. As the name suggests, their food features traditional Mexican styles with homemade spices that are wonderful in taste. And, their prices are also very ‘hot’ and reserved for those with really deep pockets. The quality of their food however is top-notch and their waiters are very smartly dressed and also respond promptly when needed. Pizza Power is located in a very small cubicle as I like to call it and as such cannot accommodate much. It is however good for evening dates, that is, if you get there in time to secure seats. The management team should seriously look at how they can solve this issue, otherwise it’s a shame to lose customers during peak hours. The Wellington is an average restaurant that is mainly patronized by common people. Their waiters do not have uniforms and their food is very average. We have had a number of reports from people who claimed that they were served food different from what they ordered. Where the mix-up happened, I don’t know, but I know that the manager of the restaurant should look into it and ensure that this does not repeat itself. Jeremy’s Recipe is a great restaurant with warm waiters and good quality food. Their only drawback is the fact that they only have three options in terms of food selection, which is rare in this industry. I think if they want to specialize in some aspect, they should, but if not, they should make more choices available for customers so they can cater for the needs of more people. Of all the restaurants mentioned, Rocking Kitchen seems to have taken the ’less is more’ philosophy a bit too literally with their servings. This restaurant’s portion sizes may leave you feeling unsure if you’ve had a full meal. A little generosity on the plate could go a long way in keeping customers coming back. Now to the part that concerns you, at the moment, Oyster Hut restaurant has agreed to have a promo throughout this week. When you order their pizza, prepare to be surprised with an extra serving of salad without extra cost, perfectly complementing your meal. As part of this promotion, you and your guests will have the privilege of enjoying a private space, elevating your dining experience to new heights. The promo continues next week, Oyster Hut will be offering a remarkable deal: receive a complimentary fourth seat for every three seats ordered. Be sure to mark your calendars for next month as well, when the restaurant will unveil delightful surprises during their happy hour events. In comparison, some competitors have initiated a promotion offering a free package with every one-week package purchased this week. It will be interesting to see how this promotion stacks up against Oyster Hut’s current offer. Before you head to Oyster Hut, I would want to give you a fuller picture of their services. While the kitchen maintains good sanitary standards, there have been occasional instances of rude behavior from the waitstaff. Additionally, some customers have reported that certain dishes may not meet the expectations set by the menu, so they doubt the restaurant’s pricing. For those who favor hot or room temperature dishes, you may think twice because Oyster Hut focuses on making cold cuisines and may be hesitant to accommodate requests for heating up food. This is probably why they offer special deals to customers as a compensation. Overall, if you prioritize your diet and health, the option of fresh oysters served with lemon could be a great choice. As we wrap up this part of the program, we wanted to make sure you’re in the know about the top food deals in town. We hope this helps you make savvy choices when dining out at local restaurants.",
+	"body": {
+		"text": "Hot and Spicy [1]\nPizza Power [2]\nThe Wellington [3]\nJeremy’s Recipe [4]\nRocking Kitchen [5]",
+		"html": "<p>Hot and Spicy [1]</p><p>Pizza Power [2]</p><p>The Wellington [3]</p><p>Jeremy’s Recipe [4]</p><p>Rocking Kitchen [5]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MATCHING_NAMES",
+			"instructions": "Which weakness is found in each of the following restaurants?\nProblems",
+			"options": [
+				{
+					"label": "A",
+					"text": "limited choices"
+				},
+				{
+					"label": "B",
+					"text": "slow in serving food"
+				},
+				{
+					"label": "C",
+					"text": "lack of space"
+				},
+				{
+					"label": "D",
+					"text": "unaffordable price"
+				},
+				{
+					"label": "E",
+					"text": "deliver the wrong food"
+				},
+				{
+					"label": "F",
+					"text": "the food is cold"
+				},
+				{
+					"label": "G",
+					"text": "small sized portion"
+				}
+			],
+			"body": "Hot and Spicy [1]\nPizza Power [2]\nThe Wellington [3]\nJeremy’s Recipe [4]\nRocking Kitchen [5]",
+			"body_html": "<p>Hot and Spicy [1]</p><p>Pizza Power [2]</p><p>The Wellington [3]</p><p>Jeremy’s Recipe [4]</p><p>Rocking Kitchen [5]</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Hot and Spicy",
+					"answer": "D",
+					"quotes": [
+						"And, their prices are also very ‘hot’ and reserved for those with really deep pockets."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Pizza Power",
+					"answer": "C",
+					"quotes": [
+						"Pizza Power is located in a very small cubicle as I like to call it and as such cannot accommodate much."
+					]
+				},
+				{
+					"number": 3,
+					"text": "The Wellington",
+					"answer": "E",
+					"quotes": [
+						"We have had a number of reports from people who claimed that they were served food different from what they ordered."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Jeremy’s Recipe",
+					"answer": "A",
+					"quotes": [
+						"Their only drawback is the fact that they only have three options in terms of food selection, which is rare in this industry."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Rocking Kitchen",
+					"answer": "G",
+					"quotes": [
+						"Of all the restaurants mentioned, Rocking Kitchen seems to have taken the ’less is more’ philosophy a bit too literally with their servings. This restaurant’s portion sizes may leave you feeling unsure if you’ve had a full meal."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-7",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Which TWO special offers are available at Oyster Hut this week?",
+					"options": [
+						{
+							"label": "A",
+							"text": "buy one week package and get one free in lunch"
+						},
+						{
+							"label": "B",
+							"text": "free salad for each pizza"
+						},
+						{
+							"label": "C",
+							"text": "happy hour- special price for kids"
+						},
+						{
+							"label": "D",
+							"text": "private space for group guests"
+						},
+						{
+							"label": "E",
+							"text": "four seats for the price of three"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 7,
+					"text": "Which TWO special offers are available at Oyster Hut this week?",
+					"options": [
+						{
+							"label": "A",
+							"text": "buy one week package and get one free in lunch"
+						},
+						{
+							"label": "B",
+							"text": "free salad for each pizza"
+						},
+						{
+							"label": "C",
+							"text": "happy hour- special price for kids"
+						},
+						{
+							"label": "D",
+							"text": "private space for group guests"
+						},
+						{
+							"label": "E",
+							"text": "four seats for the price of three"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "8-10",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Which THREE problems does Oyster Hut have currently?",
+					"options": [
+						{
+							"label": "A",
+							"text": "unhealthy food"
+						},
+						{
+							"label": "B",
+							"text": "unfriendly staff"
+						},
+						{
+							"label": "C",
+							"text": "unclean utensils"
+						},
+						{
+							"label": "D",
+							"text": "something wrong with the takeaway"
+						},
+						{
+							"label": "E",
+							"text": "few special offer"
+						},
+						{
+							"label": "F",
+							"text": "no heating service for cold dishes"
+						},
+						{
+							"label": "G",
+							"text": "overpriced dishes"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 9,
+					"text": "Which THREE problems does Oyster Hut have currently?",
+					"options": [
+						{
+							"label": "A",
+							"text": "unhealthy food"
+						},
+						{
+							"label": "B",
+							"text": "unfriendly staff"
+						},
+						{
+							"label": "C",
+							"text": "unclean utensils"
+						},
+						{
+							"label": "D",
+							"text": "something wrong with the takeaway"
+						},
+						{
+							"label": "E",
+							"text": "few special offer"
+						},
+						{
+							"label": "F",
+							"text": "no heating service for cold dishes"
+						},
+						{
+							"label": "G",
+							"text": "overpriced dishes"
+						}
+					],
+					"answer": "F"
+				},
+				{
+					"number": 10,
+					"text": "Which THREE problems does Oyster Hut have currently?",
+					"options": [
+						{
+							"label": "A",
+							"text": "unhealthy food"
+						},
+						{
+							"label": "B",
+							"text": "unfriendly staff"
+						},
+						{
+							"label": "C",
+							"text": "unclean utensils"
+						},
+						{
+							"label": "D",
+							"text": "something wrong with the takeaway"
+						},
+						{
+							"label": "E",
+							"text": "few special offer"
+						},
+						{
+							"label": "F",
+							"text": "no heating service for cold dishes"
+						},
+						{
+							"label": "G",
+							"text": "overpriced dishes"
+						}
+					],
+					"answer": "G"
+				}
+			]
+		}
+	],
+	"images": []
+}

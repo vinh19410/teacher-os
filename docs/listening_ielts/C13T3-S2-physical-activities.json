@@ -1,0 +1,227 @@
+{
+	"id": "ef7b7b34-4580-444f-88f0-58d43ce81819",
+	"url": "https://stepielts.com/student/listening/ef7b7b34-4580-444f-88f0-58d43ce81819?mode=practice",
+	"title": "Physical activities",
+	"source": "C13T3",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/53af9264-c989-4c34-8f45-21ef150c6a7a.mp3",
+	"transcript": "Speaker 0: Now turn to Section two. Section two You will hear\nSpeaker 1: a fitness instructor talking on the radio about different ways of keeping fit. First, you have some time to look at questions 11 to 16. Now listen carefully and answer questions 11 to 16.\nSpeaker 2: So if you're one of those people who hasn't found the perfect physical activity yet, here are some things to think about which might help you make the right decision for you. The first question to ask yourself is whether you would enjoy training in a gym. Many people are put off by the idea of having to fit a visit to the gym into their busy day. You often have to go very early or late as some gyms can get very crowded. But with regular training, you'll see a big difference in a relatively short space of time. Running has become incredibly popular in recent years. That's probably got a lot to do with the fact that it's a very accessible form of exercise. Anyone can run even if you can only run a few meters to begin with. But make sure you get the right shoes. It's worth investing in a high quality pair, and they don't come cheap. Another great thing about running is that you can do it at any time of day or night. The only thing that may stop you is snow and ice. Swimming is another really good way to build fitness. What attracts many people is that you can swim in an indoor pool at any time of year. On the other hand, it can be quite boring or solitary. It's hard to chat to people while you're swimming lengths. Cycling has become almost as popular as running in recent years. That's probably because as well as improving their fitness, many people say being out in the fresh air in a park or in the countryside can be fun, provided the conditions are right, of course. Only fanatics go out in the wind and rain. Yoga is a good choice for those of you looking for exercise, which focuses on developing both a healthy mind and body. It's a good way of building strength, And with the right instructor, there's less chance of hurting yourself than with other more active sports. But don't expect to find it easy. It can be surprisingly challenging, especially for people who aren't very flexible. Getting a personal trainer is a good way to start your fitness program. Obviously, there can be significant costs involved. But if you've got someone there to encourage you and help you achieve your goals, you're less likely to give up. Make sure you get someone with a recognized qualification, though, or you could do yourself permanent damage.\nSpeaker 1: Before you hear the rest of the radio program, you have some time to look at questions seventeen-twenty. Now listen and answer questions 17 to 20.\nSpeaker 2: Whatever you do, don't join a gym unless you're sure you'll make good use of it. So many people waste lots of money by signing up for membership and then hardly ever go. What happens to their good intentions? I don't think people suddenly stop caring about improving their fitness or decide they have more important things to do. I think people lose interest when they don't think they're making enough progress. That's when they give up hope and stop believing they'll ever achieve their goals. Also, what people sometimes don't realize when they start is that it takes a lot of determination and hard work to keep training week after week, and lots of people don't have that kind of commitment. One thing you can do to help yourself is to set manageable goals. Be realistic, and don't push yourself too far. Some people advise writing goals down, but I think it's better to have a flexible approach. Give yourself a really nice treat every time you reach one of your goals, and don't get too upset if you experience setbacks. It's a journey. There are bound to be difficulties along the way.\nSpeaker 1: That is the end of section two. You now have half a minute to check your answers.",
+	"body": {
+		"text": "using a gym [11]\nrunning [12]\nswimming [13]\ncycling [14]\ndoing yoga [15]\ntraining with a personal trainer [16]",
+		"html": "<p>using a gym [11]</p><p>running [12]</p><p>swimming [13]</p><p>cycling [14]</p><p>doing yoga [15]</p><p>training with a personal trainer [16]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "11-16",
+			"type": "MATCHING",
+			"instructions": "What advantage does the speaker mention for each of the following physical activities?\nChoose SIX answers from the box and write the correct letter, A-G, next to Questions 11-16\nPhysical activities",
+			"options": [
+				{
+					"label": "A",
+					"text": "not dependent on season"
+				},
+				{
+					"label": "B",
+					"text": "enjoyable"
+				},
+				{
+					"label": "C",
+					"text": "low risk of injury"
+				},
+				{
+					"label": "D",
+					"text": "fitness level unimportant"
+				},
+				{
+					"label": "E",
+					"text": "sociable"
+				},
+				{
+					"label": "F",
+					"text": "fast results"
+				},
+				{
+					"label": "G",
+					"text": "motivating"
+				}
+			],
+			"body": "using a gym [11]\nrunning [12]\nswimming [13]\ncycling [14]\ndoing yoga [15]\ntraining with a personal trainer [16]",
+			"body_html": "<p>using a gym [11]</p><p>running [12]</p><p>swimming [13]</p><p>cycling [14]</p><p>doing yoga [15]</p><p>training with a personal trainer [16]</p>",
+			"questions": [
+				{
+					"number": 11,
+					"text": "using a gym",
+					"answer": "F",
+					"quotes": [
+						"But with regular training, you'll see a big difference in a relatively short space of time."
+					]
+				},
+				{
+					"number": 12,
+					"text": "running",
+					"answer": "D",
+					"quotes": [
+						"Anyone can run even if you can only run a few meters to begin with."
+					]
+				},
+				{
+					"number": 13,
+					"text": "swimming",
+					"answer": "A",
+					"quotes": [
+						"What attracts many people is that you can swim in an indoor pool at any time of year."
+					]
+				},
+				{
+					"number": 14,
+					"text": "cycling",
+					"answer": "B",
+					"quotes": [
+						"That's probably because as well as improving their fitness, many people say being out in the fresh air in a park or in the countryside can be fun, provided the conditions are right, of course."
+					]
+				},
+				{
+					"number": 15,
+					"text": "doing yoga",
+					"answer": "C",
+					"quotes": [
+						"It's a good way of building strength, And with the right instructor, there's less chance of hurting yourself than with other more active sports."
+					]
+				},
+				{
+					"number": 16,
+					"text": "training with a personal trainer",
+					"answer": "G",
+					"quotes": [
+						"But if you've got someone there to encourage you and help you achieve your goals, you're less likely to give up."
+					]
+				}
+			]
+		},
+		{
+			"range": "17-18",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 17,
+					"text": "For which TWO reasons does the speaker say people give up going to the gym?",
+					"options": [
+						{
+							"label": "A",
+							"text": "lack of time"
+						},
+						{
+							"label": "B",
+							"text": "loss of confidence"
+						},
+						{
+							"label": "C",
+							"text": "too much effort required"
+						},
+						{
+							"label": "D",
+							"text": "high costs"
+						},
+						{
+							"label": "E",
+							"text": "feeling less successful than others"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 18,
+					"text": "For which TWO reasons does the speaker say people give up going to the gym?",
+					"options": [
+						{
+							"label": "A",
+							"text": "lack of time"
+						},
+						{
+							"label": "B",
+							"text": "loss of confidence"
+						},
+						{
+							"label": "C",
+							"text": "too much effort required"
+						},
+						{
+							"label": "D",
+							"text": "high costs"
+						},
+						{
+							"label": "E",
+							"text": "feeling less successful than others"
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "19-20",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 19,
+					"text": "Which TWO pieces of advice does the speaker give for setting goals?",
+					"options": [
+						{
+							"label": "A",
+							"text": "write goals down"
+						},
+						{
+							"label": "B",
+							"text": "have achievable aims"
+						},
+						{
+							"label": "C",
+							"text": "set a time limit"
+						},
+						{
+							"label": "D",
+							"text": "give yourself rewards"
+						},
+						{
+							"label": "E",
+							"text": "challenge yourself"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 20,
+					"text": "Which TWO pieces of advice does the speaker give for setting goals?",
+					"options": [
+						{
+							"label": "A",
+							"text": "write goals down"
+						},
+						{
+							"label": "B",
+							"text": "have achievable aims"
+						},
+						{
+							"label": "C",
+							"text": "set a time limit"
+						},
+						{
+							"label": "D",
+							"text": "give yourself rewards"
+						},
+						{
+							"label": "E",
+							"text": "challenge yourself"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		}
+	],
+	"images": []
+}

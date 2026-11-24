@@ -1,0 +1,129 @@
+{
+	"id": "4ac7ab10-debf-4007-87a2-0781e2b72d24",
+	"url": "https://stepielts.com/student/listening/4ac7ab10-debf-4007-87a2-0781e2b72d24?mode=practice",
+	"title": "Beechen Festival",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/1ab85b98-1505-421f-a88e-8936d776f13d.mp3",
+	"transcript": "Speaker 1: Employee: Beach and Festival office.\nSpeaker 2: Customer: Oh, hello. I want to check some details about the festival. I know tickets are running out fast, and I haven’t got access to the Internet at present. My computer’s down.\nSpeaker 1: Employee: Okay. Well, the first activity is on June 19 at 7PM, and it’s a concert with local musicians performing.\nSpeaker 2: Customer: Oh, lovely. Is it in the theater like last year?\nSpeaker 1: Employee: Yes. That’s right. And for the next activity on the twentieth, the time’s changed.\nSpeaker 2: Customer: Is that the tour?\nSpeaker 1: Employee: Yes. Now it does say on the tickets that it’s a 03:40 start, but that’s an error. There wasn’t time to update them, unfortunately, so it should say 04:30 instead. The correct time is on the website, though.\nSpeaker 2: Customer: Oh, right. Because one of my friends wants to go on that, to see Beechen with an expert and find out about the town and its history. Does she need to get a ticket in advance?\nSpeaker 1: Employee: No. Just turn up at the station where the guide will be waiting. They’ll start from there, and I think the plan is to stop for a break in the park. And there’s no charge for the tour. And the tour will finish with a visit to the sixteenth century mill where they used to make flour. It’s recently been restored.\nSpeaker 2: Customer: Fine.\nSpeaker 1: Employee: And then on the twenty first, there’s an all day event for children.\nSpeaker 2: Customer: Oh, that could be good for my visitors. They’re bringing theirs, you see.\nSpeaker 1: Employee: Right. Well, the plan was to have a painting competition for the kids, but it’s now going to be cooking instead, and there’ll be prizes for all the different age groups.\nSpeaker 2: Customer: Oh, great.\nSpeaker 1: Employee: And it’s in Beechen Community Centre.\nSpeaker 2: Customer: Oh, yes. I know where that is.\nSpeaker 1: Employee: They don’t need to bring any ingredients, but they’ll need to have a plate to put whatever they’ve made on so they can display it and then take it home.\nSpeaker 2: Customer: Sounds good. And are they going ahead with the fireworks in the evening, or is that cancelled? There was an article in the paper after last year’s display, which suggested it might not be happening again.\nSpeaker 1: Employee: That’s right. No. That’s still on. It’s getting more popular each year, and having it in the town square was starting to be a bit difficult because of the numbers, which is why it’s next to the river this time. It’ll be easy for large numbers of people to get to.\nSpeaker 2: Customer: Yes. Of course. I’m sure there’s lots to look forward to. Customer: Okay. Now I just want to check how it’s going to impact on me as a local resident. I mean, some people last year thought it was too noisy at night.\nSpeaker 1: Employee: Yes. I know. And that’s why this year, evening events won’t go on beyond 11:15. I know previously some activities lasted until 11:45, and the new time applies now to all the events every evening.\nSpeaker 2: Customer: Okay.\nSpeaker 1: Employee: And another change, perhaps you know about this already, is that because of high visitor numbers, parking in the town centre isn’t going to be allowed. It’ll be outside town.\nSpeaker 2: Customer: Oh, yes. To keep the streets clear, I suppose, for all the visitors. I I I did know, actually, and it’s not really going to be a problem for me.\nSpeaker 1: Employee: Right.\nSpeaker 2: Customer: I mean, I I can just walk into town from my home.\nSpeaker 1: Employee: Okay. Well, anyway, if you want to check any more details about the festival, once you’re back online, you can look at https://www.events.com , and you’ll be able to comment on what activities you enjoyed. And what would really help the organizers would be if people could use the website to give feedback about what they enjoyed and that kind of thing. This will help them plan for next year.\nSpeaker 2: Customer: That’s probably a good idea. And with pricing, I know local residents.",
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Date Time Activity Place Comments\nJune 19th 7p.m.\nExample:\nconcert\nthe [1]\nJune 20th [2] tour [3] includes a visit to an old floor mill\nJune 21st all day [4] competition Beechen Community Centre bring a [5]\nJune 21st evening fireworks by the [6]",
+			"body_table": [
+				["Date", "Time", "Activity", "Place", "Comments"],
+				["June 19th", "7p.m.", "Example:\nconcert", "the [1]", ""],
+				[
+					"June 20th",
+					"[2]",
+					"tour",
+					"[3]",
+					"includes a visit to an old floor mill"
+				],
+				[
+					"June 21st",
+					"all day",
+					"[4] competition",
+					"Beechen Community Centre",
+					"bring a [5]"
+				],
+				["June 21st", "evening", "fireworks", "by the [6]", ""]
+			],
+			"body_html": "<table><tbody><tr><td><strong>Date</strong></td><td><strong>Time</strong></td><td><strong>Activity</strong></td><td><strong>Place</strong></td><td><strong>Comments</strong></td></tr><tr><td>June 19th</td><td>7p.m.</td><td><p><u>Example:</u></p><p><strong>concert</strong></p></td><td>the [1]</td><td></td></tr><tr><td>June 20th</td><td>[2]</td><td> tour</td><td>[3]</td><td>includes a visit to an old floor mill</td></tr><tr><td>June 21st</td><td>all day</td><td>[4] competition</td><td>Beechen Community Centre</td><td>bring a [5]</td></tr><tr><td>June 21st</td><td>evening</td><td>fireworks</td><td>by the [6]</td><td></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "the [1]",
+					"answer": "theatre / theater",
+					"quotes": ["Is it in the theater like last year?"]
+				},
+				{
+					"number": 2,
+					"text": "June 20th [2] tour [3] includes a visit to an old floor mill",
+					"answer": "4.30 / 4:30",
+					"quotes": [
+						"There wasn’t time to update them, unfortunately, so it should say 04:30 instead."
+					]
+				},
+				{
+					"number": 3,
+					"text": "June 20th [2] tour [3] includes a visit to an old floor mill",
+					"answer": "station",
+					"quotes": [
+						"Just turn up at the station where the guide will be waiting."
+					]
+				},
+				{
+					"number": 4,
+					"text": "June 21st all day [4] competition Beechen Community Centre bring a [5]",
+					"answer": "cooking",
+					"quotes": [
+						"Well, the plan was to have a painting competition for the kids, but it’s now going to be cooking instead, and there’ll be prizes for all the different age groups."
+					]
+				},
+				{
+					"number": 5,
+					"text": "June 21st all day [4] competition Beechen Community Centre bring a [5]",
+					"answer": "plate",
+					"quotes": [
+						"Employee: They don’t need to bring any ingredients, but they’ll need to have a plate to put whatever they’ve made on so they can display it and then take it home."
+					]
+				},
+				{
+					"number": 6,
+					"text": "June 21st evening fireworks by the [6]",
+					"answer": "river",
+					"quotes": [
+						"It’s getting more popular each year, and having it in the town square was starting to be a bit difficult because of the numbers, which is why it’s next to the river this time."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "This year, activities end by [7] p.m.\nThere won't be any [8] in the town centre this year.\nThe festival's web address is www.[9].com.\nFestival organisers would like to receive [10] on line.",
+			"body_html": "<ul><li>This year, activities end by [7] p.m.</li><li>There won't be any [8] in the town centre this year.</li><li>The festival's web address is www.[9].com.</li><li>Festival organisers would like to receive [10] on line.</li></ul>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "This year, activities end by [7] p.m.",
+					"answer": "11.15 / 11:15",
+					"quotes": [
+						"And that’s why this year, evening events won’t go on beyond 11:15."
+					]
+				},
+				{
+					"number": 8,
+					"text": "There won't be any [8] in the town centre this year.",
+					"answer": "parking",
+					"quotes": [
+						"Employee: And another change, perhaps you know about this already, is that because of high visitor numbers, parking in the town centre isn’t going to be allowed."
+					]
+				},
+				{
+					"number": 9,
+					"text": "The festival's web address is www.[9].com.",
+					"answer": "events",
+					"quotes": [
+						"Well, anyway, if you want to check any more details about the festival, once you’re back online, you can look at https://www.events.com , and you’ll be able to comment on what activities you enjoyed."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Festival organisers would like to receive [10] on line.",
+					"answer": "feedback",
+					"quotes": [
+						"And what would really help the organizers would be if people could use the website to give feedback about what they enjoyed and that kind of thing."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

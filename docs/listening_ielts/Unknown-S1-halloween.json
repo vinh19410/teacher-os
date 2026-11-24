@@ -1,0 +1,194 @@
+{
+	"id": "c3323773-3e7a-4f0d-8e80-75faf31e9088",
+	"url": "https://stepielts.com/student/listening/c3323773-3e7a-4f0d-8e80-75faf31e9088?mode=practice",
+	"title": "Halloween",
+	"source": "Unknown",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/a993ccfc-5e50-4745-83cc-c0e63133ced2.mp3",
+	"transcript": "Speaker 0: Halloween. The holiday called Halloween is celebrated on October 31 of each year. Halloween is not an official holiday. Everyone goes to work or to school on Halloween, just as on any other day. But Halloween is still one of the holidays that children like the most. Why do children like Halloween so much? There are two reasons, costumes and candy. On the evening of October 31, children dress up in strange and unusual costumes. They wear costumes that may look like a witch, a monster, or many other weird things. Putting on these scary costumes is a lot of fun for children. After the children put on their costumes, they walk from house to house during the evening. The children carry large bags with them. At each house, they stop and knock at the door. When an adult opens the door, the children shout, trick or treat. The adult who opens the door pretends to be frightened and then puts pieces of candy into each child's open bag. At the end of the evening, the children have visited many houses and have collected much candy. During the next several days, they can feast upon the sweet candies that they have received. Another Halloween tradition is very unusual. In each house, a family gets a very large round orange vegetable called a pumpkin. They cut a hole in the top of the pumpkin and empty out the flesh and seeds of the vegetable. Then they cut holes in the side of the pumpkin so that it appears to have eyes, a nose, and a mouth. When the carving is finished, the pumpkin looks almost like a person's face. When the pumpkin has been carved to look like a face, people place a light inside the pumpkin so that the vegetable seems to glow in the dark. This strange looking face is called a jack o'-lantern. On Halloween evening, one can see many of these jack o'-lanterns, some of which are very beautifully carved. Halloween is truly a fun and interesting holiday, especially for children.",
+	"body": {
+		"text": "PART A — FILL IN THE BLANK\n1. Halloween is celebrated on October [1] of each year.\n2. The two main reasons children love Halloween are costumes and [2].\n3. Children carry large [3] with them as they walk from house to house.\n4. When an adult opens the door, the children shout \"[4] or [4]\".\n5. When the carving is finished, the pumpkin looks almost like a person's [5].",
+		"html": "<p><strong>PART A — FILL IN THE BLANK</strong></p><p>1. Halloween is celebrated on October [1] of each year.</p><p>2. The two main reasons children love Halloween are costumes and [2].</p><p>3. Children carry large [3] with them as they walk from house to house.</p><p>4. When an adult opens the door, the children shout \"[4] or [4]\".</p><p>5. When the carving is finished, the pumpkin looks almost like a person's [5].</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Listen and complete the sentences. Use ONE OR TWO WORDS only.",
+			"body": "PART A — FILL IN THE BLANK\n1. Halloween is celebrated on October [1] of each year.\n2. The two main reasons children love Halloween are costumes and [2].\n3. Children carry large [3] with them as they walk from house to house.\n4. When an adult opens the door, the children shout \"[4] or [4]\".\n5. When the carving is finished, the pumpkin looks almost like a person's [5].",
+			"body_html": "<p><strong>PART A — FILL IN THE BLANK</strong></p><p>1. Halloween is celebrated on October [1] of each year.</p><p>2. The two main reasons children love Halloween are costumes and [2].</p><p>3. Children carry large [3] with them as they walk from house to house.</p><p>4. When an adult opens the door, the children shout \"[4] or [4]\".</p><p>5. When the carving is finished, the pumpkin looks almost like a person's [5].</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Halloween is celebrated on October [1] of each year.",
+					"answer": "31",
+					"quotes": [
+						"The holiday called Halloween is celebrated on October 31 of each year."
+					]
+				},
+				{
+					"number": 2,
+					"text": "The two main reasons children love Halloween are costumes and [2].",
+					"answer": "candy",
+					"quotes": ["There are two reasons, costumes and candy."]
+				},
+				{
+					"number": 3,
+					"text": "Children carry large [3] with them as they walk from house to house.",
+					"answer": "bags",
+					"quotes": ["The children carry large bags with them."]
+				},
+				{
+					"number": 4,
+					"text": "When an adult opens the door, the children shout \"________ or ________\".",
+					"answer": "trick / treat",
+					"quotes": [
+						"When an adult opens the door, the children shout, trick or treat."
+					]
+				},
+				{
+					"number": 5,
+					"text": "When the carving is finished, the pumpkin looks almost like a person's [5].",
+					"answer": "face",
+					"quotes": [
+						"When the carving is finished, the pumpkin looks almost like a person's face."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Circle the correct answer A, B, C or D.",
+			"questions": [
+				{
+					"number": 6,
+					"text": "What kind of holiday is Halloween?",
+					"options": [
+						{
+							"label": "A",
+							"text": "An official holiday where people do not go to work."
+						},
+						{
+							"label": "B",
+							"text": "A religious holiday celebrated in churches."
+						},
+						{
+							"label": "C",
+							"text": "Not an official holiday — people still go to work and school."
+						},
+						{
+							"label": "D",
+							"text": "A national holiday celebrated only in the United States."
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 7,
+					"text": "What do children do on the evening of October 31st?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They stay at home and watch scary movies."
+						},
+						{
+							"label": "B",
+							"text": "They dress up in strange and unusual costumes."
+						},
+						{
+							"label": "C",
+							"text": "They go to special Halloween parties at school."
+						},
+						{
+							"label": "D",
+							"text": "They decorate their houses with candy."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"On the evening of October 31, children dress up in strange and unusual costumes."
+					]
+				},
+				{
+					"number": 8,
+					"text": "When a child knocks on a door and an adult opens it, what happens next?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The adult gives the child a pumpkin."
+						},
+						{
+							"label": "B",
+							"text": "The adult tells the child to go away."
+						},
+						{
+							"label": "C",
+							"text": "The adult pretends to be frightened and puts candy in the child's bag."
+						},
+						{
+							"label": "D",
+							"text": "The adult asks the child to sing a song before giving candy."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The adult who opens the door pretends to be frightened and then puts pieces of candy into each child's open bag."
+					]
+				},
+				{
+					"number": 9,
+					"text": "What do children do with the candy they collect?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They give it all away to their friends the next day."
+						},
+						{
+							"label": "B",
+							"text": "They throw it away after Halloween is over."
+						},
+						{
+							"label": "C",
+							"text": "They eat it over the next several days."
+						},
+						{
+							"label": "D",
+							"text": "They sell it at school for money."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"During the next several days, they can feast upon the sweet candies that they have received."
+					]
+				},
+				{
+					"number": 10,
+					"text": "What is a Jack O' Lantern?",
+					"options": [
+						{
+							"label": "A",
+							"text": "A type of Halloween costume shaped like a pumpkin."
+						},
+						{
+							"label": "B",
+							"text": "A carved pumpkin with a light placed inside it."
+						},
+						{
+							"label": "C",
+							"text": "A large orange candy given to children on Halloween."
+						},
+						{
+							"label": "D",
+							"text": "A scary mask worn by adults to frighten children."
+						}
+					],
+					"answer": "B"
+				}
+			]
+		}
+	],
+	"images": []
+}

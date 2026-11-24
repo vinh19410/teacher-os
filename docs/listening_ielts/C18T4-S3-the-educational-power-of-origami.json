@@ -1,0 +1,231 @@
+{
+	"id": "266aa366-a56b-45a3-88ce-821ea8e96751",
+	"url": "https://stepielts.com/student/listening/266aa366-a56b-45a3-88ce-821ea8e96751?mode=practice",
+	"title": "The Educational Power of Origami",
+	"source": "C18T4",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/c53a8626-f826-4a95-b588-2ea62a0333d6.mp3",
+	"transcript": "Speaker 0: Part three. Following instructions from their tutor, you will hear two trainee teachers discussing the use of origami, a paper folding activity, in the classroom. First, you have some time to look at questions 21 to 27. Now listen carefully and answer questions 21 to 27.\nSpeaker 1: So now I want you to discuss the lesson we've just been watching on the video and think about the ways in which origami can be a useful educational tool. Can you all work with the person sitting next to you?\nSpeaker 2: I had no idea that such a simple thing like folding squares of paper to make the shape of something like a bird could be such an amazing tool. It's made me see origami in a whole new light.\nSpeaker 1: I know. It was interesting to see the educational skills the children were developing by doing origami. On the video, you could see them really listening hard to make sure they did all the steps in the right order to make the bird.\nSpeaker 2: That's right. In this lesson, they were working individually, but it would also be interesting to see if the children could work out how to make something simple without being given any direction. That would help with building teamwork as well.\nSpeaker 1: Yes. But much more of a challenge. One thing that really stood out for me was that the children were all having fun while being taught something new.\nSpeaker 2: Which is a key aim of any lesson with this age group. And although these kids had no problems with folding the paper, with younger children, you could do origami to help practice fine motor skills.\nSpeaker 1: Absolutely. Shall we talk about the individual children we saw on the video? I wrote all their names down and took some notes.\nSpeaker 2: Yes. I did too.\nSpeaker 1: Okay. Good. Let's start with Sid.\nSpeaker 2: He was interesting because before they started doing the origami, he was being quite disruptive.\nSpeaker 1: Yes. He really benefited from having to use his hands. It helped him to settle down and start concentrating.\nSpeaker 2: Yes. I noticed that too. What about Jack? I noticed he seemed to want to work things out for himself.\nSpeaker 1: You could see him trying out different things rather than asking the teacher for help. What did you make of Naomi?\nSpeaker 2: She seemed to be losing interest at one point, but then she decided she wanted her mouse to be the best, and that motivated her to try harder.\nSpeaker 1: She didn't seem satisfied with hers in the end, though.\nSpeaker 2: No.\nSpeaker 1: Anya was such a star. She listened so carefully and then produced the perfect bird with very little effort.\nSpeaker 2: I think the teacher could have increased the level of difficulty for her.\nSpeaker 1: Maybe. I think it was the first time Zara had come across origami.\nSpeaker 2: She looked as if she didn't really get what was going on.\nSpeaker 1: She seemed unsure about what she was supposed to do. But in the end, hers didn't turn too badly.\nSpeaker 2: Yeah. I'm sure it was a positive learning experience for her. Before\nSpeaker 0: you hear the rest of the discussion, you have some time to look at questions 28 to 30. Now listen and answer questions 28 to 30.\nSpeaker 1: I think one reason why the origami activity worked so well in this class was that the teacher was well prepared.\nSpeaker 2: Right. I think it would have taken me ages to prepare examples showing each of the steps involved in making the bird, but that was a really good idea. The children could see what they were aiming for, and much better for them to be able to hold something rather than just looking at pictures.\nSpeaker 1: Those physical examples supported her verbal explanations really well.\nSpeaker 2: It's strange that origami isn't used more widely. Why do you think that is?\nSpeaker 1: Well, teachers may just feel it's not that appealing to children who are used to doing everything on computers, especially boys, even if they're aware of the benefits. Oh, I\nSpeaker 2: don't know. It's no different to any other craft activity. I bet it's because so many teachers are clumsy like me.\nSpeaker 1: That's true. Too much effort required if you're not good with your hands.\nSpeaker 2: Well, anyway, I think we should try it out in our maths teaching practice with year three. I can see using origami is a really engaging way of reinforcing children's knowledge of geometric shapes like they were doing in the video. But I think it would also work really well for presenting fractions, which is coming up soon.\nSpeaker 1: Good idea. That's something most of the kids in that class might struggle with. Origami would also be good practice for using symmetry, but I think they did that last term.\nSpeaker 2: Okay. Well, let's try and get some ideas together and plan the lesson next week.\nSpeaker 1: Okay. If you could all\nSpeaker 0: That is the end of part three. You now have thirty seconds to check your answers to part three.",
+	"body": {
+		"text": "Sid [23]\nJack [24]\nNaomi [25]\nAnya [26]\nZara [27]",
+		"html": "<p>Sid [23]</p><p>Jack [24]</p><p>Naomi [25]</p><p>Anya [26]</p><p>Zara [27]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-22",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Which TWO educational skills were shown in the video of children doing origami?",
+					"options": [
+						{
+							"label": "A",
+							"text": "solving problems"
+						},
+						{
+							"label": "B",
+							"text": "following instructions"
+						},
+						{
+							"label": "C",
+							"text": "working cooperatively"
+						},
+						{
+							"label": "D",
+							"text": "learning through play"
+						},
+						{
+							"label": "E",
+							"text": "developing hand-eye coordination"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 22,
+					"text": "Which TWO educational skills were shown in the video of children doing origami?",
+					"options": [
+						{
+							"label": "A",
+							"text": "solving problems"
+						},
+						{
+							"label": "B",
+							"text": "following instructions"
+						},
+						{
+							"label": "C",
+							"text": "working cooperatively"
+						},
+						{
+							"label": "D",
+							"text": "learning through play"
+						},
+						{
+							"label": "E",
+							"text": "developing hand-eye coordination"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "23-27",
+			"type": "MATCHING",
+			"instructions": "Which comment do the students make about each of the following children in the video?\nChoose FIVE answers from the box and write the correct letter, A-G, next to Questions 23-27.\n\nChildren",
+			"options": [
+				{
+					"label": "A",
+					"text": "demonstrated independence"
+				},
+				{
+					"label": "B",
+					"text": "asked for teacher support"
+				},
+				{
+					"label": "C",
+					"text": "developed a competitive attitude"
+				},
+				{
+					"label": "D",
+					"text": "seemed to find the activity calming"
+				},
+				{
+					"label": "E",
+					"text": "seemed pleased with the results"
+				},
+				{
+					"label": "F",
+					"text": "seemed confused"
+				},
+				{
+					"label": "G",
+					"text": "seemed to find the activity easy"
+				}
+			],
+			"body": "Sid [23]\nJack [24]\nNaomi [25]\nAnya [26]\nZara [27]",
+			"body_html": "<p>Sid [23]</p><p>Jack [24]</p><p>Naomi [25]</p><p>Anya [26]</p><p>Zara [27]</p>",
+			"questions": [
+				{
+					"number": 23,
+					"text": "Sid",
+					"answer": "D",
+					"quotes": [
+						"He really benefited from having to use his hands. It helped him to settle down and start concentrating."
+					]
+				},
+				{
+					"number": 24,
+					"text": "Jack",
+					"answer": "A",
+					"quotes": [
+						"I noticed he seemed to want to work things out for himself. You could see him trying out different things rather than asking the teacher for help."
+					]
+				},
+				{
+					"number": 25,
+					"text": "Naomi",
+					"answer": "C",
+					"quotes": [
+						"She seemed to be losing interest at one point, but then she decided she wanted her mouse to be the best, and that motivated her to try harder."
+					]
+				},
+				{
+					"number": 26,
+					"text": "Anya",
+					"answer": "G",
+					"quotes": [
+						"She listened so carefully and then produced the perfect bird with very little effort."
+					]
+				},
+				{
+					"number": 27,
+					"text": "Zara",
+					"answer": "F",
+					"quotes": [
+						"She looked as if she didn't really get what was going on."
+					]
+				}
+			]
+		},
+		{
+			"range": "28-30",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 28,
+					"text": "Before starting an origami activity in class, the students think it is important for the teacher to",
+					"options": [
+						{
+							"label": "A",
+							"text": "make models that demonstrate the different stages."
+						},
+						{
+							"label": "B",
+							"text": "check children understand the terminology involved."
+						},
+						{
+							"label": "C",
+							"text": "tell children not to worry if they find the activity difficult."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I think it would have taken me ages to prepare examples showing each of the steps involved in making the bird, but that was a really good idea."
+					]
+				},
+				{
+					"number": 29,
+					"text": "The students agree that some teachers might be unwilling to use origami in class because",
+					"options": [
+						{
+							"label": "A",
+							"text": "they may not think that crafts are important."
+						},
+						{
+							"label": "B",
+							"text": "they may not have the necessary skills."
+						},
+						{
+							"label": "C",
+							"text": "they may worry that it will take up too much time."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Too much effort required if you're not good with your hands."
+					]
+				},
+				{
+					"number": 30,
+					"text": "Why do the students decide to use origami in their maths teaching practice?",
+					"options": [
+						{
+							"label": "A",
+							"text": "to correct a particular misunderstanding"
+						},
+						{
+							"label": "B",
+							"text": "to set a challenge"
+						},
+						{
+							"label": "C",
+							"text": "to introduce a new concept"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But I think it would also work really well for presenting fractions, which is coming up soon."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

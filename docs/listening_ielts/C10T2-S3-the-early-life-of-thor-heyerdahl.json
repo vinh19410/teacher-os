@@ -1,0 +1,275 @@
+{
+	"id": "8684c2a4-b5e8-409c-a294-713d84d913e5",
+	"url": "https://stepielts.com/student/listening/8684c2a4-b5e8-409c-a294-713d84d913e5?mode=practice",
+	"title": "The early life of Thor Heyerdahl",
+	"source": "C10T2",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/11865aea-cec4-4ebe-a968-23d19241f5f0.mp3",
+	"transcript": "Speaker 0: Now turn to section three. Section three. You will hear two anthropology students called Victor and Olivia discussing their joint presentation about a Norwegian explorer called Thor Hejerdahl. First, you have some time to look at questions 21 to 24. Now listen carefully and answer questions 21 to 24.\nSpeaker 1: Right. Well, for our presentation, shall I start with the early life of Tor Heidel?\nSpeaker 2: Sure. Why don't you begin with describing the type of boy he was, especially his passion for collecting things?\nSpeaker 1: That's right. He had his own little museum. And I think it's unusual for children to develop their own values and not join in their parents' hobbies. I'm thinking of how Hayadal wouldn't go hunting with his dad, for example.\nSpeaker 2: Yeah. He preferred to learn about nature by listening to his mother read to him. And quite early on, he knew he wanted to become an explorer when he grew up. That came from his camping trips he went on in Norway, I think.\nSpeaker 1: No. It was climbing that he spent his time on as a young man.\nSpeaker 2: Oh, right. After university, he married a classmate, and together, they decided to experience living on a small island to find out how harsh weather conditions shaped people's lifestyles.\nSpeaker 1: As part of their preparation, before they left home, they learnt basic survival skills like building a shelter. I guess they needed that knowledge in order to live wild in a remote location with few inhabitants, cut off by the sea, which is what they were aiming to do.\nSpeaker 2: An important part of your talk should be the radical theory Hayerdahl formed from examining mysterious ancient carvings that he happened to find on the island. I think you should finish with that.\nSpeaker 1: Okay.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 25 to 30. Now listen and answer questions 25 to 30.\nSpeaker 2: Alright, Victor. So after your part, I'll talk about Thor Heyerdahl's adult life, continuing from the theory he had about Polynesian migration. Up until that time, of course, academics had believed that humans first migrated to the islands in Polynesia from Asia in the West.\nSpeaker 1: Yes. They thought that travel from the East was impossible because of the huge empty stretch of ocean that lies between the islands and the nearest inhabited land.\nSpeaker 2: Yes. But Hiredahl spent ages studying the cloud movements, ocean currents, and wind patterns to find if it was actually possible. And another argument was that there was no tradition of large ship building in the communities lying to the East of Polynesia. But Hayadale knew they made lots of coastal voyages in locally built canoes.\nSpeaker 1: Yes. Or sailing on rafts, as was shown by the long voyage that Hayadale did next. It was an incredibly risky journey to undertake. Sometimes I wonder if he did that trip for private reasons, you know, to show others that he could have spectacular adventures. What do you think, Olivia?\nSpeaker 2: Well, I think it was more a matter of simply trying out his idea to see if migration from the East was possible.\nSpeaker 1: Yes. That's probably it. And the poor guy suffered a bit at that time because the war forced him to stop his work for some years.\nSpeaker 2: Yes. When he got started again and planned his epic voyage, do you think it was important to him that he achieve it before anyone else did?\nSpeaker 1: I haven't read anywhere that that was his motivation. The most important factor seems to have been that he used only ancient techniques and local materials to build his raft.\nSpeaker 2: Yes. I wonder how fast it went.\nSpeaker 1: Well, it took them ninety seven days from South America to the Pacific Islands.\nSpeaker 2: And after that, Haydal went to Easter Island, didn't he? We should mention the purpose of that trip. I think he sailed there in a boat made out of reeds.\nSpeaker 1: No. That was later on in Egypt, Olivia.\nSpeaker 2: Oh, yes. That's right.\nSpeaker 1: But what he wanted to do was talk to the local people about their old stone carvings and then make one himself to learn more about the process.\nSpeaker 2: I see. Well, what a great life. Even though many of his theories have been disproven, he certainly left a lasting impression on many disciplines, didn't he? To my mind, he was the first person to establish what modern academics call practical archaeology. I mean, that they try to recreate something from the past today, like he did with his raft trip. It's unfortunate that his ideas about where Polynesians originated from have been completely discredited.\nSpeaker 1: Yes. Right. Well, I'll prepare a PowerPoint slide at the end that acknowledges our sources. I mainly used The Life and Work of Tor Heidel by William Oliver. I thought the research methods he used were very sound, although I must say I found the overall tone somewhat old fashioned. I think they need to do a new revised edition.\nSpeaker 2: Yeah. I agree. What about the subject matter? I found it really challenging.\nSpeaker 1: Well, it's a complex issue.\nSpeaker 2: I thought the book had lots of good points. What did you think of the illustration?\nSpeaker 0: That is the end of section three. You now have half a minute to check your answers.",
+	"question_groups": [
+		{
+			"range": "21-22",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Which TWO hobbies was Thor Heyerdahl very interested in as a youth?",
+					"options": [
+						{
+							"label": "A",
+							"text": "camping"
+						},
+						{
+							"label": "B",
+							"text": "climbing"
+						},
+						{
+							"label": "C",
+							"text": "collecting"
+						},
+						{
+							"label": "D",
+							"text": "hunting"
+						},
+						{
+							"label": "E",
+							"text": "reading"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 22,
+					"text": "Which TWO hobbies was Thor Heyerdahl very interested in as a youth?",
+					"options": [
+						{
+							"label": "A",
+							"text": "camping"
+						},
+						{
+							"label": "B",
+							"text": "climbing"
+						},
+						{
+							"label": "C",
+							"text": "collecting"
+						},
+						{
+							"label": "D",
+							"text": "hunting"
+						},
+						{
+							"label": "E",
+							"text": "reading"
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "23-24",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 23,
+					"text": "Which do the speakers say are the TWO reasons why Heyerdahl went to live on an island?",
+					"options": [
+						{
+							"label": "A",
+							"text": "to examine ancient carvings"
+						},
+						{
+							"label": "B",
+							"text": "to experience an isolated place"
+						},
+						{
+							"label": "C",
+							"text": "to formulate a new theory"
+						},
+						{
+							"label": "D",
+							"text": "to learn survival skills"
+						},
+						{
+							"label": "E",
+							"text": "to study the impact of an extreme environment"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 24,
+					"text": "Which do the speakers say are the TWO reasons why Heyerdahl went to live on an island?",
+					"options": [
+						{
+							"label": "A",
+							"text": "to examine ancient carvings"
+						},
+						{
+							"label": "B",
+							"text": "to experience an isolated place"
+						},
+						{
+							"label": "C",
+							"text": "to formulate a new theory"
+						},
+						{
+							"label": "D",
+							"text": "to learn survival skills"
+						},
+						{
+							"label": "E",
+							"text": "to study the impact of an extreme environment"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "25-30",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 25,
+					"text": "According to Victor and Olivia, academics thought that Polynesian migration from the east was impossible due to",
+					"options": [
+						{
+							"label": "A",
+							"text": "the fact that Eastern countries were far away."
+						},
+						{
+							"label": "B",
+							"text": "the lack of materials for boat building."
+						},
+						{
+							"label": "C",
+							"text": "the direction of the winds and currents."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"They thought that travel from the East was impossible because of the huge empty stretch of ocean that lies between the islands and the nearest inhabited land."
+					]
+				},
+				{
+					"number": 26,
+					"text": "Which do the speakers agree was the main reason for Heyerdahl’s raft journey?",
+					"options": [
+						{
+							"label": "A",
+							"text": "to overcome a research setback"
+						},
+						{
+							"label": "B",
+							"text": "to demonstrate a personal quality"
+						},
+						{
+							"label": "C",
+							"text": "to test a new theory"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Well, I think it was more a matter of simply trying out his idea to see if migration from the East was possible."
+					]
+				},
+				{
+					"number": 27,
+					"text": "What was most important to Heyerdahl about his raft journey?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the fact that he was the first person to do it"
+						},
+						{
+							"label": "B",
+							"text": "the speed of crossing the Pacific"
+						},
+						{
+							"label": "C",
+							"text": "the use of authentic construction methods"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The most important factor seems to have been that he used only ancient techniques and local materials to build his raft."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Why did Heyerdahl go to Easter Island?",
+					"options": [
+						{
+							"label": "A",
+							"text": "to build a stone statue"
+						},
+						{
+							"label": "B",
+							"text": "to sail a reed boat"
+						},
+						{
+							"label": "C",
+							"text": "to learn the local language"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But what he wanted to do was talk to the local people about their old stone carvings and then make one himself to learn more about the process."
+					]
+				},
+				{
+					"number": 29,
+					"text": "In Olivia’s opinion, Heyerdahl’s greatest influence was on",
+					"options": [
+						{
+							"label": "A",
+							"text": "theories about Polynesian origins."
+						},
+						{
+							"label": "B",
+							"text": "the development of archaeological methodology."
+						},
+						{
+							"label": "C",
+							"text": "establishing archaeology as an academic subject."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"To my mind, he was the first person to establish what modern academics call practical archaeology."
+					]
+				},
+				{
+					"number": 30,
+					"text": "Which criticism do the speakers make of William Oliver’s textbook?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Its style is out of date."
+						},
+						{
+							"label": "B",
+							"text": "Its content is over-simplified."
+						},
+						{
+							"label": "C",
+							"text": "Its methodology is flawed."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I thought the research methods he used were very sound, although I must say I found the overall tone somewhat old fashioned."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,99 @@
+{
+	"id": "3dea1d1f-d36f-4493-8194-248c8b88050d",
+	"url": "https://stepielts.com/student/listening/3dea1d1f-d36f-4493-8194-248c8b88050d?mode=practice",
+	"title": "London Relocation Services",
+	"source": "Actual Test",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/acac422f-0022-4ebd-b585-b47bf20d941e.mp3",
+	"transcript": "Speaker 1: Daniel: London Relocation Services. Daniel speaking. How may I help you?\nSpeaker 2: Anna: Good morning. My family and I are moving to London later this year, and I wonder if you can help.\nSpeaker 1: Daniel: Sure. First of all, I’ll need to get some personal details. May I take your full name, please?\nSpeaker 2: Anna: It’s Anna Woods.\nSpeaker 1: Daniel: Thanks. Where are you moving from?\nSpeaker 2: Anna: Northern Ireland, just outside Belfast, actually.\nSpeaker 1: Daniel: Right. And what’s your current address?\nSpeaker 2: Anna: It’s 118 Fordyce Park. I’ll spell that for you. It’s F O R D Y C E, and that’s in Ballysillan.\nSpeaker 1: Daniel: And what’s the postcode?\nSpeaker 2: Anna: It’s BT149BJ.\nSpeaker 1: Daniel: Alright. And could I take a contact phone number?\nSpeaker 2: Anna: I’ll give you my mobile number, as you can get me on that anytime. It’s .\nSpeaker 1: Daniel: Great. Got that. Now we always like to get a bit more information about the families that we’re moving. It helps with the search. Are you moving for work?\nSpeaker 2: Anna: Yes. My husband’s just got a new job in London.\nSpeaker 1: Daniel: And what about you? Do you work?\nSpeaker 2: Anna: Well, I’ve been working as a teaching assistant recently, but I’m actually a qualified nurse, and I’d like to get back into that if possible.\nSpeaker 1: Daniel: Right. And do you have any children?\nSpeaker 2: Anna: Yes. A son. So we need to find a school for him.\nSpeaker 1: Daniel: Is it a secondary school you’ll be looking for?\nSpeaker 2: Anna: No. He’s still in primary school. He’s not quite at the secondary level yet.\nSpeaker 1: Daniel: Fine. So let’s go on to talk about your requirements for the property. Do you have a preferred location? Is your husband’s job in the center?\nSpeaker 2: Anna: No. It’s in East London, but we’d rather live somewhere quieter.\nSpeaker 0: Daniel: Sure.\nSpeaker 1: Daniel: There are some lovely areas in the South.\nSpeaker 2: Anna: Okay. That sounds great. Now my husband doesn’t want to spend too long commuting to work every day.\nSpeaker 1: Daniel: So I imagine that ideally, he’d like to be not too far from a station then.\nSpeaker 2: Anna: Yes. He drives now, but I guess that’s not going to be possible, and he’s not keen on buses.\nSpeaker 1: Daniel: What about you or your son? Do you have any preferences? Does your son do any sport, for example?\nSpeaker 2: Anna: He’s quite active, so I’m sure he’d love a park nearby to run around in. He doesn’t do swimming or anything like that.\nSpeaker 1: Daniel: So what sort of property do you have in mind?\nSpeaker 2: Anna: We have friends who live in an amazing flat over there. But as we’ve always lived in a house, I think we’ll stick with that. We’d find it hard to adapt to a flat.\nSpeaker 1: Daniel: Okay. And size-wise, how many bedrooms would you like?\nSpeaker 2: Anna: Well, there’s just myself, my husband, and our son.\nSpeaker 1: Daniel: So you definitely need a two bedroom property. But how about having a guest room? I might be able to find a three-bedroom property for you.\nSpeaker 2: Anna: Yes. That would be ideal. We’re sure to have family visiting often.\nSpeaker 1: Daniel: Alright. I’ve made a note of that. Now are there any other requirements for your new property?\nSpeaker 2: Anna: Well, it’s not essential, but it’d be handy to have an office for when my husband works from home. It doesn’t need to be a big one. I guess it all comes down to budget.\nSpeaker 1: Daniel: Yes. Okay, Anna. Well, I’ve certainly got enough to be getting on with, and I will—",
+	"body": {
+		"text": "The London Relocation Services\nCustomer’s name: Anna Woods\nCustomer’s personal details\nCurrent address: 118 [1] Park, Ballysillan\nPostcode: BT149BJ\nPhone No: [2] (Mobile)\nOther information\nAnna is hoping to find work as a [3]\nShe needs to find a [4] school for her son.\nRequirements for the new property\nLocation\nHer preferred location is in the [5] of the city.\nHer husband would like to be near a [6]\nHer son would prefer to be close to a [7]\nProperty details\nShe would like to live in a [8]\nShe would prefer [9] bedrooms.\nA small [10] is also desirable.",
+		"html": "<h3><strong>The London Relocation Services</strong></h3><strong>Customer’s name: </strong>Anna Woods\n<h4>Customer’s personal details</h4><ul><li>Current address: 118 [1] Park, Ballysillan</li><li>Postcode: BT149BJ</li><li>Phone No: [2] (Mobile)</li></ul><h4>Other information</h4><ul><li>Anna is hoping to find work as a [3]</li><li>She needs to find a [4] school for her son.</li></ul><h4>Requirements for the new property</h4><h5>Location</h5><ul><li>Her preferred location is in the [5] of the city.</li><li>Her husband would like to be near a [6]</li><li>Her son would prefer to be close to a [7]</li></ul><h5>Property details</h5><ul><li>She would like to live in a [8]</li><li>She would prefer [9] bedrooms.</li><li>A small [10] is also desirable.</li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "The London Relocation Services\nCustomer’s name: Anna Woods\nCustomer’s personal details\nCurrent address: 118 [1] Park, Ballysillan\nPostcode: BT149BJ\nPhone No: [2] (Mobile)\nOther information\nAnna is hoping to find work as a [3]\nShe needs to find a [4] school for her son.\nRequirements for the new property\nLocation\nHer preferred location is in the [5] of the city.\nHer husband would like to be near a [6]\nHer son would prefer to be close to a [7]\nProperty details\nShe would like to live in a [8]\nShe would prefer [9] bedrooms.\nA small [10] is also desirable.",
+			"body_html": "<h3><strong>The London Relocation Services</strong></h3><strong>Customer’s name: </strong>Anna Woods\n<h4>Customer’s personal details</h4><ul><li>Current address: 118 [1] Park, Ballysillan</li><li>Postcode: BT149BJ</li><li>Phone No: [2] (Mobile)</li></ul><h4>Other information</h4><ul><li>Anna is hoping to find work as a [3]</li><li>She needs to find a [4] school for her son.</li></ul><h4>Requirements for the new property</h4><h5>Location</h5><ul><li>Her preferred location is in the [5] of the city.</li><li>Her husband would like to be near a [6]</li><li>Her son would prefer to be close to a [7]</li></ul><h5>Property details</h5><ul><li>She would like to live in a [8]</li><li>She would prefer [9] bedrooms.</li><li>A small [10] is also desirable.</li></ul>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Current address: 118 [1] Park, Ballysillan",
+					"answer": "Fordyce",
+					"quotes": ["Anna: It’s 118 Fordyce Park."]
+				},
+				{
+					"number": 2,
+					"text": "Phone No: [2] (Mobile)",
+					"answer": "07840051963",
+					"quotes": ["It’s ."]
+				},
+				{
+					"number": 3,
+					"text": "Anna is hoping to find work as a [3]",
+					"answer": "nurse",
+					"quotes": [
+						"Anna: Well, I’ve been working as a teaching assistant recently, but I’m actually a qualified nurse, and I’d like to get back into that if possible."
+					]
+				},
+				{
+					"number": 4,
+					"text": "She needs to find a [4] school for her son.",
+					"answer": "primary",
+					"quotes": ["He’s still in primary school."]
+				},
+				{
+					"number": 5,
+					"text": "Her preferred location is in the [5] of the city.",
+					"answer": "south",
+					"quotes": ["Daniel: There are some lovely areas in the South."]
+				},
+				{
+					"number": 6,
+					"text": "Her husband would like to be near a [6]",
+					"answer": "station",
+					"quotes": [
+						"Daniel: So I imagine that ideally, he’d like to be not too far from a station then."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Her son would prefer to be close to a [7]",
+					"answer": "park",
+					"quotes": [
+						"Anna: He’s quite active, so I’m sure he’d love a park nearby to run around in."
+					]
+				},
+				{
+					"number": 8,
+					"text": "She would like to live in a [8]",
+					"answer": "house",
+					"quotes": [
+						"But as we’ve always lived in a house, I think we’ll stick with that."
+					]
+				},
+				{
+					"number": 9,
+					"text": "She would prefer [9] bedrooms.",
+					"answer": "3 / three",
+					"quotes": [
+						"I might be able to find a three-bedroom property for you."
+					]
+				},
+				{
+					"number": 10,
+					"text": "A small [10] is also desirable.",
+					"answer": "office",
+					"quotes": [
+						"Anna: Well, it’s not essential, but it’d be handy to have an office for when my husband works from home."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

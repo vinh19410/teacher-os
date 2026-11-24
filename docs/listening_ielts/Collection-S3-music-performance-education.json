@@ -1,0 +1,272 @@
+{
+	"id": "483fd370-8ee6-46d3-8001-f6bee98ba901",
+	"url": "https://stepielts.com/student/listening/483fd370-8ee6-46d3-8001-f6bee98ba901?mode=practice",
+	"title": "Music performance education",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/e781ec8a-f673-4a19-8dc1-356ed7415397.mp3",
+	"transcript": "Speaker 1: Troy: Hey, Gabriela. How is it going?\nSpeaker 0: Gabriela: I’ve been pretty busy lately.\nSpeaker 1: Troy: Oh, what are you up to?\nSpeaker 0: Gabriela: I’ve been working on a dissertation on music education specializing in music performance.\nSpeaker 1: Troy: Sounds intriguing. What have you found?\nSpeaker 0: Gabriela: Well, I interviewed 18 freshmen majoring in music performance as my sample population. I first asked about their music background before being accepted to music schools.\nSpeaker 1: Troy: Let me guess. Have they all got relevant qualifications in music?\nSpeaker 0: Gabriela: Well, even though there is a wealth of music qualifications available, most of the students didn’t receive any until they entered music schools. Some capabilities like music production or music technology are pretty tough going.\nSpeaker 1: Troy: Now that you’ve mentioned it, I recall that I got mine in sound engineering in my sophomore year.\nSpeaker 0: Gabriela: Right. But the majority of these students admitted that they had performed in front of a large crowd. Around 80% of them had performed on stage as band members in secondary schools. A few of them played piano or guitar at the time, and it also surprised me that they were generally able to play multiple instruments with proficiency.\nSpeaker 1: Troy: Have they tried to compose a piece of music before?\nSpeaker 0: Gabriela: Only in rare cases did they have prior experience in composition.\nSpeaker 1: Troy: They would have to do it sooner or later. There is a whole module for it. What did they say about practicing?\nSpeaker 0: Gabriela: All subjects mentioned that they feared being marked too low and tried their best.\nSpeaker 1: Troy: So they were like practicing every single day?\nSpeaker 0: Gabriela: Not for most people. Some students worked with others in a band, so they had to arrange the time for rehearsals. But all 18 students had a sufficient amount of practice, and they frequently mentioned that playing technical pieces was exhilarating.\nSpeaker 1: Troy: I feel that way too.\nSpeaker 0: Gabriela: And then I asked questions about how they chose the pieces that were assessed and their attempts to improve their performance in recital classes.\nSpeaker 1: Troy: What did they say?\nSpeaker 0: Gabriela: Two students mentioned that they always asked their tutors advice on the pieces they were going to perform because they felt that would give them a competitive edge over those who had no clue of tutors’ preference in music.\nSpeaker 1: Troy: Well, that’s a bit sneaky.\nSpeaker 0: Gabriela: But the most common remark was that they had a minimal interest in pieces that the public barely knew. Instead, most prefer popular pieces that other students would also choose.\nSpeaker 1: Troy: How come?\nSpeaker 0: Gabriela: They said that this could mirror their weaknesses and thus help them to perfect the techniques for handling the most difficult bits. All but one of the 18 students admitted that to perform well, they had to learn the music by heart, or otherwise, they would have to divert their attention and thus make some errors.\nSpeaker 1: Troy: I agree. Troy: Oh, what aspects did you look into?\nSpeaker 0: Gabriela: I first asked how they feel about playing solo.\nSpeaker 1: Troy: What did they say?\nSpeaker 0: Gabriela: They said being a solo performer takes desire, focus, and hard work... But they all took great pleasure in it.\nSpeaker 1: Troy: Yeah. That’s quite different from playing in an orchestra where musicians have to work with other members to produce a harmonious sound that is pleasing to the ear.\nSpeaker 0: Gabriela: Right. And I also asked whether the choice of the piece to play would affect their performance.\nSpeaker 1: Troy: Well, that’s a big yes for me. When I play a song I don’t like, I won’t devote myself to it.\nSpeaker 0: Gabriela: That’s widely accepted. The audience can tell when performers are being authentic and inspired by the music they are performing. Many would spend hours or even days choosing the right piece.\nSpeaker 1: Troy: You have to put a lot of thought into it before it’s too late. So what kind of musical genre do they prefer?\nSpeaker 0: Gabriela: The answers vary vastly. But one thing in common is that they rarely switch from one style to another.\nSpeaker 1: Troy: Of course, it is tough to make such a transition. Most instrumentalists initially start with some classical based training, but they don’t know how to take their already existing knowledge and apply it to a new style of music. What about their feedback on playing duets?\nSpeaker 0: Gabriela: Yes. That’s the last question on my list. I asked their take on playing a duet with someone with the same musical instrument, like a violin duet. Although it is pretty demanding to do so, they all admitted that it is helpful in that it renews their motivation while enhancing their technical skills.\nSpeaker 1: Troy: So have you started writing the first draft of your dissertation? I can help if...",
+	"body": {
+		"text": "Play solo [7]\nChoose a piece to play [8]\nPlay different musical genres [9]\nPlay duet [10]",
+		"html": "<p>Play solo [7]</p><p>Choose a piece to play [8]</p><p>Play different musical genres [9]</p><p>Play duet [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-2",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Which TWO points do the students most frequently make about their music background before entering music schools?",
+					"options": [
+						{
+							"label": "A",
+							"text": "they had composed songs"
+						},
+						{
+							"label": "B",
+							"text": "they had relevant music qualifications"
+						},
+						{
+							"label": "C",
+							"text": "they played more than one instrument"
+						},
+						{
+							"label": "D",
+							"text": "they had played in public"
+						},
+						{
+							"label": "E",
+							"text": "they had piano lessons"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 2,
+					"text": "Which TWO points do the students most frequently make about their music background before entering music schools?",
+					"options": [
+						{
+							"label": "A",
+							"text": "they had composed songs"
+						},
+						{
+							"label": "B",
+							"text": "they had relevant music qualifications"
+						},
+						{
+							"label": "C",
+							"text": "they played more than one instrument"
+						},
+						{
+							"label": "D",
+							"text": "they had played in public"
+						},
+						{
+							"label": "E",
+							"text": "they had piano lessons"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "3-4",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 3,
+					"text": "Which TWO points do the students most frequently make about their music practice?",
+					"options": [
+						{
+							"label": "A",
+							"text": "they practised alone"
+						},
+						{
+							"label": "B",
+							"text": "they practised every day"
+						},
+						{
+							"label": "C",
+							"text": "they were motivated by fear"
+						},
+						{
+							"label": "D",
+							"text": "they did not have enough practice"
+						},
+						{
+							"label": "E",
+							"text": "they enjoyed the challenge of playing complex pieces"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 4,
+					"text": "Which TWO points do the students most frequently make about their music practice?",
+					"options": [
+						{
+							"label": "A",
+							"text": "they practised alone"
+						},
+						{
+							"label": "B",
+							"text": "they practised every day"
+						},
+						{
+							"label": "C",
+							"text": "they were motivated by fear"
+						},
+						{
+							"label": "D",
+							"text": "they did not have enough practice"
+						},
+						{
+							"label": "E",
+							"text": "they enjoyed the challenge of playing complex pieces"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "5-6",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Which TWO points do the students most frequently make about playing pieces that would be assessed?",
+					"options": [
+						{
+							"label": "A",
+							"text": "they liked to hear others playing the same piece"
+						},
+						{
+							"label": "B",
+							"text": "they wanted to play unknown pieces"
+						},
+						{
+							"label": "C",
+							"text": "they played a piece by memory"
+						},
+						{
+							"label": "D",
+							"text": "they played a piece selected by the tutor"
+						},
+						{
+							"label": "E",
+							"text": "they played technical pieces"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 6,
+					"text": "Which TWO points do the students most frequently make about playing pieces that would be assessed?",
+					"options": [
+						{
+							"label": "A",
+							"text": "they liked to hear others playing the same piece"
+						},
+						{
+							"label": "B",
+							"text": "they wanted to play unknown pieces"
+						},
+						{
+							"label": "C",
+							"text": "they played a piece by memory"
+						},
+						{
+							"label": "D",
+							"text": "they played a piece selected by the tutor"
+						},
+						{
+							"label": "E",
+							"text": "they played technical pieces"
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What comment do the students make about the following practice?",
+			"options": [
+				{
+					"label": "A",
+					"text": "it is beneficial"
+				},
+				{
+					"label": "B",
+					"text": "it is challenging but also enjoyable"
+				},
+				{
+					"label": "C",
+					"text": "it helps to boost confidence"
+				},
+				{
+					"label": "D",
+					"text": "it is pleasant to hear"
+				},
+				{
+					"label": "E",
+					"text": "it is time-consuming"
+				},
+				{
+					"label": "F",
+					"text": "need to work effectively with others"
+				},
+				{
+					"label": "G",
+					"text": "it happens infrequently"
+				}
+			],
+			"body": "Play solo [7]\nChoose a piece to play [8]\nPlay different musical genres [9]\nPlay duet [10]",
+			"body_html": "<p>Play solo [7]</p><p>Choose a piece to play [8]</p><p>Play different musical genres [9]</p><p>Play duet [10]</p>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "Play solo",
+					"answer": "B",
+					"quotes": [
+						"Gabriela: They said being a solo performer takes desire, focus, and hard work... But they all took great pleasure in it."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Choose a piece to play",
+					"answer": "E",
+					"quotes": [
+						"Many would spend hours or even days choosing the right piece."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Play different musical genres",
+					"answer": "G",
+					"quotes": [
+						"But one thing in common is that they rarely switch from one style to another."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Play duet",
+					"answer": "A",
+					"quotes": [
+						"Although it is pretty demanding to do so, they all admitted that it is helpful in that it renews their motivation while enhancing their technical skills."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,209 @@
+{
+	"id": "d107e739-5f46-4155-a503-7f522ed0a497",
+	"url": "https://stepielts.com/student/listening/d107e739-5f46-4155-a503-7f522ed0a497?mode=practice",
+	"title": "Induction talk for new apprentices",
+	"source": "C14T1",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/5f5dc7d8-d847-4b9d-bd4c-b34349785e17.mp3",
+	"transcript": "Speaker 0: Section two. You will hear a manager giving a welcome talk to a group of apprentices who are starting their training at the company. First, you have some time to look at questions 11 to 14. Now listen carefully and answer questions 11 to 14.\nSpeaker 1: Good morning, everyone. My name's Janet Parker, and I'm the human resources manager. We're very happy to welcome you to your new apprenticeship. I hope that the next six months will be a positive and enjoyable experience for you. I'd like to start with some general advice about being an apprentice. Most of you have very little or no experience of working for a big organization, and the first week or so may be quite challenging. There will be a lot of new information to take in, but don't worry too much about trying to remember everything. The important thing is to check with someone if you're not sure what to do. You'll find your supervisor is very approachable and won't mind explaining things or helping you out. You're here to learn, so make the most of that opportunity. You'll be spending time in different departments during your first week, so make an effort to talk to as many people as possible about their work. You'll make some new friends and find out lots of useful information. As well as having a supervisor, you'll each be assigned a mentor. This person will be someone who's recently completed an apprenticeship, and you'll meet with them on a weekly basis. Their role is to provide help and support throughout your apprenticeship. Of course, this doesn't mean they'll actually do any of your work for you. Instead, they'll be asking you about what goals you've achieved so far, as well as helping you to identify any areas for improvement. You can also discuss your more long term ambitions with them as well.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 15 to 20. Now listen and answer questions 15 to 20.\nSpeaker 1: Now I just want to run through a few company policies for our apprenticeship scheme with you. Most importantly, the Internet. As part of your job, you'll be doing some research online, so obviously, you'll have unlimited access for that. But please don't use it for personal use. You'll have your own phones for that. Some of you have already asked me about flexible working. After your probationary three month period, some of you will be eligible for this, but it will depend on which department you're in and what your personal circumstances are, so please don't assume you'll automatically be permitted to do this. I want to make sure there's no confusion about our holiday policy. Apart from any statutory public holidays, we ask that you don't book any holidays until after your six month apprenticeship has finished. Time off should only be taken if you are unwell. Please speak to your supervisor if this is going to be a problem. You'll be expected to work a forty hour week, but there may be opportunities to do overtime during busy periods. Although you're not required to do this, it can be a valuable experience, so we advise you to take it up if possible. Obviously, we understand that people do have commitments outside work, so don't worry if there are times when you are unavailable. As you know, we don't have a formal dress code here. You may wear casual clothes as long as they are practical, and the only restriction for shoes we have is on high heels for health and safety reasons. Comfortable shoes like trainers are preferable. There's a heavily subsidized canteen on-site where you can get hot meals or salads cheaply. Snacks and drinks are also provided, so we've decided to introduce a no packed lunch policy. This is partly to encourage healthy eating at work and partly to stop people from eating at their work station, which is unhygienic. Okay. Moving on. That\nSpeaker 0: is the end of section two. You now have half a minute to check your answers. Now turn to section three.",
+	"body": {
+		"text": "Company policy for apprentices\nUsing the internet [15]\nFlexible working [16]\nBooking holidays [17]\nWorking overtime [18]\nWearing trainers [19]\nBringing food to work [20]",
+		"html": "<p></p><p><strong>Company policy for apprentices</strong></p><p>Using the internet          [15]</p><p>Flexible working             [16]</p><p>Booking holidays            [17]</p><p>Working overtime           [18]</p><p>Wearing trainers              [19]</p><p>Bringing food to work     [20]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "11-12",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Which TWO pieces of advice for the first week of an apprenticeship does the manager give?",
+					"options": [
+						{
+							"label": "A",
+							"text": "get to know colleagues"
+						},
+						{
+							"label": "B",
+							"text": "learn from any mistakes"
+						},
+						{
+							"label": "C",
+							"text": "ask lots of questions"
+						},
+						{
+							"label": "D",
+							"text": "react positively to feedback"
+						},
+						{
+							"label": "E",
+							"text": "enjoy new challenges"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 12,
+					"text": "Which TWO pieces of advice for the first week of an apprenticeship does the manager give?",
+					"options": [
+						{
+							"label": "A",
+							"text": "get to know colleagues"
+						},
+						{
+							"label": "B",
+							"text": "learn from any mistakes"
+						},
+						{
+							"label": "C",
+							"text": "ask lots of questions"
+						},
+						{
+							"label": "D",
+							"text": "react positively to feedback"
+						},
+						{
+							"label": "E",
+							"text": "enjoy new challenges"
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "13-14",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 13,
+					"text": "Choose TWO letters, A-E. Which TWO things does the manager say mentors can help with?",
+					"options": [
+						{
+							"label": "A",
+							"text": "confidence-building"
+						},
+						{
+							"label": "B",
+							"text": "making career plans"
+						},
+						{
+							"label": "C",
+							"text": "completing difficult tasks"
+						},
+						{
+							"label": "D",
+							"text": "making a weekly timetable"
+						},
+						{
+							"label": "E",
+							"text": "reviewing progress"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 14,
+					"text": "Choose TWO letters, A-E. Which TWO things does the manager say mentors can help with?",
+					"options": [
+						{
+							"label": "A",
+							"text": "confidence-building"
+						},
+						{
+							"label": "B",
+							"text": "making career plans"
+						},
+						{
+							"label": "C",
+							"text": "completing difficult tasks"
+						},
+						{
+							"label": "D",
+							"text": "making a weekly timetable"
+						},
+						{
+							"label": "E",
+							"text": "reviewing progress"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "15-20",
+			"type": "MATCHING",
+			"instructions": "What does the manager say about each of the following aspects of the company policy for apprentices? Write the correct letter, A, B or C, next to Questions 15-20.\nCompany policy for apprentices",
+			"options": [
+				{
+					"label": "A",
+					"text": "It is encouraged."
+				},
+				{
+					"label": "B",
+					"text": "There are some restrictions."
+				},
+				{
+					"label": "C",
+					"text": "It is against the rules."
+				}
+			],
+			"body": "Company policy for apprentices\nUsing the internet [15]\nFlexible working [16]\nBooking holidays [17]\nWorking overtime [18]\nWearing trainers [19]\nBringing food to work [20]",
+			"body_html": "<p></p><p><strong>Company policy for apprentices</strong></p><p>Using the internet          [15]</p><p>Flexible working             [16]</p><p>Booking holidays            [17]</p><p>Working overtime           [18]</p><p>Wearing trainers              [19]</p><p>Bringing food to work     [20]</p>",
+			"questions": [
+				{
+					"number": 15,
+					"text": "Using the internet",
+					"answer": "B",
+					"quotes": [
+						"As part of your job, you'll be doing some research online, so obviously, you'll have unlimited access for that. But please don't use it for personal use."
+					]
+				},
+				{
+					"number": 16,
+					"text": "Flexible working",
+					"answer": "B",
+					"quotes": [
+						"After your probationary three month period, some of you will be eligible for this, but it will depend on which department you're in and what your personal circumstances are, so please don't assume you'll automatically be permitted to do this."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Booking holidays",
+					"answer": "C",
+					"quotes": [
+						"Apart from any statutory public holidays, we ask that you don't book any holidays until after your six month apprenticeship has finished. Time off should only be taken if you are unwell."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Working overtime",
+					"answer": "A",
+					"quotes": [
+						"You'll be expected to work a forty hour week, but there may be opportunities to do overtime during busy periods. Although you're not required to do this, it can be a valuable experience, so we advise you to take it up if possible."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Wearing trainers",
+					"answer": "A",
+					"quotes": ["Comfortable shoes like trainers are preferable."]
+				},
+				{
+					"number": 20,
+					"text": "Bringing food to work",
+					"answer": "C",
+					"quotes": [
+						"Snacks and drinks are also provided, so we've decided to introduce a no packed lunch policy. This is partly to encourage healthy eating at work and partly to stop people from eating at their work station, which is unhygienic."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

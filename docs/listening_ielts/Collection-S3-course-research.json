@@ -1,0 +1,212 @@
+{
+	"id": "137609bf-1d8c-4b8d-9ccb-c8f7f369d5e5",
+	"url": "https://stepielts.com/student/listening/137609bf-1d8c-4b8d-9ccb-c8f7f369d5e5?mode=practice",
+	"title": "Course Research",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/bffef2d2-57d8-486a-923a-b39027fd51fb.mp3",
+	"transcript": "Speaker 1: Charlotte: Excuse me, doctor Twain. May I speak with you for a minute?\nSpeaker 2: Dr.Twain: Of course. Please come in.\nSpeaker 1: Charlotte: I’m Charlotte York. I’m considering taking your course in tourism.\nSpeaker 2: Dr.Twain: Right. Well, Charlotte, how can I help you?\nSpeaker 1: Charlotte: I have been considering studying tourism. However, it is such an important decision that I would like to seek some advice about it first. Would you mind answering some of my questions?\nSpeaker 2: Dr.Twain: Absolutely. Fire away.\nSpeaker 1: Charlotte: Well, I have been discussing courses with my parents, and they are concerned that I will not be able to get a well paid job with a degree in tourism. The reason that I want to study the course is that I have a great interest in the subject, and I think I would really enjoy it. I believe the only way that I will enjoy my life is if I enjoy my career. Happiness is far more important than money, don’t you think?\nSpeaker 2: Dr.Twain: Absolutely. I would much rather be happy and poor rather than rich and miserable. Money cannot buy you happiness.\nSpeaker 1: Charlotte: I’m glad you agree.\nSpeaker 2: Dr.Twain: You needn’t worry about money, Charlotte. A large part of the tourism course is dedicated to teaching students how to manage finances, a skill that you can apply to your everyday life as well. I would also recommend that you take a sideline course in time management as this can be incredibly useful in efficiently planning your workload. Efficiency is the key to success.\nSpeaker 1: Charlotte: I’ll remember that.\nSpeaker 2: Dr.Twain: Now I have found that some students have natural talents that really help them to succeed in the course. Communication skills, for example, can be very beneficial. Do you have any strengths?\nSpeaker 1: Charlotte: Maths was always my favorite subject at school, so I really enjoy solving mathematical problems. However, I find statistics quite difficult. I have always been very capable and self sufficient. I have a lot of confidence in my abilities and will take the initiative in situations without needing to depend on anyone else for their help.\nSpeaker 2: Dr.Twain: That’s a really great quality to have and will be particularly useful if you choose to study tourism.\nSpeaker 1: Charlotte: That’s great.\nSpeaker 2: Dr.Twain: I would recommend that you spend some of your time researching the course. A lot of people who are uneducated on the subject claim that tourism is a shrinking industry and that it will become irrelevant in the future. If you study the published research, however, you will see that the truth is quite the opposite. The industry has, in fact, grown significantly as people have developed an ever increasing interest in culture and travel. Have you compared the university course with a polytechnic?\nSpeaker 1: Charlotte: Yes. I have. I was interested in studying the course in modules. However, the university doesn’t offer that option. I don’t have enough funds to be able to attend an expensive university, so I was relieved to see that the course is quite affordable. I also considered attending a summer school instead of university to save money and so that I could work during the rest of the year. But I really wanted the university experience.\nSpeaker 2: Dr.Twain: I think that university would suit you well. Dr.Twain: Now what about the courses? Are you interested in any of the other subjects on offer?\nSpeaker 1: Charlotte: I have looked at a few. I was interested in travel and business as it sounds similar to tourism.\nSpeaker 2: Dr.Twain: That is really worth learning. However, be aware that it is difficult and will demand a lot of your time.\nSpeaker 1: Charlotte: Okay. That’s good to know.\nSpeaker 2: Dr.Twain: You might find that Japanese is an interesting course, and it will teach you valuable skills in speaking the language. Personally, it’s not bad and could be of some help, but not that much.\nSpeaker 1: Charlotte: Okay. Japanese. Got that.\nSpeaker 2: What about medical care?Dr.Twain: Well, if you have time, the course will teach you a lot about curing diseases and illnesses or dealing with injuries outside, although it’s not essential.\nSpeaker 1: Charlotte: So, okay, if it’s useful, I’ll take it.\nSpeaker 2: Dr.Twain: If you enjoy using technology and are worried about fulfilling the entry requirements, computing is very relaxed about the skills that applicants must possess.\nSpeaker 1: Charlotte: I’m terrible with computers, so I’m not sure that I would enjoy that course. How about public relations?\nSpeaker 2: Dr.Twain: Yes. I would recommend that course. It would be related to entering the tourism industry as it will educate you on how to approach clients and develop associations with them.\nSpeaker 1: Charlotte: That’s great. Thank you so much for your help.",
+	"body": {
+		"text": "Travel and Business [6]\nJapanese [7]\nMedical Care [8]\nComputer [9]\nPublic Relations [10]",
+		"html": "<p>Travel and Business [6]</p><p>Japanese [7]</p><p>Medical Care [8]</p><p>Computer [9]</p><p>Public Relations [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Why does the student want to study Tourism?",
+					"options": [
+						{
+							"label": "A",
+							"text": "good future"
+						},
+						{
+							"label": "B",
+							"text": "good pay"
+						},
+						{
+							"label": "C",
+							"text": "parents' will"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"The reason that I want to study the course is that I have a great interest in the subject, and I think I would really enjoy it. I believe the only way that I will enjoy my life is if I enjoy my career."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What kind of skill will the student gain in the course?",
+					"options": [
+						{
+							"label": "A",
+							"text": "time-management"
+						},
+						{
+							"label": "B",
+							"text": "financial planning"
+						},
+						{
+							"label": "C",
+							"text": "note-taking"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"A large part of the tourism course is dedicated to teaching students how to manage finances, a skill that you can apply to your everyday life as well."
+					]
+				},
+				{
+					"number": 3,
+					"text": "The student has the ability of",
+					"options": [
+						{
+							"label": "A",
+							"text": "independence"
+						},
+						{
+							"label": "B",
+							"text": "communication"
+						},
+						{
+							"label": "C",
+							"text": "coping well with statistics."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I have always been very capable and self sufficient. I have a lot of confidence in my abilities and will take the initiative in situations without needing to depend on anyone else for their help."
+					]
+				},
+				{
+					"number": 4,
+					"text": "The teacher believes that the industry of tourism is",
+					"options": [
+						{
+							"label": "A",
+							"text": "shrinking"
+						},
+						{
+							"label": "B",
+							"text": "seeing a bright future"
+						},
+						{
+							"label": "C",
+							"text": "growing popular"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The industry has, in fact, grown significantly as people have developed an ever increasing interest in culture and travel."
+					]
+				},
+				{
+					"number": 5,
+					"text": "How does the student compare the university course with polytechnics?",
+					"options": [
+						{
+							"label": "A",
+							"text": "There are summer schools."
+						},
+						{
+							"label": "B",
+							"text": "The course is structured in modules."
+						},
+						{
+							"label": "C",
+							"text": "The price is reasonable."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"I don’t have enough funds to be able to attend an expensive university, so I was relieved to see that the course is quite affordable."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "What feature do the speakers identify for each of the following courses",
+			"options": [
+				{
+					"label": "A",
+					"text": "limited value"
+				},
+				{
+					"label": "B",
+					"text": "useful"
+				},
+				{
+					"label": "C",
+					"text": "relevant to career"
+				},
+				{
+					"label": "D",
+					"text": "flexible admission"
+				},
+				{
+					"label": "E",
+					"text": "intensive"
+				},
+				{
+					"label": "F",
+					"text": "improving leadership"
+				},
+				{
+					"label": "G",
+					"text": "self-control and time management"
+				}
+			],
+			"body": "Travel and Business [6]\nJapanese [7]\nMedical Care [8]\nComputer [9]\nPublic Relations [10]",
+			"body_html": "<p>Travel and Business [6]</p><p>Japanese [7]</p><p>Medical Care [8]</p><p>Computer [9]</p><p>Public Relations [10]</p>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Travel and Business",
+					"answer": "E",
+					"quotes": [
+						"However, be aware that it is difficult and will demand a lot of your time."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Japanese",
+					"answer": "A",
+					"quotes": [
+						"Personally, it’s not bad and could be of some help, but not that much."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Medical Care",
+					"answer": "B",
+					"quotes": ["Charlotte: So, okay, if it’s useful, I’ll take it."]
+				},
+				{
+					"number": 9,
+					"text": "Computer",
+					"answer": "D",
+					"quotes": [
+						"Dr.Twain: If you enjoy using technology and are worried about fulfilling the entry requirements, computing is very relaxed about the skills that applicants must possess."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Public Relations",
+					"answer": "C",
+					"quotes": [
+						"It would be related to entering the tourism industry as it will educate you on how to approach clients and develop associations with them."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

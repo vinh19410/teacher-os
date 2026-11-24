@@ -1,0 +1,198 @@
+{
+	"id": "2be9528f-cfed-41fa-b145-efde0afcde58",
+	"url": "https://stepielts.com/student/listening/2be9528f-cfed-41fa-b145-efde0afcde58?mode=practice",
+	"title": "Medicine Courses",
+	"source": "Forecast Quý 2-2025",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/5e624a00-90b1-43da-905b-d124917e0f4e.mp3",
+	"transcript": "Speaker 2: PROFESSOR: So, Mary, you’ve scored very highly in your exams this year. You won’t have trouble being accepted into any course you choose.The most popular course available is clinical nursing. Will you choose that one?MARY: No, Professor Fraser.\nSpeaker 3: I’ve thought about nursing, but I’ve decided against it.PROFESSOR: May I ask why?\nSpeaker 2: With your skills, you could excel.MARY: I’m concerned about the difficulty of the course.\nSpeaker 3: Apparently, it’s not easy to get the diploma since I may not be able to complete the assignments.I feel apprehensive about starting a course I may not be able to finish.PROFESSOR: It’s a shame you feel that way.\nSpeaker 2: But you have other options available.Have you thought about the surgical operation course?MARY: Biology is a prerequisite for that course.\nSpeaker 3: I haven’t taken that course yet, so I probably won’t be accepted.PROFESSOR: This year, we’re offering some other alternatives during summer school.If you complete these courses over the semester break, you may have a chance.\nSpeaker 2: They are not that difficult.MARY: I’m not willing to put in the effort it requires.\nSpeaker 3: Honestly speaking, I’m more interested in the personal interaction side of medicine. Are there any relevant courses I could apply for?PROFESSOR: Certainly.\nSpeaker 2: Sociology is beneficial, especially if you wish to further your studies in pediatric care.During the class, you will have the opportunity to work with people of all ages, but in particular, young ones.MARY: What career prospects are there for me once I’ve completed the course?PROFESSOR: Believe it or not, many students who complete the sociology studies go on to work in a different field. They find it a rewarding and fulfilling career to work with people who have disability and help them improve the quality of life.MARY: I see, that sounds great.\nSpeaker 3: Thank you.MARY: I’m just not sure what I want to do with my life! What do you suggest? Would you recommend studying two courses at once, so as not to limit my options?\nSpeaker 2: PROFESSOR: Many people have done that, but it’s difficult. Studying one course causes enough stress, and adding another course would be extremely challenging. You could try a different subject other than medicine.But I recommend you find the exact branch of medicine you want to study and put your focus on that.MARY: The Health and Social Care course is popular.\nSpeaker 3: Though I’m interested in this subject, I’m not sure whether I should choose it. Are there enough grants for it?PROFESSOR: Yes, I guess so.\nSpeaker 2: It has acquired a lot of financial support recently, so your research possibilities won’t be limited. Also, I do know that Professor Rhodes has a good reputation. He’s one of the most respected professors in his field.MARY: Oh, yes.\nSpeaker 3: I’ve heard the professor is world-renowned.\nSpeaker 2: So, I will definitely go for it.PROFESSOR: Alright, then how about occupational therapy?MARY: Well, my sister studied this subject last year.\nSpeaker 3: She says it’s very difficult.PROFESSOR: Perhaps it is for some students, but generally it can be easy for a student who majors in medicine.Actually, the textbooks used are published by our school, and the writer is a teacher in medical department, so if a student finds them difficult to understand, he can get quick response from the teacher for clarification, which will be of great help in occupational therapy research.MARY: That’s really great, and I also heard that the textbook is quite easy to follow, but I’d prefer a hands-on career, rather than confine myself to a research role, so I probably will think about other courses.PROFESSOR: Whatever you choose, Milton University is the best school for you and I highly recommend it.The lecture theatre is kind of old, but last year, the Ministry of Education handed out grants to the top universities, and Milton was on the list.MARY: What’s been upgraded? I heard they developed a new medical facility.PROFESSOR: Not really, but they are going to do that.Although, they did spend a large amount of money on the existing medical department.\nSpeaker 2: The entire building was renovated, and new equipment was purchased.MARY: I’m still having trouble making a decision.\nSpeaker 3: Is there any information on the school’s website?PROFESSOR: Yes, and you will find some details you need to know there.Some people have found it useful to discuss with graduating students the benefits of studying their subject.But in terms of familiarising yourself with the content of the course, you could do no better than talking with the tutor and getting to know him or her.MARY: Perhaps I’ll try that. It’s not that I want to choose an easy path. I know that only through hard work can I excel in any field.I just have so much trouble making up my mind!I know there will be funding and scholarships available for particular courses, but I just can’t choose.PROFESSOR: By all means, discuss your concerns with other teachers.MARY: They are all quite busy, you know. I’ll think about it. Thank you so much for your advice, Professor Fraser.PROFESSOR: You are welcome.\nSpeaker 2: If you ...",
+	"body": {
+		"text": "Medicine Courses\nNursing course\nDifficult to acquire the [1]\nOperation course\nNeeds to learn [2] first\nSociology course\nMainly work together with [3] people in class\nAfter the course, help people with [4]",
+		"html": "<p><strong>Medicine Courses</strong></p><p><strong>Nursing course</strong></p><ul><li>Difficult to acquire the  [1]</li></ul><p><strong>Operation course</strong></p><ul><li>Needs to learn  [2]  first</li></ul><p><strong>Sociology course</strong></p><ul><li>Mainly work together with  [3] people in class</li><li>After the course, help people with  [4]</li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "Medicine Courses\nNursing course\nDifficult to acquire the [1]\nOperation course\nNeeds to learn [2] first\nSociology course\nMainly work together with [3] people in class\nAfter the course, help people with [4]",
+			"body_html": "<p><strong>Medicine Courses</strong></p><p><strong>Nursing course</strong></p><ul><li>Difficult to acquire the  [1]</li></ul><p><strong>Operation course</strong></p><ul><li>Needs to learn  [2]  first</li></ul><p><strong>Sociology course</strong></p><ul><li>Mainly work together with  [3] people in class</li><li>After the course, help people with  [4]</li></ul>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Difficult to acquire the [1]",
+					"answer": "diploma",
+					"quotes": [
+						"Apparently, it’s not easy to get the diploma since I may not be able to complete the assignments.I feel apprehensive about starting a course I may not be able to finish.PROFESSOR: It’s a shame you feel that way."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Needs to learn [2] first",
+					"answer": "biology",
+					"quotes": [
+						"But you have other options available.Have you thought about the surgical operation course?MARY: Biology is a prerequisite for that course."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Mainly work together with [3] people in class",
+					"answer": "young",
+					"quotes": [
+						"Sociology is beneficial, especially if you wish to further your studies in pediatric care.During the class, you will have the opportunity to work with people of all ages, but in particular, young ones.MARY: What career prospects are there for me once I’ve completed the course?PROFESSOR: Believe it or not, many students who complete the sociology studies go on to work in a different field."
+					]
+				},
+				{
+					"number": 4,
+					"text": "After the course, help people with [4]",
+					"answer": "disability",
+					"quotes": [
+						"They find it a rewarding and fulfilling career to work with people who have disability and help them improve the quality of life.MARY: I see, that sounds great."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter A, B or C.",
+			"questions": [
+				{
+					"number": 5,
+					"text": "The professor suggests that Mary should",
+					"options": [
+						{
+							"label": "A",
+							"text": "choose two courses."
+						},
+						{
+							"label": "B",
+							"text": "focus on one course."
+						},
+						{
+							"label": "C",
+							"text": "choose another subject."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"You could try a different subject other than medicine.But I recommend you find the exact branch of medicine you want to study and put your focus on that.MARY: The Health and Social Care course is popular."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Why will Mary choose the Health and Social Care course?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She is interested in this subject."
+						},
+						{
+							"label": "B",
+							"text": "The teacher of the course has an international reputation."
+						},
+						{
+							"label": "C",
+							"text": "There are a lot of grants for the research."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Also, I do know that Professor Rhodes has a good reputation. He’s one of the most respected professors in his field.MARY: Oh, yes. I’ve heard the professor is world-renowned. So, I will definitely go for it.PROFESSOR: Alright, then how about occupational therapy?MARY: Well, my sister studied this subject last year."
+					]
+				},
+				{
+					"number": 7,
+					"text": "What does the professor say about occupational therapy?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The textbook is written by a school staff member."
+						},
+						{
+							"label": "B",
+							"text": "The course is very difficult."
+						},
+						{
+							"label": "C",
+							"text": "The textbook is easy to understand."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"She says it’s very difficult.PROFESSOR: Perhaps it is for some students, but generally it can be easy for a student who majors in medicine.Actually, the textbooks used are published by our school, and the writer is a teacher in medical department, so if a student finds them difficult to understand, he can get quick response from the teacher for clarification, which will be of great help in occupational therapy research.MARY: That’s really great, and I also heard that the textbook is quite easy to follow, but I’d prefer a hands-on career, rather than confine myself to a research role, so I probably will think about other courses.PROFESSOR: Whatever you choose, Milton University is the best school for you and I highly recommend it.The lecture theatre is kind of old, but last year, the Ministry of Education handed out grants to the top universities, and Milton was on the list.MARY: What’s been upgraded?"
+					]
+				},
+				{
+					"number": 8,
+					"text": "The university has recently spent money on",
+					"options": [
+						{
+							"label": "A",
+							"text": "upgrading the infrastructure for the Department of Medicine."
+						},
+						{
+							"label": "B",
+							"text": "building a new lecture theatre for all departments."
+						},
+						{
+							"label": "C",
+							"text": "developing new medical facilities."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I heard they developed a new medical facility.PROFESSOR: Not really, but they are going to do that.Although, they did spend a large amount of money on the existing medical department. The entire building was renovated, and new equipment was purchased.MARY: I’m still having trouble making a decision."
+					]
+				},
+				{
+					"number": 9,
+					"text": "What does the professor advise Mary to do about the course?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She should check the details on the website."
+						},
+						{
+							"label": "B",
+							"text": "She should discuss with graduating students."
+						},
+						{
+							"label": "C",
+							"text": "She should interact with the tutor."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Is there any information on the school’s website?PROFESSOR: Yes, and you will find some details you need to know there.Some people have found it useful to discuss with graduating students the benefits of studying their subject.But in terms of familiarising yourself with the content of the course, you could do no better than talking with the tutor and getting to know him or her.MARY: Perhaps I’ll try that."
+					]
+				},
+				{
+					"number": 10,
+					"text": "What decision does Mary make at the end of the discussion?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She will choose a less difficult course."
+						},
+						{
+							"label": "B",
+							"text": "She will talk to her teacher."
+						},
+						{
+							"label": "C",
+							"text": "She still remains uncertain on which course to choose."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"I know that only through hard work can I excel in any field.I just have so much trouble making up my mind!I know there will be funding and scholarships available for particular courses, but I just can’t choose.PROFESSOR: By all means, discuss your concerns with other teachers.MARY: They are all quite busy, you know."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

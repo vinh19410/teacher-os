@@ -1,0 +1,275 @@
+{
+	"id": "add6cf8b-72b9-4384-8ec5-4a4ec64bd872",
+	"url": "https://stepielts.com/student/listening/add6cf8b-72b9-4384-8ec5-4a4ec64bd872?mode=practice",
+	"title": "Company Survey Analysis",
+	"source": "Forecast Quý 2-2025",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/28c239c9-b871-40b5-9713-ac493e95537c.mp3",
+	"transcript": "Speaker 1: Hi Jack, Charlotte. How is your research going with the Willows company?\nSpeaker 2: Mr. Johnson, we’ve just finished the survey.\nSpeaker 1: That’s good. I remember this company used to operate massive production lines. I wonder how they’re doing lately?\nSpeaker 3: You’re right. In the past, they manufactured various kinds of furniture, in the hope they would be able to expand their retail outlets and increase the profits of the company. However, after a few years of trial, they realized it wasn’t profitable and now focus solely on producing one type of product.\nSpeaker 1: Fair enough. How did you two decide to focus on this company for your survey? Did you contact any former executives?\nSpeaker 2: Well, I’ve been interested in this company for a while because many of our schoolmates work there full-time after graduation. I guess there must be something special about it. Then one day, the manager of the company read an article by the head of our department, Ms. Walton, and reached out to her. Coincidentally, we were selecting a company in the furniture industry for the survey, she recommended the Willows.\nSpeaker 1: Interesting! What is your opinion on the new software? Do you think the company will find it difficult to use?\nSpeaker 2: I personally found it quite straightforward to master. I think it’s very helpful.\nSpeaker 1: At the moment, it seems that many staff learn to use it quickly, but the long-term outcome is uncertain. It’s possible that the old software might be more beneficial for them.\nSpeaker 3: Yeah, I agree.\nSpeaker 1: How do you plan to test our new system?\nSpeaker 3: Jack and I are planning to ask the IT department for help.\nSpeaker 1: They don’t have that kind of team in the company, unfortunately.\nSpeaker 2: Well, it looks like we’ll have to dive into the account details ourselves and keep a complete record.\nSpeaker 1: That works, but if you need any kind of data, you will need the manager’s permission first.\nSpeaker 3: Got that.\nSpeaker 1: How did you conduct your interviews?\nSpeaker 3: I thought about doing that via online communication, but Jack didn’t think it would be that effective.\nSpeaker 2: The staff were quite busy during the peak season, so they wanted the interviews to be short and neat. Therefore, we decided to meet them in person and finish all our interviews within one day to avoid disturbing the company later on.\nSpeaker 3: Yeah, that would save us a lot of trouble.\nSpeaker 1: Understandable. The questionnaire you use in the application process for this company has received mixed reactions. How do you feel?\nSpeaker 3: I’m disappointed because of the little response we received.\nSpeaker 2: Me too. I thought it should be rated highly because we spent a lot of time on it.\nSpeaker 1: Well, some parts need improvement, but overall, the questionnaire is better than many I’ve seen.I hope you can improve it further next time. How do you feel the company will benefit from the new software?\nSpeaker 3: It’s not likely to boost sales or profits. However, it should allow them to increase the size of their workforce. The current workforce is stretched to the limit to fill their orders.\nSpeaker 2: I assume it will also reduce the time it takes to produce their stock.\nSpeaker 3: Unfortunately, that won’t be the case. But labour costs overall will be significantly reduced.\nSpeaker 1: What kinds of effects do you think this new software may have?\nSpeaker 3: For customers, they can actively participate in the design process for custom-made furniture. The new system enables them to submit requirements and feedback online. At the same time, the company can monitor and evaluate the workload based on these requirements. If there is a shortage of staff, they can instantly start recruiting. However, one drawback is that the designers work offline in the factory, so they cannot access the feedback system themselves. They each have an assistant who will print out customers’ feedback and place it on their desks.\nSpeaker 1: Don’t you think that some customers may have limited knowledge about online submission?\nSpeaker 3: That shouldn’t be a problem. As far as I know, most of the customers are familiar with online submission, and there were few complaints about technical problems. Besides, customers no longer need to wait to meet the designers in person to discuss their needs, they can now submit their wants and needs online whenever they are ready.\nSpeaker 1: Alright, we shall see how this system goes.",
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "What is Willows Company's current field of business?",
+					"options": [
+						{
+							"label": "A",
+							"text": "specialize in only one kind of furniture"
+						},
+						{
+							"label": "B",
+							"text": "design all kinds of furniture for customers"
+						},
+						{
+							"label": "C",
+							"text": "manage retail outlet chains"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"However, after a few years of trial, they realized it wasn’t profitable and now focus solely on producing one type of product."
+					]
+				},
+				{
+					"number": 2,
+					"text": "How did Jack get the chance to survey Willows company?",
+					"options": [
+						{
+							"label": "A",
+							"text": "He had the former executive’s contact number."
+						},
+						{
+							"label": "B",
+							"text": "He got a referral from a faculty member at his school."
+						},
+						{
+							"label": "C",
+							"text": "He worked part-time for the company during school vacations."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Then one day, the manager of the company read an article by the head of our department, Ms. Walton, and reached out to her. Coincidentally, we were selecting a company in the furniture industry for the survey, she recommended the Willows."
+					]
+				},
+				{
+					"number": 3,
+					"text": "What is the supervisor's opinion on the new software?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It is difficult to predict whether people can master it."
+						},
+						{
+							"label": "B",
+							"text": "It is easy for most people to learn."
+						},
+						{
+							"label": "C",
+							"text": "It will be very helpful."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"At the moment, it seems that many staff learn to use it quickly, but the long-term outcome is uncertain."
+					]
+				},
+				{
+					"number": 4,
+					"text": "How will Jack and Charlotte test the system?",
+					"options": [
+						{
+							"label": "A",
+							"text": "ask the IT department"
+						},
+						{
+							"label": "B",
+							"text": "talk with the manager"
+						},
+						{
+							"label": "C",
+							"text": "inspect the account"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Well, it looks like we’ll have to dive into the account details ourselves and keep a complete record."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Why did Jack and Charlotte choose to do face-to-face interviews?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They wanted to avoid further disturbance to the company."
+						},
+						{
+							"label": "B",
+							"text": "They were not used to hosting video conferencing."
+						},
+						{
+							"label": "C",
+							"text": "They thought it’d be more interactive."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Therefore, we decided to meet them in person and finish all our interviews within one day to avoid disturbing the company later on."
+					]
+				},
+				{
+					"number": 6,
+					"text": "What is the supervisor's view on the design of the company’s questionnaire?",
+					"options": [
+						{
+							"label": "A",
+							"text": "very disappointing"
+						},
+						{
+							"label": "B",
+							"text": "better than average"
+						},
+						{
+							"label": "C",
+							"text": "surprisingly good"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Well, some parts need improvement, but overall, the questionnaire is better than many I’ve seen.I hope you can improve it further next time."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-8",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 7,
+					"text": "How will the new software benefit the company?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The company will gain more profits."
+						},
+						{
+							"label": "B",
+							"text": "Sales will be rising."
+						},
+						{
+							"label": "C",
+							"text": "The company can employ new staff."
+						},
+						{
+							"label": "D",
+							"text": "The company can reduce production time."
+						},
+						{
+							"label": "E",
+							"text": "The company can reduce labor costs."
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 8,
+					"text": "How will the new software benefit the company?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The company will gain more profits."
+						},
+						{
+							"label": "B",
+							"text": "Sales will be rising."
+						},
+						{
+							"label": "C",
+							"text": "The company can employ new staff."
+						},
+						{
+							"label": "D",
+							"text": "The company can reduce production time."
+						},
+						{
+							"label": "E",
+							"text": "The company can reduce labor costs."
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "9-10",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 9,
+					"text": "What effects will the new system bring according to the customers' feedback?",
+					"options": [
+						{
+							"label": "A",
+							"text": "There will be more contact between the company and customers."
+						},
+						{
+							"label": "B",
+							"text": "Designers can do online work."
+						},
+						{
+							"label": "C",
+							"text": "Customers will get more involved in the design process."
+						},
+						{
+							"label": "D",
+							"text": "It may trigger more negative responses from customers."
+						},
+						{
+							"label": "E",
+							"text": "It will save much time for customers."
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 10,
+					"text": "What effects will the new system bring according to the customers' feedback?",
+					"options": [
+						{
+							"label": "A",
+							"text": "There will be more contact between the company and customers."
+						},
+						{
+							"label": "B",
+							"text": "Designers can do online work."
+						},
+						{
+							"label": "C",
+							"text": "Customers will get more involved in the design process."
+						},
+						{
+							"label": "D",
+							"text": "It may trigger more negative responses from customers."
+						},
+						{
+							"label": "E",
+							"text": "It will save much time for customers."
+						}
+					],
+					"answer": "E"
+				}
+			]
+		}
+	],
+	"images": []
+}

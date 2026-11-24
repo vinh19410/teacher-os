@@ -1,0 +1,135 @@
+{
+	"id": "0c07c56f-6946-41fd-97e0-06001b159046",
+	"url": "https://stepielts.com/student/listening/0c07c56f-6946-41fd-97e0-06001b159046?mode=practice",
+	"title": "Advice",
+	"source": "Unknown",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-13",
+	"audio_url": "https://audio.stepielts.com/listening-audio/882e4b0b-c40f-4deb-91ac-e8b88c375520.mp3",
+	"transcript": "Speaker 0: Advice Sometimes my mother gives me advice. She tells me to save my money for a rainy day. She says that I should eat my vegetables if I want to be strong when I grow up. She says that you reap what you sow. I didn't know what that one meant, so I asked her. She said that if you are good to people, they will be good to you. If you do bad things, then bad things will come back to you. My mother is always giving me advice. She says that a penny saved is a penny earned. I am still thinking about that one. Some of these things are difficult to understand. My mother is very wise. She says that she has learned from her mistakes. She tells me that she would like me not to make mistakes, but she says that everyone does make mistakes. The important thing is that we learn from our mistakes. My mother says that nobody is perfect. My mother tells my sister that time is precious. My sister wastes time, and my mother doesn't like that. My mother tells me to be true to myself. She says that I should not follow the crowd. I should listen to my own conscience and do what I think is right. She says that it doesn't matter if you fail at something. The important thing is that you try. If you've done your best, then that is all that matters. I listen to my mother. I think she gives very good advice. My mother has a lot of common sense. I hope I am as wise as she is when I have children of my own. Sometimes I wish that she would not give me so much advice. I think that I know what I'm doing. But in the end, I always remember what she has said, and I try to live by the standards that she has set for me. Take the advice that your parents give you. They only have your best interests at heart.",
+	"body": {
+		"text": "PART A — FILL IN THE BLANK\nThe mother warns her child not to follow the [1], and instead to act according to their own conscience.\nThe speaker admits that some of the mother's sayings are difficult to [2].\nThe mother believes that the most important thing about making mistakes is that we [3] from them.\nThe speaker says they try to live by the [4] that their mother has set for them.\nAccording to the mother, parents give advice because they only have their children's best [5] at heart.",
+		"html": "<p><strong>PART A — FILL IN THE BLANK</strong></p><ol><li>The mother warns her child not to follow the [1], and instead to act according to their own conscience.</li><li>The speaker admits that some of the mother's sayings are difficult to [2].</li><li>The mother believes that the most important thing about making mistakes is that we [3] from them.</li><li>The speaker says they try to live by the [4] that their mother has set for them.</li><li>According to the mother, parents give advice because they only have their children's best [5] at heart.</li></ol>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Listen and complete the sentences. Use ONE OR TWO WORDS only.",
+			"body": "PART A — FILL IN THE BLANK\nThe mother warns her child not to follow the [1], and instead to act according to their own conscience.\nThe speaker admits that some of the mother's sayings are difficult to [2].\nThe mother believes that the most important thing about making mistakes is that we [3] from them.\nThe speaker says they try to live by the [4] that their mother has set for them.\nAccording to the mother, parents give advice because they only have their children's best [5] at heart.",
+			"body_html": "<p><strong>PART A — FILL IN THE BLANK</strong></p><ol><li>The mother warns her child not to follow the [1], and instead to act according to their own conscience.</li><li>The speaker admits that some of the mother's sayings are difficult to [2].</li><li>The mother believes that the most important thing about making mistakes is that we [3] from them.</li><li>The speaker says they try to live by the [4] that their mother has set for them.</li><li>According to the mother, parents give advice because they only have their children's best [5] at heart.</li></ol>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The mother warns her child not to follow the [1], and instead to act according to their own conscience.",
+					"answer": "crowd",
+					"quotes": ["She says that I should not follow the crowd."]
+				},
+				{
+					"number": 2,
+					"text": "The speaker admits that some of the mother's sayings are difficult to [2].",
+					"answer": "understand",
+					"quotes": ["Some of these things are difficult to understand."]
+				},
+				{
+					"number": 3,
+					"text": "The mother believes that the most important thing about making mistakes is that we [3] from them.",
+					"answer": "learn",
+					"quotes": ["The important thing is that we learn from our mistakes."]
+				},
+				{
+					"number": 4,
+					"text": "The speaker says they try to live by the [4] that their mother has set for them.",
+					"answer": "standards",
+					"quotes": [
+						"But in the end, I always remember what she has said, and I try to live by the standards that she has set for me."
+					]
+				},
+				{
+					"number": 5,
+					"text": "According to the mother, parents give advice because they only have their children's best [5] at heart.",
+					"answer": "interests",
+					"quotes": ["They only have your best interests at heart."]
+				}
+			]
+		},
+		{
+			"range": "6-13",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Write\nTRUE if the statement agrees with what you heard\nFALSE if it contradicts it\nNOT GIVEN if the information is not mentioned.",
+			"questions": [
+				{
+					"number": 6,
+					"text": "The mother tells her child to save money in case of future difficulties.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"quotes": ["She tells me to save my money for a rainy day."]
+				},
+				{
+					"number": 7,
+					"text": "The speaker immediately understood the meaning of \"you reap what you sow\" without asking.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"quotes": ["I didn't know what that one meant, so I asked her."]
+				},
+				{
+					"number": 8,
+					"text": "The mother admits that she has made mistakes in her own life.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"quotes": ["She says that she has learned from her mistakes."]
+				},
+				{
+					"number": 9,
+					"text": "The mother expects her child to make mistakes.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"quotes": [
+						"She tells me that she would like me not to make mistakes, but she says that everyone does make mistakes."
+					]
+				},
+				{
+					"number": 10,
+					"text": "The mother tells the speaker's sister that time should not be wasted.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"quotes": [
+						"My mother tells my sister that time is precious.",
+						"My sister wastes time, and my mother doesn't like that."
+					]
+				},
+				{
+					"number": 11,
+					"text": "The mother believes that failing at something means you should stop trying.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"quotes": [
+						"She says that it doesn't matter if you fail at something.",
+						"The important thing is that you try.",
+						"If you've done your best, then that is all that matters."
+					]
+				},
+				{
+					"number": 12,
+					"text": "The speaker plans to pass the same advice on to their own children someday.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"quotes": [
+						"I hope I am as wise as she is when I have children of my own."
+					]
+				},
+				{
+					"number": 13,
+					"text": "In the end, the speaker tries to live according to the values their mother has taught them.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"quotes": [
+						"But in the end, I always remember what she has said, and I try to live by the standards that she has set for me."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

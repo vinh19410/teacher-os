@@ -1,0 +1,95 @@
+{
+	"id": "709a221c-1ee8-40db-a016-187c0c8ac2f0",
+	"url": "https://stepielts.com/student/listening/709a221c-1ee8-40db-a016-187c0c8ac2f0?mode=practice",
+	"title": "Flight booking through Wide World Travel Birmingham",
+	"source": "Forecast Quý 2-2025",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/9b56d7be-f4de-4751-8834-832e79228b72.mp3",
+	"transcript": "Speaker 0: ANDREW: Good afternoon! I’m Andrew from Wide World Travel Birmingham. How can I help you?\nSpeaker 1: LILY: Hi! My mother and I are thinking of taking a holiday, so I would like to book some flights.\nSpeaker 0: ANDREW: Of course. Where do you want to go?\nSpeaker 1: LILY: We would like to go to Germany from Birmingham. We thought either Hamburg or Berlin might be interesting, but we’re not sure which one to pick. Do you have any recommendations?\nSpeaker 0: ANDREW: I’d choose Berlin. The flights there are the cheapest at this time of the year and we have some good deals at the moment.\nSpeaker 1: LILY: OK! That settles it. We would like to book two round trip tickets.\nSpeaker 0: ANDREW: Great. What date would you like to leave?\nSpeaker 1: LILY: We would like to leave on the 29th of October.\nSpeaker 0: ANDREW: OK. I’ve noted that down. When do you plan to return?\nSpeaker 1: LILY: On the 5th of November. We have to come back in time for my father’s birthday, which is the next day, the 6th.\nSpeaker 0: ANDREW: Alright, let me just take a look ... OK, so I’ve just found some prices for you for those dates. There are two flights, the cheaper one is £110 and the other is £150, both leaving at 10am. The cheaper option has a short stopover in Paris, though. Which would you prefer?\nSpeaker 1: LILY: We would not consider flights with a stopover as my mother likes direct flights. I think we will take the more expensive one.\nSpeaker 0: ANDREW: No problem, so I will book you in for the weekly return airfare type, flying with Golden Daybreak Airways. ANDREW: Now I would like to get some necessary personal information from you for the booking. Is that alright? LILY: No problem. ANDREW: Where do you live?\nSpeaker 1: LILY: I live at Bank House, Chalk Street, Birmingham.\nSpeaker 0: ANDREW: OK. And your name please?\nSpeaker 1: LILY: Lily Cowper. That’s C-O-W-P-E-R. My mother’s name is Janet Esperance. Oh, I nearly forgot! She has some special needs for the flight. She is lactose intolerant, so definitely no milk in her meal. And apart from that, she’s also allergic to nuts.\nSpeaker 0: ANDREW: Sure. I’ve noted this down. Is there any other things we can care for her needs on the flight?\nSpeaker 1: LILY: My mother has trouble walking. Is there any facility available to help?\nSpeaker 0: ANDREW: That’s no problem at all. The airline offers wheelchairs for anyone in need. Would you like me to call ahead and arrange one at the check-in desk when you arrive?\nSpeaker 1: LILY: Oh yes, we would really appreciate it. Thank you! She probably will need some more legroom for the flight too. Can that be arranged?\nSpeaker 0: ANDREW: Certainly! I can put you in row 40 if that suits. It isn’t an exit row but it will make sure that your mum feels comfortable. Would that be good?\nSpeaker 1: LILY: Yes, that would be great. Now, how should I pay for these flights?\nSpeaker 0: ANDREW: There are several options. You could come into our agency and pay in person via card or cash, or make an online transfer.\nSpeaker 1: LILY: Alright, I’m coming into the town next week, so I will come and pay in person by credit card ... Oh no, actually I think that an online transfer would be the easiest option for me. Could you please let me know the details?\nSpeaker 0: ANDREW: Sure. If you give me your email address. I will send the details and your itinerary through to you.\nSpeaker 1: LILY: OK, it’s la.cowper@sunstream.com. Thank you so much for your help!\nSpeaker 0: ANDREW: Great, I will send it through. And I hope you enjoy your holiday!",
+	"body": {
+		"text": "Flight booking\nFlight Information\nDeparture: Birmingham\nDestination: [1]\nDeparture date: 29th October\nReturn date: [2]\nTicket price: £[3]\nType of ticket: [4]\nPassenger Information\nHome address: [5], Chalk Street, Birmingham\nPassenger names\n- Lily [6]\n- Janet Esperance\nSpecial requirements\nFood: no milk, no [7]\nFacility: [8]\nSeat: extra [9]\nPayment method: [10]",
+		"html": "<h2>Flight booking</h2><h3>Flight Information</h3><ul><li><p>Departure: Birmingham</p></li><li><p>Destination: [1]</p></li><li><p>Departure date: 29th October</p></li><li><p>Return date: [2]</p></li><li><p>Ticket price: £[3] </p></li><li><p>Type of ticket: [4]  </p></li></ul><h3>Passenger Information</h3><ul><li><p>Home address:  [5], Chalk Street, Birmingham</p></li><li><p>Passenger names<br>- Lily [6]<br>- Janet Esperance</p></li></ul><h3>Special requirements</h3><ul><li><p>Food: no milk, no [7]  </p></li><li><p>Facility: [8] </p></li><li><p>Seat: extra [9]</p></li><li><p>Payment method: [10]</p></li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "Flight booking\nFlight Information\nDeparture: Birmingham\nDestination: [1]\nDeparture date: 29th October\nReturn date: [2]\nTicket price: £[3]\nType of ticket: [4]\nPassenger Information\nHome address: [5], Chalk Street, Birmingham\nPassenger names\n- Lily [6]\n- Janet Esperance\nSpecial requirements\nFood: no milk, no [7]\nFacility: [8]\nSeat: extra [9]\nPayment method: [10]",
+			"body_html": "<h2>Flight booking</h2><h3>Flight Information</h3><ul><li><p>Departure: Birmingham</p></li><li><p>Destination: [1]</p></li><li><p>Departure date: 29th October</p></li><li><p>Return date: [2]</p></li><li><p>Ticket price: £[3] </p></li><li><p>Type of ticket: [4]  </p></li></ul><h3>Passenger Information</h3><ul><li><p>Home address:  [5], Chalk Street, Birmingham</p></li><li><p>Passenger names<br>- Lily [6]<br>- Janet Esperance</p></li></ul><h3>Special requirements</h3><ul><li><p>Food: no milk, no [7]  </p></li><li><p>Facility: [8] </p></li><li><p>Seat: extra [9]</p></li><li><p>Payment method: [10]</p></li></ul>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Destination: [1]",
+					"answer": "Berlin",
+					"quotes": ["ANDREW: I’d choose Berlin."]
+				},
+				{
+					"number": 2,
+					"text": "Return date: [2]",
+					"answer": "5th November / November 5th / 5 November / November 5",
+					"quotes": ["LILY: On the 5th of November."]
+				},
+				{
+					"number": 3,
+					"text": "Ticket price: £[3]",
+					"answer": "150",
+					"quotes": [
+						"There are two flights, the cheaper one is £110 and the other is £150, both leaving at 10am."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Type of ticket: [4]",
+					"answer": "weekly return",
+					"quotes": [
+						"ANDREW: No problem, so I will book you in for the weekly return airfare type, flying with Golden Daybreak Airways."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Home address: [5], Chalk Street, Birmingham",
+					"answer": "Bank House",
+					"quotes": ["LILY: I live at Bank House, Chalk Street, Birmingham."]
+				},
+				{
+					"number": 6,
+					"text": "- Lily [6]",
+					"answer": "Cowper",
+					"quotes": ["LILY: Lily Cowper."]
+				},
+				{
+					"number": 7,
+					"text": "Food: no milk, no [7]",
+					"answer": "nuts",
+					"quotes": ["And apart from that, she’s also allergic to nuts."]
+				},
+				{
+					"number": 8,
+					"text": "Facility: [8]",
+					"answer": "wheelchairs",
+					"quotes": ["The airline offers wheelchairs for anyone in need."]
+				},
+				{
+					"number": 9,
+					"text": "Seat: extra [9]",
+					"answer": "legroom / leg room",
+					"quotes": [
+						"She probably will need some more legroom for the flight too."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Payment method: [10]",
+					"answer": "online transfer",
+					"quotes": [
+						"Oh no, actually I think that an online transfer would be the easiest option for me."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,228 @@
+{
+	"id": "d61ff422-4eb0-48d4-9e21-21186b48ceaa",
+	"url": "https://stepielts.com/student/listening/d61ff422-4eb0-48d4-9e21-21186b48ceaa?mode=practice",
+	"title": "Theatre Programmes",
+	"source": "C20T3",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/5cffd7ae-69f2-4a84-aaf9-29244f878260.mp3",
+	"transcript": "Speaker 0: Part three. You will hear two theatre studies students, Maya and Finn, discussing their project on theatre programmes. First, you have some time to look at questions 21 to 26. Now listen carefully and answer questions 21 to 26.\nSpeaker 1: So, Finn, I've done as much as I can for our project on theatre programmes. How's your research coming along?\nSpeaker 2: Okay, Maya. I didn't know theatre programmes are called playbills in The USA till I started looking into the topic. Even though I struggled to find many useful websites, I'm glad we picked this subject. No one else on the course is doing the same as us, although it is one of the research areas of the module convener.\nSpeaker 1: That might actually put some people off.\nSpeaker 2: I suppose so. Anyway, I hadn't realised there are actually companies specialising in creating theatre programmes.\nSpeaker 1: Yes, they're quite common nowadays. Contrary to what many people think, theatres don't hire people to do the programmes. In fact, companies buy the rights to publish programmes on the theatre's behalf, and then make their money selling advertising space within the programme booklet.\nSpeaker 2: It must be easier for theatres to do it that way. Yes. I remember reading something about programmes in early British theatre. It said that the cast was always very important.\nSpeaker 1: Yeah. Audiences were very familiar with leading actors, and big names would draw huge crowds.\nSpeaker 2: But I hadn't realised that if the programme named a famous actor, that's who the public expected to perform. And if that didn't happen, people accused the theatre of breaking their agreement with the audience. They would demand refunds and if they didn't get them, there were riots.\nSpeaker 1: Outrageous! That'd never happen now.\nSpeaker 2: No. People are too polite, even when they're disappointed if the star of the show misses a performance.\nSpeaker 1: We should definitely include that information about early audiences in our project. I also think it's important to mention that lots of ordinary people at that time were illiterate, so theatre programmes were of limited value in advertising plays. When a company of actors arrived in a town, they'd parade around the streets in their costumes, beating drums and announcing their upcoming performances.\nSpeaker 2: Interesting. I couldn't imagine that happening now either.\nSpeaker 1: There's also an interesting comparison to make between eighteenth and nineteenth century programmes.\nSpeaker 2: Wasn't it in the nineteenth century that theatre programmes started to resemble programmes today?\nSpeaker 1: Yes. And unlike programmes from the eighteenth century, they always used colour.\nSpeaker 2: And there was a greater variety of designs. But personally, I think eighteenth century programmes were superior because they told the theatregoers so many things, including about the actors.\nSpeaker 1: And about the writer, the plot, and sometimes the history of the play.\nSpeaker 2: That's right. What should we say about theatre programmes in the twentieth century?\nSpeaker 1: I reckon the most important thing is the dramatic change they underwent during World War two.\nSpeaker 2: When the government imposed restrictions on the use of paper.\nSpeaker 1: Yeah. But that was only in The UK. In The USA, programmes, or rather playbills, continued to be published in the same format.\nSpeaker 2: While here in The UK, programmes became merely a single sheet of paper folded to create four pages for text.\nSpeaker 1: What I don't really get is that after the war they didn't go back to being more than one sheet, or change in any way for over twenty five years. I know there were paper shortages after the war, but only for five or ten years.\nSpeaker 2: Strange.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 27 to 30. Now listen and answer questions 27 to 30.\nSpeaker 1: I've got some pictures of programmes we could include on the slides for our presentation.\nSpeaker 2: I found a couple too, Maya. Let's go through and see what we think.\nSpeaker 1: Ah, this is an old one for a play called Ruy Blas.\nSpeaker 2: Never heard of that. But the programme looks very decorative.\nSpeaker 1: Good enough to put in a frame on the wall. The images are just beautiful. Finn, what did you find?\nSpeaker 2: I've got some pages from a programme for Man of La Mancha. I thought this was a good programme to show, not because of the pictures, but because it contains articles written by members of the theatre company, so we can learn how the production was created and the thoughts and feelings of the cast.\nSpeaker 1: Good. I've got a copy of a programme that's now in a museum. It's for The Tragedy of Jane Shaw, and it's said to be the earliest surviving document to have been printed on Australia's first printing press. Fantastic. Another programme to talk about is for the Sailors Festival. It comes from the British Library's digitised collection of programmes that was started a few years ago. It already comprises over 200,000 programmes, which is amazing.\nSpeaker 2: Wish I'd known about it while I was doing my research.\nSpeaker 0: That is the end of part three. You now have thirty seconds to check your answers to part three.",
+	"body": {
+		"text": "Ruy Blas [27]\nMan of La Mancha [28]\nThe Tragedy of Jane Shore [29]\nThe Sailors' Festival [30]",
+		"html": "<p>Ruy Blas [27]</p><p>Man of La Mancha [28]</p><p>The Tragedy of Jane Shore [29]</p><p>The Sailors' Festival [30]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-26",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Finn was pleased to discover that their topic",
+					"options": [
+						{
+							"label": "A",
+							"text": "was not familiar to their module leader."
+						},
+						{
+							"label": "B",
+							"text": "had not been chosen by other students"
+						},
+						{
+							"label": "C",
+							"text": "did not prove to be difficult to research."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Even though I struggled to find many useful websites, I'm glad we picked this subject. No one else on the course is doing the same as us, although it is one of the research areas of the module convener."
+					]
+				},
+				{
+					"number": 22,
+					"text": "Maya says a mistaken belief about theatre programmes is that",
+					"options": [
+						{
+							"label": "A",
+							"text": "theatres pay companies to produce them."
+						},
+						{
+							"label": "B",
+							"text": "few theatre-goers buy them nowadays."
+						},
+						{
+							"label": "C",
+							"text": "they contain far more adverts than previously."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Contrary to what many people think, theatres don't hire people to do the programmes."
+					]
+				},
+				{
+					"number": 23,
+					"text": "Finn was surprised that, in early British theatre, programmes",
+					"options": [
+						{
+							"label": "A",
+							"text": "were difficult for audiences to obtain."
+						},
+						{
+							"label": "B",
+							"text": "were given out free of charge."
+						},
+						{
+							"label": "C",
+							"text": "were seen as a kind of contract."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But I hadn't realised that if the programme named a famous actor, that's who the public expected to perform. And if that didn't happen, people accused the theatre of breaking their agreement with the audience. They would demand refunds and if they didn't get them, there were riots."
+					]
+				},
+				{
+					"number": 24,
+					"text": "Maya feels their project should include an explanation of why companies of actors",
+					"options": [
+						{
+							"label": "A",
+							"text": "promoted their own plays."
+						},
+						{
+							"label": "B",
+							"text": "performed plays outdoors."
+						},
+						{
+							"label": "C",
+							"text": "had to tour with their plays."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I also think it's important to mention that lots of ordinary people at that time were illiterate, so theatre programmes were of limited value in advertising plays. When a company of actors arrived in a town, they'd parade around the streets in their costumes, beating drums and announcing their upcoming performances."
+					]
+				},
+				{
+					"number": 25,
+					"text": "Finn and Maya both think that, compared to nineteenth-century programmes, those from the eighteenth century",
+					"options": [
+						{
+							"label": "A",
+							"text": "were more original."
+						},
+						{
+							"label": "B",
+							"text": "were more colourful."
+						},
+						{
+							"label": "C",
+							"text": "were more informative."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"And about the writer, the plot, and sometimes the history of the play."
+					]
+				},
+				{
+					"number": 26,
+					"text": "Maya doesn't fully understand why, in the twentieth century,",
+					"options": [
+						{
+							"label": "A",
+							"text": "very few theatre programmes were printed in the USA."
+						},
+						{
+							"label": "B",
+							"text": "British theatre programmes failed to develop for so long."
+						},
+						{
+							"label": "C",
+							"text": "theatre programmes in Britain copied fashions from the USA."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"What I don't really get is that after the war they didn't go back to being more than one sheet, or change in any way for over twenty five years. I know there were paper shortages after the war, but only for five or ten years."
+					]
+				}
+			]
+		},
+		{
+			"range": "27-30",
+			"type": "MATCHING",
+			"instructions": "What comment is made about the programme for each of the following shows? Choose the correct answer and move into the gap.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Its origin is somewhat controversial."
+				},
+				{
+					"label": "B",
+					"text": "It is historically significant for a country."
+				},
+				{
+					"label": "C",
+					"text": "It was effective at attracting audiences."
+				},
+				{
+					"label": "D",
+					"text": "It is included in a recent project."
+				},
+				{
+					"label": "E",
+					"text": "It contains insights into the show."
+				},
+				{
+					"label": "F",
+					"text": "It resembles an artwork."
+				}
+			],
+			"body": "Ruy Blas [27]\nMan of La Mancha [28]\nThe Tragedy of Jane Shore [29]\nThe Sailors' Festival [30]",
+			"body_html": "<p>Ruy Blas [27]</p><p>Man of La Mancha [28]</p><p>The Tragedy of Jane Shore [29]</p><p>The Sailors' Festival [30]</p>",
+			"questions": [
+				{
+					"number": 27,
+					"text": "Ruy Blas",
+					"answer": "F",
+					"quotes": [
+						"Never heard of that. But the programme looks very decorative.",
+						"Good enough to put in a frame on the wall.",
+						"Ah, this is an old one for a play called Ruy Blas.",
+						"But the programme looks very decorative.",
+						"The images are just beautiful."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Man of La Mancha",
+					"answer": "E",
+					"quotes": [
+						"I thought this was a good programme to show, not because of the pictures, but because it contains articles written by members of the theatre company, so we can learn how the production was created and the thoughts and feelings of the cast."
+					]
+				},
+				{
+					"number": 29,
+					"text": "The Tragedy of Jane Shore",
+					"answer": "B",
+					"quotes": [
+						"It's for The Tragedy of Jane Shaw, and it's said to be the earliest surviving document to have been printed on Australia's first printing press."
+					]
+				},
+				{
+					"number": 30,
+					"text": "The Sailors' Festival",
+					"answer": "D",
+					"quotes": [
+						"Another programme to talk about is for the Sailors Festival."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

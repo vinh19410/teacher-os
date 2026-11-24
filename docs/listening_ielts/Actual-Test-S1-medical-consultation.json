@@ -1,0 +1,95 @@
+{
+	"id": "97eaafba-395f-4f0d-a1b4-c311417b8bc0",
+	"url": "https://stepielts.com/student/listening/97eaafba-395f-4f0d-a1b4-c311417b8bc0?mode=practice",
+	"title": "Medical Consultation",
+	"source": "Actual Test",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/1e962f86-c632-4c37-9116-ab735b234ab5.mp3",
+	"transcript": "Speaker 0: Part one. You will hear a woman talking to a doctor about the problem with her eyes. First, you have some time to look at questions one to four. Now listen carefully and answer questions one to four. Good afternoon. Take a seat.\nSpeaker 1: Oh, thank you, doctor Jackson.\nSpeaker 0: How can I help you?\nSpeaker 1: I'm feeling a bit unwell these days. I hope you can give me some advice.\nSpeaker 0: Okay. Could we start off with some basic details so that I can fill in the patient form? Sure. First of all, what's your full name, please?\nSpeaker 1: It's Anu Atkinson.\nSpeaker 0: Could you spell your family name?\nSpeaker 1: A t k I n s o n, Atkinson.\nSpeaker 0: Do you know your postcode?\nSpeaker 1: Yes. I think it's EL214FB. Let me check. Oh, sorry. It's actually EL142BF.\nSpeaker 0: Thanks. And where are you living now?\nSpeaker 1: At the moment, I'm living with my parents on Queens Avenue.\nSpeaker 0: Okay. Got that. And your date of birth?\nSpeaker 1: 10/01/1986.\nSpeaker 0: Oh, what a coincidence. It's my birthday too, but I was born in 1984. Do you have a telephone number that I can contact you with?\nSpeaker 1: Yes. It's 875934, but I'm out and about a lot in the afternoon and evening.\nSpeaker 0: So would the best time to ring you be in the morning?\nSpeaker 1: Yes.\nSpeaker 0: Fine. Got that. Before you hear the rest of the conversation, you have some time to look at questions five to 10. Now listen carefully and answer questions five to 10. Now what exactly brings you here?\nSpeaker 1: Well, my eyes seem to have some problems whenever I spend more than half an hour reading books or working on the computer.\nSpeaker 0: I see. Is this a new problem or an old one? I mean, has it been happening for a long time?\nSpeaker 1: No. It started just three days ago. Oh, no. I think it was five days ago in the gym after I played badminton.\nSpeaker 0: So it was after you played badminton. What is the symptom exactly?\nSpeaker 1: I see these flashing lights. I can't figure out what happened. Do you know what it is?\nSpeaker 0: I didn't know that either at the moment. What was the condition of the room where you played badminton? Was it very dark?\nSpeaker 1: Oh, it was very bright. Sometimes I couldn't even open my eyes. Since then, I haven't been able to see things clearly.\nSpeaker 0: Oh, that might be the reason. And have you ever been treated before for anything like dizziness?\nSpeaker 1: Well, I went into Central Hospital last month because of severe headache, and they kept me in for observation for a couple of days, but they couldn't find anything wrong.\nSpeaker 0: Okay. I'll make a note of that too.\nSpeaker 1: Thank you.\nSpeaker 0: I think I've got all the information I need right now, and there are two suggestions for you. One is that you should take a good rest. If you find yourself looking at a screen for too long, you should look away. Focus on a point in the distance for approximately ten to twenty seconds, and then focus on something closer to you. Repeating this a few times should keep your eyes from getting tired.\nSpeaker 1: Thanks. And what about the second one?\nSpeaker 0: I'll give you some eye drops. You can use it before bed. That should reduce levels of eye strain. Here's the prescription. If the situation doesn't improve in a week, come back and see me again.\nSpeaker 1: I see. Thank you for your advice. I will give it a try. Goodbye. Bye.\nSpeaker 0: That is the end of part one. You now have one minute to check your answers to part one.",
+	"body": {
+		"text": "Consultation\nPatient Information\nName: Anu [1]\nPost code: [2]\nCurrent address: [3] Avenue\nBirthday: October 1st [4]\nPhone number: 875934\nHealth Condition\nBackground: Illness has lasted for [5] days\nSymptom: see [6] lights\nPossible cause: the room was too [7]\nPrevious hospital: [8] Hospital\nSuggestions\nHave a good rest after staring at a [9] for a long time\nUse some medicine to ease eye [10]",
+		"html": "<table><tbody><tr><td><h4>Consultation</h4><p><strong>Patient Information</strong></p><p>Name: Anu [1]</p><p>Post code: [2]</p><p>Current address: [3] Avenue</p><p>Birthday: October 1st [4]</p><p>Phone number: 875934</p><p><strong>Health Condition</strong></p><p>Background: Illness has lasted for [5] days</p><p>Symptom: see [6] lights</p><p>Possible cause: the room was too [7]</p><p>Previous hospital: [8] Hospital</p><p><strong>Suggestions</strong></p><p>Have a good rest after staring at a [9] for a long time</p><p>Use some medicine to ease eye [10]</p></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below.\nWrite ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Consultation\nPatient Information\nName: Anu [1]\nPost code: [2]\nCurrent address: [3] Avenue\nBirthday: October 1st [4]\nPhone number: 875934\nHealth Condition\nBackground: Illness has lasted for [5] days\nSymptom: see [6] lights\nPossible cause: the room was too [7]\nPrevious hospital: [8] Hospital\nSuggestions\nHave a good rest after staring at a [9] for a long time\nUse some medicine to ease eye [10]",
+			"body_html": "<table><tbody><tr><td><h4>Consultation</h4><p><strong>Patient Information</strong></p><p>Name: Anu [1]</p><p>Post code: [2]</p><p>Current address: [3] Avenue</p><p>Birthday: October 1st [4]</p><p>Phone number: 875934</p><p><strong>Health Condition</strong></p><p>Background: Illness has lasted for [5] days</p><p>Symptom: see [6] lights</p><p>Possible cause: the room was too [7]</p><p>Previous hospital: [8] Hospital</p><p><strong>Suggestions</strong></p><p>Have a good rest after staring at a [9] for a long time</p><p>Use some medicine to ease eye [10]</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Name: Anu [1]",
+					"answer": "Atkinson",
+					"quotes": ["It's Anu Atkinson."]
+				},
+				{
+					"number": 2,
+					"text": "Post code: [2]",
+					"answer": "EL142BF",
+					"quotes": ["It's actually EL142BF."]
+				},
+				{
+					"number": 3,
+					"text": "Current address: [3] Avenue",
+					"answer": "Queens",
+					"quotes": [
+						"At the moment, I'm living with my parents on Queens Avenue."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Birthday: October 1st [4]",
+					"answer": "1986",
+					"quotes": ["10/01/1986."]
+				},
+				{
+					"number": 5,
+					"text": "Background: Illness has lasted for [5] days",
+					"answer": "five",
+					"quotes": [
+						"I think it was five days ago in the gym after I played badminton."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Symptom: see [6] lights",
+					"answer": "flashing",
+					"quotes": ["I see these flashing lights."]
+				},
+				{
+					"number": 7,
+					"text": "Possible cause: the room was too [7]",
+					"answer": "bright",
+					"quotes": ["Oh, it was very bright."]
+				},
+				{
+					"number": 8,
+					"text": "Previous hospital: [8] Hospital",
+					"answer": "Central",
+					"quotes": [
+						"Well, I went into Central Hospital last month because of severe headache, and they kept me in for observation for a couple of days, but they couldn't find anything wrong."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Have a good rest after staring at a [9] for a long time",
+					"answer": "screen",
+					"quotes": [
+						"If you find yourself looking at a screen for too long, you should look away."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Use some medicine to ease eye [10]",
+					"answer": "strain",
+					"quotes": ["That should reduce levels of eye strain."]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,229 @@
+{
+	"id": "4dd1ad5e-b887-4b78-a538-a84b074d1e50",
+	"url": "https://stepielts.com/student/listening/4dd1ad5e-b887-4b78-a538-a84b074d1e50?mode=practice",
+	"title": "Art Exhibition",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/5b8e3f14-45e9-4f5e-b48e-3487a5d50876.mp3",
+	"transcript": "Speaker 0: Section three. You will hear two first year art students called Max and Abby talking about their end of year art exhibition. First, you have some time to look at questions 21 to 26 on page five. Now listen carefully and answer questions 21 to 26.\nSpeaker 1: So, Abby, we have to prepare our individual displays for the end of year exhibition to showcase all the work we've done for the first year of our art degree.\nSpeaker 2: Yeah, Max. I've been thinking about how to put it all together. I'm excited about letting my friends and family see all the stuff I've produced.\nSpeaker 1: Me too. Actually, I'm really keen to see the work of the other students on our course. I mean, it'll be great to see all the finished displays.\nSpeaker 2: But we've seen what they've been doing throughout the year already, really. Anyway, what about getting feedback on our exhibition from our tutor? I wonder what that'll be like.\nSpeaker 1: I'm a bit nervous about that part.\nSpeaker 2: I hope our stuff ends up looking as good as some of the displays in last year's exhibition.\nSpeaker 1: Yeah. Do you remember that display of printed textiles, fantastic mixtures of silk and wool, all colored with natural dyes.\nSpeaker 2: Yeah. I can't actually remember that. What sticks in my mind are those 10 wooden reproductions one student made, all of different types of transport, little cars and trains and stuff.\nSpeaker 1: Yes. It was really delicate work and much harder to do than if he'd tried to construct them out of metal.\nSpeaker 2: So our tutor asked us to come up with a name for our display which reflects the work we've done. What have you gone for?\nSpeaker 1: Well, most of what I've done has focused on the countryside, so I've been thinking of things connected to that. A lot of my larger pieces are views of farmland. That's not a particularly memorable name, though. I've gone for mother nature in the end, though I did think about the name seasons as the fields are shown at different times over the farming year.\nSpeaker 2: Oh, okay.\nSpeaker 1: Do you think it's going to be challenging putting our displays together?\nSpeaker 2: Well, I've pretty much come to a conclusion about which pieces I'll include now. I'll have to miss out some of my preparatory drawings for the bigger pieces to make sure my best work fits into the space we've been allocated. I'm more concerned about how long it will take me to put everything in place.\nSpeaker 1: We've got a day and a half. That'll be plenty.\nSpeaker 2: We'll see. What about writing the summary of our work? It's for people who visit the exhibition to read, and I'm absolutely certain they will. It explains the reasons behind our work, and they'll want to know what it all means. We've got a strict word limit to stick to, but I've got so much to say it won't be easy to say it in so few words.\nSpeaker 1: So what about other organisational stuff? We'll need good lighting for one thing. The technical guys are doing that, aren't they?\nSpeaker 2: Yeah. One thing to do is copy a load of comment forms so people can write what they think of the exhibition. Hopefully, they'll be kind.\nSpeaker 1: I'm sure they will. I don't know about the journalists who've been invited, though. They might not be quite as nice to us.\nSpeaker 2: Well, fingers crossed. You never know.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 27 to 30 on page six. Now listen and answer questions 27 to 30.\nSpeaker 1: So our tutor suggested visiting a few exhibitions to look at the way work is presented and to give us a few ideas about improving and displaying our own work.\nSpeaker 2: Yeah. I liked the on the water exhibition, The way the artist used the brush strokes in the oil painting to create a sense of movement was amazing.\nSpeaker 1: It takes a long time to develop skill like that. Maybe we'll get there one day. What I liked about the city life exhibition was the fact that although the paintings themselves were of busy places, the display itself wasn't crowded at all. Perhaps the fact that the paintings were actually quite small was what created a more open feeling to the exhibition.\nSpeaker 2: Yeah. Though the way they were arranged wasn't especially unusual.\nSpeaker 1: And then there was the faces exhibition.\nSpeaker 2: Yeah. I mean, painting people's portraits isn't a new thing. But what I did like was the way the artist managed to reproduce the exact tones of the skin and hair of the people in the pictures.\nSpeaker 1: And the last exhibition we went to see was moods. I expected that to show emotions, people laughing, crying, whatever. But it was about plants. You don't tend to think of trees and flowers having feelings.\nSpeaker 2: I'm not sure they do, but it certainly seemed that way in the pictures. Not the most obvious choice of subject, that's for sure.\nSpeaker 1: Anyway, I guess we'd better get on with it.\nSpeaker 0: That is the end of section three. You now have half a minute to check your answers. Now turn to section four on page seven.",
+	"body": {
+		"text": "27. On the Water [27]\n28. City Life [28]\n29. Faces [29]\n30. Moods [30]",
+		"html": "<p>27. On the Water [27]</p><p>28. City Life [28]</p><p>29. Faces [29]</p><p>30. Moods [30]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-26",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Max and Abby agree that in the art exhibition they are looking forward to",
+					"options": [
+						{
+							"label": "A",
+							"text": "showing people their work."
+						},
+						{
+							"label": "B",
+							"text": "getting feedback from their tutor."
+						},
+						{
+							"label": "C",
+							"text": "talking to other students about their displays."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I'm excited about letting my friends and family see all the stuff I've produced."
+					]
+				},
+				{
+					"number": 22,
+					"text": "In last year's exhibition, both students were impressed by",
+					"options": [
+						{
+							"label": "A",
+							"text": "a set of metal sculptures."
+						},
+						{
+							"label": "B",
+							"text": "a series of wooden models."
+						},
+						{
+							"label": "C",
+							"text": "a collection of textile designs."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"What sticks in my mind are those 10 wooden reproductions one student made, all of different types of transport, little cars and trains and stuff."
+					]
+				},
+				{
+					"number": 23,
+					"text": "What has Max decided to call his display?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Mother Nature"
+						},
+						{
+							"label": "B",
+							"text": "Views of Farmland"
+						},
+						{
+							"label": "C",
+							"text": "Seasons"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I've gone for mother nature in the end, though I did think about the name seasons as the fields are shown at different times over the farming year."
+					]
+				},
+				{
+					"number": 24,
+					"text": "What does Abby think will be difficult about preparing for their displays?",
+					"options": [
+						{
+							"label": "A",
+							"text": "having enough time to set it up"
+						},
+						{
+							"label": "B",
+							"text": "choosing which pieces to show"
+						},
+						{
+							"label": "C",
+							"text": "filling up all the available space"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I'm more concerned about how long it will take me to put everything in place."
+					]
+				},
+				{
+					"number": 25,
+					"text": "What does Abby say about the summary they have to write?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She isn't sure whether people will read it."
+						},
+						{
+							"label": "B",
+							"text": "It will be difficult to keep it short enough."
+						},
+						{
+							"label": "C",
+							"text": "It will be hard to clarify the reasons for her work."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"We've got a strict word limit to stick to, but I've got so much to say it won't be easy to say it in so few words."
+					]
+				},
+				{
+					"number": 26,
+					"text": "What aspect of the display will the students organise themselves?",
+					"options": [
+						{
+							"label": "A",
+							"text": "arranging the lighting"
+						},
+						{
+							"label": "B",
+							"text": "inviting local journalists"
+						},
+						{
+							"label": "C",
+							"text": "providing comment forms"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"One thing to do is copy a load of comment forms so people can write what they think of the exhibition."
+					]
+				}
+			]
+		},
+		{
+			"range": "27-30",
+			"type": "MATCHING",
+			"instructions": "Which feature do the speakers identify as particularly interesting for each of the following exhibitions they saw?\nChoose FOUR answers from the box and write the correct letter, A–F, next to questions 27–30.",
+			"options": [
+				{
+					"label": "A",
+					"text": "the realistic colours"
+				},
+				{
+					"label": "B",
+					"text": "the sense of space"
+				},
+				{
+					"label": "C",
+					"text": "the unusual interpretation of the theme"
+				},
+				{
+					"label": "D",
+					"text": "the painting technique"
+				},
+				{
+					"label": "E",
+					"text": "the variety of materials used"
+				},
+				{
+					"label": "F",
+					"text": "the use of light and shade"
+				}
+			],
+			"body": "27. On the Water [27]\n28. City Life [28]\n29. Faces [29]\n30. Moods [30]",
+			"body_html": "<p>27. On the Water [27]</p><p>28. City Life [28]</p><p>29. Faces [29]</p><p>30. Moods [30]</p>",
+			"questions": [
+				{
+					"number": 27,
+					"text": "On the Water",
+					"answer": "D",
+					"quotes": [
+						"I liked the on the water exhibition, The way the artist used the brush strokes in the oil painting to create a sense of movement was amazing."
+					]
+				},
+				{
+					"number": 28,
+					"text": "City Life",
+					"answer": "B",
+					"quotes": [
+						"What I liked about the city life exhibition was the fact that although the paintings themselves were of busy places, the display itself wasn't crowded at all.",
+						"Perhaps the fact that the paintings were actually quite small was what created a more open feeling to the exhibition."
+					]
+				},
+				{
+					"number": 29,
+					"text": "Faces",
+					"answer": "A",
+					"quotes": [
+						"But what I did like was the way the artist managed to reproduce the exact tones of the skin and hair of the people in the pictures.",
+						"And then there was the faces exhibition."
+					]
+				},
+				{
+					"number": 30,
+					"text": "Moods",
+					"answer": "C",
+					"quotes": [
+						"And the last exhibition we went to see was moods.",
+						"You don't tend to think of trees and flowers having feelings.",
+						"I'm not sure they do, but it certainly seemed that way in the pictures.",
+						"Not the most obvious choice of subject, that's for sure."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,292 @@
+{
+	"id": "1649d9ab-e3f7-4168-aadf-668f456f3776",
+	"url": "https://stepielts.com/student/listening/1649d9ab-e3f7-4168-aadf-668f456f3776?mode=practice",
+	"title": "Joanna's psychology study",
+	"source": "C11T4",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/fc3e2787-cb6e-4bba-a5a5-c318473e23ab.mp3",
+	"transcript": "Speaker 1: SUPERVISOR: Hi, Joanna, good to meet you. Now, before we discuss your new research project. I’d like to hear something about the psychology study you did last year for your Master’s degree. So how did you choose your subjects for that?\nSpeaker 2: JOANNA: Well, I had six subjects, all professional musicians, and all female. There were violinists and there was also a cello player and a pianist and a flute player. They were all very highly regarded in the music world and they’d done quite extensive tours in different continents, and quite a few had won prizes and competitions as well.\nSpeaker 1: SUPERVISOR: And they were quite young, weren’t they?\nSpeaker 2: JOANNA: Yes, between 25 and 29 – the mean was 27.8. I wasn’t specifically look for artists who’d produced recordings, but this is something that’s just taken for granted these days, and they all had.\nSpeaker 1: SUPERVISOR: Right. Now you collected your data through telephone interviews, didn’t you?\nSpeaker 2: JOANNA: Yes. I realised if I was going to interview leading musicians it’s only be possible over the phone because they’re so busy. I recorded them using a telephone recording adaptor. I’d been worried about the quality, but it worked out all right. I managed at least a 30-minute interview with each subject, sometimes longer.\nSpeaker 1: SUPERVISOR: Did doing it on the phone make it more stressful?\nSpeaker 2: JOANNA: I’d thought it might … it was all quite informal though and in fact they seemed very keen to talk. And I don’t think using the phone meant I got less rich data rather the opposite in fact.\nSpeaker 1: SUPERVISOR: Interesting. And you were looking at how performers dress for concert performances?\nSpeaker 2: JOANNA: That’s right. My research investigated the way players see their role as a musician and how this is linked to the type of clothing they decide to wear. But that focus didn’t emerge immediately. When I started I was more interested in trying to investigate the impact of what was worn on those listening, and also whether someone like a violinist might adopt a different style of clothing from, say, someone playing the flute or the trumpet.\nSpeaker 1: SUPERVISOR: It’s interesting that the choice of dress is up to the individual, isn’t it?\nSpeaker 2: JOANNA: Yes, you’d expect there to be rules about it in orchestras, but that’s quite rare.\n———————————————————————————————————————————————\nSpeaker 1: SUPERVISOR: You only had women performers in your study. Was that because male musicians are less worried about fashion?\nSpeaker 2: JOANNA: I think a lot of the men are very much influenced by fashion, but in social terms the choices they have are more limited … they’d really upset audiences if they strayed away from quite narrow boundaries.\nSUPERVISOR: Hmm.\nSpeaker 1: Now, popular music has quite different expectations. Did you read Mike Frost’s article about the dress of women performers in popular music? JOANNA: No. SUPERVISOR: He points out that a lot of female singers and musicians in popular music tend to dress down in performances, and wear less feminine clothes, like jeans instead of skirts, and he suggests this is because otherwise they’d just be discounted as trivial.\nSpeaker 2: JOANNA: But you could argue they’re just wearing what’s practical … I mean, a pop-music concert is usually a pretty energetic affair.\nSpeaker 1: SUPERVISOR: Yes, he doesn’t make that point, but I think you’re probably right. I was interested by the effect of the audience at a musical performance when it came to the choice of dress.\nSpeaker 2: JOANNA: The subjects I interviewed felt this was really important. It’s all to do with what we understand by performance as a public event. They believed the audience had certain expectations and it was up to them as performers to fulfil these expectations to show a kind of esteem …\nSpeaker 1: SUPERVISOR: … they weren’t afraid of looking as if they’d made an effort to look good.\nJOANNA: Mmm.\nSpeaker 2: I think in the past the audience would have had those expectation of one another too, but that’s not really the case now, not in the UK anyway. SUPERVISOR: No. JOANNA: And I also got interested in what sports scientists are doing too, with regard to clothing.\nSpeaker 1: SUPERVISOR: Musicians are quite vulnerable physically, aren’t they, because the movements they carry out are very intensive and repetitive, so I’d imagine some features of sports clothing could safeguard the players from the potentially dangerous effects of this sort of thing.\nSpeaker 2: JOANNA: Yes, but musicians don’t really consider it. They avoid clothing that obviously restricts their movements, but that’s as far as they go.\nSpeaker 1: SUPERVISOR: Anyway, coming back to your own research, do you have any idea where you’re going from here?\nSpeaker 2: JOANNA: I was thinking of doing a study using an audience, including ..",
+	"question_groups": [
+		{
+			"range": "1-2",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Which TWO characteristics were shared by the subjects of Joanna’s psychology study?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They had all won prizes for their music."
+						},
+						{
+							"label": "B",
+							"text": "They had all made music recordings."
+						},
+						{
+							"label": "C",
+							"text": "They were all under 27 years old."
+						},
+						{
+							"label": "D",
+							"text": "They had all toured internationally."
+						},
+						{
+							"label": "E",
+							"text": "They all played a string instrument."
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 2,
+					"text": "Which TWO characteristics were shared by the subjects of Joanna’s psychology study?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They had all won prizes for their music."
+						},
+						{
+							"label": "B",
+							"text": "They had all made music recordings."
+						},
+						{
+							"label": "C",
+							"text": "They were all under 27 years old."
+						},
+						{
+							"label": "D",
+							"text": "They had all toured internationally."
+						},
+						{
+							"label": "E",
+							"text": "They all played a string instrument."
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "3-4",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 3,
+					"text": "Which TWO points does Joanna make about her use of telephone interviews?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It meant rich data could be collected."
+						},
+						{
+							"label": "B",
+							"text": "It allowed the involvement of top performers."
+						},
+						{
+							"label": "C",
+							"text": "It led to a stressful atmosphere at times."
+						},
+						{
+							"label": "D",
+							"text": "It meant interview times had to be limited."
+						},
+						{
+							"label": "E",
+							"text": "It caused some technical problems."
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 4,
+					"text": "Which TWO points does Joanna make about her use of telephone interviews?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It meant rich data could be collected."
+						},
+						{
+							"label": "B",
+							"text": "It allowed the involvement of top performers."
+						},
+						{
+							"label": "C",
+							"text": "It led to a stressful atmosphere at times."
+						},
+						{
+							"label": "D",
+							"text": "It meant interview times had to be limited."
+						},
+						{
+							"label": "E",
+							"text": "It caused some technical problems."
+						}
+					],
+					"answer": "B"
+				}
+			]
+		},
+		{
+			"range": "5-6",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Which TWO topics did Joanna originally intend to investigate in her research?",
+					"options": [
+						{
+							"label": "A",
+							"text": "regulations concerning concert dress"
+						},
+						{
+							"label": "B",
+							"text": "audience reactions to the dress of performers"
+						},
+						{
+							"label": "C",
+							"text": "changes in performer attitudes to concert dress"
+						},
+						{
+							"label": "D",
+							"text": "how choice of dress relates to performer roles"
+						},
+						{
+							"label": "E",
+							"text": "links between musical instrument and dress choice"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 6,
+					"text": "Which TWO topics did Joanna originally intend to investigate in her research?",
+					"options": [
+						{
+							"label": "A",
+							"text": "regulations concerning concert dress"
+						},
+						{
+							"label": "B",
+							"text": "audience reactions to the dress of performers"
+						},
+						{
+							"label": "C",
+							"text": "changes in performer attitudes to concert dress"
+						},
+						{
+							"label": "D",
+							"text": "how choice of dress relates to performer roles"
+						},
+						{
+							"label": "E",
+							"text": "links between musical instrument and dress choice"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 7,
+					"text": "Joanna concentrated on women performers because",
+					"options": [
+						{
+							"label": "A",
+							"text": "women are more influenced by fashion."
+						},
+						{
+							"label": "B",
+							"text": "women’s dress has led to more controversy."
+						},
+						{
+							"label": "C",
+							"text": "women’s code of dress is less strict than men’s."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"JOANNA: I think a lot of the men are very much influenced by fashion, but in social terms the choices they have are more limited … they’d really upset audiences if they strayed away from quite narrow boundaries."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Mike Frost’s article suggests that in popular music, women’s dress is affected by",
+					"options": [
+						{
+							"label": "A",
+							"text": "their wish to be taken seriously."
+						},
+						{
+							"label": "B",
+							"text": "their tendency to copy each other."
+						},
+						{
+							"label": "C",
+							"text": "their reaction to the masculine nature of the music."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"SUPERVISOR: He points out that a lot of female singers and musicians in popular music tend to dress down in performances, and wear less feminine clothes, like jeans instead of skirts, and he suggests this is because otherwise they’d just be discounted as trivial."
+					]
+				},
+				{
+					"number": 9,
+					"text": "What did Joanna’s subjects say about the audience at a performance?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The musicians’ choice of clothing is linked to respect for the audience."
+						},
+						{
+							"label": "B",
+							"text": "The clothing should not distract the audience from the music."
+						},
+						{
+							"label": "C",
+							"text": "The audience should make the effort to dress appropriately."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"It’s all to do with what we understand by performance as a public event. They believed the audience had certain expectations and it was up to them as performers to fulfil these expectations to show a kind of esteem …"
+					]
+				},
+				{
+					"number": 10,
+					"text": "According to the speakers, musicians could learn from sports scientists about",
+					"options": [
+						{
+							"label": "A",
+							"text": "the importance of clothing for physical freedom."
+						},
+						{
+							"label": "B",
+							"text": "the part played by clothing in improving performance."
+						},
+						{
+							"label": "C",
+							"text": "the way clothing may protect against physical injury."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"SUPERVISOR: Musicians are quite vulnerable physically, aren’t they, because the movements they carry out are very intensive and repetitive, so I’d imagine some features of sports clothing could safeguard the players from the potentially dangerous effects of this sort of thing."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

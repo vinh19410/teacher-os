@@ -1,0 +1,240 @@
+{
+	"id": "005a1f57-bdaa-46a0-93af-352d844a0660",
+	"url": "https://stepielts.com/student/listening/005a1f57-bdaa-46a0-93af-352d844a0660?mode=practice",
+	"title": "New staff at theatre",
+	"source": "C11T2",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/c745b903-85fe-4fd2-9993-1ea8b567b977.mp3",
+	"transcript": "Speaker 0: Now turn to section two. Section two. You will hear a woman who works in a theater talking to two new staff members on their first day of work. First, you have some time to look at questions 11 to 16. Now listen carefully and answer questions 11 to 16.\nSpeaker 1: Hi. Great to see you. I'm Jody, and I'll be looking after both of you for the first month you're working here at the Amisham Theatre. I'll tell you something about the theatre now, then take you to meet two of the other staff. It's an old building and it's been modernized several times. In fact, as you can see, we're carrying out a major refurbishment at the moment. The interior has just been repainted and we're about to start on the exterior of the building. That'll be a big job. The work's running over budget, so we've had to postpone installing an elevator. I hope you're happy running up and down stairs. When the theatre was built, people were generally slimmer and shorter than now and the seats were very close together. We've replaced them with larger seats, with more legroom. This means fewer seats in total, but we've taken the opportunity to install seats that can easily be moved to create different acting spaces. We've also turned a few storerooms over to other purposes, like using them for meetings. We try hard to involve members of the public in the theatre. One way is by organizing backstage tours so people can be shown round the building and learn how a theatre operates. These are proving very popular. What we're finding is that people want to have lunch or a cup of coffee while they're here, so we're looking into the possibility of opening a cafe in due course. We\nSpeaker 0: have\nSpeaker 1: a bookshop which specializes in books about drama and that attracts plenty of customers. Then there are two large rooms that will be decorated next month and they'll be available for hire for conferences and private functions such as parties. We're also considering hiring out costumes to amateur drama clubs. Now I want to tell you about our workshops. We recently started a programme of workshops that anyone can join. Eventually, we intend to run courses in acting, but we're waiting until we've got the right people in place as trainers. That's proving more difficult than we'd expected. There's a big demand to learn about the technical side of putting on a production, and our lighting workshop has already started with great success. We're going to start one on sound next month. A number of people have inquired about workshops on makeup, and that's something we're considering for the future. A surprise success is the workshop on making puppets. We happen to have someone working here who does it as a hobby, and she offered to run a workshop. It was so popular, we're now running them every month.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 17 to 20. Now listen and answer questions 17 to 20.\nSpeaker 1: Now a word about the layout of the building. The auditorium, stage, and dressing rooms for the actors are all below ground level. Here on the Ground Floor, we have most of the rooms that the public doesn't see. The majority are internal, so they have windows in the roof to light them. Standing here in the foyer, you're probably wondering why the box office isn't here, where the public would expect to find it. Well, you might have noticed it on your way in. Although it's part of this building, it's next door with a separate entrance from the road. For the theater manager's office, you go across the foyer and through the double doors. Turn right and it's the room at the end of the corridor with the door on the left. The lighting box is where the computerized stage lighting is operated and it's at the back of the building. When you're through the double doors, turn left, turn right at the water cooler, and right again at the end. It's the second room along that corridor. The lighting box has a window into the auditorium, which, of course, is below us. The artistic director's office is through the double doors, turn right, and it's the first room you come to on the right hand side. And finally, for the moment, the room where I'll take you next, the relaxation room. So if you'd like to come with me.\nSpeaker 0: That is the end of section two. You now have half a minute to check your answers.",
+	"question_groups": [
+		{
+			"range": "11-12",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Which TWO changes have been made so far during the refurbishment of the theatre?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Some rooms now have a different use."
+						},
+						{
+							"label": "B",
+							"text": "A different type of seating has been installed."
+						},
+						{
+							"label": "C",
+							"text": "An elevator has been installed."
+						},
+						{
+							"label": "D",
+							"text": "The outside of the building has been repaired."
+						},
+						{
+							"label": "E",
+							"text": "Extra seats have been added."
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 12,
+					"text": "Which TWO changes have been made so far during the refurbishment of the theatre?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Some rooms now have a different use."
+						},
+						{
+							"label": "B",
+							"text": "A different type of seating has been installed."
+						},
+						{
+							"label": "C",
+							"text": "An elevator has been installed."
+						},
+						{
+							"label": "D",
+							"text": "The outside of the building has been repaired."
+						},
+						{
+							"label": "E",
+							"text": "Extra seats have been added."
+						}
+					],
+					"answer": "B"
+				}
+			]
+		},
+		{
+			"range": "13-14",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 13,
+					"text": "Which TWO facilities does the theatre currently offer to the public?",
+					"options": [
+						{
+							"label": "A",
+							"text": "rooms for hire"
+						},
+						{
+							"label": "B",
+							"text": "backstage tours"
+						},
+						{
+							"label": "C",
+							"text": "hire of costumes"
+						},
+						{
+							"label": "D",
+							"text": "a bookshop"
+						},
+						{
+							"label": "E",
+							"text": "a café"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 14,
+					"text": "Which TWO facilities does the theatre currently offer to the public?",
+					"options": [
+						{
+							"label": "A",
+							"text": "rooms for hire"
+						},
+						{
+							"label": "B",
+							"text": "backstage tours"
+						},
+						{
+							"label": "C",
+							"text": "hire of costumes"
+						},
+						{
+							"label": "D",
+							"text": "a bookshop"
+						},
+						{
+							"label": "E",
+							"text": "a café"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "15-16",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 15,
+					"text": "Which TWO workshops does the theatre currently offer?",
+					"options": [
+						{
+							"label": "A",
+							"text": "sound"
+						},
+						{
+							"label": "B",
+							"text": "acting"
+						},
+						{
+							"label": "C",
+							"text": "making puppets"
+						},
+						{
+							"label": "D",
+							"text": "make-up"
+						},
+						{
+							"label": "E",
+							"text": "lighting"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 16,
+					"text": "Which TWO workshops does the theatre currently offer?",
+					"options": [
+						{
+							"label": "A",
+							"text": "sound"
+						},
+						{
+							"label": "B",
+							"text": "acting"
+						},
+						{
+							"label": "C",
+							"text": "making puppets"
+						},
+						{
+							"label": "D",
+							"text": "make-up"
+						},
+						{
+							"label": "E",
+							"text": "lighting"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "17-20",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the plan below. Write the correct letter, A-G, next to Questions 17-20.",
+			"instructions_html": "<p>Label the plan below.  Write the correct letter, A-G, next to Questions 17-20.</p><p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/d3abbeed-7e45-4f3b-a14f-ec4694f5b456.jpg\" alt=\"Cam 11 Test 2 Q17 20 980x774\"></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G"],
+			"questions": [
+				{
+					"number": 17,
+					"text": "box office",
+					"answer": "G",
+					"quotes": [
+						"Well, you might have noticed it on your way in. Although it's part of this building, it's next door with a separate entrance from the road."
+					]
+				},
+				{
+					"number": 18,
+					"text": "theatre manager’s office",
+					"answer": "D",
+					"quotes": [
+						"For the theater manager's office, you go across the foyer and through the double doors. Turn right and it's the room at the end of the corridor with the door on the left."
+					]
+				},
+				{
+					"number": 19,
+					"text": "lighting box",
+					"answer": "B",
+					"quotes": [
+						"The lighting box is where the computerized stage lighting is operated and it's at the back of the building. When you're through the double doors, turn left, turn right at the water cooler, and right again at the end. It's the second room along that corridor. The lighting box has a window into the auditorium, which, of course, is below us."
+					]
+				},
+				{
+					"number": 20,
+					"text": "artistic director’s offices",
+					"answer": "F",
+					"quotes": [
+						"The artistic director's office is through the double doors, turn right, and it's the first room you come to on the right hand side."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/d3abbeed-7e45-4f3b-a14f-ec4694f5b456.jpg"
+	]
+}

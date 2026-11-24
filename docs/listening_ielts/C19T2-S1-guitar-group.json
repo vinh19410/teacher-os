@@ -1,0 +1,129 @@
+{
+	"id": "6dc37007-5f41-484e-8e35-261f3e5df68d",
+	"url": "https://stepielts.com/student/listening/6dc37007-5f41-484e-8e35-261f3e5df68d?mode=practice",
+	"title": "Guitar group",
+	"source": "C19T2",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/6ea51ade-63ce-4902-87ec-54b378c744cd.mp3",
+	"transcript": "Speaker 1: WOMAN: Hi Coleman, how are you?\nSpeaker 2: COLEMAN: Good. Thanks.\nSpeaker 1: WOMAN: I wanted to have a chat with you because our friend Josh told me that you’ve joined a guitar group and it sounds interesting. I’d really like to learn myself.\nSpeaker 2: COLEMAN: Why don’t you come along? I’m sure there’s room for another person. WOMAN: Really? So - who runs the classes? COLEMAN: He’s called a ’coordinator’ - his name’s Gary Mathieson.\nSpeaker 1: WOMAN: Let me note that down. Gary.... How do you spell his surname?\nSpeaker 2: COLEMAN: It’s M-A-T-H-I-E-S-O-N. WOMAN: Right, thanks. COLEMAN: He’s retired, actually, but he’s a really nice guy and he used to play in a lot of bands. WOMAN: Thanks.\nSpeaker 1: So how long have you been going?\nSpeaker 2: COLEMAN: About a month now.\nSpeaker 1: WOMAN: And could you play anything before you started?\nSpeaker 2: COLEMAN: I knew a few chords, but that’s all. WOMAN: I’m sure everyone will be better than me. COLEMAN: That’s what I thought, too. When I first spoke to Gary on the phone, he said it was a class for beginners, but I was still worried that everyone would be better than me, but we were all equally hopeless!\nSpeaker 1: WOMAN: Oh, that’s reassuring. So where do you meet?\nSpeaker 2: COLEMAN: Well, when I joined the group, they were meeting in Gary’s home, but as the group got bigger, he decided to book a room at the college in town. I prefer going there.\nSpeaker 1: WOMAN: I know that place. I used to go to tap dancing classes there when I was at secondary school. I haven’t been since, though, and I can’t remember what road it’s in ... is it Lock Street?\nSpeaker 2: COLEMAN: It’s just beyond there at the bottom of New Street near the city roundabout.\nSpeaker 1: WOMAN: Yes, of course.\nSpeaker 2: COLEMAN: The guitar club is on the first floor in Room T347. WOMAN: Right.\nSpeaker 1: And when do you meet? Is it at the weekend?\nSpeaker 2: COLEMAN: We meet on Thursdays. It used to be 10.30 and that suited me well, but now we meet at. The class that’s in there before us asked if they could have the room for another 30 minutes.\nSpeaker 1: WOMAN: Oh, I see. Well, I’d love to come, but I don’t have a guitar.\nSpeaker 2: COLEMAN: Well, you can always buy a second-hand one. There’s a website called ’The perfect instrument that sells all kinds of guitars, violins and so on. I’m sure you’ll find something there.\nSpeaker 1: WOMAN: So what’s a typical lesson like with Gary?\nSpeaker 2: COLEMAN: Well, he always starts by getting us to tune our guitars. That takes about five minutes.\nSpeaker 1: WOMAN: Uhuh.\nSpeaker 2: COLEMAN: Some people have an app they use, but others do it by ear. Gary goes round and helps them. And while he’s doing that, he tells us what he’s going to do during the lesson. WOMAN: Right.\nSpeaker 1: COLEMAN: First, we usually spend about ten minutes doing some strumming. WOMAN: So is that using ... what are they called ... plectrums?\nSpeaker 2: COLEMAN: No - we just use our thumbs. WOMAN: Much easier. COLEMAN: Gary reminds us where to put our fingers for each chord and then we play them together. Sometimes we all just start laughing because we’re so bad at keeping time, so Gary starts clapping to help us.\nSpeaker 1: WOMAN: Do you learn to play any songs?\nSpeaker 2: COLEMAN: Yes - we do at least one song with words and chords. I mean that’s harder than you think.\nSpeaker 1: WOMAN: Oh, I’m sure it is! COLEMAN: That part of the lesson takes about 15 minutes.\nSpeaker 2: He often brings a recording of the song and plays it to us first. Then he hands out the song and if there’s a new chord in it, we practise that before we play it together - but really slowly.\nSpeaker 1: WOMAN: Do you do any finger picking?\nSpeaker 2: COLEMAN: That’s the last ten minutes of the lesson, when we pick out the individual notes from a tune he’s made up. It’s always quite simple.\nSpeaker 1: WOMAN: That must be hard, though.\nSpeaker 2: COLEMAN: It is, but people like it because they can really concentrate and if we’re all playing well, it sounds quite impressive. The only trouble is that he sometimes gets us to play one at a time - you know, alone.\nSpeaker 1: WOMAN: That’s scary.\nSpeaker 2: COLEMAN: It is, but I’ve got used to it now. At the end, he spends about five minutes telling us what to practise for the following week.\nSpeaker 1: WOMAN: Well, thanks Coleman. I’ll go and have a look at that website, I think.",
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "FORM_COMPLETION",
+			"instructions": "Complete the form below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Guitar Group\nCoordinator Gary [1]\nLevel: [2]\nPlace: the [3]\n[4] Street\nFirst floor, Room T347\nTime: Thursday morning at [5]\nRecommended website: 'The perfect [6]",
+			"body_html": "<table><tbody><tr><td><h4>Guitar Group </h4><p>Coordinator                           Gary [1]</p><p>Level:                                      [2]</p><p>Place:                                      the [3]</p><p>                                                [4] Street</p><p>                                                First floor, Room T347</p><p>Time:                                       Thursday morning at [5]</p><p>Recommended website:         'The perfect [6]</p></td></tr></tbody></table><p></p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Coordinator Gary [1]",
+					"answer": "Mathieson",
+					"quotes": [
+						"COLEMAN: He’s called a ’coordinator’ - his name’s Gary Mathieson."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Level: [2]",
+					"answer": "beginners",
+					"quotes": [
+						"When I first spoke to Gary on the phone, he said it was a class for beginners, but I was still worried that everyone would be better than me, but we were all equally hopeless!"
+					]
+				},
+				{
+					"number": 3,
+					"text": "Place: the [3]",
+					"answer": "college",
+					"quotes": [
+						"COLEMAN: Well, when I joined the group, they were meeting in Gary’s home, but as the group got bigger, he decided to book a room at the college in town."
+					]
+				},
+				{
+					"number": 4,
+					"text": "[4] Street",
+					"answer": "New",
+					"quotes": [
+						"COLEMAN: It’s just beyond there at the bottom of New Street near the city roundabout."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Time: Thursday morning at [5]",
+					"answer": "11:00 / 11 / eleven / 11.00",
+					"quotes": [
+						"It used to be 10.30 and that suited me well, but now we meet at."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Recommended website: 'The perfect [6]",
+					"answer": "instrument",
+					"quotes": [
+						"There’s a website called ’The perfect instrument that sells all kinds of guitars, violins and so on."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD ONLY for each answer.",
+			"body": "A typical 45-minute guitar lesson\nTime\nActivity\nNotes\n5 minutes\ntuning guitars\nusing an app or by [7]\n10 minutes\nstrumming chords using our thumbs\nkeeping time while the teacher is [8]\n15 minutes\nplaying songs\noften listening to a [9] of a song\n10 minutes\nplaying single notes and simple tunes\nplaying together, then [10]\n5 minutes\nnoting things to practise at home",
+			"body_table": [
+				["A typical 45-minute guitar lesson"],
+				["Time", "Activity", "Notes"],
+				["5 minutes", "tuning guitars", "using an app or by [7]"],
+				[
+					"10 minutes",
+					"strumming chords using our thumbs",
+					"keeping time while the teacher is [8]"
+				],
+				["15 minutes", "playing songs", "often listening to a [9] of a song"],
+				[
+					"10 minutes",
+					"playing single notes and simple tunes",
+					"playing together, then [10]"
+				],
+				["5 minutes", "noting things to practise at home", ""]
+			],
+			"body_html": "<table><tbody><tr><td colspan=\"3\"><h4>A typical 45-minute guitar lesson</h4></td></tr><tr><td><p>Time</p></td><td><p>Activity</p></td><td><p>Notes</p></td></tr><tr><td><p>5 minutes</p></td><td><p>tuning guitars</p></td><td><p>using an app or by [7]</p></td></tr><tr><td>10 minutes<br><br></td><td>strumming chords using our thumbs</td><td>keeping time while the teacher is [8]</td></tr><tr><td>15 minutes <br><br></td><td>playing songs </td><td>often listening to a [9] of a song </td></tr><tr><td>10 minutes </td><td>playing single notes and simple tunes </td><td>playing together, then [10]</td></tr><tr><td>5 minutes </td><td>noting things to practise at home </td><td></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "using an app or by [7]",
+					"answer": "ear",
+					"quotes": [
+						"COLEMAN: Some people have an app they use, but others do it by ear."
+					]
+				},
+				{
+					"number": 8,
+					"text": "keeping time while the teacher is [8]",
+					"answer": "clapping",
+					"quotes": [
+						"Sometimes we all just start laughing because we’re so bad at keeping time, so Gary starts clapping to help us."
+					]
+				},
+				{
+					"number": 9,
+					"text": "often listening to a [9] of a song",
+					"answer": "recording",
+					"quotes": [
+						"He often brings a recording of the song and plays it to us first."
+					]
+				},
+				{
+					"number": 10,
+					"text": "playing together, then [10]",
+					"answer": "alone",
+					"quotes": [
+						"The only trouble is that he sometimes gets us to play one at a time - you know, alone."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

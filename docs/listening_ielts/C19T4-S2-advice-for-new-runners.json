@@ -1,0 +1,246 @@
+{
+	"id": "827b75f9-d230-44df-843e-58dcc2efe21b",
+	"url": "https://stepielts.com/student/listening/827b75f9-d230-44df-843e-58dcc2efe21b?mode=practice",
+	"title": "Advice for new runners",
+	"source": "C19T4",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/183e6f04-b455-456d-8d25-e16f9f6ced84.mp3",
+	"transcript": "Speaker 0: Part two. You will hear a podcast by a running coach giving advice about taking up running and giving information about her club. First, you have some time to look at questions 11 to 14. Now listen carefully and answer questions 11 to 14.\nSpeaker 1: My name's Liz Fuller, and I'm a running coach with Compton Park Runners Club. Welcome to my podcast. If you're thinking about taking up running, I'm here to help. There are many training programmes available online, which aim to help people build up to running five kilometres. Some of them are great, and thousands of people of all ages are taking part in five kilometre races across the country as a result. People like them because they're easy to follow and don't push them too hard. However, they don't work for everyone, especially if you suffer from something like a heart condition or asthma, because they're aimed at people with average fitness and running ability. Another thing is that everyone is different, and if you have any specific questions related to your needs, there's no one to provide any answers. I have a couple of simple tips I always give to new runners. I expect you've been told to run very slowly until your fitness increases. Well, I find that can prevent progress. You should run at a speed that feels comfortable, but time yourself and try to run a bit faster each time. Listening to music can be very helpful. It takes your mind off things and helps your body get into a rhythm. I'd say that is better than running with a friend, especially as most people are competitive, and that's not what you want when you're just starting. I don't think the time of day is especially important. Some people are better in the evening, while others are morning people. But you need to be consistent, so aim to train regularly. Twice a week is enough to begin with.\nSpeaker 0: Before you hear the rest of the podcast, you have some time to look at questions 15 to 20. Now listen and answer questions 15 to 20.\nSpeaker 1: New members often say to me that they've been put off running either because they lack confidence or they don't have time or they think they dislike running. Kerry, for example, joined the club two years ago at the age of 40. She'd always enjoyed running at school, but wasn't sure if she'd be able to do it. She was worried about being left behind and being the slowest runner. But she says she was made to feel so welcome, she soon forgot all about that. James had always hated the idea of running, but a friend encouraged him to come along for a taster session, and he hasn't looked back. He never misses a training session despite having a really demanding job. Leo was worried about having to commit himself to training sessions every week and wasn't sure he'd be able to fit training into his busy schedule. But after experiencing a lot of stress at work, he came along to us and gave it a go. Now he says he feels much more relaxed, and he looks forward to his weekly run. Mark is quite typical of our new members. He's never considered himself to be a sporty person, and it was only when he retired that he decided to take up the challenge of trying to run five kilometres. It took him months to find the courage to contact us, but felt reassured immediately, as there were other people his age who were only just taking up running for the first time. My own journey hasn't been easy. I did my first marathon when I was 37, after having had two kids. My husband had been running marathons for years, but I never dreamed I'd be doing one with him. I managed to complete it in four hours, but I felt like giving up halfway through. It was only the support of the spectators that kept me going. I do think signing up for a race of whatever length is motivating, whether it's five k or 25 k, because it's good to have something to work towards, and it gives you a sense of achievement. I did my first 10 k after only six months, which was certainly very challenging and not something I'd necessarily recommend. But after you've been training for a few weeks, it's worth putting your name down for a five k. Some people find they only need a few practice runs before taking part in a race, but I'd give yourself a couple of months at least. Well, I hope that's given you a really good idea of what\nSpeaker 0: That is the end of part two. You now have thirty seconds to check your answers to part two.",
+	"body": {
+		"text": "Ceri [15]\nJames [16]\nLeo [17]\nMark [18]",
+		"html": "<p>Ceri [15]</p><p>James [16]</p><p>Leo [17]</p><p>Mark [18]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "11-12",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Which TWO problems with some training programmes for new runners does Liz mention?",
+					"options": [
+						{
+							"label": "A",
+							"text": "There is a risk of serious injury."
+						},
+						{
+							"label": "B",
+							"text": "They are unsuitable for certain age groups."
+						},
+						{
+							"label": "C",
+							"text": "They are unsuitable for people with health issues."
+						},
+						{
+							"label": "D",
+							"text": "It is difficult to stay motivated."
+						},
+						{
+							"label": "E",
+							"text": "There is a lack of individual support."
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 12,
+					"text": "Which TWO problems with some training programmes for new runners does Liz mention?",
+					"options": [
+						{
+							"label": "A",
+							"text": "There is a risk of serious injury."
+						},
+						{
+							"label": "B",
+							"text": "They are unsuitable for certain age groups."
+						},
+						{
+							"label": "C",
+							"text": "They are unsuitable for people with health issues."
+						},
+						{
+							"label": "D",
+							"text": "It is difficult to stay motivated."
+						},
+						{
+							"label": "E",
+							"text": "There is a lack of individual support."
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "13-14",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 13,
+					"text": "Which TWO tips does Liz recommend for new runners?",
+					"options": [
+						{
+							"label": "A",
+							"text": "doing two runs a week"
+						},
+						{
+							"label": "B",
+							"text": "running in the evening"
+						},
+						{
+							"label": "C",
+							"text": "going on runs with a friend"
+						},
+						{
+							"label": "D",
+							"text": "listening to music during runs"
+						},
+						{
+							"label": "E",
+							"text": "running very slowly"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 14,
+					"text": "Which TWO tips does Liz recommend for new runners?",
+					"options": [
+						{
+							"label": "A",
+							"text": "doing two runs a week"
+						},
+						{
+							"label": "B",
+							"text": "running in the evening"
+						},
+						{
+							"label": "C",
+							"text": "going on runs with a friend"
+						},
+						{
+							"label": "D",
+							"text": "listening to music during runs"
+						},
+						{
+							"label": "E",
+							"text": "running very slowly"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "15-18",
+			"type": "MATCHING",
+			"instructions": "What reason prevented each of the following members of the Compton Park Runners Club from joining until recently? Write the correct letter, A, B, or C next to Questions 15 - 18.",
+			"options": [
+				{
+					"label": "A",
+					"text": "a lack of confidence"
+				},
+				{
+					"label": "B",
+					"text": "a dislike of running"
+				},
+				{
+					"label": "C",
+					"text": "a lack of time"
+				}
+			],
+			"body": "Ceri [15]\nJames [16]\nLeo [17]\nMark [18]",
+			"body_html": "<p>Ceri [15]</p><p>James [16]</p><p>Leo [17]</p><p>Mark [18]</p>",
+			"questions": [
+				{
+					"number": 15,
+					"text": "Ceri",
+					"answer": "A",
+					"quotes": [
+						"She'd always enjoyed running at school, but wasn't sure if she'd be able to do it. She was worried about being left behind and being the slowest runner."
+					]
+				},
+				{
+					"number": 16,
+					"text": "James",
+					"answer": "B",
+					"quotes": [
+						"James had always hated the idea of running, but a friend encouraged him to come along for a taster session, and he hasn't looked back."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Leo",
+					"answer": "C",
+					"quotes": [
+						"Leo was worried about having to commit himself to training sessions every week and wasn't sure he'd be able to fit training into his busy schedule."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Mark",
+					"answer": "A",
+					"quotes": [
+						"He's never considered himself to be a sporty person, and it was only when he retired that he decided to take up the challenge of trying to run five kilometres. It took him months to find the courage to contact us, but felt reassured immediately, as there were other people his age who were only just taking up running for the first time."
+					]
+				}
+			]
+		},
+		{
+			"range": "19-20",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 19,
+					"text": "What does Liz say about running her first marathon?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It had always been her ambition."
+						},
+						{
+							"label": "B",
+							"text": "Her husband persuaded her to do it."
+						},
+						{
+							"label": "C",
+							"text": "She nearly gave up before the end."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"I managed to complete it in four hours, but I felt like giving up halfway through."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Liz says new runners should sign up for a race",
+					"options": [
+						{
+							"label": "A",
+							"text": "every six months."
+						},
+						{
+							"label": "B",
+							"text": "within a few weeks of taking up running."
+						},
+						{
+							"label": "C",
+							"text": "after completing several practice runs."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But after you've been training for a few weeks, it's worth putting your name down for a five k."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

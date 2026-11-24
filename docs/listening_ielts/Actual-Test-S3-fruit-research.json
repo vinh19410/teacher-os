@@ -1,0 +1,202 @@
+{
+	"id": "8c06f0f4-144f-4da2-8807-c118366d1808",
+	"url": "https://stepielts.com/student/listening/8c06f0f4-144f-4da2-8807-c118366d1808?mode=practice",
+	"title": "Fruit Research",
+	"source": "Actual Test",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/ede9f206-4ef6-4a42-b39b-bd3c28c6db85.mp3",
+	"transcript": "Speaker 0: You will hear Jack and his tutor discussing a research on food. First, you have some time to look at questions 21 to 25. Now listen carefully and answer questions 21 to 25.\nSpeaker 1: Jack, how is your research into food additives and ingredients going?\nSpeaker 2: My project is going well, although I haven't quite finished. There are a few remaining points I need to research and some data to compile.\nSpeaker 1: I'm happy to hear it's coming along well. I understand you collaborated with a partner on some aspects of this project. Sometimes it's worth teaming up with a fellow student, especially if you've worked together before and you know you can perform well as a team.\nSpeaker 2: Originally, I thought the research material would be complicated, so I should ask a friend to help interpret the results. However, it was not as complicated as I imagined. But it turned out having a partner was beneficial because there was a lot of research that needed doing, and I wouldn't have had the time to do it on my own.\nSpeaker 1: It's usually of benefit when conducting a research project to interview people that deal with your topic of study regularly. Have you thought about who you could include in your interviewing process? Perhaps supermarket managers would be a good starting point.\nSpeaker 2: Yeah. It's true that supermarket managers could be important subjects for a survey like this. But I have decided to start with consumers and take down their opinions on what they're eating. Then what I'm going to do is to conduct some surveys with food manufacturers. It's also necessary to know what food manufacturers think of.\nSpeaker 1: Excellent. Just remember, you will have to get permission from management before you begin. What information have you found useful for your project so far?\nSpeaker 2: I've been examining labels on frequently purchased products, especially ready made meals, to understand what manufacturers are required to disclose. I found the results interesting. I thought the weight of the product and ingredients would have to be stated on the packaging.\nSpeaker 1: What did you find instead?\nSpeaker 2: It seems the price of the food item is the most important consideration of the manufacturers rather than the consumer's awareness of what they're eating.\nSpeaker 1: Regarding food items that contained a list of ingredients, was there anything you found particularly surprising such as which foods are most popular?\nSpeaker 2: Unfortunately, I couldn't find out much about the popularity of foods from the labels. Although, I suspect the most frequently bought items would be from the fast food aisle. What really surprised me was the amount of artificial ingredients these foods contain. We're taking in vast amounts of additives every day.\nSpeaker 1: As the cost of food goes up, we'll see additives listed in the ingredients more often as it's cheaper to produce chemicals than grow the natural products. Do you have any concerns over how your project is going? Is it hard to get respondents?\nSpeaker 2: That's the easy part. My partner on the project worries that we have much more essential data to collect, but I'm more concerned with the fact that we're running out of time to complete the project.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 26 to 30. Now listen and answer questions 26 to 30.\nSpeaker 1: I have some tips to assist you. You must have a great deal of recorded content to interpret. It may be difficult to compile, so continuing to work with your partner is a good option.\nSpeaker 2: Those handheld recorders worked really well. I think I'll use them again for interviewing next time. I've also got to collect some data specific to consumer preferences. It's difficult to find the time.\nSpeaker 1: There's no harm in asking someone else to collect it and even analyze it. You just need the results. Some of the first year students would be glad to have the experience.\nSpeaker 2: That would be fantastic. I've got some specific research to do on the ingredients of well done beef. It's a controversial issue.\nSpeaker 1: Perhaps you could read some articles on the subject beforehand, although there is not much information available. I understand why you want to include this in your project, but I think you need to weigh up its worth against the time it would take. It wouldn't be worth it.\nSpeaker 2: True. I still have those interviews in the shopping center to conduct.\nSpeaker 1: I suggest before you begin that you do some training. Most shopping center managers want interviewers to act professionally, so you might need to find out some specific information first. You don't want to harass customers.\nSpeaker 2: Okay. I'll think about that. I've also got to decide on the layout of the results and format it into a logical presentation.\nSpeaker 1: You can work on that once you've gathered all your data.\nSpeaker 2: Great. Thanks for your help.\nSpeaker 0: That is the end of section three. You now have half a minute to check your answers.",
+	"body": {
+		"text": "26 sort out recorded content [26]\n27 collect and analyse some specific data [27]\n28 do research on ingredients of well-done beef [28]\n29 interview customers when they shop [29]\n30 decide on the format of the presentation [30]",
+		"html": "<p>26 sort out recorded content [26]</p><p>27 collect and analyse some specific data [27]</p><p>28 do research on ingredients of well-done beef [28]</p><p>29 interview customers when they shop [29]</p><p>30 decide on the format of the presentation [30]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-25",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter A, B or C",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Why did they do it as a team?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They needed to do a lot of research."
+						},
+						{
+							"label": "B",
+							"text": "They had worked together before."
+						},
+						{
+							"label": "C",
+							"text": "The research was very complicated."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But it turned out having a partner was beneficial because there was a lot of research that needed doing, and I wouldn't have had the time to do it on my own."
+					]
+				},
+				{
+					"number": 22,
+					"text": "Who will be the interviewees at the first stage?",
+					"options": [
+						{
+							"label": "A",
+							"text": "manufacturers"
+						},
+						{
+							"label": "B",
+							"text": "shoppers"
+						},
+						{
+							"label": "C",
+							"text": "managers"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But I have decided to start with consumers and take down their opinions on what they're eating."
+					]
+				},
+				{
+					"number": 23,
+					"text": "What is the manufacturers' top priority on the labels?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the weight"
+						},
+						{
+							"label": "B",
+							"text": "the ingredients"
+						},
+						{
+							"label": "C",
+							"text": "the price"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"It seems the price of the food item is the most important consideration of the manufacturers rather than the consumer's awareness of what they're eating."
+					]
+				},
+				{
+					"number": 24,
+					"text": "What result surprised them?",
+					"options": [
+						{
+							"label": "A",
+							"text": "There are a lot of additives in food."
+						},
+						{
+							"label": "B",
+							"text": "The cost of food is much higher than before."
+						},
+						{
+							"label": "C",
+							"text": "Fast food is popular among customers."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"What really surprised me was the amount of artificial ingredients these foods contain."
+					]
+				},
+				{
+					"number": 25,
+					"text": "What does Jack worry about most regarding the project?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They don't have enough respondents."
+						},
+						{
+							"label": "B",
+							"text": "There is not enough time."
+						},
+						{
+							"label": "C",
+							"text": "Some important data is not available."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"My partner on the project worries that we have much more essential data to collect, but I'm more concerned with the fact that we're running out of time to complete the project."
+					]
+				}
+			]
+		},
+		{
+			"range": "26-30",
+			"type": "MATCHING",
+			"instructions": "What does the tutor suggest doing with Jack's research regarding each of the following tasks?\nChoose FIVE answers from the box and write the correct letter, A-E.",
+			"options": [
+				{
+					"label": "A",
+					"text": "do it with a partner"
+				},
+				{
+					"label": "B",
+					"text": "not worthy of doing"
+				},
+				{
+					"label": "C",
+					"text": "leave it to others"
+				},
+				{
+					"label": "D",
+					"text": "do it later"
+				},
+				{
+					"label": "E",
+					"text": "need special training beforehand"
+				}
+			],
+			"body": "26 sort out recorded content [26]\n27 collect and analyse some specific data [27]\n28 do research on ingredients of well-done beef [28]\n29 interview customers when they shop [29]\n30 decide on the format of the presentation [30]",
+			"body_html": "<p>26 sort out recorded content [26]</p><p>27 collect and analyse some specific data [27]</p><p>28 do research on ingredients of well-done beef [28]</p><p>29 interview customers when they shop [29]</p><p>30 decide on the format of the presentation [30]</p>",
+			"questions": [
+				{
+					"number": 26,
+					"text": "sort out recorded content",
+					"answer": "A",
+					"quotes": [
+						"It may be difficult to compile, so continuing to work with your partner is a good option."
+					]
+				},
+				{
+					"number": 27,
+					"text": "collect and analyse some specific data",
+					"answer": "C",
+					"quotes": [
+						"There's no harm in asking someone else to collect it and even analyze it."
+					]
+				},
+				{
+					"number": 28,
+					"text": "do research on ingredients of well-done beef",
+					"answer": "B",
+					"quotes": [
+						"I understand why you want to include this in your project, but I think you need to weigh up its worth against the time it would take."
+					]
+				},
+				{
+					"number": 29,
+					"text": "interview customers when they shop",
+					"answer": "E",
+					"quotes": ["I suggest before you begin that you do some training."]
+				},
+				{
+					"number": 30,
+					"text": "decide on the format of the presentation",
+					"answer": "D",
+					"quotes": ["You can work on that once you've gathered all your data."]
+				}
+			]
+		}
+	],
+	"images": []
+}

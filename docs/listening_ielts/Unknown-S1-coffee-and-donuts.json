@@ -1,0 +1,199 @@
+{
+	"id": "2317b6ae-c6c9-4072-88f7-146c5d9a64d5",
+	"url": "https://stepielts.com/student/listening/2317b6ae-c6c9-4072-88f7-146c5d9a64d5?mode=practice",
+	"title": "Coffee and Donuts",
+	"source": "Unknown",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/27d5ad0b-bda4-4a16-9683-8e5c27c43fe9.mp3",
+	"transcript": "Speaker 0: Coffee and Donuts Let's go for coffee. All over North America, friends like to meet at the coffee shop. Here, people sit and talk about the day's business sports, personal concerns, shop talk, or simply gossip. Coffee shops have an informal atmosphere that encourages conversation. You don't have to dress up either. Students drop in wearing T shirts and blue jeans and sit beside businessmen wearing suits and ties. Many coffee shops are open twenty four hours a day, including Sundays and holidays. That way people who work at night or who have trouble sleeping can drop in at any time. Because coffee and doughnuts are relatively inexpensive, people feel comfortable sitting for a while knowing that they are not spending a lot of money. Although coffee and doughnuts are the main items sold at coffee shops, many also serve other beverages and desserts, and sometimes a light lunch. Many patrons have a favorite kind of coffee or other drink and will drive past other coffee shops to go to one that serves the flavor they like. Visitors from other countries are often surprised at how roomy these coffee shops can be. Some are as large as regular restaurants. Having a nice bit of space around them encourages people to relax. Some people arrange regular dates and meet every day or every week at the same time. For example, retired friends may get together every weekday morning at ten A. M. Others stop every morning at the drive in line to get their coffee for work. Even people who have coffee machines at home or at work like to go to coffee shops to get a special kind of coffee or a favorite treat. It might seem that the business owners would not make much money just selling a few items, But in fact, many coffee shops do extremely well, especially if they are located in a busy traffic area. Then business tends to be steady all through the day. Not only do people come in and sit down, but there is usually a lot of takeout business as well. People go to coffee shops not only to socialize with family and friends, but also to discuss business or treat their employees to a snack. Others go there to read the newspaper or a favorite favorite magazine. Some people even go there to do work. This article was written in a coffee shop. Of course, people who come here usually like coffee and doughnuts. Coffee is the favorite hot drink in North America, but most shops also serve tea, hot chocolate, and cappuccino, as well as some other cold beverages. Doughnuts are usually round and are small deep fried breads with various toppings. Most doughnuts have a hole in the middle. Even these holes, which are punched out of the doughnut, can be sold separately as a kind of mini doughnut. Everywhere you go in North America, you will see coffee shops. So take half an hour to stop in and relax. You'll enjoy the great North American coffee break.",
+	"body": {
+		"text": "1. Coffee shops have an informal [1] that encourages conversation.\n2. Many coffee shops are open [2] hours a day, including Sundays and holidays.\n3. Although coffee and donuts are the main items, many shops also serve a light [3].\n4. Some people arrange regular [4] and meet at the same coffee shop every week.\n5. Donuts are usually small deep-fried breads with various [5].",
+		"html": "<p>1. Coffee shops have an informal [1] that encourages conversation.</p><p>2. Many coffee shops are open [2] hours a day, including Sundays and holidays.</p><p>3. Although coffee and donuts are the main items, many shops also serve a light [3].</p><p>4. Some people arrange regular [4] and meet at the same coffee shop every week.</p><p>5. Donuts are usually small deep-fried breads with various [5].</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Listen and complete the sentences. Use ONE OR TWO WORDS only.",
+			"body": "1. Coffee shops have an informal [1] that encourages conversation.\n2. Many coffee shops are open [2] hours a day, including Sundays and holidays.\n3. Although coffee and donuts are the main items, many shops also serve a light [3].\n4. Some people arrange regular [4] and meet at the same coffee shop every week.\n5. Donuts are usually small deep-fried breads with various [5].",
+			"body_html": "<p>1. Coffee shops have an informal [1] that encourages conversation.</p><p>2. Many coffee shops are open [2] hours a day, including Sundays and holidays.</p><p>3. Although coffee and donuts are the main items, many shops also serve a light [3].</p><p>4. Some people arrange regular [4] and meet at the same coffee shop every week.</p><p>5. Donuts are usually small deep-fried breads with various [5].</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Coffee shops have an informal [1] that encourages conversation.",
+					"answer": "atmosphere",
+					"quotes": [
+						"Coffee shops have an informal atmosphere that encourages conversation."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Many coffee shops are open [2] hours a day, including Sundays and holidays.",
+					"answer": "twenty four / twenty-four / 24",
+					"quotes": [
+						"Many coffee shops are open twenty four hours a day, including Sundays and holidays."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Although coffee and donuts are the main items, many shops also serve a light [3].",
+					"answer": "lunch",
+					"quotes": [
+						"Although coffee and doughnuts are the main items sold at coffee shops, many also serve other beverages and desserts, and sometimes a light lunch."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Some people arrange regular [4] and meet at the same coffee shop every week.",
+					"answer": "dates",
+					"quotes": [
+						"Some people arrange regular dates and meet every day or every week at the same time."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Donuts are usually small deep-fried breads with various [5].",
+					"answer": "toppings",
+					"quotes": [
+						"Doughnuts are usually round and are small deep fried breads with various toppings."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Circle the correct answer A, B, C or D.",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Why do people feel comfortable sitting for a long time at coffee shops?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Because the chairs and sofas are very comfortable."
+						},
+						{
+							"label": "B",
+							"text": "Because coffee and donuts are relatively inexpensive."
+						},
+						{
+							"label": "C",
+							"text": "Because coffee shops are always quiet and peaceful."
+						},
+						{
+							"label": "D",
+							"text": "Because staff encourage customers to stay longer."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Because coffee and doughnuts are relatively inexpensive, people feel comfortable sitting for a while knowing that they are not spending a lot of money."
+					]
+				},
+				{
+					"number": 7,
+					"text": "What surprises visitors from other countries about North American coffee shops?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The wide variety of food on the menu."
+						},
+						{
+							"label": "B",
+							"text": "How cheap the coffee and donuts are."
+						},
+						{
+							"label": "C",
+							"text": "How large and roomy the coffee shops can be."
+						},
+						{
+							"label": "D",
+							"text": "The number of coffee shops on every street."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Visitors from other countries are often surprised at how roomy these coffee shops can be."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Which of the following is NOT mentioned as a reason why people go to coffee shops?",
+					"options": [
+						{
+							"label": "A",
+							"text": "To read a newspaper or magazine."
+						},
+						{
+							"label": "B",
+							"text": "To do work or write."
+						},
+						{
+							"label": "C",
+							"text": "To celebrate birthdays and special occasions."
+						},
+						{
+							"label": "D",
+							"text": "To discuss business with others."
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 9,
+					"text": "Why do coffee shops in busy traffic areas tend to do well financially?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They charge higher prices than other coffee shops."
+						},
+						{
+							"label": "B",
+							"text": "They sell a wider variety of food and drinks."
+						},
+						{
+							"label": "C",
+							"text": "Business is steady all through the day."
+						},
+						{
+							"label": "D",
+							"text": "They are open longer hours than other shops."
+						}
+					],
+					"answer": "C",
+					"quotes": ["Then business tends to be steady all through the day."]
+				},
+				{
+					"number": 10,
+					"text": "What is special about the \"holes\" punched out of donuts?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They are thrown away to keep donuts fresh."
+						},
+						{
+							"label": "B",
+							"text": "They are given free to children."
+						},
+						{
+							"label": "C",
+							"text": "They are used to make a different type of dessert."
+						},
+						{
+							"label": "D",
+							"text": "They can be sold separately as a kind of mini-donut."
+						}
+					],
+					"answer": "D",
+					"quotes": [
+						"Even these holes, which are punched out of the doughnut, can be sold separately as a kind of mini doughnut."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

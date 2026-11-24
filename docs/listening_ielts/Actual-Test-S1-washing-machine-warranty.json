@@ -1,0 +1,95 @@
+{
+	"id": "1c27e687-978f-4002-8599-52e17999152f",
+	"url": "https://stepielts.com/student/listening/1c27e687-978f-4002-8599-52e17999152f?mode=practice",
+	"title": "Washing Machine Warranty",
+	"source": "Actual Test",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/9c4ced2b-c79f-456c-b1b7-44d8e44df752.mp3",
+	"transcript": "Speaker 1: Customer Service Representative: Good morning. This is the customer service department of Kingswell washing machine. Roger speaking. How may I help you?\nSpeaker 0: Customer: Good morning. I'm calling about the washing machine I bought from the mall several months ago. There's something wrong with it at the moment. So what do I have to do?\nSpeaker 1: Representative: Okay. First, I need to get a few details about this. Could you give me your name, please?\nSpeaker 0: Customer: Yes. It's Judy Smith.\nSpeaker 1: Representative: Okay. I need one more thing. There's a reference number. It should be in the top right hand corner of the warranty card we gave you.\nSpeaker 0: Customer: Let me have a look. Oh, here it is. It's CWX576884.\nSpeaker 1: Representative: Thanks. Well, I need to make sure if your washing machine is still within the warranty period. So when did you buy it?\nSpeaker 0: Customer: Oh, sure. I remember I bought it last summer. So it was about nine months ago. And the card here says this washing machine has a two year warranty, so it's definitely within the period.\nSpeaker 1: Representative: Of course it is, madam. Alright. Then I need your address.\nSpeaker 0: Customer: My old address or my current one?\nSpeaker 1: Representative: Your current one, as we will send in someone to fix the washing machine for you.\nSpeaker 0: Customer: It's 120 Middle Street, Oxford.\nSpeaker 1: Representative: And the postcode?\nSpeaker 0: Customer: It's GO194KE.\nSpeaker 1: Representative: Now I need to know the exact problem of the washing machine. Could you describe it in detail?\nSpeaker 0: Customer: Actually, the washing machine did work very well until last weekend. I put some clothes into it and it worked normally at first. Then I just got down to doing some gardening. But after about thirty minutes, when I came back to the house, I found it was leaking. The water had soaked the entire floor.\nSpeaker 1: Representative: I'm sorry to hear that, madam. So did you do anything to make the leaking stop?\nSpeaker 0: Customer: At that moment, the washing machine was totally out of control and the alarm on it also started to sound. I thought there was not much point in pressing any button on the machine, so I just switched off the machine straight away. Then it stopped leaking at once. Thank goodness.\nSpeaker 1: Representative: Well, I think that was the only thing you could do.\nSpeaker 0: Customer: Oh, then I found my floor was nearly a disaster As it is made of wood rather than marble, it could not be soaked in water for a long time. So what I did in the next two hours was wiping up the water on the floor.\nSpeaker 1: Representative: Right.\nSpeaker 0: Customer: Later, I tried the washing machine once more, but the problem still existed.\nSpeaker 1: Representative: Well, I've taken down all the related information. Later, we'll send a client engineer to your house to fix it.\nSpeaker 0: Customer: Okay. Could you arrange the repair work as soon as possible as I'm too busy at work to do the laundry by hand? How about this Saturday?\nSpeaker 1: Representative: I have to check the schedule of the repairman. Oh, sorry, madam. Saturday has been occupied. The earliest day we can arrange for you is next Tuesday. Is that okay with you?\nSpeaker 0: Customer: Fine. I can take a leave from work that day. Anyway, thanks. Oh, my house is easy to find. It's near the Central Market, just across from the post office.\nSpeaker 1: Representative: Alright. And the last thing, could you tell me your phone number, please?\nSpeaker 0: Customer: Sure. It's 38647757.\nSpeaker 1: Representative: Okay. I've got it. The repairman will contact you before he comes.\nSpeaker 0: Customer: Okay. Thank you very much.\nSpeaker 1: Representative: You're welcome. Bye.\nSpeaker 0: Customer: Bye.",
+	"body": {
+		"text": "Personal Details\nName: Judie Smith\nReference number: [1]\nTime of purchase: [2] ago\nCurrent address: 120 [3], Oxford\nPostcode: [4]\nProblems\nThe floor was wet because of the [5]\nThe washing machine was out of control and the woman [6] immediately\nThe floor is made of [7]\nArrangement for the Repair Work\nAsk a [8] to repair the washing machine\nThe repairman is available [9]\nThe woman's house is opposite the [10]",
+		"html": "<table><tbody><tr><td><p><strong>Personal Details</strong></p><ul><li>Name: Judie Smith</li><li>Reference number: [1]</li><li>Time of purchase: [2] ago</li><li>Current address: 120 [3], Oxford</li><li>Postcode: [4]</li></ul><p><strong>Problems</strong></p><ul><li>The floor was wet because of the [5]</li><li>The washing machine was out of control and the woman [6] immediately</li><li>The floor is made of [7]</li></ul><p><strong>Arrangement for the Repair Work</strong></p><ul><li>Ask a [8] to repair the washing machine</li><li>The repairman is available [9]</li><li>The woman's house is opposite the [10]</li></ul></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "FORM_COMPLETION",
+			"instructions": "Complete the form below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "Personal Details\nName: Judie Smith\nReference number: [1]\nTime of purchase: [2] ago\nCurrent address: 120 [3], Oxford\nPostcode: [4]\nProblems\nThe floor was wet because of the [5]\nThe washing machine was out of control and the woman [6] immediately\nThe floor is made of [7]\nArrangement for the Repair Work\nAsk a [8] to repair the washing machine\nThe repairman is available [9]\nThe woman's house is opposite the [10]",
+			"body_html": "<table><tbody><tr><td><p><strong>Personal Details</strong></p><ul><li>Name: Judie Smith</li><li>Reference number: [1]</li><li>Time of purchase: [2] ago</li><li>Current address: 120 [3], Oxford</li><li>Postcode: [4]</li></ul><p><strong>Problems</strong></p><ul><li>The floor was wet because of the [5]</li><li>The washing machine was out of control and the woman [6] immediately</li><li>The floor is made of [7]</li></ul><p><strong>Arrangement for the Repair Work</strong></p><ul><li>Ask a [8] to repair the washing machine</li><li>The repairman is available [9]</li><li>The woman's house is opposite the [10]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Reference number",
+					"answer": "CWX576884",
+					"quotes": ["It's CWX576884."]
+				},
+				{
+					"number": 2,
+					"text": "Time of purchase: [2] ago",
+					"answer": "nine months / 9 months",
+					"quotes": ["So it was about nine months ago."]
+				},
+				{
+					"number": 3,
+					"text": "Current address: 120 [3], Oxford",
+					"answer": "Middle Street",
+					"quotes": ["Customer: It's 120 Middle Street, Oxford."]
+				},
+				{
+					"number": 4,
+					"text": "Postcode",
+					"answer": "GO194KE",
+					"quotes": ["Customer: It's GO194KE."]
+				},
+				{
+					"number": 5,
+					"text": "The floor was wet because of the [5]",
+					"answer": "water",
+					"quotes": ["The water had soaked the entire floor."]
+				},
+				{
+					"number": 6,
+					"text": "The washing machine was out of control and the woman [6] immediately",
+					"answer": "switched off",
+					"quotes": [
+						"I thought there was not much point in pressing any button on the machine, so I just switched off the machine straight away."
+					]
+				},
+				{
+					"number": 7,
+					"text": "The floor is made of [7]",
+					"answer": "wood",
+					"quotes": [
+						"Customer: Oh, then I found my floor was nearly a disaster As it is made of wood rather than marble, it could not be soaked in water for a long time."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Ask a [8] to repair the washing machine",
+					"answer": "client engineer",
+					"quotes": [
+						"Later, we'll send a client engineer to your house to fix it."
+					]
+				},
+				{
+					"number": 9,
+					"text": "The repairman is available [9]",
+					"answer": "next Tuesday",
+					"quotes": ["The earliest day we can arrange for you is next Tuesday."]
+				},
+				{
+					"number": 10,
+					"text": "The woman's house is opposite the [10]",
+					"answer": "post office",
+					"quotes": [
+						"It's near the Central Market, just across from the post office."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

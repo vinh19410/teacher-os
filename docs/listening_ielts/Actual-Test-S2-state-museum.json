@@ -1,0 +1,226 @@
+{
+	"id": "93a74a6f-b1da-4270-b77c-306275683835",
+	"url": "https://stepielts.com/student/listening/93a74a6f-b1da-4270-b77c-306275683835?mode=practice",
+	"title": "State Museum",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/5975b21d-98ac-465e-acb9-da41eb07202d.mp3",
+	"transcript": "Speaker 0: Part two. You will hear an audio guide to the State Museum and its exhibitions. First, you have some time to look at questions 11 to 15. Now listen carefully and answer questions 11 to 15.\nSpeaker 1: Welcome to the State Museum situated in the center of this truly multicultural metropolis, which is home to more than 30 different nationalities. The museum has a number of exciting displays and exhibitions, and this audio guide is designed to help you fully enjoy your visit. There are 15 galleries in total, and this season sees the opening of three new exhibitions. We suggest that you start your tour with these highlights of the season. The Heritage Clothes exhibition is located in Gallery 3 of the museum. People who live in the area have spent two years preparing this exhibition, which brings together some of the fascinating garments traditionally worn in their own communities. They looked into the history of their communities' clothing traditions and the customs and rituals related to them. Overall, there are 16 countries from five continents being represented. The photos that accompany each exhibit were taken by some of the city's college students who are studying design and show the clothes being modeled by the real people who wear them in the course of their everyday lives. Another remarkable highlight of the season is the exhibition known as Toys from the Past, which can be visited in Gallery 9. This exhibition, appealing to people of all ages, is on tour throughout the country and will be here for ten weeks only. Items on display include dolls produced over a century ago with beautiful porcelain faces, and in some cases, real hair. The whole collection covers antique toys such as wooden train sets from many different generations and offers plenty of fun to children and adults. The gigantic board games laid out on the gallery floor are among the most popular activities in the exhibition and should not be missed. A special display of miniature toys brings this exhibition to an end. These small objects are on loan from countries all over the world, some of which measure no more than a few centimeters. There is a tiny car made from matchsticks, a toy airplane with the pilot and passengers made out of seashells, and some delicate mini houses no higher than four centimeters.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 16 to 20. Now listen and answer questions 16 to 20.\nSpeaker 1: The final highlight of the season is the biscuit gallery number 15. About two decades ago, this city was renowned for its biscuits, although today the factory no longer exists. Did you know, for example, that before biscuits were wrapped in paper or cardboard boxes, biscuit tins were fashion items? The factory manufactured round, square, triangular, and hexagonal tins for a whole range of different occasions to celebrate national events, festivals, famous faces, etcetera. One fascinating exhibition displays people's favorite biscuits. There are sweet biscuits and savory ones, biscuits filled with jam and biscuits filled with currants, biscuits with colored toppings from sugar icing to chocolate sprinkles. When the factory finally closed, it announced that people's favorite biscuit was not as you might expect, a chocolate biscuit or one filled with jam and cream, but a plain savory one which was eaten with cheese. When you get to the end of the exhibition, there is an entertaining hands on activity to fill your own biscuit tin. All the biscuits ever produced by the company are piled up on the table along with various tins. These biscuit replicas are made out of thin pieces of wood, but the weight, colors, and shapes highly resemble the original biscuits. Your job is to fill the tin with biscuits, and when the lid is taken off, the biscuits are neatly placed as if the job were performed by a machine. It may not be as easy as it seems. If you would like to buy a memento of your visit, there is a museum gift shop, which sells postcards, souvenirs, and handmade pottery next to the information desk on the Ground Floor. And finally, if you don't want to carry your coats and bags around with you during your visit, please make use of the complimentary lockers provided by the museum. Enjoy your visit.\nSpeaker 0: That is the end of part two. You now have thirty seconds to check your answers to part two.",
+	"body": {
+		"text": "19. The gift shop is located beside the [19] on the ground floor\n20. Free [20] are available for visitors's belongings",
+		"html": "<table><tbody><tr><td><p>19. The gift shop is located beside the [19] on the ground floor</p><p>20. Free [20] are available for visitors's belongings</p></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "11-18",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter A, B or C",
+			"questions": [
+				{
+					"number": 11,
+					"text": "The Heritage Clothes Exhibition was put together by",
+					"options": [
+						{
+							"label": "A",
+							"text": "museum staff"
+						},
+						{
+							"label": "B",
+							"text": "local residents"
+						},
+						{
+							"label": "C",
+							"text": "clothing manufacturers"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"People who live in the area have spent two years preparing this exhibition, which brings together some of the fascinating garments traditionally worn in their own communities."
+					]
+				},
+				{
+					"number": 12,
+					"text": "The photographs show the clothes worn by",
+					"options": [
+						{
+							"label": "A",
+							"text": "their owners"
+						},
+						{
+							"label": "B",
+							"text": "professional models"
+						},
+						{
+							"label": "C",
+							"text": "design students"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"The photos that accompany each exhibit were taken by some of the city's college students who are studying design and show the clothes being modeled by the real people who wear them in the course of their everyday lives."
+					]
+				},
+				{
+					"number": 13,
+					"text": "The exhibition called \"Toys from the Past\" is",
+					"options": [
+						{
+							"label": "A",
+							"text": "displayed in a new gallery"
+						},
+						{
+							"label": "B",
+							"text": "on show for a limited time"
+						},
+						{
+							"label": "C",
+							"text": "specially aimed at children"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"This exhibition, appealing to people of all ages, is on tour throughout the country and will be here for ten weeks only."
+					]
+				},
+				{
+					"number": 14,
+					"text": "Visitors to \"Toys from the Past\" are recommended to",
+					"options": [
+						{
+							"label": "A",
+							"text": "play with the toy trains"
+						},
+						{
+							"label": "B",
+							"text": "look at all the dolls"
+						},
+						{
+							"label": "C",
+							"text": "see the board games"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The gigantic board games laid out on the gallery floor are among the most popular activities in the exhibition and should not be missed."
+					]
+				},
+				{
+					"number": 15,
+					"text": "The miniature toys are",
+					"options": [
+						{
+							"label": "A",
+							"text": "made by the museum"
+						},
+						{
+							"label": "B",
+							"text": "bought by the museum"
+						},
+						{
+							"label": "C",
+							"text": "borrowed by the museum"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"These small objects are on loan from countries all over the world, some of which measure no more than a few centimeters."
+					]
+				},
+				{
+					"number": 16,
+					"text": "The biscuit factory made tins",
+					"options": [
+						{
+							"label": "A",
+							"text": "for people all over the world"
+						},
+						{
+							"label": "B",
+							"text": "of different shapes"
+						},
+						{
+							"label": "C",
+							"text": "for many famous people"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"The factory manufactured round, square, triangular, and hexagonal tins for a whole range of different occasions to celebrate national events, festivals, famous faces, etcetera."
+					]
+				},
+				{
+					"number": 17,
+					"text": "People's favourite biscuit used to be",
+					"options": [
+						{
+							"label": "A",
+							"text": "an unsweetened one"
+						},
+						{
+							"label": "B",
+							"text": "one covered in chocolate"
+						},
+						{
+							"label": "C",
+							"text": "one filled with cream"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"When the factory finally closed, it announced that people's favorite biscuit was not as you might expect, a chocolate biscuit or one filled with jam and cream, but a plain savory one which was eaten with cheese."
+					]
+				},
+				{
+					"number": 18,
+					"text": "The hands-on activity allows people to",
+					"options": [
+						{
+							"label": "A",
+							"text": "make some biscuits"
+						},
+						{
+							"label": "B",
+							"text": "taste some of the biscuits"
+						},
+						{
+							"label": "C",
+							"text": "pack a biscuit tin"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"When you get to the end of the exhibition, there is an entertaining hands on activity to fill your own biscuit tin."
+					]
+				}
+			]
+		},
+		{
+			"range": "19-20",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Write NO MORE THAN TWO WORDS for each answer.",
+			"body": "19. The gift shop is located beside the [19] on the ground floor\n20. Free [20] are available for visitors's belongings",
+			"body_html": "<table><tbody><tr><td><p>19. The gift shop is located beside the [19] on the ground floor</p><p>20. Free [20] are available for visitors's belongings</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 19,
+					"text": "The gift shop is located beside the [19] on the ground floor",
+					"answer": "information desk",
+					"quotes": [
+						"If you would like to buy a memento of your visit, there is a museum gift shop, which sells postcards, souvenirs, and handmade pottery next to the information desk on the Ground Floor."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Free [20] are available for visitors's belongings",
+					"answer": "lockers",
+					"quotes": [
+						"And finally, if you don't want to carry your coats and bags around with you during your visit, please make use of the complimentary lockers provided by the museum."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

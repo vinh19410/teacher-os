@@ -1,0 +1,128 @@
+{
+	"id": "e5a254f5-9ba4-493f-9982-04c521f011f4",
+	"url": "https://stepielts.com/student/listening/e5a254f5-9ba4-493f-9982-04c521f011f4?mode=practice",
+	"title": "Student Syndicate",
+	"source": "Actual Test",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/05b393d0-1d9f-46ee-bf02-6eb2c2b6ff52.mp3",
+	"transcript": "Speaker 0: Section three. You will hear three geology students, Andy, Bob, and Helen, talking about forming a study syndicate for their forthcoming examinations. First, you have some time to look at questions 21 to 25 on page six. Now listen carefully and answer questions 21 to 25.\nSpeaker 1: Right then. Are we ready?\nBob, Helen?\nSpeaker 1: Yeah. And is someone taking notes for John? He's at a tutorial, isn't he?\nSpeaker 2: Yeah. I'll let him know what we agree.\nSpeaker 1: Good. Okay. Well, first thing is, has anyone apart from me actually been in a study syndicate before? No.\nSpeaker 3: What does it actually involve, Andy?\nSpeaker 1: Well, the idea is that it's a way for us for students to study together without a teacher.\nSpeaker 2: Oh, yeah. Right. When\nSpeaker 1: I did it last time, I found it helpful because, well, as I said, there's no teacher, so it means we're teaching one another. And I found I I really learned a lot through having to teach it myself. It seemed a very good way to learn.\nSpeaker 3: And presumably, it gives us the chance to share ideas as well.\nSpeaker 2: And you get fuller notes if you're all doing the reading.\nSpeaker 1: That's right. And as well as that, because of that, really, you can do, you know, much deeper research. So I thought we could try to revise what we've done on the geology course, because I know this is the one that most of us are worried about, the geology exam.\nSpeaker 2: Right. Yes. So the idea is we all look at a different topic, a different topic from the geology course, and then give a presentation and talk about it?\nSpeaker 1: That's right. I've drawn up the framework of a table which might be useful. Here. I've made a copy.\nSpeaker 3: Oh, thanks. For\nSpeaker 1: the first topic, I thought we could maybe do mountain building. Is that alright?\nSpeaker 2: Yeah. Sure. Actually, would you mind if I did that? I'm quite interested in it.\nSpeaker 1: Right.\nSpeaker 2: Right.\nSpeaker 1: So is May 9 okay for that?\nSpeaker 2: Mhmm. Yeah.\nSpeaker 1: I'll just write that down, and it's Bob for mountain building. And the following week, it can't be May 16 because of our tutorial. But what about the seventeenth?\nSpeaker 2: Okay. And what about the next topic? What would be the next priority?\nSpeaker 3: Well, there's glaciated areas, but I don't want to do that.\nSpeaker 1: Fair enough. Actually, I don't mind having a bash. I did an assignment on them. Glaciated areas, Andy. Then we need someone to do rock formation. Helen?\nSpeaker 3: Yeah. Okay. And John said he'd like to too, so you can put us both down for that.\nSpeaker 1: When?\nSpeaker 3: May 23 would be best.\nSpeaker 1: Rock formation, Helen and John. Right. That really only leaves one week before the exams. Shall we make it on the thirtieth?\nSpeaker 2: I can't make it, I'm afraid.\nSpeaker 1: May 29? The exam's on June 3.\nSpeaker 2: Have to be.\nSpeaker 1: Okay. Any ideas for a topic?\nSpeaker 2: John said he wouldn't mind doing something on volcanoes.\nSpeaker 1: Great. That's everyone then.\nSpeaker 0: Before you hear the rest of the conversation, you have some time to look at questions 26 to 30 on page seven. Now listen and answer questions 26 to 30.\nSpeaker 2: And how long should these presentations be?\nSpeaker 1: Well, it's obviously up to us. In my experience, thirty minutes is about enough.\nSpeaker 3: Maybe a bit short. I'd have thought forty minutes would be more like it.\nSpeaker 1: Well, should we say thirty to forty minutes? Okay. Uh-huh.\nSpeaker 2: And presumably time for questions.\nSpeaker 3: And discussion.\nSpeaker 1: Yes. Together they usually take about twenty minutes.\nSpeaker 3: Where should we get the information from? Is it mainly lecture notes?\nSpeaker 1: Well, actually, I suggest we avoid those because we already have all that information. I think it's better to go more deeply.\nSpeaker 2: We could use the bibliography.\nSpeaker 1: And anything else we find in the library, any other books.\nSpeaker 3: And articles, you know, from the journals.\nSpeaker 2: And then of course there's lots of stuff on the Internet.\nSpeaker 1: Yes, that's the sort of thing.\nSpeaker 2: And what about the presentations? Will we just be talking? Presumably, we we can't use slides.\nSpeaker 1: It'd be a bit difficult, but we can use the OHP.\nSpeaker 3: And the whiteboard, of course.\nSpeaker 2: And we can make photocopies of our notes so everyone can have a copy.\nSpeaker 1: Yes. Great. So is there anything else?\nSpeaker 0: That is the end of section three. You now have half a minute to check your answers. Now turn to section four on page eight.",
+	"question_groups": [
+		{
+			"range": "21-22",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below.\nWrite NO MORE THAN THREE WORDS for each answer.",
+			"body": "Reasons for having study Syndicates:\nA Teaching one another is a good way to learn\nB It gives the opportunity to [21]\nC shared reading means fuller notes\nD you can do [22]",
+			"body_html": "<table><tbody><tr><td><p><strong>Reasons for having study Syndicates:</strong></p><p><strong>A</strong> Teaching one another is a good way to learn</p><p><strong>B</strong> It gives the opportunity to [21]</p><p><strong>C</strong> shared reading means fuller notes</p><p><strong>D</strong> you can do [22]</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 21,
+					"text": "It gives the opportunity to [21]",
+					"answer": "share ideas",
+					"quotes": [
+						"And presumably, it gives us the chance to share ideas as well."
+					]
+				},
+				{
+					"number": 22,
+					"text": "you can do [22]",
+					"answer": "much deeper research",
+					"quotes": [
+						"And as well as that, because of that, really, you can do, you know, much deeper research."
+					]
+				}
+			]
+		},
+		{
+			"range": "23-25",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write NO MORE THAN THREE WORDS AND/ OR A NUMBER for each answer.",
+			"body": "PLAN FOR STUDY SYNDICATE\nDate Geology Topic Name of Presenter\n9th May [23] Bob\n[24] Glaciated areas Andy\n23rd May Rock formation Helen and John\n[25] Volcanoes John",
+			"body_table": [
+				["PLAN FOR STUDY SYNDICATE"],
+				["Date", "Geology Topic", "Name of Presenter"],
+				["9th May", "[23]", "Bob"],
+				["[24]", "Glaciated areas", "Andy"],
+				["23rd May", "Rock formation", "Helen and John"],
+				["[25]", "Volcanoes", "John"]
+			],
+			"body_html": "<table><tbody><tr><td colspan=\"3\"><p><strong>PLAN FOR STUDY SYNDICATE</strong></p></td></tr><tr><td>Date</td><td>Geology Topic</td><td>Name of Presenter</td></tr><tr><td>9th May</td><td>[23]</td><td>Bob</td></tr><tr><td>[24]</td><td>Glaciated areas</td><td>Andy</td></tr><tr><td>23rd May</td><td>Rock formation</td><td>Helen and John</td></tr><tr><td>[25]</td><td>Volcanoes</td><td>John</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 23,
+					"text": "Complete the table: Date 9th May, Geology Topic (blank), Name of Presenter Bob",
+					"answer": "Mountain building",
+					"quotes": [
+						"the first topic, I thought we could maybe do mountain building.",
+						"I'll just write that down, and it's Bob for mountain building."
+					]
+				},
+				{
+					"number": 24,
+					"text": "Complete the table: Date (blank), Geology Topic Glaciated areas, Name of Presenter Andy",
+					"answer": "17th May / May 17th / May 17 / 17 May",
+					"quotes": [
+						"But what about the seventeenth?",
+						"And the following week, it can't be May 16 because of our tutorial."
+					]
+				},
+				{
+					"number": 25,
+					"text": "Complete the table: Date (blank), Geology Topic Volcanoes, Name of Presenter John",
+					"answer": "29th May / May 29th / May 29 / 29 May",
+					"quotes": [
+						"May 29?",
+						"The exam's on June 3.",
+						"Have to be.",
+						"Okay.",
+						"Any ideas for a topic?",
+						"John said he wouldn't mind doing something on volcanoes.",
+						"Great."
+					]
+				}
+			]
+		},
+		{
+			"range": "26-30",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below.\nWrite NO MORE THAN THREE WORDS AND/OR A NUMBER for each answer",
+			"body": "Presentations should last for [26]\n( plus time for [27] )\nSources of information\nBibliography\nLibrary books\n[28]\n[29]\nFor the presentations, use:\nOverhead projector\nWhiteboard\n[30]",
+			"body_html": "<table><tbody><tr><td><ul><li>Presentations should last for [26]<br>( plus time for [27] )</li><li>Sources of information\n<ul><li>Bibliography</li><li>Library books</li><li>[28]</li><li>[29]</li></ul></li><li>For the presentations, use:\n<ul><li>Overhead projector</li><li>Whiteboard</li><li>[30]</li></ul></li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 26,
+					"text": "Presentations should last for [26]",
+					"answer": "thirty to forty",
+					"quotes": ["Well, should we say thirty to forty minutes?"]
+				},
+				{
+					"number": 27,
+					"text": "( plus time for [27] )",
+					"answer": "questions and discussion",
+					"quotes": ["And presumably time for questions.", "And discussion."]
+				},
+				{
+					"number": 28,
+					"text": "( plus time for _______ and _______) [second blank]",
+					"answer": "discussion",
+					"quotes": ["And articles, you know, from the journals."]
+				},
+				{
+					"number": 29,
+					"text": "Sources of information - [29]",
+					"answer": "Internet / the Internet / on the Internet",
+					"quotes": [
+						"And then of course there's lots of stuff on the Internet."
+					]
+				},
+				{
+					"number": 30,
+					"text": "For the presentations, use - [30]",
+					"answer": "photocopies / photocopies of notes / photocopies of our notes"
+				}
+			]
+		}
+	],
+	"images": []
+}

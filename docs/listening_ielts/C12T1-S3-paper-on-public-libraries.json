@@ -1,0 +1,156 @@
+{
+	"id": "cf9e97c1-8b65-42a7-bc33-1662b022aa54",
+	"url": "https://stepielts.com/student/listening/cf9e97c1-8b65-42a7-bc33-1662b022aa54?mode=practice",
+	"title": "Paper on Public Libraries",
+	"source": "C12T1",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/8d3d021d-bb28-4bf4-8d8d-3d3f4c9d4bb6.mp3",
+	"transcript": "Speaker 0: Now turn to section three. Section three You will hear two students called Trudy and Stuart, who are both studying to be librarians, discussing a paper that they are going to write together. First, you have some time to look at questions 21 to 23. Now listen carefully and answer questions 21 to 23.\nSpeaker 1: Okay, Stuart. We need to start planning our paper on public libraries. Have you thought of an angle yet?\nSpeaker 2: Well, there's so much we could look into how libraries have changed over the centuries, for instance, or how different countries organize them. What do you think, Trudy?\nSpeaker 1: Maybe we should concentrate on this country and try and relate the changes in libraries to external developments, like the fact that far more people can read than a century ago,\nSpeaker 0: and\nSpeaker 1: that the local population may speak lots of different languages?\nSpeaker 2: We could include something about changes in the source of funding, too.\nSpeaker 1: Yes, but remember we're only supposed to write a short paper, so it's probably best if we don't go into funding in any detail.\nSpeaker 2: Right. Well, shall we just brainstorm a few ideas to get started?\nSpeaker 1: Okay. We obviously need to look at the impact of new technology, particularly the Internet. Now that lots of books have been digitalized, people can access them from their own computers at home.\nSpeaker 2: And if everyone did that, libraries would be obsolete.\nSpeaker 1: Yes.\nSpeaker 2: But the digitalized books that are available online for free are mostly out of copyright, aren't they? And copyright in this country lasts for seventy years after the author dies, So you won't find the latest best seller or up to date information.\nSpeaker 1: That's an important point. Anyway, I find it hard to concentrate when I'm reading a long text on a screen. I'd much rather read a physical book, and it takes longer to read on a screen.\nSpeaker 2: Oh, I prefer it. I suppose it's just a personal preference.\nSpeaker 1: I expect the libraries will go on evolving in the next few years. Some have already become centers where community activities take place, like local clubs meeting there. I think that'll become even more common.\nSpeaker 2: I'd like to think so, and that they'll still be serving their traditional function, but I'm not so sure. There are financial implications after all. What I'm afraid will happen is that books and magazines will all disappear, and they'll just be rows and rows of computers. They won't look anything like the libraries we're used to.\nSpeaker 1: Well, we'll see.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 24 to 30. Now listen and answer questions 24 to 30.\nSpeaker 1: I've just had an idea. Why don't we make an in-depth study of our local public library as background to our paper?\nSpeaker 2: Yes. That'd be interesting and raise all sorts of issues. Let's make a list of possible things we could ask about, then work out some sort of structure. For instance, we could interview some of the staff and find out whether the library has its own budget or if that's controlled by the local council.\nSpeaker 1: And what their policies are. I know they don't allow food, but I'd love to find out what types of noise they ban. There always seems to be a lot of talking, but never music. I don't know if that's a policy or it just happens.\nSpeaker 2: I've often wondered. Then there are things like how the library is affected by employment laws. I suppose there are rules about working hours, facilities for staff, and so on.\nSpeaker 1: Right. Then there are other issues relating to the design of the building and how customers use it. Like, what measures does the library take to ensure their safety? They'd need floor coverings that aren't slippery, and emergency exits, for instance. Oh, and another thing. There's the question of the kind of insurance the library needs to have in case anyone gets injured.\nSpeaker 2: Yes. That's something else to find out. You know something I've often wondered?\nSpeaker 1: What's that?\nSpeaker 2: Well, you know they've got an archive of local newspapers going back years. Well, next to it, they've got the diary of a well known politician from the late nineteenth century. I wonder why it's there. Do you know what his connection was with this area?\nSpeaker 1: No idea. Let's add it to our list of things to find out. Well, I've just thought, you know, people might ask in the library about local organizations like sports clubs. Well, I wonder if they keep a database or whether they just look online.\nSpeaker 2: Right. I quite fancy finding out what the differences are between a library that's open to the public and one that's part of a museum, for example. They must be very different.\nSpeaker 1: Then something else I'd like to know is\nSpeaker 0: That is the end of section three. You now have half a minute to check your answers. Now turn to section four.",
+	"body": {
+		"text": "Study of local library: possible questions\n● whether it has a [24] of its own\n● its policy regarding noise of various kinds\n● how it’s affected by laws regarding all aspects of [25]\n● how the design needs to take the [26] of customers into account\n● what [27] is required in case of accidents\n● why a famous person’s [28] is located in the library\n● whether it has a [29] of local organisations\n● how it’s different from a library in a [30]",
+		"html": "<h4><strong>Study of local library: possible questions</strong></h4><p>●   whether it has a [24] of its own</p><p>●   its policy regarding noise of various kinds</p><p>●   how it’s affected by laws regarding all aspects of [25]</p><p>●   how the design needs to take the [26] of customers into account</p><p>●   what [27] is required in case of accidents</p><p>●   why a famous person’s [28] is located in the library</p><p>●   whether it has a [29] of local organisations</p><p>●   how it’s different from a library in a [30]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-23",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "What will be the main topic of Trudie and Stewart’s paper?",
+					"options": [
+						{
+							"label": "A",
+							"text": "how public library services are organised in different countries"
+						},
+						{
+							"label": "B",
+							"text": "how changes in society are reflected in public libraries"
+						},
+						{
+							"label": "C",
+							"text": "how the funding of public libraries has changed"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Maybe we should concentrate on this country and try and relate the changes in libraries to external developments, like the fact that far more people can read than a century ago,"
+					]
+				},
+				{
+					"number": 22,
+					"text": "They agree that one disadvantage of free digitalised books is that",
+					"options": [
+						{
+							"label": "A",
+							"text": "they may take a long time to read."
+						},
+						{
+							"label": "B",
+							"text": "they can be difficult to read."
+						},
+						{
+							"label": "C",
+							"text": "they are generally old."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But the digitalized books that are available online for free are mostly out of copyright, aren't they?"
+					]
+				},
+				{
+					"number": 23,
+					"text": "Stewart expect that in the future libraries will",
+					"options": [
+						{
+							"label": "A",
+							"text": "maintain their traditional function."
+						},
+						{
+							"label": "B",
+							"text": "become centres for local communities."
+						},
+						{
+							"label": "C",
+							"text": "no longer contain any books."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"What I'm afraid will happen is that books and magazines will all disappear, and they'll just be rows and rows of computers."
+					]
+				}
+			]
+		},
+		{
+			"range": "24-30",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "Study of local library: possible questions\n● whether it has a [24] of its own\n● its policy regarding noise of various kinds\n● how it’s affected by laws regarding all aspects of [25]\n● how the design needs to take the [26] of customers into account\n● what [27] is required in case of accidents\n● why a famous person’s [28] is located in the library\n● whether it has a [29] of local organisations\n● how it’s different from a library in a [30]",
+			"body_html": "<h4><strong>Study of local library: possible questions</strong></h4><p>●   whether it has a [24] of its own</p><p>●   its policy regarding noise of various kinds</p><p>●   how it’s affected by laws regarding all aspects of [25]</p><p>●   how the design needs to take the [26] of customers into account</p><p>●   what [27] is required in case of accidents</p><p>●   why a famous person’s [28] is located in the library</p><p>●   whether it has a [29] of local organisations</p><p>●   how it’s different from a library in a [30]</p>",
+			"questions": [
+				{
+					"number": 24,
+					"text": "● whether it has a [24] of its own",
+					"answer": "budget",
+					"quotes": [
+						"For instance, we could interview some of the staff and find out whether the library has its own budget or if that's controlled by the local council."
+					]
+				},
+				{
+					"number": 25,
+					"text": "● how it’s affected by laws regarding all aspects of [25]",
+					"answer": "employment",
+					"quotes": [
+						"Then there are things like how the library is affected by employment laws."
+					]
+				},
+				{
+					"number": 26,
+					"text": "● how the design needs to take the [26] of customers into account",
+					"answer": "safety",
+					"quotes": [
+						"Like, what measures does the library take to ensure their safety?"
+					]
+				},
+				{
+					"number": 27,
+					"text": "● what [27] is required in case of accidents",
+					"answer": "insurance",
+					"quotes": [
+						"There's the question of the kind of insurance the library needs to have in case anyone gets injured."
+					]
+				},
+				{
+					"number": 28,
+					"text": "● why a famous person’s [28] is located in the library",
+					"answer": "diary",
+					"quotes": [
+						"Well, next to it, they've got the diary of a well known politician from the late nineteenth century."
+					]
+				},
+				{
+					"number": 29,
+					"text": "● whether it has a [29] of local organisations",
+					"answer": "database",
+					"quotes": [
+						"Well, I wonder if they keep a database or whether they just look online."
+					]
+				},
+				{
+					"number": 30,
+					"text": "● how it’s different from a library in a [30]",
+					"answer": "museum",
+					"quotes": [
+						"I quite fancy finding out what the differences are between a library that's open to the public and one that's part of a museum, for example."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

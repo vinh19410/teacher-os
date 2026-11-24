@@ -1,0 +1,225 @@
+{
+	"id": "ca5bae76-fdc1-465f-b5f7-6eefe67db160",
+	"url": "https://stepielts.com/student/listening/ca5bae76-fdc1-465f-b5f7-6eefe67db160?mode=practice",
+	"title": "Bike-Sharing Schemes",
+	"source": "C16T4",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/bd5223c3-0bc4-4506-b35d-3b5767226d19.mp3",
+	"transcript": "Speaker 0: Part three. You will hear two urban planning students discussing bike sharing schemes in different cities. First, you have some time to look at questions 21 to 24. Now listen carefully and answer questions 21 to 24.\nSpeaker 1: Now that we've done all the research into bike sharing schemes in cities around the world, we need to think about how we're going to organize our report.\nSpeaker 2: Right. I think we should start by talking about the benefits. I mean, it's great that so many cities have introduced these schemes where anyone can pick up a bike from dozens of different locations and hire it for a few hours. It makes riding a bike very convenient for people.\nSpeaker 1: Yes. But the costs can add up, and that puts people on low incomes off in some places.\nSpeaker 2: I suppose so. But if it means more people in general are cycling rather than driving, then because they're increasing the amount of physical activity they do, it's good for their health.\nSpeaker 1: Okay. But isn't that of less importance? I mean, doesn't the impact of reduced emissions on air pollution have a more significant effect on people's health?\nSpeaker 2: Certainly, in some cities, bike sharing has made a big contribution to that, and also helped to cut the number of cars on the road significantly.\nSpeaker 1: Which is the main point.\nSpeaker 2: Exactly. But I'd say it's had less of an impact on noise pollution because there are still loads of buses and lorries around.\nSpeaker 1: Right.\nSpeaker 2: Shall we quickly discuss the recommendations we're going to make?\nSpeaker 1: In order to ensure bike sharing schemes are successful? Yes. Okay. Well, while I think it's nice to have really state of the art bikes with things like GPS, I wouldn't say they're absolutely necessary.\nSpeaker 2: But some technical things are really important, like a fully functional app so people can make payments and book bikes easily. Places which haven't invested in that have really struggled.\nSpeaker 1: Good point. Some people say there shouldn't be competing companies offering separate bike sharing schemes, but in some really big cities, competition's beneficial. And anyway, one company might not be able to manage the whole thing.\nSpeaker 2: Right. Deciding how much to invest is a big question. Cities which have opened loads of new bike lanes at the same time as introducing bike sharing schemes have generally been more successful, but there are examples of successful schemes where this hasn't happened. What does matter, though, is having a big publicity campaign.\nSpeaker 1: Definitely. If people don't know how to use the scheme or don't understand its benefits, they won't use it. People need a lot of persuasion to stop using their cars.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 25 to 30. Now listen and answer questions 25 to 30.\nSpeaker 2: Shall we look at some examples now and say what we think is good or bad about them?\nSpeaker 1: I suppose we should start with Amsterdam as this was one of the first cities to have a bike sharing scheme.\nSpeaker 2: Yes. There was already a strong culture of cycling here. In a way, it's strange that there was such a demand for bike sharing because you'd have thought most people would have used their own bikes.\nSpeaker 1: And yet it's one of the best used schemes. Dublin's an interesting example of a success story.\nSpeaker 2: It must be because the public transport system's quite limited.\nSpeaker 1: Not really. There's no underground, but there are trams and a good bus network. I'd say price has a lot to do with it. It's one of the cheapest schemes in Europe to join.\nSpeaker 2: But the buses are really slow. Anyway, the weather certainly can't be a factor.\nSpeaker 1: No. Definitely not. The London scheme's been quite successful.\nSpeaker 2: Yes. It's been a really good thing for the city. The bikes are popular, and the whole system is well maintained, but it isn't expanding quickly enough.\nSpeaker 1: Basically, not enough's been spent on increasing the number of cycle lanes. Hopefully, that'll change.\nSpeaker 2: Yes. Now what about outside Europe?\nSpeaker 1: Well, bike sharing schemes have taken off in places like Buenos Aires.\nSpeaker 2: They built a huge network of cycle lanes to support the introduction of the scheme there, didn't they? It attracted huge numbers of cyclists where previously there were hardly any.\nSpeaker 1: An example of good planning.\nSpeaker 2: Absolutely. New York is a good example of how not to introduce a scheme. When they launched it, it was more than 10 times the price of most other schemes.\nSpeaker 1: More than it costs to take a taxi. Crazy. I think the organizers lacked vision and ambition there.\nSpeaker 2: I think so too. Sydney would be a good example to use. I would have expected it to have grown pretty quickly here.\nSpeaker 1: Yes. I can't quite work out why it hasn't been an instant success like some of the others. It's a shame, really.\nSpeaker 2: I know. Okay. So now we've thought about all the\nSpeaker 0: That is the end of part three. You now have half a minute to check your answers to part three.",
+	"body": {
+		"text": "Amsterdam [25]\nDublin [26]\nLondon [27]\nBuenos Aires [28]\nNew York [29]\nSydney [30]",
+		"html": "<p>Amsterdam  [25]</p><p>Dublin [26]</p><p>London [27]</p><p>Buenos Aires [28]</p><p>New York [29]</p><p>Sydney  [30]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-22",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. Which TWO benefits of city bike-sharing schemes do the students agree are the most important?",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Choose TWO letters, A-E. Which TWO benefits of city bike-sharing schemes do the students agree are the most important?",
+					"options": [
+						{
+							"label": "A",
+							"text": "reducing noise pollution"
+						},
+						{
+							"label": "B",
+							"text": "reducing traffic congestion"
+						},
+						{
+							"label": "C",
+							"text": "improving air quality"
+						},
+						{
+							"label": "D",
+							"text": "encouraging health and fitness"
+						},
+						{
+							"label": "E",
+							"text": "making cycling affordable"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 22,
+					"text": "Choose TWO letters, A-E. Which TWO benefits of city bike-sharing schemes do the students agree are the most important?",
+					"options": [
+						{
+							"label": "A",
+							"text": "reducing noise pollution"
+						},
+						{
+							"label": "B",
+							"text": "reducing traffic congestion"
+						},
+						{
+							"label": "C",
+							"text": "improving air quality"
+						},
+						{
+							"label": "D",
+							"text": "encouraging health and fitness"
+						},
+						{
+							"label": "E",
+							"text": "making cycling affordable"
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "23-24",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. Which TWO benefits of city bike-sharing schemes do the students agree are the most important?",
+			"questions": [
+				{
+					"number": 23,
+					"text": "Choose TWO letters, A-E. Which TWO things do the students think are necessary for successful bike-sharing schemes?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Bikes should have a GPS system."
+						},
+						{
+							"label": "B",
+							"text": "The app should be easy to use."
+						},
+						{
+							"label": "C",
+							"text": "Public awareness should be raised."
+						},
+						{
+							"label": "D",
+							"text": "Only one scheme should be available."
+						},
+						{
+							"label": "E",
+							"text": "There should be a large network of cycle lanes."
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 24,
+					"text": "Choose TWO letters, A-E. Which TWO things do the students think are necessary for successful bike-sharing schemes?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Bikes should have a GPS system."
+						},
+						{
+							"label": "B",
+							"text": "The app should be easy to use."
+						},
+						{
+							"label": "C",
+							"text": "Public awareness should be raised."
+						},
+						{
+							"label": "D",
+							"text": "Only one scheme should be available."
+						},
+						{
+							"label": "E",
+							"text": "There should be a large network of cycle lanes."
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "25-30",
+			"type": "MATCHING",
+			"instructions": "What is the speakers’ opinion of the bike-sharing schemes in each of the following cities?\nChoose the correct answer and move it into the gap\n\nCities",
+			"options": [
+				{
+					"label": "A",
+					"text": "They agree it has been disappointing."
+				},
+				{
+					"label": "B",
+					"text": "They think it should be cheaper."
+				},
+				{
+					"label": "C",
+					"text": "They are surprised it has been so successful."
+				},
+				{
+					"label": "D",
+					"text": "They agree that more investment is required."
+				},
+				{
+					"label": "E",
+					"text": "They think the system has been well designed."
+				},
+				{
+					"label": "F",
+					"text": "They disagree about the reasons for its success."
+				},
+				{
+					"label": "G",
+					"text": "They think it has expanded too quickly."
+				}
+			],
+			"body": "Amsterdam [25]\nDublin [26]\nLondon [27]\nBuenos Aires [28]\nNew York [29]\nSydney [30]",
+			"body_html": "<p>Amsterdam  [25]</p><p>Dublin [26]</p><p>London [27]</p><p>Buenos Aires [28]</p><p>New York [29]</p><p>Sydney  [30]</p>",
+			"questions": [
+				{
+					"number": 25,
+					"text": "Amsterdam",
+					"answer": "C",
+					"quotes": [
+						"In a way, it's strange that there was such a demand for bike sharing because you'd have thought most people would have used their own bikes. And yet it's one of the best used schemes."
+					]
+				},
+				{
+					"number": 26,
+					"text": "Dublin",
+					"answer": "F",
+					"quotes": [
+						"It must be because the public transport system's quite limited. Not really. There's no underground, but there are trams and a good bus network. I'd say price has a lot to do with it. It's one of the cheapest schemes in Europe to join."
+					]
+				},
+				{
+					"number": 27,
+					"text": "London",
+					"answer": "D",
+					"quotes": [
+						"The bikes are popular, and the whole system is well maintained, but it isn't expanding quickly enough. Basically, not enough's been spent on increasing the number of cycle lanes."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Buenos Aires",
+					"answer": "E",
+					"quotes": ["An example of good planning."]
+				},
+				{
+					"number": 29,
+					"text": "New York",
+					"answer": "B",
+					"quotes": [
+						"New York is a good example of how not to introduce a scheme. When they launched it, it was more than 10 times the price of most other schemes. More than it costs to take a taxi. Crazy. I think the organizers lacked vision and ambition there."
+					]
+				},
+				{
+					"number": 30,
+					"text": "Sydney",
+					"answer": "A",
+					"quotes": [
+						"I would have expected it to have grown pretty quickly here. Yes. I can't quite work out why it hasn't been an instant success like some of the others. It's a shame, really."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

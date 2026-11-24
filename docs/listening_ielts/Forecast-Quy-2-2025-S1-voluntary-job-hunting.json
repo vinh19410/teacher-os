@@ -1,0 +1,107 @@
+{
+	"id": "ba4ec1f9-0f46-48a0-a5e8-97fc03da945e",
+	"url": "https://stepielts.com/student/listening/ba4ec1f9-0f46-48a0-a5e8-97fc03da945e?mode=practice",
+	"title": "Voluntary Job Hunting",
+	"source": "Forecast Quý 2-2025",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/e7486c14-eea7-488c-b784-90d3531fd1be.mp3",
+	"transcript": "Woman: Jack?Man: Oh hi, Mary! How are you? Enjoying your voluntary job?\nSpeaker 1: You are working for a large building firm as a volunteer, aren’t you?Woman: Yes, I started after I graduated this June. It’s fantastic.Man: Wow, that’s good to know. I remember you majored in architectural design in college, you must have lots of opportunities to put it into practice.Woman: Well actually I am working as a receptionist right now. I want to improve my interpersonal skills as I need to work with different personalities.Man: I’m sure this will be of great help. But you must be busy all the time, I imagine there are quite a lot of customers all day long as it’s a big company.Woman: Not really, I don’t work full time, usually the work lasts for 4 hours in the morning. Then someone will be on the afternoon shift. Also, I only need to be there on weekdays, so it’s okay.Man: So what exactly do you do? I guess you have to answer the phone, arrange appointments, and deal with people when they have complaints?Woman: Yeah, those can be part of my work, but I mainly respond to the emails from our clients.Man: Have you participated in any training courses yet? I remember last time you once joined a training club as a volunteer.Woman: Yes, of course, I thought I would receive some communication courses from this job, you know, to get some basic interpersonal communication skills. But there are only computer classes available, it’s kind of vocational education.Man: Is that free or do you have to pay for that?Woman: It’s not free, but we’ve got some subsidies from a bank which has gone into partnership with this building company.Man: That’s not bad. I wish I could get some funding from somewhere...our project is so expensive.Woman: I heard that you are working on an Urban River Project, is that right?Man: Yes, my former employer recommended it to me, it’s a big project, the largest irrigation project so far in this city.Woman: Wow, that’s amazing, I never knew you are interested in water conservancy.It must be quite challenging.Man: Yeah, actually I was planning to work in the field related to education, you know, I have always wanted to be a math teacher, but I decided to try something different in my life before I become a teacher.Woman: Of course, you will have some special experience. What does this job require you to do? Things like doing some complicated calculations?Man: Right, and before we go into any of that, we need to attend a workshop beforehand, that involves group discussion in which we share our knowledge and experience together.Woman: Sounds interesting, I bet you can get a lot from those discussions with all the experts there...Man: Sure, I really have learned a lot, it’s quite rewarding.Woman: Oh right, you remember my cousin, Simon?Man: Of course, we took part in an international research project last summer and we cooperated well. He is excellent to work with.Woman: Yeah, you know he is a construction project major and he just got his Postgraduate Diploma, now he is looking for some similar project like yours, I wonder if you can introduce him.....Man: Well, it’s quite easy for him to join us, my colleagues and I all apply online for this voluntary work. All he needs to do is to fill in some basic information and click on the Go button to finish the application.Woman: I see, could you send me the project link later?Man: No problem. Oh, I almost forgot, he will also need a formal recommendation.All volunteers are required to have a reference to vouch for them.Woman: Okay, I will inform him of that. Thank you.",
+	"body": {
+		"text": "The woman’s job\nType of the work: [1]\nLength of working: [2] hours a day\nMain task: responding to [3]\nType of training: [4] classes\nSubsidy: funded by a [5]\nThe man’s job\nAn irrigation project about a [6] in the city\nPreference to work in the field of [7]\nRequirements: need to attend a [8] first\nOnline Registration: click on the [9] button\nA formal recommendation by a [10]",
+		"html": "<h3><strong>The woman’s job </strong></h3><ul><li>Type of the work: [1]</li><li>Length of working: [2] hours a day</li><li>Main task: responding to [3]</li><li>Type of training: [4] classes</li><li>Subsidy: funded by a [5]</li></ul><h3><strong>The man’s job</strong></h3><ul><li>An irrigation project about a [6] in the city</li><li>Preference to work in the field of [7]</li><li>Requirements: need to attend a [8] first</li><li>Online Registration: click on the [9] button</li><li>A formal recommendation by a [10]</li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "The woman’s job\nType of the work: [1]\nLength of working: [2] hours a day\nMain task: responding to [3]\nType of training: [4] classes\nSubsidy: funded by a [5]\nThe man’s job\nAn irrigation project about a [6] in the city\nPreference to work in the field of [7]\nRequirements: need to attend a [8] first\nOnline Registration: click on the [9] button\nA formal recommendation by a [10]",
+			"body_html": "<h3><strong>The woman’s job </strong></h3><ul><li>Type of the work: [1]</li><li>Length of working: [2] hours a day</li><li>Main task: responding to [3]</li><li>Type of training: [4] classes</li><li>Subsidy: funded by a [5]</li></ul><h3><strong>The man’s job</strong></h3><ul><li>An irrigation project about a [6] in the city</li><li>Preference to work in the field of [7]</li><li>Requirements: need to attend a [8] first</li><li>Online Registration: click on the [9] button</li><li>A formal recommendation by a [10]</li></ul>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Type of the work: [1]",
+					"answer": "receptionist",
+					"quotes": [
+						"I remember you majored in architectural design in college, you must have lots of opportunities to put it into practice.Woman: Well actually I am working as a receptionist right now."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Length of working: [2] hours a day",
+					"answer": "4 / four",
+					"quotes": [
+						"But you must be busy all the time, I imagine there are quite a lot of customers all day long as it’s a big company.Woman: Not really, I don’t work full time, usually the work lasts for 4 hours in the morning."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Main task: responding to [3]",
+					"answer": "emails",
+					"quotes": [
+						"I guess you have to answer the phone, arrange appointments, and deal with people when they have complaints?Woman: Yeah, those can be part of my work, but I mainly respond to the emails from our clients.Man: Have you participated in any training courses yet?"
+					]
+				},
+				{
+					"number": 4,
+					"text": "Type of training: [4] classes",
+					"answer": "computer",
+					"quotes": [
+						"But there are only computer classes available, it’s kind of vocational education.Man: Is that free or do you have to pay for that?Woman: It’s not free, but we’ve got some subsidies from a bank which has gone into partnership with this building company.Man: That’s not bad."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Subsidy: funded by a [5]",
+					"answer": "bank",
+					"quotes": [
+						"But there are only computer classes available, it’s kind of vocational education.Man: Is that free or do you have to pay for that?Woman: It’s not free, but we’ve got some subsidies from a bank which has gone into partnership with this building company.Man: That’s not bad."
+					]
+				},
+				{
+					"number": 6,
+					"text": "An irrigation project about a [6] in the city",
+					"answer": "river",
+					"quotes": [
+						"I wish I could get some funding from somewhere...our project is so expensive.Woman: I heard that you are working on an Urban River Project, is that right?Man: Yes, my former employer recommended it to me, it’s a big project, the largest irrigation project so far in this city.Woman: Wow, that’s amazing, I never knew you are interested in water conservancy.It must be quite challenging.Man: Yeah, actually I was planning to work in the field related to education, you know, I have always wanted to be a math teacher, but I decided to try something different in my life before I become a teacher.Woman: Of course, you will have some special experience."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Preference to work in the field of [7]",
+					"answer": "education",
+					"quotes": [
+						"I wish I could get some funding from somewhere...our project is so expensive.Woman: I heard that you are working on an Urban River Project, is that right?Man: Yes, my former employer recommended it to me, it’s a big project, the largest irrigation project so far in this city.Woman: Wow, that’s amazing, I never knew you are interested in water conservancy.It must be quite challenging.Man: Yeah, actually I was planning to work in the field related to education, you know, I have always wanted to be a math teacher, but I decided to try something different in my life before I become a teacher.Woman: Of course, you will have some special experience."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Requirements: need to attend a [8] first",
+					"answer": "workshop",
+					"quotes": [
+						"Things like doing some complicated calculations?Man: Right, and before we go into any of that, we need to attend a workshop beforehand, that involves group discussion in which we share our knowledge and experience together.Woman: Sounds interesting, I bet you can get a lot from those discussions with all the experts there...Man: Sure, I really have learned a lot, it’s quite rewarding.Woman: Oh right, you remember my cousin, Simon?Man: Of course, we took part in an international research project last summer and we cooperated well."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Online Registration: click on the [9] button",
+					"answer": "Go",
+					"quotes": [
+						"All he needs to do is to fill in some basic information and click on the Go button to finish the application.Woman: I see, could you send me the project link later?Man: No problem."
+					]
+				},
+				{
+					"number": 10,
+					"text": "A formal recommendation by a [10]",
+					"answer": "reference",
+					"quotes": [
+						"Oh, I almost forgot, he will also need a formal recommendation.All volunteers are required to have a reference to vouch for them.Woman: Okay, I will inform him of that."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

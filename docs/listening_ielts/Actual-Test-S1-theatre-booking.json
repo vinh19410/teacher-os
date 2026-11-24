@@ -1,0 +1,109 @@
+{
+	"id": "1da69302-13fb-476b-a068-329f7023ea7e",
+	"url": "https://stepielts.com/student/listening/1da69302-13fb-476b-a068-329f7023ea7e?mode=practice",
+	"title": "Theatre booking",
+	"source": "Actual Test",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/6e001494-7667-42b4-9687-ee03fd12cbc9.mp3",
+	"transcript": "Speaker 0: Cambridge English. This recording is copyright. CD one. Test one.\nSpeaker 1: You will hear a number of different recordings, and you will have to answer questions on what you hear. There will be time for you to read the instructions and questions, and you will have a chance to check your work. All the recordings will be played once only. The test is in four sections. Write all your answers in the listening question booklet. At the end of the test, you will be given ten minutes to transfer your answers to an answer sheet. Now turn to section one on page two of your question booklet. Section one. You'll hear a woman phoning to make a theater booking. First, you have some time to look at questions one to four on page two. You will see that there is an example that has been done for you. On this occasion only, the conversation relating to this will be played first.\nSpeaker 2: Good morning. Corn Market Theatre.\nSpeaker 3: Oh, good morning. I'd like to ask about making a booking for the performance of Pirates.\nSpeaker 1: The woman would like to make a booking for the performance of pirates, so pirates has been written in the space. Now we shall begin. You should answer the questions as you listen because you will not hear the recording a second time. Listen carefully and answer questions one to four.\nSpeaker 2: Good morning. Corn Market Theatre.\nSpeaker 3: Oh, good morning. I'd like to ask about making a booking for the performance of Pirates.\nSpeaker 2: Yes. Of course. What day?\nSpeaker 3: I'd like to make a booking for the afternoon performance on December 8.\nSpeaker 2: I'll just check on the computer. Good news. You're booking well ahead of time, so there are lots of seats available for that performance.\nSpeaker 3: Great.\nSpeaker 2: Now if I can just start by taking a few details.\nSpeaker 3: Yes. Of course.\nSpeaker 2: What's your name, please?\nSpeaker 3: It's Fanella Bittens, b I, t t, e n s.\nSpeaker 2: Now can I take a contact number?\nSpeaker 3: It's 07796892326.\nSpeaker 2: Lovely. So how many tickets would you like?\nSpeaker 3: 20, please.\nSpeaker 2: So that's a group booking.\nSpeaker 3: Does that mean I get a discount? Yes.\nSpeaker 2: Are they all for adults?\nSpeaker 3: Actually, only three are adults.\nSpeaker 2: Right. So you get a discount of 10% on those tickets, which makes it £23 per person. All the tickets are the same price wherever you sit.\nSpeaker 3: And the rest are all under 16.\nSpeaker 2: Okay. So instead of £15 per person, that'll be £12.50.\nSpeaker 3: Oh, that's good.\nSpeaker 1: Before you hear the rest of the conversation, you have some time to look at questions five to ten on page two. Now listen and answer questions five to 10.\nSpeaker 2: Would you like to sit in the stall?\nSpeaker 3: I'd prefer the circle if that's possible.\nSpeaker 2: Well, I can give you 20 more or less together. Really nice seats on the middle row.\nSpeaker 3: No. I think we'd need to be right at the back, actually.\nSpeaker 2: That's no problem. There are plenty of seats there.\nSpeaker 3: That's good because we have one child who's a wheelchair user.\nSpeaker 2: Right. Well, we have very good arrangements for our disabled customers.\nSpeaker 3: Well, the main thing is we want to be able to get to the lift easily.\nSpeaker 2: That won't be any problem. I'll put you in for more or less the whole row.\nSpeaker 3: Good. Now would it be possible to pay for the tickets by credit card?\nSpeaker 2: No problem. Do you want me to send you the tickets or pick them up from the box office at the theater?\nSpeaker 3: Parking's so difficult near the theatre in the daytime.\nSpeaker 2: Well, we've now got an arrangement that you can pick up tickets in the library.\nSpeaker 3: That sounds good.\nSpeaker 2: Fine. I'll make a note that you'll do that.\nSpeaker 3: Great. Now I read in a brochure that you can also order theater meals.\nSpeaker 2: That's right. With such a large party, it's probably a good idea if you order what you want in advance.\nSpeaker 3: Well, I've got a good idea about what everyone would like. Could you put me through to the cafe?\nSpeaker 2: Well, if you want, I can take down the order now.\nSpeaker 3: That'd be great. Thanks.\nSpeaker 2: No problem.\nSpeaker 3: Well, we've got a few children in the group who are vegetarian.\nSpeaker 2: Okay. I'll make a note of that.\nSpeaker 3: And I wanted to check if you do any hot dishes, like pasta, for example.\nSpeaker 2: I'm afraid not, but we do have pizzas, though.\nSpeaker 3: Even better. Let's go for those for all of us. Cheese and tomato.\nSpeaker 2: Fine. And what would everyone like to drink?\nSpeaker 1: That is the end of section one. You now have half a minute to check your answers. Now turn to section two on page three.",
+	"body": {
+		"text": "Theatre booking\nExample: Booking for Pirates\nDate: 8th December (afternoon)\nName: Fenella [1]\nContact number: 07796892326\nBooking details: Type of booking : [2] with discount\n---tickets : 3 adults at [3] pounds each\nChildren under 16 at [4] pounds each\nRequires seats on the [5] row of the circle\n---one person uses a [6]\n---need to have good access to the [7]\nWill collect the tickets from the [8]\nMeals: Several people are [9]\nFood : [10] ( cheese and tomato )",
+		"html": "<table><tbody><tr><td colspan=\"2\"><p><strong>Theatre booking</strong></p></td></tr><tr><td>Example:</td><td>Booking for Pirates</td></tr><tr><td>Date:</td><td>8th December (afternoon)</td></tr><tr><td>Name:</td><td>Fenella [1]</td></tr><tr><td>Contact number:</td><td>07796892326</td></tr><tr><td>Booking details:</td><td>Type of booking : [2] with discount<br>---tickets : 3 adults at [3] pounds each<br>Children under 16 at [4] pounds each<br><br>Requires seats on the [5] row of the circle<br>---one person uses a [6]<br>---need to have good access to the [7]<br><br>Will collect the tickets from the [8]</td></tr><tr><td>Meals:</td><td>Several people are [9]<br>Food : [10] ( cheese and tomato )</td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below.\nWrite ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Theatre booking\nExample: Booking for Pirates\nDate: 8th December (afternoon)\nName: Fenella [1]\nContact number: 07796892326\nBooking details: Type of booking : [2] with discount\n---tickets : 3 adults at [3] pounds each\nChildren under 16 at [4] pounds each\nRequires seats on the [5] row of the circle\n---one person uses a [6]\n---need to have good access to the [7]\nWill collect the tickets from the [8]\nMeals: Several people are [9]\nFood : [10] ( cheese and tomato )",
+			"body_table": [
+				["Theatre booking"],
+				["Example:", "Booking for Pirates"],
+				["Date:", "8th December (afternoon)"],
+				["Name:", "Fenella [1]"],
+				["Contact number:", "07796892326"],
+				[
+					"Booking details:",
+					"Type of booking : [2] with discount\n---tickets : 3 adults at [3] pounds each\nChildren under 16 at [4] pounds each\nRequires seats on the [5] row of the circle\n---one person uses a [6]\n---need to have good access to the [7]\nWill collect the tickets from the [8]"
+				],
+				["Meals:", "Several people are [9]\nFood : [10] ( cheese and tomato )"]
+			],
+			"body_html": "<table><tbody><tr><td colspan=\"2\"><p><strong>Theatre booking</strong></p></td></tr><tr><td>Example:</td><td>Booking for Pirates</td></tr><tr><td>Date:</td><td>8th December (afternoon)</td></tr><tr><td>Name:</td><td>Fenella [1]</td></tr><tr><td>Contact number:</td><td>07796892326</td></tr><tr><td>Booking details:</td><td>Type of booking : [2] with discount<br>---tickets : 3 adults at [3] pounds each<br>Children under 16 at [4] pounds each<br><br>Requires seats on the [5] row of the circle<br>---one person uses a [6]<br>---need to have good access to the [7]<br><br>Will collect the tickets from the [8]</td></tr><tr><td>Meals:</td><td>Several people are [9]<br>Food : [10] ( cheese and tomato )</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Name: Fenella [1]",
+					"answer": "Bitens",
+					"quotes": ["It's Fanella Bittens, b I, t t, e n s."]
+				},
+				{
+					"number": 2,
+					"text": "Type of booking: [2] with discount",
+					"answer": "group",
+					"quotes": ["So that's a group booking."]
+				},
+				{
+					"number": 3,
+					"text": "3 adults at [3] pounds each",
+					"answer": "23",
+					"quotes": [
+						"So you get a discount of 10% on those tickets, which makes it £23 per person."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Children under 16 at [4] pounds each",
+					"answer": "12.50",
+					"quotes": ["So instead of £15 per person, that'll be £12.50."]
+				},
+				{
+					"number": 5,
+					"text": "Requires seats on the [5] row of the circle",
+					"answer": "back",
+					"quotes": ["I think we'd need to be right at the back, actually."]
+				},
+				{
+					"number": 6,
+					"text": "---one person uses a [6]",
+					"answer": "wheelchair",
+					"quotes": [
+						"That's good because we have one child who's a wheelchair user."
+					]
+				},
+				{
+					"number": 7,
+					"text": "---need to have good access to the [7]",
+					"answer": "lift",
+					"quotes": [
+						"Well, the main thing is we want to be able to get to the lift easily."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Will collect the tickets from the [8]",
+					"answer": "library",
+					"quotes": [
+						"Well, we've now got an arrangement that you can pick up tickets in the library."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Several people are [9]",
+					"answer": "vegetarian",
+					"quotes": [
+						"Well, we've got a few children in the group who are vegetarian."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Food: [10] (cheese and tomato)",
+					"answer": "pizzas",
+					"quotes": ["I'm afraid not, but we do have pizzas, though."]
+				}
+			]
+		}
+	],
+	"images": []
+}

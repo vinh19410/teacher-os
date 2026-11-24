@@ -1,0 +1,120 @@
+{
+	"id": "65eaba09-fc41-42ef-8e2b-0ddf867d1318",
+	"url": "https://stepielts.com/student/listening/65eaba09-fc41-42ef-8e2b-0ddf867d1318?mode=practice",
+	"title": "Asia-Pacific Tours Activity Holidays",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/5d10c58f-9afb-4f3d-9956-77c5565c5442.mp3",
+	"transcript": "Speaker 1: Travel Agent: Asia Pacific Tours. Can I help you?\nSpeaker 2: Customer: Yes. I’ve been looking at your website, and I’d like some more information about your activity holidays.\nSpeaker 1: Travel Agent: Certainly. You know, of course, the prices of the tours include stays in three star hotels, and they include airfares.\nSpeaker 2: Customer: Great. What about your tour of Vietnam? My sister went there last year and loved it.\nSpeaker 1: Travel Agent: Yes. It’s a really beautiful place and probably our fastest growing destination. Now that package includes several opportunities to take courses.\nSpeaker 2: Customer: Don’t you have a cookery course of some kind?\nSpeaker 1: Travel Agent: We certainly do. If you love eating out in Vietnam like most people do and want to know how to prepare a meal, you can learn how from a master in a five star hotel. On another day, you have a choice of two activities. The first is instruction in diving in the South China Sea. Not a certificate course, but just an introduction. Most people think it’s wonderful. Or if you want to stay dry but still want some exercise, you can spend the day on a trek through the jungle near the beach. It’s not difficult, and everyone seems to enjoy it.\nSpeaker 2: Customer: Anything cultural on offer?\nSpeaker 1: Travel Agent: We used to take people to a Vietnamese opera, but that didn’t prove so popular. So now we include a dance show, and our clients all rave about that. They say the colors are just magnificent.\nSpeaker 2: Customer: What’s the cost?\nSpeaker 1: Travel Agent: I’ve just noticed it’s now a special price. The holiday used to be £1,600, but it’s just been reduced to £1,450. So you do save quite a bit. And as I said, it seems to be our up and coming tour.\nSpeaker 2: Customer: Well, let’s see. Perhaps you could tell me a little about the Hong Kong tour. I noticed it includes a walk in the hills of one of their country parks, where you have the chance to see birds of all sorts.\nSpeaker 1: Travel Agent: Yes. That’s a very popular activity. People don’t realize that Hong Kong isn’t just a crowded city. That’s a half day activity, and you go with a trained escort, and it includes dinner in a monastery where you end your day. And then we wouldn’t want you to miss out altogether on shopping, so there’s another day when we take you round an electronics factory.. Now that might sound like an odd thing to do, but it’s actually really fascinating and not like your usual ceramics factory, and you can buy their products there quite cheaply. Now the whole Hong Kong package is just £1,320 per person.\nSpeaker 2: Customer: Sounds interesting. Customer: But let me find out about one more place. I’ve always wanted to go to Korea, but not on this trip. And I’ve been to Thailand, which I loved. But what about your Japan package?\nSpeaker 1: Travel Agent: Good choice. Well, that tour includes a terrific trip to a museum of traditional costume. The exhibits are gorgeous. They’ve got an absolutely priceless collection.\nSpeaker 2: Customer: And I think the website says you take your clients to a market, don’t you? A crafts market, I think.\nSpeaker 1: Travel Agent: Well, we do go to a market, but it’s one that sells fish, and it’s one of the largest in the world. And you have the chance to sample the wares in a little restaurant nearby. We also give you plenty of free time to wander around the city with our guides if you want.\nSpeaker 2: Customer: And what’s the cost of all that?\nSpeaker 1: Travel Agent: £1,800.\nSpeaker 2: Customer: Well, you’ve been ever so helpful. I’ve noted all the details down, and I’ll get back to you when I’ve made up my mind.\nSpeaker 1: Travel Agent: If we can give you any more help, do ring back.\nSpeaker 2: Customer: Thanks. I will.",
+	"body": {
+		"text": "Tour\nDetails\nCost\nExample\nVietnam\na cookery course at a 5-star hotel\neither [1] lessons or a one-day trek in the [2]\nattend a [3] performance\n£[4]\nHong Kong\ngo to the hills to look at [5] in a country park,\nfollowed by [6] in a monastery\nvisit an [7] factory with the chance to shop\n£1,320\n[8]\nvisit a museum of traditional [9]\ntour of a big [10] market\n£1,800",
+		"html": "<table><tbody><tr><td><strong>Tour</strong></td><td><strong>Details</strong></td><td><strong>Cost</strong></td></tr><tr><td><p><em>Example</em></p><p>Vietnam</p></td><td><ul><li>a cookery course at a 5-star hotel</li><li>either [1] lessons or a one-day trek in the [2]</li><li>attend a [3] performance</li></ul></td><td>£[4]</td></tr><tr><td><p>Hong Kong</p></td><td><ul><li>go to the hills to look at [5] in a country park,</li><li>followed by [6] in a monastery</li><li>visit an [7] factory with the chance to shop</li></ul></td><td>£1,320</td></tr><tr><td>[8]</td><td><ul><li>visit a museum of traditional [9]</li><li>tour of a big [10] market</li></ul></td><td>£1,800</td></tr></tbody></table><p></p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Tour\nDetails\nCost\nExample\nVietnam\na cookery course at a 5-star hotel\neither [1] lessons or a one-day trek in the [2]\nattend a [3] performance\n£[4]\nHong Kong\ngo to the hills to look at [5] in a country park,\nfollowed by [6] in a monastery\nvisit an [7] factory with the chance to shop\n£1,320\n[8]\nvisit a museum of traditional [9]\ntour of a big [10] market\n£1,800",
+			"body_table": [
+				["Tour", "Details", "Cost"],
+				[
+					"Example\nVietnam",
+					"a cookery course at a 5-star hotel\neither [1] lessons or a one-day trek in the [2]\nattend a [3] performance",
+					"£[4]"
+				],
+				[
+					"Hong Kong",
+					"go to the hills to look at [5] in a country park,\nfollowed by [6] in a monastery\nvisit an [7] factory with the chance to shop",
+					"£1,320"
+				],
+				[
+					"[8]",
+					"visit a museum of traditional [9]\ntour of a big [10] market",
+					"£1,800"
+				]
+			],
+			"body_html": "<table><tbody><tr><td><strong>Tour</strong></td><td><strong>Details</strong></td><td><strong>Cost</strong></td></tr><tr><td><p><em>Example</em></p><p>Vietnam</p></td><td><ul><li>a cookery course at a 5-star hotel</li><li>either [1] lessons or a one-day trek in the [2]</li><li>attend a [3] performance</li></ul></td><td>£[4]</td></tr><tr><td><p>Hong Kong</p></td><td><ul><li>go to the hills to look at [5] in a country park,</li><li>followed by [6] in a monastery</li><li>visit an [7] factory with the chance to shop</li></ul></td><td>£1,320</td></tr><tr><td>[8]</td><td><ul><li>visit a museum of traditional [9]</li><li>tour of a big [10] market</li></ul></td><td>£1,800</td></tr></tbody></table><p></p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "either [1] lessons or a one-day trek in the [2]",
+					"answer": "diving",
+					"quotes": [
+						"The first is instruction in diving in the South China Sea."
+					]
+				},
+				{
+					"number": 2,
+					"text": "either [1] lessons or a one-day trek in the [2]",
+					"answer": "jungle",
+					"quotes": [
+						"Or if you want to stay dry but still want some exercise, you can spend the day on a trek through the jungle near the beach."
+					]
+				},
+				{
+					"number": 3,
+					"text": "attend a [3] performance",
+					"answer": "dance",
+					"quotes": [
+						"So now we include a dance show, and our clients all rave about that."
+					]
+				},
+				{
+					"number": 4,
+					"text": "£[4]",
+					"answer": "1,450 / 1450",
+					"quotes": [
+						"The holiday used to be £1,600, but it’s just been reduced to £1,450."
+					]
+				},
+				{
+					"number": 5,
+					"text": "go to the hills to look at [5] in a country park,",
+					"answer": "birds",
+					"quotes": [
+						"I noticed it includes a walk in the hills of one of their country parks, where you have the chance to see birds of all sorts."
+					]
+				},
+				{
+					"number": 6,
+					"text": "followed by [6] in a monastery",
+					"answer": "dinner",
+					"quotes": [
+						"That’s a half day activity, and you go with a trained escort, and it includes dinner in a monastery where you end your day."
+					]
+				},
+				{
+					"number": 7,
+					"text": "visit an [7] factory with the chance to shop",
+					"answer": "electronics",
+					"quotes": [
+						"And then we wouldn’t want you to miss out altogether on shopping, so there’s another day when we take you round an electronics factory.. Now that might sound like an odd thing to do, but it’s actually really fascinating and not like your usual ceramics factory, and you can buy their products there quite cheaply."
+					]
+				},
+				{
+					"number": 8,
+					"text": "",
+					"answer": "Japan",
+					"quotes": ["But what about your Japan package?"]
+				},
+				{
+					"number": 9,
+					"text": "visit a museum of traditional [9]",
+					"answer": "costume"
+				},
+				{
+					"number": 10,
+					"text": "tour of a big [10] market",
+					"answer": "fish",
+					"quotes": [
+						"Travel Agent: Well, we do go to a market, but it’s one that sells fish, and it’s one of the largest in the world."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

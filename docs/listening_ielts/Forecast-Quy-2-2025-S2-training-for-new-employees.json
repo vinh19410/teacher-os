@@ -1,0 +1,152 @@
+{
+	"id": "fca56ff6-c42f-4e84-99a8-dc688ea25966",
+	"url": "https://stepielts.com/student/listening/fca56ff6-c42f-4e84-99a8-dc688ea25966?mode=practice",
+	"title": "Training for new employees",
+	"source": "Forecast Quý 2-2025",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/58ea0902-379c-42d7-94b4-52477ad6a7db.mp3",
+	"transcript": "Speaker 0: Good morning. I’m Edwin Foster, your human resource manager. Welcome to Red Hills and congratulations on becoming part of us. Red Hills is gaining a very good reputation in this industry. So I’m sure you have made a good decision in choosing to work with us. I’m happy to meet you here on your first day of work, I’d like to use this opportunity to tell you about some key rules of our company. Our business is quite good all year around, but like many other companies in this industry, we have our busy seasons and off-peak seasons, you know, when we don’t have as many orders from our customers. On that note, I want to remind you that even though the starting time for work is 9 a.m. every day, the finishing time in peak seasons is 7p.m., an hour later than that in off-peak seasons. We usually have more work to do during the period. Our company cares about the welfare of all employees, and we know you all like to have holidays. At Red Hills, you all are entitled to annual holiday leave and the length depends on the years of experience that you have. Traditionally, you are allowed to take a leave at the beginning of every March though, because that’s the start of off-peak season. You can use the holiday to go on a picnic or do something with your family. Before you go on holiday, you don’t need to inform your supervisor but remember to email me. Every morning, you should get to work on time, even though we don’t have a clock in system. And when you arrive, don’t walk around to discuss things unrelated to work with your coworkers. I’ve noticed that some of you were chatting at other people’s desk this morning. Please be seated at your own desk when you arrive. This will improve your work efficiency. Now, let me tell you about this building where you will be working. You will all need to enter from the staff entrance, that’s on the south. When you enter, the bathroom accessible to both customers and staff will be to your left. Please keep it clean after you use it. Across from it, on your right side, there is a locker room. You can change your clothes and put your personal belongings in the lockers. If you turn right into the alley and walk past the locker room, you will see three rooms on your left-hand side. Loading dock is the room in the middle. It’s where we load our products, some of you will be working there. Please follow the instructions and mind the safety when you are operating the machines there. Now returning to the main hall, you can see the stairway leading up to the second floor. To the left of the stairway, you can see a room. That’s where we have our meetings. Usually, important meetings will be held in that room. The room, between the public entrance and stairway, is the production manager’s office. He is the person who is responsible for signing documents. But since he is quite busy, I suggest that you schedule with him in advance in case he’s not available. The public entrance is mainly for our customers. When they enter from there, the media room will be right in front of them. We will play some movies in the room during special occasions like important festivals. Our customers or visitors can see some video clips about our company and products there, too. Oh, right. The cafeteria is to the right of the loading dock, behind the media room. Lunch time is at 12 o’clock. There will be different kinds of food, and feel free to write your opinions on a board at the back of the cafeteria.",
+	"question_groups": [
+		{
+			"range": "1-3",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "What difference should the employees pay attention to in terms of busy or off-peak seasons?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Different starting time."
+						},
+						{
+							"label": "B",
+							"text": "Different finishing time."
+						},
+						{
+							"label": "C",
+							"text": "Different work content."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"On that note, I want to remind you that even though the starting time for work is 9 a.m. every day, the finishing time in peak seasons is 7p.m., an hour later than that in off-peak seasons."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What is the rule about annual holiday leave?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Everyone has the vocation of the same length."
+						},
+						{
+							"label": "B",
+							"text": "You may leave at some fixed time."
+						},
+						{
+							"label": "C",
+							"text": "You should notice your supervisor in advance."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Traditionally, you are allowed to take a leave at the beginning of every March though, because that’s the start of off-peak season."
+					]
+				},
+				{
+					"number": 3,
+					"text": "When entering the office, one should",
+					"options": [
+						{
+							"label": "A",
+							"text": "discuss work with colleagues."
+						},
+						{
+							"label": "B",
+							"text": "sit in one's place for work."
+						},
+						{
+							"label": "C",
+							"text": "sign in at the front desk."
+						}
+					],
+					"answer": "B",
+					"quotes": ["Please be seated at your own desk when you arrive."]
+				}
+			]
+		},
+		{
+			"range": "4-10",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below.",
+			"instructions_html": "<p>Label the map below.</p><p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/5f4eb533-4de1-4423-99a7-527d22fdd23e.jpg\" alt=\"L V02212 Training for New Employees\"></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
+			"questions": [
+				{
+					"number": 4,
+					"text": "Bathroom",
+					"answer": "I",
+					"quotes": [
+						"When you enter, the bathroom accessible to both customers and staff will be to your left."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Locker room",
+					"answer": "J",
+					"quotes": [
+						"Across from it, on your right side, there is a locker room."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Loading dock",
+					"answer": "G",
+					"quotes": [
+						"If you turn right into the alley and walk past the locker room, you will see three rooms on your left-hand side. Loading dock is the room in the middle."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Meeting room",
+					"answer": "B",
+					"quotes": [
+						"To the left of the stairway, you can see a room. That’s where we have our meetings."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Production manager’s office",
+					"answer": "C",
+					"quotes": [
+						"The room, between the public entrance and stairway, is the production manager’s office."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Media room",
+					"answer": "E",
+					"quotes": [
+						"When they enter from there, the media room will be right in front of them."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Cafeteria",
+					"answer": "H",
+					"quotes": [
+						"The cafeteria is to the right of the loading dock, behind the media room."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/5f4eb533-4de1-4423-99a7-527d22fdd23e.jpg"
+	]
+}

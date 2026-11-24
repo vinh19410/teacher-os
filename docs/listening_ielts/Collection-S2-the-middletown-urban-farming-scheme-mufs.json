@@ -1,0 +1,224 @@
+{
+	"id": "ecc30441-7fc1-496f-b7a1-26ca0e7dbb9a",
+	"url": "https://stepielts.com/student/listening/ecc30441-7fc1-496f-b7a1-26ca0e7dbb9a?mode=practice",
+	"title": "The Middletown Urban Farming Scheme (MUFS)",
+	"source": "Collection",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/2e55d06f-3be5-41e4-b75c-e56081385ec0.mp3",
+	"transcript": "Speaker 1: Chairperson: I'm Chris Butler, and I'm the chairperson of the Middletown Urban Farming Scheme, or MUFS for short. A highly successful program which encourages city dwellers to grow their own fruit and vegetables, to become city farmers, if you will. Who started MUFS? Well, the idea of urban farming has been around for quite a while, particularly among town planners. But it was actually a group of Middletown business people, including myself, who decided to create what became MUFS. University agriculture specialists got involved later. Now, initially, the aim was not some eco-friendly goal of reducing CO2 emissions caused by the transport of food from farm to dinner plate. It was simply to maximize the utilization of the vacant or idle land that lies within the city. Of course, later we realized that an additional benefit might be a healthier diet for local people. Let me tell you a bit about the groups that have joined the scheme. We've got any number of schools involved. And loads of corporate employees. So our message seems to have been well received there. But for next year, we're going to concentrate on getting various community centers, like those for senior citizens to join. Because so far, they've been somewhat slow to take up the scheme. Now, the core committee of the MUFS is a group of dedicated gardeners. They probably won't be familiar with your specific plot of land. They're mostly amateurs.\nBut they are the people who are going to be involved in the scheme.\nSpeaker 1: They are the people who know the ins and outs of gardening. And they will be happy to sit down with any MUFS member and make some hands-on suggestions about gardening. But I don't expect them to know the answers to technical questions, like the Latin names of plants. The MUFS are keen to support members who are physically disabled. We're looking at the possibility of providing specially adapted gardening tools on loan to members who can't cope with regular tools. That's not happening yet. But we do have some window boxes, as well as larger containers, which we can distribute free of charge to these members, although they will have to provide their own soil and compost themselves. I'm especially proud of the work we've done with the local schools, both grade school level and high schools. The teachers say that they knew the scheme would be of some practical use in science classes, like biology. Despite the original hopes of some, the fruit and vegetable plots haven't provided cheaper lunches for their students. But what they didn't anticipate was the change in attitude that the scheme has created amongst their students. They say the students have become much more conscious of their surrounding environment. They want to keep it neat and tidy. Chairperson: Now a number of local organizations and businesses provide our members with free goods and services. Let me go through some of them. The city hospital, as you might expect, has to provide thousands of meals for its patients. So the manager of its kitchen runs a course for our members on how to use vegetables in a huge variety of dishes. The local government found it had a large glass building, which the parks department used, to start off flower seeds in young plants during the winter. And they agreed to allow our members to use this free of charge, to get their own little seedlings off to a good start. Another thing, the university has agreed that if members send them a sample of their soil, they will do a series of tests on it to indicate what kind of plants will grow best and what types of fertilizer and nutrients would be best to use. And just to make sure our members know what's good, a supermarket is offering a series of classes on how to lose weight and stay healthy by having a sensible diet. Now, let's talk about the practicalities.",
+	"body": {
+		"text": "city hospital [7]\nlocal government [8]\nuniversity [9]\nsupermarket [10]",
+		"html": "<p>city hospital [7]</p><p>local government [8]</p><p>university [9]</p><p>supermarket [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Who founded the Middletown Urban Farming Scheme?",
+					"options": [
+						{
+							"label": "A",
+							"text": "university specialists"
+						},
+						{
+							"label": "B",
+							"text": "business people"
+						},
+						{
+							"label": "C",
+							"text": "town planners"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But it was actually a group of Middletown business people, including myself, who decided to create what became MUFS."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What was the original reason for starting the MUFS?",
+					"options": [
+						{
+							"label": "A",
+							"text": "to encourage more efficient land use"
+						},
+						{
+							"label": "B",
+							"text": "to help lessen CO2 emissions"
+						},
+						{
+							"label": "C",
+							"text": "to improve people’s eating habits"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"It was simply to maximize the utilization of the vacant or idle land that lies within the city."
+					]
+				},
+				{
+					"number": 3,
+					"text": "For the coming year, the MUFS will focus on recruiting members from",
+					"options": [
+						{
+							"label": "A",
+							"text": "schools."
+						},
+						{
+							"label": "B",
+							"text": "companies."
+						},
+						{
+							"label": "C",
+							"text": "community centres."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But for next year, we're going to concentrate on getting various community centers, like those for senior citizens to join."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What kind of information is available from members of the MUFS committee?",
+					"options": [
+						{
+							"label": "A",
+							"text": "practical gardening tips"
+						},
+						{
+							"label": "B",
+							"text": "plant science"
+						},
+						{
+							"label": "C",
+							"text": "location of local garden sites"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"And they will be happy to sit down with any MUFS member and make some hands-on suggestions about gardening."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What are provided by the MUFS for the physically disabled?",
+					"options": [
+						{
+							"label": "A",
+							"text": "soil and compost"
+						},
+						{
+							"label": "B",
+							"text": "containers for plants"
+						},
+						{
+							"label": "C",
+							"text": "gardening tools"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But we do have some window boxes, as well as larger containers, which we can distribute free of charge to these members, although they will have to provide their own soil and compost themselves."
+					]
+				},
+				{
+					"number": 6,
+					"text": "According to school teachers, what has been an unexpected advantage of the MUFS?",
+					"options": [
+						{
+							"label": "A",
+							"text": "its usefulness as an aid for teaching science"
+						},
+						{
+							"label": "B",
+							"text": "its contribution to reducing costs of school meals"
+						},
+						{
+							"label": "C",
+							"text": "its help in encouraging community pride among students"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But what they didn't anticipate was the change in attitude that the scheme has created amongst their students. They say the students have become much more conscious of their surrounding environment. They want to keep it neat and tidy."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What free goods or services are offered by each of the following providers?",
+			"options": [
+				{
+					"label": "A",
+					"text": "fertilisers"
+				},
+				{
+					"label": "B",
+					"text": "cooking lessons"
+				},
+				{
+					"label": "C",
+					"text": "advice on soil"
+				},
+				{
+					"label": "D",
+					"text": "eat-to-keep-fit course"
+				},
+				{
+					"label": "E",
+					"text": "use of a greenhouse"
+				},
+				{
+					"label": "F",
+					"text": "market stalls"
+				}
+			],
+			"body": "city hospital [7]\nlocal government [8]\nuniversity [9]\nsupermarket [10]",
+			"body_html": "<p>city hospital [7]</p><p>local government [8]</p><p>university [9]</p><p>supermarket [10]</p>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "city hospital",
+					"answer": "B",
+					"quotes": [
+						"So the manager of its kitchen runs a course for our members on how to use vegetables in a huge variety of dishes."
+					]
+				},
+				{
+					"number": 8,
+					"text": "local government",
+					"answer": "E",
+					"quotes": [
+						"The local government found it had a large glass building, which the parks department used, to start off flower seeds in young plants during the winter. And they agreed to allow our members to use this free of charge, to get their own little seedlings off to a good start."
+					]
+				},
+				{
+					"number": 9,
+					"text": "university",
+					"answer": "C",
+					"quotes": [
+						"Another thing, the university has agreed that if members send them a sample of their soil, they will do a series of tests on it to indicate what kind of plants will grow best and what types of fertilizer and nutrients would be best to use."
+					]
+				},
+				{
+					"number": 10,
+					"text": "supermarket",
+					"answer": "D",
+					"quotes": [
+						"And just to make sure our members know what's good, a supermarket is offering a series of classes on how to lose weight and stay healthy by having a sensible diet."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

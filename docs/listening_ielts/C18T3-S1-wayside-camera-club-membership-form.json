@@ -1,0 +1,115 @@
+{
+	"id": "35a9fa2c-4582-4249-b1d9-b01a900f3b92",
+	"url": "https://stepielts.com/student/listening/35a9fa2c-4582-4249-b1d9-b01a900f3b92?mode=practice",
+	"title": "Wayside Camera Club membership form",
+	"source": "C18T3",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/d7ed2e21-995f-4999-9b13-047c1c167a9a.mp3",
+	"transcript": "Speaker 0: Test three. This is the IELTS listening test. You will hear a number of different recordings, and you will have to answer questions on what you hear. There will be time for you to read the instructions and questions, and you will have a chance to check your work. All the recordings will be played once only. The test is in four parts. At the end of the test, you will be given ten minutes to transfer your answers to an answer sheet. Now turn to part one. Part one. You will hear a man talking to the coordinator of a photography club. First, you have some time to look at questions one to four. Now listen carefully and answer questions one to four.\nSpeaker 1: Hello. Wayside Camera Club. Breda speaking.\nSpeaker 2: Oh, hello. My name's Dan, and I'd like to join your club.\nSpeaker 1: That's great, Dan. We have an application form. Would you like to complete it over the phone? Then you can ask any questions you might have.\nSpeaker 2: Oh, yes. Thanks.\nSpeaker 1: Okay. So what's your family name?\nSpeaker 2: It's Green, Dan Green.\nSpeaker 1: So can I take your email address?\nSpeaker 2: Yes. It's dan1068@market.com.\nSpeaker 1: Thanks. And what about your home address?\nSpeaker 2: Well, I'm about 10 miles away from your club in Peacetown. I live in a house there.\nSpeaker 1: Okay. So what's the house number and street?\nSpeaker 2: It's 52 Marrowfield Street.\nSpeaker 1: Is that M A R R 0 W F I E L D?\nSpeaker 2: That's right.\nSpeaker 1: And that's Peace Town, you said?\nSpeaker 2: Uh-huh.\nSpeaker 1: So how did you hear about our club? Did you look on the Internet?\nSpeaker 2: I usually do that, but this time, well, I was talking to a relative the other day and he suggested it.\nSpeaker 1: Oh, is he a member too?\nSpeaker 2: He belongs to another club, but he'd heard good things about yours.\nSpeaker 1: Okay. So what do you hope to get from joining?\nSpeaker 2: Well, one thing that really interests me is the competitions that you have. I enjoy entering those.\nSpeaker 1: Right. Anything else?\nSpeaker 2: Well, I also like to socialize with other photographers.\nSpeaker 1: That's great. So what type of membership would you like?\nSpeaker 2: What are the options?\nSpeaker 1: It's £30 a year for full membership or £20 a year if you're an associate.\nSpeaker 2: I think I'll go for the full membership then.\nSpeaker 1: That's a good idea because you can't vote in meetings with an associate membership.\nSpeaker 0: Before you hear the rest of the conversation, you have some time to look at questions five to 10. Now listen and answer questions five to 10.\nSpeaker 1: If I could just find out a bit more about you.\nSpeaker 2: Okay.\nSpeaker 1: So you said you wanted to compete. Have you ever won any photography competitions?\nSpeaker 2: Not yet, but I have entered three in the past.\nSpeaker 1: Oh, that's interesting. So why don't you tell me something about those? Let's start with the first one.\nSpeaker 2: Well, the theme was entitled domestic life.\nSpeaker 1: I see. So it had to be something related to the home?\nSpeaker 2: Yeah. I chose to take a photo of a family sitting round the dinner table having a meal, and I didn't win, but I did get some feedback.\nSpeaker 1: Oh, what did the judges say?\nSpeaker 2: That it was too busy as a picture.\nSpeaker 1: So it was the composition of the picture that they criticized?\nSpeaker 2: That's right. And once they told me that, I could see my mistake.\nSpeaker 1: So what was the theme of the second competition?\nSpeaker 2: Well, my university was on the coast, and that area gets a lot of beautiful sunsets. So that was the theme.\nSpeaker 1: Oh, sunsets. That's a great theme.\nSpeaker 2: Yes. The instructions were to capture the clouds as well. It couldn't just be blue sky and a setting sun.\nSpeaker 1: Sure. Because they give you all those amazing pinks and purples.\nSpeaker 2: Yeah. And I thought I'd done that well, but the feedback was that I should have waited a bit longer to get the shot.\nSpeaker 1: I see. So the timing wasn't right.\nSpeaker 2: Yes. I took it too soon, basically. And then the third competition I entered was called animal magic.\nSpeaker 1: Well, that's a difficult subject.\nSpeaker 2: I know. I had to take hundreds of shots.\nSpeaker 1: I'm sure because animals move all the time.\nSpeaker 2: That's what we had to show. There had to be some movement in the scene. I got a great shot of a fox in the end, but I took it at night and well, I suspected that it was a bit dark, which is what I was told.\nSpeaker 1: Well, Dan, you seem to be really keen, and we'd be delighted to have you in our club. I'm sure we can help with all those areas that you've outlined.\nSpeaker 2: Thanks. That's great.\nSpeaker 0: That is the end of part one. You now have one minute to check your answers to part one.",
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "FORM_COMPLETION",
+			"instructions": "Complete the form below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Wayside Camera Club\nmembership form\nName: Dan Green\nEmail address: dan1068@market.com\nHome address: 52 [1] Street, Peacetown\nHeard about us: from a [2]\nReasons for joining:\n- to enter competitions\n- to [3]\nType of membership: [4] membership (£30)",
+			"body_html": "<h4><strong>Wayside Camera Club</strong><br><strong>membership form</strong></h4><p><strong>Name: </strong>  Dan Green</p><p><strong>Email address:  </strong> dan1068@market.com</p><p><strong>Home address:</strong>   52 [1] Street, Peacetown</p><p><strong>Heard about us:</strong>   from a [2]</p><p><strong>Reasons for joining:   </strong></p><p>- to enter competitions </p><p>- to [3]</p><p><strong>Type of membership: </strong>  [4] membership (£30)</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Home address: 52 [1] Street, Peacetown",
+					"answer": "Marrowfield",
+					"quotes": ["It's 52 Marrowfield Street."]
+				},
+				{
+					"number": 2,
+					"text": "Heard about us: from a [2]",
+					"answer": "relative",
+					"quotes": [
+						"I usually do that, but this time, well, I was talking to a relative the other day and he suggested it."
+					]
+				},
+				{
+					"number": 3,
+					"text": "- to [3]",
+					"answer": "socialise / socialize",
+					"quotes": ["Well, I also like to socialize with other photographers."]
+				},
+				{
+					"number": 4,
+					"text": "Type of membership: [4] membership (£30)",
+					"answer": "full",
+					"quotes": ["I think I'll go for the full membership then."]
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write NO MORE THAN TWO WORDS for each answer.",
+			"body": "Photography competitions\nTitle of competition\nInstructions\nFeedback to Dan\n5 [5]\nA scene in the home\nThe picture’s composition was not good.\n‘Beautiful Sunsets’\nScene must show some [6]\nThe [7] was wrong.\n8 [8]\nScene must show [9]\nThe photograph was too [10] .",
+			"body_table": [
+				["Photography competitions"],
+				["Title of competition", "Instructions", "Feedback to Dan"],
+				[
+					"5 [5]",
+					"A scene in the home",
+					"The picture’s composition was not good."
+				],
+				[
+					"‘Beautiful Sunsets’",
+					"Scene must show some [6]",
+					"The [7] was wrong."
+				],
+				["8 [8]", "Scene must show [9]", "The photograph was too [10] ."]
+			],
+			"body_html": "<table><tbody><tr><td colspan=\"3\"><p><strong>Photography competitions</strong></p></td></tr><tr><td><p><strong>Title of competition</strong></p></td><td><p><strong>Instructions</strong></p></td><td><p><strong>Feedback to Dan</strong></p></td></tr><tr><td><p><strong>5</strong> [5]</p></td><td><p>A scene in the home</p></td><td><p>The picture’s composition was not good.</p></td></tr><tr><td><p>‘Beautiful Sunsets’</p></td><td><p>Scene must show some [6]</p></td><td><p>The [7] was wrong.</p></td></tr><tr><td><p><strong>8</strong> [8]</p></td><td><p>Scene must show [9]</p></td><td><p>The photograph was too [10] .</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "",
+					"answer": "Domestic Life",
+					"quotes": ["Well, the theme was entitled domestic life."]
+				},
+				{
+					"number": 6,
+					"text": "Scene must show some [6]",
+					"answer": "clouds",
+					"quotes": ["The instructions were to capture the clouds as well."]
+				},
+				{
+					"number": 7,
+					"text": "The [7] was wrong.",
+					"answer": "timing",
+					"quotes": ["So the timing wasn't right."]
+				},
+				{
+					"number": 8,
+					"text": "",
+					"answer": "Animal Magic",
+					"quotes": [
+						"And then the third competition I entered was called animal magic."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Scene must show [9]",
+					"answer": "animal movement / movement",
+					"quotes": [
+						"And then the third competition I entered was called animal magic. Well, that's a difficult subject. I know. I had to take hundreds of shots. I'm sure because animals move all the time. That's what we had to show. There had to be some movement in the scene."
+					]
+				},
+				{
+					"number": 10,
+					"text": "The photograph was too [10] .",
+					"answer": "dark",
+					"quotes": [
+						"I got a great shot of a fox in the end, but I took it at night and well, I suspected that it was a bit dark, which is what I was told."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

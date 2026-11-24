@@ -1,0 +1,137 @@
+{
+	"id": "2e22c2dd-070a-4276-ba9e-61f9fab18827",
+	"url": "https://stepielts.com/student/listening/2e22c2dd-070a-4276-ba9e-61f9fab18827?mode=practice",
+	"title": "Stretton Festival",
+	"source": "C11T4",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/d8fc082c-6bd8-47fb-b296-e463b2444a83.mp3",
+	"transcript": "Speaker 0: Section one. You will hear a woman telephoning for information about a festival. First, you have some time to look at questions one to seven. You will see that there is an example that has been done for you. On this occasion only, the conversation relating to this will be played first.\nSpeaker 1: Good morning. Stratton Festival box office. How can I help you?\nSpeaker 2: Oh, hello. My family and I are on holiday in the area, and we've seen some posters about the festival this week. Could you tell me about some of the events, please?\nSpeaker 1: Of course.\nSpeaker 2: First of all, are there still tickets available for the jazz band on Saturday?\nSpeaker 1: There are, but only 15 pounds. The 12 pounds seats have all been sold.\nSpeaker 0: The man says that tickets are available for £15, so 15 has been written in the space. Now we shall begin. You should answer the questions as you listen because you will not hear the recording a second time. Listen carefully and answer questions one to seven.\nSpeaker 1: Good morning. Stratton Festival box office. How can I help you?\nSpeaker 2: Oh, hello. My family and I are on holiday in the area, and we've seen some posters about the festival this week. Could you tell me about some of the events, please? Of course. First of all, are there still tickets available for the jazz band on Saturday?\nSpeaker 1: There are, but only 15 pounds. The 12 pounds seats have all been sold.\nSpeaker 2: Okay. And the venue is the school, isn't it?\nSpeaker 1: Yes. That's right. The secondary school. Make sure you don't go to the primary school by mistake. And there's an additional performer who isn't mentioned on the posters. Caroline Hart is going to play with the band.\nSpeaker 2: Oh, I think I've heard her on the radio. Doesn't she play the oboe or flutes or something?\nSpeaker 1: Yes. The flute. She usually plays with symphony orchestras, and apparently, this is her first time with a jazz band.\nSpeaker 2: Well, I'd certainly like to hear her. Then the next thing I want to ask about is the duck races. I saw a poster beside a river. What are they exactly?\nSpeaker 1: Well, you buy a yellow plastic duck or as many as you like. They're a pound each. And you write your name on each one. There'll be several races depending on the number of ducks taking part. And John Stevens, a champion swimmer who lives locally, is going to start the races. All the ducks will be launched into the river at the back of the cinema. Then they'll float along the river for 500 meters as far as the railway bridge.\nSpeaker 2: And are there any prizes?\nSpeaker 1: Yes. The first duck in each race to arrive at the finishing line wins its owner three tickets for the concert on the last night of the festival.\nSpeaker 2: You said you can buy a duck. I'm sure my children will both want one. They're on sale at a stall in the market. You can't miss it. It's got an enormous sign showing a couple of ducks. Okay. I'll go there this afternoon. I remember walking past there yesterday. Now could you tell me something about the flower show, please?\nSpeaker 1: Well, admission is free, and the show is being held in Bythewaite Hall. Sorry. How do you spell that? B Y T H W A I T E, Bythewaite.\nSpeaker 2: Is it easy to find? I'm not very familiar with the town yet.\nSpeaker 1: Oh, you won't have any problem. It's right in the center of Stretton. It's the only old building in the town, so it's easy to recognize.\nSpeaker 2: I know it. I presume it's open all day.\nSpeaker 1: Yes. But if you'd like to see the prizes being awarded for the best flowers, you'll need to be there at 05:00. The prizes are being given by a famous actor, Kevin Shapless. He lives nearby and gets involved in a lot of community events.\nSpeaker 2: Gosh. I've seen him on TV. I'll definitely go to the prize giving. Right.\nSpeaker 0: Before you hear the rest of the conversation, you have some time to look at questions eight to 10. Now listen and answer questions eight to 10.\nSpeaker 2: I've seen a list of plays that are being performed this week, and I'd like to know which is suitable for my children and which ones my husband and I might go to.\nSpeaker 1: How old are your children?\nSpeaker 2: Five and seven. What about The Mystery of Muldoon?\nSpeaker 1: That's aimed at five to 10 year olds.\nSpeaker 2: So if I take my children, I can expect them to enjoy it more than I do?\nSpeaker 1: I think so. If you'd like something for yourself and your husband and leave your children with a babysitter, you might like to see fire and flood. It's about events that really happened in Stretton two hundred years ago, and children might find it rather frightening.\nSpeaker 2: Oh, thanks for the warning. And finally, what about silly sailor?\nSpeaker 1: That's a comedy, and it's for young and old. In fact, it won an award in the Stratton Drama Festival a couple\nSpeaker 2: of months ago. Okay. Well, goodbye, and thanks for all the information. I'm looking forward to the festival.\nSpeaker 1: Goodbye.\nSpeaker 0: That is the end of section one. You now have half a minute to check your answers.",
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD AND/OR A NUMBER for each answer",
+			"body": "Event\nCost\nVenue\nNotes\nJazz band\nExample\nTickets available for £ …..15…..\nThe [1] school\nAlso appearing: Carolyn Hart (plays the [2])\nDuck races\n£1 per duck\nStart behind the [3]\nPrize: tickets for [4] held at the end of the festival.\nDucks can be bought in the [5]\nFlower show\nFree\n[6] Hall\nPrizes presented at 5 pm by a well-known [7]",
+			"body_table": [
+				["Event", "Cost", "Venue", "Notes"],
+				[
+					"Jazz band",
+					"Example\nTickets available for £ …..15…..",
+					"The [1] school",
+					"Also appearing: Carolyn Hart (plays the [2])"
+				],
+				[
+					"Duck races",
+					"£1 per duck",
+					"Start behind the [3]",
+					"Prize: tickets for [4] held at the end of the festival.\nDucks can be bought in the [5]"
+				],
+				[
+					"Flower show",
+					"Free",
+					"[6] Hall",
+					"Prizes presented at 5 pm by a well-known [7]"
+				]
+			],
+			"body_html": "<table><tbody><tr><td><p><strong>Event</strong></p></td><td><p><strong>Cost</strong></p></td><td><p><strong>Venue</strong></p></td><td><p><strong>Notes</strong></p></td></tr><tr><td><p><strong>Jazz band</strong></p></td><td><p><em>Example</em></p><p>Tickets available for £ …..<em>15</em>…..</p></td><td><p>The [1] school</p></td><td><p>Also appearing: Carolyn Hart (plays the [2])</p></td></tr><tr><td><p><strong>Duck races</strong></p></td><td><p>£1 per duck</p></td><td><p>Start behind the [3]</p></td><td><p>Prize: tickets for [4] held at the end of the festival.</p><p>Ducks can be bought in the [5]</p></td></tr><tr><td><p><strong>Flower show</strong></p></td><td><p>Free</p></td><td><p>[6] Hall</p></td><td><p>Prizes presented at 5 pm by a well-known [7]</p></td></tr></tbody></table><p></p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The [1] school",
+					"answer": "secondary",
+					"quotes": ["The secondary school."]
+				},
+				{
+					"number": 2,
+					"text": "Also appearing: Carolyn Hart (plays the [2])",
+					"answer": "flute",
+					"quotes": ["The flute."]
+				},
+				{
+					"number": 3,
+					"text": "Start behind the [3]",
+					"answer": "cinema",
+					"quotes": [
+						"All the ducks will be launched into the river at the back of the cinema."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Prize: tickets for [4] held at the end of the festival.",
+					"answer": "concert",
+					"quotes": [
+						"The first duck in each race to arrive at the finishing line wins its owner three tickets for the concert on the last night of the festival."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Ducks can be bought in the [5]",
+					"answer": "market",
+					"quotes": ["They're on sale at a stall in the market."]
+				},
+				{
+					"number": 6,
+					"text": "[6] Hall",
+					"answer": "Bythwaite",
+					"quotes": [
+						"Well, admission is free, and the show is being held in Bythewaite Hall."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Prizes presented at 5 pm by a well-known [7]",
+					"answer": "actor",
+					"quotes": [
+						"The prizes are being given by a famous actor, Kevin Shapless."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-10",
+			"type": "MATCHING",
+			"instructions": "Who is each play suitable for?\nWrite the correct letter, A, B or C, next to Questions 8 - 10",
+			"options": [
+				{
+					"label": "A",
+					"text": "mainly for children"
+				},
+				{
+					"label": "B",
+					"text": "mainly for adults"
+				},
+				{
+					"label": "C",
+					"text": "suitable for people of all ages"
+				}
+			],
+			"body": "The Mystery of Muldoon [8]\nFire and Flood [9]\nSilly Sailor [10]",
+			"body_html": "<p>The Mystery of Muldoon [8]</p><p>Fire and Flood [9]</p><p>Silly Sailor [10]</p>",
+			"questions": [
+				{
+					"number": 8,
+					"text": "The Mystery of Muldoon",
+					"answer": "A",
+					"quotes": ["That's aimed at five to 10 year olds."]
+				},
+				{
+					"number": 9,
+					"text": "Fire and Flood",
+					"answer": "B",
+					"quotes": [
+						"If you'd like something for yourself and your husband and leave your children with a babysitter, you might like to see fire and flood. It's about events that really happened in Stretton two hundred years ago, and children might find it rather frightening."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Silly Sailor",
+					"answer": "C",
+					"quotes": ["That's a comedy, and it's for young and old."]
+				}
+			]
+		}
+	],
+	"images": []
+}

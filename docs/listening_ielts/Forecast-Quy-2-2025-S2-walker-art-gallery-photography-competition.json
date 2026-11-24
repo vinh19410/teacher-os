@@ -1,0 +1,128 @@
+{
+	"id": "4c07f3a3-f4c8-4680-8e51-f0533f70b3ae",
+	"url": "https://stepielts.com/student/listening/4c07f3a3-f4c8-4680-8e51-f0533f70b3ae?mode=practice",
+	"title": "Walker Art Gallery Photography Competition",
+	"source": "Forecast Quý 2-2025",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/cb53511e-2710-44ad-9291-0b347452512d.mp3",
+	"transcript": "Speaker 1: Hello! Thank you for joining us today. My name is Tara Amber and I am here to tell you about our Walker Art Gallery and our upcoming photography competition. As many of you are amateur photographers or student photographers, you may not be familiar with our contest, which is now in its 8th year. Beginning May 1 and through May 20, the Walker Art Gallery will be accepting photographs for this international contest, which is known as open gallery, as anyone who is interested has access to it, amateur or professional. Last year’s contest had 120 entrants who submitted 340 photographs. Last year, the“On the Road”competition was quite a success, and“On the Street”is the theme of this year’s competition. As usual, we are looking for extraordinary photos of ordinary people and places. Both black-and-white and color photographs are welcome. Photos of any reasonable size are acceptable. Each contestant is allowed to submit a maximum of 5 photographs. After reviewing all submitted photos, our panel of judges will determine the photos that are going to be shown in the photo exhibition, which will be available for viewing in the foyer of our theatre inside the Walker Art Gallery. That exhibition will be available for viewing the entire month of June and then the contest winners will be announced on the final night of the exhibition. The top three photographs, as chosen by the judges will receive cash awards, but more importantly the winners will be invited to have their own exhibition at the Walker Art Gallery in September. Let me tell you about the three honored judges who will be determining the winners of this year’s contest. Annie Lawman is a well-known Australian photographer who has won many awards. Some of her photographs were recently featured in Time magazine. Ms. Lawman previously studied photography in Italy. She got her degree at Tufts University. She now lives in London, where she runs a photography workshop . Besides her interest in photography, Ms. Lawman enjoys traveling and painting. Unlike most people who like collecting old stamps, she loves maps, especially those old and historical ones, which makes her a prominent figure among collectors. As a collector, she has a theme for her collection and sometimes she would spend a lot on it. If you are interested in her collection, you can go to her website. Steven Denier is another of our judges. Mr. Denier is British. He was a history professor in London university but then he became interested in photographs, so he quit this job and now he is the curator of a picture library in Liverpool. At first, he took a wide range of photos from scenery to people of different cultures which were taken on each of the seven continents. But then he focused on animals and plants, especially endangered species. As an internationally known photographer for his collection of wildlife photographs. Mr. Denier has received multiple awards from national and international foundations who appreciate his contribution to the preservation of endangered species. Our third judge is Jennifer Richardson, a native of Mexico. Ms. Richardson is currently a visiting lecturer at the London College of Design. She has attended and photographed international competitions, including the World Cup football championship, the 2012 Summer Olympics. So, she has enjoyed good reputation as a sports photographer. Her photos have been featured in many magazines and gallery showcases. I encourage you not to let the fame of these judges intimidate you. The submitted photos will remain anonymous while being viewed by the judges. If your photo is a great one, it will stand on its own merits and you may have a chance to be selected as one of our winners.",
+	"question_groups": [
+		{
+			"range": "1-3",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Write NO MORE THAN THREE WORDS for each answer.",
+			"body": "Walker Art Gallery\nThe international program held by Walker is called [1] gallery.\n[2] is the theme of this new competition.\nThe photography show is held in the [3] foyer.",
+			"body_html": "<p><strong>Walker Art Gallery</strong></p><p>The international program held by Walker is called [1] gallery.</p><p>[2]  is the theme of this new competition.</p><p>The photography show is held in the [3] foyer.</p><p></p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The international program held by Walker is called [1] gallery.",
+					"answer": "open",
+					"quotes": [
+						"Beginning May 1 and through May 20, the Walker Art Gallery will be accepting photographs for this international contest, which is known as open gallery, as anyone who is interested has access to it, amateur or professional."
+					]
+				},
+				{
+					"number": 2,
+					"text": "[2] is the theme of this new competition.",
+					"answer": "On the Street / ON THE STREET / on the street / On The Street",
+					"quotes": [
+						"Last year, the“On the Road”competition was quite a success, and“On the Street”is the theme of this year’s competition."
+					]
+				},
+				{
+					"number": 3,
+					"text": "The photography show is held in the [3] foyer.",
+					"answer": "theatre / theater",
+					"quotes": [
+						"After reviewing all submitted photos, our panel of judges will determine the photos that are going to be shown in the photo exhibition, which will be available for viewing in the foyer of our theatre inside the Walker Art Gallery."
+					]
+				}
+			]
+		},
+		{
+			"range": "4-10",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD ONLY for each answer.",
+			"body": "Name\nNationality\nPresent job\nFamous for\nAnnie Lawman\n[4]\nOwner of a [5]\ncollecting historical [6]\nSteven Denier\nBritish\n[7] of a picture library\ncollection of [8] photographs\nJenny Richardson\nMexican\n[9] from London College of Design\ntaking [10] photographs",
+			"body_table": [
+				["Name", "Nationality", "Present job", "Famous for"],
+				["Annie Lawman", "[4]", "Owner of a [5]", "collecting historical [6]"],
+				[
+					"Steven Denier",
+					"British",
+					"[7] of a picture library",
+					"collection of [8] photographs"
+				],
+				[
+					"Jenny Richardson",
+					"Mexican",
+					"[9] from London College of Design",
+					"taking [10] photographs"
+				]
+			],
+			"body_html": "<p></p><table><tbody><tr><td><p><strong>Name</strong></p></td><td><p><strong>Nationality</strong></p></td><td><p><strong>Present job</strong></p></td><td><p><strong>Famous for</strong></p></td></tr><tr><td><p>Annie Lawman</p></td><td><p>[4]</p></td><td><p>Owner of a  [5]</p></td><td><p>collecting historical  [6]</p></td></tr><tr><td><p>Steven Denier</p></td><td><p>British</p></td><td><p>[7]  of a picture library</p></td><td><p>collection of [8] photographs</p></td></tr><tr><td><p>Jenny Richardson</p></td><td><p>Mexican</p></td><td><p>[9]  from London College of Design</p></td><td><p>taking [10]  photographs</p></td></tr></tbody></table><p></p>",
+			"questions": [
+				{
+					"number": 4,
+					"text": "",
+					"answer": "Australian",
+					"quotes": [
+						"Annie Lawman is a well-known Australian photographer who has won many awards."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Owner of a [5]",
+					"answer": "workshop",
+					"quotes": [
+						"She now lives in London, where she runs a photography workshop ."
+					]
+				},
+				{
+					"number": 6,
+					"text": "collecting historical [6]",
+					"answer": "maps",
+					"quotes": [
+						"Unlike most people who like collecting old stamps, she loves maps, especially those old and historical ones, which makes her a prominent figure among collectors."
+					]
+				},
+				{
+					"number": 7,
+					"text": "[7] of a picture library",
+					"answer": "curator",
+					"quotes": [
+						"He was a history professor in London university but then he became interested in photographs, so he quit this job and now he is the curator of a picture library in Liverpool."
+					]
+				},
+				{
+					"number": 8,
+					"text": "collection of [8] photographs",
+					"answer": "wildlife",
+					"quotes": [
+						"As an internationally known photographer for his collection of wildlife photographs."
+					]
+				},
+				{
+					"number": 9,
+					"text": "[9] from London College of Design",
+					"answer": "lecturer",
+					"quotes": [
+						"Ms. Richardson is currently a visiting lecturer at the London College of Design."
+					]
+				},
+				{
+					"number": 10,
+					"text": "taking [10] photographs",
+					"answer": "sports",
+					"quotes": [
+						"So, she has enjoyed good reputation as a sports photographer."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

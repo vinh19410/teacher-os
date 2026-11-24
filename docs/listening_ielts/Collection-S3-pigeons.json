@@ -1,0 +1,218 @@
+{
+	"id": "e19be36a-1ea1-4506-b51c-997f10f90929",
+	"url": "https://stepielts.com/student/listening/e19be36a-1ea1-4506-b51c-997f10f90929?mode=practice",
+	"title": "Pigeons",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/933b55a8-32ab-4ce4-81d3-16dbaa274192.mp3",
+	"transcript": "Speaker 0: HARRISON: Morning Mary. Thanks for coming to discuss our presentation. MARY: No problem, Harrison. HARRISON: So what information do we have for our presentation on Australian pigeons so far?\nSpeaker 2: MARY: Obviously many big cities within Australia have an over-population of pigeons. They really thrive where humans live.\nSpeaker 0: HARRISON: Many people believe if you feed the pigeons, they will reproduce more extensively due to the favourable conditions.\nSpeaker 2: MARY: But the real problem that faces the pigeon population is obesity. That’s similar to humans. Although it’s not a sickness, it will have a negative impact on the pigeon’s life quality. I suggest that we can present some statistical graphs of pigeons’ average weights over the past 10 years, along with some pictures of chubby pigeons to attract the audience. HARRISON: Cool! What about the solution of this problem? I’ve known that in Melbourne, the government is taking steps to limit the number of fat pigeons. MARY: Yeah, the government used to spread healthier bird food outside of the city area, but it didn’t seem to work out. And it’s quite impossible to build a zoo specially for the pigeons.\nSpeaker 0: HARRISON: The most useful option they’ve tried lately is to provide nesting boxes in the parks surrounding the city, where pigeons can breed in safety, away from human inhabitation. This gives them space to live a more natural life.\nSpeaker 2: MARY: But some citizens feel this policy is ineffective.\nSpeaker 0: HARRISON: Well, it’s not effectiveness they doubt about, it’s actually the financial impact of this move. They doubt the necessity of spending such huge amounts of money on building thousands of pigeon houses.\nSpeaker 2: MARY: Thankfully, this operation hasn’t affected people’s day-to-day lives adversely.\nSpeaker 0: HARRISON: Have we had any information on successful measures of controlling pigeon population in cities? My own personal feeling is that we should leave them as they are as it’s impossible to catch them and relocate them.\nSpeaker 2: MARY: I think that’s reasonable too. We need to cite the information from some academic paper to make our presentation more convincing. I found a relevant thesis mentioning that the key is education. If people were taught the detrimental effects of feeding pigeons and were therefore dissuaded from doing so, pigeons wouldn’t live in such close proximity to humans.\nSpeaker 0: HARRISON: Sure. So the first part of our presentation is about how human beings’ activities affect pigeons. To make the presentation more comprehensive, I suggest that we can cover how pigeons influence people’s life in the next part. How about narrowing the scope down to something specific, such as how they affect the transportation systems? MARY: Melbourne has a train and tram system, but I can’t find any valuable reference about the impacts the birds have had on it.\nSpeaker 2: But some journal articles mention that pigeons can carry diseases that have an adverse effect on human well-being.\nSpeaker 0: HARRISON: And it seems that pigeons do damage to buildings with their nests, and their droppings can contaminate local water supplies.\nSpeaker 2: MARY: I guess the audience would prefer more insights into the health problem as they have more concerns about it. What do you think?\nSpeaker 0: HARRISON: That’s right. Then we’ll just focus on this.\nSpeaker 2: MARY: We could also incorporate a comprehensive study of the different types of pigeons and their impacts on Australian cities. HARRISON: Let me see.\nSpeaker 0: There are at least five distinct pigeon species in Australia.\nSpeaker 2: MARY: The first one is Australian Crest Pigeon. HARRISON: Yes, what’s fascinating about this species is that their different ways of flapping wings get different messages through within their groups. MARY: The next one is the Rock Pigeon. They are of small population in Australia, but they are not endangered, because their colonies are widely distributed. They’re adaptable to a variety of climates and habitats, either bushland or urban.\nSpeaker 0: HARRISON: Another species, Black Banded Pigeons, are generally frightened of dangers at ground level, so they make their nests high up in trees or on balconies of tall buildings.\nSpeaker 2: MARY: And there is one pigeon species that cannot eat meat, but they attract their mates by singing beautiful songs. Which one is that? HARRISON: I believe it’s the Gala Pigeon. Meat is poisonous to them, so they must feed on the leaves of a certain kind of tree.\nSpeaker 0: But actually they can’t sing. Maybe you’ve mixed it up with another type of pigeon on this point. The Australian government is working to provide more of this food source for the urban populations of the Gala Pigeon.\nSpeaker 2: MARY: What is the last kind of pigeon?\nSpeaker 0: HARRISON: The Northern Pigeon. They’re known for their attractive colours, including shades of pink and green. They generally avoid living with other pigeons.\nSpeaker 2: MARY: Alright then, I’ll ...",
+	"body": {
+		"text": "Australian crest pigeons [6]\nRock pigeons [7]\nBlack-banded pigeons [8]\nGala pigeons [9]\nNorthern pigeons [10]",
+		"html": "<p> Australian crest pigeons [6]</p><p>Rock pigeons [7]</p><p>Black-banded pigeons [8]</p><p>Gala pigeons [9]</p><p>Northern pigeons [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "What is the consequence of feeding pigeons?",
+					"options": [
+						{
+							"label": "A",
+							"text": "There will be more pigeons."
+						},
+						{
+							"label": "B",
+							"text": "Pigeons will become overweight."
+						},
+						{
+							"label": "C",
+							"text": "Pigeons will get sick."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"MARY: But the real problem that faces the pigeon population is obesity."
+					]
+				},
+				{
+					"number": 2,
+					"text": "The most effective measure to reduce pigeons' obesity is",
+					"options": [
+						{
+							"label": "A",
+							"text": "to provide healthier bird food."
+						},
+						{
+							"label": "B",
+							"text": "to provide more space for pigeons in the zoo."
+						},
+						{
+							"label": "C",
+							"text": "to build nests for pigeons nearby the city."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"HARRISON: The most useful option they’ve tried lately is to provide nesting boxes in the parks surrounding the city, where pigeons can breed in safety, away from human inhabitation."
+					]
+				},
+				{
+					"number": 3,
+					"text": "What do most citizens think of the nesting policy?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It's expensive."
+						},
+						{
+							"label": "B",
+							"text": "It affects people's lives."
+						},
+						{
+							"label": "C",
+							"text": "It's ineffective."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"HARRISON: Well, it’s not effectiveness they doubt about, it’s actually the financial impact of this move. They doubt the necessity of spending such huge amounts of money on building thousands of pigeon houses."
+					]
+				},
+				{
+					"number": 4,
+					"text": "The most successful policy to reduce the number of urban pigeons is",
+					"options": [
+						{
+							"label": "A",
+							"text": "to leave them alone."
+						},
+						{
+							"label": "B",
+							"text": "to let people know the results of feeding them."
+						},
+						{
+							"label": "C",
+							"text": "to take them to another area."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"If people were taught the detrimental effects of feeding pigeons and were therefore dissuaded from doing so, pigeons wouldn’t live in such close proximity to humans."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What are Marry and Harrison going to demonstrate in the second part?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Pigeons' influence on the environment."
+						},
+						{
+							"label": "B",
+							"text": "Pigeons' influence on human health."
+						},
+						{
+							"label": "C",
+							"text": "Pigeons' influence on the transportation system."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"MARY: I guess the audience would prefer more insights into the health problem as they have more concerns about it. What do you think? HARRISON: That’s right. Then we’ll just focus on this."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What is the feature of each type of pigeon?",
+			"options": [
+				{
+					"label": "A",
+					"text": "eat meat"
+				},
+				{
+					"label": "B",
+					"text": "struggle with survival"
+				},
+				{
+					"label": "C",
+					"text": "live in various environments"
+				},
+				{
+					"label": "D",
+					"text": "eat a particular plant"
+				},
+				{
+					"label": "E",
+					"text": "sing for mating"
+				},
+				{
+					"label": "F",
+					"text": "communicate through wings"
+				},
+				{
+					"label": "G",
+					"text": "avoid grounds"
+				},
+				{
+					"label": "H",
+					"text": "have bright feathers"
+				}
+			],
+			"body": "Australian crest pigeons [6]\nRock pigeons [7]\nBlack-banded pigeons [8]\nGala pigeons [9]\nNorthern pigeons [10]",
+			"body_html": "<p> Australian crest pigeons [6]</p><p>Rock pigeons [7]</p><p>Black-banded pigeons [8]</p><p>Gala pigeons [9]</p><p>Northern pigeons [10]</p>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Australian crest pigeons",
+					"answer": "F",
+					"quotes": [
+						"HARRISON: Yes, what’s fascinating about this species is that their different ways of flapping wings get different messages through within their groups."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Rock pigeons",
+					"answer": "C",
+					"quotes": [
+						"They’re adaptable to a variety of climates and habitats, either bushland or urban."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Black-banded pigeons",
+					"answer": "G",
+					"quotes": [
+						"HARRISON: Another species, Black Banded Pigeons, are generally frightened of dangers at ground level, so they make their nests high up in trees or on balconies of tall buildings."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Gala pigeons",
+					"answer": "D",
+					"quotes": [
+						"Meat is poisonous to them, so they must feed on the leaves of a certain kind of tree."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Northern pigeons",
+					"answer": "H",
+					"quotes": [
+						"They’re known for their attractive colours, including shades of pink and green."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

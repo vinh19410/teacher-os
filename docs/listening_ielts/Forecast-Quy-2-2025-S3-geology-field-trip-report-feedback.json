@@ -1,0 +1,214 @@
+{
+	"id": "f91f88a3-faeb-465b-8435-792457ec93e8",
+	"url": "https://stepielts.com/student/listening/f91f88a3-faeb-465b-8435-792457ec93e8?mode=practice",
+	"title": "Geology Field Trip Report Feedback",
+	"source": "Forecast Quý 2-2025",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/ab88fda7-a87e-4431-8983-7c6dce89c5a3.mp3",
+	"transcript": "Speaker 0: Hello, Natasha. Come on in. Sit down.\nSpeaker 1: Thanks, Mr. White. Did you manage to look over the draft of my field trip report?\nSpeaker 0: Yes, and I have a few observations and some things I would like to see revised.\nSpeaker 1: I see. Feedback is always appreciated, positive or negative.\nSpeaker 0: May I ask, what was your motivation in completing this report? If you want extra credit to go towards your final grade, I’m afraid it doesn’t work like that.\nSpeaker 1: Not at all. I wasn’t sure which aspect of science I wanted to study and thought this might help me focus. After this field trip, I’ve realised that geology is a field I would love to be involved in, and I’ve signed up for a course next term. And, actually, having worked on the draft, I’ve learned that I need practice at writing reports like these!\nSpeaker 0: I can’t argue with that. Geology is one of my favourite subjects, too, but I don’t advise using this report as a basis for any further assignments. The details you’ve included are informative, though your organisation is relatively poor.\nSpeaker 1: I will take that down. How do you feel about the introduction?\nSpeaker 0: It’s not bad at all, but you need to follow it through in the main part of the essay. The school website has many essay templates you can use, including the ones for a scientific report, which is what you need here. I’d like you to download one and revise accordingly. Can you do that?\nSpeaker 1: Yes. And I am thinking about adding more details to make the report more convincing. Do you have any advice?\nSpeaker 0: Well, actually, I don’t think it’s necessary to do that. Your choice of survey site was an interesting one. Was there a reason you chose this particular site? We have a map in the lab which is marked with all the sites in the local area that are geologically and geographically noteworthy.\nBut yours wasn’t one of them.\nSpeaker 1: Knowing they had been repeatedly studied by geography students, I wanted to try somewhere different. I believe every place is geologically unique, so I closed my eyes and stabbed the map, then looked for the nearest open site. Fortunately, it was easily accessible.\nSpeaker 0: Interesting. What did you hope to gain from your field trip? Surprisingly, the grasses in the area you chose are quite dense though the soil is somewhat sandy—were you thinking of finding out any special properties in the soil that may cause this?\nSpeaker 1: Not particularly. I’m very interested in the elements that make up different soil types and the dunes have always captured my interest, because of the sand content. As an added bonus, I was also able to try out a number of the soil-testing techniques you’ve been coaching us in.\nSpeaker 0: I noticed you’ve also incorporated some of your fellow-students’ data in your report.\nSpeaker 1: Yes, in an effort to make my own findings more accurate, I thought it is wise to get a broader view by merging their data with mine.\nSpeaker 0: Good idea. Your report is reasonably comprehensive. Incorporating others’ findings like this also enables you to compare your methods with other people’s.\nSpeaker 1: Yes, I thought that would be beneficial.\nSpeaker 0: I note that you’ve included quite a detailed map of the site. How did you go about drawing that? I’m assuming you took photographs and used a graphics program?\nSpeaker 1: I took a satellite image with me to the viewing platform at the dune’s Visitor Centre. I can see the whole area from up there! Then I marked in the details I could see. Some of my classmates just copied the local map with tracing paper, but I didn’t feel it was detailed enough.\nSpeaker 0: What equipment did you use to survey the site?\nSpeaker 1: I predominantly used the soil pH test kit you recommended but it’s quite technical and I found it difficult to use. There were so many buttons and I didn’t know which ones to click!\nSpeaker 0: Hmm, it is somewhat complex since it’s quite professional, but a bit of training would help. Now, your data collection sheet has some issues.\nSpeaker 1: I know. It’s a bit disorganised, isn’t it? What should I do?\nSpeaker 0: Begin with the main topic, then put all the variables that you need in separate columns, and use a fresh line for each sample.\nSpeaker 1: OK, I’ll do that. I thought my literature review was good though—clear and comprehensive.\nSpeaker 0: It didn’t really give a full picture and you neglected some parts which are important. I recommend you gather a greater selection of materials. There are some excellent books and papers I can recommend to you on the subject.\nSpeaker 1: Oh, that would be very helpful. Um, how do you feel about my notes based on conversations with local residents? You know, about their experience of growing different plants in similar soil types?\nSpeaker 0: It’s always a good idea to incorporate some real-world experiences in a report like yours.\nSpeaker 1: I wasn’t sure whether it’s redundant, but I learned a lot.\nSpeaker 0: It’s an established research method.\nSpeaker 1: It took a long time, though. Next time I should limit the number of questions I ask, or get someone to help transcribe the recordings.\nSpeaker 0: (laughs) You’ll be asking for a research assistant next!",
+	"body": {
+		"text": "The test kit [7]\nData collecting sheet [8]\nLiterature Review [9]\nInterviews [10]",
+		"html": "<p>The test kit [7]</p><p>Data collecting sheet [8]</p><p>Literature Review [9]</p><p>Interviews [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Why did Natasha decide to write the report?",
+					"options": [
+						{
+							"label": "A",
+							"text": "to get extra credits"
+						},
+						{
+							"label": "B",
+							"text": "to help her decide on a course"
+						},
+						{
+							"label": "C",
+							"text": "to practice report-writing"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I wasn’t sure which aspect of science I wanted to study and thought this might help me focus."
+					]
+				},
+				{
+					"number": 2,
+					"text": "How does Mr. White advise Natasha to improve her report?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She should include some more details."
+						},
+						{
+							"label": "B",
+							"text": "She should take advantage of report templates."
+						},
+						{
+							"label": "C",
+							"text": "She should revise the introduction."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"The school website has many essay templates you can use, including the ones for a scientific report, which is what you need here. I’d like you to download one and revise accordingly."
+					]
+				},
+				{
+					"number": 3,
+					"text": "How did Natasha choose the field trip site?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She chose a difficult place to get to."
+						},
+						{
+							"label": "B",
+							"text": "She selected one that was recommended."
+						},
+						{
+							"label": "C",
+							"text": "She chose one at random."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"I believe every place is geologically unique, so I closed my eyes and stabbed the map, then looked for the nearest open site."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Natasha's main aim in going on the field trip was to",
+					"options": [
+						{
+							"label": "A",
+							"text": "apply some of the techniques she learned in class."
+						},
+						{
+							"label": "B",
+							"text": "measure the density of grasses in the area."
+						},
+						{
+							"label": "C",
+							"text": "analyse the soil content of sand dunes."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"I’m very interested in the elements that make up different soil types and the dunes have always captured my interest, because of the sand content."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Why did Natasha include data from other students?",
+					"options": [
+						{
+							"label": "A",
+							"text": "to make her result more reliable"
+						},
+						{
+							"label": "B",
+							"text": "to compare her data with other data"
+						},
+						{
+							"label": "C",
+							"text": "to make her report more complete"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Yes, in an effort to make my own findings more accurate, I thought it is wise to get a broader view by merging their data with mine."
+					]
+				},
+				{
+					"number": 6,
+					"text": "How did Natasha produce such a detailed map?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She made careful observations."
+						},
+						{
+							"label": "B",
+							"text": "She took some photographs first."
+						},
+						{
+							"label": "C",
+							"text": "She copied relevant material."
+						}
+					],
+					"answer": "A",
+					"quotes": ["Then I marked in the details I could see."]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What problem does each of the following part of data collecting have?",
+			"options": [
+				{
+					"label": "A",
+					"text": "inadequately developed"
+				},
+				{
+					"label": "B",
+					"text": "time-consuming"
+				},
+				{
+					"label": "C",
+					"text": "redundant"
+				},
+				{
+					"label": "D",
+					"text": "poorly organised"
+				},
+				{
+					"label": "E",
+					"text": "too complicated"
+				}
+			],
+			"body": "The test kit [7]\nData collecting sheet [8]\nLiterature Review [9]\nInterviews [10]",
+			"body_html": "<p>The test kit [7]</p><p>Data collecting sheet [8]</p><p>Literature Review [9]</p><p>Interviews [10]</p>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "The test kit",
+					"answer": "E",
+					"quotes": [
+						"Hmm, it is somewhat complex since it’s quite professional, but a bit of training would help."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Data collecting sheet",
+					"answer": "D",
+					"quotes": ["It’s a bit disorganised, isn’t it?"]
+				},
+				{
+					"number": 9,
+					"text": "Literature Review",
+					"answer": "A",
+					"quotes": [
+						"It didn’t really give a full picture and you neglected some parts which are important."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Interviews",
+					"answer": "B",
+					"quotes": ["It took a long time, though."]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,194 @@
+{
+	"id": "9c1cc493-2eb9-46b9-8eb7-633b6394bcdb",
+	"url": "https://stepielts.com/student/listening/9c1cc493-2eb9-46b9-8eb7-633b6394bcdb?mode=practice",
+	"title": "Hobson Park",
+	"source": "Collection",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/f185ee2c-0237-4e44-a867-5b2b9426c3f2.mp3",
+	"transcript": "Speaker 1: Tour Guide : Welcome to our lovely tour around Hobson Park. Visible from much of Auckland, this is a widely recognized local landmark. I hope you’ll enjoy your stay here. But first, let me briefly introduce its history to you before we stroll around the park. Hobson Park is located on an island that used to be a volcano, which emerged just 600 years ago. You can still enjoy the breathtaking views of a nearby lake today. The lava flow at the end of Takapuna Beach enveloped a kauri forest. It is known to be New Zealand’s only example of a fossil forest preserved in a lava flow. Actually, Hobson Park was named after William Hobson, a British captain and also the first governor of New Zealand. At the time, the British were making plans to claim New Zealand as a colony to ensure their trade interest. War broke out between Maori troops and government forces. After years of revolt, two Maori chiefs were invited to the island to restore peace. They signed a treaty and shook hands with governor Hobson. While local tribes started to celebrate their success, the two Maori chiefs didn’t stop promoting Maori self determination in meetings and correspondence with the government. In 1840, Hobson chose Auckland as the site for his capital. The same year, plans for founding Hobson Park were initiated. But it was in 1842 that the park was actually created and officially opened to the public. As you can see, the park is immense. It is comprised of many natural wonders as well as artificial features. Just a few hundred meters away, there is a duck pond where you can observe the water birds, including some rare breeds. But remember to keep a distance from them and refrain from feeding them. Across the iron bridge, you’ll get to formal gardens used for experiments on breeding local wild species. If you keep roaming down the trail, you’ll see the old residents of Maori people forming a small village. These houses are full of local paintings, sculptures, and artifacts, all donated by the city council to showcase the history and culture of Maori people living there. And these are not something you’ll stumble upon in a regular museum. Oh, and don’t forget to visit the Temperate House. It’s only a ten minute walk away from the duck pond. It accommodates a whole range of wild plants from around the country. But what makes it unique is the forest of kauri trees, a native species to New Zealand. However, the kauri tree population was threatened by the spread of kauri dieback disease and is now under the protection of the Department of Conservation. Let me point out the whereabouts of some other critical features in the park in case you need them. If you are a plant lover and want to take some local greenery home, you may wish to visit the plant nursery where you can choose from an extensive collection of plants, from succulents to some rare local species. It’s right next to the museum on the same side of the road. There is a pine tree hill with tracks for hikers of all abilities. The whole trip takes about half an hour. There is a steep climb in places. Tread carefully and stick to the formal tracks. You’ll be rewarded with great views. If you leave your car in the car park, you can see it just across the road towards George Street entry. Or if you are an experienced hiker and want some challenge, you can choose Eagle Mountain. It offers fantastic hiking routes. It’s also an ideal spot for bird watching with many wild species unique to New Zealand. We are right here at the Wellington entrance. Then take the first right, and you’ll see Eagle Mountain immediately to your right. If you’re hungry and want to take a quick bite, there is a nearby food kiosk providing snacks and beverages. Start from the Wellington entrance. Take the first left. Keep walking down the road. And after the junction, where it meets a road connecting the George Street entry, you’ll see it on your right. And lastly, there is a conservation area protecting kauri trees just by the winter garden. Unfortunately, it’s currently out of bounds to the public. Okay. Now, if you have anything else to ask, I’m here to help.",
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The park was originally the site of",
+					"options": [
+						{
+							"label": "A",
+							"text": "a forest"
+						},
+						{
+							"label": "B",
+							"text": "a lake"
+						},
+						{
+							"label": "C",
+							"text": "a volcano"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Hobson Park is located on an island that used to be a volcano, which emerged just 600 years ago."
+					]
+				},
+				{
+					"number": 2,
+					"text": "The two chiefs met in the area to",
+					"options": [
+						{
+							"label": "A",
+							"text": "trade"
+						},
+						{
+							"label": "B",
+							"text": "end the fight"
+						},
+						{
+							"label": "C",
+							"text": "celebrate their victory"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"After years of revolt, two Maori chiefs were invited to the island to restore peace."
+					]
+				},
+				{
+					"number": 3,
+					"text": "The park was founded in",
+					"options": [
+						{
+							"label": "A",
+							"text": "1840"
+						},
+						{
+							"label": "B",
+							"text": "1842"
+						},
+						{
+							"label": "C",
+							"text": "1942"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 4,
+					"text": "The area used for testing is the",
+					"options": [
+						{
+							"label": "A",
+							"text": "duck pond"
+						},
+						{
+							"label": "B",
+							"text": "formal gardens"
+						},
+						{
+							"label": "C",
+							"text": "iron bridge"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Across the iron bridge, you’ll get to formal gardens used for experiments on breeding local wild species."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Who provided the artwork to the village?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the city council"
+						},
+						{
+							"label": "B",
+							"text": "local residents"
+						},
+						{
+							"label": "C",
+							"text": "local museum"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"These houses are full of local paintings, sculptures, and artifacts, all donated by the city council to showcase the history and culture of Maori people living there."
+					]
+				},
+				{
+					"number": 6,
+					"text": "What is special about the Temperate House?",
+					"options": [
+						{
+							"label": "A",
+							"text": "it saves a large number of endangered New Zealand plants"
+						},
+						{
+							"label": "B",
+							"text": "it accommodates newly discovered plants"
+						},
+						{
+							"label": "C",
+							"text": "it collects plants from around the world"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But what makes it unique is the forest of kauri trees, a native species to New Zealand. However, the kauri tree population was threatened by the spread of kauri dieback disease and is now under the protection of the Department of Conservation."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below.",
+			"instructions_html": "<p>Label the map below.</p><p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/1a53affa-64ca-4ce6-9c6a-1d9209485a72.png\" alt=\"Youpass Ielts Listening Hobson Park\"></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G"],
+			"questions": [
+				{
+					"number": 7,
+					"text": "Plant nursery",
+					"answer": "E",
+					"quotes": [
+						"If you are a plant lover and want to take some local greenery home, you may wish to visit the plant nursery where you can choose from an extensive collection of plants, from succulents to some rare local species. It’s right next to the museum on the same side of the road."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Pine tree hill",
+					"answer": "B",
+					"quotes": [
+						"There is a pine tree hill with tracks for hikers of all abilities.",
+						"If you leave your car in the car park, you can see it just across the road towards George Street entry."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Eagle mountain",
+					"answer": "G",
+					"quotes": [
+						"Or if you are an experienced hiker and want some challenge, you can choose Eagle Mountain. It offers fantastic hiking routes. It’s also an ideal spot for bird watching with many wild species unique to New Zealand. We are right here at the Wellington entrance. Then take the first right, and you’ll see Eagle Mountain immediately to your right."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Food kiosk",
+					"answer": "D",
+					"quotes": [
+						"If you’re hungry and want to take a quick bite, there is a nearby food kiosk providing snacks and beverages. Start from the Wellington entrance. Take the first left. Keep walking down the road. And after the junction, where it meets a road connecting the George Street entry, you’ll see it on your right."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/1a53affa-64ca-4ce6-9c6a-1d9209485a72.png"
+	]
+}

@@ -1,0 +1,180 @@
+{
+	"id": "2180e2d3-536d-4854-9e4a-8321a34a3f1d",
+	"url": "https://stepielts.com/student/listening/2180e2d3-536d-4854-9e4a-8321a34a3f1d?mode=practice",
+	"title": "Advice on Academic Decisions",
+	"source": "Forecast Quý 2-2025",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/11ff7dd5-bd8d-46b9-bfa7-e8119f40018b.mp3",
+	"transcript": "Speaker 1: Hi Katie, it’s good to see you. How are your studies going? Last time I saw you, you weren’t sure whether to continue with your major.\nSpeaker 2: Well, I’m still thinking about changing my major.\nSpeaker 1: You’re doing a major in physiology, right?\nSpeaker 2: Yes that’s right, but I am not really enjoying it. I would prefer to do something that involves a career working with people.\nSpeaker 1: Oh, you are already in your third year. Is it just because it’s difficult to decide to change – perhaps you need more advice from the university staff?\nSpeaker 2: Not really, the main reason is that if I switch to another subject in which I might not excel, I won’t have enough credit points to pursue honors.\nSpeaker 1: I see. But it’s a pity to continue with something you don’t enjoy for that reason.\nSpeaker 2: That’s true. I have telephoned my parents though, which was helpful.\nSpeaker 1: Did they help you to make your decision? They’re paying for your course, maybe that’s why you wanted to consult with them...?\nSpeaker 2: Actually, they just know me very well and I think their advice is reliable.\nSpeaker 1: Well I am surprised that you don’t enjoy your major. As far as I know, the teacher is known to be excellent, and my friend Jack told me that the students usually find good jobs when they graduate.\nSpeaker 2: Maybe that is true for some people, but I just struggle to learn anything in that class. I guess I just don’t connect with the teaching style.\nSpeaker 1: But as I said, don’t forget to consider your future job prospects. I understand that in physiology, you can get higher paying jobs.\nSpeaker 2: I’m not too concerned about that, I’m even less worried about my credits. I’m most worried about catching up on lessons I have missed if I change majors.\nSpeaker 1: Many students take this subject because they think it’s practical and less theoretical. Do you think so as well?\nSpeaker 2: I’m really bored in class and I’m not sure if it’s practical for finding a job. Interest in the subject is what drives me to learn.\nSpeaker 1: So what are you thinking of changing to?\nSpeaker 2: Actually I am thinking I’d like to be a physical education teacher.\nSpeaker 1: Do you think you know enough about physical education? Have you talked to some of the current students to get their opinion on the course?\nSpeaker 2: Not really, I think it will be better to consult the tutor about it. His name is Professor Mills and I’m hoping to speak with him tomorrow. And hopefully he can tell me how much extra the course will cost.\nSpeaker 1: Hmm, I’m not sure he will be able to tell you that, actually I think you will need to talk to the Finance Office. And you will need to ask for the start date of the new course so that you will know how much to pay – you won’t have to pay for the entire course if you start late.\nSpeaker 2: Oh really? I did not know that. By the way, it is all very stressful and I’m not sleeping very well at the moment because I’m so worried about things.\nSpeaker 1: Sorry to hear that. Did you know that you can contact the Welfare Director? She is available to talk to any student about problems or stresses. You should send her an email, her address is on the notice board.\nSpeaker 2: Thanks Jason, I had forgotten that. I will definitely email her.\nSpeaker 1: And I also just remembered that I think you need to contact the Administration Office before starting the new course – I’m sure the professor will be able to tell you the contact information.\nSpeaker 2: You are right. I think that I will also need to inform the head of the residence hall too.\nSpeaker 1: Anyway, good luck and hope you’ll make the right decision for your future.\nSpeaker 2: Thank you!",
+	"body": {
+		"text": "get information about the new course: ask the [6]\nknow about the extra cost: notice the [7]\nways to deal with mental problems: email the [8]\ncontact the [9] before changing one’s major\ninform the head of the [10]",
+		"html": "<ul><li>get information about the new course: ask the [6]</li><li>know about the extra cost: notice the [7]</li><li>ways to deal with mental problems: email the [8]</li><li>contact the [9] before changing one’s major </li><li>inform the head of the [10]</li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Why does Katie continue her current subject?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She needs more credits."
+						},
+						{
+							"label": "B",
+							"text": "She needs more guidance from the tutor."
+						},
+						{
+							"label": "C",
+							"text": "She hasn’t made a decision of changing her subject yet."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Not really, the main reason is that if I switch to another subject in which I might not excel, I won’t have enough credit points to pursue honors."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Why does Katie consult her family members to discuss the decision?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Her parents can give her good advice."
+						},
+						{
+							"label": "B",
+							"text": "She is not sure of her decision."
+						},
+						{
+							"label": "C",
+							"text": "Her family is paying for her tuition."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Actually, they just know me very well and I think their advice is reliable."
+					]
+				},
+				{
+					"number": 3,
+					"text": "What’s Jason's attitude towards the course that Katie takes?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The teacher has a good reputation."
+						},
+						{
+							"label": "B",
+							"text": "It can help students find a better job."
+						},
+						{
+							"label": "C",
+							"text": "It is easy to adapt to the teaching style."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"As far as I know, the teacher is known to be excellent, and my friend Jack told me that the students usually find good jobs when they graduate."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What factor does Katie think she should consider more when changing a major?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the extra pay"
+						},
+						{
+							"label": "B",
+							"text": "the lessons she has to make up"
+						},
+						{
+							"label": "C",
+							"text": "the credits she can get"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I’m most worried about catching up on lessons I have missed if I change majors."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What does Katie think of the subject she is studying?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It's not practical."
+						},
+						{
+							"label": "B",
+							"text": "It's helpful when looking for a job."
+						},
+						{
+							"label": "C",
+							"text": "It's not interesting enough for her to continue."
+						}
+					],
+					"answer": "C",
+					"quotes": ["Yes that’s right, but I am not really enjoying it."]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THAN THREE WORDS for each answer.",
+			"body": "get information about the new course: ask the [6]\nknow about the extra cost: notice the [7]\nways to deal with mental problems: email the [8]\ncontact the [9] before changing one’s major\ninform the head of the [10]",
+			"body_html": "<ul><li>get information about the new course: ask the [6]</li><li>know about the extra cost: notice the [7]</li><li>ways to deal with mental problems: email the [8]</li><li>contact the [9] before changing one’s major </li><li>inform the head of the [10]</li></ul>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "get information about the new course: ask the [6]",
+					"answer": "tutor",
+					"quotes": [
+						"Not really, I think it will be better to consult the tutor about it."
+					]
+				},
+				{
+					"number": 7,
+					"text": "know about the extra cost: notice the [7]",
+					"answer": "Finance Office",
+					"quotes": [
+						"Hmm, I’m not sure he will be able to tell you that, actually I think you will need to talk to the Finance Office."
+					]
+				},
+				{
+					"number": 8,
+					"text": "ways to deal with mental problems: email the [8]",
+					"answer": "Welfare Director",
+					"quotes": ["Did you know that you can contact the Welfare Director?"]
+				},
+				{
+					"number": 9,
+					"text": "contact the [9] before changing one’s major",
+					"answer": "Administration Office",
+					"quotes": [
+						"And I also just remembered that I think you need to contact the Administration Office before starting the new course – I’m sure the professor will be able to tell you the contact information."
+					]
+				},
+				{
+					"number": 10,
+					"text": "inform the head of the [10]",
+					"answer": "residence hall",
+					"quotes": [
+						"I think that I will also need to inform the head of the residence hall too."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

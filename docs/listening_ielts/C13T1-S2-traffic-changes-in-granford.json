@@ -1,0 +1,154 @@
+{
+	"id": "d29fc78a-2248-4552-b778-ec2adf1502fa",
+	"url": "https://stepielts.com/student/listening/d29fc78a-2248-4552-b778-ec2adf1502fa?mode=practice",
+	"title": "Traffic Changes in Granford",
+	"source": "C13T1",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/153f3ef1-2e3c-4b66-878b-8b5f80d9dc52.mp3",
+	"transcript": "Speaker 0: Now turn to section two. Section two. You will hear the chairman of the Highways Committee of Granford speaking to members of the public about proposed changes to traffic and parking in the area. First, you have some time to look at questions 11 to 13. Now listen carefully and answer questions 11 to 13.\nSpeaker 1: Good evening, everyone. My name's Phil Sutton, and I'm chairman of the Highways Committee. We've called this meeting to inform members of the public about the new regulations for traffic and parking we're proposing for Granford. I'll start by summarizing these changes before we open the meeting to questions. So why do we need to make these changes to traffic systems in Granford? Well, we're very aware that traffic is becoming an increasing problem. It's been especially noticeable with the increase in heavy traffic while they've been building the new hospital. But it's the overall rise in the volume of traffic of all kinds that's concerning us. To date, there's not been any increase in traffic accidents, but that's not something we want to see happen, obviously. We recently carried out a survey of local residents, and their responses were interesting. People were very concerned about the lack of visibility on some roads due to cars parked along the sides of the roads. We'd expected complaints about the congestion near the school when parents are dropping off their children or picking them up. But this was on top of the list, and nor were noise and fumes from trucks and lorries, though they were mentioned by some people. We think these new traffic regulations would make a lot of difference, but we still have a long way to go. We've managed to keep our proposals within budget, just so they can be covered by the council. But, of course, it's no good introducing new regulations if we don't have a way of making sure that everyone obeys them, and that's an area we're still working on with the help of representatives from the police force.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 14 to 20. Now listen and answer questions 14 to 20.\nSpeaker 1: Okay. So this slide shows a map of the central area of Granford with the High Street in the middle and School Road on the right. Now we already have a set of traffic lights in the High Street at the junction with Station Road, but we're planning to have another set at the other end at the School Road junction to regulate the flow of traffic along the High Street. We've decided we definitely need a pedestrian crossing. We considered putting this on School Road just outside the school, but in the end, we decided that could lead to a lot of traffic congestion. So we decided to locate it on the High Street, crossing the road in front of the supermarket. That's a very busy area, so it should help things there. We are proposing some changes to parking. At present, parking isn't allowed on the High Street outside the library, but we are going to change that and allow parking there, but not at the other end of the High Street near School Road. There'll be a new no parking sign on School Road just by the entrance to the school, forbidding parking for 25 meters. This should improve visibility for drivers and pedestrians, especially on the bend just to the north of the school. As far as disabled drivers are concerned, at present, they have parking outside the supermarket, but lorries also use those spaces, so we've got two new disabled parking spaces on the side road up towards the bank. It's not ideal, but probably better than the present arrangement. We also plan to widen the pavement on School Road. We think we can manage to get an extra half metre on the bend just before you get to the school, on the same side of the road. Finally, we've introduced new restrictions on loading and unloading for the supermarket, so lorries will only be allowed to stop there before 8AM. That's the supermarket on School Road. We kept to the existing arrangements with the High Street supermarket. Okay. So that's about it. Now would any\nSpeaker 0: That is the end of section two. You now have half a minute to check your answers.",
+	"question_groups": [
+		{
+			"range": "11-13",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Why are changes needed to traffic systems in Granford?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The number of traffic accidents has risen."
+						},
+						{
+							"label": "B",
+							"text": "The amount of traffic on the roads has increased."
+						},
+						{
+							"label": "C",
+							"text": "The types of vehicles on the roads have changed."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But it's the overall rise in the volume of traffic of all kinds that's concerning us."
+					]
+				},
+				{
+					"number": 12,
+					"text": "In a survey, local residents particularly complained about",
+					"options": [
+						{
+							"label": "A",
+							"text": "dangerous driving by parents."
+						},
+						{
+							"label": "B",
+							"text": "pollution from trucks and lorries."
+						},
+						{
+							"label": "C",
+							"text": "inconvenience from parked cars."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"People were very concerned about the lack of visibility on some roads due to cars parked along the sides of the roads."
+					]
+				},
+				{
+					"number": 13,
+					"text": "According to the speaker, one problem with the new regulations will be",
+					"options": [
+						{
+							"label": "A",
+							"text": "raising money to pay for them."
+						},
+						{
+							"label": "B",
+							"text": "finding a way to make people follow them."
+						},
+						{
+							"label": "C",
+							"text": "getting the support of the police."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But, of course, it's no good introducing new regulations if we don't have a way of making sure that everyone obeys them, and that's an area we're still working on with the help of representatives from the police force."
+					]
+				}
+			]
+		},
+		{
+			"range": "14-20",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below.\nWrite the correct letter, A-I, next to Questions 14 - 20",
+			"instructions_html": "<p>Label the map below.</p><p><em>Write the correct letter, <strong>A-I</strong>, next to Questions 14 - 20</em></p><p><strong><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/a4a3d786-7939-48d5-9e64-1dcc01957019.jpg\" alt=\"Cam 13 Test 1 Q14 20 980x837\"></strong></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
+			"questions": [
+				{
+					"number": 14,
+					"text": "New traffic lights",
+					"answer": "E",
+					"quotes": [
+						"Now we already have a set of traffic lights in the High Street at the junction with Station Road, but we're planning to have another set at the other end at the School Road junction to regulate the flow of traffic along the High Street."
+					]
+				},
+				{
+					"number": 15,
+					"text": "Pedestrian crossing",
+					"answer": "D",
+					"quotes": [
+						"So we decided to locate it on the High Street, crossing the road in front of the supermarket."
+					]
+				},
+				{
+					"number": 16,
+					"text": "Parking allowed",
+					"answer": "B",
+					"quotes": [
+						"At present, parking isn't allowed on the High Street outside the library, but we are going to change that and allow parking there, but not at the other end of the High Street near School Road."
+					]
+				},
+				{
+					"number": 17,
+					"text": "New ‘No Parking’ sign",
+					"answer": "G",
+					"quotes": [
+						"There'll be a new no parking sign on School Road just by the entrance to the school, forbidding parking for 25 meters."
+					]
+				},
+				{
+					"number": 18,
+					"text": "New disabled parking spaces",
+					"answer": "C",
+					"quotes": [
+						"As far as disabled drivers are concerned, at present, they have parking outside the supermarket, but lorries also use those spaces, so we've got two new disabled parking spaces on the side road up towards the bank."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Widened pavement",
+					"answer": "H",
+					"quotes": [
+						"We also plan to widen the pavement on School Road. We think we can manage to get an extra half metre on the bend just before you get to the school, on the same side of the road."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Lorry loading/unloading restrictions",
+					"answer": "I",
+					"quotes": [
+						"Finally, we've introduced new restrictions on loading and unloading for the supermarket, so lorries will only be allowed to stop there before 8AM. That's the supermarket on School Road."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/a4a3d786-7939-48d5-9e64-1dcc01957019.jpg"
+	]
+}

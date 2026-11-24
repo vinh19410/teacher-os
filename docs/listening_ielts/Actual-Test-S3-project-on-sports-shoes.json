@@ -1,0 +1,218 @@
+{
+	"id": "b1db2c85-c34c-4a62-9df4-fec85a4be959",
+	"url": "https://stepielts.com/student/listening/b1db2c85-c34c-4a62-9df4-fec85a4be959?mode=practice",
+	"title": "Project on Sports Shoes",
+	"source": "Actual Test",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/a601818c-5c2c-4d22-9898-aecdda50ee70.mp3",
+	"transcript": "Speaker 0: Rosie: Okay, Martin. Before we plan our presentation for the project, let’s discuss what we’ve done so far.\nSpeaker 1: Martin: Okay, Rosie. When the tutor gave us the theme of sports shoes to base our project on, I was not all that interested, but I’m starting to get into it. I’ve pretty much finished the research stage.\nSpeaker 0: Rosie: Me too. At first, I had no idea what to write for the essay, so I asked some senior students for advice, and they gave me some websites to look at, where I found some articles on sports shoes and got some ideas.\nSpeaker 1: Martin: Yes. I searched for pictures of sports shoes online and applied them in my research. It’s beneficial.\nSpeaker 0: Rosie: Right.\nSpeaker 1: Martin: According to the project’s requirements, we have to find an example for the research, and I’ve just completed this part.\nSpeaker 0: Rosie: What example do you use? You said you’d like to borrow a sample from the tutor.\nSpeaker 1: Martin: That was my first thought, but I realized maybe the tutor wanted us to do our own thing, not copy. Then I cut off my old sports shoes and separated them into different parts so that I could make a careful study of the internal structure.\nSpeaker 0: Rosie: It’s a good idea.\nSpeaker 1: Martin: Then I drew a diagram which could show precisely each part of the shoes. Through the research, I found that sports shoes nowadays have significantly improved.\nSpeaker 0: Rosie: What do you mean?\nSpeaker 1: Martin: For example, designers these days use better raw materials, which are not only durable but also make the skin of feet breathe more easily. Moreover, they also take into account the factor of foot shape, but they’ve ignored the foot movement, which is essential for sports people.\nSpeaker 0: Rosie: Interesting. I think I can add this to the essay.\nSpeaker 1: Martin: Okay. Given that you’ve got most ideas for the essay so far, I think you can mainly finish the written sections of the project, and I can take care of every detail of the presentation. Does this appeal to you?\nSpeaker 0: Rosie: I’m okay with that. I prefer written work to give in a presentation.\nSpeaker 1: Martin: That’s good. What do we need to do next?\nSpeaker 0: Rosie: Well, according to the plan, we will give a presentation next Wednesday. And before that, we’ll have to finish the questionnaire left by the tutor, and I think we can handle it this weekend.\nSpeaker 1: Martin: Okay. Do we have to do some face to face interviews?\nSpeaker 0: Rosie: The tutor said that would be for the next assignment, not this one.\nSpeaker 1: Martin: Okay. Then about the presentation. I remember in the last tutorial, the tutor advised us to use some slides to make the presentation more attractive. But I’ll also need a whiteboard because I like writing or drawing when necessary.\nSpeaker 0: Rosie: We can ask our tutor for help. He might have one and can lend it to us. Right. Rosie: Well, Martin, let’s go through the draft of the essay together and see whether there are any changes we have to make.\nSpeaker 1: Martin: Okay, Rosie. I think the summary gives a brief and precise description of the project’s main ideas. Where will it go?\nSpeaker 0: Rosie: I’d like to put it at the end of the essay. What do you think?\nSpeaker 1: Martin: Good idea. And I think the result part describes in detail what the research has achieved. But I’m wondering whether it should go directly behind the part of the research as they are closely related.\nSpeaker 0: Rosie: Yes. I think that’d be better. I’ll move this part. Then the conclusion, I’m wondering whether I’ve used too many technical terms which other students might struggle with.\nSpeaker 1: Martin: You’re right. Not everyone will be familiar with the subject.\nSpeaker 0: Rosie: So I think we could replace them with straightforward explanations.\nSpeaker 1: Martin: I agree. Lastly, the discussion. I like this part as it presents a series of questions that we can talk about with other students after the presentation.\nSpeaker 0: Rosie: Yes. But I think the questions look messy and need to be better sequenced. Maybe we could arrange them in a list. Okay. That’d be better.",
+	"body": {
+		"text": "Summary [7]\nResult [8]\nConclusion [9]\nDiscussion [10]",
+		"html": "<p>Summary [7]</p><p>Result [8]</p><p>Conclusion [9]</p><p>Discussion [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "What did the students get from the website?",
+					"options": [
+						{
+							"label": "A",
+							"text": "advice from others"
+						},
+						{
+							"label": "B",
+							"text": "ideas to fulfil the project requirements"
+						},
+						{
+							"label": "C",
+							"text": "relevant information about the case"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"At first, I had no idea what to write for the essay, so I asked some senior students for advice, and they gave me some websites to look at, where I found some articles on sports shoes and got some ideas."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What did Martin use as an example of the research?",
+					"options": [
+						{
+							"label": "A",
+							"text": "He downloaded a diagram from the internet."
+						},
+						{
+							"label": "B",
+							"text": "He took apart his old shoes."
+						},
+						{
+							"label": "C",
+							"text": "He borrowed a sample from the tutor."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Then I cut off my old sports shoes and separated them into different parts so that I could make a careful study of the internal structure."
+					]
+				},
+				{
+					"number": 3,
+					"text": "According to Martin, what other factors should be considered while designing shoes?",
+					"options": [
+						{
+							"label": "A",
+							"text": "foot shape"
+						},
+						{
+							"label": "B",
+							"text": "foot movement"
+						},
+						{
+							"label": "C",
+							"text": "raw materials"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Moreover, they also take into account the factor of foot shape, but they’ve ignored the foot movement, which is essential for sports people."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What proportion of the essay does Martin suggest Rosie do?",
+					"options": [
+						{
+							"label": "A",
+							"text": "half"
+						},
+						{
+							"label": "B",
+							"text": "almost all"
+						},
+						{
+							"label": "C",
+							"text": "every part"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Given that you’ve got most ideas for the essay so far, I think you can mainly finish the written sections of the project, and I can take care of every detail of the presentation."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What will Martin and Rosie do this weekend?",
+					"options": [
+						{
+							"label": "A",
+							"text": "carry out a plan"
+						},
+						{
+							"label": "B",
+							"text": "do some face-to-face interviews"
+						},
+						{
+							"label": "C",
+							"text": "answer the questions"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"And before that, we’ll have to finish the questionnaire left by the tutor, and I think we can handle it this weekend."
+					]
+				},
+				{
+					"number": 6,
+					"text": "What help can the students get from the tutor?",
+					"options": [
+						{
+							"label": "A",
+							"text": "borrow equipment"
+						},
+						{
+							"label": "B",
+							"text": "get some advice"
+						},
+						{
+							"label": "C",
+							"text": "have a tutorial"
+						}
+					],
+					"answer": "A",
+					"quotes": ["He might have one and can lend it to us."]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What decision do the students make about each of the following parts of their essay?\nParts of the essay",
+			"options": [
+				{
+					"label": "A",
+					"text": "change the layout"
+				},
+				{
+					"label": "B",
+					"text": "write it longer"
+				},
+				{
+					"label": "C",
+					"text": "give a detailed example"
+				},
+				{
+					"label": "D",
+					"text": "change to another part"
+				},
+				{
+					"label": "E",
+					"text": "use simple language"
+				},
+				{
+					"label": "F",
+					"text": "write in the last part"
+				}
+			],
+			"body": "Summary [7]\nResult [8]\nConclusion [9]\nDiscussion [10]",
+			"body_html": "<p>Summary [7]</p><p>Result [8]</p><p>Conclusion [9]</p><p>Discussion [10]</p>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "Summary",
+					"answer": "F",
+					"quotes": ["Rosie: I’d like to put it at the end of the essay."]
+				},
+				{
+					"number": 8,
+					"text": "Result",
+					"answer": "D",
+					"quotes": [
+						"But I’m wondering whether it should go directly behind the part of the research as they are closely related. Rosie: Yes. I think that’d be better. I’ll move this part."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Conclusion",
+					"answer": "E",
+					"quotes": [
+						"Rosie: So I think we could replace them with straightforward explanations. Martin: I agree."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Discussion",
+					"answer": "A",
+					"quotes": ["Maybe we could arrange them in a list."]
+				}
+			]
+		}
+	],
+	"images": []
+}
