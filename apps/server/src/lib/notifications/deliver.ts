@@ -56,6 +56,7 @@ interface QueuedRow {
 	id: string;
 	title: string;
 	body: string;
+	htmlBody: string | null;
 	linkPath: string;
 	recipientEmail: string | null;
 	senderName: string;
@@ -152,6 +153,7 @@ export async function deliverNotifications(
 				id: notificationRecord.id,
 				title: notificationRecord.title,
 				body: notificationRecord.body,
+				htmlBody: notificationRecord.htmlBody,
 				linkPath: notificationRecord.linkPath,
 				recipientEmail: notificationRecord.recipientEmail,
 				senderName: notificationRecord.senderName,
@@ -182,7 +184,7 @@ export async function deliverNotifications(
 				await mailer.send({
 					to: row.recipientEmail,
 					subject: row.title,
-					html: renderHtml(row.body, linkUrl),
+					html: row.htmlBody || renderHtml(row.body, linkUrl),
 					text: renderText(row.body, linkUrl),
 					idempotencyKey: row.id,
 					...(row.replyToEmail ? { replyTo: row.replyToEmail } : {}),

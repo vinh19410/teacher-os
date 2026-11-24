@@ -1,3 +1,4 @@
+import { renderClassOpeningEmail } from "@teacher-os/api/class-opening-email";
 import {
 	NOTIFICATION_EVENT_GROUP_BY_TYPE,
 	type NotificationEventGroup,
@@ -8,6 +9,7 @@ import {
 	formatVietnamTimeHHMM,
 	vietnamDateKeyOf,
 } from "@teacher-os/api/vietnam-date";
+import { BRAND_NAME } from "../brand";
 
 /** 1 sự kiện phát ra từ route nghiệp vụ, chưa resolve người nhận (D4). */
 export interface NotificationEvent {
@@ -17,6 +19,8 @@ export interface NotificationEvent {
 	idempotencyKey: string;
 	title: string;
 	body: string;
+	/** Nội dung HTML đã render sẵn cho email giàu định dạng; bỏ trống/null dùng renderer mặc định. */
+	htmlBody?: string | null;
 	/** Đường dẫn trên cổng học viên, vd "/assignments/a-1". */
 	linkPath: string;
 	refType: string;
@@ -210,4 +214,57 @@ export function placementSubmittedEvent(input: {
 		refId: input.submissionId,
 		channels: "in_app",
 	};
+}
+
+/**
+ * Sự kiện thông báo chốt / cập nhật lịch khai giảng lớp học — sinh HTML thương
+ * hiệu riêng từng học viên, khóa chống trùng theo (classId, version, studentId).
+ */
+export function classOpeningConfirmedEvents(input: {
+	classId: string;
+	className: string;
+	startDate: string;
+	scheduleRaw: string;
+	mode: string;
+	sessionsTotal?: number;
+	level?: string;
+	version: number;
+	isUpdate: boolean;
+	teacherNote: string;
+	orgName: string;
+	studentOrigin?: string;
+	students: Array<{ id: string; name: string }>;
+}): NotificationEvent[] {
+	const trimmedOrigin = input.studentOrigin?.trim() ?? "";
+	const portalUrl = trimmedOrigin
+		? `${trimmedOrigin.replace(/\/+$/, "")}/classes`
+		: "/classes";
+
+	return input.students.map((s) => {
+		const rendered = renderClassOpeningEmail({
+			className: input.className,
+			startDate: input.startDate,
+			scheduleRaw: input.scheduleRaw,
+			mode: input.mode,
+			sessionsTotal: input.sessionsTotal,
+			level: input.level,
+			studentName: s.name,
+			orgName: input.orgName,
+			brandName: BRAND_NAME,
+			teacherNote: input.teacherNote,
+			isUpdate: input.isUpdate,
+			portalUrl,
+		});
+		return {
+			studentId: s.id,
+			eventType: "class_opening_confirmed",
+			idempotencyKey: `class_opening_confirmed:${input.classId}:v${input.version}:${s.id}`,
+			title: rendered.subject,
+			body: rendered.inboxBody,
+			htmlBody: rendered.html,
+			linkPath: "/classes",
+			refType: "class",
+			refId: input.classId,
+		};
+	});
 }

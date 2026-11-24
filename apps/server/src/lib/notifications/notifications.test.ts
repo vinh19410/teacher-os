@@ -20,7 +20,9 @@ import {
 	buildOrgInvitationEmail,
 	buildStudentPortalInviteEmail,
 } from "./invite-email";
+import { requeueSingleFailedNotification } from "./requeue";
 import {
+	classOpeningConfirmedEvents,
 	holidayCreatedEvents,
 	placementSubmittedEvent,
 	tuitionReminderEvent,
@@ -484,7 +486,7 @@ describe("notifications service (#454 phase 2)", () => {
 					refId: "enr-x",
 				},
 			]),
-		).resolves.toBeUndefined();
+		).resolves.toEqual({ createdIds: [], queuedEmailIds: [] });
 	});
 
 	test("emitNotifications không có runInBackground → deliver await tuần tự", async () => {
@@ -584,6 +586,148 @@ describe("notifications service (#454 phase 2)", () => {
 		expect(row8d.channels).toBe("in_app");
 		expect(row8d.status).toBe("sent");
 		expect(row8d.recipientEmail).toBeNull();
+	});
+
+	test("htmlBody được lưu nguyên vẹn và gửi trực tiếp tới mailer; bản ghi htmlBody=null vẫn dùng renderHtml", async () => {
+		await seedOrg("org-html-1", "HTML Academy");
+		await seedOwner("org-html-1", "user-html-1", "owner@html-academy.vn");
+		await seedStudent("org-html-1", "stu-html-1", "rich@example.com");
+		await seedStudent("org-html-1", "stu-plain-1", "plain@example.com");
+
+		const openingEvents = classOpeningConfirmedEvents({
+			classId: "cls-html-1",
+			className: "IELTS Speaking Pro",
+			startDate: "2026-08-10",
+			scheduleRaw: JSON.stringify({
+				days: [0, 3],
+				start: "19:30",
+				end: "21:00",
+			}),
+			mode: "Online",
+			sessionsTotal: 16,
+			version: 1,
+			isUpdate: false,
+			teacherNote: "Chuẩn bị micro rõ tiếng",
+			orgName: "HTML Academy",
+			studentOrigin: "https://student.teacheros.example",
+			students: [{ id: "stu-html-1", name: "Student stu-html-1" }],
+		});
+		const expectedRichHtml = openingEvents[0]?.htmlBody ?? "";
+		expect(expectedRichHtml.length).toBeGreaterThan(100);
+
+		const plainEvent = {
+			studentId: "stu-plain-1",
+			eventType: "class_enrolled" as const,
+			idempotencyKey: "class_enrolled:enr-plain-1",
+			title: "Được mời vào lớp",
+			body: "Bạn được mời tham gia lớp IELTS Speaking Pro.",
+			linkPath: "/classes",
+			refType: "enrollment",
+			refId: "enr-plain-1",
+		};
+
+		const sentInputs: Parameters<Mailer["send"]>[0][] = [];
+		const result = await emitNotifications(
+			{
+				db,
+				mailer: fakeMailer(async (input) => {
+					sentInputs.push(input);
+				}),
+				studentOrigin: "https://student.teacheros.example",
+			},
+			"org-html-1",
+			[...openingEvents, plainEvent],
+		);
+
+		expect(result.createdIds).toHaveLength(2);
+		expect(result.queuedEmailIds).toHaveLength(2);
+
+		const richRow = await rowOf("stu-html-1");
+		const plainRow = await rowOf("stu-plain-1");
+		expect(richRow.htmlBody).toBe(expectedRichHtml);
+		expect(plainRow.htmlBody).toBeNull();
+
+		const richSent = sentInputs.find((s) => s.to === "rich@example.com");
+		const plainSent = sentInputs.find((s) => s.to === "plain@example.com");
+		expect(richSent?.html).toBe(expectedRichHtml);
+		expect(plainSent?.html).toBe(
+			renderHtml(plainEvent.body, "https://student.teacheros.example/classes"),
+		);
+	});
+
+	test("gửi lại bản ghi failed (requeueSingleFailedNotification + deliverNotifications) giữ nguyên htmlBody đã lưu", async () => {
+		await seedOrg("org-html-resend", "Resend Academy");
+		await seedStudent(
+			"org-html-resend",
+			"stu-html-resend",
+			"retry@example.com",
+		);
+
+		const openingEvents = classOpeningConfirmedEvents({
+			classId: "cls-resend-1",
+			className: "IELTS Writing 7.0",
+			startDate: "2026-09-01",
+			scheduleRaw: JSON.stringify({
+				days: [1, 4],
+				start: "20:00",
+				end: "21:30",
+			}),
+			mode: "Online",
+			sessionsTotal: 20,
+			version: 1,
+			isUpdate: false,
+			teacherNote: "Đọc trước bài mẫu unit 1",
+			orgName: "Resend Academy",
+			studentOrigin: "https://student.teacheros.example",
+			students: [{ id: "stu-html-resend", name: "Minh Quân" }],
+		});
+		const expectedHtml = openingEvents[0]?.htmlBody ?? "";
+
+		const enqueued = await enqueueNotifications(
+			db,
+			"org-html-resend",
+			openingEvents,
+		);
+		const recordId = enqueued.queuedEmailIds[0];
+		if (!recordId) throw new Error("expected queued email id");
+
+		await deliverNotifications(
+			db,
+			fakeMailer(async () => {
+				throw new Error("temporary provider outage");
+			}),
+			[recordId],
+			"https://student.teacheros.example",
+			{ retryDelaysMs: [0, 0] },
+		);
+
+		const failedRow = await rowOf("stu-html-resend");
+		expect(failedRow.status).toBe("failed");
+		expect(failedRow.htmlBody).toBe(expectedHtml);
+
+		const requeued = await requeueSingleFailedNotification(
+			db,
+			"org-html-resend",
+			recordId,
+		);
+		expect(requeued.kind).toBe("ok");
+		if (requeued.kind !== "ok") throw new Error("expected ok requeue");
+
+		const resentInputs: Parameters<Mailer["send"]>[0][] = [];
+		await deliverNotifications(
+			db,
+			fakeMailer(async (input) => {
+				resentInputs.push(input);
+			}),
+			requeued.requeuedIds,
+			"https://student.teacheros.example",
+			{ retryDelaysMs: [0, 0] },
+		);
+
+		expect(resentInputs).toHaveLength(1);
+		expect(resentInputs[0]?.html).toBe(expectedHtml);
+		const finalRow = await rowOf("stu-html-resend");
+		expect(finalRow.status).toBe("sent");
 	});
 });
 

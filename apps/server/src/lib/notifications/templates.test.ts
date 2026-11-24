@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
 	assignmentPublishedEvents,
 	classEnrolledEvent,
+	classOpeningConfirmedEvents,
 	eventGroupOf,
 	gradeReturnedEvent,
 	holidayCreatedEvents,
@@ -139,5 +140,106 @@ describe("notification template builders (phase 3 #454)", () => {
 			channels: "in_app",
 		});
 		expect(eventGroupOf(e.eventType)).toBe("assignment");
+	});
+
+	test("classOpeningConfirmedEvents — sinh email HTML cá nhân hóa, khóa theo (classId, version, studentId)", () => {
+		const events = classOpeningConfirmedEvents({
+			classId: "cls-1",
+			className: "IELTS 6.5 Intensive",
+			startDate: "2026-06-15",
+			scheduleRaw: JSON.stringify({
+				days: [0, 2, 4],
+				start: "19:00",
+				end: "20:30",
+			}),
+			mode: "Online",
+			sessionsTotal: 24,
+			level: "Band 6.5",
+			version: 1,
+			isUpdate: false,
+			teacherNote: "Mang theo <b>vở ghi</b>\nVào phòng sớm 10 phút",
+			orgName: "Trung tâm Anh ngữ Minh Anh",
+			studentOrigin: "https://student.teacheros.example///",
+			students: [
+				{ id: "s-1", name: "Nguyễn Văn An" },
+				{ id: "s-2", name: "Trần Thu Hà" },
+			],
+		});
+
+		expect(events).toHaveLength(2);
+		expect(events.map((e) => e.idempotencyKey)).toEqual([
+			"class_opening_confirmed:cls-1:v1:s-1",
+			"class_opening_confirmed:cls-1:v1:s-2",
+		]);
+
+		const first = events[0];
+		const second = events[1];
+		if (!first || !second) throw new Error("expected 2 events");
+
+		expect(first.eventType).toBe("class_opening_confirmed");
+		expect(eventGroupOf(first.eventType)).toBe("schedule");
+		expect(first.linkPath).toBe("/classes");
+		expect(first.refType).toBe("class");
+		expect(first.refId).toBe("cls-1");
+		expect(first.title).toContain(
+			"Thông báo khai giảng lớp IELTS 6.5 Intensive",
+		);
+		expect(first.title).toContain("15/06/2026");
+		expect(first.body).toContain("IELTS 6.5 Intensive");
+		expect(first.htmlBody).toBeTruthy();
+		expect(first.htmlBody).toContain("<!DOCTYPE html>");
+		expect(first.htmlBody).toContain("Chào Nguyễn Văn An,");
+		expect(first.htmlBody).toContain("IELTS 6.5 Intensive");
+		expect(first.htmlBody).toContain("19:00 – 20:30");
+		expect(first.htmlBody).toContain("24 buổi");
+		expect(first.htmlBody).toContain("Band 6.5");
+		expect(first.htmlBody).toContain("Trung tâm Anh ngữ Minh Anh");
+		expect(first.htmlBody).toContain(
+			"Mang theo &lt;b&gt;vở ghi&lt;/b&gt;<br>Vào phòng sớm 10 phút",
+		);
+		expect(first.htmlBody).not.toContain("<b>vở ghi</b>");
+		expect(first.htmlBody).toContain(
+			'href="https://student.teacheros.example/classes"',
+		);
+		expect(second.htmlBody).toContain("Chào Trần Thu Hà,");
+	});
+
+	test("classOpeningConfirmedEvents — chế độ cập nhật dùng tiêu đề cập nhật và fallback portalUrl an toàn", () => {
+		const updateEvents = classOpeningConfirmedEvents({
+			classId: "cls-2",
+			className: "Giao tiếp cơ bản",
+			startDate: "2026-07-01",
+			scheduleRaw: "T3 & T5 · 18:30",
+			mode: "Offline",
+			version: 2,
+			isUpdate: true,
+			teacherNote: "",
+			orgName: "",
+			studentOrigin: "   ",
+			students: [{ id: "s-3", name: "Lê Minh" }],
+		});
+
+		expect(updateEvents).toHaveLength(1);
+		const ev = updateEvents[0];
+		if (!ev) throw new Error("expected 1 event");
+		expect(ev.idempotencyKey).toBe("class_opening_confirmed:cls-2:v2:s-3");
+		expect(ev.title).toContain("Cập nhật lịch khai giảng lớp Giao tiếp cơ bản");
+		expect(ev.htmlBody).toContain("Cập nhật lịch khai giảng");
+		expect(ev.htmlBody).toContain('href="/classes"');
+
+		const unsafeOriginEvents = classOpeningConfirmedEvents({
+			classId: "cls-2",
+			className: "Giao tiếp cơ bản",
+			startDate: "2026-07-01",
+			scheduleRaw: "",
+			mode: "Online",
+			version: 3,
+			isUpdate: false,
+			teacherNote: "",
+			orgName: "",
+			studentOrigin: "javascript:alert(1)",
+			students: [{ id: "s-3", name: "Lê Minh" }],
+		});
+		expect(unsafeOriginEvents[0]?.htmlBody).not.toContain("javascript:");
 	});
 });

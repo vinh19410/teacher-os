@@ -56,6 +56,7 @@ export async function enqueueNotifications(
 				idempotencyKey: event.idempotencyKey,
 				title: event.title,
 				body: event.body,
+				htmlBody: event.htmlBody ?? null,
 				linkPath: event.linkPath,
 				refType: event.refType,
 				refId: event.refId,

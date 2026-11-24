@@ -34,6 +34,7 @@ import {
 	material,
 	syllabusLessonMaterial,
 } from "@teacher-os/db/schema/material";
+import { notificationRecord } from "@teacher-os/db/schema/notification-record";
 import { orgEvent } from "@teacher-os/db/schema/org-event";
 import {
 	holidaySessionCancel,
@@ -267,6 +268,7 @@ export async function loadSnapshot(
 		classSessionRows,
 		classSessionMeetingRows,
 		bankMaterialLinkRows,
+		openingNotifRows,
 	] = await Promise.all([
 		db
 			.select()
@@ -486,6 +488,19 @@ export async function loadSnapshot(
 				asc(syllabusLessonMaterial.position),
 				asc(syllabusLessonMaterial.createdAt),
 			),
+		db
+			.select({
+				refId: notificationRecord.refId,
+				studentId: notificationRecord.studentId,
+			})
+			.from(notificationRecord)
+			.where(
+				and(
+					eq(notificationRecord.orgId, orgId),
+					eq(notificationRecord.eventType, "class_opening_confirmed"),
+					eq(notificationRecord.refType, "class"),
+				),
+			),
 	]);
 
 	// #208: headers BEFORE targets, strictly sequential — a write landing
@@ -657,6 +672,16 @@ export async function loadSnapshot(
 		modulesBySyllabus.set(mod.syllabusId, list);
 	}
 
+	const openingNotifiedByClass = new Map<string, Set<string>>();
+	for (const row of openingNotifRows) {
+		let set = openingNotifiedByClass.get(row.refId);
+		if (!set) {
+			set = new Set();
+			openingNotifiedByClass.set(row.refId, set);
+		}
+		set.add(row.studentId);
+	}
+
 	return {
 		students: studentRows.map((row) => ({
 			id: row.id,
@@ -686,6 +711,14 @@ export async function loadSnapshot(
 			tuitionFee: row.tuitionFee ?? null,
 			schedulingMode: row.schedulingMode ?? "auto",
 			notes: row.notes,
+			openingConfirmedAt: row.openingConfirmedAt
+				? row.openingConfirmedAt.toISOString()
+				: null,
+			openingNote: row.openingNote ?? "",
+			openingAnnouncementVersion: row.openingAnnouncementVersion ?? 0,
+			openingNotifiedStudentIds: [
+				...(openingNotifiedByClass.get(row.id) ?? []),
+			],
 		})),
 		enrollments: enrollmentRows.map((row) => ({
 			id: row.id,
