@@ -1328,4 +1328,272 @@ describe("QuizPaper — inline answer inputs", () => {
 		const select4 = getByLabelText("Chọn đáp án câu 4") as HTMLSelectElement;
 		expect(select4.options[0]?.textContent).toBe("—");
 	});
+
+	describe("QuizPaper — Issue #875: Neanderthal Technology reading summary input & group scoping", () => {
+		it("cô lập optionBank của part nhóm: nhóm summary không có optionBank render ô nhập văn bản, không render nút A–K", () => {
+			const onAnswer = vi.fn();
+			const headingsPart: QuizPart = {
+				id: "group-1",
+				label: "Questions 1–6",
+				qStart: 1,
+				typeId: "headings",
+				source: "group",
+				instructionHtml:
+					"<p>Choose the correct heading for each section from the list of headings below.</p>",
+				optionBank: [
+					"Heading i: Origins",
+					"Heading ii: Tool types",
+					"Heading iii: Hunting techniques",
+					"Heading iv: Fire usage",
+					"Heading v: Shelters",
+					"Heading vi: Language",
+				],
+				questions: [1, 2, 3, 4, 5, 6].map((num, i) => ({
+					q: i,
+					number: num,
+					stem: `Section ${String.fromCharCode(65 + i)}`,
+					opts: null,
+					pin: null,
+					type: "headings",
+				})),
+			};
+
+			const infoPart: QuizPart = {
+				id: "group-2",
+				label: "Questions 7–10",
+				qStart: 7,
+				typeId: "info",
+				source: "group",
+				instructionHtml:
+					"<p>Which section contains the following information?</p>",
+				optionBank: ["A", "B", "C", "D", "E"],
+				questions: [7, 8, 9, 10].map((num, i) => ({
+					q: 6 + i,
+					number: num,
+					stem: `Information item ${num}`,
+					opts: null,
+					pin: null,
+					type: "info",
+				})),
+			};
+
+			const summaryPart: QuizPart = {
+				id: "group-3",
+				label: "Questions 11–13",
+				qStart: 11,
+				typeId: "summary",
+				source: "group",
+				instructionHtml: "", // Không có instruction riêng trên nhóm, phụ thuộc vào intro
+				optionBank: [], // Summary completion từ passage, không có Word Bank
+				questions: [
+					{
+						q: 10,
+						number: 11,
+						stem: "Neanderthals lived in a (11) __________ environment.",
+						opts: null,
+						pin: null,
+						type: "summary",
+					},
+					{
+						q: 11,
+						number: 12,
+						stem: "Their bodies were adapted to be (12) __________ and strong.",
+						opts: null,
+						pin: null,
+						type: "summary",
+					},
+					{
+						q: 12,
+						number: 13,
+						stem: "They were skilled hunters of large (13) __________.",
+						opts: null,
+						pin: null,
+						type: "summary",
+					},
+				],
+			};
+
+			const mcqPart: QuizPart = {
+				id: "group-4",
+				label: "Questions 14",
+				qStart: 14,
+				typeId: "mcq",
+				source: "group",
+				instructionHtml: "<p>Choose the correct letter, A, B, C or D.</p>",
+				optionBank: [],
+				questions: [
+					{
+						q: 13,
+						number: 14,
+						stem: "What is the main idea?",
+						opts: ["Option A", "Option B", "Option C", "Option D"],
+						pin: null,
+						type: "mcq",
+					},
+				],
+			};
+
+			const combinedOptionBank = [
+				"Heading i: Origins",
+				"Heading ii: Tool types",
+				"Heading iii: Hunting techniques",
+				"Heading iv: Fire usage",
+				"Heading v: Shelters",
+				"Heading vi: Language",
+				"A",
+				"B",
+				"C",
+				"D",
+				"E",
+			];
+
+			const detail = baseDetail({
+				skill: "reading",
+				type: "reading",
+				intro: `
+					<p>Questions 1–6: Choose the correct heading for each section from the list of headings below.</p>
+					<p>Questions 7–10: Which section contains the following information?</p>
+					<p>Questions 11–13: Complete the summary below. Choose NO MORE THAN TWO WORDS from the passage for each answer.</p>
+					<p>Questions 14: Choose the correct letter, A, B, C or D.</p>
+				`,
+				optionBank: combinedOptionBank,
+			});
+
+			const { container, getByLabelText } = render(
+				<QuizPaper
+					detail={detail}
+					parts={[headingsPart, infoPart, summaryPart, mcqPart]}
+					answers={{}}
+					onAnswer={onAnswer}
+					currentQuestion={10}
+					mode="take"
+				/>,
+			);
+
+			// 1. Không hiển thị option bank 11 mục ở đầu đề (showDetailBank = false vì hasGroupSource = true)
+			const topBank = container.querySelector(
+				"article > [data-testid='option-bank-list']",
+			);
+			expect(topBank).toBeNull();
+
+			// 2. Nhóm summary hiển thị đúng hướng dẫn "NO MORE THAN TWO WORDS", KHÔNG hiển thị fallback "ONE WORD ONLY"
+			expect(container.textContent).toContain("NO MORE THAN TWO WORDS");
+			expect(container.textContent).not.toContain("ONE WORD ONLY");
+
+			// 3. Preamble đầu trang không bị lặp lại dòng Questions 11-13 vì đã bị tiêu thụ
+			const preamble = container.querySelector(
+				"article > div.text-muted-foreground",
+			);
+			expect(preamble?.textContent ?? "").not.toContain(
+				"Questions 11–13: Complete the summary below",
+			);
+
+			// 4. Các câu hỏi Q11, Q12, Q13 render input text, KHÔNG render button radio A–K
+			const input11 = getByLabelText("Điền đáp án câu 11") as HTMLInputElement;
+			const input12 = getByLabelText("Điền đáp án câu 12") as HTMLInputElement;
+			const input13 = getByLabelText("Điền đáp án câu 13") as HTMLInputElement;
+
+			expect(input11).not.toBeNull();
+			expect(input12).not.toBeNull();
+			expect(input13).not.toBeNull();
+
+			// Không có nút radio lựa chọn A-K cho câu 11–13
+			const radiosInSummary = container.querySelectorAll(
+				"input[type='radio'][name='quiz-q-10']",
+			);
+			expect(radiosInSummary).toHaveLength(0);
+
+			// Học viên có thể gõ cụm từ (ví dụ predatory animals có 2 từ)
+			fireEvent.change(input13, { target: { value: "predatory animals" } });
+			expect(onAnswer).toHaveBeenCalledWith(12, "predatory animals");
+		});
+
+		it("đề không nhóm trộn dạng (summary + matching có required bank): summary không mượn bank nhầm", () => {
+			const onAnswer = vi.fn();
+			const matchingPart: QuizPart = {
+				id: "part-1",
+				label: "Questions 1–2",
+				qStart: 1,
+				typeId: "matching",
+				questions: [
+					{
+						q: 0,
+						number: 1,
+						stem: "Match 1",
+						opts: null,
+						pin: null,
+						type: "matching",
+					},
+					{
+						q: 1,
+						number: 2,
+						stem: "Match 2",
+						opts: null,
+						pin: null,
+						type: "matching",
+					},
+				],
+			};
+			const summaryPart: QuizPart = {
+				id: "part-2",
+				label: "Questions 3–4",
+				qStart: 3,
+				typeId: "summary",
+				questions: [
+					{
+						q: 2,
+						number: 3,
+						stem: "Summary 3",
+						opts: null,
+						pin: null,
+						type: "summary",
+					},
+					{
+						q: 3,
+						number: 4,
+						stem: "Summary 4",
+						opts: null,
+						pin: null,
+						type: "summary",
+					},
+				],
+			};
+
+			const detail = baseDetail({
+				skill: "reading",
+				type: "reading",
+				optionBank: ["Item A", "Item B", "Item C"],
+			});
+
+			const { getByLabelText, container } = render(
+				<QuizPaper
+					detail={detail}
+					parts={[matchingPart, summaryPart]}
+					answers={{}}
+					onAnswer={onAnswer}
+					currentQuestion={2}
+					mode="take"
+				/>,
+			);
+
+			// Matching part có radio pills chọn từ Item A, B, C (3 options A, B, C)
+			const radios1 = container.querySelectorAll(
+				"input[type='radio'][name='quiz-q-1']",
+			);
+			expect(radios1).toHaveLength(3);
+
+			// Summary part render input text, không bị biến thành letter options A–C
+			const input3 = getByLabelText("Điền đáp án câu 3") as HTMLInputElement;
+			expect(input3).not.toBeNull();
+			const radios = container.querySelectorAll(
+				"input[type='radio'][name='quiz-q-2']",
+			);
+			expect(radios).toHaveLength(0);
+
+			// Summary part không dùng hướng dẫn chọn từ list của word bank
+			expect(container.textContent).not.toContain(
+				"Complete the summary using the list of words below",
+			);
+		});
+	});
 });
