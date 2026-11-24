@@ -204,7 +204,8 @@ export const server = Cloudflare.Worker("server", {
 		date: WORKER_COMPATIBILITY_DATE,
 		flags: ["nodejs_compat"],
 	},
-	crons: ["*/10 * * * *"],
+	// `*/10 * * * *` syncs Zoom cloud recordings; `0 23 * * *` (23:00 UTC = 06:00 Asia/Ho_Chi_Minh) sends daily assignment deadline reminder emails.
+	crons: ["*/10 * * * *", "0 23 * * *"],
 	...(topology && { domain: topology.apiHost, workersDev: false }),
 	env: {
 		DB: db,

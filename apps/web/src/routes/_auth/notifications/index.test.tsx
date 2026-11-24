@@ -10,6 +10,7 @@ import {
 	render,
 	screen,
 	waitFor,
+	within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -155,6 +156,25 @@ describe("NotificationsRoute (#454 phase 5)", () => {
 		expect(table.textContent).toContain("Mời vào lớp");
 		expect(table.textContent).toContain("Email + In-app");
 		expect(table.textContent).toContain("Đã xem");
+	});
+
+	it("renders daily_deadline_reminder row with event label Nhắc bài hằng ngày and channel Email", async () => {
+		renderRoute(
+			seedResponse({
+				rows: [
+					row({
+						id: "nt-daily-reminder",
+						eventType: "daily_deadline_reminder",
+						eventGroup: "assignment",
+						channels: "email",
+						status: "sent",
+					}),
+				],
+			}),
+		);
+		const table = await screen.findByTestId("notifications-table");
+		expect(within(table).getByText("Nhắc bài hằng ngày")).toBeTruthy();
+		expect(within(table).getByText("Email")).toBeTruthy();
 	});
 
 	it("badge đếm chip trạng thái lấy từ counts server, aria-hidden", async () => {

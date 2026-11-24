@@ -39,7 +39,7 @@ export const notificationRecord = sqliteTable(
 		linkPath: text("link_path").notNull().default(""),
 		refType: text("ref_type").notNull().default(""),
 		refId: text("ref_id").notNull().default(""),
-		/** "email,in_app" hoặc "in_app". */
+		/** "email,in_app", "email" hoặc "in_app". */
 		channels: text("channels").notNull().default("in_app"),
 		/** Snapshot email học viên lúc gửi. */
 		recipientEmail: text("recipient_email"),
