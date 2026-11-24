@@ -39,6 +39,8 @@ import {
 	studentZoomJoinResponseSchema,
 } from "@teacher-os/api/contracts";
 import type {
+	StudentClassMaterialListResponse,
+	StudentClassMaterialView,
 	StudentLessonMaterialListResponse,
 	StudentLessonMaterialView,
 } from "@teacher-os/api/material-contracts";
@@ -483,6 +485,20 @@ function lessonMaterialsPath(classId: string, date: string): string {
 	return `${getApiBaseUrl()}/api/student/classes/${encodeURIComponent(classId)}/sessions/${encodeURIComponent(date)}/materials`;
 }
 
+function classMaterialsPath(classId: string): string {
+	return `${getApiBaseUrl()}/api/student/classes/${encodeURIComponent(classId)}/materials`;
+}
+
+function appendMaterialFileParams(baseUrl: string, download: boolean): string {
+	const params = new URLSearchParams();
+	if (download) params.set("download", "1");
+	// Thẻ media và link tải không gửi được header x-student-org-id.
+	const orgId = getActiveStudentOrgId();
+	if (orgId) params.set("org", orgId);
+	const query = params.toString();
+	return `${baseUrl}${query ? `?${query}` : ""}`;
+}
+
 /** URL stream file của một tài liệu trong buổi học (`download` → attachment). */
 export function lessonMaterialFileUrl(
 	classId: string,
@@ -490,28 +506,35 @@ export function lessonMaterialFileUrl(
 	materialId: string,
 	download = false,
 ): string {
-	const params = new URLSearchParams();
-	if (download) params.set("download", "1");
-	// Thẻ media và link tải không gửi được header x-student-org-id.
-	const orgId = getActiveStudentOrgId();
-	if (orgId) params.set("org", orgId);
-	const query = params.toString();
-	return `${lessonMaterialsPath(classId, date)}/${encodeURIComponent(materialId)}/file${query ? `?${query}` : ""}`;
+	return appendMaterialFileParams(
+		`${lessonMaterialsPath(classId, date)}/${encodeURIComponent(materialId)}/file`,
+		download,
+	);
+}
+
+/** URL stream file của một tài liệu chung cấp lớp (`download` → attachment). */
+export function classMaterialFileUrl(
+	classId: string,
+	materialId: string,
+	download = false,
+): string {
+	return appendMaterialFileParams(
+		`${classMaterialsPath(classId)}/${encodeURIComponent(materialId)}/file`,
+		download,
+	);
 }
 
 /**
- * Tải file tài liệu buổi học về `blob:` URL để xem trước inline trong app
- * (server trả `attachment` + CSP khoá cứng). Xử lý 401 `reauth()`, 403
- * `STUDENT_ORG_MISMATCH` tự xoá org stale và thử lại 1 lần, và kiểm
- * `Content-Type` allowlist trước `URL.createObjectURL`.
+ * Tải file tài liệu về `blob:` URL để xem trước inline trong app (server trả
+ * `attachment` + CSP khoá cứng). Xử lý 401 `reauth()`, 403
+ * `STUDENT_ORG_MISMATCH` tự xoá org stale và thử lại 1 lần, kiểm sai vai trò
+ * giáo viên trên portal học viên, và kiểm `Content-Type` allowlist trước
+ * `URL.createObjectURL`.
  */
-export async function fetchLessonMaterialBlobUrl(
-	classId: string,
-	date: string,
-	materialId: string,
+async function fetchStudentMaterialBlobUrl(
+	url: string,
 	signal?: AbortSignal,
 ): Promise<string> {
-	const url = `${lessonMaterialsPath(classId, date)}/${encodeURIComponent(materialId)}/file`;
 	const headers = getStudentHeaders({ Accept: "*/*" });
 	const sentOrgId = headers["x-student-org-id"];
 	let res = await fetch(url, {
@@ -578,6 +601,31 @@ export async function fetchLessonMaterialBlobUrl(
 	return URL.createObjectURL(await res.blob());
 }
 
+/** Tải file tài liệu buổi học về `blob:` URL để xem trước inline trong app. */
+export async function fetchLessonMaterialBlobUrl(
+	classId: string,
+	date: string,
+	materialId: string,
+	signal?: AbortSignal,
+): Promise<string> {
+	return fetchStudentMaterialBlobUrl(
+		`${lessonMaterialsPath(classId, date)}/${encodeURIComponent(materialId)}/file`,
+		signal,
+	);
+}
+
+/** Tải file tài liệu chung của lớp về `blob:` URL để xem trước inline trong app. */
+export async function fetchClassMaterialBlobUrl(
+	classId: string,
+	materialId: string,
+	signal?: AbortSignal,
+): Promise<string> {
+	return fetchStudentMaterialBlobUrl(
+		`${classMaterialsPath(classId)}/${encodeURIComponent(materialId)}/file`,
+		signal,
+	);
+}
+
 export async function fetchLessonMaterials(
 	classId: string,
 	date: string,
@@ -616,6 +664,33 @@ export function useLessonMaterials(
 	return useQuery({
 		queryKey: ["student", "class", classId, "materials", date],
 		queryFn: () => fetchLessonMaterials(classId, date),
+		enabled,
+		staleTime: 60_000,
+	});
+}
+
+export async function fetchClassMaterials(
+	classId: string,
+): Promise<StudentClassMaterialView[]> {
+	const headers = getStudentHeaders();
+	const sentOrgId = headers["x-student-org-id"];
+	const res = await fetch(classMaterialsPath(classId), {
+		method: "GET",
+		headers,
+		credentials: "include",
+	});
+	if (!res.ok) {
+		await throwStudentHttpError(res, sentOrgId);
+	}
+	const data = (await res.json()) as Partial<StudentClassMaterialListResponse>;
+	return Array.isArray(data.items) ? data.items : [];
+}
+
+/** Tài liệu chung cấp lớp — chỉ bật khi học viên mở tab Tài liệu chung. */
+export function useClassMaterials(classId: string, enabled = true) {
+	return useQuery({
+		queryKey: ["student", "class", classId, "shared-materials"],
+		queryFn: () => fetchClassMaterials(classId),
 		enabled,
 		staleTime: 60_000,
 	});

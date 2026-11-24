@@ -20,6 +20,7 @@ import { useState } from "react";
 import { ClassAssignmentTable } from "@/components/class/class-assignment-table";
 import { ClassInfoCard } from "@/components/class/class-info-card";
 import { ClassLessonList } from "@/components/class/class-lesson-list";
+import { ClassMaterialsTab } from "@/components/class/class-materials-tab";
 import { ClassmatesTab } from "@/components/class/classmates-tab";
 import { RingStat } from "@/components/class/ring-stat";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +52,7 @@ const CLASS_TABS = [
 	{ id: "journey", label: "Hành trình học" },
 	{ id: "assignments", label: "Bài tập" },
 	{ id: "syllabus", label: "Giáo trình" },
+	{ id: "materials", label: "Tài liệu chung" },
 	{ id: "classmates", label: "Bạn cùng lớp" },
 ] as const;
 
@@ -368,6 +370,7 @@ export function ClassDetailView({
 					/>
 				)}
 				{tab === "syllabus" && <SyllabusTab detail={detail} />}
+				{tab === "materials" && <ClassMaterialsTab classId={cls.id} />}
 				{tab === "classmates" && <ClassmatesTab classId={cls.id} />}
 			</div>
 		</>
