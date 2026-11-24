@@ -47,7 +47,9 @@ import {
 	COMPLETION_TYPE_REGEX,
 	deduplicateGroupIntroPreamble,
 	isEffectivelyEmptyInstruction,
+	isPositionalSectionBank,
 	resolvePartInstruction,
+	scopeFlattenedOptionBank,
 } from "@teacher-os/ui/lib/quiz-instruction";
 import { cn } from "@teacher-os/ui/lib/utils";
 import { useMemo } from "react";
@@ -75,7 +77,13 @@ function isPositionalOnlyBank(
 	bank: readonly string[],
 	kind: keyof typeof ASSIGNMENT_ANSWER_CHOICES,
 ): boolean {
-	if (bank.length === 0 || (kind !== "letter" && kind !== "roman")) {
+	if (bank.length === 0) {
+		return false;
+	}
+	if (kind === "letter") {
+		return isPositionalSectionBank(bank);
+	}
+	if (kind !== "roman") {
 		return false;
 	}
 	const alphabet = extendedAnswerChoices(kind);
@@ -103,6 +111,18 @@ const NON_INLINE_QUESTION_TYPES = new Set([
 	"mcq_many",
 	"tfng",
 	"ynng",
+]);
+
+const REQUIRED_BANK_QUESTION_TYPES = new Set([
+	"headings",
+	"info",
+	"features",
+	"match_names",
+	"matching",
+	"sentend",
+	"map",
+	"match2",
+	"match",
 ]);
 
 const EMPTY_MATCHED_INSTRUCTIONS: ReadonlyMap<string, string> = new Map();
@@ -533,10 +553,31 @@ export function QuizPaper({
 			}
 			return deduplicateGroupIntroPreamble(rawIntroPreamble, parts);
 		}, [hasGroupSource, hasIntroSplit, rawIntroPreamble, parts]);
+	const scopedBankResult = useMemo(() => {
+		if (hasGroupSource) {
+			return { partitioned: null, isBankScoped: true };
+		}
+		return scopeFlattenedOptionBank(
+			parts,
+			detail.optionBank,
+			matchedInstructionsByPartId,
+			{ skill, introPreamble },
+		);
+	}, [
+		hasGroupSource,
+		parts,
+		detail.optionBank,
+		matchedInstructionsByPartId,
+		skill,
+		introPreamble,
+	]);
+	const partitionedBanks = scopedBankResult.partitioned;
+	const hasPartitionedBanks = partitionedBanks !== null;
+	const isBankScoped = scopedBankResult.isBankScoped;
 	// Bank vẫn prompt-level nhưng hiện khi type đề HOẶC bất kỳ câu bankable
 	// (đề trộn dạng) — cụm bankable phải có list để học viên chọn (#286 H2).
-	// Part nhóm (#433) bank nằm trên từng part: KHÔNG render bank cấp đề khi
-	// có nhóm (đã render per-group qua showPartBank).
+	// Part nhóm (#433) hoặc đã tách bank theo part (#877) render per-part qua
+	// showPartBank.
 	const bankKind = libraryOptionBankKindFor(
 		skill,
 		typeId,
@@ -545,6 +586,7 @@ export function QuizPaper({
 	);
 	const showDetailBank =
 		!hasGroupSource &&
+		!hasPartitionedBanks &&
 		bankKind !== undefined &&
 		!isPositionalOnlyBank(detail.optionBank, bankKind);
 	const hasPins = questions.some((question) => question.pin != null);
@@ -634,23 +676,17 @@ export function QuizPaper({
 	// Bank riêng của part (nhóm) ưu tiên bank cấp đề — câu trong part nhóm
 	// chọn từ bank của nhóm mình (red-team R5). Part nhóm không bank tuyệt
 	// đối không mượn detail.optionBank (#875).
-	const hasRequiredBankQuestion = questions.some((q) => {
-		const t = q.type ?? typeId;
-		return (
-			t === "headings" ||
-			t === "info" ||
-			t === "features" ||
-			t === "match_names" ||
-			t === "matching" ||
-			t === "sentend" ||
-			t === "map" ||
-			t === "match2" ||
-			t === "match"
-		);
-	});
+	const hasRequiredBankQuestion = questions.some((q) =>
+		REQUIRED_BANK_QUESTION_TYPES.has(q.type ?? typeId),
+	);
 	const choiceRowsByQ = new Map<number, QuizChoiceRow[]>();
 	const optionBankByQ = new Map<number, readonly string[]>();
 	for (const part of parts) {
+		const partHasRequiredBankQuestion = part.questions.some((q) =>
+			REQUIRED_BANK_QUESTION_TYPES.has(
+				q.type ?? (part.source === "group" ? part.typeId : typeId),
+			),
+		);
 		for (const question of part.questions) {
 			const effectiveType =
 				question.type ?? (part.source === "group" ? part.typeId : typeId);
@@ -659,10 +695,15 @@ export function QuizPaper({
 			const qBank =
 				part.source === "group"
 					? (part.optionBank ?? [])
-					: (part.optionBank ??
-						(isQOptionalBank && hasRequiredBankQuestion
-							? []
-							: detail.optionBank));
+					: hasPartitionedBanks
+						? (part.optionBank ??
+							(isQOptionalBank && partHasRequiredBankQuestion
+								? []
+								: (partitionedBanks.get(part.id) ?? [])))
+						: (part.optionBank ??
+							(isQOptionalBank && hasRequiredBankQuestion
+								? []
+								: detail.optionBank));
 			// Câu có pin trả lời qua input trên ảnh (PinOverlay) — không nhân đôi
 			// widget bằng radio pills dưới list. Widget key theo type HIỆU DỤNG
 			// của câu (đề trộn dạng), fallback type đề.
@@ -850,20 +891,29 @@ export function QuizPaper({
 					const display = quizTypeDisplay(part.typeId);
 					const matchedInstruction = matchedInstructionsByPartId.get(part.id);
 					const isPartOptionalBank =
-						part.typeId === "summary" || part.typeId === "flow";
+						part.typeId === "summary" ||
+						part.typeId === "flow" ||
+						part.typeId === "flowchart";
+					const partScopedBank = hasPartitionedBanks
+						? (partitionedBanks.get(part.id) ?? [])
+						: undefined;
 					const effectivePartBank =
 						part.source === "group"
 							? (part.optionBank ?? [])
-							: (part.optionBank ??
-								(isPartOptionalBank && hasRequiredBankQuestion
-									? []
-									: detail.optionBank));
+							: part.optionBank !== undefined
+								? part.optionBank
+								: partScopedBank !== undefined
+									? partScopedBank
+									: isPartOptionalBank && hasRequiredBankQuestion
+										? []
+										: detail.optionBank;
 					const displayInstruction = resolvePartInstruction(
 						part.typeId,
 						part.questions,
 						display.instruction,
 						{
 							partBank: effectivePartBank,
+							isBankScoped,
 							matchedInstruction,
 							contextIntro:
 								parts.length <= 1
@@ -890,16 +940,26 @@ export function QuizPaper({
 					const fromOwnSource =
 						part.source === "intro" ||
 						(part.source === "group" && hasOwnInstruction);
-					// Option bank riêng của nhóm — render ngay dưới header nhóm
-					// (red-team RT2/R5); part thường không có bank riêng.
-					const partBankKind = part.optionBank?.length
-						? libraryOptionBankKindFor(
-								skill,
-								part.typeId,
-								part.questions.map((question) => question.type),
-								part.optionBank,
-							)
-						: undefined;
+					// Option bank riêng của nhóm hoặc đã tách theo part (#877) — render
+					// ngay dưới header nhóm; giữ guard .length > 0 để không hiện alert
+					// thiếu bank (RT2).
+					const partBankToRender: string[] | undefined =
+						part.source === "group"
+							? (part.optionBank ?? [])
+							: part.optionBank !== undefined
+								? part.optionBank
+								: partScopedBank !== undefined
+									? partScopedBank
+									: undefined;
+					const partBankKind =
+						partBankToRender && partBankToRender.length > 0
+							? libraryOptionBankKindFor(
+									skill,
+									part.typeId,
+									part.questions.map((question) => question.type),
+									partBankToRender,
+								)
+							: undefined;
 					const renderUnits = buildPartRenderUnits(part, typeId);
 					const parsedInline = parsedInlineByPartId.get(part.id) ?? null;
 					const remainingUnits = parsedInline
@@ -911,7 +971,9 @@ export function QuizPaper({
 						: renderUnits;
 					const showPartBank =
 						partBankKind !== undefined &&
-						!isPositionalOnlyBank(part.optionBank ?? [], partBankKind);
+						partBankToRender !== undefined &&
+						partBankToRender.length > 0 &&
+						!isPositionalOnlyBank(partBankToRender, partBankKind);
 					return (
 						<section
 							key={part.id}
@@ -943,13 +1005,13 @@ export function QuizPaper({
 								(parsedInline ? (
 									<div className="mb-3">
 										<OptionBankList
-											bank={part.optionBank ?? []}
+											bank={partBankToRender ?? []}
 											kind={partBankKind}
 										/>
 									</div>
 								) : (
 									<OptionBankList
-										bank={part.optionBank ?? []}
+										bank={partBankToRender ?? []}
 										kind={partBankKind}
 									/>
 								))}
