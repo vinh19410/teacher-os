@@ -43,6 +43,10 @@ import {
 	type ParsedInlineInstruction,
 	parseInlineInstruction,
 } from "@teacher-os/ui/lib/inline-instruction";
+import {
+	deduplicateGroupIntroPreamble,
+	resolvePartInstruction,
+} from "@teacher-os/ui/lib/quiz-instruction";
 import { cn } from "@teacher-os/ui/lib/utils";
 import { useMemo } from "react";
 
@@ -64,28 +68,6 @@ export type QuizPaperDetail = Pick<
 	| "optionBank"
 	| "note"
 >;
-
-function resolvePartInstruction(
-	typeId: string,
-	questions: ReadonlyArray<{
-		type?: string | null;
-		opts?: readonly string[] | null;
-	}>,
-	fallback: string,
-): string {
-	if (typeId !== "mcq") return fallback;
-	const mcqQuestions = questions.filter((q) => (q.type ?? typeId) === "mcq");
-	if (mcqQuestions.length === 0) return fallback;
-	const counts = new Set(
-		mcqQuestions.map((q) => (q.opts?.length ? Math.min(q.opts.length, 4) : 4)),
-	);
-	if (counts.size === 1) {
-		if (counts.has(2)) return "Choose the correct letter A or B.";
-		if (counts.has(3)) return "Choose the correct letter A, B or C.";
-		return fallback;
-	}
-	return "Choose the correct letter.";
-}
 
 function isPositionalOnlyBank(
 	bank: readonly string[],
@@ -534,14 +516,22 @@ export function QuizPaper({
 	const introSplit = parts.some((part) => part.source === "intro")
 		? splitQuizIntro(detail.intro, questions.length)
 		: null;
-	const introPreamble = introSplit ? introSplit.preamble : detail.intro;
+	const rawIntroPreamble = introSplit ? introSplit.preamble : detail.intro;
 	const hasGroupSource = parts.some((part) => part.source === "group");
+	const { cleanedPreamble: introPreamble, matchedInstructionsByPartId } =
+		useMemo(() => {
+			if (!hasGroupSource) {
+				return {
+					cleanedPreamble: rawIntroPreamble,
+					matchedInstructionsByPartId: new Map<string, string>(),
+				};
+			}
+			return deduplicateGroupIntroPreamble(rawIntroPreamble, parts);
+		}, [hasGroupSource, rawIntroPreamble, parts]);
 	// Bank vẫn prompt-level nhưng hiện khi type đề HOẶC bất kỳ câu bankable
 	// (đề trộn dạng) — cụm bankable phải có list để học viên chọn (#286 H2).
 	// Part nhóm (#433) bank nằm trên từng part: KHÔNG render bank cấp đề khi
-	// rỗng — schema cấm bank part-level khi có nhóm nên bank rỗng ở đây là
-	// hợp lệ, không phải dữ liệu hỏng (red-team RT2 — alert "Thiếu ngân hàng
-	// lựa chọn" chỉ dành cho đề không nhóm).
+	// có nhóm (đã render per-group qua showPartBank).
 	const bankKind = libraryOptionBankKindFor(
 		skill,
 		typeId,
@@ -549,8 +539,8 @@ export function QuizPaper({
 		detail.optionBank,
 	);
 	const showDetailBank =
+		!hasGroupSource &&
 		bankKind !== undefined &&
-		(!hasGroupSource || detail.optionBank.length > 0) &&
 		!isPositionalOnlyBank(detail.optionBank, bankKind);
 	const hasPins = questions.some((question) => question.pin != null);
 	// PinOverlay chỉ khả dụng khi ảnh đề hợp lệ — thiếu ảnh thì câu pin fallback
@@ -622,14 +612,37 @@ export function QuizPaper({
 		};
 	}, [isAuto, parts, introPreamble, typeId, usePinOverlay]);
 	// Bank riêng của part (nhóm) ưu tiên bank cấp đề — câu trong part nhóm
-	// chọn từ bank của nhóm mình (red-team R5).
+	// chọn từ bank của nhóm mình (red-team R5). Part nhóm không bank tuyệt
+	// đối không mượn detail.optionBank (#875).
+	const hasRequiredBankQuestion = questions.some((q) => {
+		const t = q.type ?? typeId;
+		return (
+			t === "headings" ||
+			t === "info" ||
+			t === "features" ||
+			t === "match_names" ||
+			t === "matching" ||
+			t === "sentend" ||
+			t === "map" ||
+			t === "match2" ||
+			t === "match"
+		);
+	});
 	const choiceRowsByQ = new Map<number, QuizChoiceRow[]>();
 	const optionBankByQ = new Map<number, readonly string[]>();
 	for (const part of parts) {
-		const partBank = part.optionBank ?? detail.optionBank;
 		for (const question of part.questions) {
 			const effectiveType =
 				question.type ?? (part.source === "group" ? part.typeId : typeId);
+			const isQOptionalBank =
+				effectiveType === "summary" || effectiveType === "flow";
+			const qBank =
+				part.source === "group"
+					? (part.optionBank ?? [])
+					: (part.optionBank ??
+						(isQOptionalBank && hasRequiredBankQuestion
+							? []
+							: detail.optionBank));
 			// Câu có pin trả lời qua input trên ảnh (PinOverlay) — không nhân đôi
 			// widget bằng radio pills dưới list. Widget key theo type HIỆU DỤNG
 			// của câu (đề trộn dạng), fallback type đề.
@@ -637,18 +650,17 @@ export function QuizPaper({
 				question.q,
 				usePinOverlay && question.pin != null
 					? []
-					: questionChoiceRows(question, effectiveType, partBank),
+					: questionChoiceRows(question, effectiveType, qBank),
 			);
 			const bankKindForQ =
-				(effectiveType === "summary" || effectiveType === "flow") &&
-				partBank.length > 0
+				isQOptionalBank && qBank.length > 0
 					? "letter"
 					: answerKindByType[effectiveType];
 			if (
-				partBank.length > 0 &&
+				qBank.length > 0 &&
 				(bankKindForQ === "letter" || bankKindForQ === "roman")
 			) {
-				optionBankByQ.set(question.q, partBank);
+				optionBankByQ.set(question.q, qBank);
 			}
 		}
 	}
@@ -816,14 +828,35 @@ export function QuizPaper({
 					// viện #433) hiển thị instruction đó thay 2 dòng chuẩn; chỉ có
 					// marker fallback về chuẩn.
 					const display = quizTypeDisplay(part.typeId);
+					const matchedInstruction = matchedInstructionsByPartId.get(part.id);
+					const isPartOptionalBank =
+						part.typeId === "summary" || part.typeId === "flow";
+					const effectivePartBank =
+						part.source === "group"
+							? (part.optionBank ?? [])
+							: (part.optionBank ??
+								(isPartOptionalBank && hasRequiredBankQuestion
+									? []
+									: detail.optionBank));
 					const displayInstruction = resolvePartInstruction(
 						part.typeId,
 						part.questions,
 						display.instruction,
+						{
+							partBank: effectivePartBank,
+							matchedInstruction,
+							contextIntro: detail.intro,
+						},
 					);
 					const hasOwnInstruction =
+						(part.instructionHtml !== undefined &&
+							!isEmptyRichText(part.instructionHtml ?? "")) ||
+						Boolean(matchedInstruction);
+					const instructionToShow =
 						part.instructionHtml !== undefined &&
-						!isEmptyRichText(part.instructionHtml ?? "");
+						!isEmptyRichText(part.instructionHtml ?? "")
+							? part.instructionHtml
+							: matchedInstruction;
 					// Part nhóm (#433): header không kèm nhãn dạng bài khi có
 					// instruction riêng — cùng ngôn ngữ với section intro.
 					const fromOwnSource =
@@ -863,7 +896,7 @@ export function QuizPaper({
 									<h2 className="font-semibold">{part.label}</h2>
 									{parsedInline ? null : hasOwnInstruction ? (
 										<RichTextBody
-											text={part.instructionHtml ?? ""}
+											text={instructionToShow ?? ""}
 											className="text-muted-foreground text-sm"
 										/>
 									) : (

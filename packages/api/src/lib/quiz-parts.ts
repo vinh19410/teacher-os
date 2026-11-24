@@ -32,7 +32,7 @@ export interface QuizPart {
 	 * cụm theo type → header dùng QUIZ_TYPE_DISPLAY. */
 	instructionHtml?: string;
 	/** Option bank riêng của part (nhóm thư viện #433). undefined = part dùng
-	 * bank cấp đề (`detail.optionBank`) như trước — caller cũ không đổi. */
+	 * bank cấp đề (`detail.optionBank`) như trước — chỉ áp dụng cho part không phải "group". */
 	optionBank?: string[];
 	/** Nguồn dựng part: `"intro"` = section tách từ marker intro (#301);
 	 * `"group"` = nhóm câu có cấu trúc (thư viện, #433); undefined = cụm theo
@@ -196,9 +196,7 @@ export function buildQuizPartsFromGroups(
 			qStart,
 			typeId: group.type,
 			instructionHtml: group.instruction,
-			...(group.optionBank.length > 0
-				? { optionBank: [...group.optionBank] }
-				: {}),
+			optionBank: [...group.optionBank],
 			source: "group",
 			questions: slice.map((question, offset) => ({
 				q: qOffset + group.startIndex + offset,
