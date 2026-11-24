@@ -101,8 +101,6 @@ const STRICT_PREAMBLE_WORD_BANK_RE =
 	/\b(?:list\s+of\s+(?:words|phrases)|from\s+the\s+(?:list|box)|box\s+below|list\s+below|using\s+(?:the\s+)?(?:list|words|letters?)[^.!?\n]{0,40}\bA\s*[-–—]\s*[B-T])\b/i;
 const ANSWER_SHEET_BOX_RE =
 	/^write\s+(?:your\s+)?answers?\s+in\s+(?:the\s+)?boxes?\b/i;
-const INLINE_MARKER_RE =
-	/\[(\d+)\]|<strong(?:\s[^>]*)?>\s*\((\d+)\)\s*<\/strong\s*>/gi;
 const INLINE_SIBLING_BLOCK_RE = /^<(?:table|ul|ol|p|h[2-4])\b/i;
 const VIETNAMESE_DIACRITIC_RE =
 	/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
@@ -119,7 +117,7 @@ const PASSAGE_STRUCTURE_RE =
 const PASSAGE_STRUCTURE_CLAUSE_RE =
 	/(?:the\s+)?reading\s+passage(?:\s+\d+)?\s+(?:has|contains)\s+[^.!?\n]+[.!?]?/gi;
 const LISTENING_MATCHING_LEAD_IN_RE =
-	/^(?:what|which)\b[^\n]{0,160}\b(?:each\s+of\s+the\s+following|these)\b/i;
+	/^(?:what|which|who)\b[^\n]{0,160}\b(?:each\s+(?:of\s+the\s+(?:following|\w+)|\w+)|these|the\s+following)\b/i;
 
 const HEADINGS_ANCHOR_RE =
 	/\b(?:list\s+of\s+headings?|correct\s+headings?|suitable\s+headings?|heading\s+for\s+(?:each|paragraphs?|sections?)|match\s+(?:each\s+of\s+the\s+following\s+)?headings?)\b/i;
@@ -129,11 +127,15 @@ const SENTEND_ANCHOR_RE =
 	/\bcomplete\s+(?:each|the(?:\s+following)?)\s+sentences?\s+with\s+(?:the\s+)?(?:correct|best)\s+(?:endings?|letters?)\b/i;
 const MAP_ANCHOR_RE = /\blabel\s+the\s+(?:map|plan|floor\s*plan)\b/i;
 const CHOOSE_FROM_BOX_RE =
-	/\bchoose\s+(?:one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+(?:(?:correct|appropriate|best)\s+)?(?:answers?|letters?|options?)\s+from\s+the\s+(?:box|list)\b/i;
+	/\bchoose\s+(?:(?:one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+(?:(?:correct|appropriate|best)\s+)?(?:answers?|letters?|options?)\s+)?from\s+the\s+(?:box|list|options?)\b/i;
 const LOOK_AT_FOLLOWING_RE = /^look\s+at\s+the\s+following\b/i;
 const MATCH_VERB_TAIL_RE = /^match\s+(?:each|the)\b/i;
 const NAMED_MATCHING_DIRECT_RE =
-	/\b(?:match\s+(?:each|the)\b[^.!?\n]{1,100}\bwith\b|use\s+the\s+information\s+in\s+the\s+passage\s+to\s+match|classify\s+the\s+following|choose\s+your\s+answers?\s+from\s+the\s+option\s+bank)\b/i;
+	/\b(?:match\s+(?:each|the)\b[^.!?\n]{1,100}\bwith\b|use\s+the\s+information\s+in\s+the\s+passage\s+to\s+match|classify\s+the\s+following|choose\s+your\s+answers?\s+from\s+the\s+option\s+bank|choose\s+the\s+correct\s+answer\s+and\s+move(?:\s+it)?\s+into\s+the\s+gap)\b/i;
+const LISTENING_NEXT_TO_QUESTIONS_RE =
+	/\b(?:write|choose)\s+(?:the\s+(?:correct|appropriate)\s+)?letter\b[^\n]{0,60}\bnext\s+to\s+questions?\b/i;
+const WRITE_LETTER_TAIL_RE =
+	/^write\s+(?:the\s+)?(?:correct|appropriate)\s+letter\b/i;
 const PERSON_COMPANY_HINT_RE =
 	/\b(?:people|persons?|researchers?|scientists?|writers?|authors?|inventors?|compan(?:y|ies)|experts?|economists?|historians?|psychologists?)\b/i;
 
@@ -142,7 +144,7 @@ const MATCHING_TAIL_DIRECTIVE_RE =
 const MATCHING_TAIL_NB_RE =
 	/^(?:nb\b[:.\s]?|you\s+may\s+(?:use|choose)\s+any\s+letter\s+more\s+than\s+once\b)/i;
 const MATCHING_TAIL_BOXES_RE =
-	/^(?:write|choose)\s+(?:your\s+|the\s+(?:correct|appropriate)\s+)?(?:letters?|answers?|numbers?)\s+in\s+(?:the\s+)?boxes?\b/i;
+	/^(?:write|choose)\s+(?:your\s+|the\s+(?:correct|appropriate)\s+)?(?:letters?|answers?|numbers?)(?:\s*,?\s*A\s*[-–—]\s*[B-T]\s*,?)?\s+in\s+(?:the\s+)?boxes?\b/i;
 const HEADINGS_DONE_EXAMPLE_RE =
 	/^one\s+of\s+the\s+headings\s+has\s+been\s+done\b/i;
 const HEADINGS_EXAMPLE_HEADER_RE = /^example(?:\s+answer)?[:.\s]*$/i;
@@ -151,14 +153,16 @@ const HEADINGS_EXAMPLE_PARAGRAPH_RE = /^(?:paragraph|section)\s+[A-Z]\b/i;
 
 const MCQ_MANY_ANCHOR_RE =
 	/\b(?:choose|select|pick)\s+(?:two|three|four|five|\d+)\s+(?:(?:correct|appropriate|best)\s+)?(?:letters?|answers?|options?)\b/i;
-const MCQ_MANY_WHICH_RE = /^which\s+(?:two|three|four|five|\d+)\b/i;
+const MCQ_MANY_WHICH_RE =
+	/^which(?:\s+(?:are|were))?(?:\s+the)?\s+(?:two|three|four|five|\d+)\b/i;
 const MCQ_MANY_NEGATIVE_RE =
-	/\bfrom\s+the\s+(?:box|list)\b|\bnext\s+to\s+questions?\b|\bwrite\s+the\s+correct\s+letter,?\s*A\s*[-–—]/i;
+	/\bfrom\s+the\s+(?:box|list|options?)\b|\b(?:write|choose)\s+(?:the\s+(?:correct|appropriate)\s+)?letter\s*,?\s*A\s*[-–—]\s*[B-T]\b[^\n]{0,40}\bnext\s+to\s+questions?\b/i;
 const MCQ_MANY_TAIL_NB_RE = /^nb\b[^\n]{0,120}\bany\s+order\b/i;
 
-const MCQ_SINGLE_ANCHOR_RE = /^choose\s+the\s+correct\s+(?:letter|answer)\b/i;
+const MCQ_SINGLE_ANCHOR_RE =
+	/^(?:part\s+\d+\s*[—–\-:]\s*(?:multiple\s+choice\.?\s*)?)?(?:choose|circle)\s+the\s+correct\s+(?:letter|answer|option)s?\b/i;
 const MCQ_SINGLE_NEGATIVE_RE =
-	/\b(?:two|three|four|five|headings?|endings?)\b|\bfrom\s+the\s+(?:list|box)\b/i;
+	/\b(?:two|three|four|five|headings?|endings?)\b|\bfrom\s+the\s+(?:list|box|options?)\b|\bnext\s+to\s+questions?\b|\bmove(?:\s+it)?\s+into\s+the\s+gap\b/i;
 const LETTER_RANGE_TOKEN_RE = /\bA\s*[-–—]\s*([B-T])\b/g;
 const ANY_LETTER_RANGE_RE = /\b[A-T]\s*[-–—]\s*[B-T]\b/;
 const ENUMERATED_LETTERS_RE =
@@ -167,6 +171,19 @@ const ROMAN_RANGE_TOKEN_RE = /\bi\s*(?:[-–—]|to)\s*([ivx]{1,5})\b/g;
 
 const MAX_INLINE_SCAN_BLOCKS = 30;
 const MAX_LEAD_IN_WITHOUT_MARKER = 2;
+const MAX_OFFSET_MARKER_NUM = 60;
+const MAX_QUIZ_INLINE_DELTA = 40;
+const BRACKET_MARKER_RE = /\[(\d+)\]/g;
+const LEAF_PAREN_MARKER_RE = /^\((\d+)\)$/;
+const NON_INLINE_PART_TYPES = new Set([
+	"mcq",
+	"mcq1",
+	"mcq3",
+	"mcq_many",
+	"tfng",
+	"ynng",
+	"headings",
+]);
 
 const DEDICATED_NAMED_MATCHING_TYPES: readonly string[] = [
 	"features",
@@ -710,17 +727,332 @@ function splitOwnInstructionLines(html: string): string[] {
 	return lines;
 }
 
-function extractInlineMarkerNumbers(block: string): number[] {
-	const numbers: number[] = [];
-	for (const match of block.matchAll(INLINE_MARKER_RE)) {
-		const raw = match[1] ?? match[2];
+function pushBracketMarkers(text: string, out: number[]): void {
+	if (!text.includes("[")) return;
+	for (const match of text.matchAll(BRACKET_MARKER_RE)) {
+		const raw = match[1];
 		if (!raw) continue;
 		const num = Number.parseInt(raw, 10);
 		if (Number.isSafeInteger(num) && num >= 1) {
-			numbers.push(num);
+			out.push(num);
 		}
 	}
+}
+
+/**
+ * Extracts visible inline question markers (`[N]` or leaf `<strong>(N)</strong>`)
+ * using a single-pass O(N) HTML scanner that strips comments, forbidden
+ * containers (`script`, `style`, `svg`, ...), `<a>...</a>` contents, and tag
+ * attributes — preventing hidden markup spoofing and matching `parseInlineInstruction`.
+ */
+function extractInlineMarkerNumbers(block: string): number[] {
+	const numbers: number[] = [];
+	const len = block.length;
+	if (len === 0) return numbers;
+	if (!block.includes("<")) {
+		pushBracketMarkers(decodeBasicEntities(block), numbers);
+		return numbers;
+	}
+
+	const lower = toAsciiLower(block);
+	let i = 0;
+	let anchorDepth = 0;
+
+	while (i < len) {
+		const lt = block.indexOf("<", i);
+		if (lt === -1) {
+			if (anchorDepth === 0) {
+				pushBracketMarkers(decodeBasicEntities(block.slice(i)), numbers);
+			}
+			break;
+		}
+		if (lt > i && anchorDepth === 0) {
+			pushBracketMarkers(decodeBasicEntities(block.slice(i, lt)), numbers);
+		}
+
+		// HTML comment
+		if (block.startsWith("<!--", lt)) {
+			const commentEnd = block.indexOf("-->", lt + 4);
+			if (commentEnd === -1) break;
+			i = commentEnd + 3;
+			continue;
+		}
+
+		let pos = lt + 1;
+		if (pos >= len) break;
+
+		const firstCode = block.charCodeAt(pos);
+		const isClose = firstCode === 47; // '/'
+		if (isClose) {
+			pos += 1;
+		} else if (firstCode === 33 || firstCode === 63) {
+			const closeIdx = block.indexOf(">", pos + 1);
+			if (closeIdx === -1) break;
+			i = closeIdx + 1;
+			continue;
+		}
+
+		if (pos >= len || !isAsciiLetter(block.charCodeAt(pos))) {
+			i = lt + 1;
+			continue;
+		}
+
+		const nameStart = pos;
+		while (pos < len && isTagNameChar(block.charCodeAt(pos))) {
+			pos += 1;
+		}
+		const tagName = lower.slice(nameStart, pos);
+
+		let quote: string | null = null;
+		let tagEnd = -1;
+		while (pos < len) {
+			const ch = block[pos];
+			if (quote !== null) {
+				if (ch === quote) quote = null;
+			} else if (ch === '"' || ch === "'") {
+				quote = ch;
+			} else if (ch === ">") {
+				tagEnd = pos;
+				break;
+			}
+			pos += 1;
+		}
+		if (tagEnd === -1) break;
+
+		const isSelfClosing = !isClose && block[tagEnd - 1] === "/";
+		const isForeignSelfClosing =
+			isSelfClosing && (tagName === "svg" || tagName === "math");
+
+		if (
+			!isClose &&
+			!isForeignSelfClosing &&
+			FORBIDDEN_CONTAINER_TAGS.has(tagName)
+		) {
+			const closeMarker = `</${tagName}`;
+			let searchFrom = tagEnd + 1;
+			let closeEnd = -1;
+			while (searchFrom < len) {
+				const found = lower.indexOf(closeMarker, searchFrom);
+				if (found === -1) break;
+				const afterName = found + closeMarker.length;
+				const nextCh = lower[afterName];
+				if (
+					nextCh === ">" ||
+					nextCh === " " ||
+					nextCh === "\t" ||
+					nextCh === "\n" ||
+					nextCh === "\r" ||
+					nextCh === "/"
+				) {
+					const gt = block.indexOf(">", afterName);
+					closeEnd = gt === -1 ? len : gt + 1;
+					break;
+				}
+				searchFrom = afterName;
+			}
+			i = closeEnd === -1 ? len : closeEnd;
+			continue;
+		}
+
+		if (tagName === "a") {
+			if (!isClose && !isSelfClosing) {
+				anchorDepth += 1;
+			} else if (isClose && anchorDepth > 0) {
+				anchorDepth -= 1;
+			}
+			i = tagEnd + 1;
+			continue;
+		}
+
+		// Leaf <strong>(N)</strong> outside <a> (no nested child tags before </strong>)
+		if (
+			anchorDepth === 0 &&
+			!isClose &&
+			!isSelfClosing &&
+			tagName === "strong"
+		) {
+			const nextLt = block.indexOf("<", tagEnd + 1);
+			if (nextLt !== -1 && lower.startsWith("</strong", nextLt)) {
+				const afterCloseName = nextLt + "</strong".length;
+				const nextCh = lower[afterCloseName];
+				if (
+					nextCh === ">" ||
+					nextCh === " " ||
+					nextCh === "\t" ||
+					nextCh === "\n" ||
+					nextCh === "\r"
+				) {
+					const closeGt = block.indexOf(">", afterCloseName);
+					if (closeGt !== -1) {
+						const innerText = decodeBasicEntities(
+							block.slice(tagEnd + 1, nextLt),
+						).trim();
+						const leafMatch = LEAF_PAREN_MARKER_RE.exec(innerText);
+						if (leafMatch?.[1]) {
+							const num = Number.parseInt(leafMatch[1], 10);
+							if (Number.isSafeInteger(num) && num >= 1) {
+								numbers.push(num);
+							}
+						} else {
+							pushBracketMarkers(innerText, numbers);
+						}
+						i = closeGt + 1;
+						continue;
+					}
+				}
+			}
+		}
+
+		i = tagEnd + 1;
+	}
+
 	return numbers;
+}
+
+/**
+ * Infers a single quiz-wide positive IELTS section/passage marker offset
+ * (`1..40`) across all inline sibling blocks (e.g. Listening Section 3 markers
+ * `21..30` mapped to local `1..10` -> delta `20`, Reading Passage 2 `14..23`
+ * -> delta `13`). Fails closed to `0` unless every valid marker maps into an
+ * inline-capable part, covers >= 2 inline parts, and achieves a unique maximum
+ * `(cleanClusters, exactBoundaryHits)` score.
+ */
+function inferQuizInlineDelta(
+	blocks: readonly string[],
+	allParts: readonly QuizPart[],
+): number {
+	const totalQuestions = allParts.reduce(
+		(sum, part) => sum + part.questions.length,
+		0,
+	);
+	if (totalQuestions === 0 || allParts.length < 2) return 0;
+
+	const ownerByNumber = new Map<number, QuizPart>();
+	const rangeByPartId = new Map<string, { start: number; end: number }>();
+	for (const part of allParts) {
+		if (part.questions.length === 0) continue;
+		let minQ = Number.POSITIVE_INFINITY;
+		let maxQ = Number.NEGATIVE_INFINITY;
+		for (const q of part.questions) {
+			ownerByNumber.set(q.number, part);
+			if (q.number < minQ) minQ = q.number;
+			if (q.number > maxQ) maxQ = q.number;
+		}
+		rangeByPartId.set(part.id, { start: minQ, end: maxQ });
+	}
+
+	const clusters: number[][] = [];
+	const validMarkers = new Set<number>();
+	let currentCluster: number[] = [];
+
+	const flushCluster = () => {
+		if (currentCluster.length > 0) {
+			clusters.push(currentCluster);
+			currentCluster = [];
+		}
+	};
+
+	for (const block of blocks) {
+		if (INLINE_SIBLING_BLOCK_RE.test(block.trim())) {
+			const markers = extractInlineMarkerNumbers(block).filter(
+				(m) => m >= 1 && m <= MAX_OFFSET_MARKER_NUM,
+			);
+			if (markers.length > 0) {
+				currentCluster.push(...markers);
+				for (const m of markers) validMarkers.add(m);
+				continue;
+			}
+		}
+		flushCluster();
+	}
+	flushCluster();
+
+	if (validMarkers.size < 2) return 0;
+
+	const allDirectInRange = [...validMarkers].every((m) => {
+		const owner = ownerByNumber.get(m);
+		return owner !== undefined && !NON_INLINE_PART_TYPES.has(owner.typeId);
+	});
+	if (allDirectInRange) return 0;
+
+	let bestDelta = 0;
+	let bestClean = -1;
+	let bestBoundary = -1;
+	let tieCount = 0;
+
+	for (let delta = 1; delta <= MAX_QUIZ_INLINE_DELTA; delta += 1) {
+		const coveredInlineParts = new Set<string>();
+		let validCandidate = true;
+
+		for (const m of validMarkers) {
+			const shifted = m - delta;
+			if (shifted < 1) {
+				validCandidate = false;
+				break;
+			}
+			const owner = ownerByNumber.get(shifted);
+			if (!owner || NON_INLINE_PART_TYPES.has(owner.typeId)) {
+				validCandidate = false;
+				break;
+			}
+			coveredInlineParts.add(owner.id);
+		}
+		if (!validCandidate || coveredInlineParts.size < 2) continue;
+
+		let cleanClusters = 0;
+		let exactBoundaryHits = 0;
+		for (const cluster of clusters) {
+			const firstOwner = ownerByNumber.get((cluster[0] ?? 0) - delta);
+			if (!firstOwner) continue;
+			let sameOwner = true;
+			let minShifted = Number.POSITIVE_INFINITY;
+			let maxShifted = Number.NEGATIVE_INFINITY;
+			for (const m of cluster) {
+				const s = m - delta;
+				if (ownerByNumber.get(s)?.id !== firstOwner.id) {
+					sameOwner = false;
+					break;
+				}
+				if (s < minShifted) minShifted = s;
+				if (s > maxShifted) maxShifted = s;
+			}
+			if (sameOwner) {
+				cleanClusters += 1;
+				const range = rangeByPartId.get(firstOwner.id);
+				if (range) {
+					if (minShifted === range.start) exactBoundaryHits += 1;
+					if (maxShifted === range.end) exactBoundaryHits += 1;
+				}
+			}
+		}
+
+		if (
+			cleanClusters > bestClean ||
+			(cleanClusters === bestClean && exactBoundaryHits > bestBoundary)
+		) {
+			bestDelta = delta;
+			bestClean = cleanClusters;
+			bestBoundary = exactBoundaryHits;
+			tieCount = 1;
+		} else if (
+			cleanClusters === bestClean &&
+			exactBoundaryHits === bestBoundary
+		) {
+			tieCount += 1;
+		}
+	}
+
+	return tieCount === 1 ? bestDelta : 0;
+}
+
+function normalizeMcqManyLine(line: string): string {
+	return collapseWhitespace(
+		line
+			.toLowerCase()
+			.replace(/[–—]/g, "-")
+			.replace(/\bbox(?:es)?\s+\d+\s*(?:-|and|&|to)\s*\d+\b/gi, "boxes #")
+			.replace(/[.,;:!?]+$/g, ""),
+	);
 }
 
 function hasOrderedTokens(
@@ -842,6 +1174,17 @@ function classifyMatchingLine(
 	return null;
 }
 
+function isListeningMatchingLine2(nextClean: string): boolean {
+	if (!nextClean) return false;
+	return (
+		CHOOSE_FROM_BOX_RE.test(nextClean) ||
+		NAMED_MATCHING_DIRECT_RE.test(nextClean) ||
+		LISTENING_NEXT_TO_QUESTIONS_RE.test(nextClean) ||
+		(WRITE_LETTER_TAIL_RE.test(nextClean) &&
+			!MATCHING_TAIL_BOXES_RE.test(nextClean))
+	);
+}
+
 function isMatchingAnchorAt(
 	cleans: readonly string[],
 	idx: number,
@@ -857,9 +1200,9 @@ function isMatchingAnchorAt(
 		}
 	}
 	if (
+		isMcqAnchorAt(clean) === null &&
 		LISTENING_MATCHING_LEAD_IN_RE.test(clean) &&
-		nextClean &&
-		CHOOSE_FROM_BOX_RE.test(nextClean)
+		isListeningMatchingLine2(nextClean)
 	) {
 		return "named";
 	}
@@ -879,6 +1222,10 @@ function isMcqAnchorAt(clean: string): "mcq_many" | "mcq_single" | null {
 		!MCQ_SINGLE_NEGATIVE_RE.test(clean) &&
 		!ANY_LETTER_RANGE_RE.test(clean)
 	) {
+		const declaredCount = extractExpectedBankCount("mcq", clean);
+		if (declaredCount !== null && declaredCount > 4) {
+			return null;
+		}
 		return "mcq_single";
 	}
 	return null;
@@ -942,7 +1289,7 @@ function isAnotherCompletionAnchor(
  * - Disabled for `headings` (headings match passage paragraphs, never inline cloze).
  * - Caps total scanned blocks and consecutive non-marker lead-ins.
  * - Stops on Vietnamese notes or any other group anchor.
- * - Rejects marker ranges belonging strictly to another missing part at delta=0.
+ * - Rejects marker ranges belonging strictly to another part using quizInlineDelta.
  */
 function scanInlineSiblingEndIdx(
 	blocks: readonly string[],
@@ -950,6 +1297,7 @@ function scanInlineSiblingEndIdx(
 	endIdx: number,
 	candidatePart: QuizPart,
 	allParts: readonly QuizPart[],
+	quizInlineDelta = 0,
 ): number {
 	if (candidatePart.typeId === "headings") {
 		return endIdx;
@@ -961,6 +1309,13 @@ function scanInlineSiblingEndIdx(
 			(other) => other.id !== candidatePart.id && other.questions.length > 0,
 		)
 		.map((other) => new Set(other.questions.map((q) => q.number)));
+
+	const isStrictlyOther = (markers: readonly number[]): boolean =>
+		ownNumbers.size > 0 &&
+		!markers.some((m) => ownNumbers.has(m - quizInlineDelta)) &&
+		otherPartNumberSets.some((otherNums) =>
+			markers.every((m) => otherNums.has(m - quizInlineDelta)),
+		);
 
 	let scanIdx = endIdx + 1;
 	let scanned = 0;
@@ -996,13 +1351,7 @@ function scanInlineSiblingEndIdx(
 				break;
 			}
 		} else {
-			if (
-				ownNumbers.size > 0 &&
-				!markers.some((m) => ownNumbers.has(m)) &&
-				otherPartNumberSets.some((otherNums) =>
-					markers.every((m) => otherNums.has(m)),
-				)
-			) {
+			if (isStrictlyOther(markers)) {
 				break;
 			}
 			consecutiveNoMarker = 0;
@@ -1018,16 +1367,8 @@ function scanInlineSiblingEndIdx(
 		return endIdx;
 	}
 
-	if (ownNumbers.size > 0 && collectedMarkers.length > 0) {
-		const hitsOwnExact = collectedMarkers.some((m) => ownNumbers.has(m));
-		if (!hitsOwnExact) {
-			const hitsOtherExact = otherPartNumberSets.some((otherNums) =>
-				collectedMarkers.every((m) => otherNums.has(m)),
-			);
-			if (hitsOtherExact) {
-				return endIdx;
-			}
-		}
+	if (collectedMarkers.length > 0 && isStrictlyOther(collectedMarkers)) {
+		return endIdx;
 	}
 
 	return lastMarkerIdx;
@@ -1039,6 +1380,7 @@ function detectMatchingCluster(
 	startIdx: number,
 	missingParts: readonly QuizPart[],
 	allParts: readonly QuizPart[],
+	quizInlineDelta = 0,
 ): { endIdx: number; targetIdx: number } | null {
 	const clean = cleans[startIdx] ?? "";
 	const nextClean = cleans[startIdx + 1] ?? "";
@@ -1060,9 +1402,9 @@ function detectMatchingCluster(
 
 	if (
 		!kind &&
+		isMcqAnchorAt(clean) === null &&
 		LISTENING_MATCHING_LEAD_IN_RE.test(clean) &&
-		nextClean &&
-		CHOOSE_FROM_BOX_RE.test(nextClean)
+		isListeningMatchingLine2(nextClean)
 	) {
 		kind = "named";
 		anchorIdx = startIdx + 1;
@@ -1136,6 +1478,7 @@ function detectMatchingCluster(
 		endIdx,
 		targetPart,
 		allParts,
+		quizInlineDelta,
 	);
 
 	return { endIdx, targetIdx };
@@ -1155,12 +1498,13 @@ function detectMcqCluster(
 		const targetIdx = missingParts.findIndex((p) => p.typeId === "mcq_many");
 		if (targetIdx === -1) return null;
 
+		const startedWithWhich = MCQ_MANY_WHICH_RE.test(clean);
 		let endIdx = startIdx;
 		while (endIdx + 1 < blocks.length) {
 			const tailClean = cleans[endIdx + 1] ?? "";
 			if (!tailClean) break;
 			if (
-				MCQ_MANY_WHICH_RE.test(tailClean) ||
+				(!startedWithWhich && MCQ_MANY_WHICH_RE.test(tailClean)) ||
 				MATCHING_TAIL_BOXES_RE.test(tailClean) ||
 				MCQ_MANY_TAIL_NB_RE.test(tailClean)
 			) {
@@ -1238,6 +1582,9 @@ export function deduplicateGroupIntroPreamble(
 	const missingParts = parts.filter((p) =>
 		isEffectivelyEmptyInstruction(p.instructionHtml),
 	);
+	const quizInlineDelta = inferQuizInlineDelta(blocks, parts);
+	const matchedMcqManyExactLines = new Set<string>();
+	let justSkippedDuplicateMcqMany = false;
 
 	const keptBlocks: string[] = [];
 
@@ -1255,8 +1602,31 @@ export function deduplicateGroupIntroPreamble(
 						own.includes(clean) || (own.length >= 20 && clean.includes(own)),
 				));
 		if (isDuplicate) {
+			justSkippedDuplicateMcqMany = false;
 			continue;
 		}
+
+		// 1b. Dedupe các dòng lặp hệt của cụm mcq_many liên tiếp đã bị clusterByType gộp thành 1 part
+		if (matchedMcqManyExactLines.size > 0) {
+			const normalizedLine = normalizeMcqManyLine(clean);
+			if (
+				isMcqAnchorAt(clean) === "mcq_many" &&
+				!missingParts.some((p) => p.typeId === "mcq_many") &&
+				matchedMcqManyExactLines.has(normalizedLine)
+			) {
+				justSkippedDuplicateMcqMany = true;
+				continue;
+			}
+			if (
+				justSkippedDuplicateMcqMany &&
+				(MATCHING_TAIL_BOXES_RE.test(clean) ||
+					MCQ_MANY_TAIL_NB_RE.test(clean)) &&
+				matchedMcqManyExactLines.has(normalizedLine)
+			) {
+				continue;
+			}
+		}
+		justSkippedDuplicateMcqMany = false;
 
 		// 2a. Kiểm tra cụm TFNG / YNNG nhiều dòng cho nhóm đang thiếu instruction
 		const tfngCluster = detectTfngCluster(blocks, cleans, idx);
@@ -1286,6 +1656,7 @@ export function deduplicateGroupIntroPreamble(
 			idx,
 			missingParts,
 			parts,
+			quizInlineDelta,
 		);
 		if (matchingCluster) {
 			const targetPart = missingParts[matchingCluster.targetIdx];
@@ -1304,9 +1675,16 @@ export function deduplicateGroupIntroPreamble(
 		const mcqCluster = detectMcqCluster(blocks, cleans, idx, missingParts);
 		if (mcqCluster) {
 			const targetPart = missingParts[mcqCluster.targetIdx];
-			const joined = joinMixedBlocks(blocks.slice(idx, mcqCluster.endIdx + 1));
+			const clusterBlocks = blocks.slice(idx, mcqCluster.endIdx + 1);
+			const joined = joinMixedBlocks(clusterBlocks);
 			if (targetPart && !isEffectivelyEmptyInstruction(joined)) {
 				matchedInstructionsByPartId.set(targetPart.id, joined);
+				if (targetPart.typeId === "mcq_many") {
+					for (const clusterBlock of clusterBlocks) {
+						const norm = normalizeMcqManyLine(toSafePlainText(clusterBlock));
+						if (norm) matchedMcqManyExactLines.add(norm);
+					}
+				}
 				missingParts.splice(mcqCluster.targetIdx, 1);
 				idx = mcqCluster.endIdx;
 				continue;
@@ -1417,6 +1795,7 @@ export function deduplicateGroupIntroPreamble(
 					endIdx,
 					candidatePart,
 					parts,
+					quizInlineDelta,
 				);
 
 				const joined = joinMixedBlocks(blocks.slice(idx, endIdx + 1));
