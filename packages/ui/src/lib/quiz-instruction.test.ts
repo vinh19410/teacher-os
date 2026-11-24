@@ -2254,4 +2254,1019 @@ describe("quiz-instruction helper suite", () => {
 			).toBe(18);
 		});
 	});
+
+	describe("deduplicateGroupIntroPreamble — Listening instruction isolation & offset safety", () => {
+		it("assigns Bikes Q8-10 mcq_many instruction and Q1-7 table without leaking to preamble on ungrouped fallback", () => {
+			const bikesParts: QuizPart[] = [
+				{
+					id: "part-1",
+					label: "Questions 1–7",
+					qStart: 1,
+					typeId: "tablecomp",
+					questions: Array.from({ length: 7 }, (_, i) => ({
+						q: i,
+						number: i + 1,
+						stem: i === 4 ? "easier; ride ____" : `Q${i + 1} ____`,
+						opts: null,
+						pin: null,
+						type: "tablecomp",
+					})),
+				},
+				{
+					id: "part-2",
+					label: "Questions 8–10",
+					qStart: 8,
+					typeId: "mcq_many",
+					questions: Array.from({ length: 3 }, (_, i) => ({
+						q: 7 + i,
+						number: 8 + i,
+						stem: "Choose THREE letters, A-F.",
+						opts: ["A", "B", "C", "D", "E", "F"],
+						pin: null,
+						type: "mcq_many",
+					})),
+				},
+			];
+			const flattenedIntro = [
+				"<p>Complete the table below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.</p>",
+				"<h3><strong>Talking about the history of bikes</strong></h3>",
+				"<table><tbody><tr><td><p><strong>(1)</strong></p></td><td><p><strong>(2)</strong></p></td><td><p><strong>(3)</strong></p></td><td><p><strong>(4)</strong></p></td><td><p>easier; ride <strong>(5)</strong></p></td><td><p><strong>(6)</strong></p></td><td><p><strong>(7)</strong></p></td></tr></tbody></table>",
+				"<p>Choose THREE letters, A-F, and write them next to questions 8-10. The invention of different gears on a bicycle affected which THREE of the following?</p>",
+			].join("\n");
+
+			const res = deduplicateGroupIntroPreamble(flattenedIntro, bikesParts);
+			expect(res.cleanedPreamble).toBe("");
+			expect(res.matchedInstructionsByPartId.get("part-1")).toContain(
+				"easier; ride <strong>(5)</strong>",
+			);
+			expect(res.matchedInstructionsByPartId.get("part-1")).not.toContain(
+				"Choose THREE letters",
+			);
+			expect(res.matchedInstructionsByPartId.get("part-2")).toContain(
+				"Choose THREE letters, A-F, and write them next to questions 8-10.",
+			);
+		});
+
+		it("isolates City Health Services 'Choose the correct answer.' strictly to mcq1 in both grouped and ungrouped modes", () => {
+			const formHtml =
+				"<p>Complete the form below. Write NO MORE THAN TWO WORDS for each answer.</p>" +
+				"<h3><strong>HOUSE SERVICE INFORMATION</strong></h3>" +
+				"<table><tbody><tr><td><ul><li>Location: <strong>(1)</strong> London</li><li>Rooms: two <strong>(2)</strong> bedrooms</li><li>an <strong>(3)</strong></li><li>and <strong>(4)</strong></li></ul></td></tr></tbody></table>";
+			const mcqHtml = "<p>Choose the correct answer.</p>";
+			const sentHtml =
+				"<p>Complete the sentences below. Write ONE WORD AND/OR A NUMBER for each answer.</p>" +
+				"<table><tbody><tr><td><ul><li>12 <strong>(8)</strong> Road.</li><li>next <strong>(9)</strong></li><li><strong>(10)</strong> hours</li></ul></td></tr></tbody></table>";
+			const flattenedIntro = [formHtml, mcqHtml, sentHtml].join("\n");
+
+			const makeQuestions = (start: number, count: number, type: string) =>
+				Array.from({ length: count }, (_, i) => ({
+					q: start + i,
+					number: start + i + 1,
+					stem: `Q${start + i + 1}`,
+					opts: type === "mcq1" ? ["A", "B", "C"] : null,
+					pin: null,
+					type,
+				}));
+
+			const groupedParts: QuizPart[] = [
+				{
+					id: "part-1",
+					label: "Questions 1–4",
+					qStart: 1,
+					typeId: "form",
+					source: "group",
+					instructionHtml: formHtml,
+					questions: makeQuestions(0, 4, "form"),
+				},
+				{
+					id: "part-2",
+					label: "Questions 5–7",
+					qStart: 5,
+					typeId: "mcq1",
+					source: "group",
+					instructionHtml: mcqHtml,
+					questions: makeQuestions(4, 3, "mcq1"),
+				},
+				{
+					id: "part-3",
+					label: "Questions 8–10",
+					qStart: 8,
+					typeId: "sent4",
+					source: "group",
+					instructionHtml: sentHtml,
+					questions: makeQuestions(7, 3, "sent4"),
+				},
+			];
+			const groupedRes = deduplicateGroupIntroPreamble(
+				flattenedIntro,
+				groupedParts,
+			);
+			expect(groupedRes.cleanedPreamble).toBe("");
+
+			const ungroupedParts: QuizPart[] = groupedParts.map(
+				({ instructionHtml: _i, source: _s, ...rest }) => rest,
+			);
+			const ungroupedRes = deduplicateGroupIntroPreamble(
+				flattenedIntro,
+				ungroupedParts,
+			);
+			expect(ungroupedRes.cleanedPreamble).toBe("");
+			expect(ungroupedRes.matchedInstructionsByPartId.get("part-1")).toContain(
+				"Complete the form below.",
+			);
+			expect(
+				ungroupedRes.matchedInstructionsByPartId.get("part-1"),
+			).not.toContain("Choose the correct answer.");
+			expect(ungroupedRes.matchedInstructionsByPartId.get("part-2")).toContain(
+				"Choose the correct answer.",
+			);
+			expect(ungroupedRes.matchedInstructionsByPartId.get("part-3")).toContain(
+				"Complete the sentences below.",
+			);
+			expect(
+				ungroupedRes.matchedInstructionsByPartId.get("part-3"),
+			).not.toContain("Choose the correct answer.");
+		});
+
+		it("stops notes completion before 'Choose the correct answer and move (it) into the gap' matching in C14T3-S3, C15T3-S3, C20T3-S3, and C20T4-S2", () => {
+			// C14T3-S3 / C15T3-S3 shape: notes (local 1..6, markers 21..26) + matching (local 7..10, markers 27..30)
+			const notesMatchingParts: QuizPart[] = [
+				{
+					id: "part-1",
+					label: "Questions 1–6",
+					qStart: 1,
+					typeId: "notes",
+					questions: Array.from({ length: 6 }, (_, i) => ({
+						q: i,
+						number: i + 1,
+						stem: `Note ${i + 1} ____`,
+						opts: null,
+						pin: null,
+						type: "notes",
+					})),
+				},
+				{
+					id: "part-2",
+					label: "Questions 7–10",
+					qStart: 7,
+					typeId: "matching",
+					questions: Array.from({ length: 4 }, (_, i) => ({
+						q: 6 + i,
+						number: 7 + i,
+						stem: `Member ${i + 1}`,
+						opts: null,
+						pin: null,
+						type: "matching",
+					})),
+				},
+			];
+			const c14Intro = [
+				"<p>Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.</p>",
+				"<p><strong>Background on school marching band</strong></p>",
+				"<p>It consists of around <strong>(21)</strong> students.</p>",
+				"<p>It is due to play in a <strong>(22)</strong> band competition.</p>",
+				"<p>It has been invited to play in the town’s <strong>(23)</strong></p>",
+				"<p>They have listened to a talk by a <strong>(24)</strong></p>",
+				"<p>Joe will discuss a <strong>(25)</strong> with the band.</p>",
+				"<p>Joe hopes the band will attend a <strong>(26)</strong> next month.</p>",
+				"<p>What problem does Joe mention in connection with each of the following band members? Choose the correct answer and move it into the gap.</p>",
+				"<p><strong>Band members Problems</strong></p>",
+				"<ul><li>flautist <strong>(27)</strong></li><li>trumpeter <strong>(28)</strong></li><li>trombonist <strong>(29)</strong></li><li>percussionist <strong>(30)</strong></li></ul>",
+			].join("");
+
+			const c14Res = deduplicateGroupIntroPreamble(
+				c14Intro,
+				notesMatchingParts,
+			);
+			expect(c14Res.cleanedPreamble).toBe("");
+			expect(c14Res.matchedInstructionsByPartId.get("part-1")).toContain(
+				"(26)",
+			);
+			expect(c14Res.matchedInstructionsByPartId.get("part-1")).not.toContain(
+				"Choose the correct answer",
+			);
+			expect(c14Res.matchedInstructionsByPartId.get("part-1")).not.toContain(
+				"(27)",
+			);
+			expect(c14Res.matchedInstructionsByPartId.get("part-2")).toContain(
+				"Choose the correct answer and move it into the gap.",
+			);
+			expect(c14Res.matchedInstructionsByPartId.get("part-2")).toContain(
+				"(30)",
+			);
+
+			// C20T3-S3 real shape: mcq3 (21-26) + matching (27-30) with "move into the gap" (no "it")
+			const c20T3Parts: QuizPart[] = [
+				{
+					id: "part-1",
+					label: "Questions 1–6",
+					qStart: 1,
+					typeId: "mcq3",
+					questions: Array.from({ length: 6 }, (_, i) => ({
+						q: i,
+						number: i + 1,
+						stem: `Q${i + 1}`,
+						opts: ["A", "B", "C"],
+						pin: null,
+						type: "mcq3",
+					})),
+				},
+				{
+					id: "part-2",
+					label: "Questions 7–10",
+					qStart: 7,
+					typeId: "matching",
+					questions: Array.from({ length: 4 }, (_, i) => ({
+						q: 6 + i,
+						number: 7 + i,
+						stem: `Show ${i + 1}`,
+						opts: null,
+						pin: null,
+						type: "matching",
+					})),
+				},
+			];
+			const c20T3Intro = [
+				"<p>Choose the correct answer.</p>",
+				"<p>What comment is made about the programme for each of the following shows? Choose the correct answer and move into the gap.</p>",
+				"<ul><li>Show 1 <strong>(27)</strong></li><li>Show 2 <strong>(28)</strong></li><li>Show 3 <strong>(29)</strong></li><li>Show 4 <strong>(30)</strong></li></ul>",
+			].join("\n");
+			const c20T3Res = deduplicateGroupIntroPreamble(c20T3Intro, c20T3Parts);
+			expect(c20T3Res.cleanedPreamble).toBe("");
+			expect(c20T3Res.matchedInstructionsByPartId.get("part-1")).toContain(
+				"Choose the correct answer.",
+			);
+			expect(c20T3Res.matchedInstructionsByPartId.get("part-2")).toContain(
+				"move into the gap",
+			);
+
+			// C20T4-S2 real shape: merged mcq_many (11-14 from 2 consecutive groups) + matching (15-20)
+			const c20T4Parts: QuizPart[] = [
+				{
+					id: "part-1",
+					label: "Questions 1–4",
+					qStart: 1,
+					typeId: "mcq_many",
+					questions: Array.from({ length: 4 }, (_, i) => ({
+						q: i,
+						number: i + 1,
+						stem: `Q${i + 1}`,
+						opts: ["A", "B", "C", "D", "E"],
+						pin: null,
+						type: "mcq_many",
+					})),
+				},
+				{
+					id: "part-2",
+					label: "Questions 5–10",
+					qStart: 5,
+					typeId: "matching",
+					questions: Array.from({ length: 6 }, (_, i) => ({
+						q: 4 + i,
+						number: 5 + i,
+						stem: `Year ${i + 1}`,
+						opts: null,
+						pin: null,
+						type: "matching",
+					})),
+				},
+			];
+			const c20T4Intro = [
+				"<p>Choose TWO correct answers.</p>",
+				"<p>Choose TWO correct answers.</p>",
+				"<p>Which event in the history of football in the UK took place in each of the following years? Choose the correct answer and move into the gap</p>",
+			].join("\n");
+			const c20T4Res = deduplicateGroupIntroPreamble(c20T4Intro, c20T4Parts);
+			expect(c20T4Res.cleanedPreamble).toBe("");
+			expect(c20T4Res.matchedInstructionsByPartId.get("part-1")).toContain(
+				"Choose TWO correct answers.",
+			);
+			expect(c20T4Res.matchedInstructionsByPartId.get("part-2")).toContain(
+				"move into the gap",
+			);
+		});
+
+		it("infers quiz-wide inline delta safely across offset sections, out-of-order tables, non-inline parts, and spoofed HTML", () => {
+			// 1. Offset notes (21..26) directly followed by matching inline body (27..30) with NO anchor between them,
+			//    plus out-of-order (22),(21) and HTML comment/attribute/link spoof traps.
+			const offsetParts: QuizPart[] = [
+				{
+					id: "part-1",
+					label: "Questions 1–6",
+					qStart: 1,
+					typeId: "notes",
+					questions: Array.from({ length: 6 }, (_, i) => ({
+						q: i,
+						number: i + 1,
+						stem: `N${i + 1}`,
+						opts: null,
+						pin: null,
+						type: "notes",
+					})),
+				},
+				{
+					id: "part-2",
+					label: "Questions 7–10",
+					qStart: 7,
+					typeId: "matching",
+					questions: Array.from({ length: 4 }, (_, i) => ({
+						q: 6 + i,
+						number: 7 + i,
+						stem: `M${i + 1}`,
+						opts: null,
+						pin: null,
+						type: "matching",
+					})),
+				},
+			];
+			const offsetIntro = [
+				"<p>Complete the notes below. Write ONE WORD ONLY for each answer.</p>",
+				'<p><!-- [100] --><span title="[99]">Line B <strong>(22)</strong> and Line A <strong>(21)</strong></span></p>',
+				"<p>Line C <strong>(23)</strong>, <strong>(24)</strong>, <strong>(25)</strong>, <strong>(26)</strong></p>",
+				"<p>Part 2 item <strong>(27)</strong>, <strong>(28)</strong>, <strong>(29)</strong>, <strong>(30)</strong></p>",
+			].join("");
+			const offsetRes = deduplicateGroupIntroPreamble(offsetIntro, offsetParts);
+			expect(offsetRes.matchedInstructionsByPartId.get("part-1")).toContain(
+				"(26)",
+			);
+			expect(offsetRes.matchedInstructionsByPartId.get("part-1")).not.toContain(
+				"(27)",
+			);
+
+			// 2. HTML attribute and <a> href spoofing must not be treated as inline markers
+			const spoofIntro = [
+				"<p>Complete the notes below. Write ONE WORD ONLY for each answer.</p>",
+				'<p title="[21][22]">Ghi chú không có chỗ trống.</p>',
+				'<p><a href="https://example.com/[21]/[22]">Tham khảo [23]</a></p>',
+			].join("");
+			const spoofRes = deduplicateGroupIntroPreamble(spoofIntro, offsetParts);
+			expect(spoofRes.matchedInstructionsByPartId.get("part-1")).not.toContain(
+				"Ghi chú không có chỗ trống.",
+			);
+			expect(spoofRes.cleanedPreamble).toContain("Ghi chú không có chỗ trống.");
+
+			// 3. Non-inline parts guard (Actual-Test-S3-effects-of-music shape): mcq3(1-4) + mcq_many(5-6) + matching(7-10)
+			//    with markers [27..30] must NOT invent delta=23 that touches mcq3/mcq_many.
+			const musicParts: QuizPart[] = [
+				{
+					id: "part-1",
+					label: "Questions 1–4",
+					qStart: 1,
+					typeId: "mcq3",
+					questions: Array.from({ length: 4 }, (_, i) => ({
+						q: i,
+						number: i + 1,
+						stem: `Q${i + 1}`,
+						opts: ["A", "B", "C"],
+						pin: null,
+						type: "mcq3",
+					})),
+				},
+				{
+					id: "part-2",
+					label: "Questions 5–6",
+					qStart: 5,
+					typeId: "mcq_many",
+					questions: Array.from({ length: 2 }, (_, i) => ({
+						q: 4 + i,
+						number: 5 + i,
+						stem: `Q${5 + i}`,
+						opts: ["A", "B", "C", "D", "E"],
+						pin: null,
+						type: "mcq_many",
+					})),
+				},
+				{
+					id: "part-3",
+					label: "Questions 7–10",
+					qStart: 7,
+					typeId: "matching",
+					questions: Array.from({ length: 4 }, (_, i) => ({
+						q: 6 + i,
+						number: 7 + i,
+						stem: `Music ${i + 1}`,
+						opts: null,
+						pin: null,
+						type: "matching",
+					})),
+				},
+			];
+			const musicIntro = [
+				"<p>Choose the correct letters, A, B or C</p>",
+				"<p>Choose TWO letters, A-E.</p>",
+				"<p>What is people's attitude toward playing each of the following music in restaurants?</p>",
+				"<p>Write the correct letter, A, B or C, next to questions 27-30.</p>",
+				"<ul><li>Jazz <strong>(27)</strong></li><li>Rock <strong>(28)</strong></li><li>Classical <strong>(29)</strong></li><li>Pop <strong>(30)</strong></li></ul>",
+			].join("\n");
+			const musicRes = deduplicateGroupIntroPreamble(musicIntro, musicParts);
+			expect(musicRes.cleanedPreamble).toBe("");
+			expect(musicRes.matchedInstructionsByPartId.get("part-3")).toContain(
+				"(27)",
+			);
+			expect(musicRes.matchedInstructionsByPartId.get("part-3")).toContain(
+				"(30)",
+			);
+
+			// 4. delta=0 collision protection (Collection-nineteenth-century-paperback-literature shape:
+			//    info 1..6 markers 14..19 + matching 7..10 markers 20..23 + ynng 11..14 non-inline)
+			const paperbackParts: QuizPart[] = [
+				{
+					id: "part-1",
+					label: "Questions 1–6",
+					qStart: 1,
+					typeId: "info",
+					questions: Array.from({ length: 6 }, (_, i) => ({
+						q: i,
+						number: i + 1,
+						stem: `I${i + 1}`,
+						opts: null,
+						pin: null,
+						type: "info",
+					})),
+				},
+				{
+					id: "part-2",
+					label: "Questions 7–10",
+					qStart: 7,
+					typeId: "matching",
+					questions: Array.from({ length: 4 }, (_, i) => ({
+						q: 6 + i,
+						number: 7 + i,
+						stem: `M${i + 1}`,
+						opts: null,
+						pin: null,
+						type: "matching",
+					})),
+				},
+				{
+					id: "part-3",
+					label: "Questions 11–14",
+					qStart: 11,
+					typeId: "ynng",
+					questions: Array.from({ length: 4 }, (_, i) => ({
+						q: 10 + i,
+						number: 11 + i,
+						stem: `Y${i + 1}`,
+						opts: null,
+						pin: null,
+						type: "ynng",
+					})),
+				},
+			];
+			const paperbackIntro = [
+				"<p>Which section contains the following information? Write the correct letter A-F.</p>",
+				"<p>14. Popular in America. [14]</p>",
+				"<p>15. Cheap editions. [15]</p>",
+				"<p>16-19. Details [16] [17] [18] [19]</p>",
+				"<p>Match each publisher with the statement A-D.</p>",
+				"<p>20-23. Publishers [20] [21] [22] [23]</p>",
+			].join("");
+			const paperbackRes = deduplicateGroupIntroPreamble(
+				paperbackIntro,
+				paperbackParts,
+			);
+			expect(paperbackRes.matchedInstructionsByPartId.get("part-1")).toContain(
+				"[14]",
+			);
+			expect(paperbackRes.matchedInstructionsByPartId.get("part-1")).toContain(
+				"[19]",
+			);
+			expect(
+				paperbackRes.matchedInstructionsByPartId.get("part-1"),
+			).not.toContain("[20]");
+
+			// 5. Multi-part non-zero qOffset (qStart = 11: 11..16 + 17..20 with Section 3 markers 21..30)
+			const nonZeroOffsetParts: QuizPart[] = [
+				{
+					id: "part-1",
+					label: "Questions 11–16",
+					qStart: 11,
+					typeId: "notes",
+					questions: Array.from({ length: 6 }, (_, i) => ({
+						q: i,
+						number: 11 + i,
+						stem: `N${i + 1}`,
+						opts: null,
+						pin: null,
+						type: "notes",
+					})),
+				},
+				{
+					id: "part-2",
+					label: "Questions 17–20",
+					qStart: 17,
+					typeId: "matching",
+					questions: Array.from({ length: 4 }, (_, i) => ({
+						q: 6 + i,
+						number: 17 + i,
+						stem: `M${i + 1}`,
+						opts: null,
+						pin: null,
+						type: "matching",
+					})),
+				},
+			];
+			const nonZeroOffsetRes = deduplicateGroupIntroPreamble(
+				[
+					"<p>Complete the notes below. Write ONE WORD ONLY for each answer.</p>",
+					"<p>Notes <strong>(21)</strong>, <strong>(22)</strong>, <strong>(23)</strong>, <strong>(24)</strong>, <strong>(25)</strong>, <strong>(26)</strong></p>",
+					"<p>Matching body <strong>(27)</strong>, <strong>(28)</strong>, <strong>(29)</strong>, <strong>(30)</strong></p>",
+				].join(""),
+				nonZeroOffsetParts,
+			);
+			expect(
+				nonZeroOffsetRes.matchedInstructionsByPartId.get("part-1"),
+			).toContain("(26)");
+			expect(
+				nonZeroOffsetRes.matchedInstructionsByPartId.get("part-1"),
+			).not.toContain("(27)");
+
+			// 6. Single-inline-part coverage (< 2 inline parts) must fail closed to delta = 0
+			const singleInlineParts: QuizPart[] = [
+				{
+					id: "part-1",
+					label: "Questions 1–5",
+					qStart: 1,
+					typeId: "info",
+					questions: Array.from({ length: 5 }, (_, i) => ({
+						q: i,
+						number: i + 1,
+						stem: `I${i + 1}`,
+						opts: null,
+						pin: null,
+						type: "info",
+					})),
+				},
+				{
+					id: "part-2",
+					label: "Questions 6–8",
+					qStart: 6,
+					typeId: "summary",
+					questions: Array.from({ length: 3 }, (_, i) => ({
+						q: 5 + i,
+						number: 6 + i,
+						stem: `S${i + 1}`,
+						opts: null,
+						pin: null,
+						type: "summary",
+					})),
+				},
+			];
+			const singleInlineRes = deduplicateGroupIntroPreamble(
+				[
+					"<p>Which section contains the following information? Write the correct letter A-F.</p>",
+					"<p>Complete the summary below. Write ONE WORD ONLY for each answer.</p>",
+					"<p>Summary details [19] and [20] and [21].</p>",
+				].join(""),
+				singleInlineParts,
+			);
+			expect(
+				singleInlineRes.matchedInstructionsByPartId.get("part-2"),
+			).toContain("[19]");
+			expect(
+				singleInlineRes.matchedInstructionsByPartId.get("part-2"),
+			).toContain("[21]");
+			expect(
+				singleInlineRes.matchedInstructionsByPartId.get("part-1"),
+			).not.toContain("[19]");
+
+			// 7. Ambiguous tied deltas must fail closed to delta = 0
+			const tiedParts: QuizPart[] = [
+				{
+					id: "part-1",
+					label: "Questions 1–5",
+					qStart: 1,
+					typeId: "notes",
+					questions: Array.from({ length: 5 }, (_, i) => ({
+						q: i,
+						number: i + 1,
+						stem: `N${i + 1}`,
+						opts: null,
+						pin: null,
+						type: "notes",
+					})),
+				},
+				{
+					id: "part-2",
+					label: "Questions 6–10",
+					qStart: 6,
+					typeId: "summary",
+					questions: Array.from({ length: 5 }, (_, i) => ({
+						q: 5 + i,
+						number: 6 + i,
+						stem: `S${i + 1}`,
+						opts: null,
+						pin: null,
+						type: "summary",
+					})),
+				},
+			];
+			const tiedRes = deduplicateGroupIntroPreamble(
+				[
+					"<p>Complete the notes below. Write ONE WORD ONLY for each answer.</p>",
+					"<p>Notes [22] and [23]</p>",
+					"<p>Details [27] and [28]</p>",
+				].join(""),
+				tiedParts,
+			);
+			// Because delta=19 -> (3,4)/(8,9) and delta=20 -> (2,3)/(7,8) tie with (clean=2, boundary=0),
+			// delta fails closed to 0 so part-1 keeps both inline blocks rather than guessing.
+			expect(tiedRes.matchedInstructionsByPartId.get("part-1")).toContain(
+				"[22]",
+			);
+			expect(tiedRes.matchedInstructionsByPartId.get("part-1")).toContain(
+				"[28]",
+			);
+		});
+
+		it("handles Listening 2-line matching, Choose from the list/options, single-MCQ variants, Which are the TWO, and repeated mcq_many blocks", () => {
+			// C11T3-S3: Who ... each of the following ... + Write the correct letter, A-D, next to Questions 27 - 30.
+			const c11Parts: QuizPart[] = [
+				{
+					id: "p-notes",
+					label: "Questions 1–6",
+					qStart: 1,
+					typeId: "notes",
+					questions: [],
+				},
+				{
+					id: "p-match",
+					label: "Questions 7–10",
+					qStart: 7,
+					typeId: "matching",
+					questions: [],
+				},
+			];
+			const c11Res = deduplicateGroupIntroPreamble(
+				[
+					"<p>Complete the notes below. Write ONE WORD ONLY for each answer.</p>",
+					"<p>Who is going to write each of the following parts of the report?</p>",
+					"<p>Write the correct letter, A-D, next to Questions 27 - 30.</p>",
+				].join("\n"),
+				c11Parts,
+			);
+			expect(c11Res.cleanedPreamble).toBe("");
+			expect(c11Res.matchedInstructionsByPartId.get("p-match")).toContain(
+				"Who is going to write",
+			);
+			expect(c11Res.matchedInstructionsByPartId.get("p-match")).toContain(
+				"next to Questions 27 - 30",
+			);
+
+			// Actual-Test-S2-radio-program-singing-in-the-choir: matching + mcq1 (mcq1 must NOT steal next to questions)
+			const choirParts: QuizPart[] = [
+				{
+					id: "p-match",
+					label: "Questions 1–5",
+					qStart: 1,
+					typeId: "matching",
+					questions: [],
+				},
+				{
+					id: "p-mcq1",
+					label: "Questions 6–10",
+					qStart: 6,
+					typeId: "mcq1",
+					questions: [],
+				},
+			];
+			const choirRes = deduplicateGroupIntroPreamble(
+				[
+					"<p>Which choir does each of the following statements apply to?</p>",
+					"<p>Choose the correct letter, A, B or C, next to questions 11-15</p>",
+					"<p>Choose the correct option A, B or C</p>",
+				].join("\n"),
+				choirParts,
+			);
+			expect(choirRes.cleanedPreamble).toBe("");
+			expect(choirRes.matchedInstructionsByPartId.get("p-match")).toContain(
+				"Which choir",
+			);
+			expect(choirRes.matchedInstructionsByPartId.get("p-match")).toContain(
+				"next to questions 11-15",
+			);
+			expect(choirRes.matchedInstructionsByPartId.get("p-mcq1")).toContain(
+				"Choose the correct option A, B or C",
+			);
+
+			// Collection-S3-climate-change-and-allergies: Choose from the list A-G.
+			const allergyParts: QuizPart[] = [
+				{
+					id: "p-mcq3",
+					label: "Questions 1–5",
+					qStart: 1,
+					typeId: "mcq3",
+					questions: [],
+				},
+				{
+					id: "p-feat",
+					label: "Questions 6–10",
+					qStart: 6,
+					typeId: "features",
+					questions: [],
+				},
+			];
+			const allergyRes = deduplicateGroupIntroPreamble(
+				[
+					"<p>Circle the correct answer A, B, C or D.</p>",
+					"<p>What comment is made about the seasonal changes in pollen in each of the following European countries?</p>",
+					"<p>Choose from the list A-G.</p>",
+					"<p>NB You may use any letter more than once.</p>",
+				].join("\n"),
+				allergyParts,
+			);
+			expect(allergyRes.cleanedPreamble).toBe("");
+			expect(allergyRes.matchedInstructionsByPartId.get("p-mcq3")).toContain(
+				"Circle the correct answer",
+			);
+			expect(allergyRes.matchedInstructionsByPartId.get("p-feat")).toContain(
+				"Choose from the list A-G.",
+			);
+
+			// Single-MCQ variants + Which are the TWO + Choose TWO answers ... next to questions
+			const variantCases: Array<{ typeId: string; instr: string }> = [
+				{ typeId: "mcq1", instr: "<p>Choose the correct option.</p>" },
+				{
+					typeId: "mcq1",
+					instr: "<p>Choose the correct letters A, B, or C.</p>",
+				},
+				{
+					typeId: "mcq",
+					instr:
+						"<p>Part 2 — Multiple choice. Choose the correct letter A, B, C or D.</p>",
+				},
+				{
+					typeId: "mcq_many",
+					instr:
+						"<p>Which are the TWO main duties for Personal Support Workers (PSWs)?</p>",
+				},
+				{
+					typeId: "mcq_many",
+					instr:
+						"<p>Choose TWO answers and write them next to questions 11-12.</p>",
+				},
+			];
+			for (const vc of variantCases) {
+				const res = deduplicateGroupIntroPreamble(vc.instr, [
+					{
+						id: "p-target",
+						label: "Questions 1–4",
+						qStart: 1,
+						typeId: vc.typeId,
+						questions: [],
+					},
+					{
+						id: "p-other",
+						label: "Questions 5–8",
+						qStart: 5,
+						typeId: "notes",
+						questions: [],
+					},
+				]);
+				expect(res.cleanedPreamble, vc.instr).toBe("");
+				expect(
+					res.matchedInstructionsByPartId.get("p-target"),
+					vc.instr,
+				).toBeTruthy();
+			}
+
+			// Consecutive mcq_many with dash/period drift and line-2 Write your answers in boxes
+			const dupMcqManyRes = deduplicateGroupIntroPreamble(
+				[
+					"<p>Choose TWO letters, A–E.</p>",
+					"<p>Write your answers in boxes 5-6 on your answer sheet.</p>",
+					"<p>Choose TWO letters, A-E</p>",
+					"<p>Write your answers in boxes 5-6 on your answer sheet</p>",
+				].join("\n"),
+				[
+					{
+						id: "p-many",
+						label: "Questions 1–4",
+						qStart: 1,
+						typeId: "mcq_many",
+						questions: [],
+					},
+					{
+						id: "p-notes",
+						label: "Questions 5–8",
+						qStart: 5,
+						typeId: "notes",
+						questions: [],
+					},
+				],
+			);
+			expect(dupMcqManyRes.cleanedPreamble).toBe("");
+			expect(dupMcqManyRes.matchedInstructionsByPartId.get("p-many")).toContain(
+				"Choose TWO letters, A–E.",
+			);
+		});
+
+		it("preserves 2-line MAP_LABELLING bank scoping, 5-option mcq_many (grey-workers), bare MCQ under lead-in, C13T3-S2, and Reading MCQ in boxes", () => {
+			// 1. 2-line MAP_LABELLING (C16T1-S2-plan-of-stevensons-site): must keep both lines in map + isBankScoped = true
+			const mapParts: QuizPart[] = [
+				{
+					id: "part-1",
+					label: "Questions 1–4",
+					qStart: 1,
+					typeId: "mcq1",
+					questions: [],
+				},
+				{
+					id: "part-2",
+					label: "Questions 5–10",
+					qStart: 5,
+					typeId: "map",
+					questions: [],
+				},
+			];
+			const mapIntro = [
+				"<p>Choose the correct letter, A, B or C.</p>",
+				"<p>Label the map below.</p>",
+				"<p>Write the correct letter, A-J, next to Questions 15-20.</p>",
+			].join("\n");
+			const mapRes = deduplicateGroupIntroPreamble(mapIntro, mapParts);
+			expect(mapRes.cleanedPreamble).toBe("");
+			expect(mapRes.matchedInstructionsByPartId.get("part-2")).toContain(
+				"Label the map below.",
+			);
+			expect(mapRes.matchedInstructionsByPartId.get("part-2")).toContain(
+				"Write the correct letter, A-J, next to Questions 15-20.",
+			);
+			const mapScope = scopeFlattenedOptionBank(
+				mapParts,
+				["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
+				mapRes.matchedInstructionsByPartId,
+				{ skill: "listening", introPreamble: mapRes.cleanedPreamble },
+			);
+			expect(mapScope.isBankScoped).toBe(true);
+			expect(mapScope.partitioned?.get("part-2")).toHaveLength(10);
+
+			// 2. 5-option mcq_many + 4-option mcq (Forecast-Quy-2-2025-grey-workers): mcq must NOT steal A, B, C, D or E
+			const greyParts: QuizPart[] = [
+				{
+					id: "p-many",
+					label: "Questions 1–4",
+					qStart: 1,
+					typeId: "mcq_many",
+					questions: [],
+				},
+				{
+					id: "p-mcq",
+					label: "Questions 5–9",
+					qStart: 5,
+					typeId: "mcq",
+					questions: [],
+				},
+			];
+			const greyRes = deduplicateGroupIntroPreamble(
+				[
+					"<p>Choose the correct letter, A, B, C, D or E.</p>",
+					"<p>Choose the correct letter, A, B, C or D.</p>",
+					"<p>Write the correct letter in boxes 9-13 on your answer sheet.</p>",
+				].join("\n"),
+				greyParts,
+			);
+			expect(greyRes.matchedInstructionsByPartId.get("p-mcq")).toContain(
+				"Choose the correct letter, A, B, C or D.",
+			);
+			expect(greyRes.matchedInstructionsByPartId.get("p-mcq")).not.toContain(
+				"D or E",
+			);
+
+			// 3. Lead-in preamble before bare "Choose the correct answer." must NOT let matching steal mcq1
+			const bareMcqParts: QuizPart[] = [
+				{
+					id: "p-mcq1",
+					label: "Questions 1–3",
+					qStart: 1,
+					typeId: "mcq1",
+					questions: [],
+				},
+				{
+					id: "p-match",
+					label: "Questions 4–6",
+					qStart: 4,
+					typeId: "matching",
+					questions: [],
+				},
+			];
+			const bareMcqRes = deduplicateGroupIntroPreamble(
+				[
+					"<p>What do these speakers disagree about?</p>",
+					"<p>Choose the correct answer.</p>",
+				].join("\n"),
+				bareMcqParts,
+			);
+			expect(bareMcqRes.matchedInstructionsByPartId.get("p-mcq1")).toContain(
+				"Choose the correct answer.",
+			);
+			expect(
+				bareMcqRes.matchedInstructionsByPartId.get("p-match"),
+			).toBeUndefined();
+
+			// 4. C13T3-S2 matching from the box must NOT be stolen by mcq_many
+			const c13Parts: QuizPart[] = [
+				{
+					id: "p-match",
+					label: "Questions 1–6",
+					qStart: 1,
+					typeId: "matching",
+					questions: [],
+				},
+				{
+					id: "p-many",
+					label: "Questions 7–10",
+					qStart: 7,
+					typeId: "mcq_many",
+					questions: [],
+				},
+			];
+			const c13Res = deduplicateGroupIntroPreamble(
+				[
+					"<p>Choose SIX answers from the box and write the correct letter, A-G, next to Questions 11-16.</p>",
+					"<p>Choose TWO correct answers.</p>",
+					"<p>Choose TWO correct answers.</p>",
+				].join("\n"),
+				c13Parts,
+			);
+			expect(c13Res.cleanedPreamble).toBe("");
+			expect(c13Res.matchedInstructionsByPartId.get("p-match")).toContain(
+				"Choose SIX answers from the box",
+			);
+			expect(c13Res.matchedInstructionsByPartId.get("p-many")).toContain(
+				"Choose TWO correct answers.",
+			);
+
+			// 5. 2-line mcq_many ("Which TWO of the following..." + "Write the correct letter...")
+			//    must NOT be hijacked by matching/features when both parts are missing.
+			const twoLineManyParts: QuizPart[] = [
+				{
+					id: "p-many",
+					label: "Questions 1–2",
+					qStart: 1,
+					typeId: "mcq_many",
+					questions: [],
+				},
+				{
+					id: "p-feat",
+					label: "Questions 3–6",
+					qStart: 3,
+					typeId: "features",
+					questions: [],
+				},
+			];
+			const twoLineManyRes = deduplicateGroupIntroPreamble(
+				[
+					"<p>Which TWO of the following statements are true?</p>",
+					"<p>Write the correct letter, A-E, in boxes 1-2 on your answer sheet.</p>",
+					"<p>Match each researcher with their finding, A-F.</p>",
+				].join("\n"),
+				twoLineManyParts,
+			);
+			expect(twoLineManyRes.cleanedPreamble).toBe("");
+			expect(
+				twoLineManyRes.matchedInstructionsByPartId.get("p-many"),
+			).toContain("Which TWO of the following statements are true?");
+			expect(
+				twoLineManyRes.matchedInstructionsByPartId.get("p-many"),
+			).toContain("in boxes 1-2");
+			expect(
+				twoLineManyRes.matchedInstructionsByPartId.get("p-feat"),
+			).toContain("Match each researcher with their finding, A-F.");
+			expect(
+				twoLineManyRes.matchedInstructionsByPartId.get("p-feat"),
+			).not.toContain("Which TWO");
+
+			// 6. Consecutive identical "Which are the TWO..." mcq_many headings must be deduplicated
+			//    (not concatenated twice into the first mcq_many cluster).
+			const dupWhichRes = deduplicateGroupIntroPreamble(
+				[
+					"<p>Which are the TWO main duties for Personal Support Workers (PSWs)?</p>",
+					"<p>Which are the TWO main duties for Personal Support Workers (PSWs)?</p>",
+				].join("\n"),
+				[
+					{
+						id: "p-many",
+						label: "Questions 1–4",
+						qStart: 1,
+						typeId: "mcq_many",
+						questions: [],
+					},
+					{
+						id: "p-notes",
+						label: "Questions 5–10",
+						qStart: 5,
+						typeId: "notes",
+						questions: [],
+					},
+				],
+			);
+			expect(dupWhichRes.cleanedPreamble).toBe("");
+			const dupWhichMatches =
+				dupWhichRes.matchedInstructionsByPartId
+					.get("p-many")
+					?.match(/Which are the TWO/g) ?? [];
+			expect(dupWhichMatches).toHaveLength(1);
+		});
+	});
 });

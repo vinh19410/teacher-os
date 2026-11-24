@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { gradeQuiz } from "@teacher-os/api/lib/grade-quiz";
 import {
 	buildQuizParts,
 	buildQuizPartsFromGroups,
@@ -2628,6 +2629,509 @@ describe("QuizPaper — inline answer inputs", () => {
 			expect(retryBtn?.textContent).toBe("Thử lại");
 			if (retryBtn) fireEvent.click(retryBtn);
 			expect(onAudioRetry).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe("QuizPaper — Talking about the history of bikes Q5 & City Health Services listening isolation", () => {
+		it("renders Bikes Q5 'easier; ride' inline input matching key 'more smoothly' and isolates Q8-10 mcq_many across take/review and grouped/ungrouped", () => {
+			const bikesTableInstruction =
+				"<p>Complete the table below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.</p>" +
+				"<h3><strong>Talking about the history of bikes</strong></h3>" +
+				"<table><tbody>" +
+				"<tr><td><p><strong>Years/Time</strong></p></td><td><p><strong>Feature</strong></p></td><td><p><strong>Advantage</strong></p></td><td><p><strong>Disadvantage</strong></p></td></tr>" +
+				"<tr><td><p>1830s</p></td><td><p>wooden wheels covered with metal</p></td><td><p>need <strong>(1)</strong> than walking</p></td><td><p>quite <strong>(2)</strong></p></td></tr>" +
+				"<tr><td><p><strong>(3)</strong></p></td><td><p>Chain and sprocket are <strong>(4)</strong></p></td><td><p>easier; ride <strong>(5)</strong></p></td><td><p>harder to balance</p></td></tr>" +
+				"<tr><td><p>1880s</p></td><td><p>use <strong>(6)</strong></p></td><td><p>more comfortable</p></td><td><p>The faster you go, the more you feel every bump.</p></td></tr>" +
+				"<tr><td><p>1890s</p></td><td><p>equal-sized wheels</p></td><td><p><strong>(7)</strong></p></td><td><p>dangerous before brakes appeared</p></td></tr>" +
+				"</tbody></table>";
+			const bikesMcqManyInstruction =
+				"<p>Choose THREE letters, A-F, and write them next to questions 8-10. The invention of different gears on a bicycle affected which THREE of the following?</p>";
+			const flattenedIntro = `${bikesTableInstruction}\n${bikesMcqManyInstruction}`;
+
+			const bikesGradedQuestions = [
+				{
+					stem: "need ____ than walking",
+					opts: null,
+					answer: "less effort",
+					alts: "",
+					type: "tablecomp",
+					pin: null,
+				},
+				{
+					stem: "quite ____",
+					opts: null,
+					answer: "uncomfortable",
+					alts: "",
+					type: "tablecomp",
+					pin: null,
+				},
+				{
+					stem: "____",
+					opts: null,
+					answer: "1860s",
+					alts: "",
+					type: "tablecomp",
+					pin: null,
+				},
+				{
+					stem: "Chain and sprocket are ____",
+					opts: null,
+					answer: "connected",
+					alts: "",
+					type: "tablecomp",
+					pin: null,
+				},
+				{
+					stem: "easier; ride ____",
+					opts: null,
+					answer: "more smoothly",
+					alts: "",
+					type: "tablecomp",
+					pin: null,
+				},
+				{
+					stem: "use ____",
+					opts: null,
+					answer: "rubber wheels",
+					alts: "",
+					type: "tablecomp",
+					pin: null,
+				},
+				{
+					stem: "____",
+					opts: null,
+					answer: "safer",
+					alts: "",
+					type: "tablecomp",
+					pin: null,
+				},
+				{
+					stem: "Choose THREE letters, A-F, and write them next to questions 8-10. The invention of different gears on a bicycle affected which THREE of the following?",
+					opts: [
+						"Wheel size",
+						"Balance",
+						"Rate of speed",
+						"The back wheel",
+						"Safety",
+						"Downhill travel",
+					],
+					answer: "C",
+					alts: "",
+					type: "mcq_many",
+					pin: null,
+					answerSet: "set-2",
+				},
+				{
+					stem: "Choose THREE letters, A-F, and write them next to questions 8-10. The invention of different gears on a bicycle affected which THREE of the following?",
+					opts: [
+						"Wheel size",
+						"Balance",
+						"Rate of speed",
+						"The back wheel",
+						"Safety",
+						"Downhill travel",
+					],
+					answer: "D",
+					alts: "",
+					type: "mcq_many",
+					pin: null,
+					answerSet: "set-2",
+				},
+				{
+					stem: "Choose THREE letters, A-F, and write them next to questions 8-10. The invention of different gears on a bicycle affected which THREE of the following?",
+					opts: [
+						"Wheel size",
+						"Balance",
+						"Rate of speed",
+						"The back wheel",
+						"Safety",
+						"Downhill travel",
+					],
+					answer: "F",
+					alts: "",
+					type: "mcq_many",
+					pin: null,
+					answerSet: "set-2",
+				},
+			];
+
+			const gradedCorrect = gradeQuiz(bikesGradedQuestions, {
+				"4": "more smoothly",
+			});
+			expect(gradedCorrect.verdicts[4]).toBe("correct");
+
+			const gradedWrong = gradeQuiz(bikesGradedQuestions, { "4": "smoother" });
+			expect(gradedWrong.verdicts[4]).toBe("wrong");
+
+			const studentQuestions = bikesGradedQuestions.map(
+				({ answer: _a, alts: _al, ...q }) => q,
+			);
+			const groups = [
+				{
+					id: "g1",
+					type: "tablecomp",
+					instruction: bikesTableInstruction,
+					startIndex: 0,
+					count: 7,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+				{
+					id: "g2",
+					type: "mcq_many",
+					instruction: bikesMcqManyInstruction,
+					startIndex: 7,
+					count: 3,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+			];
+
+			const partVariants = [
+				{
+					label: "grouped",
+					parts: buildQuizPartsFromGroups(
+						studentQuestions,
+						groups,
+						"tablecomp",
+						flattenedIntro,
+					),
+				},
+				{
+					label: "ungrouped",
+					parts: buildQuizParts(studentQuestions, "tablecomp", flattenedIntro),
+				},
+			];
+
+			const reviewCorrect: Record<number, QuizReviewInfo> = {
+				4: {
+					verdict: "correct",
+					key: "more smoothly",
+					alts: "",
+					answer: "more smoothly",
+					note: "",
+				},
+			};
+			const reviewWrong: Record<number, QuizReviewInfo> = {
+				4: {
+					verdict: "wrong",
+					key: "more smoothly",
+					alts: "",
+					answer: "smoother",
+					note: "",
+				},
+			};
+
+			for (const variant of partVariants) {
+				for (const mode of ["take", "review"] as const) {
+					cleanup();
+					const { container } = render(
+						<QuizPaper
+							detail={baseDetail({
+								skill: "listening",
+								type: "tablecomp",
+								passage: "",
+								intro: flattenedIntro,
+								hasAudio: true,
+								audioName: "unknown-s4-talking-about-the-history-of-bikes.mp3",
+							})}
+							parts={variant.parts}
+							answers={mode === "review" ? { 4: "more smoothly" } : {}}
+							onAnswer={vi.fn()}
+							currentQuestion={null}
+							mode={mode}
+							review={mode === "review" ? reviewCorrect : undefined}
+						/>,
+					);
+
+					const sections = Array.from(container.querySelectorAll("section"));
+					expect(sections, `${variant.label}/${mode}`).toHaveLength(2);
+					const tableSection = sections[0];
+					const mcqSection = sections[1];
+					expect(tableSection?.textContent).toContain("easier; ride");
+					expect(tableSection?.textContent).not.toContain("easier and");
+					expect(tableSection?.textContent).not.toContain(
+						"Choose THREE letters",
+					);
+
+					const q5Input = tableSection?.querySelector(
+						'input[aria-label="Điền đáp án câu 5"]',
+					) as HTMLInputElement | null;
+					expect(q5Input, `${variant.label}/${mode} q5 input`).not.toBeNull();
+					expect(q5Input?.closest("td")?.textContent).toContain("easier; ride");
+					if (mode === "review") {
+						const q5Slot = tableSection?.querySelector(
+							'[data-testid="quiz-inline-slot"][data-question="4"]',
+						);
+						expect(q5Slot?.getAttribute("data-verdict")).toBe("correct");
+					}
+
+					// Q8-10 mcq_many instruction stays inside Questions 8-10 and never leaks to introPreamble
+					expect(mcqSection?.textContent).toContain(
+						"Choose THREE letters, A-F, and write them next to questions 8-10.",
+					);
+					const fullText = container.textContent ?? "";
+					const mcqText = mcqSection?.textContent ?? "";
+					const totalMatches =
+						fullText.match(/Choose THREE letters, A-F/g)?.length ?? 0;
+					const insideMcqMatches =
+						mcqText.match(/Choose THREE letters, A-F/g)?.length ?? 0;
+					expect(totalMatches).toBeGreaterThanOrEqual(1);
+					expect(totalMatches - insideMcqMatches).toBe(0);
+				}
+
+				// Review wrong answer displays inline key -> more smoothly beside Q5 slot
+				cleanup();
+				const { container: wrongContainer } = render(
+					<QuizPaper
+						detail={baseDetail({
+							skill: "listening",
+							type: "tablecomp",
+							passage: "",
+							intro: flattenedIntro,
+						})}
+						parts={variant.parts}
+						answers={{ 4: "smoother" }}
+						onAnswer={vi.fn()}
+						currentQuestion={null}
+						mode="review"
+						review={reviewWrong}
+					/>,
+				);
+				const q5WrongSlot = wrongContainer.querySelector(
+					'[data-testid="quiz-inline-slot"][data-question="4"]',
+				);
+				expect(q5WrongSlot?.getAttribute("data-verdict")).toBe("wrong");
+				expect(
+					q5WrongSlot?.querySelector('[data-testid="quiz-inline-key"]')
+						?.textContent,
+				).toContain("more smoothly");
+			}
+		});
+
+		it("isolates City Health Services 'Choose the correct answer.' strictly inside Questions 5-7 across take/review and grouped/ungrouped", () => {
+			const formInstruction =
+				"<p>Complete the form below. Write NO MORE THAN TWO WORDS for each answer.</p>" +
+				"<h3><strong>HOUSE SERVICE INFORMATION</strong></h3>" +
+				'<table><tbody><tr><td colspan="1" rowspan="1"><ul>' +
+				"<li>Name: Barbara Hill</li>" +
+				"<li>Location: <strong>(1)</strong> London</li>" +
+				"<li>Postcode: SW105</li>" +
+				"<li>Rooms: two <strong>(2)</strong> bedrooms</li>" +
+				"<li>The other room used as: an <strong>(3)</strong></li>" +
+				"<li>Downstairs: kitchen-diner, conservatory, and <strong>(4)</strong></li>" +
+				"</ul></td></tr></tbody></table>";
+			const mcqInstruction = "<p>Choose the correct answer.</p>";
+			const sentInstruction =
+				"<p>Complete the sentences below. Write ONE WORD AND/OR A NUMBER for each answer.</p>" +
+				'<table><tbody><tr><td colspan="1" rowspan="1"><ul>' +
+				"<li>The agent's address is 12 <strong>(8)</strong> Road.</li>" +
+				"<li>Her house will get cleaned next <strong>(9)</strong></li>" +
+				"<li>The maximum time of cleaning service is <strong>(10)</strong> hours</li>" +
+				"</ul></td></tr></tbody></table>";
+			const flattenedIntro = [
+				formInstruction,
+				mcqInstruction,
+				sentInstruction,
+			].join("\n");
+
+			const cityQuestions = [
+				{
+					stem: "Location: ____ London",
+					opts: null,
+					pin: null,
+					type: "form",
+				},
+				{
+					stem: "Rooms: two ____ bedrooms",
+					opts: null,
+					pin: null,
+					type: "form",
+				},
+				{
+					stem: "The other room used as: an ____",
+					opts: null,
+					pin: null,
+					type: "form",
+				},
+				{
+					stem: "Downstairs: kitchen-diner, conservatory, and ____",
+					opts: null,
+					pin: null,
+					type: "form",
+				},
+				{
+					stem: "Which of these extra services does the customer agree to do?",
+					opts: [
+						"Change the bed linen",
+						"Do some gardening work",
+						"Clean the glass",
+					],
+					pin: null,
+					type: "mcq1",
+				},
+				{
+					stem: "What does the customer want cleaned every three months?",
+					opts: ["Curtains", "Carpets", "Mats"],
+					pin: null,
+					type: "mcq1",
+				},
+				{
+					stem: "What does the customer want done with clothes?",
+					opts: [
+						"Wash and iron the clothes",
+						"Iron the clothes",
+						"Clean and dry the clothes",
+					],
+					pin: null,
+					type: "mcq1",
+				},
+				{
+					stem: "The agent's address is 12 ____ Road.",
+					opts: null,
+					pin: null,
+					type: "sent4",
+				},
+				{
+					stem: "Her house will get cleaned next ____",
+					opts: null,
+					pin: null,
+					type: "sent4",
+				},
+				{
+					stem: "The maximum time of cleaning service is ____ hours",
+					opts: null,
+					pin: null,
+					type: "sent4",
+				},
+			];
+			const groups = [
+				{
+					id: "g1",
+					type: "form",
+					instruction: formInstruction,
+					startIndex: 0,
+					count: 4,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+				{
+					id: "g2",
+					type: "mcq1",
+					instruction: mcqInstruction,
+					startIndex: 4,
+					count: 3,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+				{
+					id: "g3",
+					type: "sent4",
+					instruction: sentInstruction,
+					startIndex: 7,
+					count: 3,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+			];
+
+			const partVariants = [
+				{
+					label: "grouped",
+					parts: buildQuizPartsFromGroups(
+						cityQuestions,
+						groups,
+						"form",
+						flattenedIntro,
+					),
+				},
+				{
+					label: "ungrouped",
+					parts: buildQuizParts(cityQuestions, "form", flattenedIntro),
+				},
+			];
+
+			for (const variant of partVariants) {
+				for (const mode of ["take", "review"] as const) {
+					cleanup();
+					const { container } = render(
+						<QuizPaper
+							detail={baseDetail({
+								skill: "listening",
+								type: "form",
+								passage: "",
+								intro: flattenedIntro,
+								hasAudio: true,
+								audioName: "actual-test-s1-city-health-services.mp3",
+							})}
+							parts={variant.parts}
+							answers={{}}
+							onAnswer={vi.fn()}
+							currentQuestion={null}
+							mode={mode}
+							review={
+								mode === "review"
+									? {
+											0: {
+												verdict: "skipped",
+												key: "Southwest",
+												alts: "South-west / South West",
+												answer: "",
+												note: "",
+											},
+										}
+									: undefined
+							}
+						/>,
+					);
+
+					const sections = Array.from(container.querySelectorAll("section"));
+					expect(sections, `${variant.label}/${mode}`).toHaveLength(3);
+					const formSection = sections[0];
+					const mcqSection = sections[1];
+					const sentSection = sections[2];
+
+					expect(formSection?.textContent).toContain(
+						"Complete the form below. Write NO MORE THAN TWO WORDS for each answer.",
+					);
+					expect(formSection?.textContent).not.toContain(
+						"Choose the correct answer.",
+					);
+					expect(
+						formSection?.querySelector('input[aria-label="Điền đáp án câu 1"]'),
+					).not.toBeNull();
+
+					expect(mcqSection?.textContent).toContain(
+						"Choose the correct answer.",
+					);
+
+					expect(sentSection?.textContent).toContain(
+						"Complete the sentences below. Write ONE WORD AND/OR A NUMBER for each answer.",
+					);
+					expect(sentSection?.textContent).not.toContain(
+						"Choose the correct answer.",
+					);
+					expect(
+						sentSection?.querySelector('input[aria-label="Điền đáp án câu 8"]'),
+					).not.toBeNull();
+
+					// Must appear exactly once in the entire rendered paper (inside Questions 5-7 only)
+					const occurrences =
+						(container.textContent ?? "").match(/Choose the correct answer\./g)
+							?.length ?? 0;
+					expect(occurrences, `${variant.label}/${mode}`).toBe(1);
+				}
+			}
 		});
 	});
 });
