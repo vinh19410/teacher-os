@@ -1,0 +1,152 @@
+{
+	"id": "cda5081e-8d0d-4abe-b7ba-011c3351d0f5",
+	"url": "https://stepielts.com/student/listening/cda5081e-8d0d-4abe-b7ba-011c3351d0f5?mode=practice",
+	"title": "Tour in Canada",
+	"source": "Forecast Quý 2-2025",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/9a8324c8-a7f9-4cc5-bb36-66035c731ada.mp3",
+	"transcript": "Speaker 1: Hello everyone, I am Joe, your tour guide and I welcome you to this wonderful place. As you must have seen outside, this place in Canada was built to preserve and showcase some of the most interesting landmarks in the world. I am here to give you a brief introduction of what we have and where we would be going on this tour. We will begin our tour by exploring the awe-inspiring display of the world’s largest dinosaur bones, which are truly magnificent in size. These remarkable fossils have been excavated and date back over 100 million years to the Mesozoic era. It’s worth noting that during this visit, you will have the opportunity to observe 170 meticulously preserved dinosaur footprints. Furthermore, on our upcoming trip next year, you will be delighted to witness an even greater spectacle with 190 footprints in larger sizes. It is truly remarkable to imagine the immense size of these ancient creatures. For our second location, we highly recommend embarking on a night tour. This is because the true beauty of this place reveals itself under the cover of darkness. Rest assured, it is an experience unlike any other you have encountered. Prepare to be amazed by the breathtaking sight of the illuminated skyscrapers in the CBD area. We have thoughtfully installed artificial lights that will make you forget it is nighttime. Of course, we also offer a daytime tour as an alternative, but there may not be as much to see during the day. The next stop is one of the places that displays Canada’s rich mineral deposit. We have a huge reservoir in this area and you might see some workers working in the area and I can tell you that you can find one of the largest Uranium deposits here, in Canada. There is also an agricultural development site here. Plans are ongoing to expand it in the nearest future. And, don’t miss out on checking out the nearby rest area by the highway! It’s the perfect spot to snap some awesome photos and soak in the stunning views. Trust me, you’ll have plenty of chances to capture jaw-dropping images that will totally blow your mind. Perhaps, the most special feature of this third stop is the presence of raccoons! Oh my, these are so beautiful and their blue colour is just amazing and always makes them stand out. Raccoons are many in the area and they are quite intelligent and curious creatures as you would see. You also get to see a river at this top, though it’s not the longest, it’s one of the cleanest in the world. So as you relax, you get a very great view at this third location. This river is devoid of a lot of contaminants usually seen in rivers and the government has taken extra precautions to ensure that it remains so. To embark on this wonderful tour, of course, we would need transportation and this has been well catered for. You would have noticed a lot of horses in the area while coming in. Yes, you can ride on the horseback as we go along, but this mode of transportation would require a government permit. So once you have your permit, you can go see any of the handlers as we move. If you do not have a permit, there is no problem. The primary mode of transportation here is by boat, and they have boats available for use. As you may have been informed, exploring on foot is more enjoyable, but it can be easy to get lost in certain areas without proper road directions. It is advisable to have a tour guide or travel in groups. In terms of the intercity bus, it is not accessible during this time of year. However, if you return in two months, it will offer a different experience. Some of you have asked about riding a camel, and while it is an option, there have been reports of riders falling off camels every year, so better safe than sorry. Please also ensure to always keep your visitor sticker on you at all times so you can be easily granted whatever you need at any point. Alright, get your phones and cameras ready because we are all going to have a nice time. Let us move!",
+	"body": {
+		"text": "Highlights of the 1st location:\n- a visit to witness the giant dinosaur [1]\n- a collection of [2] dinosaur footprints\nHighlights of the 2nd location:\n- [3] tour\n- [4] in the town center\nHighlights of the 3rd location:\n- [5] resources and agricultural development\n- special photo-taking spots at the highway [6] areas\n- the small raccoons in [7] colour\n- one of the [8] rivers in the world",
+		"html": "<p><strong>Highlights of the 1st location:  </strong></p><p>- a visit to witness the giant dinosaur [1]</p><p>- a collection of  [2] dinosaur footprints</p><p><strong>Highlights of the 2nd location: </strong></p><p>-  [3] tour</p><p>-  [4] in the town center</p><p><strong>Highlights of the 3rd location:</strong></p><p>-  [5] resources and agricultural development</p><p>- special photo-taking spots at the highway [6] areas</p><p>- the small raccoons in [7] colour</p><p>- one of the [8] rivers in the world</p><p></p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-8",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Highlights of the 1st location:\n- a visit to witness the giant dinosaur [1]\n- a collection of [2] dinosaur footprints\nHighlights of the 2nd location:\n- [3] tour\n- [4] in the town center\nHighlights of the 3rd location:\n- [5] resources and agricultural development\n- special photo-taking spots at the highway [6] areas\n- the small raccoons in [7] colour\n- one of the [8] rivers in the world",
+			"body_html": "<p><strong>Highlights of the 1st location:  </strong></p><p>- a visit to witness the giant dinosaur [1]</p><p>- a collection of  [2] dinosaur footprints</p><p><strong>Highlights of the 2nd location: </strong></p><p>-  [3] tour</p><p>-  [4] in the town center</p><p><strong>Highlights of the 3rd location:</strong></p><p>-  [5] resources and agricultural development</p><p>- special photo-taking spots at the highway [6] areas</p><p>- the small raccoons in [7] colour</p><p>- one of the [8] rivers in the world</p><p></p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "- a visit to witness the giant dinosaur [1]",
+					"answer": "bones",
+					"quotes": [
+						"We will begin our tour by exploring the awe-inspiring display of the world’s largest dinosaur bones, which are truly magnificent in size."
+					]
+				},
+				{
+					"number": 2,
+					"text": "- a collection of [2] dinosaur footprints",
+					"answer": "170",
+					"quotes": [
+						"It’s worth noting that during this visit, you will have the opportunity to observe 170 meticulously preserved dinosaur footprints."
+					]
+				},
+				{
+					"number": 3,
+					"text": "- [3] tour",
+					"answer": "night",
+					"quotes": [
+						"For our second location, we highly recommend embarking on a night tour."
+					]
+				},
+				{
+					"number": 4,
+					"text": "- [4] in the town center",
+					"answer": "skyscrapers",
+					"quotes": [
+						"Prepare to be amazed by the breathtaking sight of the illuminated skyscrapers in the CBD area."
+					]
+				},
+				{
+					"number": 5,
+					"text": "- [5] resources and agricultural development",
+					"answer": "mineral",
+					"quotes": [
+						"The next stop is one of the places that displays Canada’s rich mineral deposit."
+					]
+				},
+				{
+					"number": 6,
+					"text": "- special photo-taking spots at the highway [6] areas",
+					"answer": "rest",
+					"quotes": [
+						"And, don’t miss out on checking out the nearby rest area by the highway!"
+					]
+				},
+				{
+					"number": 7,
+					"text": "- the small raccoons in [7] colour",
+					"answer": "blue",
+					"quotes": [
+						"Oh my, these are so beautiful and their blue colour is just amazing and always makes them stand out."
+					]
+				},
+				{
+					"number": 8,
+					"text": "- one of the [8] rivers in the world",
+					"answer": "cleanest",
+					"quotes": [
+						"You also get to see a river at this top, though it’s not the longest, it’s one of the cleanest in the world."
+					]
+				}
+			]
+		},
+		{
+			"range": "9-10",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 9,
+					"text": "Which TWO comments of transportation choices are given by the tour guide?",
+					"options": [
+						{
+							"label": "A",
+							"text": "People can choose to walk on their own."
+						},
+						{
+							"label": "B",
+							"text": "Riding on horseback requires a government permit."
+						},
+						{
+							"label": "C",
+							"text": "Camels are safer than riding a horse."
+						},
+						{
+							"label": "D",
+							"text": "Boats will be accessible for those traveling without a permit."
+						},
+						{
+							"label": "E",
+							"text": "The intercity bus is in service throughout the year."
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 10,
+					"text": "Which TWO comments of transportation choices are given by the tour guide?",
+					"options": [
+						{
+							"label": "A",
+							"text": "People can choose to walk on their own."
+						},
+						{
+							"label": "B",
+							"text": "Riding on horseback requires a government permit."
+						},
+						{
+							"label": "C",
+							"text": "Camels are safer than riding a horse."
+						},
+						{
+							"label": "D",
+							"text": "Boats will be accessible for those traveling without a permit."
+						},
+						{
+							"label": "E",
+							"text": "The intercity bus is in service throughout the year."
+						}
+					],
+					"answer": "D"
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,240 @@
+{
+	"id": "778458c8-eab1-4d5a-9183-3be1ab9adc9b",
+	"url": "https://stepielts.com/student/listening/778458c8-eab1-4d5a-9183-3be1ab9adc9b?mode=practice",
+	"title": "Muna Island",
+	"source": "Collection",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/fcbce827-00c2-4641-bea9-9a2aa3f6f3ab.mp3",
+	"transcript": "Speaker 1: Hazel: Hello, everyone. I’m Hazel, the guide from Travellight Agency. Since we mentioned the trip to Muna Island in the last program, we’ve received several online messages from those who have been there. As a result, we’ve collected some helpful do’s and don’ts for new visitors, which will hopefully help you to know the island better and enjoy your stay to the fullest. The first suggestion is about tips. Although tipping is required in most circumstances in Muna Island, the amount you should give differs significantly. If you take a taxi, there is no set rate on how much you should leave to the driver. Someone may give a generous tip if he thinks the service is fantastic. It’s up to you entirely. However, if you go to the hairdresser’s or enjoy a meal in the restaurant and the bill comes with no service charge, a 10% tip is advisable. Muna Island has got relatively good medical service. If you get sick, the quickest way is to ask the hotel to arrange an English-speaking doctor for you. But remember, it’s not a complimentary service. The other alternative is to visit the local clinic, and you have to prepare for the charge as well. I should remind you that the medical service on the island can be pricey, so it’s better to buy your insurance before you leave. When you visit Muna Island, you’ll see the notice nearly everywhere. Tap water is safe to drink, but you might not get used to its weird taste because it contains minerals. In this case, you can buy bottled water sold in every shop, but you’d better make sure the sealed lid is untouched as the locals often put tap water into the bottle. Then I’ll focus on transportation in Muna Island. The bus is the most commonly used means of transportation for local residents. Although there aren’t many bus lines, they’re always on time. However, some people complained that the road was so bumpy that they even got nausea and dizziness. As a result, it’s not a good choice if you want to sit peacefully and relax on the way. And another thing is before you jump on the bus, inquire of the driver about where the bus will go. Unlike most cities, here in Muna Island, you cannot find the destination shown in front of the bus or at the bus stop. Maybe you found the bus service is not so enjoyable. In that case, you can always rent a car. If you choose this way, I advise you to prepare well beforehand. Although some taxi companies provide car rental services, many visitors sometimes find nobody answering the phone, so leave this way when you are in a hurry. It’s wise to compare several car rental companies online beforehand as the price may vary a lot. Booking via hotel may be overcharged as it contains a 10% commission, so it’s also not advisable. More importantly, don’t forget to check with the company what the price covers in detail, like daily rental expenses, car insurance, commission, etcetera. It usually includes unlimited mileage too, but fuel is excluded. If you don’t want to drive, a taxi is the quickest and most comfortable way, although few are available on Muna Island. If you want to find a taxi quickly, it’s not a good idea to reserve through the taxi company as sometimes you’ll have quite a wait, especially in the rush hour. The easiest way is just waving your hands on the street to stop the taxi. Otherwise, the driver will drive away directly after he drops off the guests. Oh, another thing is I have to remind you that there is no meter for taxis in Muna Island. So before you jump in the taxi, you’d better negotiate with the driver about how much you’re going to pay. For example, if you take a taxi from the airport at night, it may cost you. So confirm the price before you get in. Okay. That’s all about the tips for Muna Island that I want to share today. And are there any questions?",
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "How much should visitors tip taxi drivers on the island?",
+					"options": [
+						{
+							"label": "A",
+							"text": "as much as they feel right"
+						},
+						{
+							"label": "B",
+							"text": "no tip at all"
+						},
+						{
+							"label": "C",
+							"text": "10% tip"
+						}
+					],
+					"answer": "A",
+					"quotes": ["It’s up to you entirely."]
+				},
+				{
+					"number": 2,
+					"text": "What is mentioned about the medical service on the island?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It will be charged."
+						},
+						{
+							"label": "B",
+							"text": "Visitors should contact their insurance company."
+						},
+						{
+							"label": "C",
+							"text": "Visitors have to find the hotel doctor."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But remember, it’s not a complimentary service.",
+						"The other alternative is to visit the local clinic, and you have to prepare for the charge as well."
+					]
+				},
+				{
+					"number": 3,
+					"text": "The tour guide says the tap water",
+					"options": [
+						{
+							"label": "A",
+							"text": "contains no mineral."
+						},
+						{
+							"label": "B",
+							"text": "is unsafe."
+						},
+						{
+							"label": "C",
+							"text": "has an unusual taste."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Tap water is safe to drink, but you might not get used to its weird taste because it contains minerals."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What point is made about bottled water?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It is expensive."
+						},
+						{
+							"label": "B",
+							"text": "The bottle is not always sealed."
+						},
+						{
+							"label": "C",
+							"text": "It isn't sold everywhere."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"In this case, you can buy bottled water sold in every shop, but you’d better make sure the sealed lid is untouched as the locals often put tap water into the bottle."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What feature is mentioned about the bus on the island?",
+					"options": [
+						{
+							"label": "A",
+							"text": "frequent"
+						},
+						{
+							"label": "B",
+							"text": "not punctual"
+						},
+						{
+							"label": "C",
+							"text": "not comfortable"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"However, some people complained that the road was so bumpy that they even got nausea and dizziness. As a result, it’s not a good choice if you want to sit peacefully and relax on the way."
+					]
+				},
+				{
+					"number": 6,
+					"text": "How can visitors know the destination of the bus on the island?",
+					"options": [
+						{
+							"label": "A",
+							"text": "find it in front of the bus"
+						},
+						{
+							"label": "B",
+							"text": "check it with the driver"
+						},
+						{
+							"label": "C",
+							"text": "find it at the bus stop"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"And another thing is before you jump on the bus, inquire of the driver about where the bus will go. Unlike most cities, here in Muna Island, you cannot find the destination shown in front of the bus or at the bus stop."
+					]
+				},
+				{
+					"number": 7,
+					"text": "What does the tour guide advise visitors to do before renting a car?",
+					"options": [
+						{
+							"label": "A",
+							"text": "find a taxi company"
+						},
+						{
+							"label": "B",
+							"text": "go to the hotel reception"
+						},
+						{
+							"label": "C",
+							"text": "compare the price in advance"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"It’s wise to compare several car rental companies online beforehand as the price may vary a lot."
+					]
+				},
+				{
+					"number": 8,
+					"text": "When they rent a car, it's important for visitors to know",
+					"options": [
+						{
+							"label": "A",
+							"text": "the mileage is limited."
+						},
+						{
+							"label": "B",
+							"text": "what is included in the price."
+						},
+						{
+							"label": "C",
+							"text": "fuel is included in the price."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"More importantly, don’t forget to check with the company what the price covers in detail, like daily rental expenses, car insurance, commission, etcetera."
+					]
+				},
+				{
+					"number": 9,
+					"text": "How can visitors find a taxi easily?",
+					"options": [
+						{
+							"label": "A",
+							"text": "call the taxi company"
+						},
+						{
+							"label": "B",
+							"text": "look for a taxi in advance"
+						},
+						{
+							"label": "C",
+							"text": "stop a taxi on the street"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The easiest way is just waving your hands on the street to stop the taxi."
+					]
+				},
+				{
+					"number": 10,
+					"text": "What is suggested by the tour guide about the taxi fee?",
+					"options": [
+						{
+							"label": "A",
+							"text": "make sure no extra money is asked"
+						},
+						{
+							"label": "B",
+							"text": "check what is included in the fee"
+						},
+						{
+							"label": "C",
+							"text": "agree the price with the driver in advance"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"So before you jump in the taxi, you’d better negotiate with the driver about how much you’re going to pay."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

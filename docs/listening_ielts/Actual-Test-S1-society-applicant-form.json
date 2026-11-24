@@ -1,0 +1,117 @@
+{
+	"id": "9aa05109-8660-437c-a355-72cbb4027ca4",
+	"url": "https://stepielts.com/student/listening/9aa05109-8660-437c-a355-72cbb4027ca4?mode=practice",
+	"title": "Society Applicant Form",
+	"source": "Actual Test",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/5e24fcdf-0317-429b-a583-b8f617e6a4cc.mp3",
+	"transcript": "Speaker 1: Receptionist: Wildlife Conservation Society. Good afternoon. Can I help you?\nSpeaker 2: Caller: Oh, hello. Yes. I'd like to join, please.\nSpeaker 1: Receptionist: Oh, yes. Certainly. I'll just get some details from you. Could I have your name?\nSpeaker 2: Caller: Michael Jones.\nSpeaker 1: Receptionist: Right. And can I ask where you heard about us? Was it in an advert or did a friend tell you? Or...\nSpeaker 2: Caller: Neither, actually. It was a radio program. Then I just got your number from the phone book.\nSpeaker 1: Receptionist: Oh, right. Now I need some membership details. It's Michael Jones. And the address?\nSpeaker 2: Caller: 21 Beel Street.\nSpeaker 1: Receptionist: Okay.\nSpeaker 2: Caller: Leeds.\nSpeaker 1: Receptionist: Fine. And do you know your postcode?\nSpeaker 2: Caller: Yes. It's LS142JW.\nSpeaker 1: Receptionist: Okay. And do you have a daytime telephone number we can contact you on?\nSpeaker 2: Caller: Yes. You can call me at work. The number's 0117358642. And I can give you my office email address if you like.\nSpeaker 1: Receptionist: That'd probably be useful. Yes, please.\nSpeaker 2: Caller: It's mj@hennings.co.uk.\nReceptionist:\nSpeaker 1: Is that h e, n, n, i n g s?\nSpeaker 2: Caller: That's right.\nSpeaker 1: Receptionist: Thank you. Now I just need to ask you some questions about exactly what you want. First of all, how long do you want the membership for? We do two, three, and five year memberships, and we also do one for life.\nSpeaker 2: Caller: I think I'll just get the minimum length this time around.\nSpeaker 1: Receptionist: Fine. And then the type of membership. We do single, joint, or family, which covers up to four children.\nSpeaker 2: Caller: Well, we haven't got any children, but I think I'll get the joint one because my wife will probably want to do the activities with me.\nSpeaker 1: Receptionist: Yes. Fine. Let me see. That'll be 49 altogether then, please.\n----------------------------------------------------------------------------------------------------------------------------\nSpeaker 1: Receptionist: How would you like to pay?\nSpeaker 2: Caller: By direct debit.\nSpeaker 1: Receptionist: No problem. I just need your bank details. Can you give me the name first?\nSpeaker 2: Caller: It's the Union Bank.\nSpeaker 1: Receptionist: And now I've got your name, but I need your account number.\nSpeaker 2: Caller: 01059612.\nSpeaker 1: Receptionist: Okay. When would you like to start payment? Next month on the October 1st? Or\nSpeaker 2: Caller: Can you make it the fifteenth instead?\nSpeaker 1: Receptionist: No problem. The membership will begin then too. Is that alright?\nSpeaker 2: Caller: That's fine.\nSpeaker 1: Receptionist: I'll just give you a reference number in case there's any problem. Have you got a pen?\nSpeaker 2: Caller: Yes.\nSpeaker 1: Receptionist: It's JYZ37, and we'll be sending you an information pack within a few days. Is there anything else?\nSpeaker 2: Caller: Oh, yes. Could you send me an additional one? I've got a friend who's very interested.\nSpeaker 1: Receptionist: Certainly. No problem. I'll make a note of that. There's also a video we can send you if you like. There's no charge.\nSpeaker 2: Caller: Yes, please. That'll be great.",
+	"body": {
+		"text": "Wildlife Conservation Society\nApplication for membership\nExample\nCaller's name: Michael Jones\nHeard of WCS from: [1]\nAddress 21 Beel Street Leeds\nPostcode [2]\nPhone number 0117358642\nEmail address mj @[3]\nLength of membership [4] years\nType of membership [5]\nFee [6]\nPayment details direct debit\nName of bank [7]\nAccount name: Michael Jones\nAccount number 01059612\nDate of first payment: [8]\nReference number [9]\nOther requests\n- extra information pack\n- [10]",
+		"html": "<table><tbody><tr><td colspan=\"2\"><p><strong>Wildlife Conservation Society</strong></p></td></tr><tr><td colspan=\"2\"><p><strong>Application for membership</strong></p></td></tr><tr><td colspan=\"2\"><strong>Example</strong><br><strong>Caller's name: Michael Jones</strong></td></tr><tr><td><strong>Heard of WCS from:</strong></td><td>[1]</td></tr><tr><td><strong>Address</strong></td><td>21 Beel Street Leeds</td></tr><tr><td><strong>Postcode</strong></td><td>[2]</td></tr><tr><td><strong>Phone number</strong></td><td>0117358642</td></tr><tr><td><strong>Email address</strong></td><td>mj @[3]</td></tr><tr><td><strong>Length of membership</strong></td><td>[4] years</td></tr><tr><td><strong>Type of membership</strong></td><td>[5]</td></tr><tr><td><strong>Fee</strong></td><td>[6]</td></tr><tr><td><strong>Payment details</strong></td><td>direct debit</td></tr><tr><td><strong>Name of bank</strong></td><td>[7]</td></tr><tr><td><strong>Account name:</strong></td><td>Michael Jones</td></tr><tr><td><strong>Account number</strong></td><td>01059612</td></tr><tr><td><strong>Date of first payment:</strong></td><td>[8]</td></tr><tr><td><strong>Reference number</strong></td><td>[9]</td></tr><tr><td><strong>Other requests</strong></td><td><p>- extra information pack</p><p>- [10]</p></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "FORM_COMPLETION",
+			"instructions": "Complete the form below. Write NO MORE THAN THREE WORDS AND/OR A NUMBER for each answer.",
+			"body": "Wildlife Conservation Society\nApplication for membership\nExample\nCaller's name: Michael Jones\nHeard of WCS from: [1]\nAddress 21 Beel Street Leeds\nPostcode [2]\nPhone number 0117358642\nEmail address mj @[3]\nLength of membership [4] years\nType of membership [5]\nFee [6]\nPayment details direct debit\nName of bank [7]\nAccount name: Michael Jones\nAccount number 01059612\nDate of first payment: [8]\nReference number [9]\nOther requests\n- extra information pack\n- [10]",
+			"body_table": [
+				["Wildlife Conservation Society"],
+				["Application for membership"],
+				["Example\nCaller's name: Michael Jones"],
+				["Heard of WCS from:", "[1]"],
+				["Address", "21 Beel Street Leeds"],
+				["Postcode", "[2]"],
+				["Phone number", "0117358642"],
+				["Email address", "mj @[3]"],
+				["Length of membership", "[4] years"],
+				["Type of membership", "[5]"],
+				["Fee", "[6]"],
+				["Payment details", "direct debit"],
+				["Name of bank", "[7]"],
+				["Account name:", "Michael Jones"],
+				["Account number", "01059612"],
+				["Date of first payment:", "[8]"],
+				["Reference number", "[9]"],
+				["Other requests", "- extra information pack\n- [10]"]
+			],
+			"body_html": "<table><tbody><tr><td colspan=\"2\"><p><strong>Wildlife Conservation Society</strong></p></td></tr><tr><td colspan=\"2\"><p><strong>Application for membership</strong></p></td></tr><tr><td colspan=\"2\"><strong>Example</strong><br><strong>Caller's name: Michael Jones</strong></td></tr><tr><td><strong>Heard of WCS from:</strong></td><td>[1]</td></tr><tr><td><strong>Address</strong></td><td>21 Beel Street Leeds</td></tr><tr><td><strong>Postcode</strong></td><td>[2]</td></tr><tr><td><strong>Phone number</strong></td><td>0117358642</td></tr><tr><td><strong>Email address</strong></td><td>mj @[3]</td></tr><tr><td><strong>Length of membership</strong></td><td>[4] years</td></tr><tr><td><strong>Type of membership</strong></td><td>[5]</td></tr><tr><td><strong>Fee</strong></td><td>[6]</td></tr><tr><td><strong>Payment details</strong></td><td>direct debit</td></tr><tr><td><strong>Name of bank</strong></td><td>[7]</td></tr><tr><td><strong>Account name:</strong></td><td>Michael Jones</td></tr><tr><td><strong>Account number</strong></td><td>01059612</td></tr><tr><td><strong>Date of first payment:</strong></td><td>[8]</td></tr><tr><td><strong>Reference number</strong></td><td>[9]</td></tr><tr><td><strong>Other requests</strong></td><td><p>- extra information pack</p><p>- [10]</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Heard of WCS from:",
+					"answer": "radio program",
+					"quotes": ["It was a radio program."]
+				},
+				{
+					"number": 2,
+					"text": "Postcode",
+					"answer": "LS142JW",
+					"quotes": ["It's LS142JW."]
+				},
+				{
+					"number": 3,
+					"text": "Email address: mj@...",
+					"answer": "henningshennings.co.uk",
+					"quotes": ["Caller: It's mj@hennings.co.uk."]
+				},
+				{
+					"number": 4,
+					"text": "Length of membership ... years",
+					"answer": "2",
+					"quotes": [
+						"We do two, three, and five year memberships, and we also do one for life.",
+						"Caller: I think I'll just get the minimum length this time around."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Type of membership",
+					"answer": "joint",
+					"quotes": [
+						"Caller: Well, we haven't got any children, but I think I'll get the joint one because my wife will probably want to do the activities with me."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Fee:",
+					"answer": "£49",
+					"quotes": ["That'll be 49 altogether then, please."]
+				},
+				{
+					"number": 7,
+					"text": "Name of bank",
+					"answer": "Union Bank",
+					"quotes": ["Caller: It's the Union Bank."]
+				},
+				{
+					"number": 8,
+					"text": "Date of first payment:",
+					"answer": "October 15",
+					"quotes": [
+						"Caller: Can you make it the fifteenth instead?",
+						"Next month on the October 1st?"
+					]
+				},
+				{
+					"number": 9,
+					"text": "Reference number",
+					"answer": "JYZed37",
+					"quotes": [
+						"Receptionist: It's JYZ37, and we'll be sending you an information pack within a few days."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Other requests - ... (second bullet point)",
+					"answer": "video",
+					"quotes": ["There's also a video we can send you if you like."]
+				}
+			]
+		}
+	],
+	"images": []
+}

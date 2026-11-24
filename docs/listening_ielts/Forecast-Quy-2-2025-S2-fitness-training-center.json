@@ -1,0 +1,192 @@
+{
+	"id": "e6e1dd2c-e00e-49ed-bc4f-6b2ca3e1adc8",
+	"url": "https://stepielts.com/student/listening/e6e1dd2c-e00e-49ed-bc4f-6b2ca3e1adc8?mode=practice",
+	"title": "Fitness training center",
+	"source": "Forecast Quý 2-2025",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/69ca81f3-9539-4ddb-88dd-e6e02dc9c5de.mp3",
+	"transcript": "Speaker 1: Good evening, and thank you for joining us to learn more about our fitness package. We recognize that many of our valued customers are also dedicated parents, and with that in mind, we’ve designed our childcare services to enhance your workout experience, making it both convenient and enjoyable. For those of you striving to maintain an active lifestyle while ensuring your children are in good hands, our play area has recently doubled in size, offering ample space for kids to play, explore, and have a great time. Our caring staff is on hand during daytime hours to provide attentive childcare, giving you the freedom to concentrate on your workout without any worries. Moreover, we’ve introduced special classes aimed at nurturing children’s physical and mental growth, allowing them to learn and stay active while you attend to your fitness needs. Now, you might be thinking that such a comprehensive service would come with a hefty price tag. However, we are delighted to offer these childcare services at reasonable rates, ranging from $5 to $10 per hour for our members, ensuring quality service and a positive experience for all. Previously, our canteen catered to both adults and children. However, for the safety of our younger guests with allergies or dietary restrictions, we have decided to no longer serve meals to children in our facility. We kindly suggest exploring the nearby dining options, and we’ve prepared a brochure with a variety of restaurants that are suitable for both adults and children. Next, it’s a pleasure to share the scoop on our current class offerings. Get ready to move to the rhythm in our dance classes—they’re the perfect blend of cardio and fun, guaranteed to get your heart racing and your spirits soaring. At the same time, each of you will have the opportunity to partake in an exclusive program, designed to elevate your arm strength to new heights. Brace yourselves for a challenge that will test your endurance like never before. This program sets itself apart from any previous offerings, as it spans a month of daily sessions. Rest assured, the results will leave you pleasantly surprised. Weightlifting may be included in the future once our trainers are ready to deliver a combined course. So stay tuned for our upcoming program. Regarding class times, we know that evenings are a popular request. However, we’re currently sticking to our schedule into next year to ensure that each class is led by our exceptional instructors. And a quick note for the teens—we’re in the process of designing classes just for you, tailored to your unique energy and interests. Now, let me introduce our top trainers to you, so you can decide who will be the most suitable for your training course. First on the list is Kimberly, who is a tennis retiree as I like to call him. He won several local and international honours before he took his leave and is one of the people I used to love watching while he played. Martin is also a sportsman of international reputation. He recently suffered an ankle injury but has recovered and is back at the top level. I know you must all have heard of the star boy Robert, who has won the New York City prize 3 times. Next, Mr. Edward has always been around fame and it has really rubbed off on him. He networks with elites and celebrities and it is no wonder he was recently recognized as one of the top 50 most influential men in our city. Andrew Gills has won the hearts of many fans and is a beloved figure among our community. I remember seeing five ladies wearing shirts with his face branded on them. Our last trainer is someone very special to me. Tommy is a legend. Right from when we were in school together, he has always had a heart for people. He single-handedly began running nonprofit programs for children with disabilities from France and Australia while in school. He has always been a source of motivation. Alright, that concludes today’s introduction. Thank you for joining us. We look forward to welcoming you and your family soon!",
+	"question_groups": [
+		{
+			"range": "1-2",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E. What does the speaker say about the childcare service at the training centre?",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Choose TWO letters, A-E. What does the speaker say about the childcare service at the training centre?",
+					"options": [
+						{
+							"label": "A",
+							"text": "more space for children to play"
+						},
+						{
+							"label": "B",
+							"text": "all-day-long childcare"
+						},
+						{
+							"label": "C",
+							"text": "special class for children"
+						},
+						{
+							"label": "D",
+							"text": "free childcare"
+						},
+						{
+							"label": "E",
+							"text": "provide meals"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 2,
+					"text": "Choose TWO letters, A-E. What does the speaker say about the childcare service at the training centre?",
+					"options": [
+						{
+							"label": "A",
+							"text": "more space for children to play"
+						},
+						{
+							"label": "B",
+							"text": "all-day-long childcare"
+						},
+						{
+							"label": "C",
+							"text": "special class for children"
+						},
+						{
+							"label": "D",
+							"text": "free childcare"
+						},
+						{
+							"label": "E",
+							"text": "provide meals"
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "3-4",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E. What does the speaker say about the childcare service at the training centre?",
+			"questions": [
+				{
+					"number": 3,
+					"text": "Choose TWO letters, A-E. What do fitness classes include at the moment?",
+					"options": [
+						{
+							"label": "A",
+							"text": "weight lifting"
+						},
+						{
+							"label": "B",
+							"text": "dance exercise"
+						},
+						{
+							"label": "C",
+							"text": "special class for teenagers"
+						},
+						{
+							"label": "D",
+							"text": "intensive training for arms"
+						},
+						{
+							"label": "E",
+							"text": "more evening classes"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 4,
+					"text": "Choose TWO letters, A-E. What do fitness classes include at the moment?",
+					"options": [
+						{
+							"label": "A",
+							"text": "weight lifting"
+						},
+						{
+							"label": "B",
+							"text": "dance exercise"
+						},
+						{
+							"label": "C",
+							"text": "special class for teenagers"
+						},
+						{
+							"label": "D",
+							"text": "intensive training for arms"
+						},
+						{
+							"label": "E",
+							"text": "more evening classes"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "MATCHING_NAMES",
+			"instructions": "What is true about each of the following trainers?",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
+			"questions": [
+				{
+					"number": 5,
+					"text": "Kimberly",
+					"answer": "C",
+					"quotes": [
+						"First on the list is Kimberly, who is a tennis retiree as I like to call him. He won several local and international honours before he took his leave and is one of the people I used to love watching while he played."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Martin",
+					"answer": "B",
+					"quotes": [
+						"Martin is also a sportsman of international reputation. He recently suffered an ankle injury but has recovered and is back at the top level."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Robert",
+					"answer": "A",
+					"quotes": [
+						"I know you must all have heard of the star boy Robert, who has won the New York City prize 3 times."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Edward",
+					"answer": "E",
+					"quotes": [
+						"Next, Mr. Edward has always been around fame and it has really rubbed off on him. He networks with elites and celebrities and it is no wonder he was recently recognized as one of the top 50 most influential men in our city."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Andrew",
+					"answer": "G",
+					"quotes": [
+						"Andrew Gills has won the hearts of many fans and is a beloved figure among our community. I remember seeing five ladies wearing shirts with his face branded on them."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Tommy",
+					"answer": "F",
+					"quotes": [
+						"Tommy is a legend. Right from when we were in school together, he has always had a heart for people. He single-handedly began running nonprofit programs for children with disabilities from France and Australia while in school. He has always been a source of motivation."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,180 @@
+{
+	"id": "3cd359d2-d756-4f9b-b135-6ae70fb21496",
+	"url": "https://stepielts.com/student/listening/3cd359d2-d756-4f9b-b135-6ae70fb21496?mode=practice",
+	"title": "Visit to Branley Castle",
+	"source": "C14T2",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/754a0f90-d503-427b-84e0-e3fbe168eb57.mp3",
+	"transcript": "Speaker 0: Now turn to section two. Section two. You will hear a guide talking to a group of tourists who are about to visit an English castle. First, you have some time to look at questions 11 to 15. Now listen carefully and answer questions 11 to 15.\nSpeaker 1: We'll be arriving at Branley Castle in about five minutes. But before we get there, I'll give you a little information about the castle and what our visit will include. So, in fact, there's been a castle on this site for over eleven hundred years. The first building was a fort constructed in September for defense against Danish invaders by king Alfred the Great's daughter, who ruled England at the time. In the following century, after the Normans conquered England, the land was given to a nobleman called Richard de Vere, and he built a castle there that stayed in the de Vere family for over four hundred years. However, when queen Elizabeth the first announced that she was going to visit the castle in 1576, it was beginning to look a bit run down. And it was decided that rather than repair the guest rooms, they'd make a new house for her out of wood next to the main hall. She stayed there for four nights, and apparently, it was very luxurious. But, unfortunately, it was destroyed a few years later by fire. In the seventeenth century, the castle belonged to the wealthy Fennis family who enlarged it and made it more comfortable. However, by 1982, the Fennis family could no longer afford to maintain the castle even though they received government support, and they put it on the market. It was eventually taken over by a company who owned a number of amusement parks. But when we get there, I think you'll see that they've managed to retain the original atmosphere of the castle. When you go inside, you'll find that in the stay rooms, there are lifelike moving wax models dressed in costumes of different periods in the past, which even carry on conversations together. As well as that in every room, there are booklets giving information about what the room was used for and the history of the objects and furniture it contains. The castle park's quite extensive. At one time, sheep were kept there, and in the nineteenth century, the owners had a little zoo with animals like rabbits and even a baby elephant. Nowadays, the old zoo buildings are used for public displays of paintings and sculpture. The park also has some beautiful trees, though the oldest of all, which dated back 800 years, was sadly blown down in 1987. Now you're free to wander around on your own until 04:30, but then at the end of our visit, we'll all meet together at the bottom of the great staircase. We'll then go on to the long gallery where there's a wonderful collection of photographs showing the family who owned the castle a hundred years ago having tea and cakes in the conservatory. And we'll then take you to the same place where afternoon tea will be served to you.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 16 to 20. Now listen and answer questions 16 to 20.\nSpeaker 1: Now if you can take a look at your plans, you'll see Branley Castle has four towers joined together by a high wall with the river on two sides. Don't miss seeing the Great Hall. That's near the river in the main tower, the biggest one which was extended and redesigned in the eighteenth century. If you want to get a good view of the whole castle, you can walk around the walls. The starting point's quite near the main entrance. Walk straight down the path until you get to the South Gate, and it's just there. Don't go on to the North Gate. There's no way up from there. There'll shortly be a show in which you can see archers displaying their skill with a bow and arrow. The quickest way to get there is to take the first left after the main entrance and follow the path past the bridge. Then you'll see it in front of you at the end. If you like animals, there's also a display of hunting birds, falcons and eagles and so on. If you go from the main entrance in the direction of the South Gate, but turn right before you get there instead of going through it, you'll see it on your right past the first tower. At 3PM, there's a short performance of traditional dancing on the outdoor stage. That's right at the other side of the castle from the entrance and over the bridge. It's about ten minutes walk or so. And finally, the shop. It's actually inside one of the towers, but the way in is from the outside. Just take the first left after the main entrance, go down the path, and take the first right. It's got some lovely gifts and souvenirs. Right. So we're just arriving.\nSpeaker 0: That is the end of section two. You now have half a minute to check your answers.",
+	"question_groups": [
+		{
+			"range": "11-15",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Before Queen Elizabeth I visited the castle in 1576,",
+					"options": [
+						{
+							"label": "A",
+							"text": "repairs were carried out to the quest rooms."
+						},
+						{
+							"label": "B",
+							"text": "a new building was constructed for her."
+						},
+						{
+							"label": "C",
+							"text": "a fire damaged part of the main hall."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"And it was decided that rather than repair the guest rooms, they'd make a new house for her out of wood next to the main hall."
+					]
+				},
+				{
+					"number": 12,
+					"text": "In 1982, the castle was sold to",
+					"options": [
+						{
+							"label": "A",
+							"text": "the government"
+						},
+						{
+							"label": "B",
+							"text": "the Fenys family."
+						},
+						{
+							"label": "C",
+							"text": "an entertainment company."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"It was eventually taken over by a company who owned a number of amusement parks."
+					]
+				},
+				{
+					"number": 13,
+					"text": "In some of the rooms, visitors can",
+					"options": [
+						{
+							"label": "A",
+							"text": "speak to experts on the history of the castle."
+						},
+						{
+							"label": "B",
+							"text": "interact with actors dressed as famous characters."
+						},
+						{
+							"label": "C",
+							"text": "see models of historical figures moving and talking."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"When you go inside, you'll find that in the stay rooms, there are lifelike moving wax models dressed in costumes of different periods in the past, which even carry on conversations together."
+					]
+				},
+				{
+					"number": 14,
+					"text": "In the castle park, visitors can",
+					"options": [
+						{
+							"label": "A",
+							"text": "see an 800-year-old tree."
+						},
+						{
+							"label": "B",
+							"text": "go to an art exhibition."
+						},
+						{
+							"label": "C",
+							"text": "visit a small zoo."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Nowadays, the old zoo buildings are used for public displays of paintings and sculpture."
+					]
+				},
+				{
+					"number": 15,
+					"text": "At the end of the visit, the group will have",
+					"options": [
+						{
+							"label": "A",
+							"text": "afternoon tea in the conservatory."
+						},
+						{
+							"label": "B",
+							"text": "the chance to meet the castle’s owners."
+						},
+						{
+							"label": "C",
+							"text": "a photograph together on the Great Staircase."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"We'll then go on to the long gallery where there's a wonderful collection of photographs showing the family who owned the castle a hundred years ago having tea and cakes in the conservatory. And we'll then take you to the same place where afternoon tea will be served to you."
+					]
+				}
+			]
+		},
+		{
+			"range": "16-20",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the plan below. Write the correct letter, A-H, next to Questions 16-20:",
+			"instructions_html": "<p>Label the plan below. Write the correct letter, A-H, next to Questions 16-20:</p><p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/85c01fbe-8d1e-45f3-9254-3cbad75385f5.jpg\" alt=\"Cam 14 Test 2 Sec 2\"></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H"],
+			"questions": [
+				{
+					"number": 16,
+					"text": "Starting point for walking the walls",
+					"answer": "H",
+					"quotes": ["The starting point's quite near the main entrance."]
+				},
+				{
+					"number": 17,
+					"text": "Bow and arrow display",
+					"answer": "D",
+					"quotes": [
+						"There'll shortly be a show in which you can see archers displaying their skill with a bow and arrow."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Hunting birds display",
+					"answer": "F",
+					"quotes": [
+						"If you like animals, there's also a display of hunting birds, falcons and eagles and so on. If you go from the main entrance in the direction of the South Gate, but turn right before you get there instead of going through it, you'll see it on your right past the first tower."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Traditional dancing",
+					"answer": "A",
+					"quotes": [
+						"At 3PM, there's a short performance of traditional dancing on the outdoor stage. That's right at the other side of the castle from the entrance and over the bridge."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Shop",
+					"answer": "E",
+					"quotes": [
+						"It's actually inside one of the towers, but the way in is from the outside. Just take the first left after the main entrance, go down the path, and take the first right."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/85c01fbe-8d1e-45f3-9254-3cbad75385f5.jpg"
+	]
+}

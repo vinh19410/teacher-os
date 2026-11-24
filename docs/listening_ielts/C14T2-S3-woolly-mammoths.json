@@ -1,0 +1,204 @@
+{
+	"id": "b475e207-4734-4067-98e2-ed202879c9b2",
+	"url": "https://stepielts.com/student/listening/b475e207-4734-4067-98e2-ed202879c9b2?mode=practice",
+	"title": "Woolly Mammoths",
+	"source": "C14T2",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/818254d4-3ba3-465b-b27d-6d624ce81d86.mp3",
+	"transcript": "Speaker 0: To section three. Section three. You will hear two environmental science students called Rosie and Martin discussing their presentation on an extinct animal called the woolly mammoth with their tutor. First, you have some time to look at questions 21 to 24. Now listen carefully and answer questions 21 to 24.\nSpeaker 1: So, Rosie and Martin, let's look at what you've got for your presentation on woolly mammoths.\nSpeaker 2: Okay. We've got a short outline here.\nSpeaker 1: Thanks. So it's about a research project in North America.\nSpeaker 3: Yes. But we thought we needed something general about woolly mammoths in our introduction to establish that they were related to our modern elephant,\nSpeaker 1: and\nSpeaker 2: they lived thousands of years ago in the last ice age. Maybe we could show a video clip of a cartoon about mammoths, but that'd be a bit childish. Or we could have a diagram. It could be a timeline to show when they lived with illustrations.\nSpeaker 3: Or we could just show a drawing of them walking in the ice. No. Let's go with your last suggestion.\nSpeaker 1: Good. Then you're describing the discovery of the mammoth tooth on Saint Paul's Island in Alaska and why it was significant.\nSpeaker 2: Yes. The tooth was found by a man called Russell Graham. He picked it up from under a rock in a cave. He knew it was special. For a start, it was in really good condition, as if it had been just extracted from the animal's jawbone. Anyway, they found it was 6,500 years old.\nSpeaker 1: So why was that significant?\nSpeaker 2: Well, the mammoth bones previously found on the North American Mainland were much less recent than that, so this was really amazing.\nSpeaker 3: Then we're making an animated diagram to show the geography of the area in prehistoric times. So originally, St Paul's Island wasn't an island. It was connected to the mainland, and mammoths and other animals, like bears, were able to roam around the whole area.\nSpeaker 2: Then the climate warmed up and the sea level began to rise, and the island got cut off from the mainland. So those mammoths on the island couldn't escape. They had to stay on the island.\nSpeaker 3: And in fact, the species survived there for thousands of years after they'd become extinct on the mainland.\nSpeaker 1: So why do you think they died out on the mainland?\nSpeaker 3: No one's sure. Anyway, next we'll explain how Graham and his team identified the date when the mammoths became extinct on the island. They concluded that the extinction happened five thousand six hundred years ago, which is a very precise time for a prehistoric extinction. It's based on samples they took from mud at the bottom of a lake on the island. They analyzed it to find out what had fallen in over time bits of plants, volcanic ash, and even DNA from the mammoth themselves. It's standard procedure, but it took nearly two years to do.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 25 to 30. Now listen and answer questions 25 to 30.\nSpeaker 1: So why don't you quickly go through the main sections of your presentation and discuss what action's needed for each part?\nSpeaker 3: Okay. So for the introduction, we're using a visual. So once we've prepared that, we're done. I'm not sure.\nSpeaker 2: I think we need to write down all the ideas we want to include here, not just rely on memory. How we begin the presentation is so important. You're right. The discovery of the mammoth tooth is probably the most dramatic part, but we don't have that much information, only what we got from the online article. I thought maybe we could get in touch with the researcher who led the team and ask him to tell us a bit more.\nSpeaker 3: Great idea. What about the section with the initial questions asked by the researchers? We've got a lot on that, but we need to make it interesting.\nSpeaker 2: We could ask the audience to suggest some questions about it, and then see how many of them we can answer. I don't think it would take too long.\nSpeaker 1: Yes. That would add a bit of variety.\nSpeaker 3: Then the section on further research carried out on the island, analyzing the mud in the lake. I wonder if we've actually got too much information here. Should we cut some?\nSpeaker 2: I don't think so, but it's all a bit muddled at present.\nSpeaker 3: Yes. Maybe it would be better if it followed a chronological pattern.\nSpeaker 2: I think so. The findings and possible explanations section is just about ready, but we need to practice it so we're sure it won't overrun. I think it should be okay, but yes, let's make sure.\nSpeaker 1: In the last section, relevance to the present day, you've got some good ideas, but this is where you need to move away from the ideas of others and give your own viewpoint.\nSpeaker 3: Okay. We'll think about that. Now shall we show you some of\nSpeaker 0: That is the end of section three. You now have half a minute to check your answers.",
+	"body": {
+		"text": "Sections of presentation\nIntroduction [25]\nDiscovery of the mammoth tooth [26]\nInitial questions asked by the researchers [27]\nFurther research carried out on the island [28]\nFindings and possible explanations [29]\nRelevance to the present day [30]",
+		"html": "<p><strong>Sections of presentation</strong></p><br><p>Introduction                                                   [25]</p><p>Discovery of the mammoth tooth                 [26]</p><p>Initial questions asked by the researchers     [27]</p><p>Further research carried out on the island     [28]</p><p>Findings and possible explanations                [29]</p><p>Relevance to the present day                          [30]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-24",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "",
+			"questions": [
+				{
+					"number": 21,
+					"text": "How will Rosie and Martin introduce their presentation?",
+					"options": [
+						{
+							"label": "A",
+							"text": "with a drawing of woolly mammoths in their natural habit"
+						},
+						{
+							"label": "B",
+							"text": "with a timeline showing when woolly mammoths lived"
+						},
+						{
+							"label": "C",
+							"text": "with a video clip about woolly mammoths"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"It could be a timeline to show when they lived with illustrations."
+					]
+				},
+				{
+					"number": 22,
+					"text": "What was surprising about the mammoth tooth found by Russell Graham?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It was still embedded in the mammoth’s jawbone."
+						},
+						{
+							"label": "B",
+							"text": "It was from an unknown species of mammoth."
+						},
+						{
+							"label": "C",
+							"text": "It was not as old as mammoth remains from elsewhere."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Well, the mammoth bones previously found on the North American Mainland were much less recent than that, so this was really amazing."
+					]
+				},
+				{
+					"number": 23,
+					"text": "The students will use an animated diagram to demonstrate how the mammoths",
+					"options": [
+						{
+							"label": "A",
+							"text": "became isolated on the island."
+						},
+						{
+							"label": "B",
+							"text": "spread from the island to other areas."
+						},
+						{
+							"label": "C",
+							"text": "coexisted with other animals on the island."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Then the climate warmed up and the sea level began to rise, and the island got cut off from the mainland."
+					]
+				},
+				{
+					"number": 24,
+					"text": "According to Martin, what is unusual about the date of the mammoths’ extinction on the island?",
+					"options": [
+						{
+							"label": "A",
+							"text": "how exact it is"
+						},
+						{
+							"label": "B",
+							"text": "how early it is"
+						},
+						{
+							"label": "C",
+							"text": "how it was established"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"They concluded that the extinction happened five thousand six hundred years ago, which is a very precise time for a prehistoric extinction."
+					]
+				}
+			]
+		},
+		{
+			"range": "25-30",
+			"type": "MATCHING",
+			"instructions": "What action will the students take for each of the following sections of their presentation?\nChoose the correct answer and move it into the gap",
+			"options": [
+				{
+					"label": "A",
+					"text": "make it more interactive"
+				},
+				{
+					"label": "B",
+					"text": "reduce visual input"
+				},
+				{
+					"label": "C",
+					"text": "add personal opinions"
+				},
+				{
+					"label": "D",
+					"text": "contact one of the researchers"
+				},
+				{
+					"label": "E",
+					"text": "make detailed notes"
+				},
+				{
+					"label": "F",
+					"text": "find information online"
+				},
+				{
+					"label": "G",
+					"text": "check timing"
+				},
+				{
+					"label": "H",
+					"text": "organise the content more clearly"
+				}
+			],
+			"body": "Sections of presentation\nIntroduction [25]\nDiscovery of the mammoth tooth [26]\nInitial questions asked by the researchers [27]\nFurther research carried out on the island [28]\nFindings and possible explanations [29]\nRelevance to the present day [30]",
+			"body_html": "<p><strong>Sections of presentation</strong></p><br><p>Introduction                                                   [25]</p><p>Discovery of the mammoth tooth                 [26]</p><p>Initial questions asked by the researchers     [27]</p><p>Further research carried out on the island     [28]</p><p>Findings and possible explanations                [29]</p><p>Relevance to the present day                          [30]</p>",
+			"questions": [
+				{
+					"number": 25,
+					"text": "Introduction",
+					"answer": "E",
+					"quotes": [
+						"I think we need to write down all the ideas we want to include here, not just rely on memory."
+					]
+				},
+				{
+					"number": 26,
+					"text": "Discovery of the mammoth tooth",
+					"answer": "D",
+					"quotes": [
+						"I thought maybe we could get in touch with the researcher who led the team and ask him to tell us a bit more."
+					]
+				},
+				{
+					"number": 27,
+					"text": "Initial questions asked by the researchers",
+					"answer": "A",
+					"quotes": [
+						"We could ask the audience to suggest some questions about it, and then see how many of them we can answer."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Further research carried out on the island",
+					"answer": "H",
+					"quotes": [
+						"Then the section on further research carried out on the island, analyzing the mud in the lake. I wonder if we've actually got too much information here. Should we cut some? I don't think so, but it's all a bit muddled at present. Yes. Maybe it would be better if it followed a chronological pattern."
+					]
+				},
+				{
+					"number": 29,
+					"text": "Findings and possible explanations",
+					"answer": "G",
+					"quotes": [
+						"The findings and possible explanations section is just about ready, but we need to practice it so we're sure it won't overrun."
+					]
+				},
+				{
+					"number": 30,
+					"text": "Relevance to the present day",
+					"answer": "C",
+					"quotes": [
+						"In the last section, relevance to the present day, you've got some good ideas, but this is where you need to move away from the ideas of others and give your own viewpoint."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,112 @@
+{
+	"id": "0992934a-6460-4e3d-a115-c46c6e0c8efc",
+	"url": "https://stepielts.com/student/listening/0992934a-6460-4e3d-a115-c46c6e0c8efc?mode=practice",
+	"title": "Fitness Program",
+	"source": "Forecast Quý 2-2025",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/2ddddc36-10d3-4b50-ab6b-333a6c930ed3.mp3",
+	"transcript": "Speaker 0: MAN: Hi! How can I help you today?\nSpeaker 1: WOMAN: Hello. I would like to sign my family up for some fitness programs. We’ve just moved here from Bristol. We’d like to start in September if that’s possible.\nSpeaker 0: MAN: Well, here at Workout Weekly Fitness we offer different programs to suit everyone’s needs. Our head trainer Mark Critchton offers professional and personalised coaching .\nSpeaker 1: WOMAN: I’m sorry? What’s his family name again, please?\nSpeaker 0: MAN: Crichton, that’s C-R-I-C-H-T-O-N. WOMAN: Ok. MAN: What in particular would you like to do?\nSpeaker 1: WOMAN: As a family, we enjoy running. It’s something we can do together.\nSpeaker 0: MAN: And it’s a great way to stay fit! We have many running programs available at the moment. Here’s a printout of our schedule. Do you prefer sprinting? WOMAN: I do. MAN: That’s great! We’ve got 100-metre sprinting program which has many vacancies available. This program is held on weekends.\nSpeaker 1: WOMAN: Nice,where’s the venue for it?\nSpeaker 0: MAN: It’s at the local Sports Centre on the other side of town. Unfortunately, we can’t operate all our programs here at our centre. We just don’t have the room.\nSpeaker 1: WOMAN: That might be a little far for us to go. Is there anything else available?\nSpeaker 0: MAN: We have middle-range distance training held every morning in spring. But you would have to wait until then to start.\nSpeaker 1: WOMAN: Middle-range ... Would that be about 1 kilometre?\nSpeaker 0: MAN: Nearly.That’s 2 laps around the track, exactly 800 metres long.It’s a good amount. But it is planned to start at 6.15 every morning. That’s a little too early for some of our clients.Is it a problem for you?\nSpeaker 1: WOMAN: It’s not a problem for my husband and me, but our children are in their late teens, and don’t like getting out of bed early. I’m sure you know what teenagers are like. And we don’t want to have to wait until next spring to start.\nSpeaker 0: MAN: I understand. Then “Long Road Runner” is the last program available at the moment. The distance is quite challenging though.\nSpeaker 1: WOMAN: My family and I are used to running long distances. We used to compete in the 8-kilometre mini marathons in our old city.\nSpeaker 0: MAN: This is for very experienced runners. It is a 10-kilometre run. We practice every Thursday evening at 6 pm. Are you interested?\nSpeaker 1: WOMAN: It sounds like just what we want! Where is it held?\nSpeaker 0: MAN: It’s in the Central Park. Oops, sorry. I almost forgot that we just changed the location last week. We now train at North Park, on Gilmore Street. Do you know where that is?\nSpeaker 1: WOMAN: Yes! That’s right near our house. That would be perfect! Please sign us up for that one. We are the Andrews family. There is my husband, my two children and me in our family. WOMAN: Is there anything we need to prepare before we begin? Such as special running shoes? Or do we need a club sweater?\nSpeaker 0: MAN: We have shirts, shorts, socks and shoes available but they are not compulsory. However, we do recommend that all people participating in our training programs buy a club vest. We want everyone to feel like a part of a team. And it’s good for advertising.\nSpeaker 1: WOMAN: OK, can we buy them here?\nSpeaker 0: MAN: You certainly can! I will get them for you in a moment. Are you interested in signing up for our marathon competition? It isn’t until June, but if you sign up early, you can start training immediately. WOMAN: Yes, we’d love to! MAN: Eh, wait a minute. I made a mistake. It’s actually on the 13th of July. Would you like to hire a private trainer?\nSpeaker 1: WOMAN: I’m afraid it would be over my budget, so we will just stick to the group training program.\nSpeaker 0: MAN: No problem at all. Do you have a phone number I can contact you with? To let you know of any changes to the schedule, or things like that.\nSpeaker 1: WOMAN: Yes, you can call me at 07958477.\nSpeaker 0: MAN: Excellent! Thank you very much. We’re very happy to have you with us.",
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "Fitness program\nTrainer: Mark [1]\nSport Programs\nLength\nTime\nLocation\nThe Sprinters\n100 metres\nOn weekends\nLocal [2]\nMiddle-Range Distance Running\n[3] metres\nAt [4] a.m.\nnext spring\nCity Stadium\nLong [5]\n[6] kilometres\nOn Thursdays\n[7] Park",
+			"body_table": [
+				["Trainer: Mark [1]"],
+				["Sport Programs", "Length", "Time", "Location"],
+				["The Sprinters", "100 metres", "On weekends", "Local [2]"],
+				[
+					"Middle-Range Distance Running",
+					"[3] metres",
+					"At [4] a.m.\nnext spring",
+					"City Stadium"
+				],
+				["Long [5]", "[6] kilometres", "On Thursdays", "[7] Park"]
+			],
+			"body_html": "<h3><strong>Fitness program</strong></h3><table><tbody><tr><td colspan=\"4\"><p>Trainer: Mark [1]</p></td></tr><tr><td><p>Sport Programs</p></td><td><p>Length</p></td><td><p>Time</p></td><td><p>Location</p></td></tr><tr><td><p>The Sprinters</p></td><td><p>100 metres</p></td><td><p>On weekends</p></td><td><p>Local [2] </p></td></tr><tr><td><p>Middle-Range Distance Running</p></td><td><p>[3] metres</p></td><td><p>At  [4]  a.m.</p><p>next spring</p></td><td><p>City Stadium</p></td></tr><tr><td><p>Long [5] </p></td><td><p>[6] kilometres</p></td><td><p>On Thursdays</p></td><td><p>[7] Park</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Trainer: Mark [1]",
+					"answer": "Crichton",
+					"quotes": ["MAN: Crichton, that’s C-R-I-C-H-T-O-N."]
+				},
+				{
+					"number": 2,
+					"text": "Local [2]",
+					"answer": "Sports Centre / sports center / sports centre",
+					"quotes": [
+						"MAN: It’s at the local Sports Centre on the other side of town."
+					]
+				},
+				{
+					"number": 3,
+					"text": "[3] metres",
+					"answer": "800 / eight hundred",
+					"quotes": [
+						"MAN: Nearly.That’s 2 laps around the track, exactly 800 metres long.It’s a good amount."
+					]
+				},
+				{
+					"number": 4,
+					"text": "At [4] a.m.",
+					"answer": "6.15 / 6:15",
+					"quotes": ["But it is planned to start at 6.15 every morning."]
+				},
+				{
+					"number": 5,
+					"text": "Long [5]",
+					"answer": "Road Runner / ROAD RUNNER",
+					"quotes": [
+						"Then “Long Road Runner” is the last program available at the moment."
+					]
+				},
+				{
+					"number": 6,
+					"text": "[6] kilometres",
+					"answer": "10 / ten",
+					"quotes": ["It is a 10-kilometre run."]
+				},
+				{
+					"number": 7,
+					"text": "[7] Park",
+					"answer": "North",
+					"quotes": ["We now train at North Park, on Gilmore Street."]
+				}
+			]
+		},
+		{
+			"range": "8-10",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Write ONE WORD OR A NUMBER for each answer.",
+			"body": "Wearing a club [8] can intensify team spirit.\nMarathon competition will take place in [9].\nThe woman’s phone number is [10].",
+			"body_html": "<ul><li>Wearing a club [8] can intensify team spirit.</li><li>Marathon competition will take place in [9].</li><li>The woman’s phone number is [10].</li></ul><p></p>",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Wearing a club [8] can intensify team spirit.",
+					"answer": "vest",
+					"quotes": [
+						"However, we do recommend that all people participating in our training programs buy a club vest."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Marathon competition will take place in [9].",
+					"answer": "July",
+					"quotes": ["It’s actually on the 13th of July."]
+				},
+				{
+					"number": 10,
+					"text": "The woman’s phone number is [10].",
+					"answer": "07958477",
+					"quotes": ["WOMAN: Yes, you can call me at 07958477."]
+				}
+			]
+		}
+	],
+	"images": []
+}

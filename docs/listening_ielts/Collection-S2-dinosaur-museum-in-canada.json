@@ -1,0 +1,105 @@
+{
+	"id": "4db18942-33f6-495d-8d8e-09f9bb5eee46",
+	"url": "https://stepielts.com/student/listening/4db18942-33f6-495d-8d8e-09f9bb5eee46?mode=practice",
+	"title": "Dinosaur Museum in Canada",
+	"source": "Collection",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/a6b3122b-1155-44f8-a9c0-803cf6759f5f.mp3",
+	"transcript": "Speaker 1: Tour Guide (Jo): Hello, everyone. I am Jo, your tour guide, and I welcome you to this wonderful place. As you must have seen outside, this place in Canada was built to preserve and showcase some of the most interesting landmarks in the world. I am here to give you a brief introduction of what we have and where we would be going on this tour. We will begin our tour by exploring the awe inspiring display of the world’s largest dinosaur bones, which are truly magnificent in size. It is at the foot of Rocky Mountains. These remarkable fossils have been excavated and date back over 100 million years to the Mesozoic era. It’s worth noting that during this visit, you will have the opportunity to observe around a 170 meticulously preserved dinosaur footprints. Furthermore, on our upcoming trip next year, you will be delighted to witness an even greater spectacle with a 190 footprints in larger sizes, it is truly remarkable to imagine the immense size of these ancient creatures. We highly recommend embarking on a night tour. This is because the true beauty of this place reveals itself under the cover of darkness. Rest assured, it is an experience unlike any other you have encountered. Prepare to be amazed by the breathtaking sight of the illuminated skyscrapers in the CBD area. For our second location, you can have a chance to explore Stikine River Park. We have thoughtfully installed artificial lights that will make you forget it is nighttime and immerse yourself in the early past. Of course, we also offer a daytime tour as an alternative, but there may not be as much to see during the day. The next stop is one of the places that displays Canada’s rich mineral deposit. We have a huge reservoir in this area, and you might see some workers working in the area, and I can tell you that you can find one of the largest uranium deposits here in Canada. There is also an agricultural development site here. Plans are ongoing to expand it in the nearest future. And don’t miss out on checking out the nearby rest area by the highway. It’s the perfect spot to snap some awesome photos and soak in the stunning views. Trust me, you’ll have plenty of chances to capture jaw dropping images that will totally blow your mind. Perhaps the most special feature of this third stop is the presence of raccoons in Science Center Museum. Oh my. These are so beautiful, and their blue color is just amazing and always makes them stand out. Raccoons are many in the area, and they are quite intelligent and curious creatures as you would see. You also get to see a river at this stop. Though it’s not the longest, it’s one of the cleanest in the world. So as you relax, you get a very great view at this third location. This river is devoid of a lot of contaminants usually seen in rivers, and the government has taken extra precautions to ensure that it remains so. To embark on this wonderful tour, of course, we would need transportation, and this has been well catered for. You would have noticed a lot of horses in the area while coming in.\nYes.\nSpeaker 1: You can ride on the horseback as we go along, but this mode of transportation would require a permit from the authorities. So once you have your IT, you can go see any of the handlers as we move. If you don’t have, there is no problem. The primary mode of transportation here is by boat, and they have boats available for use. As you may have been informed, exploring on foot is more enjoyable, but it can be easy to get lost in certain areas without proper road directions. It is advisable to have a tour guide or travel in groups. In terms of the intercity bus, it is not accessible during this time of year. However, if you return in two months, it will offer a different experience.",
+	"body": {
+		"text": "Foot of Rocky Mountains\nA visit to witness the giant dinosaur [1]\nA collection of [2] dinosaur footprints\nSuggestion: the [3] tour\nStikine River Park\nSkyscrapers in the town center, which helps you to see clearly the [4] history.\n[5] resources and agricultural development\nSpecial photo-taking spots at the highway [6] areas\nScience Centre Museum\nThe small raccoons in [7] colour\nOne of the [8] rivers in the world\nRiding on horseback requires a government [9]\nTransport: by [10]",
+		"html": "<table><tbody><tr><td><h4><strong>Foot of Rocky Mountains</strong></h4><ul><li>A visit to witness the giant dinosaur [1]</li><li>A collection of [2] dinosaur footprints</li><li>Suggestion: the [3] tour</li></ul><h4><strong>Stikine River Park</strong></h4><ul><li>Skyscrapers in the town center, which helps you to see clearly the [4] history.</li><li>[5] resources and agricultural development</li><li>Special photo-taking spots at the highway [6] areas</li></ul><h4><strong>Science Centre Museum</strong></h4><ul><li>The small raccoons in [7] colour</li><li>One of the [8] rivers in the world</li><li>Riding on horseback requires a government [9]</li><li>Transport: by [10]</li></ul></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Foot of Rocky Mountains\nA visit to witness the giant dinosaur [1]\nA collection of [2] dinosaur footprints\nSuggestion: the [3] tour\nStikine River Park\nSkyscrapers in the town center, which helps you to see clearly the [4] history.\n[5] resources and agricultural development\nSpecial photo-taking spots at the highway [6] areas\nScience Centre Museum\nThe small raccoons in [7] colour\nOne of the [8] rivers in the world\nRiding on horseback requires a government [9]\nTransport: by [10]",
+			"body_html": "<table><tbody><tr><td><h4><strong>Foot of Rocky Mountains</strong></h4><ul><li>A visit to witness the giant dinosaur [1]</li><li>A collection of [2] dinosaur footprints</li><li>Suggestion: the [3] tour</li></ul><h4><strong>Stikine River Park</strong></h4><ul><li>Skyscrapers in the town center, which helps you to see clearly the [4] history.</li><li>[5] resources and agricultural development</li><li>Special photo-taking spots at the highway [6] areas</li></ul><h4><strong>Science Centre Museum</strong></h4><ul><li>The small raccoons in [7] colour</li><li>One of the [8] rivers in the world</li><li>Riding on horseback requires a government [9]</li><li>Transport: by [10]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "A visit to witness the giant dinosaur [1]",
+					"answer": "bones",
+					"quotes": [
+						"We will begin our tour by exploring the awe inspiring display of the world’s largest dinosaur bones, which are truly magnificent in size."
+					]
+				},
+				{
+					"number": 2,
+					"text": "A collection of [2] dinosaur footprints",
+					"answer": "preserved",
+					"quotes": [
+						"It’s worth noting that during this visit, you will have the opportunity to observe around a 170 meticulously preserved dinosaur footprints."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Suggestion: the [3] tour",
+					"answer": "night",
+					"quotes": ["We highly recommend embarking on a night tour."]
+				},
+				{
+					"number": 4,
+					"text": "Skyscrapers in the town center, which helps you to see clearly the [4] history.",
+					"answer": "early",
+					"quotes": [
+						"We have thoughtfully installed artificial lights that will make you forget it is nighttime and immerse yourself in the early past."
+					]
+				},
+				{
+					"number": 5,
+					"text": "[5] resources and agricultural development",
+					"answer": "Mineral",
+					"quotes": [
+						"The next stop is one of the places that displays Canada’s rich mineral deposit."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Special photo-taking spots at the highway [6] areas",
+					"answer": "rest",
+					"quotes": [
+						"And don’t miss out on checking out the nearby rest area by the highway."
+					]
+				},
+				{
+					"number": 7,
+					"text": "The small raccoons in [7] colour",
+					"answer": "blue",
+					"quotes": [
+						"These are so beautiful, and their blue color is just amazing and always makes them stand out."
+					]
+				},
+				{
+					"number": 8,
+					"text": "One of the [8] rivers in the world",
+					"answer": "cleanest",
+					"quotes": [
+						"Though it’s not the longest, it’s one of the cleanest in the world."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Riding on horseback requires a government [9]",
+					"answer": "permit",
+					"quotes": [
+						"You can ride on the horseback as we go along, but this mode of transportation would require a permit from the authorities."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Transport: by [10]",
+					"answer": "boat",
+					"quotes": [
+						"The primary mode of transportation here is by boat, and they have boats available for use."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

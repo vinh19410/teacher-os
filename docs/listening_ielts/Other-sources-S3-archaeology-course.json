@@ -1,0 +1,101 @@
+{
+	"id": "1e67550c-48d0-4fc7-adf9-cff5a5841eea",
+	"url": "https://stepielts.com/student/listening/1e67550c-48d0-4fc7-adf9-cff5a5841eea?mode=practice",
+	"title": "Archaeology Course",
+	"source": "Other sources",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/67da5e2d-d7ad-4495-be4a-fd738e97f735.mp3",
+	"transcript": "Speaker 1: Ross: Hello, professor. I’m Ross. I spoke to you on the phone last week.\nSpeaker 0: Professor: Ah, yes. Come in and have a seat. You want to talk to me about the archaeology course. Right?\nSpeaker 1: Ross: Yes. I’ve read the handbook, but I still have some questions and want to know more details before deciding whether to do it.\nSpeaker 0: Professor: Right. So what would you like to know?\nSpeaker 1: Ross: Well, first of all, when I choose the archaeology course, can I integrate it with other subjects? For example, one in anthropology?\nSpeaker 0: Professor: Yes. It can be combined with any other subjects apart from classical history. That’s because there is some overlap in the lecture times for those two courses. We weren’t able to coordinate them.\nSpeaker 1: Ross: That’s okay. Then about the modules, could you tell me the details?\nSpeaker 0: Professor: In the first semester, there are three modules, all of which are compulsory. What about optional modules? Well, we don’t offer optional modules until next semester.\nSpeaker 1: Ross: Okay.\nSpeaker 0: Professor: The first module is called Object Matters, and Doctor Morris teaches it. This module is mainly about what can be learned from specific artifacts, such as pottery and stone tools.\nSpeaker 1: Ross: That’s something I’ve never heard about. I’m interested. How is the module presented? I mean, is it all lectures?\nSpeaker 0: Professor: Well, you mean the learning method. In this case, its lectures are combined with practical sessions, so it’s a mixture.\nSpeaker 1: Ross: What about the content of the module? I suppose we will be looking at different kinds of archaeological remains and how to date them, that kind of thing.\nSpeaker 0: Professor: To some extent, yes. But the module is based on processes, and it covers four aspects in detail. First of all, recording material and then classification, then the interpretation of the data, that’s how archaeologists conclude their findings. And finally, display. Is that okay for you?\nSpeaker 1: Ross: I think so. Yes. Thanks. Oh, one important thing. How is the module assessed? Should we take an exam at the end of the semester?\nSpeaker 0: Professor: No. It’s all based on coursework after each lecture. So try your best when the lecturer assigns you a task.\nSpeaker 1: Ross: Okay.\nSpeaker 0: Professor: The second module’s title is Towns and Cities. It is taught by Professor Elliott, the head of our department. And as the name suggests, the module focuses on the origins of built environments and how they developed.\nSpeaker 1: Ross: That’s mainly factual, I suppose.\nSpeaker 0: Professor: It is. And for that reason, it is assessed by examination. But instead of a written exam, we set it as an oral one as we think most students prefer this way.\nSpeaker 1: Ross: It sounds a bit scary. I prefer written exams.\nSpeaker 0: Professor: Don’t worry too much. Most of our students find they enjoy it.\nSpeaker 1: Ross: Okay.\nSpeaker 0: Professor: And then the third module is called Method and Science. And in this module, Dr Thompson will introduce you to the standard techniques used in archaeological fieldwork and analysis, such as excavating and dating.\nSpeaker 1: Ross: What about the learning method for this module? Are there any lectures or it’s all laboratory work?\nSpeaker 0: Professor: Oh, there aren’t any lectures. It combines half lab work and half seminars.\nSpeaker 1: Ross: What about the assessment?\nSpeaker 0: Professor: Oh, you are lucky. This module has no formal assessment. But right at the end of the module, you will have to take part in a site survey.\nSpeaker 1: Ross: That’s great. Where shall we go for the site survey?\nSpeaker 0: Professor: Sorry. I can’t tell you the location yet. That would be announced later. The date for that is the week beginning the 10th of March.\nSpeaker 1: Ross: Okay. That’s all I want to know. Thank you very much, professor. Bye.\nSpeaker 0: Professor: You are welcome, Ross. Bye.",
+	"body": {
+		"text": "Can be combined with any other subjects except [1]\nHas three [2] modules in the first semester\nModule 1\nTitle: [3]\nLecturer: Dr Morris\nLearning method: Lectures and practical sessions\nContent: Based on processes:\nrecording\n[4]\ninterpretation\ndisplay\nAssessment: By [5]\nModule 2\nTitle: [6]\nLecturer: Prof. Elliot\nContent: [7] and development of built environments\nAssessment: By [8] examination\nModule 3\nTitle: Method and Science\nLecturer: Dr Thompson\nContent: Standard techniques in fieldwork and analysis\nLearning method: 50% lab work, 50% [9]\nSite survey at the end of the module (the [10] is to be announced later)",
+		"html": "<table><tbody><tr><td><ul><li>Can be combined with any other subjects except [1]</li></ul><ul><li>Has three [2] modules in the first semester</li></ul><h4><strong>Module 1</strong></h4><ul><li>Title: [3]</li></ul><ul><li>Lecturer: Dr Morris</li></ul><ul><li>Learning method: Lectures and practical sessions</li></ul><ul><li>Content: Based on processes:</li></ul><ul><li>\nrecording\n</li><li>\n[4]\n</li><li>\ninterpretation\n</li><li>\ndisplay\n</li></ul><ul><li>Assessment: By [5]</li></ul><h4><strong>Module 2</strong></h4><ul><li>Title: [6]</li></ul><ul><li>Lecturer: Prof. Elliot</li></ul><ul><li>Content: [7] and development of built environments</li></ul><ul><li>Assessment: By [8] examination</li></ul><h4><strong>Module 3</strong></h4><ul><li>Title: Method and Science</li></ul><ul><li>Lecturer: Dr Thompson</li></ul><ul><li>Content: Standard techniques in fieldwork and analysis</li></ul><ul><li>Learning method: 50% lab work, 50% [9]</li></ul><ul><li>Site survey at the end of the module (the [10] is to be announced later)</li></ul></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THAN THREE WORDS for each answer.",
+			"body": "Can be combined with any other subjects except [1]\nHas three [2] modules in the first semester\nModule 1\nTitle: [3]\nLecturer: Dr Morris\nLearning method: Lectures and practical sessions\nContent: Based on processes:\nrecording\n[4]\ninterpretation\ndisplay\nAssessment: By [5]\nModule 2\nTitle: [6]\nLecturer: Prof. Elliot\nContent: [7] and development of built environments\nAssessment: By [8] examination\nModule 3\nTitle: Method and Science\nLecturer: Dr Thompson\nContent: Standard techniques in fieldwork and analysis\nLearning method: 50% lab work, 50% [9]\nSite survey at the end of the module (the [10] is to be announced later)",
+			"body_html": "<table><tbody><tr><td><ul><li>Can be combined with any other subjects except [1]</li></ul><ul><li>Has three [2] modules in the first semester</li></ul><h4><strong>Module 1</strong></h4><ul><li>Title: [3]</li></ul><ul><li>Lecturer: Dr Morris</li></ul><ul><li>Learning method: Lectures and practical sessions</li></ul><ul><li>Content: Based on processes:</li></ul><ul><li>\nrecording\n</li><li>\n[4]\n</li><li>\ninterpretation\n</li><li>\ndisplay\n</li></ul><ul><li>Assessment: By [5]</li></ul><h4><strong>Module 2</strong></h4><ul><li>Title: [6]</li></ul><ul><li>Lecturer: Prof. Elliot</li></ul><ul><li>Content: [7] and development of built environments</li></ul><ul><li>Assessment: By [8] examination</li></ul><h4><strong>Module 3</strong></h4><ul><li>Title: Method and Science</li></ul><ul><li>Lecturer: Dr Thompson</li></ul><ul><li>Content: Standard techniques in fieldwork and analysis</li></ul><ul><li>Learning method: 50% lab work, 50% [9]</li></ul><ul><li>Site survey at the end of the module (the [10] is to be announced later)</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Can be combined with any other subjects except [1]",
+					"answer": "classical history",
+					"quotes": [
+						"It can be combined with any other subjects apart from classical history."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Has three [2] modules in the first semester",
+					"answer": "compulsory",
+					"quotes": [
+						"Professor: In the first semester, there are three modules, all of which are compulsory."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Title: [3]",
+					"answer": "object matters",
+					"quotes": [
+						"Professor: The first module is called Object Matters, and Doctor Morris teaches it."
+					]
+				},
+				{
+					"number": 4,
+					"text": "",
+					"answer": "classification",
+					"quotes": [
+						"First of all, recording material and then classification, then the interpretation of the data, that’s how archaeologists conclude their findings."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Assessment: By [5]",
+					"answer": "coursework",
+					"quotes": ["It’s all based on coursework after each lecture."]
+				},
+				{
+					"number": 6,
+					"text": "Title: [6]",
+					"answer": "towns and cities",
+					"quotes": [
+						"Professor: The second module’s title is Towns and Cities."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Content: [7] and development of built environments",
+					"answer": "origins",
+					"quotes": [
+						"And as the name suggests, the module focuses on the origins of built environments and how they developed."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Assessment: By [8] examination",
+					"answer": "an oral / oral",
+					"quotes": [
+						"But instead of a written exam, we set it as an oral one as we think most students prefer this way."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Learning method: 50% lab work, 50% [9]",
+					"answer": "seminars",
+					"quotes": ["It combines half lab work and half seminars."]
+				},
+				{
+					"number": 10,
+					"text": "Site survey at the end of the module (the [10] is to be announced later)",
+					"answer": "location",
+					"quotes": ["I can’t tell you the location yet."]
+				}
+			]
+		}
+	],
+	"images": []
+}

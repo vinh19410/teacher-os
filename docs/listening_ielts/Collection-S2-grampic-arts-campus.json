@@ -1,0 +1,186 @@
+{
+	"id": "de9d7808-7221-40ad-b16c-c93f677419e6",
+	"url": "https://stepielts.com/student/listening/de9d7808-7221-40ad-b16c-c93f677419e6?mode=practice",
+	"title": "Grampic Arts Campus",
+	"source": "Collection",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/b6eef646-1f3f-4f1e-8b93-e6449d5af194.mp3",
+	"transcript": "Speaker 1: Director: Welcome to Grampic Arts Campus for our annual residential arts weekend. I'm Bob Grain, director of the program. It's a large campus. It's quite easy to get lost, so I'm going to give you a quick overview of the most important places here. Right. I'm glad you all found your way here to reception. First, a word about parking. We do have a free temporary car park here. And for those of you coming by bike, the bike sheds aren't far from reception. You'll see them on your left as you walk down South Lane towards the residential rooms. Now dinner is in the dining room at 07:30. If you need something to eat now, the snack shop is still open. The quickest way to get there is to leave here, go straight through the office, they won't mind, the ornamental ponds in front of you, and the snack shop is the building on your left. The fitness facilities are even better this year. We've outgrown the old fitness rooms, which were next to the office. To find the new fitness rooms from here, walk up to North Road, they're at the end in the last block next to the dining room. Now your bedrooms are quite near. You can see the single rooms in the tall block to the far left of us across South Lane. Couples and families are in our family rooms, right next door to them. I'm afraid there aren't any TVs in the rooms. We ask you to keep the noise down, please. We have a TV room You can probably see it from here. It's right opposite us in the big red building. But there are gaps in our timetables for some extra options. You may have this information in your brochure, but there've been some changes. Firstly, the drama option. I'm afraid our theatre and practice rooms here are being refurbished and are out of use. We decided against using our sports hall, and instead, we're going to use our lecture rooms, which we've converted into a theatre for the weekend. There are also changes to the photography option. This year, this option isn't open to everyone. We decided, for practical reasons, to reserve it for beginners with no previous experience. Let me remind you that you don't need any special equipment. That's provided. The tutors have said that, unfortunately, they can't accept parents with children because that proved too disruptive last time. But if you're over 18, that's fine. On to the writing option. Previous courses looked at starting your novel. This year, we wondered about focusing on the techniques of writing different types of poetry. However, as a result of many requests, we've decided the workshop will concentrate on helping each participant write one or more short stories. Poetry, maybe some future time. Now music. The brochure says you'll go to a concert. That's a misprint. Instead, you'll be writing and putting on your own performance, a concert for yourselves. Unfortunately, the singing tutor is ill. It's too late to replace her, so we've had to cancel singing lessons. Apologies for that. Finally, the creche. This is available for all families on the programme, and there are still some places left. I'm sure you'll be pleased to know that the charge for this hasn't increased since last year. Lunch is included, but, of course, parents are welcome to collect their children and spend the lunch break with them. May I remind you that any fees for this service must be settled in full at the end of the last day. So has anybody got any questions?",
+	"question_groups": [
+		{
+			"range": "11-15",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below. Write the correct letter, A-H, next to questions 11-15.",
+			"instructions_html": "<p>Label the map below. Write the correct letter, <strong>A-H</strong>, next to questions <strong>11-15</strong>.</p><p><br></p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/08ef7c87-45f5-4b35-ab2e-3dd53116e9d8.png\" alt=\"Map/Diagram\">",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H"],
+			"questions": [
+				{
+					"number": 11,
+					"text": "Bike sheds",
+					"answer": "G",
+					"quotes": [
+						"And for those of you coming by bike, the bike sheds aren't far from reception.",
+						"You'll see them on your left as you walk down South Lane towards the residential rooms."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Snack shop",
+					"answer": "E",
+					"quotes": [
+						"The quickest way to get there is to leave here, go straight through the office, they won't mind, the ornamental ponds in front of you, and the snack shop is the building on your left.",
+						"If you need something to eat now, the snack shop is still open."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Fitness rooms",
+					"answer": "A",
+					"quotes": [
+						"To find the new fitness rooms from here, walk up to North Road, they're at the end in the last block next to the dining room."
+					]
+				},
+				{
+					"number": 14,
+					"text": "Family rooms",
+					"answer": "F",
+					"quotes": [
+						"Couples and families are in our family rooms, right next door to them.",
+						"You can see the single rooms in the tall block to the far left of us across South Lane."
+					]
+				},
+				{
+					"number": 15,
+					"text": "TV room",
+					"answer": "H",
+					"quotes": [
+						"We have a TV room You can probably see it from here.",
+						"It's right opposite us in the big red building."
+					]
+				}
+			]
+		},
+		{
+			"range": "16-20",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 16,
+					"text": "The drama option takes place",
+					"options": [
+						{
+							"label": "A",
+							"text": "in the theatre."
+						},
+						{
+							"label": "B",
+							"text": "in the sports hall."
+						},
+						{
+							"label": "C",
+							"text": "in the lecture rooms."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"We decided against using our sports hall, and instead, we're going to use our lecture rooms, which we've converted into a theatre for the weekend."
+					]
+				},
+				{
+					"number": 17,
+					"text": "The photography option is reserved for",
+					"options": [
+						{
+							"label": "A",
+							"text": "people new to photography."
+						},
+						{
+							"label": "B",
+							"text": "people with special equipment."
+						},
+						{
+							"label": "C",
+							"text": "parents and children."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"We decided, for practical reasons, to reserve it for beginners with no previous experience."
+					]
+				},
+				{
+					"number": 18,
+					"text": "The writing option will focus on",
+					"options": [
+						{
+							"label": "A",
+							"text": "poetry techniques."
+						},
+						{
+							"label": "B",
+							"text": "short stories."
+						},
+						{
+							"label": "C",
+							"text": "starting a novel."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"However, as a result of many requests, we've decided the workshop will concentrate on helping each participant write one or more short stories."
+					]
+				},
+				{
+					"number": 19,
+					"text": "The music option involves",
+					"options": [
+						{
+							"label": "A",
+							"text": "singing classes."
+						},
+						{
+							"label": "B",
+							"text": "going to a concert."
+						},
+						{
+							"label": "C",
+							"text": "giving a performance."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Instead, you'll be writing and putting on your own performance, a concert for yourselves."
+					]
+				},
+				{
+					"number": 20,
+					"text": "What information is given about the creche?",
+					"options": [
+						{
+							"label": "A",
+							"text": "it costs the same as last year."
+						},
+						{
+							"label": "B",
+							"text": "lunch costs extra."
+						},
+						{
+							"label": "C",
+							"text": "parents must pay in advance."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I'm sure you'll be pleased to know that the charge for this hasn't increased since last year."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/08ef7c87-45f5-4b35-ab2e-3dd53116e9d8.png"
+	]
+}

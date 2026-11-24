@@ -1,0 +1,212 @@
+{
+	"id": "95daf665-0871-4d09-a978-3296395b00ae",
+	"url": "https://stepielts.com/student/listening/95daf665-0871-4d09-a978-3296395b00ae?mode=practice",
+	"title": "Scandinavian studies",
+	"source": "C12T2",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/d970d99e-b630-4fd0-b745-c6e80fe15b28.mp3",
+	"transcript": "Speaker 0: Now turn to section three. Section three You will hear James, who is in the Scandinavian Studies department at his university, talking to his tutor, Beth. First, you have some time to look at questions 21 to 25. Now listen carefully and answer questions 21 to 25.\nSpeaker 1: Oh, good morning. You must be James. I'm Beth Cartwright. Please call me Beth.\nSpeaker 2: Thank you.\nSpeaker 1: Now as this is your first tutorial since you started on the Scandinavian studies course, I'd like to find out something about you. Why did you decide to take this course?\nSpeaker 2: Well, my mother is Danish. And although we always lived in England, she used to talk about her home a lot, and that made me want to visit Denmark. We hardly ever did, though. My mother usually went on her own. But whenever her relations or friends were in England, they always came to see us.\nSpeaker 1: I see. So I assume you already speak Danish, one of the languages you'll be studying?\nSpeaker 2: I can get by when I talk to people, though I'm not terribly accurate.\nSpeaker 1: Now you probably know that you'll spend the third year of the course abroad. Have you had any thoughts about that?\nSpeaker 2: I'm really looking forward to it. And although Denmark seems the obvious place to go because of my family connections, I'd love to spend the time in Iceland.\nSpeaker 1: Oh, I'm sure it can be arranged. Do you have any plans for when you graduate? A lot of students go on to take a master's degree.\nSpeaker 2: I think the four years of the undergraduate course will be enough for me. I'm interested in journalism, and I quite like the idea of moving to Scandinavia and writing for magazines. I'd find that more creative than translating, which I suppose most graduates do.\nSpeaker 1: Okay. Now how are you finding the courses you're taking this term, James?\nSpeaker 2: Well, I'm really enjoying the one on Swedish cinema.\nSpeaker 1: That'll continue next term. But the one on Scandinavian literature that's running at the moment will be replaced by more specialised courses. Oh, and by the way, if you're interested in watching Danish television programmes, there's going to be a course on that, the term after next.\nSpeaker 2: That sounds good.\nSpeaker 1: Have you started thinking about the literature paper that you have to write in the next few weeks?\nSpeaker 2: Yes. My first choice would be to do something on the Icelandic sagas.\nSpeaker 1: The trouble with that is that a lot of people choose that topic, and it can be difficult to get hold of the books you'll need. Why not leave that for another time?\nSpeaker 2: Right.\nSpeaker 1: You might find modern novels or nineteenth century playwrights interesting.\nSpeaker 2: I've read or seen several plays in translation, so that would be a good idea.\nSpeaker 1: Fine. I'll put you down for that topic.\nSpeaker 2: Right. So what would you advise me to aim at in the paper?\nSpeaker 1: First, I suggest you avoid taking one writer and going into a great deal of detail. That approach certainly has its place, but I think you first need to get an understanding of the literature in the context of the society in which it was produced, who it was written for, how it was published, and so on. I also think that's more fruitful than placing it within the history of the genre.\nSpeaker 2: Okay, that sounds reasonable.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 26 to 30. Now listen and answer questions 26 to 30.\nSpeaker 2: Could I ask for some advice about writing the paper I'm working on about the Vikings? I have to do that this week, and I'm a bit stuck.\nSpeaker 1: Of course. Have you decided yet what to write about?\nSpeaker 2: No. I haven't. There's so much that seems interesting. Viking settlement in other countries, trade, mythology.\nSpeaker 1: Well, what I suggest is that you read an assignment a student wrote last year, which is kept in the library. It's short and well focused, and I'm sure you'll find it helpful. I'll give you the details in a moment. Textbooks usually cover so many topics, it can be very difficult to choose just one.\nSpeaker 2: Okay. I've got a DVD of the film about the Vikings that came out earlier this year. Should I watch that again?\nSpeaker 1: If it's the one I am thinking of, I'd ignore it. It's more fantasy than reality. But I've got a recording of a documentary that you should watch. It makes some interesting and provocative points, which I think will help you to focus your topic.\nSpeaker 2: Right. So then should I work out an outline?\nSpeaker 1: Yes, just headings for different sections at this stage. And then you should start looking for suitable articles and books to draw on, and take notes which you organize according to those headings. I see. Then put short phrases and sentences as bullet points under each heading. Make sure that this skeleton makes sense and flows properly before writing up the paper in full.\nSpeaker 2: Okay. Thanks. That's very helpful.\nSpeaker 0: That is the end of section three. You now have half a minute to check your answers.",
+	"body": {
+		"text": "How James will write his paper on the Vikings\nHe’ll read a [26] and choose his topic.\n↓\nHe’ll borrow a [27] from Beth.\n↓\nHe’ll plan the [28] of the paper.\n↓\nHe’ll read some source material and write [29].\n↓\nHe’ll write the paper using [30].\n↓\nHe’ll write the complete paper.",
+		"html": "<strong>How James will write his paper on the Vikings</strong><p>He’ll read a [26] and choose his topic.</p><p>↓</p><p>He’ll borrow a [27] from Beth.</p><p>↓</p><p>He’ll plan the [28] of the paper.</p><p>↓</p><p>He’ll read some source material and write [29].</p><p>↓</p><p>He’ll write the paper using [30].</p><p>↓</p><p>He’ll write the complete paper.</p><p></p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-25",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "James chose to take Scandinavian Studies because when he was a child",
+					"options": [
+						{
+							"label": "A",
+							"text": "he was often taken to Denmark."
+						},
+						{
+							"label": "B",
+							"text": "his mother spoke to him in Danish."
+						},
+						{
+							"label": "C",
+							"text": "a number of Danish people visited his family."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But whenever her relations or friends were in England, they always came to see us."
+					]
+				},
+				{
+					"number": 22,
+					"text": "When he graduates, James would like to",
+					"options": [
+						{
+							"label": "A",
+							"text": "take a postgraduate course."
+						},
+						{
+							"label": "B",
+							"text": "work in the media."
+						},
+						{
+							"label": "C",
+							"text": "become a translator."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I'm interested in journalism, and I quite like the idea of moving to Scandinavia and writing for magazines."
+					]
+				},
+				{
+					"number": 23,
+					"text": "Which course will end this term?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Swedish cinema"
+						},
+						{
+							"label": "B",
+							"text": "Danish television programmes"
+						},
+						{
+							"label": "C",
+							"text": "Scandinavian literature"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But the one on Scandinavian literature that's running at the moment will be replaced by more specialised courses."
+					]
+				},
+				{
+					"number": 24,
+					"text": "They agree that James’s literature paper this term will be on",
+					"options": [
+						{
+							"label": "A",
+							"text": "19th century playwrights"
+						},
+						{
+							"label": "B",
+							"text": "the Icelandic sagas"
+						},
+						{
+							"label": "C",
+							"text": "modern Scandinavian novels."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"You might find modern novels or nineteenth century playwrights interesting."
+					]
+				},
+				{
+					"number": 25,
+					"text": "Beth recommends that James’s paper should be",
+					"options": [
+						{
+							"label": "A",
+							"text": "a historical overview of the genre."
+						},
+						{
+							"label": "B",
+							"text": "an in-depth analysis of a single writer."
+						},
+						{
+							"label": "C",
+							"text": "a study of the social background to the literature."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"First, I suggest you avoid taking one writer and going into a great deal of detail. That approach certainly has its place, but I think you first need to get an understanding of the literature in the context of the society in which it was produced, who it was written for, how it was published, and so on. I also think that's more fruitful than placing it within the history of the genre."
+					]
+				}
+			]
+		},
+		{
+			"range": "26-30",
+			"type": "FLOWCHART_COMPLETION",
+			"instructions": "Complete the flow-chart below. Choose FIVE answers from the box and write the correct letter, A-G, next to Questions 26 - 30.",
+			"options": [
+				{
+					"label": "A",
+					"text": "bullet points"
+				},
+				{
+					"label": "B",
+					"text": "film"
+				},
+				{
+					"label": "C",
+					"text": "notes"
+				},
+				{
+					"label": "D",
+					"text": "structure"
+				},
+				{
+					"label": "E",
+					"text": "student paper"
+				},
+				{
+					"label": "F",
+					"text": "textbook"
+				},
+				{
+					"label": "G",
+					"text": "documentary"
+				}
+			],
+			"body": "How James will write his paper on the Vikings\nHe’ll read a [26] and choose his topic.\n↓\nHe’ll borrow a [27] from Beth.\n↓\nHe’ll plan the [28] of the paper.\n↓\nHe’ll read some source material and write [29].\n↓\nHe’ll write the paper using [30].\n↓\nHe’ll write the complete paper.",
+			"body_html": "<strong>How James will write his paper on the Vikings</strong><p>He’ll read a [26] and choose his topic.</p><p>↓</p><p>He’ll borrow a [27] from Beth.</p><p>↓</p><p>He’ll plan the [28] of the paper.</p><p>↓</p><p>He’ll read some source material and write [29].</p><p>↓</p><p>He’ll write the paper using [30].</p><p>↓</p><p>He’ll write the complete paper.</p><p></p>",
+			"questions": [
+				{
+					"number": 26,
+					"text": "He’ll read a [26] and choose his topic.",
+					"answer": "E",
+					"quotes": [
+						"Well, what I suggest is that you read an assignment a student wrote last year, which is kept in the library."
+					]
+				},
+				{
+					"number": 27,
+					"text": "He’ll borrow a [27] from Beth.",
+					"answer": "G",
+					"quotes": [
+						"But I've got a recording of a documentary that you should watch."
+					]
+				},
+				{
+					"number": 28,
+					"text": "He’ll plan the [28] of the paper.",
+					"answer": "D",
+					"quotes": ["Yes, just headings for different sections at this stage."]
+				},
+				{
+					"number": 29,
+					"text": "He’ll read some source material and write [29].",
+					"answer": "C",
+					"quotes": [
+						"And then you should start looking for suitable articles and books to draw on, and take notes which you organize according to those headings."
+					]
+				},
+				{
+					"number": 30,
+					"text": "He’ll write the paper using [30].",
+					"answer": "A",
+					"quotes": [
+						"Then put short phrases and sentences as bullet points under each heading."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

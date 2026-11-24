@@ -1,0 +1,231 @@
+{
+	"id": "1c183a7a-800c-4321-b1b9-8c35ce8c7af6",
+	"url": "https://stepielts.com/student/listening/1c183a7a-800c-4321-b1b9-8c35ce8c7af6?mode=practice",
+	"title": "Exploring Dickens",
+	"source": "C15T2",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/2dd3e36d-3891-4697-a4db-b7cb05e1dc28.mp3",
+	"transcript": "Speaker 0: Part three. You will hear two students of English called Kathy and Graham planning a display on nineteenth century British life and literature for a university event. First, you have some time to look at questions 21 to 24. Now listen carefully and answer questions 21 to 24.\nSpeaker 1: Okay, Graham. So let's check we both know what we're supposed to be doing.\nSpeaker 2: Okay.\nSpeaker 1: So for the university's open day, we have to plan a display on British life and literature in the mid nineteenth century.\nSpeaker 2: That's right. But we'll have some people to help us find the materials and set it up, remember? For the moment, we just need to plan it.\nSpeaker 1: Good. So have you gathered who's expected to come and see the display? Is it for the people studying English or students from other departments? I'm not clear about it.\nSpeaker 2: Nor me. That was how it used to be, but it didn't attract many people. So this year, it's going to be part of an open day to raise the university's profile. It'll be publicized in the city to encourage people to come and find out something of what goes on here, and it's included in the information that's sent to people who are considering applying to study here next year.\nSpeaker 1: Presumably, some current students and lecturers will come?\nSpeaker 2: I would imagine so. But we've been told to concentrate on the other categories of people.\nSpeaker 1: Right. We don't have to cover the whole range of nineteenth century literature, do we?\nSpeaker 2: No. It's entirely up to us. I suggest just using Charles Dickens.\nSpeaker 1: That's a good idea. Most people have heard of him and have probably read some of his novels or seen films based on them. So that's a good lead in to life in his time.\nSpeaker 2: Exactly. And his novels show the awful conditions that most people had to live in, don't they? He wanted to shock people into doing something about it.\nSpeaker 1: Did he do any campaigning other than writing?\nSpeaker 2: Yes. He campaigned for education and other social reforms and gave talks, but I'm inclined to ignore that and focus on the novels.\nSpeaker 1: Yes. I agree.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 25 to 30. Now listen and answer questions 25 to 30.\nSpeaker 1: Okay. So now shall we think about a topic linked to each novel?\nSpeaker 2: Yes. I've printed out a list of Dickens's novels in the order they were published in the hope you'd agree to focus on him.\nSpeaker 1: You're lucky I did agree. Let's have a look. Okay. The first was the Pickwick Papers, published in 1836. It was very successful when\nSpeaker 2: it came out, wasn't it, and was adapted for the theater straight away. There's an interesting point though that there's a character who keeps falling asleep, and that medical condition was named after the book Pickwickian syndrome.\nSpeaker 1: Oh, so why don't we use that as the topic and include some quotations from the novel? Right. Next is Oliver Twist. Mhmm.\nSpeaker 2: There's a lot in the novel about poverty, but maybe something less obvious.\nSpeaker 1: Well, Oliver is taught how to steal, isn't he? We could use that to illustrate the fact that very few children went to school, particularly not poor children, so they learnt in other ways.\nSpeaker 2: Good idea. What's next?\nSpeaker 1: Maybe Nicholas Nickleby? Actually, he taught in a really cruel school, didn't he?\nSpeaker 2: That's right. But there's also the company of touring actors that Nicholas joins. We could do something on theaters and other amusements of the time. We don't want only the bad things, do we?\nSpeaker 1: Okay.\nSpeaker 2: What about Martin Chuzzlewyd? He goes to The USA, doesn't he?\nSpeaker 1: Yes. And Diggins himself had been there a year before and drew on his experience there in the novel.\nSpeaker 2: I wonder, though. The main theme is selfishness. So we could do something on social justice? No. Too general. Let's keep to your idea. I think it would work well.\nSpeaker 1: He wrote Bleak House next. That's my favorite of his novels. Yes. Mine too. Oh.\nSpeaker 2: His satire of the legal system is pretty powerful.\nSpeaker 1: That's true. But think about Esther, the heroine. As a child, she lives with someone she doesn't know is her aunt who treats her very badly. Then she's very happy living with her guardian, and he puts her in charge of the household. And at the end, she gets married, and her guardian gives her and her husband a house where, of course, they're very happy.\nSpeaker 2: Yes. I like that.\nSpeaker 1: What shall we take next? Little Dorrit? Old mister Dorrit has been in a debtor's prison for years.\nSpeaker 2: So was Dickens' father, wasn't he? That's right. What about focusing on the part when mister Dorrit inherits a fortune and he starts pretending he's always been rich?\nSpeaker 1: Good idea.\nSpeaker 2: Okay. So next, we need to think about what materials we want to illustrate each issue. That's going to be quite hard.\nSpeaker 0: That is the end of part three. You now have thirty seconds to check your answers to part three.",
+	"body": {
+		"text": "The Pickwick Papers [25]\nOliver Twist [26]\nNicholas Nickleby [27]\nMartin Chuzzlewit [28]\nBleak House [29]\nLittle Dorrit [30]",
+		"html": "<p>The Pickwick Papers [25]</p><p>Oliver Twist [26]</p><p>Nicholas Nickleby [27]</p><p>Martin Chuzzlewit [28]</p><p>Bleak House [29]</p><p>Little Dorrit [30]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-22",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. Which TWO groups of people is the display primarily intended for?",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Choose TWO letters, A-E. Which TWO groups of people is the display primarily intended for?",
+					"options": [
+						{
+							"label": "A",
+							"text": "student from the English department"
+						},
+						{
+							"label": "B",
+							"text": "residents of the local area"
+						},
+						{
+							"label": "C",
+							"text": "the university’s teaching staff"
+						},
+						{
+							"label": "D",
+							"text": "potential new students"
+						},
+						{
+							"label": "E",
+							"text": "students from other departments"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 22,
+					"text": "Choose TWO letters, A-E. Which TWO groups of people is the display primarily intended for?",
+					"options": [
+						{
+							"label": "A",
+							"text": "student from the English department"
+						},
+						{
+							"label": "B",
+							"text": "residents of the local area"
+						},
+						{
+							"label": "C",
+							"text": "the university’s teaching staff"
+						},
+						{
+							"label": "D",
+							"text": "potential new students"
+						},
+						{
+							"label": "E",
+							"text": "students from other departments"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "23-24",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. Which TWO groups of people is the display primarily intended for?",
+			"questions": [
+				{
+					"number": 23,
+					"text": "Choose TWO letters, A-E. What are Cathy and Graham’s TWO reasons for choosing the novelist Charles Dickens?",
+					"options": [
+						{
+							"label": "A",
+							"text": "His speeches inspired others to try to improve society."
+						},
+						{
+							"label": "B",
+							"text": "He used his publications to draw attention to social problems."
+						},
+						{
+							"label": "C",
+							"text": "His novels are well-known now."
+						},
+						{
+							"label": "D",
+							"text": "He was consulted on a number of social issues."
+						},
+						{
+							"label": "E",
+							"text": "His reputation has changed in recent times."
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 24,
+					"text": "Choose TWO letters, A-E. What are Cathy and Graham’s TWO reasons for choosing the novelist Charles Dickens?",
+					"options": [
+						{
+							"label": "A",
+							"text": "His speeches inspired others to try to improve society."
+						},
+						{
+							"label": "B",
+							"text": "He used his publications to draw attention to social problems."
+						},
+						{
+							"label": "C",
+							"text": "His novels are well-known now."
+						},
+						{
+							"label": "D",
+							"text": "He was consulted on a number of social issues."
+						},
+						{
+							"label": "E",
+							"text": "His reputation has changed in recent times."
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "25-30",
+			"type": "MATCHING",
+			"instructions": "What topic do Cathy and Graham choose to illustrate with each novel? Choose the correct answer and move it into the gap.\n\nNovels by Dickens",
+			"options": [
+				{
+					"label": "A",
+					"text": "poverty"
+				},
+				{
+					"label": "B",
+					"text": "education"
+				},
+				{
+					"label": "C",
+					"text": "Dickens’s travels"
+				},
+				{
+					"label": "D",
+					"text": "entertainment"
+				},
+				{
+					"label": "E",
+					"text": "crime and the law"
+				},
+				{
+					"label": "F",
+					"text": "wealth"
+				},
+				{
+					"label": "G",
+					"text": "medicine"
+				},
+				{
+					"label": "H",
+					"text": "a woman’s life"
+				}
+			],
+			"body": "The Pickwick Papers [25]\nOliver Twist [26]\nNicholas Nickleby [27]\nMartin Chuzzlewit [28]\nBleak House [29]\nLittle Dorrit [30]",
+			"body_html": "<p>The Pickwick Papers [25]</p><p>Oliver Twist [26]</p><p>Nicholas Nickleby [27]</p><p>Martin Chuzzlewit [28]</p><p>Bleak House [29]</p><p>Little Dorrit [30]</p>",
+			"questions": [
+				{
+					"number": 25,
+					"text": "The Pickwick Papers",
+					"answer": "G",
+					"quotes": [
+						"There's an interesting point though that there's a character who keeps falling asleep, and that medical condition was named after the book Pickwickian syndrome."
+					]
+				},
+				{
+					"number": 26,
+					"text": "Oliver Twist",
+					"answer": "B",
+					"quotes": [
+						"Well, Oliver is taught how to steal, isn't he? We could use that to illustrate the fact that very few children went to school, particularly not poor children, so they learnt in other ways."
+					]
+				},
+				{
+					"number": 27,
+					"text": "Nicholas Nickleby",
+					"answer": "D",
+					"quotes": [
+						"We could do something on theaters and other amusements of the time."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Martin Chuzzlewit",
+					"answer": "C",
+					"quotes": [
+						"He goes to The USA, doesn't he? Yes. And Diggins himself had been there a year before and drew on his experience there in the novel."
+					]
+				},
+				{
+					"number": 29,
+					"text": "Bleak House",
+					"answer": "H",
+					"quotes": [
+						"But think about Esther, the heroine. As a child, she lives with someone she doesn't know is her aunt who treats her very badly. Then she's very happy living with her guardian, and he puts her in charge of the household. And at the end, she gets married, and her guardian gives her and her husband a house where, of course, they're very happy."
+					]
+				},
+				{
+					"number": 30,
+					"text": "Little Dorrit",
+					"answer": "F",
+					"quotes": [
+						"What about focusing on the part when mister Dorrit inherits a fortune and he starts pretending he's always been rich?"
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

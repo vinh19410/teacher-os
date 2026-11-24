@@ -1,0 +1,217 @@
+{
+	"id": "00e9a9b2-4ee5-4f32-8979-3f0f37b187b2",
+	"url": "https://stepielts.com/student/listening/00e9a9b2-4ee5-4f32-8979-3f0f37b187b2?mode=practice",
+	"title": "Maori Carving",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/2ff93756-c21c-444d-876b-f422087de3c9.mp3",
+	"transcript": "Speaker 1: Hi, Mike. Aren't these New Zealand carvings we've been studying in class fascinating?\nSpeaker 2: Oh, hi, Amy. Oh, the Maori greenstone tikis. They're all a bit organic for my taste. You know, all curves and twisting shapes. I like modern stuff, geometric shapes, but I can see the skill involved in making them.\nSpeaker 1: But the stories behind the tikis are what make them interesting. Besides, I imagine it would be difficult to create geometric patterns. The shape of each tiki seems to follow the natural contours of the stone. It's extremely hard, and it requires expertise and time to shape.\nSpeaker 2: That's true. I suppose that's why modern greenstone carvings are so expensive, but there aren't that many genuine old ones around. Archaeologists rarely discover such treasures, which is odd given they are such a huge part of Maori culture. I wonder if archaeological dig sites were raided and the tikis were taken to sell.\nSpeaker 1: I believe it's because the owners valued them and so preserved them. Many of them would have been passed down through the generations and remain in the possession of the families today, like heirlooms. Do you know what they were used for?\nSpeaker 2: I thought they were just an art form or a means of decoration. But professor Matteu says that the Maori believed tikis were sacred and could be used as a pathway to their ancestors. They believed the dead could speak to them through these talismans.\nSpeaker 1: So they don't represent tribes or anything? Interesting. How many different kinds are there? There must be hundreds of variations.\nSpeaker 2: There are other greenstone carvings beside tikis, although I can't remember all their names. Traditional tikis themselves can be divided into two distinct groups, though.\nSpeaker 1: Can they? By the materials? I've seen some with metal features. Or is it to do with size or where they were made?\nSpeaker 2: Actually, it is the ways that their feet, heads, and hands are placed that make the major difference.\nSpeaker 1: Is it easy to discern the difference between the ancient stones and more modern reproductions? Are the styles very different?\nSpeaker 2: Modern reproductions usually use a different type of stone, although they may be of the same design. They may also be of a smaller size. But it's actually quite easy to tell if you are buying a genuine carving or a mass produced souvenir.\nSpeaker 1: How?\nSpeaker 2: Nowadays, they are produced by machine using lasers even, so they have no blemishes. In genuine carvings, they aren't always perfect because the Maori used simple hand tools. For example, the hole that the cord is fed through isn't perfectly round.\nSpeaker 1: That makes sense. Actually, it's amazing that they produce such detailed tikis with such simple tools and materials. Talk me through the process. I know the basic shape is carved from New Zealand greenstone.\nSpeaker 2: Yes. But first, they had to get a blank of the right size.\nSpeaker 1: You mean a piece of stone of the right size and basic shape?\nSpeaker 2: That's right. They used a hard stone tool, something rough, to wear a groove into a piece of greenstone. After they'd scored it with that, they could just snap it in two. I guess they could have used some kind of hammer, though. They repeated the process until they had a piece of stone suitable for what they wanted to carve, usually flat pieces for tikis.\nSpeaker 1: Right. Because they're fairly small and quite thin. Then they started carving?\nSpeaker 2: Not right away. Before they could start carving, they needed an absolutely smooth, flat surface. Nowadays, when we want to do something like that, we'd clamp the stone in a vice and use a sander. But they used a heavy block of sandstone and rubbed the piece of green stone on it over and over to prepare it for carving.\nSpeaker 1: It must have been very time consuming. So how did they cut out the little details like hands and feet?\nSpeaker 2: They had carving tools. They used small chips of stone glued and tied onto a wooden handle. Then they also used a piece of sharpened bone made into a point.\nSpeaker 1: Is that what they used to make the holes?\nSpeaker 2: Actually, they had a special tool to make holes. It was a stick tied between two heavy pebbles with a point at the end. They would wrap string around it, pull it back and forth to wear a hole into the tiki. They used the same technique to make round shapes too, but didn't make the hole go all the way through.\nSpeaker 1: And I've seen some tikis with colored eyes or decorations. Are they painted?\nSpeaker 2: Mostly, they are inlaid with different colored stone or mother of pearl from shells or sometimes dyed pieces of bone. They were fixed in place using teratagum, a sticky plant resin. They used plants to make the natural strings too.\nSpeaker 1: That's right. The Maori were very resourceful, weren't they?\nSpeaker 2: They certainly were.",
+	"body": {
+		"text": "creating a blank [26]\nsmoothing the surface [27]\ncarving details [28]\nmaking holes [29]\nfixing coloured decorations [30]",
+		"html": "<ul><li>creating a blank [26]</li><li>smoothing the surface [27]</li><li>carving details [28]</li><li>making holes [29]</li><li>fixing coloured decorations [30]</li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "21-25",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Amy and Mike agree that the greenstone tikis",
+					"options": [
+						{
+							"label": "A",
+							"text": "take great skill to produce."
+						},
+						{
+							"label": "B",
+							"text": "are fascinating curved shapes."
+						},
+						{
+							"label": "C",
+							"text": "have interesting stories behind them."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"It's extremely hard, and it requires expertise and time to shape.",
+						"The shape of each tiki seems to follow the natural contours of the stone.",
+						"Besides, I imagine it would be difficult to create geometric patterns.",
+						"That's true."
+					]
+				},
+				{
+					"number": 22,
+					"text": "According to Amy, why are so few genuine old tikis found on archaeological dig sites?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Not many people know about them."
+						},
+						{
+							"label": "B",
+							"text": "They tend to be stolen by treasure hunters."
+						},
+						{
+							"label": "C",
+							"text": "The majority become inherited items."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Many of them would have been passed down through the generations and remain in the possession of the families today, like heirlooms."
+					]
+				},
+				{
+					"number": 23,
+					"text": "The Maori people considered tikis to be",
+					"options": [
+						{
+							"label": "A",
+							"text": "decorative items."
+						},
+						{
+							"label": "B",
+							"text": "religious objects."
+						},
+						{
+							"label": "C",
+							"text": "tribal symbols."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But professor Matteu says that the Maori believed tikis were sacred and could be used as a pathway to their ancestors.",
+						"They believed the dead could speak to them through these talismans."
+					]
+				},
+				{
+					"number": 24,
+					"text": "Tikis are classified into one type or the other by",
+					"options": [
+						{
+							"label": "A",
+							"text": "where they originated."
+						},
+						{
+							"label": "B",
+							"text": "the materials used."
+						},
+						{
+							"label": "C",
+							"text": "the position of the body."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Actually, it is the ways that their feet, heads, and hands are placed that make the major difference."
+					]
+				},
+				{
+					"number": 25,
+					"text": "How can modern reproductions be easily distinguished from genuine Maori carvings?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The materials differ."
+						},
+						{
+							"label": "B",
+							"text": "They are too regular in shape."
+						},
+						{
+							"label": "C",
+							"text": "They are of different sizes."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Nowadays, they are produced by machine using lasers even, so they have no blemishes.",
+						"In genuine carvings, they aren't always perfect because the Maori used simple hand tools."
+					]
+				}
+			]
+		},
+		{
+			"range": "26-30",
+			"type": "MATCHING",
+			"instructions": "What tool did Maoris use to carry out each of the following tasks?\nChoose FIVE answers from the box and write the correct letter, A-E next to Question 27-30",
+			"options": [
+				{
+					"label": "A",
+					"text": "Sandstone block"
+				},
+				{
+					"label": "B",
+					"text": "Plant glue"
+				},
+				{
+					"label": "C",
+					"text": "Stone scoring tool"
+				},
+				{
+					"label": "D",
+					"text": "Bone point"
+				},
+				{
+					"label": "E",
+					"text": "Stick drill"
+				}
+			],
+			"body": "creating a blank [26]\nsmoothing the surface [27]\ncarving details [28]\nmaking holes [29]\nfixing coloured decorations [30]",
+			"body_html": "<ul><li>creating a blank [26]</li><li>smoothing the surface [27]</li><li>carving details [28]</li><li>making holes [29]</li><li>fixing coloured decorations [30]</li></ul>",
+			"questions": [
+				{
+					"number": 26,
+					"text": "creating a blank",
+					"answer": "C",
+					"quotes": [
+						"They used a hard stone tool, something rough, to wear a groove into a piece of greenstone.",
+						"But first, they had to get a blank of the right size."
+					]
+				},
+				{
+					"number": 27,
+					"text": "smoothing the surface",
+					"answer": "A",
+					"quotes": [
+						"But they used a heavy block of sandstone and rubbed the piece of green stone on it over and over to prepare it for carving.",
+						"Before they could start carving, they needed an absolutely smooth, flat surface."
+					]
+				},
+				{
+					"number": 28,
+					"text": "carving details",
+					"answer": "D",
+					"quotes": [
+						"Then they also used a piece of sharpened bone made into a point.",
+						"They had carving tools."
+					]
+				},
+				{
+					"number": 29,
+					"text": "making holes",
+					"answer": "E",
+					"quotes": [
+						"It was a stick tied between two heavy pebbles with a point at the end.",
+						"Actually, they had a special tool to make holes."
+					]
+				},
+				{
+					"number": 30,
+					"text": "fixing coloured decorations",
+					"answer": "B",
+					"quotes": [
+						"They were fixed in place using teratagum, a sticky plant resin.",
+						"Mostly, they are inlaid with different colored stone or mother of pearl from shells or sometimes dyed pieces of bone.",
+						"Are they painted?"
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

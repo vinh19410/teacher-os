@@ -1,0 +1,143 @@
+{
+	"id": "de01074f-3976-4c0e-adf0-2d720da5bbe1",
+	"url": "https://stepielts.com/student/listening/de01074f-3976-4c0e-adf0-2d720da5bbe1?mode=practice",
+	"title": "The health benefits of art and music",
+	"source": "Actual Test",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "31-40",
+	"audio_url": "https://audio.stepielts.com/listening-audio/70f497f8-7881-4ef4-9286-6bdc3ee05ea1.mp3",
+	"transcript": "Speaker 0: Section four. You will hear part of a student presentation on how music and art are used in the healing process. First, you have some time to look at questions 31 to 40. Now listen carefully and answer questions 31 to 40.\nSpeaker 1: Hello, everyone. Before we continue with our lectures on the history of music and art, we'll be listening to Michael's presentation on how music and art are being used to help with the healing process in the twenty first century. Michael, are you ready to begin?\nSpeaker 2: Yes. I think so. Thanks, professor. Right. Good morning all. As professor McKinley just stated, I've been doing some research into the healing powers of art and music, and I'd like to present my findings to you today. I intend to demonstrate the positive effects of music and art on patients' emotional, social, as well as physical well-being. Let's begin by going back in time to the most famous of nurses, Florence Nightingale. Way back in 1860, Florence Nightingale wrote in her notes on nursing that brightly colored flowers and art helped her patients to recover more quickly. Although her comments were viewed with scepticism at the time, she was, we believe, the first of many health professionals to state this. Over the following years, there were many other studies that tried to prove that a link between art, music, and health exists. But very few of them were strictly controlled, so the results were variable and therefore unreliable. However, one American study was different. In the nineteen eighties, some research took place into the effects of architecture on the recovery time of forty six patients who were in hospital for a gallbladder operation. Half of the patients were kept in hospital wards with windows overlooking some trees. The other half were left in rooms that faced onto a brick wall. It was found that the ones with a nice view left hospital a day earlier and needed fewer painkillers. This study was groundbreaking, as it was the first that used controlled conditions that could be measured statistically and without bias. Now I'd like to bring you up to date and take a closer comparative look at three research projects on three very different types of patient. The first monitored the health of unborn babies. In the study which took place at a hospital in London, babies were played live music, and their heart rates were monitored. A healthy baby's heart would beat around 110 to 160 times a minute, but researchers found that their heart rate increased by up to 15 beats a minute on average without the mother's pulse changing. This is a good sign that the baby is healthy. In addition, the mothers that took part in the survey also said they felt more relaxed. Another study looked at cancer patients who were visiting as day patients to receive their chemotherapy treatments. They were treated in a room that had artistic pictures hanging on the wall. The pictures were changed each week so that the patients would not have to look at the same ones week after week. When questioned afterwards, patients said that they felt less pain because the images helped take their mind off the treatment they were receiving. They also noted general improvements in their well-being. Finally, the last study analysed the treatment of a group of elderly patients who were in hospital to have a hip replacement operation, and so they needed to stay for around ten to fourteen days. The researchers played them thirty minute tracks of soothing classical music, but not every day, and then monitored their progress using a questionnaire. When asked to rate how they felt both with and without music, the patients consistently stated that they felt less anxious on the days when they had the music playing. There was a second unexpected but completely understandable result from the research. The staff liked the music so much that they said they too felt happier, and that they would be less likely to leave the hospital for a job elsewhere if it were to continue. Now that has to be a good thing, which will also have a positive effect on the quality of the treatment patients receive. In conclusion, I'd like to bring to your\nSpeaker 0: That is the end of section four. You now have half a minute to check your answers.",
+	"question_groups": [
+		{
+			"range": "31-35",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "The health benefits of art and music\nAccording to the speaker, art and music can benefit patients' emotional, [31] and physical well-being.\nFlorence Nightingale first noted the improvements in the year [32]\nThe results of many did not prove a link between health and art as they were rarely [33]\nThe American study looked at the effects of architecture on patients' [34]\nThe patients who were in a ward with a [35] were not in hospital for as long and needed less medication.",
+			"body_table": [
+				[
+					"According to the speaker, art and music can benefit patients' emotional, [31] and physical well-being."
+				],
+				["Florence Nightingale first noted the improvements in the year [32]"],
+				[
+					"The results of many did not prove a link between health and art as they were rarely [33]"
+				],
+				[
+					"The American study looked at the effects of architecture on patients' [34]"
+				],
+				[
+					"The patients who were in a ward with a [35] were not in hospital for as long and needed less medication."
+				]
+			],
+			"body_html": "<p><strong>The health benefits of art and music</strong></p><table><tbody><tr><td><ul><li>According to the speaker, art and music can benefit patients' emotional, [31] and physical well-being.</li></ul></td></tr><tr><td><ul><li>Florence Nightingale first noted the improvements in the year [32]</li></ul></td></tr><tr><td><ul><li>The results of many did not prove a link between health and art as they were rarely [33]</li></ul></td></tr><tr><td><ul><li>The American study looked at the effects of architecture on patients' [34]</li></ul></td></tr><tr><td><ul><li>The patients who were in a ward with a [35] were not in hospital for as long and needed less medication.</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 31,
+					"text": "According to the speaker, art and music can benefit patients' emotional [31] and physical well-being.",
+					"answer": "social",
+					"quotes": [
+						"I intend to demonstrate the positive effects of music and art on patients' emotional, social, as well as physical well-being."
+					]
+				},
+				{
+					"number": 32,
+					"text": "Florence Nightingale first noted the improvements in the year [32]",
+					"answer": "1860",
+					"quotes": [
+						"Way back in 1860, Florence Nightingale wrote in her notes on nursing that brightly colored flowers and art helped her patients to recover more quickly."
+					]
+				},
+				{
+					"number": 33,
+					"text": "The results of many studies did not prove a link between health and art as they were rarely [33]",
+					"answer": "strictly controlled",
+					"quotes": [
+						"But very few of them were strictly controlled, so the results were variable and therefore unreliable."
+					]
+				},
+				{
+					"number": 34,
+					"text": "The American study looked at the effects of architecture on patients' [34]",
+					"answer": "recovery time",
+					"quotes": [
+						"In the nineteen eighties, some research took place into the effects of architecture on the recovery time of forty six patients who were in hospital for a gallbladder operation."
+					]
+				},
+				{
+					"number": 35,
+					"text": "The patients who were in a ward with a [35] were not in hospital for as long and needed less medication.",
+					"answer": "nice view",
+					"quotes": [
+						"It was found that the ones with a nice view left hospital a day earlier and needed fewer painkillers."
+					]
+				}
+			]
+		},
+		{
+			"range": "36-40",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write NO MORE THAN THREE WORDS for each answer.",
+			"body": "Recent Research Projects\nType of patient Type of art/music Effects on patients Other improvements\nUnborn babies\n[36]\nheart rate increased\nmother felt relaxed\nCancer patients\n[37]\n[38]\nimprovements in well-being\nHip replacement (elderly)\n[39]\neased anxiety\nstaff [40]",
+			"body_table": [
+				[
+					"Type of patient",
+					"Type of art/music",
+					"Effects on patients",
+					"Other improvements"
+				],
+				[
+					"Unborn babies",
+					"[36]",
+					"heart rate increased",
+					"mother felt relaxed"
+				],
+				["Cancer patients", "[37]", "[38]", "improvements in well-being"],
+				["Hip replacement (elderly)", "[39]", "eased anxiety", "staff [40]"]
+			],
+			"body_html": "<p><strong>Recent Research Projects</strong></p><table><thead><tr><th>Type of patient</th><th>Type of art/music</th><th>Effects on patients</th><th>Other improvements</th></tr></thead><tbody><tr><td><p>Unborn babies</p></td><td><p>[36]</p></td><td><p>heart rate increased</p></td><td><p>mother felt relaxed</p></td></tr><tr><td><p>Cancer patients</p></td><td><p>[37]</p></td><td><p>[38]</p></td><td><p>improvements in well-being</p></td></tr><tr><td><p>Hip replacement (elderly)</p></td><td><p>[39]</p></td><td><p>eased anxiety</p></td><td><p>staff [40]</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 36,
+					"text": "Complete the table below. Write NO MORE THAN THREE WORDS for each answer. Type of art/music for Unborn babies",
+					"answer": "live music",
+					"quotes": [
+						"In the study which took place at a hospital in London, babies were played live music, and their heart rates were monitored."
+					]
+				},
+				{
+					"number": 37,
+					"text": "Complete the table below. Write NO MORE THAN THREE WORDS for each answer. Type of art/music for Cancer patients",
+					"answer": "artistic pictures",
+					"quotes": [
+						"They were treated in a room that had artistic pictures hanging on the wall."
+					]
+				},
+				{
+					"number": 38,
+					"text": "Complete the table below. Write NO MORE THAN THREE WORDS for each answer. Effects on patients for Cancer patients",
+					"answer": "felt less pain",
+					"quotes": [
+						"When questioned afterwards, patients said that they felt less pain because the images helped take their mind off the treatment they were receiving."
+					]
+				},
+				{
+					"number": 39,
+					"text": "Complete the table below. Write NO MORE THAN THREE WORDS for each answer. Type of art/music for Hip replacement (elderly)",
+					"answer": "soothing classical music",
+					"quotes": [
+						"The researchers played them thirty minute tracks of soothing classical music, but not every day, and then monitored their progress using a questionnaire."
+					]
+				},
+				{
+					"number": 40,
+					"text": "Complete the table below. Write NO MORE THAN THREE WORDS for each answer. Other improvements for Hip replacement (elderly) - staff",
+					"answer": "felt happier",
+					"quotes": [
+						"The staff liked the music so much that they said they too felt happier, and that they would be less likely to leave the hospital for a job elsewhere if it were to continue."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

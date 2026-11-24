@@ -1,0 +1,206 @@
+{
+	"id": "4339b5eb-8e23-4d8a-bbe6-53d637b1a34b",
+	"url": "https://stepielts.com/student/listening/4339b5eb-8e23-4d8a-bbe6-53d637b1a34b?mode=practice",
+	"title": "Paul's Tourism Studies Journey",
+	"source": "Forecast Quý 2-2025",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/1b766c6e-aabe-4f0d-9627-1090a7afc18f.mp3",
+	"transcript": "Speaker 1: Hey, Paul. Have you decided what to study in your graduate school?\nSpeaker 2: Hi Lily. It’s a tough decision to make, but somehow, I managed. I’m going to study Tourism.\nSpeaker 1: Oh, really? That’s quite a departure from your previous pursuits. Why did you choose to study it? Was it because you wanted to travel to more places?\nSpeaker 2: Well, while I do enjoy being a tourist, I haven’t had the opportunity to explore many different places yet. After conducting some research in the job market, I believe that studying tourism can offer me a promising future. My friend Mike has been in this field for several years. He is able to make good money and feels inspired every day. I guess that’s what makes me more certain of my choice.\nSpeaker 1: Good for you. Have you done some research about the prerequisites for this subject? Some schools may require work experience before starting the course.\nSpeaker 2: Yes. They usually accept students with some work experience in tourism. I don’t have that, but I have an edge over most students, which is good financial management. As trip planning involves costs and expenses, applicants need to have relevant skills. I’ve always lived in rented places since high school, which has given me quite a bit of experience in making budgets and planning my money.\nSpeaker 1: That’s interesting.\nSpeaker 2: Yeah. And because of that, I learned how to take care of myself and go to different places on my own. You know, it happens to be something a qualified tour guide should have.\nSpeaker 1: I understand.\nSpeaker 2: I probably have to work on my temper, being a bit more patient as I can’t stand waiting for people for too long. You know, there are always clients who wake up late and have other people wait for them to start the tour of the day.\nSpeaker 1: Yeah, that’s typical. You’ll have to learn to tolerate that. Anyway, which school are you going to?\nSpeaker 2: A polytechnic.Even though my cousin said it was very expensive, I still chose to go. Many students are interested in attending this school, and what I can learn there will be very practical after I graduate.\nSpeaker 1: I’m not sure if it’s easy to find a job with a degree from a polytechnic. Moreover, nobody can predict what will happen 10 years from now.\nSpeaker 2: We’ll see what happens until then.\nSpeaker 1: What’s your curriculum like in the first term?\nSpeaker 2: Oh. There are quite a few. There’s a course named travel and business.\nSpeaker 1: Sounds easy. We’ve taken a similar course before.\nSpeaker 2: According to the instructor’s email I received yesterday, there’s a lot to learn. I’ll take quite a lot of quizzes before the final exam, looks really tough.\nSpeaker 1: Wow. Good luck with that.\nSpeaker 2: Thanks. And I’ll study the culture of different countries and places. It requires us to have leadership skills since we have to be able to arrange group talks in this course and talk about the cultural customs in front of the public.\nSpeaker 1: That’s not hard for you. You are a good public speaker.\nSpeaker 2: That doesn’t bother me as much as the Japanese and Mandarin course, in which I have to acquire conversational language skills in these two oriental languages.\nSpeaker 1: Oh, I spent a few years learning these two languages, perhaps I can help you if needed.\nSpeaker 2: That’s good to know. And guess what, we need to learn about mechanic operations.\nSpeaker 1: What does that have to do with tourism?\nSpeaker 2: I was confused at first too. But then my tutor explained that understanding basic mechanic operations is crucial for managing and maintaining vehicles used in adventure tourism, like off-road vehicles for safaris or bikes for mountain tours. It’s all about ensuring safety and reliability during trips.\nSpeaker 1: Ah, that makes sense. I guess they also teach you medical skills to deal with accidents in this course, right?\nSpeaker 2: Exactly. It’s quite essential for ensuring tourists’ safety and dealing with emergencies effectively. I think I’m going to become well-rounded.\nSpeaker 1: Do you need to learn anything about setting up marketing events during peak seasons?\nSpeaker 2: There is a course related to it, but it’s optional. There’s one more course named “Computing of Tourism”.\nSpeaker 1: Does it require you to be tech-savvy? Like, do you need to do some coding during the course?\nSpeaker 2: It’s not about developing any tools. In this course, we learn how to use existing tools to enhance customer relationship skills. This includes managing bookings, providing personalized services through data analysis, and effectively communicating with clients online.\nSpeaker 1: Interesting. Overall, that’s already a ton of courses! Hope you can manage time well for studying them.\nSpeaker 2: Yeah, I’ll work on that.",
+	"body": {
+		"text": "Travel and Business [5]\nCulture Studies [6]\nJapanese and Mandarin [7]\nMechanic Operations [8]\nMarketing Event [9]\nComputing of Tourism [10]",
+		"html": "<p>Travel and Business [5]</p><p>Culture Studies [6]</p><p>Japanese and Mandarin [7]</p><p>Mechanic Operations [8]</p><p>Marketing Event [9]</p><p>Computing of Tourism [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Why does Paul want to study tourism?",
+					"options": [
+						{
+							"label": "A",
+							"text": "He has been to many places."
+						},
+						{
+							"label": "B",
+							"text": "He has worked in the field."
+						},
+						{
+							"label": "C",
+							"text": "He believes it has a good future."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"After conducting some research in the job market, I believe that studying tourism can offer me a promising future."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What advantage has Paul gained?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Years of working experience in media"
+						},
+						{
+							"label": "B",
+							"text": "Financial planning"
+						},
+						{
+							"label": "C",
+							"text": "Writing analysis reports for businesses"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I don’t have that, but I have an edge over most students, which is good financial management."
+					]
+				},
+				{
+					"number": 3,
+					"text": "What ability does Paul have?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Independence"
+						},
+						{
+							"label": "B",
+							"text": "Patience"
+						},
+						{
+							"label": "C",
+							"text": "Tolerance"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"And because of that, I learned how to take care of myself and go to different places on my own."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Why did Paul choose a polytechnic school instead of a university?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It is easy to find a job in the future."
+						},
+						{
+							"label": "B",
+							"text": "It is much cheaper."
+						},
+						{
+							"label": "C",
+							"text": "It is more popular and more practical."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Many students are interested in attending this school, and what I can learn there will be very practical after I graduate."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What is the feature of each of the following courses?",
+			"options": [
+				{
+					"label": "A",
+					"text": "language skills"
+				},
+				{
+					"label": "B",
+					"text": "medicine skills"
+				},
+				{
+					"label": "C",
+					"text": "self-defense"
+				},
+				{
+					"label": "D",
+					"text": "intense class"
+				},
+				{
+					"label": "E",
+					"text": "customer relationship"
+				},
+				{
+					"label": "F",
+					"text": "flexible entry"
+				},
+				{
+					"label": "G",
+					"text": "leadership"
+				},
+				{
+					"label": "H",
+					"text": "technology"
+				},
+				{
+					"label": "I",
+					"text": "financial management"
+				}
+			],
+			"body": "Travel and Business [5]\nCulture Studies [6]\nJapanese and Mandarin [7]\nMechanic Operations [8]\nMarketing Event [9]\nComputing of Tourism [10]",
+			"body_html": "<p>Travel and Business [5]</p><p>Culture Studies [6]</p><p>Japanese and Mandarin [7]</p><p>Mechanic Operations [8]</p><p>Marketing Event [9]</p><p>Computing of Tourism [10]</p>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Travel and Business",
+					"answer": "D",
+					"quotes": [
+						"I’ll take quite a lot of quizzes before the final exam, looks really tough."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Culture Studies",
+					"answer": "G",
+					"quotes": [
+						"It requires us to have leadership skills since we have to be able to arrange group talks in this course and talk about the cultural customs in front of the public."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Japanese and Mandarin",
+					"answer": "A",
+					"quotes": [
+						"That doesn’t bother me as much as the Japanese and Mandarin course, in which I have to acquire conversational language skills in these two oriental languages."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Mechanic Operations",
+					"answer": "B",
+					"quotes": [
+						"I guess they also teach you medical skills to deal with accidents in this course, right?"
+					]
+				},
+				{
+					"number": 9,
+					"text": "Marketing Event",
+					"answer": "F",
+					"quotes": ["There is a course related to it, but it’s optional."]
+				},
+				{
+					"number": 10,
+					"text": "Computing of Tourism",
+					"answer": "E",
+					"quotes": [
+						"In this course, we learn how to use existing tools to enhance customer relationship skills."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,241 @@
+{
+	"id": "a0f3ad8c-52e5-4164-83cf-bdafaa3d3b9e",
+	"url": "https://stepielts.com/student/listening/a0f3ad8c-52e5-4164-83cf-bdafaa3d3b9e?mode=practice",
+	"title": "The Laki Eruption",
+	"source": "C18T2",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/1bcb2c6c-078a-44c1-b6a8-bef28c452acc.mp3",
+	"transcript": "Speaker 0: Part three. You will hear two geography students, Adam and Michel, talking about a volcanic eruption which took place in Iceland in 1783. First, you have some time to look at questions 21 to 26. Now listen carefully and answer questions 21 to 26.\nSpeaker 1: So, Michelle, shall we make a start on our presentation? We haven't got that much time left.\nSpeaker 2: No, Adam. But at least we've done all the background reading. I found it really interesting. I'd never even heard of the Larki eruption before this.\nSpeaker 1: Me neither. I suppose 1783 is a long time ago.\nSpeaker 2: But it was a huge eruption, and it had such devastating consequences.\nSpeaker 1: I know. It was great there were so many primary sources to look at. It really gives you a sense of how catastrophic the volcano was. People were really trying to make sense of the science for the first time.\nSpeaker 2: That's right. But what I found more significant was how impacted directly and indirectly on political events, as well as having massive social and economic consequences.\nSpeaker 1: I know. That should be the main focus of our presentation.\nSpeaker 2: The observations made by people at the time were interesting, weren't they? I mean, they all gave a pretty consistent account of what happened, even if they didn't always use the same terminology.\nSpeaker 1: Yeah. I was surprised there were so many weather stations established by that time. So, you know, you can see how the weather changed often by the hour.\nSpeaker 2: Right. Writers at the time talked about the Larky haze to describe the volcanic fog that spread across Europe. They all realized that this wasn't the sort of fog they were used to. And, of course, this was in pre industrial times, so they hadn't experienced sulphur smelling fog before.\nSpeaker 1: No. That's true.\nSpeaker 2: Reports from the period blamed the haze for an increase in headaches, respiratory issues, and asthma attacks. And they all describe how it covered the sun and made it look a strange red color.\nSpeaker 1: Must have been very weird.\nSpeaker 2: It's interesting that Benjamin Franklin wrote about the haze. Did you read that? He was the American ambassador in Paris at the time.\nSpeaker 1: Yeah. At first, no one realized that the haze was caused by the volcanic eruption in Iceland.\nSpeaker 2: It was Benjamin Franklin who realized that before anyone else.\nSpeaker 1: He's often credited with that apparently, but a French naturalist beat him to it. I can't remember his name. I'd have to look it up. Then other naturalists had the same idea, all independently of each other.\nSpeaker 2: Oh, right. We should talk about the immediate impact of the eruption, which was obviously enormous, especially in Iceland where so many people died.\nSpeaker 1: You'd expect that, and the fact that the volcanic ash drifted so swiftly, but not that the effects would go on for so long, or that two years after the eruption, strange weather events were being reported as far away as North America and North Africa.\nSpeaker 2: No. I found all that hard to believe too. It must have been terrible, and there was nothing anyone could do about it, even if they knew the ash cloud was coming in their direction.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 27 to 30. Now listen and answer questions 27 to 30.\nSpeaker 2: We should run through some of the terrible consequences of the eruption experienced in different countries. There's quite a varied range.\nSpeaker 1: Starting with Iceland, where the impact on farming was devastating.\nSpeaker 2: One of the most dramatic things there was the effect on livestock as they grazed in the fields. They were poisoned because they ate vegetation that had been contaminated with fluorine as a result of the volcanic fallout.\nSpeaker 1: That was horrible. In Egypt, the bizarre weather patterns led to a severe drought, and as a result, the Nile didn't flood, which meant the crops all failed.\nSpeaker 2: It's so far from where the eruption happened, and yet the famine there led to more people dying than any other country. It was worse than the plague.\nSpeaker 1: Okay. Then in The UK, the mortality rate went up a lot, presumably from respiratory illnesses. According to one report, it was about double the usual number, and included an unusually high percentage of people 25.\nSpeaker 2: I think people will be surprised to hear that the weather in The USA was badly affected too. George Washington even makes a note in his diary that they were snowbound until March in Virginia. That was before he became president.\nSpeaker 1: Yes. And there was ice floating down the Mississippi, which was unprecedented.\nSpeaker 2: Astonishing, really. Anyway, what do you think we should include next?\nSpeaker 0: That is the end of part three. You now have thirty seconds to check your answers to part three.",
+	"body": {
+		"text": "Iceland [27]\nEgypt [28]\nUK [29]\nUSA [30]",
+		"html": "<p>Iceland [27]</p><p>Egypt  [28]</p><p>UK [29]</p><p>USA  [30]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-24",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Why do the students think the Laki eruption of 1783 is so important?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It was the most severe eruption in modern times."
+						},
+						{
+							"label": "B",
+							"text": "It led to the formal study of volcanoes."
+						},
+						{
+							"label": "C",
+							"text": "It had a profound effect on society."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But what I found more significant was how impacted directly and indirectly on political events, as well as having massive social and economic consequences."
+					]
+				},
+				{
+					"number": 22,
+					"text": "What surprised Adam about observations made at the time?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the number of places producing them"
+						},
+						{
+							"label": "B",
+							"text": "the contradictions in them"
+						},
+						{
+							"label": "C",
+							"text": "the lack of scientific data to support them"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I was surprised there were so many weather stations established by that time."
+					]
+				},
+				{
+					"number": 23,
+					"text": "According to Michelle, what did the contemporary sources say about the Laki haze?",
+					"options": [
+						{
+							"label": "A",
+							"text": "People thought it was similar to ordinary fog."
+						},
+						{
+							"label": "B",
+							"text": "It was associated with health issues."
+						},
+						{
+							"label": "C",
+							"text": "It completely blocked out the sun for weeks."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Reports from the period blamed the haze for an increase in headaches, respiratory issues, and asthma attacks."
+					]
+				},
+				{
+					"number": 24,
+					"text": "Adam corrects Michelle when she claims that Benjamin Franklin",
+					"options": [
+						{
+							"label": "A",
+							"text": "came to the wrong conclusion about the cause of the haze."
+						},
+						{
+							"label": "B",
+							"text": "was the first to identify the reason for the haze."
+						},
+						{
+							"label": "C",
+							"text": "supported the opinions of other observers about the haze."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"He's often credited with that apparently, but a French naturalist beat him to it."
+					]
+				}
+			]
+		},
+		{
+			"range": "25-26",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. Which TWO issues following the Laki eruption surprised the students?",
+			"questions": [
+				{
+					"number": 25,
+					"text": "Choose TWO letters, A-E. Which TWO issues following the Laki eruption surprised the students?",
+					"options": [
+						{
+							"label": "A",
+							"text": "how widespread the effects were"
+						},
+						{
+							"label": "B",
+							"text": "how long-lasting the effects were"
+						},
+						{
+							"label": "C",
+							"text": "the number of deaths it caused"
+						},
+						{
+							"label": "D",
+							"text": "the speed at which the volcanic ash cloud spread"
+						},
+						{
+							"label": "E",
+							"text": "how people ignored the warning signs"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 26,
+					"text": "Choose TWO letters, A-E. Which TWO issues following the Laki eruption surprised the students?",
+					"options": [
+						{
+							"label": "A",
+							"text": "how widespread the effects were"
+						},
+						{
+							"label": "B",
+							"text": "how long-lasting the effects were"
+						},
+						{
+							"label": "C",
+							"text": "the number of deaths it caused"
+						},
+						{
+							"label": "D",
+							"text": "the speed at which the volcanic ash cloud spread"
+						},
+						{
+							"label": "E",
+							"text": "how people ignored the warning signs"
+						}
+					],
+					"answer": "B"
+				}
+			]
+		},
+		{
+			"range": "27-30",
+			"type": "MATCHING",
+			"instructions": "What comment do the students make about the impact of the Laki eruption on the following countries?\nChoose FOUR answers from the box and write the correct letter, A-F, next to Questions 27-30.\nCountries",
+			"options": [
+				{
+					"label": "A",
+					"text": "This country suffered the most severe loss of life."
+				},
+				{
+					"label": "B",
+					"text": "The impact on agriculture was predictable."
+				},
+				{
+					"label": "C",
+					"text": "There was a significant increase in deaths of young people."
+				},
+				{
+					"label": "D",
+					"text": "Animals suffered from a sickness."
+				},
+				{
+					"label": "E",
+					"text": "This country saw the highest rise in food prices in the world."
+				},
+				{
+					"label": "F",
+					"text": "It caused a particularly harsh winter."
+				}
+			],
+			"body": "Iceland [27]\nEgypt [28]\nUK [29]\nUSA [30]",
+			"body_html": "<p>Iceland [27]</p><p>Egypt  [28]</p><p>UK [29]</p><p>USA  [30]</p>",
+			"questions": [
+				{
+					"number": 27,
+					"text": "Iceland",
+					"answer": "D",
+					"quotes": [
+						"One of the most dramatic things there was the effect on livestock as they grazed in the fields. They were poisoned because they ate vegetation that had been contaminated with fluorine as a result of the volcanic fallout."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Egypt",
+					"answer": "A",
+					"quotes": [
+						"It's so far from where the eruption happened, and yet the famine there led to more people dying than any other country."
+					]
+				},
+				{
+					"number": 29,
+					"text": "UK",
+					"answer": "C",
+					"quotes": [
+						"According to one report, it was about double the usual number, and included an unusually high percentage of people 25."
+					]
+				},
+				{
+					"number": 30,
+					"text": "USA",
+					"answer": "F",
+					"quotes": [
+						"George Washington even makes a note in his diary that they were snowbound until March in Virginia. That was before he became president. Yes. And there was ice floating down the Mississippi, which was unprecedented."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

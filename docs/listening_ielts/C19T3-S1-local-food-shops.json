@@ -1,0 +1,111 @@
+{
+	"id": "175496ef-200b-42f6-ba21-da8523deeb18",
+	"url": "https://stepielts.com/student/listening/175496ef-200b-42f6-ba21-da8523deeb18?mode=practice",
+	"title": "Local food shops",
+	"source": "C19T3",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/83431a50-34f9-40b8-8ee3-8d655124e1e8.mp3",
+	"transcript": "Speaker 1: LEON: Hi Shannon - how are you settling into your new flat?\nSpeaker 2: SHANNON: Really well, thanks.\nSpeaker 1: LEON: You look like you’re going shopping.\nSpeaker 2: SHANNON: Yes, I am. My cousins are coming to stay for a couple of days, and I have to cook for them.\nSpeaker 1: LEON: Well, there are plenty of places to buy food in Kite Place - it’s the area by the harbour.\nSpeaker 2: SHANNON: Oh, OK, I’ll find that on the map. Thanks.\nSpeaker 1: LEON: What sort of food do you need to get?\nSpeaker 2: SHANNON: Well, neither of them eats meat but they both like fish.\nSpeaker 1: LEON: Well, there’s a really good fish market there.\nSpeaker 2: SHANNON: Oh great - where is it exactly?\nSpeaker 1: LEON: It’s at the far end of Kite Place, so you have to go over the bridge and then it’s on the right.\nSpeaker 2: SHANNON: OK - is it open all day?\nSpeaker 1: LEON: It doesn’t close until four, but I’d recommend going earlier than that - it does run out of some things.\nSpeaker 2: SHANNON: Oh, I don’t want that to happen. LEON: As long as you get there by 3.30, you should be fine.\nSpeaker 1: It’s only 11 now, so plenty of time.\nSpeaker 2: SHANNON: Right.\nSpeaker 1: LEON: Do you need to buy vegetables too?\nSpeaker 2: SHANNON: I do, and I want to avoid all the plastic packaging in the supermarket!\nSpeaker 1: LEON: Well, there’s a really nice organic shop there. Now what’s it called ... it’s the name of a flower. I know, it’s ’Rose’.\nSpeaker 2: SHANNON: That’s a nice name.\nSpeaker 1: LEON: Yeah - it sells vegetables and quite a lot of other stuff.\nSpeaker 2: SHANNON: And where’s that?\nSpeaker 1: LEON: Well, as you reach the market, you’ll see a big grey building on your left - I think it used to be a warehouse. Anyway, now it’s a restaurant upstairs, but the ground floor has two shops either side of the entrance and it’s the one on the left.\nSpeaker 2: SHANNON: That’s easy enough.\nSpeaker 1: LEON: You can’t miss it - there’s also a big sign on the pavement so you can look for that.\nSpeaker 2: SHANNON: Fine! I guess if I need anything else, I’ll have to go to the supermarket.\nSpeaker 1: LEON: Yeah - you should be able to get everything you need, but there’s a minibus that goes to the supermarket if you need it. It’s purple and the number is 289.\nSpeaker 2: SHANNON: Thanks, that’s great.\nSpeaker 1: LEON: So what do you need to get at the fish market? The salmon is always very good and the shellfish.\nSpeaker 2: SHANNON: I’m going to make a curry, I think, and I need about 12 prawns for that.\nSpeaker 1: LEON: They’ll have plenty of those.\nSpeaker 2: SHANNON: OK.\nSpeaker 1: LEON: Have you ever tried samphire?\nSpeaker 2: SHANNON: No - what’s that?\nSpeaker 1: LEON: It’s a type of seaweed. I just ask for a handful and you fry it in butter. It’s delicious!\nSpeaker 2: SHANNON: Oh, I might try that - how do you spell it?\nSpeaker 1: LEON: It’s S-A-M-P-H-I-R-E.\nSpeaker 2: SHANNON: Great - it’s always good to try something different.\nSpeaker 1: LEON: Yeah.\nSpeaker 2: SHANNON: I’ll see what beans they have in the organic shop and I think I’ll get something for dessert there.\nSpeaker 1: LEON: How about a mango?\nSpeaker 2: SHANNON: I’m not sure - they’re not always ripe. I’d prefer a melon - it’s bigger too.\nSpeaker 1: LEON: Good idea. The owner also sells a lot of spices there that you can put in a curry, and things like coconut.\nSpeaker 2: SHANNON: Oh, that’s very helpful. I’ll have a look.\nSpeaker 1: LEON: No problem.\nSpeaker 2: SHANNON: I know bread doesn’t really go with curry but I always like to have some in case.\nSpeaker 1: LEON: As I said - all the bread is home-made and there’s lots of variety. I like the brown bread myself.\nSpeaker 2: SHANNON: Mm, sounds good.\nSpeaker 1: LEON: They sell other things there too.\nSpeaker 2: SHANNON: Like cakes? I love chocolate cake.\nSpeaker 1: LEON: Well - not that, but they have a whole range of tarts and the best are the strawberry ones.\nSpeaker 2: SHANNON: Perfect - hopefully I won’t even have to go to the supermarket!",
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Local food shops\nWhere to go\n• Kite Place - near the [1]\nFish market\n• cross the [2] and turn right\n• best to go before [3]\npm, earlier than closing time\nOrganic shop\n• called '[4]'\n• below a restaurant in the large, grey building\n• look for the large [5] outside\nSupermarket\n• take a [6] minibus, number 289",
+			"body_html": "<table><tbody><tr><td><h4><strong>Local food shops</strong></h4><p><strong>Where to go</strong></p><p>• Kite Place - near the [1]</p><p><strong>Fish market</strong></p><p>• cross the [2] and turn right</p><p>• best to go before [3] <br> pm, earlier than closing time</p><p><strong>Organic shop</strong></p><p>• called '[4]'</p><p>• below a restaurant in the large, grey building</p><p>• look for the large [5] outside</p><p><strong>Supermarket</strong></p><p>• take a [6] minibus, number 289 </p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "• Kite Place - near the [1]",
+					"answer": "harbor / harbour",
+					"quotes": [
+						"LEON: Well, there are plenty of places to buy food in Kite Place - it’s the area by the harbour."
+					]
+				},
+				{
+					"number": 2,
+					"text": "• cross the [2] and turn right",
+					"answer": "bridge",
+					"quotes": [
+						"LEON: It’s at the far end of Kite Place, so you have to go over the bridge and then it’s on the right."
+					]
+				},
+				{
+					"number": 3,
+					"text": "• best to go before [3]",
+					"answer": "3.30 / three thirty / half past three / 3:30",
+					"quotes": [
+						"LEON: As long as you get there by 3.30, you should be fine."
+					]
+				},
+				{
+					"number": 4,
+					"text": "• called '[4]'",
+					"answer": "rose",
+					"quotes": ["I know, it’s ’Rose’."]
+				},
+				{
+					"number": 5,
+					"text": "• look for the large [5] outside",
+					"answer": "sign",
+					"quotes": [
+						"LEON: You can’t miss it - there’s also a big sign on the pavement so you can look for that."
+					]
+				},
+				{
+					"number": 6,
+					"text": "• take a [6] minibus, number 289",
+					"answer": "purple",
+					"quotes": ["It’s purple and the number is 289."]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD ONLY for each answer.",
+			"body": "Shopping\n\nTo buy\nOther ideas\nFish market\na dozen prawns\na handful of [7] (type of seaweed)\nOrganic shop\nbeans and a [8] for dessert\nspices and [9]\nBakery\na brown loaf\na [10] tart",
+			"body_table": [
+				["Shopping"],
+				["", "To buy", "Other ideas"],
+				["Fish market", "a dozen prawns", "a handful of [7] (type of seaweed)"],
+				["Organic shop", "beans and a [8] for dessert", "spices and [9]"],
+				["Bakery", "a brown loaf", "a [10] tart"]
+			],
+			"body_html": "<table><tbody><tr><td colspan=\"3\"><strong>Shopping</strong></td></tr><tr><td></td><td>To buy</td><td>Other ideas </td></tr><tr><td>Fish market </td><td>a dozen prawns</td><td>a handful of [7] (type of seaweed) </td></tr><tr><td>Organic shop</td><td>beans and a [8] for dessert</td><td>spices and [9]</td></tr><tr><td>Bakery </td><td>a brown loaf </td><td>a [10] tart </td></tr></tbody></table><p></p>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "a handful of [7] (type of seaweed)",
+					"answer": "samphire",
+					"quotes": ["LEON: Have you ever tried samphire?"]
+				},
+				{
+					"number": 8,
+					"text": "beans and a [8] for dessert",
+					"answer": "melon",
+					"quotes": ["I’d prefer a melon - it’s bigger too."]
+				},
+				{
+					"number": 9,
+					"text": "spices and [9]",
+					"answer": "coconut",
+					"quotes": [
+						"The owner also sells a lot of spices there that you can put in a curry, and things like coconut."
+					]
+				},
+				{
+					"number": 10,
+					"text": "a [10] tart",
+					"answer": "strawberry",
+					"quotes": [
+						"LEON: Well - not that, but they have a whole range of tarts and the best are the strawberry ones."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

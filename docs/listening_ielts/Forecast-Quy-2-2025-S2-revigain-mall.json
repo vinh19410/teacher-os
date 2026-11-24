@@ -1,0 +1,196 @@
+{
+	"id": "afd211a5-96ca-4238-bf79-f1a5e8cdd8ee",
+	"url": "https://stepielts.com/student/listening/afd211a5-96ca-4238-bf79-f1a5e8cdd8ee?mode=practice",
+	"title": "Revigain mall",
+	"source": "Forecast Quý 2-2025",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/64296a5c-43e9-4036-9617-40f395819bc4.mp3",
+	"transcript": "Speaker 0: Good afternoon Mr. Chairman, staff and customers of Revigain mall, distinguished ladies and gentlemen. As the general manager here, I’m proud to give a speech on the occasion of the grand opening of the new shopping mall. With some experienced managers already in position, I believe Revigain Mall will gain in popularity. But we still face an urgent problem and the first step to take in solving it is the expansion programme which means we need more land. Today we celebrate a right step in the right direction. Having been around for a while, we know and understand that this business requires a little more than shopping. It requires ingenuity, creativity, something unusual to always be ahead. When you look at the shopping malls here, pretty much everything else is the same with others, such as pricing or the variety of goods. But we have found our edge by introducing an art gallery in Revigain and we are using it well. For security matters, which is very important to us, we have had the surveillance cameras installed. Besides, the X-Ray machine is performing the bag check task at the entrances. Still, we must install more emergency phones and panic buttons in different places to ensure that our customers can get support immediately. Our security experts will take special care to do this so that it would be easier to help people in need. As a company that is very considerate of our customers, especially the special ones among them, particular care has been taken to help them navigate around effortlessly. We already opted for signals for the blind, because of the high number of such customers we have noticed and the nature of the building structure. We will have wheelchairs and gesture assistants available next year. Restaurants present in our mall boast of high-quality food. They have a wide range of delicacies to pick from and are known to never disappoint. They also open at different times, so if you are an early riser, there is one for you and if you are also someone that prefers to stay out late at night, there is a place for you too. The most important feature of our restaurants however, is that we restrict the number of restaurants, so we do not have an unnecessary long chain. Some people have also asked why we do not provide entertainment in the mall. Firstly, apart from the fact that many people just come to get goods from the mall and might not really pay attention to entertainment, or the fact that the setup of such facilities is quite expensive, the major factor is that we already have such facilities outside the mall and we want an organized structure, devoid of unnecessary repetitions here and there. Right now, I would go to the unveiling of the new layout for the mall. Starting from the entrance, which is obvious, we are seated in front of the shop where hairdressing, makeup, and cosmetic treatments are provided. It has just opened and customers can enjoy a 50% discount on all products and services. The area to the left of the entrance is a new restaurant which will be open soon. It’s a well-known chain store. I won’t reveal the name today but I’m sure it’ll impress you all. The delivery office was near the exit facing the bakery, but recently we relocated it and you’ll see it at the bottom left of the map. You can get all deliveries here and their schedule is available online. Some new staff ask if they should go to the top right corner to provide weekly reports to their manager, well, actually the right place is at the top left corner, just close to the bakery. Please note that your manager is usually at his office after 10 in the morning. The information desk is just to your right once you enter through the entrance. Don’t go too far into the corner. As we can see this new layout gives a lot of accessibility with less effort. We designed it to satisfy our clients.\nI believe that with what I have said …",
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The first thing Revigain mall needs to do is to",
+					"options": [
+						{
+							"label": "A",
+							"text": "hire senior managers."
+						},
+						{
+							"label": "B",
+							"text": "buy land."
+						},
+						{
+							"label": "C",
+							"text": "become popular."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But we still face an urgent problem and the first step to take in solving it is the expansion programme which means we need more land."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What is the biggest difference between Revigain mall and other malls?",
+					"options": [
+						{
+							"label": "A",
+							"text": "range of goods"
+						},
+						{
+							"label": "B",
+							"text": "prices of different items"
+						},
+						{
+							"label": "C",
+							"text": "display of art works"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But we have found our edge by introducing an art gallery in Revigain and we are using it well."
+					]
+				},
+				{
+					"number": 3,
+					"text": "What needs to be added about security?",
+					"options": [
+						{
+							"label": "A",
+							"text": "TV surveillance"
+						},
+						{
+							"label": "B",
+							"text": "emergency response"
+						},
+						{
+							"label": "C",
+							"text": "bag check"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Still, we must install more emergency phones and panic buttons in different places to ensure that our customers can get support immediately."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What service does Revigain mall provide for disabled people?",
+					"options": [
+						{
+							"label": "A",
+							"text": "signs for the blind"
+						},
+						{
+							"label": "B",
+							"text": "wheelchairs"
+						},
+						{
+							"label": "C",
+							"text": "gesture language assistants"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"We already opted for signals for the blind, because of the high number of such customers we have noticed and the nature of the building structure."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What is the characteristic about the restaurants in Revigain mall?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The menus of the restaurants are too similar."
+						},
+						{
+							"label": "B",
+							"text": "There are not too many chain restaurants around."
+						},
+						{
+							"label": "C",
+							"text": "Most restaurants only open in the evening."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"The most important feature of our restaurants however, is that we restrict the number of restaurants, so we do not have an unnecessary long chain."
+					]
+				},
+				{
+					"number": 6,
+					"text": "The main reason of not providing entertainment in Revigain mall is because",
+					"options": [
+						{
+							"label": "A",
+							"text": "most customers only show interest in shopping for goods."
+						},
+						{
+							"label": "B",
+							"text": "it has enough entertainment facilities nearby already."
+						},
+						{
+							"label": "C",
+							"text": "it is expensive to set up entertainment facilities."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Firstly, apart from the fact that many people just come to get goods from the mall and might not really pay attention to entertainment, or the fact that the setup of such facilities is quite expensive, the major factor is that we already have such facilities outside the mall and we want an organized structure, devoid of unnecessary repetitions here and there."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below.",
+			"instructions_html": "<p>Label the map below.</p><p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/9e2ab974-de88-4015-a735-e2c09f65d443.png\" alt=\"Yp\"></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
+			"questions": [
+				{
+					"number": 7,
+					"text": "beauty shop",
+					"answer": "G",
+					"quotes": [
+						"Starting from the entrance, which is obvious, we are seated in front of the shop where hairdressing, makeup, and cosmetic treatments are provided."
+					]
+				},
+				{
+					"number": 8,
+					"text": "delivery office",
+					"answer": "E",
+					"quotes": [
+						"The delivery office was near the exit facing the bakery, but recently we relocated it and you’ll see it at the bottom left of the map."
+					]
+				},
+				{
+					"number": 9,
+					"text": "manager's office",
+					"answer": "B",
+					"quotes": [
+						"Some new staff ask if they should go to the top right corner to provide weekly reports to their manager, well, actually the right place is at the top left corner, just close to the bakery."
+					]
+				},
+				{
+					"number": 10,
+					"text": "information desk",
+					"answer": "A",
+					"quotes": [
+						"The information desk is just to your right once you enter through the entrance."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/9e2ab974-de88-4015-a735-e2c09f65d443.png"
+	]
+}

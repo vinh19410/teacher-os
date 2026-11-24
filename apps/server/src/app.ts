@@ -24,6 +24,7 @@ import { examImportRoutes } from "./routes/exam-imports";
 import { githubWebhookRoutes } from "./routes/github-webhooks";
 import { kernelRoutes } from "./routes/kernel";
 import { publicLeadRoutes } from "./routes/public-leads";
+import { publicLibraryImagesRoutes } from "./routes/public-library-images";
 import { publicPayRoutes } from "./routes/public-pay";
 import { publicPlacementTestRoutes } from "./routes/public-placement-test";
 import { readinessRoute } from "./routes/readiness";
@@ -419,7 +420,8 @@ export function buildApp(deps: AppDeps) {
 			c.req.path === "/public/leads" ||
 			c.req.path.startsWith("/public/leads/") ||
 			c.req.path === "/public/placement-test" ||
-			c.req.path.startsWith("/public/placement-test/")
+			c.req.path.startsWith("/public/placement-test/") ||
+			c.req.path.startsWith("/public/library-images/")
 		) {
 			return next();
 		}
@@ -449,6 +451,8 @@ export function buildApp(deps: AppDeps) {
 	app.route("/public/leads", publicLeadRoutes(deps));
 	// Bộ đề kiểm tra đầu vào công khai (#515): CORS theo leadOrigins, audio hỗ trợ Range.
 	app.route("/public/placement-test", publicPlacementTestRoutes(deps));
+	// Ảnh bản đồ/biểu đồ thư viện đề re-host trên R2 (read-only, immutable).
+	app.route("/public/library-images", publicLibraryImagesRoutes(deps));
 	// Readiness probe: mounted outside /api/* so the bootstrap middleware and
 	// Better Auth never run — it answers purely from the D1 schema catalog.
 	app.get("/readyz", readinessRoute(deps));

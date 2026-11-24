@@ -1,0 +1,106 @@
+{
+	"id": "3266b5ce-3c01-401c-8cd1-e37a33156c8e",
+	"url": "https://stepielts.com/student/listening/3266b5ce-3c01-401c-8cd1-e37a33156c8e?mode=practice",
+	"title": "Shopping at the mall",
+	"source": "Unknown",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/de25070a-93d8-4dfd-975f-7ddf12d2605a.mp3",
+	"transcript": "Speaker 0: Shopping at the Mall At one time in North America, most people shopped downtown on Main Street. Most businesses were at the center of town. When people started using automobiles, however, they moved away from downtown. In time, most people lived in the suburbs. Eventually, stores and small shopping plazas were built in suburban areas. Still, most of the big stores were downtown. But as more and more cars were on the roads, driving and parking downtown became a problem. There wasn't room for a lot of cars to park downtown. People also didn't want to fight downtown traffic just to go shopping. So in the 1950s and 1960s, there was the beginning of large suburban shopping malls and plazas. Plazas were a row of stores attached to one another. Malls were usually a double row of stores, with a roof connecting both rows. This means that shoppers did all their shopping inside. Large department stores and grocery stores were usually part of the mall, but there were many smaller stores as well. When you came to the mall and went inside, many people would get a shopping cart. You can walk along the aisles, putting your purchases in the cart. When you're finished shopping, you can push your shopping buggy out to the car. Many malls also have buggies or strollers for pushing small children along. There can be a lot of walking in a trip to the mall. In fact, some people go to the mall just to exercise. A half dozen laps around the mall every morning amount to a pretty good workout. However, there are always places to sit down when you get tired. Most malls have a food court. This is an open area with a lot of tables and chairs. Usually, there are a dozen or more small restaurants circled around the food court. The department stores often have full size restaurants. Malls have large parking lots. Unlike downtown, you don't pay to park at the mall. On a busy day, finding a space close to the store can be a challenge. Many people go to the malls when the weather is bad. During wintry weather, the malls are busy. Likewise, in really hot summer weather, people go to the malls to get cool. The climate there is always the same. People don't go to malls just to shop. They also go to meet people. Usually, you bump into friends and neighbors there. Old people as well as teenagers go there to see friends. Usually, the malls sponsor special events. With lots to see and do, malls are a popular place to hang out.",
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Listen and complete the sentences. Use ONE OR TWO WORDS only.",
+			"body": "1. At one time, most people shopped [1] on Main Street.\n2. As more cars appeared, driving and [2] downtown became a problem.\n3. Malls were usually a double row of stores with a [3] connecting both rows.\n4. Most malls have a food [4], which is an open area with tables, chairs, and small restaurants.\n5. Unlike downtown, you don't have to [5] to park at the mall.",
+			"body_html": "<p>1. At one time, most people shopped [1] on Main Street.</p><p>2. As more cars appeared, driving and [2] downtown became a problem.</p><p>3. Malls were usually a double row of stores with a [3] connecting both rows.</p><p>4. Most malls have a food [4], which is an open area with tables, chairs, and small restaurants.</p><p>5. Unlike downtown, you don't have to [5] to park at the mall.</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "At one time, most people shopped [1] on Main Street.",
+					"answer": "downtown",
+					"quotes": [
+						"Shopping at the Mall At one time in North America, most people shopped downtown on Main Street."
+					]
+				},
+				{
+					"number": 2,
+					"text": "As more cars appeared, driving and [2] downtown became a problem.",
+					"answer": "parking",
+					"quotes": [
+						"But as more and more cars were on the roads, driving and parking downtown became a problem."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Malls were usually a double row of stores with a [3] connecting both rows.",
+					"answer": "roof",
+					"quotes": [
+						"Malls were usually a double row of stores, with a roof connecting both rows."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Most malls have a food [4], which is an open area with tables, chairs, and small restaurants.",
+					"answer": "court",
+					"quotes": ["Most malls have a food court."]
+				},
+				{
+					"number": 5,
+					"text": "Unlike downtown, you don't have to [5] to park at the mall.",
+					"answer": "pay",
+					"quotes": ["Unlike downtown, you don't pay to park at the mall."]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "FILL_BLANK",
+			"instructions": "Listen and answer the questions. Write SHORT answers — no more than FIVE words.",
+			"body": "PART B — SHORT ANSWER\n6. Where did most people shop before they started using automobiles? [6]\n7. What happened to parking downtown as more people bought cars? [7]\n8. Name ONE thing shoppers use to carry their purchases around the mall. [8]\n9. Why do some people go to the mall just to exercise? [9]\n10. Give TWO types of people who go to the mall to meet friends. [10]",
+			"body_html": "<p><strong>PART B — SHORT ANSWER</strong></p><p>6. Where did most people shop before they started using automobiles? [6]</p><p>7. What happened to parking downtown as more people bought cars? [7]</p><p>8. Name ONE thing shoppers use to carry their purchases around the mall. [8]</p><p>9. Why do some people go to the mall just to exercise? [9]</p><p>10. Give TWO types of people who go to the mall to meet friends. [10]</p>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Where did most people shop before they started using automobiles?",
+					"answer": "downtown on Main Street",
+					"quotes": [
+						"Shopping at the Mall At one time in North America, most people shopped downtown on Main Street."
+					]
+				},
+				{
+					"number": 7,
+					"text": "What happened to parking downtown as more people bought cars?",
+					"answer": "became a problem",
+					"quotes": [
+						"But as more and more cars were on the roads, driving and parking downtown became a problem."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Name ONE thing shoppers use to carry their purchases around the mall.",
+					"answer": "shopping cart",
+					"quotes": [
+						"When you came to the mall and went inside, many people would get a shopping cart."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Why do some people go to the mall just to exercise?",
+					"answer": "to get a good workout",
+					"quotes": [
+						"A half dozen laps around the mall every morning amount to a pretty good workout."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Give TWO types of people who go to the mall to meet friends.",
+					"answer": "old people and teenagers",
+					"quotes": ["Old people as well as teenagers go there to see friends."]
+				}
+			]
+		}
+	],
+	"images": []
+}

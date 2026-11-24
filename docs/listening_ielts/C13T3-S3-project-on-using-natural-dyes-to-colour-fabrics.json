@@ -1,0 +1,202 @@
+{
+	"id": "d5a2bfd0-928b-4943-9942-924dc9453d88",
+	"url": "https://stepielts.com/student/listening/d5a2bfd0-928b-4943-9942-924dc9453d88?mode=practice",
+	"title": "Project on using natural dyes to colour fabrics",
+	"source": "C13T3",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/fbb0ee5a-a314-471e-a655-feceeb9ca021.mp3",
+	"transcript": "Speaker 0: Section three You will hear a textile design student called Jim discussing his project on using natural dyes for colouring fabrics with his tutor. First you have some time to look at questions 21 to 24. Now listen carefully and answer questions 21 to 24.\nSpeaker 1: Okay, Jim. You wanted to see me about your textile design project.\nSpeaker 2: That's right. I've been looking at how a range of natural dyes can be used to color fabrics like cotton and wool.\nSpeaker 1: Why did you choose that topic?\nSpeaker 2: Well, I got a lot of useful ideas from the museum, you know, at that exhibition of textiles. But I've always been interested in anything to do with color. Years ago, I went to a carpet shop with my parents when we were on holiday in Turkey, and I remember all the amazing colors.\nSpeaker 1: They might not all have been natural dyes.\nSpeaker 2: Maybe not. But for the project, I decided to follow it up. And I found a great book about a botanic garden in California that specializes in plants used for dyes.\nSpeaker 1: Okay. So in your project, you had to include a practical investigation.\nSpeaker 2: Yeah. At first, I couldn't decide on my variables. I was going to just look at one type of fiber, for example, like cotton.\nSpeaker 1: And see how different types of dyes affected it?\nSpeaker 2: Yes. Then I decided to include others as well. So I looked at cotton and wool and nylon.\nSpeaker 1: With just one type of dye?\nSpeaker 2: Various types, including some that weren't natural for comparison.\nSpeaker 1: Okay.\nSpeaker 2: So I did the experiments last week. I used some ready made natural dyes. I found a website which supplied them. They came in just a few days, but I also made some of my own.\nSpeaker 1: That must have taken quite a bit of time.\nSpeaker 2: Yes. I thought it'd just be a matter of a teaspoon or so of dye, and actually that wasn't the case at all. Like, I was using one vegetable, a beet root for a red dye, and I had to chop up a whole pile of it. So it all took longer than I'd expected.\nSpeaker 1: One possibility is to use food colorings.\nSpeaker 2: I did use one. That was a yellow dye, an artificial one.\nSpeaker 1: Tatrazine?\nSpeaker 2: Yeah. I used it on cotton first. It came out a great color. But when I rinsed the material, the color just washed away. I'd been going to try it out on nylon, but I abandoned that idea.\nSpeaker 1: Were you worried about health issues?\nSpeaker 2: I thought if it's illegal food coloring, it must be safe.\nSpeaker 1: Well, it can occasionally cause allergic reactions, I believe.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 25 to 30. Now listen and answer questions 25 to 30.\nSpeaker 1: So what natural dyes did you look at?\nSpeaker 2: Well, one was turmeric. The color's great. It's a really strong yellow. It's generally used in dishes like curry.\nSpeaker 1: It's meant to be quite good for your health when eaten, but you might find it's not permanent when it's used as a dye. A few washes and it's gone.\nSpeaker 2: Right. I used beetroot as a dye for wool. When I chop up beetroot to eat, I always end up with bright red hands, but the wool ended up just a sort of watery cream shade. Disappointing.\nSpeaker 1: There's a natural dye called Tyrian purple. Have you heard of that?\nSpeaker 2: Yes. It comes from a shellfish, and it was worn in ancient times, but only by important people as it was so rare. I didn't use it.\nSpeaker 1: It fell out of use centuries ago, though one researcher managed to get hold of some recently. But that shade of purple can be produced by chemical dyes nowadays. Did you use any black dyes?\nSpeaker 2: Logwood. That was quite complicated. I had to prepare the fabric so the dye would take.\nSpeaker 1: I hope you were careful to wear gloves.\nSpeaker 2: Yes. I know the danger with that dye.\nSpeaker 1: Good. It can be extremely dangerous if it's ingested. Now presumably, you had a look at an insect based dye, like cochineal, for example.\nSpeaker 2: Yes. I didn't actually make that. I didn't have time to start crushing up insects to get the red color. And, anyway, they're not available here. But I managed to get the dye quite easily from a website, but it cost a fortune. I can see why it's generally just used in cooking and in small quantities.\nSpeaker 1: Yes. It's very effective, but that's precisely why it's not used as a dye.\nSpeaker 2: I also read about using metal oxide. Apparently, you can allow iron to rust while it's in contact with the fabric, and that colors it.\nSpeaker 1: Yes. That works well for dyeing cotton. But you have to be careful as the metal can actually affect the fabric, and so you can't expect to get a lot of wear out of fabrics treated in this way. And the colors are quite subtle. Not everyone likes them. Anyway, it looks as if you've done a lot of work.\nSpeaker 0: That is the end of section three. You now have half a minute to check your answers. Now turn to section four. Section four You will hear part of a biology lecture about an animal called the sleepy lizard that is common in parts of Australia. First, you have some time to look at questions 31 to 40.",
+	"body": {
+		"text": "turmeric [25]\nbeetroot [26]\nTyrian purple [27]\nlogwood [28]\ncochineal [29]\nmetal oxide [30]",
+		"html": "<p>turmeric [25]</p><p>beetroot [26]</p><p>Tyrian purple [27]</p><p>logwood [28]</p><p>cochineal [29]</p><p>metal oxide [30]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-24",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "What first inspired Jim to choose this project?",
+					"options": [
+						{
+							"label": "A",
+							"text": "textiles displayed in an exhibition"
+						},
+						{
+							"label": "B",
+							"text": "a book about a botanic garden"
+						},
+						{
+							"label": "C",
+							"text": "carpets he saw on holiday"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Years ago, I went to a carpet shop with my parents when we were on holiday in Turkey, and I remember all the amazing colors."
+					]
+				},
+				{
+					"number": 22,
+					"text": "Jim eventually decided to do a practical investigation which involved",
+					"options": [
+						{
+							"label": "A",
+							"text": "using a range of dyes with different fibres."
+						},
+						{
+							"label": "B",
+							"text": "applying different dyes to one type of fibre."
+						},
+						{
+							"label": "C",
+							"text": "testing one dye and a range of fibres."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Then I decided to include others as well. So I looked at cotton and wool and nylon. With just one type of dye? Various types, including some that weren't natural for comparison."
+					]
+				},
+				{
+					"number": 23,
+					"text": "When doing his experiments, Jim was surprised by",
+					"options": [
+						{
+							"label": "A",
+							"text": "how much natural material was needed to make the dye."
+						},
+						{
+							"label": "B",
+							"text": "the fact that dyes were widely available on the internet."
+						},
+						{
+							"label": "C",
+							"text": "the time that he had to leave the fabric in the dye."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I thought it'd just be a matter of a teaspoon or so of dye, and actually that wasn't the case at all. Like, I was using one vegetable, a beet root for a red dye, and I had to chop up a whole pile of it."
+					]
+				},
+				{
+					"number": 24,
+					"text": "What problem did Jim have with using tartrazine as a fabric dye?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It caused a slight allergic reaction."
+						},
+						{
+							"label": "B",
+							"text": "It was not a permanent dye on cotton."
+						},
+						{
+							"label": "C",
+							"text": "It was ineffective when used on nylon."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I used it on cotton first. It came out a great color. But when I rinsed the material, the color just washed away."
+					]
+				}
+			]
+		},
+		{
+			"range": "25-30",
+			"type": "MATCHING",
+			"instructions": "What problem is identified with each of the following natural dyes?\nChoose SIX answers from the box and write the correct letter, A-H, next to Questions 5 - 10\nNatural dyes",
+			"options": [
+				{
+					"label": "A",
+					"text": "It is expensive."
+				},
+				{
+					"label": "B",
+					"text": "The colour is too strong."
+				},
+				{
+					"label": "C",
+					"text": "The colour is not long-lasting."
+				},
+				{
+					"label": "D",
+					"text": "It is very poisonous."
+				},
+				{
+					"label": "E",
+					"text": "It can damage the fabric."
+				},
+				{
+					"label": "F",
+					"text": "The colour may be unexpected."
+				},
+				{
+					"label": "G",
+					"text": "It is unsuitable for some fabrics."
+				},
+				{
+					"label": "H",
+					"text": "It is not generally available"
+				}
+			],
+			"body": "turmeric [25]\nbeetroot [26]\nTyrian purple [27]\nlogwood [28]\ncochineal [29]\nmetal oxide [30]",
+			"body_html": "<p>turmeric [25]</p><p>beetroot [26]</p><p>Tyrian purple [27]</p><p>logwood [28]</p><p>cochineal [29]</p><p>metal oxide [30]</p>",
+			"questions": [
+				{
+					"number": 25,
+					"text": "turmeric",
+					"answer": "C",
+					"quotes": [
+						"It's meant to be quite good for your health when eaten, but you might find it's not permanent when it's used as a dye. A few washes and it's gone."
+					]
+				},
+				{
+					"number": 26,
+					"text": "beetroot",
+					"answer": "F",
+					"quotes": [
+						"When I chop up beetroot to eat, I always end up with bright red hands, but the wool ended up just a sort of watery cream shade."
+					]
+				},
+				{
+					"number": 27,
+					"text": "Tyrian purple",
+					"answer": "H",
+					"quotes": [
+						"It comes from a shellfish, and it was worn in ancient times, but only by important people as it was so rare."
+					]
+				},
+				{
+					"number": 28,
+					"text": "logwood",
+					"answer": "D",
+					"quotes": ["It can be extremely dangerous if it's ingested."]
+				},
+				{
+					"number": 29,
+					"text": "cochineal",
+					"answer": "A",
+					"quotes": [
+						"But I managed to get the dye quite easily from a website, but it cost a fortune."
+					]
+				},
+				{
+					"number": 30,
+					"text": "metal oxide",
+					"answer": "E",
+					"quotes": [
+						"But you have to be careful as the metal can actually affect the fabric, and so you can't expect to get a lot of wear out of fabrics treated in this way."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

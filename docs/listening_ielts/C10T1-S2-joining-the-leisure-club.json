@@ -1,0 +1,152 @@
+{
+	"id": "4ffece00-3478-426a-ac4c-5437854b50ae",
+	"url": "https://stepielts.com/student/listening/4ffece00-3478-426a-ac4c-5437854b50ae?mode=practice",
+	"title": "Joining the leisure club",
+	"source": "C10T1",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/86beb7b4-0362-444a-859c-a08964e85ea3.mp3",
+	"transcript": "Speaker 0: Now turn to section two. Section two. You will hear a fitness manager of a leisure club talking to some new members. First, you have some time to look at questions eleven and twelve. Now listen and answer questions eleven and twelve.\nSpeaker 1: On behalf of LP Clubs, I'd like to welcome you all here today. My name's Sandy Fisher, and I'm one of the fitness managers here. Before we start our tour of the club, I'll just run through some basic information about the facilities we have here, including recent improvements, and explain the types of membership available. Our greatest asset is probably our swimming pool, which at 25 metres isn't Olympic sized, but now we've expanded it to eight lanes, it's much wider. This means there are rarely more than a couple of people at a time in each lane. Unfortunately, there isn't space for an outdoor pool here, but the glass roof on the swimming pool is partly retractable, which means you can enjoy something of the open air experience on warmer days. Our recently refurbished fitness suite has all the latest exercise equipment, including 10 new running machines and a wide range of weight training machines. Each member is given full training in how to operate the equipment, and there is always a trainer on duty to offer help and advice. Although we do have adult only times after six and at certain times at weekends, children are well catered for. Older children continue to benefit from a wide range of tuition, anything from trampolining to yoga.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 13 to 20. Now listen and answer questions 13 to 20.\nSpeaker 1: One thing all our members appreciate about us is that we take very good care of them. This starts on day one with your personal assessment. You are asked to fill in a questionnaire giving details of any health problems. One of our personal trainers will then go through this with you. The trainer will then take you through the safety rules for using the equipment in the fitness suite. During your next exercise session, a personal trainer will work with you to make sure you understand these. It's very important to do this because we really do want to avoid having any sports injuries. There's a lot more to looking after yourself than simply lifting weights. At the end of the personal assessment, the trainer will draw up a plan outlining what you should try to achieve within a six week period. This will then be reviewed at the end of the six weeks. Now I'll just quickly run through the types of membership we have available. All members must pay a joining fee of £90 in addition to the rates for the monthly membership fees. Gold membership entitles you to free entry at all LP clubs. There are now LP clubs in all major cities and towns, so if you travel a lot, this will be a great advantage. Individual gold membership costs £50 a month, and joint membership for you and your partner will cost £75. Premier membership is for professional people whose work commitments make it difficult for them to use the club during the day, and so LP gives booking preferences to Premier members at peak times. This means you will find it easier to book the sessions at times that suit you. Reciprocal arrangements with other LP clubs are available to premier members. Premier membership is for individuals only, but you'll be sent passes for guests every month. The monthly fee is £65. You don't have to have any special clothes or equipment when you visit the club. We provide robes and hair dryers in the changing rooms, but it's very important to remember your photo card because you won't be able to get in without it. For people who aren't working during the day, then you should\nSpeaker 0: That is the end of section two. You now have half a minute to check your answers.",
+	"body": {
+		"text": "Joining the leisure club\nPersonal Assessment\n● New members should describe any [13].\n● The [14] will be explained to you before you use the equipment.\n● You will be given a six-week [15].\nTypes of membership\n● There is a compulsory £90 [16] fee for members.\n● Gold members are given [17] to all the LP clubs.\n● Premier members are given priority during [18] hours.\n● Premier members can bring some [19] every month.\n● Members should always take their [20] with them.",
+		"html": "<h3><strong>Joining the leisure club</strong></h3><p><em>Personal Assessment</em></p><p>●   New members should describe any [13].</p><p>●   The [14] will be explained to you before you use the equipment.</p><p>●   You will be given a six-week [15].</p><p><em>Types of membership</em></p><p>●   There is a compulsory £90 [16] fee for members.</p><p>●   Gold members are given [17] to all the LP clubs.</p><p>●   Premier members are given priority during [18] hours.</p><p>●   Premier members can bring some [19] every month.</p><p>●   Members should always take their [20] with them.</p>"
+	},
+	"question_groups": [
+		{
+			"range": "11-12",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Which TWO facilities at the leisure club have recently been improved?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the gym"
+						},
+						{
+							"label": "B",
+							"text": "the tracks"
+						},
+						{
+							"label": "C",
+							"text": "the indoor pool"
+						},
+						{
+							"label": "D",
+							"text": "the outdoor pool"
+						},
+						{
+							"label": "E",
+							"text": "the sports training for children"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 12,
+					"text": "Which TWO facilities at the leisure club have recently been improved?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the gym"
+						},
+						{
+							"label": "B",
+							"text": "the tracks"
+						},
+						{
+							"label": "C",
+							"text": "the indoor pool"
+						},
+						{
+							"label": "D",
+							"text": "the outdoor pool"
+						},
+						{
+							"label": "E",
+							"text": "the sports training for children"
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "13-20",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THEN TWO WORDS for each answer.",
+			"body": "Joining the leisure club\nPersonal Assessment\n● New members should describe any [13].\n● The [14] will be explained to you before you use the equipment.\n● You will be given a six-week [15].\nTypes of membership\n● There is a compulsory £90 [16] fee for members.\n● Gold members are given [17] to all the LP clubs.\n● Premier members are given priority during [18] hours.\n● Premier members can bring some [19] every month.\n● Members should always take their [20] with them.",
+			"body_html": "<h3><strong>Joining the leisure club</strong></h3><p><em>Personal Assessment</em></p><p>●   New members should describe any [13].</p><p>●   The [14] will be explained to you before you use the equipment.</p><p>●   You will be given a six-week [15].</p><p><em>Types of membership</em></p><p>●   There is a compulsory £90 [16] fee for members.</p><p>●   Gold members are given [17] to all the LP clubs.</p><p>●   Premier members are given priority during [18] hours.</p><p>●   Premier members can bring some [19] every month.</p><p>●   Members should always take their [20] with them.</p>",
+			"questions": [
+				{
+					"number": 13,
+					"text": "● New members should describe any [13].",
+					"answer": "health problems",
+					"quotes": [
+						"You are asked to fill in a questionnaire giving details of any health problems."
+					]
+				},
+				{
+					"number": 14,
+					"text": "● The [14] will be explained to you before you use the equipment.",
+					"answer": "safety rules",
+					"quotes": [
+						"The trainer will then take you through the safety rules for using the equipment in the fitness suite."
+					]
+				},
+				{
+					"number": 15,
+					"text": "● You will be given a six-week [15].",
+					"answer": "plan",
+					"quotes": [
+						"At the end of the personal assessment, the trainer will draw up a plan outlining what you should try to achieve within a six week period."
+					]
+				},
+				{
+					"number": 16,
+					"text": "● There is a compulsory £90 [16] fee for members.",
+					"answer": "joining",
+					"quotes": [
+						"All members must pay a joining fee of £90 in addition to the rates for the monthly membership fees."
+					]
+				},
+				{
+					"number": 17,
+					"text": "● Gold members are given [17] to all the LP clubs.",
+					"answer": "free entry",
+					"quotes": [
+						"Gold membership entitles you to free entry at all LP clubs."
+					]
+				},
+				{
+					"number": 18,
+					"text": "● Premier members are given priority during [18] hours.",
+					"answer": "peak",
+					"quotes": [
+						"Premier membership is for professional people whose work commitments make it difficult for them to use the club during the day, and so LP gives booking preferences to Premier members at peak times."
+					]
+				},
+				{
+					"number": 19,
+					"text": "● Premier members can bring some [19] every month.",
+					"answer": "guests",
+					"quotes": [
+						"Premier membership is for individuals only, but you'll be sent passes for guests every month."
+					]
+				},
+				{
+					"number": 20,
+					"text": "● Members should always take their [20] with them.",
+					"answer": "photo card / photo cards",
+					"quotes": [
+						"We provide robes and hair dryers in the changing rooms, but it's very important to remember your photo card because you won't be able to get in without it."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

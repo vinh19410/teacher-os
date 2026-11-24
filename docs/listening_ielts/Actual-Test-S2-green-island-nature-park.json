@@ -1,0 +1,202 @@
+{
+	"id": "e859fdaf-87fb-4e17-96a0-5e96472c9ef1",
+	"url": "https://stepielts.com/student/listening/e859fdaf-87fb-4e17-96a0-5e96472c9ef1?mode=practice",
+	"title": "Green Island Nature Park",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/2d417c68-2b4a-462b-b5e8-d4c117c4e732.mp3",
+	"transcript": "Speaker 0: Now turn to section two. Section two. You will hear a tour guide giving information about a nature park to a group of students. First, you have some time to look at questions 11 to 14. Now listen carefully and answer questions 11 to 14.\nSpeaker 1: Good morning, everyone, and thank you for driving up from the city to visit the Green Island Nature Park. The nature park includes Green Island itself and the water around it for one kilometer out to sea. So why is Green Island such an interesting place? Visitors come from all over the country to use our glass bottom boat to see the fish at Green Island. But in fact, there's nothing unusual about the fish here. You find exactly the same species in many other places on this coast and the same is true of the birds. What is unique about Green Island is that the water is so clear which means that you can actually see the fish more easily. The first scientist to work here was Mitchell Cullen, who began recording information about marine life in the area. Some years later, Joseph Tourier established a laboratory which we'll be visiting shortly. But of course, the name of Churchill Peters will always be the most closely associated with the setting up of the nature park itself. He wanted to protect the species that live around Green Island, and creating a nature park was the best way of achieving that. So let me tell you about the fish. As I mentioned, you can usually see them quite easily, but the distance you can see underwater does change depending on the conditions. So, here are a few things to think about. The most important consideration is rainfall. If it's raining, don't come to Green Island to see the fish. What you want is a bright day, but either summer or winter is fine. As we know in this part of the world, it can actually be quite hazy and cloudy in summer, so the season doesn't really matter. What's important is that there shouldn't have been any rain for a week. That's when the water is clearest. The state of the tide though doesn't make much difference to underwater visibility, and you can come at either high or low tide. Another thing to think about is the wind. The perfect time to come to Green Island is when it's calm and there are no waves on the sea. In our experience, an east wind is the worst because it causes too many waves. Oh, one other thing. Don't come too early in the morning. Anytime in the middle of the day when the sun is high is best.\nSpeaker 0: Before you hear the rest of the information, you have some time to look at questions 15 to 20. Now listen and answer questions 15 to 20.\nSpeaker 1: Alright. So before we go and see the fish for ourselves, there are a number of rules you must know about. So far as the beach goes, this isn't the best place for your family's soccer or cricket game. There are many other beaches in the area for those sorts of activities. But at low tide and when the park doesn't have very many visitors, people do occasionally play a game on the beach. We don't mind that. Many of our visitors like to use the glass bottom boats to see the fish, but you're welcome to get into the water and swim with them at any time. Soon, you'll be surrounded by hundreds of small fish. It's a wonderful experience. Now, the difficult question of feeding the fish. Feeding the fish encourages them to swim around people, but it also changes their natural environment. We ask you therefore to use your common sense. If there are only a few visitors, you can give the fish a small amount of food. But when the park is very busy, we ask you not to feed the fish. If you do go swimming with the fish, you'll find that sometimes they bump into you, touch your legs or arms. However, you shouldn't try to deliberately touch the fish. Photographs though are not a problem. In fact, professional underwater photographers often visit the park. And today it's possible to buy simple underwater cameras quite cheaply. Now we don't encourage you to visit the island itself, and climbing on it is forbidden during the spring nesting season. But at other times of the year, if you're swimming near the island and are feeling tired, it's okay to climb up and have a quick rest. Finally, boats. We provide a number of different boat trips for visitors, but if you have your own boat, you are very welcome to use it here at the nature park. Just remember to go slowly near the beach or when there are divers in the water. Okay. Well, I think we're ready to go down to the beach, so grab your\nSpeaker 0: That is the end of section two. You now have half a minute to check your answers.",
+	"body": {
+		"text": "15. play games on the beach [15]\n16. feed the fish [16]\n17. touch the fish on purpose [17]\n18. take photographs underwater [18]\n19. climb on Green Island [19]\n20. use a private boat [20]",
+		"html": "<p>15. play games on the beach [15]</p><p>16. feed the fish [16]</p><p>17. touch the fish on purpose [17]</p><p>18. take photographs underwater [18]</p><p>19. climb on Green Island [19]</p><p>20. use a private boat [20]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "11-12",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Which natural feature of Green Island is special?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The water"
+						},
+						{
+							"label": "B",
+							"text": "The birds"
+						},
+						{
+							"label": "C",
+							"text": "The fish"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"What is unique about Green Island is that the water is so clear which means that you can actually see the fish more easily."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Who started the nature park?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Mitchell Cullen"
+						},
+						{
+							"label": "B",
+							"text": "Churchill Peters"
+						},
+						{
+							"label": "C",
+							"text": "Joseph Turier"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But of course, the name of Churchill Peters will always be the most closely associated with the setting up of the nature park itself."
+					]
+				}
+			]
+		},
+		{
+			"range": "13-14",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A–E",
+			"questions": [
+				{
+					"number": 13,
+					"text": "Which TWO conditions are best for seeing fish?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Summer days"
+						},
+						{
+							"label": "B",
+							"text": "No wind"
+						},
+						{
+							"label": "C",
+							"text": "Early morning"
+						},
+						{
+							"label": "D",
+							"text": "High tide"
+						},
+						{
+							"label": "E",
+							"text": "No rain for one week"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 14,
+					"text": "Which TWO conditions are best for seeing fish?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Summer days"
+						},
+						{
+							"label": "B",
+							"text": "No wind"
+						},
+						{
+							"label": "C",
+							"text": "Early morning"
+						},
+						{
+							"label": "D",
+							"text": "High tide"
+						},
+						{
+							"label": "E",
+							"text": "No rain for one week"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "15-20",
+			"type": "MATCHING",
+			"instructions": "What are the rules for the following activities in the nature park?\nWrite the correct letter, A, B or C, next to questions 15–20.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Visitors can always do this"
+				},
+				{
+					"label": "B",
+					"text": "Visitors can sometimes do this"
+				},
+				{
+					"label": "C",
+					"text": "Visitors must not do this"
+				}
+			],
+			"body": "15. play games on the beach [15]\n16. feed the fish [16]\n17. touch the fish on purpose [17]\n18. take photographs underwater [18]\n19. climb on Green Island [19]\n20. use a private boat [20]",
+			"body_html": "<p>15. play games on the beach [15]</p><p>16. feed the fish [16]</p><p>17. touch the fish on purpose [17]</p><p>18. take photographs underwater [18]</p><p>19. climb on Green Island [19]</p><p>20. use a private boat [20]</p>",
+			"questions": [
+				{
+					"number": 15,
+					"text": "play games on the beach",
+					"answer": "B",
+					"quotes": [
+						"But at low tide and when the park doesn't have very many visitors, people do occasionally play a game on the beach."
+					]
+				},
+				{
+					"number": 16,
+					"text": "feed the fish",
+					"answer": "B",
+					"quotes": [
+						"If there are only a few visitors, you can give the fish a small amount of food."
+					]
+				},
+				{
+					"number": 17,
+					"text": "touch the fish on purpose",
+					"answer": "C",
+					"quotes": [
+						"However, you shouldn't try to deliberately touch the fish."
+					]
+				},
+				{
+					"number": 18,
+					"text": "take photographs underwater",
+					"answer": "A",
+					"quotes": [
+						"Photographs though are not a problem.",
+						"In fact, professional underwater photographers often visit the park."
+					]
+				},
+				{
+					"number": 19,
+					"text": "climb on Green Island",
+					"answer": "B",
+					"quotes": [
+						"Now we don't encourage you to visit the island itself, and climbing on it is forbidden during the spring nesting season."
+					]
+				},
+				{
+					"number": 20,
+					"text": "use a private boat",
+					"answer": "A",
+					"quotes": [
+						"We provide a number of different boat trips for visitors, but if you have your own boat, you are very welcome to use it here at the nature park."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

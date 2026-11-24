@@ -1,0 +1,126 @@
+{
+	"id": "76f5118a-4e02-4d46-9b11-ba1987871348",
+	"url": "https://stepielts.com/student/listening/76f5118a-4e02-4d46-9b11-ba1987871348?mode=practice",
+	"title": "Hotel Booking Inquiry and Activities",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/20ff4271-114c-4fa6-99fa-b3903110c243.mp3",
+	"transcript": "Speaker 1: Receptionist: Good afternoon. You’re through to reception at the Island Hotel in Crete. How may I help you today?\nSpeaker 2: Customer: Yes. Hello there. I’m hoping to book a double room for my wife and myself for about two weeks from the April 25. Firstly, could you tell me whether it’s particularly hot during this time?\nSpeaker 1: Receptionist: Yes, of course, sir. During late April and early May, the daytime temperature shouldn’t exceed 19 degrees Celsius. But the weather has been rather erratic and difficult to predict in recent years, so I am unable to say for certain.\nSpeaker 2: Customer: Okay. That sounds good. My wife doesn’t like going outside when it’s very hot. I haven’t booked flights yet, but I must say that I’m unfamiliar with Crete and its transport system. Does the hotel provide an airport shuttle service?\nSpeaker 1: Receptionist: Yes, sir. We provide a complimentary airport pickup service for all our guests. It takes about forty minutes to get here from the airport, but it’s at least sixty minutes at rush hours. And you will be provided with a fully air conditioned shuttle bus.\nSpeaker 2: Customer: Okay. Excellent. In that case, do you have any rooms available for the dates I gave you?\nSpeaker 1: Receptionist: I shall have a look on the system now for you, sir. Bear with me just a moment. Yes, sir. I can see now that we have several rooms available. Would you prefer a garden view or a sea view?\nSpeaker 2: Customer: Well, ideally, would like a sea view room with a balcony. But of course, that depends on the difference in price.\nSpeaker 1: Receptionist: Not to worry, sir. All of our standard double rooms have en suite facilities and a balcony. If you would like one of our sea view rooms, there is a premium of €60 per night.\nSpeaker 2: Customer: Okay. So could you tell me the total nightly rate for a standard double room with a sea view?\nSpeaker 1: Receptionist: Yes. Of course, sir. For the spring months, our rate is €216 per night. For fourteen nights altogether, this will come to €3,024.\nSpeaker 2: Customer: Perfect. I also read on your website that the hotel has gym and spa facilities. Are there any other facilities on offer?\nSpeaker 1: Receptionist: Yes. We have a large outdoor infinity pool overlooking the ocean with luxury sun beds and a poolside bar. We also have three full size tennis courts where we run a popular doubles tournament with the winner receiving two all inclusive spa day vouchers.\nSpeaker 2: Customer: Goodness. I shall have to brush up on my tennis skills. Customer: Are there any other activities organized by the hotel that we can partake in? It’s just that it’s our wedding anniversary on the June 30, and I would like to provide my wife with the perfect romantic getaway.\nSpeaker 1: Receptionist: I can assure you, sir, that your wife won’t be disappointed. Ours is a five star resort, which is renowned for its luxury and beauty. In terms of activities, the hotel provides thrice weekly entertainment. On Tuesdays, guests will take a minibus and partake in learning to cook succulent fish dishes with our Michelin starred chef, Enrique. The class will take place in a beautiful valley deep in the Cretan Hills, where guests will be treated to an intimate piano performance by our in house concert pianist, Pedro. On Wednesdays, a select number of guests will be fortunate enough to explore the mountains by helicopter before being transported to a tropical Cretan garden by shuttle bus. Finally, on Thursdays, after a fancy dinner, we provide a spectacular fireworks display, which guests can view from the comfort of a cable car.\nSpeaker 2: Customer: Oh, wow. That all sounds absolutely wonderful. I shall book the room now, and then I need to look at flights so as not to become extortionate. Would you like to take my details now or later?",
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "Example\nType of room required: double room\nTime\n• The length of stay: approx 2 weeks\n• Starting date: 25th April\nTemperature\n• Daytime: up to [1]°C\n• Erratic weather\nTransport\n• Pick-up service is provided.\n• Normally transferring to the airport takes about [2]\nFacilities\n• en-suite facilities and a [3]\n• gym and spa facilities\n• a large outdoor swimming pool\n• three standard [4]",
+			"body_html": "<table><tbody><tr><td><em>Example</em><br><em>Type of room required: double room</em></td></tr></tbody></table><table><tbody><tr><td><p><strong>Time</strong></p><p>• The length of stay: approx 2 weeks</p><p>• Starting date: 25th April</p><p><strong>Temperature</strong></p><p>• Daytime: up to [1]°C</p><p>• Erratic weather</p><p><strong>Transport</strong></p><p>• Pick-up service is provided.</p><p>• Normally transferring to the airport takes about [2]</p><p><strong>Facilities</strong></p><p>• en-suite facilities and a [3]</p><p>• gym and spa facilities</p><p>• a large outdoor swimming pool</p><p>• three standard [4]</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "• Daytime: up to [1]°C",
+					"answer": "19",
+					"quotes": [
+						"During late April and early May, the daytime temperature shouldn’t exceed 19 degrees Celsius."
+					]
+				},
+				{
+					"number": 2,
+					"text": "• Normally transferring to the airport takes about [2]",
+					"answer": "40 minutes / forty minutes",
+					"quotes": [
+						"It takes about forty minutes to get here from the airport, but it’s at least sixty minutes at rush hours."
+					]
+				},
+				{
+					"number": 3,
+					"text": "• en-suite facilities and a [3]",
+					"answer": "balcony",
+					"quotes": [
+						"All of our standard double rooms have en suite facilities and a balcony."
+					]
+				},
+				{
+					"number": 4,
+					"text": "• three standard [4]",
+					"answer": "tennis courts",
+					"quotes": [
+						"We also have three full size tennis courts where we run a popular doubles tournament with the winner receiving two all inclusive spa day vouchers."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Write NO MORE THAN TWO WORDS for each answer.",
+			"body": "Day\nEntertainment activities\nTransportation\nTuesdays\nLearning to make [5]\nHaving a [6]\nmini bus\nWednesdays\nenjoying mountain view\nexploring a tropical [7]\n[8]\nshuttle bus\nThursdays\nhaving a fancy dinner\nwatching a spectacular display of [9]\n[10]",
+			"body_table": [
+				["Day", "Entertainment activities", "Transportation"],
+				["Tuesdays", "Learning to make [5]\nHaving a [6]", "mini bus"],
+				[
+					"Wednesdays",
+					"enjoying mountain view\nexploring a tropical [7]",
+					"[8]\nshuttle bus"
+				],
+				[
+					"Thursdays",
+					"having a fancy dinner\nwatching a spectacular display of [9]",
+					"[10]"
+				]
+			],
+			"body_html": "<table><tbody><tr><td><strong>Day</strong></td><td><strong>Entertainment activities</strong></td><td><strong>Transportation</strong></td></tr><tr><td>Tuesdays</td><td><p>Learning to make [5]</p><p>Having a [6]</p></td><td>mini bus</td></tr><tr><td>Wednesdays</td><td><p>enjoying mountain view</p><p>exploring a tropical [7]</p></td><td><p>[8]</p><p>shuttle bus</p></td></tr><tr><td>Thursdays</td><td><p>having a fancy dinner</p><p>watching a spectacular display of [9]</p></td><td>[10]</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Learning to make [5]",
+					"answer": "fish dishes",
+					"quotes": [
+						"On Tuesdays, guests will take a minibus and partake in learning to cook succulent fish dishes with our Michelin starred chef, Enrique."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Having a [6]",
+					"answer": "piano performance",
+					"quotes": [
+						"The class will take place in a beautiful valley deep in the Cretan Hills, where guests will be treated to an intimate piano performance by our in house concert pianist, Pedro."
+					]
+				},
+				{
+					"number": 7,
+					"text": "exploring a tropical [7]",
+					"answer": "garden / Cretan garden",
+					"quotes": [
+						"On Wednesdays, a select number of guests will be fortunate enough to explore the mountains by helicopter before being transported to a tropical Cretan garden by shuttle bus."
+					]
+				},
+				{
+					"number": 8,
+					"text": "",
+					"answer": "helicopter",
+					"quotes": [
+						"On Wednesdays, a select number of guests will be fortunate enough to explore the mountains by helicopter before being transported to a tropical Cretan garden by shuttle bus."
+					]
+				},
+				{
+					"number": 9,
+					"text": "watching a spectacular display of [9]",
+					"answer": "fireworks",
+					"quotes": [
+						"Finally, on Thursdays, after a fancy dinner, we provide a spectacular fireworks display, which guests can view from the comfort of a cable car."
+					]
+				},
+				{
+					"number": 10,
+					"text": "",
+					"answer": "cable car",
+					"quotes": [
+						"Finally, on Thursdays, after a fancy dinner, we provide a spectacular fireworks display, which guests can view from the comfort of a cable car."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,227 @@
+{
+	"id": "fde05ca1-f38f-4516-a35c-ac6aa944cde1",
+	"url": "https://stepielts.com/student/listening/fde05ca1-f38f-4516-a35c-ac6aa944cde1?mode=practice",
+	"title": "Walking Effect on Creativity and Physical Wellbeing",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/5d3b2d58-701d-47fe-a2e2-29ee2d936b73.mp3",
+	"transcript": "Speaker 1: Katie: Hi, Daniel.\nSpeaker 2: Daniel: Katie, you look as if you're off somewhere.\nSpeaker 1: Katie: Yes, I was just heading out for a walk.\nSpeaker 2: Daniel: Funny. I was just reading an article about some research that's been done on the effects of walking on creativity.\nSpeaker 1: Katie: Sounds interesting.\nSpeaker 2: Daniel: I've always found walking helped me think, but this article confirms that everybody can benefit.\nSpeaker 1: Katie: Oh, tell me more.\nSpeaker 2: Daniel: OK, but I may even do some more research on it at some point, so don't pinch my idea.\nSpeaker 1: Promise.\nSpeaker 2: Well, in the experiments, the researchers tested participants' creativity by comparing how many ideas they thought of while they were walking, compared to while they were doing other activities.\nSpeaker 1: Katie: What, like listening to music?\nSpeaker 2: Daniel: Nothing like that. But they did analyse the ideas participants came up with when sitting, both outdoors and inside. What I found surprising was that they didn't compare walking to other forms of exercise, like running for example.\nSpeaker 1: Katie: Right. So what was the difference between the experiments?\nSpeaker 2: Daniel: Well, in each one, the activities were put together in different ways. Several of the experiments specifically focused on the ability of participants to come up with new ideas. Then the final experiment was a control test of sorts.\nSpeaker 1: Katie: Oh, right.\nSpeaker 2: Daniel: In one experiment, participants had to think of unusual uses for three everyday objects within a time limit.\nSpeaker 1: Katie: Okay.\nSpeaker 2: Daniel: And then there was an experiment with words.\nSpeaker 1: Katie: What did they ask them to do?\nSpeaker 2: Daniel: Compare words in unusual ways. For example, the word sweet—if participants simply said sweet as sugar that wasn't creative, but an answer like sweet as a cat with honey on its paws was okay.\nSpeaker 1: Katie: I can see why they'd ask them to do that.\nSpeaker 2: Daniel: Really, I just don't see how the experiment is fair.\nSpeaker 1: Katie: Why? Because the conclusions are based only on the researchers’ opinion.\nSpeaker 2: Daniel: I think it's more that anyone who'd studied language would be at an advantage.\nSpeaker 1: Katie: Okay. Was there an experiment about focused thinking?\nSpeaker 2: Daniel: Yeah, there was. It aimed to find out if walking helped focused thinking.\nThough I wasn't sure that I agreed with their findings.\nSpeaker 2: They decided that walking doesn't help this type of thinking.\nSpeaker 1: Katie: What evidence did they have?\nSpeaker 2: Daniel: Well, that's it. I don't think there was enough evidence to support their conclusions, even if their methods were sound.\nSpeaker 1: Katie: Well, I'd certainly hesitate before making such a bold statement.\nSpeaker 2: Daniel: Still, it's a first step, isn't it? I suppose to move forward with this they'll need to test other ways people keep fit, like swimming.\nSpeaker 1: Katie: That would be useful. But personally I'd like to know more about the fundamental reason for the effect on people's creativity.\nSpeaker 2: Daniel: That would be good. Then it could be applied more widely in work, for example.\nSpeaker 1: Katie: Again, that's secondary really.\nSpeaker 2: Daniel: But how would you test walking if you wanted to assess its physical benefits?\nSpeaker 1: Katie: Firstly, I'd like to know more about the benefits of different situations.\nSpeaker 2: Daniel: What about the effect of footwear?\nSpeaker 1: Katie: Hadn't thought of that.\nSpeaker 2: Daniel: Well, I've read that shoes with thinner soles were found to be better for people's joints. It even made the skeletal structure tougher.\nSpeaker 1: Katie: Interesting. Was that because they lost weight?\nSpeaker 2: Daniel: Not as far as I'm aware. And then there's walking in the mountains.\nSpeaker 1: Katie: Walking in the mountains.\nHmm.\nSpeaker 1: I think I've read something about that. Doesn't altitude help people regulate their sleep patterns?\nSpeaker 2: Daniel: It's more that it improves your vision.\nSpeaker 1: Katie: It must be those breathtaking views.\nSpeaker 2: Daniel: Yeah.\nSpeaker 1: Katie: And what about the effect that walking has for elderly people?\nSpeaker 2: Daniel: Better balance by any chance?\nSpeaker 1: Katie: More than that, it had a positive effect by helping them maintain their body clock's natural rhythm, both when going to bed and waking up.\nSpeaker 2: Daniel: Right. And what about the effect of walking long distances?\nSpeaker 1: Katie: Well, a person needs to find the balance between their optimum speed and their natural breathing pattern. Once they're synchronised, they can just keep on going for much longer periods than they could before.\nDaniel: Hmm.\nSpeaker 2: I can see how that would work. But anyway",
+	"body": {
+		"text": "- walking with thin-soled footwear [7]\n- walking in the mountains [8]\n- walking for the elderly [9]\n- walking long distances [10]",
+		"html": "<p>  - walking with thin-soled footwear [7]</p><p>  - walking in the mountains [8]</p><p>  - walking for the elderly [9]</p><p>  - walking long distances [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter A, B or C",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Daniel mentions the research about walking and creativity to Katie because",
+					"options": [
+						{
+							"label": "A",
+							"text": "she has read it too."
+						},
+						{
+							"label": "B",
+							"text": "what she says reminds him of it."
+						},
+						{
+							"label": "C",
+							"text": "he thinks she might like to do similar research."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I was just reading an article about some research that's been done on the effects of walking on creativity."
+					]
+				},
+				{
+					"number": 2,
+					"text": "In the experiments, researchers compared participants' creativity when walking and when",
+					"options": [
+						{
+							"label": "A",
+							"text": "sitting."
+						},
+						{
+							"label": "B",
+							"text": "running"
+						},
+						{
+							"label": "C",
+							"text": "listening to music."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But they did analyse the ideas participants came up with when sitting, both outdoors and inside."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Daniel says that in each experiment, there was a different",
+					"options": [
+						{
+							"label": "A",
+							"text": "type of control group."
+						},
+						{
+							"label": "B",
+							"text": "pattern of activities."
+						},
+						{
+							"label": "C",
+							"text": "way of selecting participants."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Daniel: Well, in each one, the activities were put together in different ways."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Daniel thinks the experiment with words is",
+					"options": [
+						{
+							"label": "A",
+							"text": "biased in favour of certain people."
+						},
+						{
+							"label": "B",
+							"text": "a good indicator of creativity."
+						},
+						{
+							"label": "C",
+							"text": "open to personal interpretation."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Daniel: I think it's more that anyone who'd studied language would be at an advantage."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What is Katie and Daniel’s attitude to the experiment on focused thinking?",
+					"options": [
+						{
+							"label": "A",
+							"text": "they are doubtful about its aims."
+						},
+						{
+							"label": "B",
+							"text": "they are confused by its methods."
+						},
+						{
+							"label": "C",
+							"text": "they are cautious about its conclusions."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"I don't think there was enough evidence to support their conclusions, even if their methods were sound.",
+						"Katie: Well, I'd certainly hesitate before making such a bold statement."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Katie thinks that the best way forward is to consider",
+					"options": [
+						{
+							"label": "A",
+							"text": "whether other types of exercise affect creativity."
+						},
+						{
+							"label": "B",
+							"text": "the cause of the improvement in creativity."
+						},
+						{
+							"label": "C",
+							"text": "how the results can be applied to creativity in real life."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But personally I'd like to know more about the fundamental reason for the effect on people's creativity."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What is the main physical benefit of each of the following walking situations?",
+			"options": [
+				{
+					"label": "A",
+					"text": "improved balance"
+				},
+				{
+					"label": "B",
+					"text": "greater stamina"
+				},
+				{
+					"label": "C",
+					"text": "better eyesight"
+				},
+				{
+					"label": "D",
+					"text": "lower blood pressure"
+				},
+				{
+					"label": "E",
+					"text": "regular sleeping pattern"
+				},
+				{
+					"label": "F",
+					"text": "stronger bones"
+				},
+				{
+					"label": "G",
+					"text": "weight reduction"
+				}
+			],
+			"body": "- walking with thin-soled footwear [7]\n- walking in the mountains [8]\n- walking for the elderly [9]\n- walking long distances [10]",
+			"body_html": "<p>  - walking with thin-soled footwear [7]</p><p>  - walking in the mountains [8]</p><p>  - walking for the elderly [9]</p><p>  - walking long distances [10]</p>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "walking with thin-soled footwear",
+					"answer": "F",
+					"quotes": [
+						"Daniel: Well, I've read that shoes with thinner soles were found to be better for people's joints. It even made the skeletal structure tougher."
+					]
+				},
+				{
+					"number": 8,
+					"text": "walking in the mountains",
+					"answer": "C",
+					"quotes": ["Daniel: It's more that it improves your vision."]
+				},
+				{
+					"number": 9,
+					"text": "walking for the elderly",
+					"answer": "E",
+					"quotes": [
+						"Katie: More than that, it had a positive effect by helping them maintain their body clock's natural rhythm, both when going to bed and waking up."
+					]
+				},
+				{
+					"number": 10,
+					"text": "walking long distances",
+					"answer": "B",
+					"quotes": [
+						"Katie: Well, a person needs to find the balance between their optimum speed and their natural breathing pattern. Once they're synchronised, they can just keep on going for much longer periods than they could before."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

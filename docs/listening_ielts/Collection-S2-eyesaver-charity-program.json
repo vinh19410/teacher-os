@@ -1,0 +1,224 @@
+{
+	"id": "28253df2-4a8b-4653-b4d2-e0af4d264686",
+	"url": "https://stepielts.com/student/listening/28253df2-4a8b-4653-b4d2-e0af4d264686?mode=practice",
+	"title": "Eyesaver Charity Program",
+	"source": "Collection",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/10078093-7399-49b6-9f2d-bec7d0000604.mp3",
+	"transcript": "Speaker 0: Hello, everyone. Thanks for attending tonight’s event. Let me start with the early history of our charity, Eyesaver. Eyesaver was founded by a retired optometrist Timothy Gaines. Now, our charity has been helping people for three decades. I have spent much of my working life at Eyesaver. I am 60 years old now and I started working for this organization 15 years ago when I left a corporate position to help people with eye problems. You may know that we are now doing various other things to help people with eye problems. That includes medications for children with eye diseases and operational help to those in the public who have eye problems. But when Mr. Gaines just founded Eyesaver, he wanted the program to be able to offer common eye equipment to those who needed it. We receive occasional donations from corporations and charity groups. Now we have over 1500 volunteers who work on the streets with the little red donation boxes which many of you are familiar with, and this is the main source of funding for us. Besides, we are planning to work to secure donations from wealthy benefactors. Many people are passionate about charity cause and have been inquiring how to donate money to us. I really appreciate that. But our main need is to collect glasses for our patients. Many of you have multiple pairs of old glasses in your possession and we encourage you to gather these pairs which you no longer need and donate them to our cause. In doing this, you’ll be able to make sure that someone else can see better. Most of us cannot imagine a life in which we are unable to see well. This is why your eyeglass donations are so critical to our mission. And, as a side note, we offer full-time positions, let me know if you are interested. Our goal is to make people aware that even the smallest of donations can help change a person’s life. So, your donation can be a turning point for them. The other day, when I was talking to some people on the street, they were surprised to find out how easily some eye problems can be cured. And I’m proud to say that our next program will aim at educating people about common eye diseases, we are able to prevent many fatal eye problems. In order to publicize our charity program, we surely need to do some advertising. When we first started our program, we used computers to create awareness for our cause. For instance, promoting seminars in which we informed people as to how they could help us to solve eye problems. But in recent years, the main means of advertising our program is through audio recordings. We have found it cost-efficient and effective. It’s good to know that many of our staff are recommending our program to their friends and colleagues, but I am afraid that our training cannot show people the whole picture of our program. Finally, I would like to tell you about some organizations which have played important roles in the development and success of Eyesaver. Our affiliation with the National Vision Funding Group has allowed us to gain fame and to become even more significant. So, many people around the country are coming for our services. Our association with the Eye for the Future organization has allowed us to run cooperative ads by which we seek producers of equipment to work with us. Meanwhile some of our staff has been sent to this organization for some special training, their skills should be improved very soon. Also, we have had a long time cooperation with Sam’s Eyecare Institution. Our relationship with it has given us the opportunity to link with many different academic institutions, including colleges and universities with good reputation. And we have a similar friendship with a group called Youth Health. Our connection with that group allows us to link directly with young kids since this is a crucial stage in their growth. We plan to contact some colleges and hope that with their help, more college students could get to know our program. So, as you can see, we have all bases covered in linking with students, as we have affiliations directly with both administrators and the students themselves. Thank you so much for your attention today. As we try to stamp out eye problems, we will appreciate your donations, no matter how large or how small. We believe with our efforts, the world will be brighter and more beautiful...",
+	"body": {
+		"text": "National Vision Funding Group [7]\nEye for the Future [8]\nSam's Eyecare Institution [9]\nYouth Health [10]",
+		"html": "<p>National Vision Funding Group [7]</p><p>Eye for the Future [8]</p><p>Sam's Eyecare Institution [9]</p><p>Youth Health [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "When was Eyesaver founded?",
+					"options": [
+						{
+							"label": "A",
+							"text": "15 years ago"
+						},
+						{
+							"label": "B",
+							"text": "30 years ago"
+						},
+						{
+							"label": "C",
+							"text": "60 years ago"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Now, our charity has been helping people for three decades."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What was the original aim of the program?",
+					"options": [
+						{
+							"label": "A",
+							"text": "to offer common equipment"
+						},
+						{
+							"label": "B",
+							"text": "to offer medication to children with eye diseases"
+						},
+						{
+							"label": "C",
+							"text": "to offer operational help to people who had eye problems"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But when Mr. Gaines just founded Eyesaver, he wanted the program to be able to offer common eye equipment to those who needed it."
+					]
+				},
+				{
+					"number": 3,
+					"text": "The main funding comes from",
+					"options": [
+						{
+							"label": "A",
+							"text": "monthly donation."
+						},
+						{
+							"label": "B",
+							"text": "donation from rich people."
+						},
+						{
+							"label": "C",
+							"text": "money collected on the street."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Now we have over 1500 volunteers who work on the streets with the little red donation boxes which many of you are familiar with, and this is the main source of funding for us."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What does the speaker expect listeners to provide?",
+					"options": [
+						{
+							"label": "A",
+							"text": "glasses for the patients"
+						},
+						{
+							"label": "B",
+							"text": "money donation"
+						},
+						{
+							"label": "C",
+							"text": "voluntary work"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But our main need is to collect glasses for our patients."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What is the main purpose of this program?",
+					"options": [
+						{
+							"label": "A",
+							"text": "to show people their donation can make a difference"
+						},
+						{
+							"label": "B",
+							"text": "to show people how easily eye problems can be cured"
+						},
+						{
+							"label": "C",
+							"text": "to educate people about common eye diseases"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Our goal is to make people aware that even the smallest of donations can help change a person’s life."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Eyesaver advertises for the program through",
+					"options": [
+						{
+							"label": "A",
+							"text": "computers."
+						},
+						{
+							"label": "B",
+							"text": "recordings."
+						},
+						{
+							"label": "C",
+							"text": "training."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But in recent years, the main means of advertising our program is through audio recordings."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What role does each of the following organisations play for the development of Eyesaver?",
+			"options": [
+				{
+					"label": "A",
+					"text": "gain more donation"
+				},
+				{
+					"label": "B",
+					"text": "involve more children in need"
+				},
+				{
+					"label": "C",
+					"text": "earn support from colleges"
+				},
+				{
+					"label": "D",
+					"text": "help look for equipment manufacturers"
+				},
+				{
+					"label": "E",
+					"text": "take the reputation to a higher level"
+				},
+				{
+					"label": "F",
+					"text": "recruit and support staff"
+				}
+			],
+			"body": "National Vision Funding Group [7]\nEye for the Future [8]\nSam's Eyecare Institution [9]\nYouth Health [10]",
+			"body_html": "<p>National Vision Funding Group [7]</p><p>Eye for the Future [8]</p><p>Sam's Eyecare Institution [9]</p><p>Youth Health [10]</p>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "National Vision Funding Group",
+					"answer": "E",
+					"quotes": [
+						"Our affiliation with the National Vision Funding Group has allowed us to gain fame and to become even more significant."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Eye for the Future",
+					"answer": "D",
+					"quotes": [
+						"Our association with the Eye for the Future organization has allowed us to run cooperative ads by which we seek producers of equipment to work with us."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Sam's Eyecare Institution",
+					"answer": "C",
+					"quotes": [
+						"Our relationship with it has given us the opportunity to link with many different academic institutions, including colleges and universities with good reputation."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Youth Health",
+					"answer": "B",
+					"quotes": [
+						"Our connection with that group allows us to link directly with young kids since this is a crucial stage in their growth."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

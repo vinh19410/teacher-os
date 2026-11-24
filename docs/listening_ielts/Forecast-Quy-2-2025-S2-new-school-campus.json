@@ -1,0 +1,119 @@
+{
+	"id": "f68d6c64-0c0d-4fc3-b6de-531349e0764f",
+	"url": "https://stepielts.com/student/listening/f68d6c64-0c0d-4fc3-b6de-531349e0764f?mode=practice",
+	"title": "New School Campus",
+	"source": "Forecast Quý 2-2025",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/77cc1732-be29-41a8-ba1b-e59bb4879138.mp3",
+	"transcript": "Speaker 1: As you will have noticed upon entering the main campus, the area is quite vast. I’d like to show you around today and get you familiar with the area. Right now, we are standing in the campus garden, which is the most conspicuous area in the whole campus. It is roughly in the centre of the campus and makes for a good reference point. To the north-west of the garden, we have what we refer to as the Student service unit. This is where you can find course information, lodge complaints about registration, receive grades, and conduct other administrational tasks. You should become familiar with this place as you will likely be visiting it a lot in the near future, by which I mean, from tomorrow! To the south-east of the garden near the south gate, we have quite a vibrant venue for both sports and concerts, and it provides over 5000 seats. You can find a lot of posters on the billboard nearby advertising upcoming activities. We usually organize at least one big event each month and have a few regularly scheduled activities that are open to all students on weekends. Take the lane leading to the northeastern corner of the campus, and you will find a new building at the end. It’s where trained staff are ready to cater to your health needs and give advice for any health related problems that you might have. Just to let you know, the first floor is for physical checkups while the second floor is for consultations. If you’re from abroad and need help, you’ll need to go to the building directly adjacent to the campus garden. Go straight to the second floor, where we have staff there to assist you. By the way, that building is also where we hold most of our international conferences and seminars. It’s a great place to listen to experts share their experience. I highly recommend it! For those who need to find a place to live on campus, you can go to the accommodation office. Please note that we have closed the old office which is directly to the west of the campus garden, as it is too small. The larger building right next to the café is where the new one is located. I am aware that some students have yet to receive their room keys. This is probably because you have not provided us with your proof of payment and identity card yet. Please don’t worry though; I can assure you that there are enough rooms for everybody. The students’ dormitory is on the south side of the campus, and it is, of course, where you would be residing throughout your stay. Each room is equipped to accommodate two students. The kitchen space is shared, but you do have a shower for yourselves. After you move in, you will have to talk to the designated manager of your dormitory building before using any of the facilities in the basement, including washing machines and dryers. If you have signed up for our school meal program, please listen up. In order to prevent any mix-ups when distributing meals, most of our food containers will be marked with each student’s name. If the labeling isn’t done correctly on yours, please let us know in time. You should be aware that last semester we had some incidents involving theft in the dorms. As such, we’ve implemented some new policies this year to upgrade our security services. Every student will be provided with an access code, without which they cannot enter their rooms. Please don’t share it with anyone. If you want to renew its validity, you’ll need to check your portal page and find the button under the tab ‘on-campus dormitory’. We hope that this new system should limit the number of thefts this year. Finally, I’d like to talk briefly about campus rules. It is expected that all gadgets and appliances are switched off after the lights are out, which happens at 11.30 pm. Most students’ bedtime is around 11 pm, so please keep to this time and respect others’ need for quiet. We take this quite seriously and are quite strict. Any gadgets that are seized for breaking this rule won’t be returned until the end of the semester.",
+	"body": {
+		"text": "On-campus Accommodation\nEach student has his or her own [6]\nLaundry facilities situate in the [7] of each dormitory.\nMost [8] are named.\nAn [9] is needed to go into the dormitory.\nElectric appliances should be turned off after [10]",
+		"html": "<h3><strong>On-campus Accommodation</strong></h3><ul><li>Each student has his or her own [6]</li><li>Laundry facilities situate in the [7] of each dormitory.</li><li>Most [8] are named.</li><li>An [9] is needed to go into the dormitory.</li><li>Electric appliances should be turned off after [10]</li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below.",
+			"instructions_html": "<p>Label the map below.</p><p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/cac0710b-112a-4c87-a483-a94b8047ad99.jpg\" alt=\"Map 02203\"></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H"],
+			"questions": [
+				{
+					"number": 1,
+					"text": "Student service office",
+					"answer": "F",
+					"quotes": [
+						"To the north-west of the garden, we have what we refer to as the Student service unit."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Stadium",
+					"answer": "B",
+					"quotes": [
+						"To the south-east of the garden near the south gate, we have quite a vibrant venue for both sports and concerts, and it provides over 5000 seats."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Health centre",
+					"answer": "E",
+					"quotes": [
+						"It’s where trained staff are ready to cater to your health needs and give advice for any health related problems that you might have."
+					]
+				},
+				{
+					"number": 4,
+					"text": "International student office",
+					"answer": "A",
+					"quotes": [
+						"If you’re from abroad and need help, you’ll need to go to the building directly adjacent to the campus garden."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Accommodation office",
+					"answer": "C",
+					"quotes": [
+						"For those who need to find a place to live on campus, you can go to the accommodation office.",
+						"The larger building right next to the café is where the new one is located."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "On-campus Accommodation\nEach student has his or her own [6]\nLaundry facilities situate in the [7] of each dormitory.\nMost [8] are named.\nAn [9] is needed to go into the dormitory.\nElectric appliances should be turned off after [10]",
+			"body_html": "<h3><strong>On-campus Accommodation</strong></h3><ul><li>Each student has his or her own [6]</li><li>Laundry facilities situate in the [7] of each dormitory.</li><li>Most [8] are named.</li><li>An [9] is needed to go into the dormitory.</li><li>Electric appliances should be turned off after [10]</li></ul>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Each student has his or her own [6]",
+					"answer": "shower",
+					"quotes": [
+						"The kitchen space is shared, but you do have a shower for yourselves."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Laundry facilities situate in the [7] of each dormitory.",
+					"answer": "basement",
+					"quotes": [
+						"After you move in, you will have to talk to the designated manager of your dormitory building before using any of the facilities in the basement, including washing machines and dryers."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Most [8] are named.",
+					"answer": "food containers",
+					"quotes": [
+						"In order to prevent any mix-ups when distributing meals, most of our food containers will be marked with each student’s name."
+					]
+				},
+				{
+					"number": 9,
+					"text": "An [9] is needed to go into the dormitory.",
+					"answer": "access code",
+					"quotes": [
+						"Every student will be provided with an access code, without which they cannot enter their rooms."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Electric appliances should be turned off after [10]",
+					"answer": "11.30 pm / 11:30 pm / 11.30 p.m. / 11:30 p.m.",
+					"quotes": [
+						"It is expected that all gadgets and appliances are switched off after the lights are out, which happens at 11.30 pm."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/cac0710b-112a-4c87-a483-a94b8047ad99.jpg"
+	]
+}

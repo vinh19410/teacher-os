@@ -1,0 +1,148 @@
+{
+	"id": "860b3cc1-d9b7-4b85-b174-23698b2e6e48",
+	"url": "https://stepielts.com/student/listening/860b3cc1-d9b7-4b85-b174-23698b2e6e48?mode=practice",
+	"title": "Floral beauty",
+	"source": "Forecast Quý 2-2025",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/5a88edb9-d927-4ff5-8639-778be5a4f570.mp3",
+	"transcript": "Speaker 1: Hello workers of Floral beauty. I welcome you all back to work after the holiday. Some of you might be wondering what is going on as you must have noticed that this was not the same place you left. Yes, a general restructuring and refurbishment of the shop have taken place. Here is a brief rundown through the changes: The café continues to operate, serving a variety of snacks and beverages. Instead of creating something new, we decided to just make some essential changes in this area. We reshuffled the furniture, changed up the color scheme, and fiddled with the menu offerings. It took quite some time, and there was even a point when we thought about closing the place down. But I’m glad that we stayed the course and the result was well worth it. We figured that since there were few customers asking about garden tools and buying them, we should get rid of them. Our garden pots are very good containers and do not need many changes so we decided to leave them as they were. Last year, we had a lot of complaints about customers getting confused, not knowing what exactly they wanted or even expected whenever they came to the shop. To eliminate this problem, we have set up a new section where we would have skilled experts in the field of floral decoration giving advice to our prospective customers. We hope this would help us achieve more conversions, and in the long term, clients would be committed and loyal to the shop. You know our exotic plants need special care and for this reason only a few customers would like to buy them. It was decided that a new catalogue of species that are now in high demand in the market would take the place of these floras that we used to keep because our research team suggested. I suggest that everyone get familiar with them, so that you can at least answer some questions in public. Now, I will make a brief introduction to the interior of the refurbished shop to you. Just a little tour, the café is located at the centre of the shop, I mean the bigger area facing the cashier desk not far from the exit. In the café, you will see an oval-shaped bar surrounded by wooden stools. We also have a fountain, which is the first area you will see in front of you after entering our shop. We used to have one at the bottom left corner, but for our customers it was not noticeable, so we built a new one and it looks great. At the top left corner, we have a storeroom for fertilizers to help in the growth of our flowers, just beside the cashier’s point which is near the exit. They are arranged and stacked in bags. By the way, the new heads for that section would be Jack and Pete. Please ensure that this section is always clean and also try to minimize wastage during use. We keep our packaging materials to the right of the cashier area at the entrance where you would see three shelves of the same size and we place them on the one between the flowerpots shelf and the tripods shelf. Finally, our freezer is situated at the top right corner of the shop. We keep some plant seeds in there when necessary.",
+	"body": {
+		"text": "food and beverage [1]\ngardening tools [2]\nflowerpots [3]\nconsulting [4]\nexotic plants [5]",
+		"html": "<p>food and beverage [1]</p><p>gardening tools [2]</p><p>flowerpots [3]</p><p>consulting [4]</p><p>exotic plants [5]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "What change occurred to each of the following services or goods?",
+			"options": [
+				{
+					"label": "A",
+					"text": "rearranged"
+				},
+				{
+					"label": "B",
+					"text": "recently introduced"
+				},
+				{
+					"label": "C",
+					"text": "unchanged"
+				},
+				{
+					"label": "D",
+					"text": "removed"
+				},
+				{
+					"label": "E",
+					"text": "replaced"
+				},
+				{
+					"label": "F",
+					"text": "temporarily closed"
+				},
+				{
+					"label": "G",
+					"text": "relocated"
+				}
+			],
+			"body": "food and beverage [1]\ngardening tools [2]\nflowerpots [3]\nconsulting [4]\nexotic plants [5]",
+			"body_html": "<p>food and beverage [1]</p><p>gardening tools [2]</p><p>flowerpots [3]</p><p>consulting [4]</p><p>exotic plants [5]</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "food and beverage",
+					"answer": "A",
+					"quotes": [
+						"We reshuffled the furniture, changed up the color scheme, and fiddled with the menu offerings."
+					]
+				},
+				{
+					"number": 2,
+					"text": "gardening tools",
+					"answer": "D",
+					"quotes": [
+						"We figured that since there were few customers asking about garden tools and buying them, we should get rid of them."
+					]
+				},
+				{
+					"number": 3,
+					"text": "flowerpots",
+					"answer": "C",
+					"quotes": [
+						"Our garden pots are very good containers and do not need many changes so we decided to leave them as they were."
+					]
+				},
+				{
+					"number": 4,
+					"text": "consulting",
+					"answer": "B",
+					"quotes": [
+						"To eliminate this problem, we have set up a new section where we would have skilled experts in the field of floral decoration giving advice to our prospective customers."
+					]
+				},
+				{
+					"number": 5,
+					"text": "exotic plants",
+					"answer": "E",
+					"quotes": [
+						"It was decided that a new catalogue of species that are now in high demand in the market would take the place of these floras that we used to keep because our research team suggested."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "MAP_LABELLING",
+			"instructions": "",
+			"instructions_html": "<p></p><p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/b4450b90-dad4-4578-9e4f-7eedf5615537.jpg\" alt=\"Image 04 02 2025 at 10.55\"></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
+			"questions": [
+				{
+					"number": 6,
+					"text": "café",
+					"answer": "A",
+					"quotes": [
+						"Just a little tour, the café is located at the centre of the shop, I mean the bigger area facing the cashier desk not far from the exit."
+					]
+				},
+				{
+					"number": 7,
+					"text": "fountain",
+					"answer": "B",
+					"quotes": [
+						"We also have a fountain, which is the first area you will see in front of you after entering our shop."
+					]
+				},
+				{
+					"number": 8,
+					"text": "fertilizers",
+					"answer": "C",
+					"quotes": [
+						"At the top left corner, we have a storeroom for fertilizers to help in the growth of our flowers, just beside the cashier’s point which is near the exit."
+					]
+				},
+				{
+					"number": 9,
+					"text": "packaging materials",
+					"answer": "E",
+					"quotes": [
+						"We keep our packaging materials to the right of the cashier area at the entrance where you would see three shelves of the same size and we place them on the one between the flowerpots shelf and the tripods shelf."
+					]
+				},
+				{
+					"number": 10,
+					"text": "freezer",
+					"answer": "J",
+					"quotes": [
+						"Finally, our freezer is situated at the top right corner of the shop."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/b4450b90-dad4-4578-9e4f-7eedf5615537.jpg"
+	]
+}

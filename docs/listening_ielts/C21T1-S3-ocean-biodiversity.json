@@ -1,0 +1,240 @@
+{
+	"id": "17df9546-b483-4b1e-8268-c0cd1e6fa649",
+	"url": "https://stepielts.com/student/listening/17df9546-b483-4b1e-8268-c0cd1e6fa649?mode=practice",
+	"title": "Ocean biodiversity",
+	"source": "C21T1",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/d3dcdd21-eaa4-4ae5-98f9-2714cfcd2d95.mp3",
+	"transcript": "Speaker 0: Part three. You will hear two marine biology students discussing a lecture on marine biodiversity and conservation from a visiting speaker. First, you have some time to look at questions 21 to 24. Now listen carefully and answer questions 21 to 24.\nSpeaker 1: That lecture from the visiting speaker yesterday was good, wasn't it?\nSpeaker 2: Yeah. I learned a lot from her about ocean biodiversity. I've already done some reading on it, and I did an assignment on some of the problems associated with it last year. But I especially like the way her lecture focused on more long term issues.\nSpeaker 1: Yes. Things that aren't currently receiving widespread attention but are likely to be important in the future. That impressed me too. It wasn't exactly a feel good conclusion because it's hard to see any real solution for a lot of the problems.\nSpeaker 2: No. Though she did point to where policy changes could be made to protect our marine and coastal environments.\nSpeaker 1: But that's just at a national level. The examples she gave were at a more global level, and they really made it clear to me just how wide ranging the threats to ocean biodiversity are.\nSpeaker 2: Yes. Me too.\nSpeaker 1: The research project she described was impressive, wasn't it? I'd have thought it was quite unusual to have so many experts working together.\nSpeaker 2: Yeah. And from such different backgrounds. Must have been a really exciting team to work with. I'd heard of a couple of them before. They were involved in research way back in 2009, warning about the dangers of ocean pollution.\nSpeaker 1: But now people are much more aware of that, aren't they?\nSpeaker 2: I suppose so.\nSpeaker 1: Another thing about the research is that the team members came from all around the world, though I suppose that's not unusual nowadays. Now everyone can work remotely.\nSpeaker 2: Right. I like the way she didn't bombard us with figures. I mean, they were available, but she focused more on the general points they indicated.\nSpeaker 1: And the description of improvements in systems used for tracking marine animals and things like robots were really interesting.\nSpeaker 2: Yes. And her description of how robotics can be used to investigate threats to biodiversity.\nSpeaker 1: Absolutely.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 25 to 30. Now listen and answer questions 25 to 30.\nSpeaker 1: While you're here, can we talk about the list of resources we have to evaluate for the seminar tomorrow? I've had a look at them all, but it's been a bit of a rush.\nSpeaker 2: Yeah. What did you think of that article on invasive lionfish? The one claiming they were expanding their habitat throughout the Mediterranean Sea.\nSpeaker 1: Well, the writer went on about how dangerous they were in environmental terms, which is probably true, but he didn't really provide much information to explain why.\nSpeaker 2: I know what you mean.\nSpeaker 1: I watched the documentary on microplastics. At least, I started to. But then I found it was made ten years ago, so I gave up.\nSpeaker 2: I watched to the end, but you're right. It was showing its age. People had hardly heard of microplastics then, whereas now everyone knows about them and how dangerous they are.\nSpeaker 1: Yeah. Did you listen to the podcast on ocean pollution?\nSpeaker 2: I didn't get anything out of it, though. Most of it was stating the obvious.\nSpeaker 1: Yes. It mentioned pesticides and plastic and things, and it clearly made the point that they were a bad thing. But everybody knows that anyway. Did you read that book on coastal ecosystems?\nSpeaker 2: The one by John Harper? Yes. I found it hard going at first. It went into a lot of detail about things like the effects of offshore wind farms and fish farms, but actually, I ended up with a much better understanding of the issues.\nSpeaker 1: Yes. I agree. And I thought it was a well written summary of those, and the diagrams helped a lot too.\nSpeaker 2: The article on metal toxicity was way above my head. I didn't know anything about how metals from industrial emissions react in the ocean, and I still don't understand it.\nSpeaker 1: I gave up reading after the first chapter. I just couldn't follow it.\nSpeaker 2: That podcast on floating marine cities was interesting, though it presented a rather one-sided picture, I thought.\nSpeaker 1: Yes. It focused on how this would benefit people and ignored the effects on the environment.\nSpeaker 2: But anyway, shall we talk about\nSpeaker 0: That is the end of part three. You now have thirty seconds to check your answers to part three.",
+	"body": {
+		"text": "25. Article on invasive lionfish [25]\n26. Documentary on microplastics [26]\n27. Podcast on ocean pollution [27]\n28. Book on coastal ecosystems [28]\n29. Article on metal toxicity [29]\n30. Podcast on floating marine cities [30]",
+		"html": "<p>25. Article on invasive lionfish [25]</p><p>26. Documentary on microplastics [26]</p><p>27. Podcast on ocean pollution [27]</p><p>28. Book on coastal ecosystems [28]</p><p>29. Article on metal toxicity [29]</p><p>30. Podcast on floating marine cities [30]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-22",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A–E",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Which TWO features of the lecture on ocean biodiversity had the greatest impact on the students?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the references to local problems"
+						},
+						{
+							"label": "B",
+							"text": "the broad focus of the examples"
+						},
+						{
+							"label": "C",
+							"text": "the practical suggestions for solutions"
+						},
+						{
+							"label": "D",
+							"text": "the type of issues discussed"
+						},
+						{
+							"label": "E",
+							"text": "the implications for government policy"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 22,
+					"text": "Which TWO features of the lecture on ocean biodiversity had the greatest impact on the students?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the references to local problems"
+						},
+						{
+							"label": "B",
+							"text": "the broad focus of the examples"
+						},
+						{
+							"label": "C",
+							"text": "the practical suggestions for solutions"
+						},
+						{
+							"label": "D",
+							"text": "the type of issues discussed"
+						},
+						{
+							"label": "E",
+							"text": "the implications for government policy"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "23-24",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A–E",
+			"questions": [
+				{
+					"number": 23,
+					"text": "Which TWO details about the research project particularly impressed the students?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the team's previous successes"
+						},
+						{
+							"label": "B",
+							"text": "its wide geographical scale"
+						},
+						{
+							"label": "C",
+							"text": "the use of new technology"
+						},
+						{
+							"label": "D",
+							"text": "the extensive statistical evidence"
+						},
+						{
+							"label": "E",
+							"text": "the large range of specialists involved"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 24,
+					"text": "Which TWO details about the research project particularly impressed the students?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the team's previous successes"
+						},
+						{
+							"label": "B",
+							"text": "its wide geographical scale"
+						},
+						{
+							"label": "C",
+							"text": "the use of new technology"
+						},
+						{
+							"label": "D",
+							"text": "the extensive statistical evidence"
+						},
+						{
+							"label": "E",
+							"text": "the large range of specialists involved"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "25-30",
+			"type": "MATCHING_FEATURES",
+			"instructions": "What is the students' opinion of each of the following resources related to ocean biodiversity?\nChoose SIX answers from the box and write the correct letter, A–H, next to Questions 25–30.",
+			"options": [
+				{
+					"label": "A",
+					"text": "This is aimed at a very specialist audience."
+				},
+				{
+					"label": "B",
+					"text": "This is now rather outdated."
+				},
+				{
+					"label": "C",
+					"text": "This was an effective description of a new danger."
+				},
+				{
+					"label": "D",
+					"text": "This suggests possible ways to improve the situation."
+				},
+				{
+					"label": "E",
+					"text": "This does not give a balanced account."
+				},
+				{
+					"label": "F",
+					"text": "This is too predictable to be useful."
+				},
+				{
+					"label": "G",
+					"text": "This gives insufficient evidence for its claims."
+				},
+				{
+					"label": "H",
+					"text": "This gives a clear explanation of the problems."
+				}
+			],
+			"body": "25. Article on invasive lionfish [25]\n26. Documentary on microplastics [26]\n27. Podcast on ocean pollution [27]\n28. Book on coastal ecosystems [28]\n29. Article on metal toxicity [29]\n30. Podcast on floating marine cities [30]",
+			"body_html": "<p>25. Article on invasive lionfish [25]</p><p>26. Documentary on microplastics [26]</p><p>27. Podcast on ocean pollution [27]</p><p>28. Book on coastal ecosystems [28]</p><p>29. Article on metal toxicity [29]</p><p>30. Podcast on floating marine cities [30]</p>",
+			"questions": [
+				{
+					"number": 25,
+					"text": "Article on invasive lionfish",
+					"answer": "G",
+					"quotes": [
+						"Well, the writer went on about how dangerous they were in environmental terms, which is probably true, but he didn't really provide much information to explain why.",
+						"What did you think of that article on invasive lionfish?"
+					]
+				},
+				{
+					"number": 26,
+					"text": "Documentary on microplastics",
+					"answer": "B",
+					"quotes": [
+						"It was showing its age.",
+						"I watched the documentary on microplastics.",
+						"But then I found it was made ten years ago, so I gave up."
+					]
+				},
+				{
+					"number": 27,
+					"text": "Podcast on ocean pollution",
+					"answer": "F",
+					"quotes": [
+						"Did you listen to the podcast on ocean pollution?",
+						"Most of it was stating the obvious.",
+						"But everybody knows that anyway.",
+						"It mentioned pesticides and plastic and things, and it clearly made the point that they were a bad thing."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Book on coastal ecosystems",
+					"answer": "H",
+					"quotes": [
+						"It went into a lot of detail about things like the effects of offshore wind farms and fish farms, but actually, I ended up with a much better understanding of the issues.",
+						"Did you read that book on coastal ecosystems?"
+					]
+				},
+				{
+					"number": 29,
+					"text": "Article on metal toxicity",
+					"answer": "A",
+					"quotes": [
+						"The article on metal toxicity was way above my head.",
+						"I didn't know anything about how metals from industrial emissions react in the ocean, and I still don't understand it.",
+						"I gave up reading after the first chapter."
+					]
+				},
+				{
+					"number": 30,
+					"text": "Podcast on floating marine cities",
+					"answer": "E",
+					"quotes": [
+						"That podcast on floating marine cities was interesting, though it presented a rather one-sided picture, I thought."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

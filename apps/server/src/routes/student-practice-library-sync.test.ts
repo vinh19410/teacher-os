@@ -275,15 +275,24 @@ describe("student practice — đồng bộ đề thư viện", () => {
 			skill: string;
 			hasAudio?: boolean;
 			audioName: string;
-			questions: Array<{ type?: string }>;
+			groups?: Array<{ id: string; type: string; optionBank: string[] }>;
+			questions: Array<{ type?: string; answerSet?: string | null }>;
 		};
 		expect(quiz.skill).toBe("listening");
 		expect(quiz.hasAudio).toBe(true);
 		expect(quiz.audioName).toBe("talking-about-the-history-of-bikes.mp3");
+		expect(quiz.groups).toHaveLength(2);
+		expect(quiz.groups?.[0]?.type).toBe("notes");
+		expect(quiz.groups?.[1]?.type).toBe("mcq_many");
 		expect(quiz.questions.map((q) => q.type)).toEqual([
 			"notes",
 			"mcq_many",
 			"mcq_many",
+		]);
+		expect(quiz.questions.map((q) => q.answerSet ?? null)).toEqual([
+			null,
+			"g2",
+			"g2",
 		]);
 
 		const audioRes = await app.request(

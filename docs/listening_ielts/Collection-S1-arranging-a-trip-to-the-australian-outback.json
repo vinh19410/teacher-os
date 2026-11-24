@@ -1,0 +1,132 @@
+{
+	"id": "12b2a5e4-a75b-4725-94b7-427b40008e58",
+	"url": "https://stepielts.com/student/listening/12b2a5e4-a75b-4725-94b7-427b40008e58?mode=practice",
+	"title": "Arranging a Trip to the Australian Outback",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/35289e04-23de-470c-af10-eb1e4ff75b2d.mp3",
+	"transcript": "Speaker 1: Woman: Good morning. I’ve been looking at your holidays to Australia in your brochure. I’m thinking of going during the second half of next month.\nSpeaker 2: Travel Agent: Good morning. As you can see from our brochure, we offer a wide variety of packages to various destinations in Australia. Is there anything in particular that interests you?\nSpeaker 1: Woman: Yes. My husband and I are very interested in the holidays in the outback.\nSpeaker 2: Travel Agent: These holidays are becoming increasingly popular. Would you like to arrange flights and accommodation with us or just accommodation?\nSpeaker 1: Woman: Can you arrange flights from Sydney?\nSpeaker 2: Travel Agent: Certainly.\nSpeaker 1: Woman: Okay. Flights and accommodation then.\nSpeaker 2: Travel Agent: Right. You said that you wanted to travel next month. Which date would you prefer? I should point out that there are no daily flights available. So if you have a flexible itinerary, that’s better.\nSpeaker 1: Woman: Well, we arrive in Sydney on the April 15, and we were thinking of traveling to the Outback on the August 18. I mean, April.\nSpeaker 2: Travel Agent: Okay. There’s only one flight from Sydney to Alice Springs on the eighteenth, so I’ll book you on that. It leaves at ten in the morning, which is quite convenient. Shall I book two seats for you?\nSpeaker 1: Woman: Yes, please.\nSpeaker 2: Travel Agent: As for your stay in the Outback, you can see from the brochure that we offer three packages, budget, standard, and luxury. The budget package is about 500 Australian dollars. The standard package is about 700, and the luxury one is approximately 1,000. Though it does depend on exactly what you would like regarding extras. Which one would you prefer?\nSpeaker 1: Woman: Well, we can’t decide between the budget and standard options.\nSpeaker 2: Travel Agent: Ah, well, actually, just looking at my computer here, on the date that you want to fly into Alice Springs, there is no standard accommodation available. It’s fully booked, I’m afraid.\nSpeaker 1: Woman: That’s okay. We think that the cheapest one should be fine for us. We don’t mind roughing it for a few days, and we don’t expect to be spending much time at our accommodations. We prefer the outdoors.\nSpeaker 2: Travel Agent: Right. Let’s look at the room options. Travel Agent: First of all, would you prefer a non smoking room?\nSpeaker 1: Woman: Yes. Neither of us smokes.\nSpeaker 2: Okay.\nSpeaker 1: Oh, before I forget, could you book everything in my husband’s name, please?\nSpeaker 2: Travel Agent: Yes, of course. Are you paying by credit card?\nSpeaker 1: Woman: Yes.\nSpeaker 2: Travel Agent: In that case, I’ll need your husband’s name exactly as it appears on the card.\nSpeaker 1: Woman: Of course. It’s John A Smyth. That’s Smyth with a y. John, middle initial a, surname Smyth, s m y t h.\nSpeaker 2: Travel Agent: Is that correct?\nSpeaker 1: Woman: Correct.\nSpeaker 2: Travel Agent: Thank you. I’ll just check the price. The room will cost a $100 a night plus $10 tax, so a $110 per night in total. Is that okay?\nSpeaker 1: Woman: Yes. That’s fine. Book us for three nights, please.\nSpeaker 2: Travel Agent: Most of the guests like to participate in some special activities and trips while they are staying in the outback. Is there anything that interests you and your husband?\nSpeaker 1: Woman: Yes. There are several things we’d like to see and do. We definitely like to visit the cultural center.\nSpeaker 2: Travel Agent: Yes. That’s very popular. It’s within walking distance of the accommodation, and it’s free. It’s also a great place to pick up souvenirs of your trip.\nSpeaker 1: Woman: We were thinking about visiting one of the nearby farms.\nSpeaker 2: Travel Agent: There are two farms nearby, a sheep farm and a kangaroo farm. There is also an opportunity to ride camels in the desert. Have you ridden a camel before?\nSpeaker 1: Woman: No. But it sounds like fun. Could you give me some more details about the kangaroo farm and the camel ride?\nSpeaker 2: Travel Agent: Certainly. The kangaroo farm includes information on how the animals are raised, whilst the camel ride provides information on desert flora and fauna. Which would you prefer? You can arrange to see the kangaroos in the wild if you like, rather than on a farm.\nSpeaker 1: Woman: That sounds perfect. Okay. We’ll go on the camel ride and see the kangaroos in their natural habitat.\nSpeaker 2: Travel Agent: Okay. I’ll arrange that for you. I forgot to mention that the journey also includes a stop at a place of aboriginal artwork. It’s a place well known for stone carvings of animals and mythical creatures.\nSpeaker 1: Woman: That sounds great. Are the carvings in the desert? Yes. Travel Agent: Wonderful.\nSpeaker 2: Well, that’s perfect then. I’m sure you’ll have a lovely trip, but remember that you need to take care in the sun.\nSpeaker 1: Woman: Yes. We’re really looking forward to our trip. We really want to try to experience the dream time under the stars.\nSpeaker 2: Travel Agent: Of course. That’s what a trip to the outback is really all about.\nSpeaker 1: Woman: Yes. Now, how about the cost?",
+	"question_groups": [
+		{
+			"range": "1-3",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below write ONE WORD ONLY for each answer.",
+			"body": "NOTES OF CUSTOMER INFORMATION\nInformation source:\nfound in the brochure\nIncluded services\n[1] and accommodation\nSydney arrival date:\n15th of [2]\nAccommodation criteria:\n[3]",
+			"body_table": [
+				["Information source:", "found in the brochure"],
+				["Included services", "[1] and accommodation"],
+				["Sydney arrival date:", "15th of [2]"],
+				["Accommodation criteria:", "[3]"]
+			],
+			"body_html": "<h3><strong>NOTES OF CUSTOMER INFORMATION</strong></h3><table><tbody><tr><td><ul><li>Information source:</li></ul></td><td>found in the brochure </td></tr><tr><td><ul><li>Included services</li></ul></td><td>[1] and accommodation</td></tr><tr><td><ul><li>Sydney arrival date:</li></ul></td><td>15th of [2]</td></tr><tr><td><ul><li>Accommodation criteria:</li></ul></td><td>[3]</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "[1] and accommodation",
+					"answer": "flights",
+					"quotes": ["Flights and accommodation then."]
+				},
+				{
+					"number": 2,
+					"text": "15th of [2]",
+					"answer": "April",
+					"quotes": [
+						"Woman: Well, we arrive in Sydney on the April 15, and we were thinking of traveling to the Outback on the August 18.",
+						"I mean, April."
+					]
+				},
+				{
+					"number": 3,
+					"text": "",
+					"answer": "budget",
+					"quotes": [
+						"Which one would you prefer?",
+						"Woman: Well, we can’t decide between the budget and standard options."
+					]
+				}
+			]
+		},
+		{
+			"range": "4-6",
+			"type": "FORM_COMPLETION",
+			"instructions": "Complete the form below. Write NO MORE THAN THREE WORDS OR A NUMBER for each answer.",
+			"body": "BOOKING INFORMATION\nRoom type:\n[4]\nCredit card holder:\n[5]\nTotal cost for one night:\n$[6]",
+			"body_table": [
+				["Room type:", "[4]"],
+				["Credit card holder:", "[5]"],
+				["Total cost for one night:", "$$[6]"]
+			],
+			"body_html": "<h3><strong>BOOKING INFORMATION</strong></h3><table><tbody><tr><td><ul><li>Room type:</li></ul></td><td>[4]</td></tr><tr><td><ul><li>Credit card holder:</li></ul></td><td>[5]</td></tr><tr><td><ul><li>Total cost for one night:</li></ul></td><td>$[6]</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 4,
+					"text": "",
+					"answer": "non-smoking / non smoking",
+					"quotes": [
+						"Travel Agent: First of all, would you prefer a non smoking room?"
+					]
+				},
+				{
+					"number": 5,
+					"text": "",
+					"answer": "John A Smyth",
+					"quotes": ["It’s John A Smyth."]
+				},
+				{
+					"number": 6,
+					"text": "$[6]",
+					"answer": "110",
+					"quotes": [
+						"The room will cost a $100 a night plus $10 tax, so a $110 per night in total."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentence below. Write NO MORE THAN TWO WORDS for answer.",
+			"body": "The [7] is within walking distance of the accommodation\nThe customer books [8]\nAboriginals stone carvings are in the [9]\nThe Dreamtime can be experienced beneath the [10]",
+			"body_table": [
+				["The [7] is within walking distance of the accommodation"],
+				["The customer books [8]"],
+				["Aboriginals stone carvings are in the [9]"],
+				["The Dreamtime can be experienced beneath the [10]"]
+			],
+			"body_html": "<table><tbody><tr><td colspan=\"1\" rowspan=\"1\"><ul><li>\nThe [7] is within walking distance of the accommodation\n</li></ul></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><ul><li>\nThe customer books [8]\n</li></ul></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><ul><li>\nAboriginals stone carvings are in the [9]\n</li></ul></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><ul><li>\nThe Dreamtime can be experienced beneath the [10]\n</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "The [7] is within walking distance of the accommodation",
+					"answer": "Cultural Center / Cultural Centre",
+					"quotes": ["We definitely like to visit the cultural center."]
+				},
+				{
+					"number": 8,
+					"text": "The customer books [8]",
+					"answer": "camel ride",
+					"quotes": [
+						"We’ll go on the camel ride and see the kangaroos in their natural habitat."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Aboriginals stone carvings are in the [9]",
+					"answer": "desert",
+					"quotes": ["Are the carvings in the desert?"]
+				},
+				{
+					"number": 10,
+					"text": "The Dreamtime can be experienced beneath the [10]",
+					"answer": "stars",
+					"quotes": [
+						"We really want to try to experience the dream time under the stars."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

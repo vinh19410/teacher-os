@@ -6,7 +6,7 @@ import {
 	WRITING_MIN_WORDS,
 } from "@teacher-os/api/contracts";
 import {
-	buildQuizParts,
+	buildQuizPartsFromGroups,
 	isAnsweredValue,
 } from "@teacher-os/api/lib/quiz-parts";
 import { countWords } from "@teacher-os/api/lib/word-count";
@@ -230,12 +230,13 @@ export function QuizTakeView({
 	essayStoreRef.current = essayStore;
 	const parts = useMemo(
 		() =>
-			buildQuizParts(
+			buildQuizPartsFromGroups(
 				detail?.questions ?? [],
+				detail?.groups,
 				detail?.type ?? "",
 				detail?.intro ?? "",
 			),
-		[detail?.questions, detail?.type, detail?.intro],
+		[detail?.questions, detail?.groups, detail?.type, detail?.intro],
 	);
 	const allQuestions = useMemo(
 		() => parts.flatMap((part) => part.questions),

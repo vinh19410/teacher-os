@@ -1,0 +1,178 @@
+{
+	"id": "50de6f0f-331f-4d3a-80df-22a43a3a98cb",
+	"url": "https://stepielts.com/student/listening/50de6f0f-331f-4d3a-80df-22a43a3a98cb?mode=practice",
+	"title": "Global design competition",
+	"source": "C10T1",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/06902b12-212a-4b27-9845-af1ceea8593c.mp3",
+	"transcript": "Speaker 0: Now turn to section three. Section three. You will hear a student called John talking to a professor about a design competition he is entering. First, you have some time to look at questions 21 to 25. Now listen carefully and answer questions 21 to 25.\nSpeaker 1: Hello, professor. I'm John Wishart. I'm working on my entry for the global design competition. My tutor said you might be able to help me with it.\nSpeaker 2: Ah, yes. I got a copy of your drawings. Come in and tell me about it. What sort of competition is it?\nSpeaker 1: Well, it's an international design competition, and we have to come up with a new design for a typical domestic kitchen appliance.\nSpeaker 2: I see. And are there any special conditions? Does it have to save energy, for example?\nSpeaker 1: Actually, that was the focus in last year's competition. This year's different. We have to adopt an innovative approach to existing technology, using it in a way that hasn't been thought of before.\nSpeaker 2: I see. That sounds tricky. And what kitchen appliance have you chosen?\nSpeaker 1: Well, I decided to choose the dishwasher.\nSpeaker 2: Interesting. What made you choose that?\nSpeaker 1: Well, they're an everyday kitchen appliance in most Australian houses, but they're all pretty boring and almost identical to each other. I think some people will be prepared to pay a little extra for something that looks different.\nSpeaker 2: It's a nice idea. I see you've called your design the rock pool. Why is that?\nSpeaker 1: Basically, because it looks like the rock pools you find on a beach. The top is made of glass so that you can look down into it.\nSpeaker 2: And there's a stone at the bottom. Is that just for decoration?\nSpeaker 1: Actually, it does have a function. Instead of pushing a button, you turn the stone.\nSpeaker 2: So it's really just a novel way of starting the dishwasher.\nSpeaker 1: That's right.\nSpeaker 2: It's a really nice design. But what makes it innovative?\nSpeaker 1: Well, I decided to make a dishwasher that uses carbon dioxide.\nSpeaker 2: In place of water and detergent? How will you manage that?\nSpeaker 1: The idea is to pressurize the carbon dioxide so that it becomes a liquid. The fluid is then released into the dishwasher where it cleans the dishes all by itself.\nSpeaker 2: Sounds like a brilliant idea. Your system will totally do away with the need for strong detergents. So what happens once the dishes are clean?\nSpeaker 1: Well, to allow them to dry, the liquid carbon dioxide and the waste materials all go to an area called the holding chamber. That's where the liquid is depressurized and so it reverts to a gas. Then the oil and grease are separated out and sent to the waste system.\nSpeaker 2: It sounds like you've thought it all out very thoroughly. So what happens to the carbon dioxide once the process is complete? Not wasted, I hope.\nSpeaker 1: Actually, that's where the real savings are made. The carbon dioxide is sent back to the cylinder and can be used again and again.\nSpeaker 2: What a terrific idea. Do you think it will ever be built?\nSpeaker 1: Probably not, but that's okay.\nSpeaker 2: Well, I'm sure a lot of positive things will come out of your design.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 26 to 30. Now listen and answer questions 26 to 30.\nSpeaker 2: Now you seem to have thought about everything. So what exactly did you need me to help you with?\nSpeaker 1: Well, my design has made it to the final stage of the competition. And in a few months' time, I have to give a presentation, and that's the part I was hoping you could help me with.\nSpeaker 2: Right. Well, that should be easy enough. What have you managed to do so far?\nSpeaker 1: Well, I've got detailed drawings to show how it will work, and I've also written a 500 word paper on it.\nSpeaker 2: I see. Well, if you wanna stand a good chance of winning, you really need a model of the machine.\nSpeaker 1: Yes. I thought I might, but I'm having a few problems.\nSpeaker 2: What's the main difficulty so far? Let me guess. Is it the materials?\nSpeaker 1: Yes. I want it to look professional, but everything that's top quality is also very expensive.\nSpeaker 2: Look. Projects like this are very important to us. They really help lift our profile. So why don't you talk to the university about a grant? Oh. I can help you fill out the application forms if you like.\nSpeaker 1: Oh, that would be great.\nSpeaker 2: You'd better show me this paper you've written as well. For a global competition such as this, you need to make sure the technical details you've given are accurate and thorough.\nSpeaker 1: Oh, that would be a great help.\nSpeaker 2: Is there anything else I can do?\nSpeaker 1: Well, I'm really\nSpeaker 0: That is the end of section three. You now have half a minute to check your answers.",
+	"body": {
+		"text": "● John needs help preparing for his [26].\n● The professor advises John to make a [27] of his design.\n● John’s main problem is getting good quality [28].\n● The professor suggests John apply for a [29].\n● The professor will check the [30] information in John’s written report.",
+		"html": "<p>●   John needs help preparing for his [26].</p><p>●   The professor advises John to make a [27] of his design.</p><p>●   John’s main problem is getting good quality [28].</p><p>●   The professor suggests John apply for a [29].</p><p>●   The professor will check the [30] information in John’s written report.</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-25",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Students entering the design competition have to",
+					"options": [
+						{
+							"label": "A",
+							"text": "produce an energy-efficient design."
+						},
+						{
+							"label": "B",
+							"text": "adapt an existing energy-saving appliance."
+						},
+						{
+							"label": "C",
+							"text": "develop a new use for current technology."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"We have to adopt an innovative approach to existing technology, using it in a way that hasn't been thought of before."
+					]
+				},
+				{
+					"number": 22,
+					"text": "John chose a dishwasher because he wanted to make dishwashers",
+					"options": [
+						{
+							"label": "A",
+							"text": "more appealing."
+						},
+						{
+							"label": "B",
+							"text": "more common."
+						},
+						{
+							"label": "C",
+							"text": "more economical."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Well, they're an everyday kitchen appliance in most Australian houses, but they're all pretty boring and almost identical to each other. I think some people will be prepared to pay a little extra for something that looks different."
+					]
+				},
+				{
+					"number": 23,
+					"text": "The stone in John’s ‘Rockpool’ design is used",
+					"options": [
+						{
+							"label": "A",
+							"text": "for decoration."
+						},
+						{
+							"label": "B",
+							"text": "to switch it on."
+						},
+						{
+							"label": "C",
+							"text": "to stop water escaping."
+						}
+					],
+					"answer": "B",
+					"quotes": ["Instead of pushing a button, you turn the stone."]
+				},
+				{
+					"number": 24,
+					"text": "In the holding chamber, the carbon dioxide",
+					"options": [
+						{
+							"label": "A",
+							"text": "changes back to a gas."
+						},
+						{
+							"label": "B",
+							"text": "dries the dishes."
+						},
+						{
+							"label": "C",
+							"text": "is allowed to cool."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"That's where the liquid is depressurized and so it reverts to a gas."
+					]
+				},
+				{
+					"number": 25,
+					"text": "At the end of the cleaning process, the carbon dioxide",
+					"options": [
+						{
+							"label": "A",
+							"text": "is released into the air."
+						},
+						{
+							"label": "B",
+							"text": "is disposed of with the waste."
+						},
+						{
+							"label": "C",
+							"text": "is collected ready to be re-used."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The carbon dioxide is sent back to the cylinder and can be used again and again."
+					]
+				}
+			]
+		},
+		{
+			"range": "26-30",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "● John needs help preparing for his [26].\n● The professor advises John to make a [27] of his design.\n● John’s main problem is getting good quality [28].\n● The professor suggests John apply for a [29].\n● The professor will check the [30] information in John’s written report.",
+			"body_html": "<p>●   John needs help preparing for his [26].</p><p>●   The professor advises John to make a [27] of his design.</p><p>●   John’s main problem is getting good quality [28].</p><p>●   The professor suggests John apply for a [29].</p><p>●   The professor will check the [30] information in John’s written report.</p>",
+			"questions": [
+				{
+					"number": 26,
+					"text": "● John needs help preparing for his [26].",
+					"answer": "presentation",
+					"quotes": [
+						"And in a few months' time, I have to give a presentation, and that's the part I was hoping you could help me with."
+					]
+				},
+				{
+					"number": 27,
+					"text": "● The professor advises John to make a [27] of his design.",
+					"answer": "model",
+					"quotes": [
+						"Well, if you wanna stand a good chance of winning, you really need a model of the machine."
+					]
+				},
+				{
+					"number": 28,
+					"text": "● John’s main problem is getting good quality [28].",
+					"answer": "material / materials",
+					"quotes": ["Is it the materials?"]
+				},
+				{
+					"number": 29,
+					"text": "● The professor suggests John apply for a [29].",
+					"answer": "grant",
+					"quotes": ["So why don't you talk to the university about a grant?"]
+				},
+				{
+					"number": 30,
+					"text": "● The professor will check the [30] information in John’s written report.",
+					"answer": "technical",
+					"quotes": [
+						"For a global competition such as this, you need to make sure the technical details you've given are accurate and thorough."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

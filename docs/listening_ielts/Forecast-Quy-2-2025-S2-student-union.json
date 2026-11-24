@@ -1,0 +1,222 @@
+{
+	"id": "25576c9a-ab61-4eb5-a7b1-7ef9ce371f27",
+	"url": "https://stepielts.com/student/listening/25576c9a-ab61-4eb5-a7b1-7ef9ce371f27?mode=practice",
+	"title": "Student Union",
+	"source": "Forecast Quý 2-2025",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/6c8ba514-b7f2-4324-82e2-caa6309cb95f.mp3",
+	"transcript": "Speaker 1: Hello, all. My name is Samantha. I am a senior at the university and I am here this afternoon to introduce you to the student union on our campus. As a student of this university, you are registered in our student union automatically and can enjoy all the benefits. No submission fees are required; those are included in your tuition. With this in mind, we encourage you to take advantage of all of the different services our student union offers. The student union is governed by students who are chosen by their fellow students in an annual election. Nobody else is allowed to vote in these elections–not even university faculty or staff. The student union is housed at the aptly-named Union House on the southeast corner of the campus where you will also see the library beside it. A complete list of all clubs governed by the student union is available if you are interested. Compared to the number last year, we have 50 more non-sports clubs available, so that the union now governs 30 sports clubs and over 100 non-sports clubs on campus. These include clubs for each of the majors offered by the university: political clubs, language clubs, international student clubs, sororities and fraternities, etc. We encourage you, as newly enrolled students of this university, to join any of the clubs available. It’s a great way to meet fellow students, and to have some fun. This university prides itself in developing its students completely, not just academically! But the student union does more than that. It is also available to help you with various problems you might encounter in your time here. If you feel that your civil rights have been seriously violated, for example, the student union can arrange a legal consultation for you. Unlike most consultations offered outside the university, we will do this for you for free since most of the staff are working as volunteers. If you struggle with paying tuition, the student union has a placement agency for part-time jobs which are available exclusively to students of this university. For health-related problems, we can direct you to the doctors at the campus clinic or to the local hospital, although we’re not qualified to give medical advice ourselves, obviously, and if you’re feeling a bit overwhelmed or a bit down, then you shouldn’t hesitate to call the mental health line in our local area, which is 555 632 1987. They are very professional in this respect. If you have problems with your courses or exams, on the other hand, the student union will organise regular sessions to help you improve. I’m afraid it can’t solve communication problems with a roommate, a girlfriend, or a boyfriend at the moment, but you should certainly make use of most of the services that are available. Before I go, I would like to highlight three of my personal favorites from the many clubs or teams which are part of the student union. The first is The Movie Makers, which travels to different locations during semester breaks and produces films and documentaries. They have achieved great success and are recognized among the film community for their work. They have won numerous international awards as well as some national awards at the prestigious Sundance Film Festival. The Team Travel club is an organization that arranges discounted trips for many of our students and staff. It negotiates discounts with airlines, hotels and hostels, car rental companies, and long distance transport companies, so if you are planning a trip at mid-semester or semester break, consult Team Travel and you’ll definitely get a better deal for your dollar—and they don’t charge a cent for planning! And finally, Campus Radio, 94.7 FM. is manned mostly by students who are communications majors, marketing, or business majors. The schedule features a campus news show, live sporting events, and lots of great music. No other university campus radio station is bigger than ours, so if you want to stay informed about what’s happening on campus, turn your dial to the Campus Radio. Okay, thanks for your time and attention today. I hope you enjoy your time here at the university and that you utilize the many resources offered by our student union.",
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Basic information\nThere is no requirement for [1] fees.\nA yearly [2] is adopted for selecting candidates running the student union.\nOn-campus location: next to the [3]\nAvailable clubs\n30 clubs related to sports\n[4] clubs offer non-athletic activities.",
+			"body_html": "<h3>Basic information</h3><ul><li>There is no requirement for [1] fees.</li><li>A yearly [2] is adopted for selecting candidates running the student union. </li><li>On-campus location: next to the [3]</li></ul><h3>Available clubs</h3><ul><li>30 clubs related to sports</li><li>[4] clubs offer non-athletic activities.</li></ul>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "There is no requirement for [1] fees.",
+					"answer": "submission",
+					"quotes": [
+						"No submission fees are required; those are included in your tuition."
+					]
+				},
+				{
+					"number": 2,
+					"text": "A yearly [2] is adopted for selecting candidates running the student union.",
+					"answer": "election",
+					"quotes": [
+						"The student union is governed by students who are chosen by their fellow students in an annual election."
+					]
+				},
+				{
+					"number": 3,
+					"text": "On-campus location: next to the [3]",
+					"answer": "library",
+					"quotes": [
+						"The student union is housed at the aptly-named Union House on the southeast corner of the campus where you will also see the library beside it."
+					]
+				},
+				{
+					"number": 4,
+					"text": "[4] clubs offer non-athletic activities.",
+					"answer": "over 100 / over one hundred / over a hundred",
+					"quotes": [
+						"Compared to the number last year, we have 50 more non-sports clubs available, so that the union now governs 30 sports clubs and over 100 non-sports clubs on campus."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-7",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose THREE letters, A-G.",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Which THREE areas does the student union itself offer help on?",
+					"options": [
+						{
+							"label": "A",
+							"text": "academics"
+						},
+						{
+							"label": "B",
+							"text": "communication"
+						},
+						{
+							"label": "C",
+							"text": "dental health"
+						},
+						{
+							"label": "D",
+							"text": "finance"
+						},
+						{
+							"label": "E",
+							"text": "student conflicts"
+						},
+						{
+							"label": "F",
+							"text": "legal issues"
+						},
+						{
+							"label": "G",
+							"text": "mental well-being"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 6,
+					"text": "Which THREE areas does the student union itself offer help on?",
+					"options": [
+						{
+							"label": "A",
+							"text": "academics"
+						},
+						{
+							"label": "B",
+							"text": "communication"
+						},
+						{
+							"label": "C",
+							"text": "dental health"
+						},
+						{
+							"label": "D",
+							"text": "finance"
+						},
+						{
+							"label": "E",
+							"text": "student conflicts"
+						},
+						{
+							"label": "F",
+							"text": "legal issues"
+						},
+						{
+							"label": "G",
+							"text": "mental well-being"
+						}
+					],
+					"answer": "D"
+				},
+				{
+					"number": 7,
+					"text": "Which THREE areas does the student union itself offer help on?",
+					"options": [
+						{
+							"label": "A",
+							"text": "academics"
+						},
+						{
+							"label": "B",
+							"text": "communication"
+						},
+						{
+							"label": "C",
+							"text": "dental health"
+						},
+						{
+							"label": "D",
+							"text": "finance"
+						},
+						{
+							"label": "E",
+							"text": "student conflicts"
+						},
+						{
+							"label": "F",
+							"text": "legal issues"
+						},
+						{
+							"label": "G",
+							"text": "mental well-being"
+						}
+					],
+					"answer": "F"
+				}
+			]
+		},
+		{
+			"range": "8-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What is the feature of each of the three clubs in the student union?",
+			"options": [
+				{
+					"label": "A",
+					"text": "large size"
+				},
+				{
+					"label": "B",
+					"text": "good reputation"
+				},
+				{
+					"label": "C",
+					"text": "fun people"
+				},
+				{
+					"label": "D",
+					"text": "low price"
+				},
+				{
+					"label": "E",
+					"text": "free trips"
+				}
+			],
+			"body": "The Movie Makers [8]\nTeam Travel [9]\nCampus Radio [10]",
+			"body_html": "<p>The Movie Makers [8]</p><p>Team Travel [9]</p><p>Campus Radio [10]</p>",
+			"questions": [
+				{
+					"number": 8,
+					"text": "The Movie Makers",
+					"answer": "B",
+					"quotes": [
+						"They have achieved great success and are recognized among the film community for their work."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Team Travel",
+					"answer": "D",
+					"quotes": [
+						"The Team Travel club is an organization that arranges discounted trips for many of our students and staff. It negotiates discounts with airlines, hotels and hostels, car rental companies, and long distance transport companies, so if you are planning a trip at mid-semester or semester break, consult Team Travel and you’ll definitely get a better deal for your dollar—and they don’t charge a cent for planning!"
+					]
+				},
+				{
+					"number": 10,
+					"text": "Campus Radio",
+					"answer": "A",
+					"quotes": [
+						"No other university campus radio station is bigger than ours, so if you want to stay informed about what’s happening on campus, turn your dial to the Campus Radio."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

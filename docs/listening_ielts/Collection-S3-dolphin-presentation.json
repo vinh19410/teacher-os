@@ -1,0 +1,204 @@
+{
+	"id": "c45822d4-ff1a-4301-9859-6ac604b8a65e",
+	"url": "https://stepielts.com/student/listening/c45822d4-ff1a-4301-9859-6ac604b8a65e?mode=practice",
+	"title": "Dolphin presentation",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/9b3e266d-7ebf-46be-96aa-781d0f1df644.mp3",
+	"transcript": "Speaker 2: Mark: Hi Fran, thanks for coming around. Fran: Hi Mark, no problem. We need to try and get this presentation finished. Mark: Fran, let’s start with the way dolphins make sounds. Fran: Well, we all know that dolphins make clicking noises to communicate.\nSpeaker 1: Yes, they have tongues and larynxes as humans do, but what’s really strange about the dolphin is that the sounds are focused through an extraordinary organ called the melon, which most other sea mammals don’t have.\nSpeaker 2: Mark: So, shall I take over from there and speak about the different dolphin types? I want to share what we found out about those rare dolphins that are special just to New Zealand in particular.\nSpeaker 1: Fran: Yeah, great. Put the emphasis on them. The rarest of all is the Hector’s dolphin, isn’t it? They are endangered, aren’t they? I think that’s mainly because so many of them get tangled up in fishing gear, especially gill nets, and die. I know that some conservationists are worried about the impact of the tourism industry on dolphin numbers, but I don’t think that’s a problem yet here. Also, remember that this species has a very long reproductive cycle so their numbers don’t get replenished quickly.\nSpeaker 2: Mark: Yeah, that’s really sad. But at least the New Zealand government established a sanctuary for them, didn’t it? The fishing industry was against it, but I remember reading that the general public were very supportive of the decision. It was a consequence of a study done by some marine biologists. Having a protected breeding area has made a big difference to the dolphin population already.\nSpeaker 1: Fran: Yeah, I think their numbers have swelled to over 7,000 in total, with a tiny group of just 89 living down off Southland, nearly 2,000 living near Christchurch on the east coast and the biggest group surviving off the west coast. It’s pretty wild country over there, so I guess there aren’t as many tourists and fishermen to disturb them.\nSpeaker 2: Fran: OK, so how do you suggest I structure my part of the talk?\nSpeaker 1: Mark: Well, you could start with the common dolphin, which inhabits the whole of the sea around New Zealand. And once you’ve covered everything to do with them, feeding and so on, you could go on to the more unusual types. The dusky dolphin is a special species. It’s a very interesting dolphin, because you know how all the dolphins travel in small social groups called pods? Well, the dusky dolphins travel in pods as big as 800 members.\nSpeaker 2: Fran: And I think the duskies like to travel along beside fishing and tourist boats, don’t they? Whereas the Hector’s dolphins are different, in that they prefer to go in the wake of boats, that is, coming along in the rear.\nSpeaker 1: Mark: Yeah, they do. But they also dive down deep to avoid fast boats.\nSpeaker 2: Fran: Oh. Oh, let’s not forget the Maui, because they are endangered too, aren’t they? There are only 150 of them left, and they inhabit only the western coastal waters off the North Island of New Zealand.\nSpeaker 1: Mark: Yeah, it’s a pity. They also face problems because of their tiny size. Now, the orca is actually a dolphin too, right?\nSpeaker 2: Fran: Yes, surprisingly. So I’ll include that in my talk. People call them killer whales, but in fact they’re not whales. They’re a huge and very large dolphin. A very fierce type of dolphin. In New Zealand, Kaikoura in the South Island is the best place to spot orcas swimming by, so people mistakenly think that’s where they live. But actually, orcas cover vast distances.\nSpeaker 1: Mark: Let’s not forget to mention the bottlenose. It’s bigger than nearly all the other dolphins, even the common dolphin.\nSpeaker 2: Fran: Oh, but still not as big as the orca, right?\nSpeaker 1: Mark: That’s right. Well, I think that’s our presentation done.",
+	"body": {
+		"text": "Common dolphins [5]\nDusky dolphins [6]\nHector's dolphins [7]\nMaui's dolphins [8]\nOrcas [9]\nBottle-nose dolphins [10]",
+		"html": "<p>Common dolphins [5]</p><p>Dusky dolphins [6]</p><p>Hector's dolphins [7]</p><p>Maui's dolphins [8]</p><p>Orcas [9]</p><p>Bottle-nose dolphins [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "What is the students' purpose in mentioning the way dolphins make sounds?",
+					"options": [
+						{
+							"label": "A",
+							"text": "to show comparison with human speech"
+						},
+						{
+							"label": "B",
+							"text": "to show the unusual anatomy of a dolphin's head"
+						},
+						{
+							"label": "C",
+							"text": "to show recent developments in understanding the meaning of the sounds"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Yes, they have tongues and larynxes as humans do, but what’s really strange about the dolphin is that the sounds are focused through an extraordinary organ called the melon, which most other sea mammals don’t have."
+					]
+				},
+				{
+					"number": 2,
+					"text": "According to Fran, Hector's dolphins are unaffected by",
+					"options": [
+						{
+							"label": "A",
+							"text": "tourist numbers."
+						},
+						{
+							"label": "B",
+							"text": "the threat from fishing nets."
+						},
+						{
+							"label": "C",
+							"text": "their slow breeding rate."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I know that some conservationists are worried about the impact of the tourism industry on dolphin numbers, but I don’t think that’s a problem yet here."
+					]
+				},
+				{
+					"number": 3,
+					"text": "The New Zealand Government set up a marine sanctuary",
+					"options": [
+						{
+							"label": "A",
+							"text": "because of public pressure."
+						},
+						{
+							"label": "B",
+							"text": "as a result of scientific research."
+						},
+						{
+							"label": "C",
+							"text": "to protect a dolphin feeding ground."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"It was a consequence of a study done by some marine biologists."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Where is the largest population of Hector's dolphins in New Zealand?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the east coast"
+						},
+						{
+							"label": "B",
+							"text": "Southland"
+						},
+						{
+							"label": "C",
+							"text": "the west coast"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Fran: Yeah, I think their numbers have swelled to over 7,000 in total, with a tiny group of just 89 living down off Southland, nearly 2,000 living near Christchurch on the east coast and the biggest group surviving off the west coast."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Which special characteristic does each of the following types of dolphin have?\nTypes of dolphin",
+			"options": [
+				{
+					"label": "A",
+					"text": "swim along behind boats"
+				},
+				{
+					"label": "B",
+					"text": "swim in unusually large groups"
+				},
+				{
+					"label": "C",
+					"text": "live along New Zealand's entire coastline"
+				},
+				{
+					"label": "D",
+					"text": "swim beneath slow-moving boats"
+				},
+				{
+					"label": "E",
+					"text": "tend to be solitary"
+				},
+				{
+					"label": "F",
+					"text": "live only off New Zealand's northwest coast"
+				},
+				{
+					"label": "G",
+					"text": "are the second largest dolphin species in New Zealand"
+				},
+				{
+					"label": "H",
+					"text": "are seen mostly in Kaikoura"
+				}
+			],
+			"body": "Common dolphins [5]\nDusky dolphins [6]\nHector's dolphins [7]\nMaui's dolphins [8]\nOrcas [9]\nBottle-nose dolphins [10]",
+			"body_html": "<p>Common dolphins [5]</p><p>Dusky dolphins [6]</p><p>Hector's dolphins [7]</p><p>Maui's dolphins [8]</p><p>Orcas [9]</p><p>Bottle-nose dolphins [10]</p>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Common dolphins",
+					"answer": "C",
+					"quotes": [
+						"Mark: Well, you could start with the common dolphin, which inhabits the whole of the sea around New Zealand."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Dusky dolphins",
+					"answer": "B",
+					"quotes": [
+						"Well, the dusky dolphins travel in pods as big as 800 members."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Hector's dolphins",
+					"answer": "A",
+					"quotes": [
+						"Whereas the Hector’s dolphins are different, in that they prefer to go in the wake of boats, that is, coming along in the rear."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Maui's dolphins",
+					"answer": "F",
+					"quotes": [
+						"There are only 150 of them left, and they inhabit only the western coastal waters off the North Island of New Zealand."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Orcas",
+					"answer": "H",
+					"quotes": [
+						"In New Zealand, Kaikoura in the South Island is the best place to spot orcas swimming by, so people mistakenly think that’s where they live."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Bottle-nose dolphins",
+					"answer": "G",
+					"quotes": [
+						"It’s bigger than nearly all the other dolphins, even the common dolphin. Fran: Oh, but still not as big as the orca, right?"
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

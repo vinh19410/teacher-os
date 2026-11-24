@@ -1,0 +1,103 @@
+{
+	"id": "9f676335-aa7c-4dac-af6f-4834ae05585f",
+	"url": "https://stepielts.com/student/listening/9f676335-aa7c-4dac-af6f-4834ae05585f?mode=practice",
+	"title": "Greenview Bed and Breakfast",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/eb041b87-44b3-4df4-b180-d20cc46ee080.mp3",
+	"transcript": "Good morning. Greenview bed and breakfast service. How can I assist you today? Good morning. I'd like to book a room at your bed and breakfast. Of course. I can help with that. Can I have your name and address for the booking form? I'm James I'm James Frost, and I live at 27B Waikato Road, Albany, Auckland. I'll spell the street name for you. W A I K A T O. Great. And your contact number for reminders? My phone number is 0217486905. Thank you. When do you plan to check-in and out? I'll check-in on March 30 for the long weekend and check out on April 2 due to an important meeting on April 3. Noted. Would you like a room with a specific view? Yes. A room with a view of mountains for a relaxing change from the city. Understood. Any specific room requirements? I'd need a desk in the room. I may have to work on my laptop to handle some business correspondence. Certainly. Would you also like to reserve a parking spot? Yes, please. I'll be driving. Noted. And what would you prefer for breakfast? I would like toast and fruit rather than bacon as it's better for my health. I see. Do you have any specific food dislikes or dietary restrictions? I have allergies to eggs, so the meal should not contain this ingredient. Understood. Would you like to book any activities during your stay? We offer fishing, bird watching, and hunting, among others. Yes. I'm interested in horseback riding. I'd like to book a couple of horses. Alright. Lastly, may I have your driver's license number? It's DE528401. Thank you. How did you hear about our service? Your input can help our marketing efforts. I got the information from my cousin during a conversation about where to spend a weekend. Thank you, mister Frost. Your reservation is confirmed. We look forward to welcoming you on March 30.",
+	"body": {
+		"text": "Booking Form\nGuest Details\nName of the guest: James Frost\nAddress: 27B, [1] Road, Albany, Auckland\nPhone number: [2]\nCheck-in date: March 30th\nCheck-out date: [3]\nRoom Requests\nhave a view of [4]\na [5] in the room\nparking available\nBreakfast Requests\ntoast and [6]\nno [7] because of allergies\nActivities\nbook two [8] for a ride on Saturday Morning\nIdentification\ndriver's license number: [9]\nHow the Guest Heard About the Service\nfrom the guest's [10]",
+		"html": "<table><tbody><tr><td><h4><strong>Booking Form</strong></h4><h4><strong>Guest Details</strong></h4><p>Name of the guest: James Frost<br>Address: 27B, [1] Road, Albany, Auckland<br>Phone number: [2]<br>Check-in date: March 30th<br>Check-out date: [3]</p><h4><strong>Room Requests</strong></h4><ul><li>have a view of [4]</li><li>a [5] in the room</li><li>parking available</li></ul><h4><strong>Breakfast Requests</strong></h4><ul><li>toast and [6]</li><li>no [7] because of allergies</li></ul><h4><strong>Activities</strong></h4><ul><li>book two [8] for a ride on Saturday Morning</li></ul><h4><strong>Identification</strong></h4><ul><li>driver's license number: [9]</li></ul><h4><strong>How the Guest Heard About the Service</strong></h4><ul><li>from the guest's [10]</li></ul></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Booking Form\nGuest Details\nName of the guest: James Frost\nAddress: 27B, [1] Road, Albany, Auckland\nPhone number: [2]\nCheck-in date: March 30th\nCheck-out date: [3]\nRoom Requests\nhave a view of [4]\na [5] in the room\nparking available\nBreakfast Requests\ntoast and [6]\nno [7] because of allergies\nActivities\nbook two [8] for a ride on Saturday Morning\nIdentification\ndriver's license number: [9]\nHow the Guest Heard About the Service\nfrom the guest's [10]",
+			"body_html": "<table><tbody><tr><td><h4><strong>Booking Form</strong></h4><h4><strong>Guest Details</strong></h4><p>Name of the guest: James Frost<br>Address: 27B, [1] Road, Albany, Auckland<br>Phone number: [2]<br>Check-in date: March 30th<br>Check-out date: [3]</p><h4><strong>Room Requests</strong></h4><ul><li>have a view of [4]</li><li>a [5] in the room</li><li>parking available</li></ul><h4><strong>Breakfast Requests</strong></h4><ul><li>toast and [6]</li><li>no [7] because of allergies</li></ul><h4><strong>Activities</strong></h4><ul><li>book two [8] for a ride on Saturday Morning</li></ul><h4><strong>Identification</strong></h4><ul><li>driver's license number: [9]</li></ul><h4><strong>How the Guest Heard About the Service</strong></h4><ul><li>from the guest's [10]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Address: 27B, [1] Road, Albany, Auckland",
+					"answer": "Waikato",
+					"quotes": [
+						"I'm James I'm James Frost, and I live at 27B Waikato Road, Albany, Auckland."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Phone number: [2]",
+					"answer": "0217486905",
+					"quotes": ["My phone number is 0217486905."]
+				},
+				{
+					"number": 3,
+					"text": "Check-out date: [3]",
+					"answer": "April 2",
+					"quotes": [
+						"I'll check-in on March 30 for the long weekend and check out on April 2 due to an important meeting on April 3."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Have a view of [4]",
+					"answer": "mountains",
+					"quotes": [
+						"A room with a view of mountains for a relaxing change from the city."
+					]
+				},
+				{
+					"number": 5,
+					"text": "A [5] in the room",
+					"answer": "desk",
+					"quotes": ["I'd need a desk in the room."]
+				},
+				{
+					"number": 6,
+					"text": "Toast and [6]",
+					"answer": "fruit",
+					"quotes": [
+						"I would like toast and fruit rather than bacon as it's better for my health.",
+						"And what would you prefer for breakfast?"
+					]
+				},
+				{
+					"number": 7,
+					"text": "No [7] because of allergies",
+					"answer": "eggs",
+					"quotes": [
+						"I have allergies to eggs, so the meal should not contain this ingredient."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Book two [8] for a ride on Saturday Morning",
+					"answer": "horses",
+					"quotes": ["I'd like to book a couple of horses."]
+				},
+				{
+					"number": 9,
+					"text": "Driver's license number: [9]",
+					"answer": "DE528401",
+					"quotes": [
+						"It's DE528401.",
+						"Lastly, may I have your driver's license number?"
+					]
+				},
+				{
+					"number": 10,
+					"text": "From the guest's [10]",
+					"answer": "cousin",
+					"quotes": [
+						"I got the information from my cousin during a conversation about where to spend a weekend."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

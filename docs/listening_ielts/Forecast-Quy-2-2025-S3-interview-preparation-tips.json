@@ -1,0 +1,154 @@
+{
+	"id": "9516e616-fc31-4233-91f4-2b99fb2cc61d",
+	"url": "https://stepielts.com/student/listening/9516e616-fc31-4233-91f4-2b99fb2cc61d?mode=practice",
+	"title": "Interview Preparation Tips",
+	"source": "Forecast Quý 2-2025",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/01d45081-6c31-4557-9c5e-29c59a56483b.mp3",
+	"transcript": "Speaker 1: Hello, Stephen. I received your email about this upcoming interview you may have with ATA company. I am hoping to give you some suggestions today. The first recommendation I have for you is to show the interviewers a sample of the group project we did last semester.\nSpeaker 2: That is a good idea. I kept a copy of that project and I will be sure to show it during my interview.\nSpeaker 1: When you show them this project, it will be necessary to mention the software that you and your classmates used to carry out the data analysis.\nSpeaker 2: OK. What else do you think I should prepare?\nSpeaker 1: I’d suggest two things. First, it’s very important to provide your observation on their current situation. It would be inspiring for the managers to reflect upon certain problems. Moreover, don’t forget the internal surveys. It’s a powerful tool to discover what employees really think of their companies.\nSpeaker 2: Got that.\nSpeaker 1: I noticed that you emphasized various methods in your research, may I know the purpose of doing so?\nSpeaker 2: Well, I think this is what differentiates me from other candidates. I’m very cautious with the details I write in my reports, so I usually provide extra reference to back up my points. For some topics, I’ll include lots of photo statistics for better readability and illustration.\nSpeaker 1: Visual aids do matter for some experiments, as they present more information that cannot be conveyed by words.\nSpeaker 2: As for the practical applications of my research, I’ve prepared several ways to demonstrate how it works. I think they will justify the value of the theories in my research.\nSpeaker 1: Sounds great. Those are the things that most interviewers would look into and you obviously have covered them in your preparation. Are you aware that there is the possibility of receiving criticism during the interview? Do you have a plan regarding what to do if that happens?\nSpeaker 2: I tend to ignore the negative comments and stay silent.\nSpeaker 1: I think it would be a mistake to do that. Instead, you would be wiser to offer some ideas on how to solve the problem that causes the criticism. If you can do this, they will then know that you are a problem-solver.\nSpeaker 2: Thanks for the advice.\nSpeaker 1: And you are probably wondering about what kind of notes or records you should make during the interview?\nSpeaker 2: Yes, I’m quite bad at note-taking.\nSpeaker 1: Although it is very important that you listen carefully to anything that the interviewer says, remember, do not take notes of everything that is said. If you are doing that, then I fear that you will miss some of the key information that is being said.\nSpeaker 2: Oh, looks like I have already made the mistake in some of my classes. Perhaps I should get a recorder.\nSpeaker 1: You may not be allowed to do that in some scenarios. I suggest that you listen intently and then just write down the keywords when there is a break in the conversation. This will be much easier.\nSpeaker 2: On another note, do you have any suggestions on what I should do before I publish the results of my study? Do you think I should write a book?\nSpeaker 1: I don’t think you are at that point yet. Since you have already read enough publications according to our last chat, I think you simply need to gain more experience, and then you should be ready to publish your own materials.\nSpeaker 2: Thank you very much, everything is clear to me now.",
+	"body": {
+		"text": "Things for demonstration in the interview\n• provide a [1] for interview\n• refer to the [2] for data review\n\nThings to prepare\n• [3] for managers\n• [4] for employees\n\nReasons for applying different methods:\n• additional [5] to support details\n• photo [6] for better illustration\n• [7] to show practicality",
+		"html": "<p><strong>Things for demonstration in the interview  </strong></p><p>• provide a [1] for interview</p><p>• refer to the [2]  for data review</p><p></p><p><strong>Things to prepare</strong></p><p>•  [3] for managers</p><p>• [4]  for employees</p><p></p><p><strong>Reasons for applying different methods: </strong></p><p> • additional [5]  to support details</p><p> • photo [6]  for better illustration</p><p> • [7] to show practicality</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "Things for demonstration in the interview\n• provide a [1] for interview\n• refer to the [2] for data review\n\nThings to prepare\n• [3] for managers\n• [4] for employees\n\nReasons for applying different methods:\n• additional [5] to support details\n• photo [6] for better illustration\n• [7] to show practicality",
+			"body_html": "<p><strong>Things for demonstration in the interview  </strong></p><p>• provide a [1] for interview</p><p>• refer to the [2]  for data review</p><p></p><p><strong>Things to prepare</strong></p><p>•  [3] for managers</p><p>• [4]  for employees</p><p></p><p><strong>Reasons for applying different methods: </strong></p><p> • additional [5]  to support details</p><p> • photo [6]  for better illustration</p><p> • [7] to show practicality</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "• provide a [1] for interview",
+					"answer": "sample",
+					"quotes": [
+						"The first recommendation I have for you is to show the interviewers a sample of the group project we did last semester."
+					]
+				},
+				{
+					"number": 2,
+					"text": "• refer to the [2] for data review",
+					"answer": "software",
+					"quotes": [
+						"When you show them this project, it will be necessary to mention the software that you and your classmates used to carry out the data analysis."
+					]
+				},
+				{
+					"number": 3,
+					"text": "• [3] for managers",
+					"answer": "observation / observations",
+					"quotes": [
+						"First, it’s very important to provide your observation on their current situation."
+					]
+				},
+				{
+					"number": 4,
+					"text": "• [4] for employees",
+					"answer": "surveys",
+					"quotes": ["Moreover, don’t forget the internal surveys."]
+				},
+				{
+					"number": 5,
+					"text": "• additional [5] to support details",
+					"answer": "reference / references",
+					"quotes": [
+						"I’m very cautious with the details I write in my reports, so I usually provide extra reference to back up my points."
+					]
+				},
+				{
+					"number": 6,
+					"text": "• photo [6] for better illustration",
+					"answer": "statistics",
+					"quotes": [
+						"For some topics, I’ll include lots of photo statistics for better readability and illustration."
+					]
+				},
+				{
+					"number": 7,
+					"text": "• [7] to show practicality",
+					"answer": "applications",
+					"quotes": [
+						"As for the practical applications of my research, I’ve prepared several ways to demonstrate how it works."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-10",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 8,
+					"text": "What should Stephen do when there is criticism during the interview?",
+					"options": [
+						{
+							"label": "A",
+							"text": "keep silent"
+						},
+						{
+							"label": "B",
+							"text": "offer solutions"
+						},
+						{
+							"label": "C",
+							"text": "express his own view"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Instead, you would be wiser to offer some ideas on how to solve the problem that causes the criticism."
+					]
+				},
+				{
+					"number": 9,
+					"text": "During the interview, it is suggested to make",
+					"options": [
+						{
+							"label": "A",
+							"text": "key points."
+						},
+						{
+							"label": "B",
+							"text": "complete notes."
+						},
+						{
+							"label": "C",
+							"text": "Recordings."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I suggest that you listen intently and then just write down the keywords when there is a break in the conversation."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Before publishing some materials, Stephen should",
+					"options": [
+						{
+							"label": "A",
+							"text": "browse some published materials."
+						},
+						{
+							"label": "B",
+							"text": "write a book."
+						},
+						{
+							"label": "C",
+							"text": "accumulate more experience."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Since you have already read enough publications according to our last chat, I think you simply need to gain more experience, and then you should be ready to publish your own materials."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

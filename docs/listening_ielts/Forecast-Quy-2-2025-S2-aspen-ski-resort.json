@@ -1,0 +1,226 @@
+{
+	"id": "98243704-2fdd-4222-b304-16bb931625ef",
+	"url": "https://stepielts.com/student/listening/98243704-2fdd-4222-b304-16bb931625ef?mode=practice",
+	"title": "Aspen Ski Resort",
+	"source": "Forecast Quý 2-2025",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/5742b91f-197f-4e94-988d-b287345d9218.mp3",
+	"transcript": "Speaker 1: Hello, all. Welcome to Aspen Ski Resort near Cumbria. It is one of my favorite vacation spots. I first discovered this fantastic resort when it was recommended to me by a journalist who was interviewing me. I then contacted my travel agent for further information about the resort and, from the first time I visited the place, it was “love at first sight”. Now, when I don’t have acting jobs to do, I would come here and relax. My parents were both geographers and their profession afforded my siblings and I the opportunity to travel with them all over the world when we were growing up, visiting some of the places I had seen in the television documentaries I had watched. Their passion kept affecting me and eventually I realized that travelling has been something I love for a long time. A bit of background on the Aspen Ski Resort: The area of Cumbria was first known as a vacation spot in the 1920s, however that was only as a summer vacation spot. The area became home to a summer resort in the 1930s. In the 1960s, with the increasing popularity of downhill skiing, the first British ski resort appeared. The Aspen Ski Resort was established soon after in 1968 and the Cumbria area became a popular destination for winter skiing vacations. Although snow skiing is the most popular winter activity at the resort, there are also some other popular activities. In the spring, summer, and fall seasons, playing golf is easily the favorite activity of most of the resort’s guests. There are five top-ranked courses within a short driving distance of the resort and the resort offers many packages for visitors during the warmer months. Also, throughout the year, many of the resort’s guests like to visit the Great Waters Brewing Company. But it is under reconstruction at the moment. Also, many of our visitors take advantage of skydiving activities offered by a skydiving school, but the school is located in another town which is about 2-hour drive from here. Some people ask what activities are recommended in the nearby Edimore region. Many visitors to that popular destination often also visit either the hot springs near the city of Marlborough or the local market in the city of Jameston. The hot springs are geothermally heated groundwaters that rise from the crust of the earth and are enjoyed by folks of all ages. However, the price of having a hot spa there is quite high this season. The Edimore Nature Museum is a great alternative. You will see details of the animals which are native to the area. Most visitors in the past gave really positive feedback about the museum. The market in Jameston region has a nice selection of fruits and vegetables which are grown on farms in the area and also a selection of fresh seafood. The market is not open this week. Please note that the Aspen Resort sponsors monthly education and entertainment programs which are open to the public. Previous programs have featured Mountain Walking in Europe and Wildlife around the World. The upcoming entertainment program which will take place at 7 p.m. May 18th in the resort’s conference center will be about the Landscape of the United Kingdom. These events are free to those attending, but seats are available on a first come, first served basis. Finally, let me outline what some of the Cumbria area’s other skiing locations are popular for. Lakeside is the oldest of the area resorts. Its popularity barely decreases over the years and it was recently renovated. A newly-built ski school there has attracted some attention and it will be open to the public within a couple of months. Petersburg is well-known as a training site for skiing teams. It’s the home training base for Olympic champion Billy Randolph. Winterton is a resort that is well-known as a place for inexperienced skiers. It has many different bunny hills for new learners, and it doesn’t require any good equipment. Al-slops is a resort that will provide you with some special service. They have a certified staff that will care for your kids while you are on the slopes. For people who want to enjoy the beauty of nature as well as having some exciting activities, these places are…",
+	"body": {
+		"text": "Lakeside [7]\nPetersburg [8]\nWinterton [9]\nAl slops [10]",
+		"html": "<p>Lakeside [7]</p><p>Petersburg [8]</p><p>Winterton [9]</p><p>Al slops [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "What is the speaker's profession?",
+					"options": [
+						{
+							"label": "A",
+							"text": "a travel agent"
+						},
+						{
+							"label": "B",
+							"text": "an actor"
+						},
+						{
+							"label": "C",
+							"text": "a journalist"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Now, when I don’t have acting jobs to do, I would come here and relax."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Why does he love travelling?",
+					"options": [
+						{
+							"label": "A",
+							"text": "He watched documentaries as a child."
+						},
+						{
+							"label": "B",
+							"text": "He is influenced by his parents' passion."
+						},
+						{
+							"label": "C",
+							"text": "His parents are geographers."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Their passion kept affecting me and eventually I realized that travelling has been something I love for a long time."
+					]
+				},
+				{
+					"number": 3,
+					"text": "When was the first British ski resort established?",
+					"options": [
+						{
+							"label": "A",
+							"text": "1920s"
+						},
+						{
+							"label": "B",
+							"text": "1930s"
+						},
+						{
+							"label": "C",
+							"text": "1960s"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"In the 1960s, with the increasing popularity of downhill skiing, the first British ski resort appeared."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Which activity is offered by a school in the other town?",
+					"options": [
+						{
+							"label": "A",
+							"text": "skydiving"
+						},
+						{
+							"label": "B",
+							"text": "playing golf"
+						},
+						{
+							"label": "C",
+							"text": "visiting a brewery"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Also, many of our visitors take advantage of skydiving activities offered by a skydiving school, but the school is located in another town which is about 2-hour drive from here."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What does the speaker recommend in Edimore region?",
+					"options": [
+						{
+							"label": "A",
+							"text": "a hot spring"
+						},
+						{
+							"label": "B",
+							"text": "a museum"
+						},
+						{
+							"label": "C",
+							"text": "a local market"
+						}
+					],
+					"answer": "B",
+					"quotes": ["The Edimore Nature Museum is a great alternative."]
+				},
+				{
+					"number": 6,
+					"text": "What program will be available soon?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Landscape of UK"
+						},
+						{
+							"label": "B",
+							"text": "Mountain Walking in Europe"
+						},
+						{
+							"label": "C",
+							"text": "Wildlife around the World"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"The upcoming entertainment program which will take place at 7 p.m. May 18th in the resort’s conference center will be about the Landscape of the United Kingdom."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Which feature does each of the following skiing locations have?",
+			"options": [
+				{
+					"label": "A",
+					"text": "a well-known ski school"
+				},
+				{
+					"label": "B",
+					"text": "suitable for beginners"
+				},
+				{
+					"label": "C",
+					"text": "Olympics champion training location"
+				},
+				{
+					"label": "D",
+					"text": "would-be Olympics Rink"
+				},
+				{
+					"label": "E",
+					"text": "good ski facilities"
+				},
+				{
+					"label": "F",
+					"text": "popular for many years"
+				},
+				{
+					"label": "G",
+					"text": "childcare provided"
+				}
+			],
+			"body": "Lakeside [7]\nPetersburg [8]\nWinterton [9]\nAl slops [10]",
+			"body_html": "<p>Lakeside [7]</p><p>Petersburg [8]</p><p>Winterton [9]</p><p>Al slops [10]</p>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "Lakeside",
+					"answer": "F",
+					"quotes": [
+						"Its popularity barely decreases over the years and it was recently renovated."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Petersburg",
+					"answer": "C",
+					"quotes": [
+						"It’s the home training base for Olympic champion Billy Randolph."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Winterton",
+					"answer": "B",
+					"quotes": [
+						"Winterton is a resort that is well-known as a place for inexperienced skiers. It has many different bunny hills for new learners, and it doesn’t require any good equipment."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Al slops",
+					"answer": "G",
+					"quotes": [
+						"They have a certified staff that will care for your kids while you are on the slopes."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

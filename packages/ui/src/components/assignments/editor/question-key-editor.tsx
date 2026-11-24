@@ -1,5 +1,8 @@
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
-import { isLibraryBankableType } from "@teacher-os/api/library-contracts";
+import {
+	isLibraryBankableType,
+	isLibraryImageBasedType,
+} from "@teacher-os/api/library-contracts";
 import { htmlToPlainText } from "@teacher-os/api/rich-text";
 import { Button } from "@teacher-os/ui/components/web-kit/button";
 import {
@@ -63,6 +66,7 @@ export function QuestionKeyEditor({
 	imageId,
 	maxBank = OPTION_BANK_MAX,
 	libraryReadingMode = false,
+	libraryMode = false,
 	maxQuestions = QUESTION_MAX_COUNT,
 	lockAddQuestion = false,
 }: {
@@ -101,19 +105,22 @@ export function QuestionKeyEditor({
 	imageId?: string;
 	maxBank?: number;
 	libraryReadingMode?: boolean;
+	libraryMode?: boolean;
 	maxQuestions?: number;
 	lockAddQuestion?: boolean;
 }) {
+	const isLibraryMode = libraryMode || libraryReadingMode;
 	const actualImageId = imageId ?? `assignment-field-image-${partId}`;
 	const qStart = qStartOverride ?? qStartOf(skill, partId);
 	const isMcqMany = typeId === "mcq_many";
 	const supportsLibraryToggle =
-		libraryReadingMode && (typeId === "summary" || typeId === "fill_blank");
+		isLibraryMode && (typeId === "summary" || typeId === "fill_blank");
+	const supportsOptionalWordBank =
+		isLibraryMode &&
+		(typeId === "summary" || (skill === "listening" && typeId === "flow"));
 	const [summaryWordBankOpen, setSummaryWordBankOpen] = useState(false);
 	const wordBankChecked =
-		libraryReadingMode &&
-		typeId === "summary" &&
-		(optionBank.length > 0 || summaryWordBankOpen);
+		supportsOptionalWordBank && (optionBank.length > 0 || summaryWordBankOpen);
 	const [completionMode, setCompletionMode] = useState<"cloze" | "table">(() =>
 		items.some((item) => parseTableStem(item.stem) !== null)
 			? "table"
@@ -125,26 +132,26 @@ export function QuestionKeyEditor({
 	// Bank là prompt-level nhưng editor hiện khi type đề HOẶC bất kỳ câu
 	// bankable (đề trộn dạng) — không thì cụm bankable không có chỗ nhập bank
 	// mà instruction take screen vẫn nói "choose from the option bank".
-	const bankableCheck = libraryReadingMode
-		? isLibraryBankableType
-		: isBankableType;
-	const bankTypeId =
-		typeId === "summary"
-			? wordBankChecked
-				? "summary"
-				: null
-			: bankableCheck(skill, typeId)
-				? typeId
-				: (items.find(
-						(item) =>
-							item.type &&
-							(item.type !== "summary" || optionBank.length > 0) &&
-							bankableCheck(skill, item.type),
-					)?.type ?? null);
-	// Phase-04 FR2/FR3 — image-based pairs (reading diagram + listening map,
-	// skill-qualified) surface the URL field + pin editor; `map` gains the
-	// field it never had while writing task1's shared `map` id stays clear.
-	const isImage = isImageBased(skill, typeId);
+	const bankableCheck = isLibraryMode ? isLibraryBankableType : isBankableType;
+	const isOptionalBankType = (t: string) =>
+		t === "summary" || (skill === "listening" && t === "flow");
+	const bankTypeId = isOptionalBankType(typeId)
+		? wordBankChecked
+			? typeId
+			: null
+		: bankableCheck(skill, typeId)
+			? typeId
+			: (items.find(
+					(item) =>
+						item.type &&
+						(!isOptionalBankType(item.type) || optionBank.length > 0) &&
+						bankableCheck(skill, item.type),
+				)?.type ?? null);
+	// Phase-04 FR2/FR3 — image-based pairs (reading diagram + listening map/diagram
+	// trong thư viện) surface the URL field + pin editor; writing task1's shared `map` stays clear.
+	const isImage = isLibraryMode
+		? isLibraryImageBasedType(skill, typeId)
+		: isImageBased(skill, typeId);
 	// Same scheme policy as the contract — the thumbnail never renders an
 	// unsafe URL, even while the field still carries a draft value.
 	const safeImageUrl = imageUrl.trim();
@@ -158,12 +165,12 @@ export function QuestionKeyEditor({
 	// tablecomp gets the grid editor; `shortans` keeps the phase-01 text rows
 	// (no content block — coordinator scope note).
 	// `gap` (Grammar/Vocabulary) reuses the click-to-blank editor without being an IELTS completion type.
-	// Library Reading mode (#762): `summary`/`fill_blank` support cloze/table toggle, `diagram` shows ClozeEditor.
+	// Library mode (#762 & listening): `summary`/`fill_blank` support cloze/table toggle, `diagram` shows ClozeEditor.
 	const showClozeEditor = supportsLibraryToggle
 		? completionMode === "cloze"
 		: CLOZE_EDITOR_TYPES.has(typeId) ||
 			typeId === "gap" ||
-			(libraryReadingMode && (typeId === "fill_blank" || typeId === "diagram"));
+			(isLibraryMode && (typeId === "fill_blank" || typeId === "diagram"));
 	const showTableEditor = supportsLibraryToggle
 		? completionMode === "table"
 		: typeId === TABLECOMP_TYPE;
@@ -262,10 +269,7 @@ export function QuestionKeyEditor({
 		setPasteOpen(false);
 		setPasteOutcome(null);
 	};
-	const requirePin =
-		isImage &&
-		status === "ready" &&
-		!(libraryReadingMode && skill === "reading");
+	const requirePin = isImage && status === "ready" && !isLibraryMode;
 	return (
 		<div className="flex flex-col gap-4 rounded-md rounded-md bg-muted p-4">
 			<div>
@@ -327,7 +331,7 @@ export function QuestionKeyEditor({
 						</button>
 					</fieldset>
 				)}
-				{libraryReadingMode && typeId === "summary" && (
+				{supportsOptionalWordBank && (
 					<label className="flex cursor-pointer items-center gap-2 text-sm">
 						<input
 							type="checkbox"
@@ -468,6 +472,7 @@ export function QuestionKeyEditor({
 							openRow={openRow}
 							onOpenRowChange={onOpenRowChange}
 							libraryReadingMode={libraryReadingMode}
+							libraryMode={isLibraryMode}
 						/>
 						<div className="flex flex-col gap-1">
 							<Button

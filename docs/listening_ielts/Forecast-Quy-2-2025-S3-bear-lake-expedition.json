@@ -1,0 +1,199 @@
+{
+	"id": "57bb7bb4-3a93-4c95-8f3d-9f954fd06c54",
+	"url": "https://stepielts.com/student/listening/57bb7bb4-3a93-4c95-8f3d-9f954fd06c54?mode=practice",
+	"title": "Bear Lake Expedition",
+	"source": "Forecast Quý 2-2025",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/114e021c-f338-4beb-bad5-ac71f26288c2.mp3",
+	"transcript": "Speaker 0: TUTOR: So Fiona, you wanted to see me as you said in the email that you’ve got some questions about the upcoming trip to Bear Lake in Idaho?\nSpeaker 1: FIONA: Yes. I saw on the news that there has recently been flooding in the area. Is that going to affect our plans?\nSpeaker 0: TUTOR: I don’t think so. The water has already receded, so we do not need to worry about it . It’s still muddy around the lake at the moment, I believe, but that will disappear by the time we go on our trip.\nSpeaker 1: FIONA: That’s good to know. I didn’t know if I should bring my waterproof clothing or not. We are camping in the nearby village, right?\nSpeaker 0: TUTOR: Yes, that’s right. We will be camping not far from the lake - And you will need to organize your own camping gear. A tent and a sleeping bag should be enough.\nSpeaker 1: FIONA: I don’t do much camping. I’m just a little concerned about sleeping outdoors - will there be any dangerous animals around?\nSpeaker 0: TUTOR: Well, there are some animals such as raccoons or squirrels, but nothing dangerous that you need to be concerned about. Large animals such as bears and moose generally keep well away from where humans are.\nSpeaker 1: FIONA: What about domestic animals such as cattle and horses? Are there any of those in the area?\nSpeaker 0: TUTOR: No, farm animals are not allowed in the protected area.\nSpeaker 1: FIONA: Great. It’s best to keep them away to protect the natural ecology. Speaking of the ecosystem, do many animals live in the area?\nSpeaker 0: TUTOR: Yes, many small mammals, and it’s also a well-known bird habitat popular among bird-watchers.\nSpeaker 1: FIONA: Interesting. I wonder if there are any endangered species in the Bear Lake area?\nSpeaker 0: TUTOR: If you are lucky, you might be able to run into a rare species of butterfly. TUTOR: Are you aware that after the trip you will need to make a presentation to the class?\nSpeaker 1: FIONA: Oh yes - I’m a little nervous about that. I believe I can find enough interesting data during my research and share my research methods. But I haven’t picked a topic yet. I guess that will become clear during the trip. Did you say the presentation needs to be 10 minutes, or 15 minutes? I can’t remember!\nSpeaker 0: TUTOR: The presentation should be around 15 minutes. But please do not just rely on your data from the trip though, you will need to do extra research too.\nSpeaker 1: FIONA: I’ve started already. I’m looking on the Internet and in geography magazines.\nSpeaker 0: TUTOR: Those are not the best options. For academic research, I think the best resource is surveys conducted by government departments. You should be able to find lots of useful and interesting information from the Department of Parks and Natural Resources.\nSpeaker 1: FIONA: Great idea, thanks! I just hope I can do it well enough. I’m feeling stressed about this project.\nSpeaker 0: TUTOR: That’s understandable. What is stressing you most - not having enough time?\nSpeaker 1: FIONA: Well, the research required is going to take a lot of time, but I’m mainly concerned that I might analyse the data from the government incorrectly. I’m not very experienced at doing that, and I know it’s important to get it right.\nSpeaker 0: TUTOR: That’s true, but do your best, and if there are any specific areas you have trouble with, you can come and ask me.\nSpeaker 1: FIONA: Thank you. I really appreciate that. So is there anything else I need to know about our trip? What should I focus on during our time there?\nSpeaker 0: TUTOR: Well, you will probably find that there are different kinds of plants, soil and stones at the site. Soil condition is something students from the past trips researched most, so I highly recommend that you do the same. The study of the appearance of stones there is usually favored by students who’ve been there twice or more.\nSpeaker 1: FIONA: Alright. I’ll take your advice since this place is completely new to me. And how much note-taking do you think we should do on the trip? Is it better to take many notes, or rely on memory? I always see other students taking lots of notes and think they are doing better than me.\nSpeaker 0: TUTOR: No need to compare yourself with others, just take down as many details as you can. After you come back, you can mention them during your presentation.\nSpeaker 1: FIONA: Alright. Well, I’d better not take up more of your time, thanks again and see you soon.\nSpeaker 0: TUTOR: Not at all. See you on the trip. Good luck with your research.",
+	"body": {
+		"text": "muddy area [1]\nanimal attacks [2]\nfarm animals [3]\nanimal habitats [4]\nendangered species [5]",
+		"html": "<p>muddy area [1]</p><p>animal attacks [2]</p><p>farm animals [3]</p><p>animal habitats [4]</p><p>endangered species [5]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Will there be any of the following things in the area when the students visit?",
+			"options": [
+				{
+					"label": "A",
+					"text": "there will be"
+				},
+				{
+					"label": "B",
+					"text": "there might be"
+				},
+				{
+					"label": "C",
+					"text": "there will not be"
+				}
+			],
+			"body": "muddy area [1]\nanimal attacks [2]\nfarm animals [3]\nanimal habitats [4]\nendangered species [5]",
+			"body_html": "<p>muddy area [1]</p><p>animal attacks [2]</p><p>farm animals [3]</p><p>animal habitats [4]</p><p>endangered species [5]</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "muddy area",
+					"answer": "C",
+					"quotes": [
+						"It’s still muddy around the lake at the moment, I believe, but that will disappear by the time we go on our trip."
+					]
+				},
+				{
+					"number": 2,
+					"text": "animal attacks",
+					"answer": "C",
+					"quotes": [
+						"TUTOR: Well, there are some animals such as raccoons or squirrels, but nothing dangerous that you need to be concerned about.",
+						"Large animals such as bears and moose generally keep well away from where humans are."
+					]
+				},
+				{
+					"number": 3,
+					"text": "farm animals",
+					"answer": "C",
+					"quotes": [
+						"TUTOR: No, farm animals are not allowed in the protected area."
+					]
+				},
+				{
+					"number": 4,
+					"text": "animal habitats",
+					"answer": "A",
+					"quotes": [
+						"TUTOR: Yes, many small mammals, and it’s also a well-known bird habitat popular among bird-watchers."
+					]
+				},
+				{
+					"number": 5,
+					"text": "endangered species",
+					"answer": "B",
+					"quotes": [
+						"TUTOR: If you are lucky, you might be able to run into a rare species of butterfly."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Fiona was certain about",
+					"options": [
+						{
+							"label": "A",
+							"text": "which topic to choose."
+						},
+						{
+							"label": "B",
+							"text": "the length of the presentation."
+						},
+						{
+							"label": "C",
+							"text": "the research methods."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"I believe I can find enough interesting data during my research and share my research methods."
+					]
+				},
+				{
+					"number": 7,
+					"text": "According to the tutor, the best way to get the information for the presentation is through",
+					"options": [
+						{
+							"label": "A",
+							"text": "surveys from the authorities."
+						},
+						{
+							"label": "B",
+							"text": "the internet."
+						},
+						{
+							"label": "C",
+							"text": "some journals."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"For academic research, I think the best resource is surveys conducted by government departments."
+					]
+				},
+				{
+					"number": 8,
+					"text": "What does Fiona worry about most on this presentation?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She is running out of time."
+						},
+						{
+							"label": "B",
+							"text": "She has to do the research extensively."
+						},
+						{
+							"label": "C",
+							"text": "She may misinterpret the supporting data."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"FIONA: Well, the research required is going to take a lot of time, but I’m mainly concerned that I might analyse the data from the government incorrectly."
+					]
+				},
+				{
+					"number": 9,
+					"text": "The tutor suggests that Fiona should focus on",
+					"options": [
+						{
+							"label": "A",
+							"text": "the variety of plants."
+						},
+						{
+							"label": "B",
+							"text": "soil condition."
+						},
+						{
+							"label": "C",
+							"text": "stone shapes."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Soil condition is something students from the past trips researched most, so I highly recommend that you do the same."
+					]
+				},
+				{
+					"number": 10,
+					"text": "When Fiona is taking notes during the trip, she should",
+					"options": [
+						{
+							"label": "A",
+							"text": "make comparisons between different students notes."
+						},
+						{
+							"label": "B",
+							"text": "underscore items that are especially important."
+						},
+						{
+							"label": "C",
+							"text": "try to include all the details."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"TUTOR: No need to compare yourself with others, just take down as many details as you can."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

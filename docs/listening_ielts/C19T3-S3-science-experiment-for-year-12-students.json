@@ -1,0 +1,216 @@
+{
+	"id": "483dd220-51f1-4dd8-afc9-1fac36edc267",
+	"url": "https://stepielts.com/student/listening/483dd220-51f1-4dd8-afc9-1fac36edc267?mode=practice",
+	"title": "Science experiment for year 12 students",
+	"source": "C19T3",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/aad48e0c-2a47-4d43-ba7d-6fc547b7c084.mp3",
+	"transcript": "Speaker 0: You will hear a trainee science teacher called Claire talking about her practical teaching work to another trainee called Jake. First, you have some time to look at questions 21 to 25. Now listen carefully and answer questions 21 to 25.\nSpeaker 1: Hi, Jake. How are you getting on with the practical teaching?\nSpeaker 2: Oh, it's harder than I expected, but I've got some great classes. How about you?\nSpeaker 1: Not brilliant. I'm really struggling with my year 12 science class.\nSpeaker 2: Are they hard to control?\nSpeaker 1: Well, don't have discipline problems as such. It's just that they don't seem to think that science has anything to do with their lives. It's depressing. They listen to what I say, and I gave them a test last week and the results weren't too bad, But there's no real engagement.\nSpeaker 2: Right.\nSpeaker 1: And as part of my teaching practice, I have to design an experiment for them to do. I was wondering about something on the children's diets you know, asking them to record what they eat and maybe linking it to their state of health.\nSpeaker 2: Let's think. So your methodology would involve the children recording what they eat, Okay, but you'd also need to have access to the children's medical records, and I don't think people would be happy about that. Confidentiality would be an issue. If you could get the right data, the conclusions might be significant, but I suspect it's not going to be easy.\nSpeaker 1: Right.\nSpeaker 2: Have you thought about doing an experiment using animals?\nSpeaker 1: Wouldn't that be upsetting for the children?\nSpeaker 2: Well, the animals don't have to be harmed in any way. It could just be an experiment where they're given a certain diet and the effects are observed.\nSpeaker 1: Would I have to get permission to use these animals?\nSpeaker 2: Yes. You'd have to submit an outline of the experiment and fill in a form, but it's quite straightforward.\nSpeaker 1: But if we found out that, say, a particular diet affects the health of animals, the same thing wouldn't necessarily be true for people, would it?\nSpeaker 2: No, that's true. But the findings for any experiment are going to be limited. It's inevitable.\nSpeaker 1: I suppose so. So what animals could I use to investigate the effects of diet? Mice?\nSpeaker 2: Yes. You'd need experimental mice, ones that have been specially bred for experiments. Okay, so what will your experiment be investigating exactly?\nSpeaker 1: Well, something to do with nutrition, so maybe we could look at food supplements things like extra iron and extra protein and their impact on health.\nSpeaker 2: That might be rather broad. Maybe just look at the effects of one supplement, like sugar, on the health of the mice?\nSpeaker 1: In fact, maybe the focus could be on whether mice can control their own diet.\nSpeaker 2: So what happens when they have access to more sugar that they don't really need?\nSpeaker 1: Exactly. Do they eat it, or do they decide to leave it?\nSpeaker 2: Great. Then later on you could do a follow-up experiment adding another variable. Like, you could give some of the mice the chance to be more active, running on a wheel or something, and the others just sit around and don't do much.\nSpeaker 1: Or I could repeat the experiment but change the type of food I provided, or use mice with a different genetic structure. But I think your idea would be more interesting. I might think about that some more.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 26 to 30. Now listen and answer questions 26 to 30.\nSpeaker 1: So can I talk through a possible procedure for the experiment where mice are given a sugar supplement?\nSpeaker 2: Sure. I did a similar experiment in college, actually.\nSpeaker 1: Great. So how many mice would I need?\nSpeaker 2: I'd say about 12, and all young ones, not a mixture of old and young.\nSpeaker 1: Okay. And I'd need two groups of equal sizes, so six in each group. How would I tell them apart? I suppose I could put some sort of tag on one group, or just mark them in some way?\nSpeaker 2: You could use food colouring, that wouldn't hurt them.\nSpeaker 1: Perfect. Then each group would go into a separate cage, and one group let's call them Group A would be the control group, so they'd just have ordinary mouse food. I suppose you can buy that?\nSpeaker 2: Yes, it comes in dry pellets.\nSpeaker 1: And the other group would have the same as the first group, but they'd also have the extra sugar.\nSpeaker 2: Would you just give them straight sugar?\nSpeaker 1: It might be better to give them something like cereal with it.\nSpeaker 2: Then you'd need to weigh the mice, I should think, once a week, and you'd need an electronic balance.\nSpeaker 1: But we can't hold them on the balance, or it'd affect the reading.\nSpeaker 2: Exactly. So you need something called a weighing chamber to stop the mice from running away. It sounds complicated, but actually you can just use a plastic box with holes in the top.\nSpeaker 1: Okay. So once we've measured the weight gain of each mouse, we can work out the average for each group, as well as the standard deviation, and then see where we go from there. That sounds cool. I think the students will enjoy it.\nSpeaker 2: Yes. One thing you must remember\nSpeaker 0: That is the end of part three. You now have thirty seconds to check your answers to part three.",
+	"body": {
+		"text": "Choose mice which are all the same [26]\n↓\nDivide the mice into two groups, each with a different [27]\n↓\nPut each group in a separate cage.\nFeed group A commercial mouse food.\nFeed group B the same, but also sugar contained in [28]\n↓\nTake measurements using an electronic scale.\nPlace them in a weighing chamber to prevent [29]\n↓\nDo all necessary [30]",
+		"html": "<table><tbody><tr><td>Choose mice which are all the same [26]</td></tr></tbody></table><p>↓</p><table><tbody><tr><td>Divide the mice into two groups, each with a different [27]</td></tr></tbody></table><p>↓</p><table><tbody><tr><td>Put each group in a separate cage.<br>Feed group A commercial mouse food.<br>Feed group B the same, but also sugar contained in [28]</td></tr></tbody></table><p>↓</p><table><tbody><tr><td>Take measurements using an electronic scale.<br>Place them in a weighing chamber to prevent [29]</td></tr></tbody></table><p>↓</p><table><tbody><tr><td>Do all necessary [30]</td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "21-25",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "How does Clare feel about the students in her Year 12 science class?",
+					"options": [
+						{
+							"label": "A",
+							"text": "worried that they are not making progress"
+						},
+						{
+							"label": "B",
+							"text": "challenged by their poor behaviour in class"
+						},
+						{
+							"label": "C",
+							"text": "frustrated at their lack of interest in the subject"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"It's just that they don't seem to think that science has anything to do with their lives. It's depressing. They listen to what I say, and I gave them a test last week and the results weren't too bad, But there's no real engagement."
+					]
+				},
+				{
+					"number": 22,
+					"text": "How does Jake react to Clare's suggestion about an experiment based on children's diet?",
+					"options": [
+						{
+							"label": "A",
+							"text": "He is concerned that the results might not be meaningful."
+						},
+						{
+							"label": "B",
+							"text": "He feels some of the data might be difficult to obtain."
+						},
+						{
+							"label": "C",
+							"text": "He suspects that the conclusions might be upsetting."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"So your methodology would involve the children recording what they eat, Okay, but you'd also need to have access to the children's medical records, and I don't think people would be happy about that. Confidentiality would be an issue."
+					]
+				},
+				{
+					"number": 23,
+					"text": "What problem do they agree may be involved in an experiment involving animals?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Any results may not apply to humans."
+						},
+						{
+							"label": "B",
+							"text": "It may be complicated to get permission."
+						},
+						{
+							"label": "C",
+							"text": "Students may not be happy about animal experiments."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But if we found out that, say, a particular diet affects the health of animals, the same thing wouldn't necessarily be true for people, would it?"
+					]
+				},
+				{
+					"number": 24,
+					"text": "What question do they decide the experiment should address?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Are mice capable of controlling their food intake?"
+						},
+						{
+							"label": "B",
+							"text": "Does an increase in sugar lead to health problems?"
+						},
+						{
+							"label": "C",
+							"text": "How much do supplements of different kinds affect health?"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"In fact, maybe the focus could be on whether mice can control their own diet."
+					]
+				},
+				{
+					"number": 25,
+					"text": "Clare might also consider doing another experiment involving",
+					"options": [
+						{
+							"label": "A",
+							"text": "other types of food supplement."
+						},
+						{
+							"label": "B",
+							"text": "different genetic strains of mice."
+						},
+						{
+							"label": "C",
+							"text": "varying amounts of exercise."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Then later on you could do a follow-up experiment adding another variable. Like, you could give some of the mice the chance to be more active, running on a wheel or something, and the others just sit around and don't do much."
+					]
+				}
+			]
+		},
+		{
+			"range": "26-30",
+			"type": "FLOWCHART_COMPLETION",
+			"instructions": "Complete the flowchart below. Choose FIVE answers from the box and write the correct letter, A- H, next to Questions 26 - 30.",
+			"options": [
+				{
+					"label": "A",
+					"text": "size"
+				},
+				{
+					"label": "B",
+					"text": "escape"
+				},
+				{
+					"label": "C",
+					"text": "age"
+				},
+				{
+					"label": "D",
+					"text": "water"
+				},
+				{
+					"label": "E",
+					"text": "cereal"
+				},
+				{
+					"label": "F",
+					"text": "calculations"
+				},
+				{
+					"label": "G",
+					"text": "changes"
+				},
+				{
+					"label": "H",
+					"text": "colour"
+				}
+			],
+			"body": "Choose mice which are all the same [26]\n↓\nDivide the mice into two groups, each with a different [27]\n↓\nPut each group in a separate cage.\nFeed group A commercial mouse food.\nFeed group B the same, but also sugar contained in [28]\n↓\nTake measurements using an electronic scale.\nPlace them in a weighing chamber to prevent [29]\n↓\nDo all necessary [30]",
+			"body_html": "<table><tbody><tr><td>Choose mice which are all the same [26]</td></tr></tbody></table><p>↓</p><table><tbody><tr><td>Divide the mice into two groups, each with a different [27]</td></tr></tbody></table><p>↓</p><table><tbody><tr><td>Put each group in a separate cage.<br>Feed group A commercial mouse food.<br>Feed group B the same, but also sugar contained in [28]</td></tr></tbody></table><p>↓</p><table><tbody><tr><td>Take measurements using an electronic scale.<br>Place them in a weighing chamber to prevent [29]</td></tr></tbody></table><p>↓</p><table><tbody><tr><td>Do all necessary [30]</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 26,
+					"text": "Choose mice which are all the same [26]",
+					"answer": "C",
+					"quotes": [
+						"I'd say about 12, and all young ones, not a mixture of old and young."
+					]
+				},
+				{
+					"number": 27,
+					"text": "Divide the mice into two groups, each with a different [27]",
+					"answer": "H",
+					"quotes": ["You could use food colouring, that wouldn't hurt them."]
+				},
+				{
+					"number": 28,
+					"text": "Feed group B the same, but also sugar contained in [28]",
+					"answer": "E",
+					"quotes": [
+						"It might be better to give them something like cereal with it."
+					]
+				},
+				{
+					"number": 29,
+					"text": "Place them in a weighing chamber to prevent [29]",
+					"answer": "B",
+					"quotes": [
+						"So you need something called a weighing chamber to stop the mice from running away."
+					]
+				},
+				{
+					"number": 30,
+					"text": "Do all necessary [30]",
+					"answer": "F",
+					"quotes": [
+						"So once we've measured the weight gain of each mouse, we can work out the average for each group, as well as the standard deviation, and then see where we go from there."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

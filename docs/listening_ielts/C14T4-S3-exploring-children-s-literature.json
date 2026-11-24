@@ -1,0 +1,212 @@
+{
+	"id": "edbbf0c8-b0da-4c13-9d68-29d5bbc46311",
+	"url": "https://stepielts.com/student/listening/edbbf0c8-b0da-4c13-9d68-29d5bbc46311?mode=practice",
+	"title": "Exploring Children's Literature",
+	"source": "C14T4",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/88f3c72a-589b-4843-b909-cc5734798c06.mp3",
+	"transcript": "Speaker 1: STEPHANIE: Hello, Trevor.\nSpeaker 2: TREVOR: Hello, Stephanie. You said you wanted to talk about the course I’m taking on literature for children.\nSpeaker 1: STEPHANIE: That’s right. I’m thinking of doing it next year, but I’d like to find out more about it first.\nSpeaker 2: TREVOR: OK, well, as you probably know, it’s a one-year course. It’s divided into six modules, and you have to take all of them. One of the most interesting ones, for me, at least, was about the purpose of children’s literature.\nSpeaker 1: STEPHANIE: You mean, whether it should just entertain children or should be educational, as well. TREVOR: Right, and whether the teaching should be factual -- giving them information about the world -- or ethical, teaching them values.\nSpeaker 2: What’s fascinating is that the writer isn’t necessarily conscious of the message they’re conveying. For instance, a story might show a child who has a problem as a result of not doing what an adult has told them to do, implying that children should always obey adults.\nSpeaker 1: STEPHANIE: I see what you mean.\nSpeaker 2: TREVOR: That module made me realise how important stories are -- they can have a significant effect on children as they grow up. Actually, it inspired me to have a go at it myself, just for my own interest. I know can’t compete with the really popular stories, like the Harry Potter books -- they’re very good, and even young kids like my seven-year-old niece love reading them.\nSTEPHANIE: Mm.\nSpeaker 1: I’m very interested in illustrations in stories. Is that covered in the course?\nSpeaker 2: TREVOR: Yes, there’s a module on pictures, and how they’re sometimes central to the story.\nSpeaker 1: STEPHANIE: That’s good. I remember some frightening ones I saw as a child and I can still see them vividly in my mind, years later! Pictures can be so powerful, just as powerful as words. I’ve always enjoyed drawing, so that’s the field I want to go into when I finish the course. I bet that module will be really helpful.\nSpeaker 2: TREVOR: I’m sure it will. We also studied comics in that module, but I’m not convinced of their value, not compared with books. One of the great things about words is that you use your imagination, but with a comic you don’t have to.\nSpeaker 1: STEPHANIE: But children are so used to visual input -- on TV, video games, and so on. There are plenty of kids who wouldn’t even try to read a book, so I think comics can serve a really useful purpose.\nSpeaker 2: TREVOR: You mean, it’s better to read a comic than not to read at all? Yes, I suppose you’re right. I just think its sad when children don’t read books.\nSpeaker 1: STEPHANIE: What about books for girls and books for boys? Does the course go into that?\nSpeaker 2: TREVOR: Yes, there’s a module on it. For years, lots of stories, in English, at least, assumed that boys went out and did adventurous things and girls stayed at home and played with dolls. I was amazed how many books were targeted at just one sex or the other. Of course this reflects society as it is when the books are written.\nSpeaker 1: STEPHANIE: That’s true. So it sounds as though you think it’s a good course.\nSpeaker 2: TREVOR: Definitely. TREVOR: Have you been reading lots of children’s stories, to help you decide whether to take the course?\nSpeaker 1: STEPHANIE: Yeah. I’ve gone as far back as the late seventeenth century, though I know there were earlier children’s stories. TREVOR: So does that mean you’ve read Perrault’s fairy tales?\nCinderella, The Sleeping Beauty, and so on.\nSpeaker 1: STEPHANIE: Yes. They must be important, because no stories of that type had been written before**, there** were the first. Then there’s The Swiss Family Robinson. TREVOR: I haven’t read that. STEPHANIE: The English name makes it sound as though Robinson is the family’s surname, but a more accurate translation would be The Swiss Robinsons, because it’s about a Swiss family who are shipwrecked, like Robinson Crusoe in the novel of a century earlier.\nSpeaker 2: TREVOR: Well I never knew that!\nSpeaker 1: STEPHANIE: Have you read Hoffmann’s The Nutcracker and the Mouse King?\nSpeaker 2: TREVOR: Wasn’t that the basis for Tchaikovsky’s ballet The Nutcracker?\nSpeaker 1: STEPHANIE: That’s right. It has some quite bizarre elements.\nSpeaker 2: TREVOR: I hope you’ve read Oscar Wilde’s The Happy Prince. It’s probably my favourite children’s story of all time.\nSpeaker 1: STEPHANIE: Mine too! And it’s so surprising, because Wilde is best known for his plays, and most of them are very witty, but The Happy Prince is really moving. I struggled with Tolkien’s The Lord of the Rings -- there long books, and I gave up after one.\nSpeaker 2: TREVOR: It’s extremely popular, though.\nSpeaker 1: STEPHANIE: Yeah, but whereas something like The Happy Prince just carried me along with it, The Lord of the Rings took more effort than I was prepared to give it. TREVOR: I didn’t find that -- I love it. STEPHANIE: Another one I’ve read is War Horse.\nSpeaker 2: TREVOR: Oh yes. It’s about the First Word War, isn’t it? Hardly what you’d expect for a children’s story.\nSpeaker 1: STEPHANIE: Exactly, but it’s been very successful.\nHave you read any ...",
+	"body": {
+		"text": "Perrault’s fairy tales [6]\nThe Swiss Family Robinson [7]\nThe Nutcracker and the Mouse King [8]\nThe Lord of the Rings [9]\nWar Horse [10]",
+		"html": "<p>Perrault’s fairy tales [6]</p><p>The Swiss Family Robinson [7]</p><p>The Nutcracker and the Mouse King [8]</p><p>The Lord of the Rings [9]</p><p>War Horse [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "What does Trevor find interesting about the purpose of children’s literature?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the fact that authors may not realise what values they’re teaching"
+						},
+						{
+							"label": "B",
+							"text": "the fact that literature can be entertaining and educational at the same time"
+						},
+						{
+							"label": "C",
+							"text": "the fact that adults expect children to imitate characters in literature"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"What’s fascinating is that the writer isn’t necessarily conscious of the message they’re conveying."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Trevor says the module about the purpose of children’s literature made him",
+					"options": [
+						{
+							"label": "A",
+							"text": "analyse some of the stories that his niece reads."
+						},
+						{
+							"label": "B",
+							"text": "wonder how far popularity reflects good qualify."
+						},
+						{
+							"label": "C",
+							"text": "decide to start writing some children’s stories."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Actually, it inspired me to have a go at it myself, just for my own interest."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Stephanie is interested in the Pictures module because",
+					"options": [
+						{
+							"label": "A",
+							"text": "she intends to become an illustrator."
+						},
+						{
+							"label": "B",
+							"text": "she can remember beautiful illustrations from her childhood."
+						},
+						{
+							"label": "C",
+							"text": "she believes illustrations are more important than words."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I’ve always enjoyed drawing, so that’s the field I want to go into when I finish the course."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Trevor and Stephanie agree that comics",
+					"options": [
+						{
+							"label": "A",
+							"text": "are inferior to books"
+						},
+						{
+							"label": "B",
+							"text": "have the potential for being useful."
+						},
+						{
+							"label": "C",
+							"text": "discourage children from using their imagination."
+						}
+					],
+					"answer": "B",
+					"quotes": ["Yes, I suppose you’re right."]
+				},
+				{
+					"number": 5,
+					"text": "With regard to books aimed at only boys or only girls, Trevor was surprised",
+					"options": [
+						{
+							"label": "A",
+							"text": "how long the distinction had gone unquestioned."
+						},
+						{
+							"label": "B",
+							"text": "how few books were aimed at both girls and boys."
+						},
+						{
+							"label": "C",
+							"text": "how many children enjoyed books intended for the opposite sex."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I was amazed how many books were targeted at just one sex or the other."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "What comment is made about each of these stories?\nChoose FIVE answers from the box and write the correct letter, A-G\nStories",
+			"options": [
+				{
+					"label": "A",
+					"text": "translated into many other languages"
+				},
+				{
+					"label": "B",
+					"text": "hard to read"
+				},
+				{
+					"label": "C",
+					"text": "inspired a work in a different area of art"
+				},
+				{
+					"label": "D",
+					"text": "more popular than the author's other works"
+				},
+				{
+					"label": "E",
+					"text": "original title refers to another book"
+				},
+				{
+					"label": "F",
+					"text": "started a new genre"
+				},
+				{
+					"label": "G",
+					"text": "unlikely topic"
+				}
+			],
+			"body": "Perrault’s fairy tales [6]\nThe Swiss Family Robinson [7]\nThe Nutcracker and the Mouse King [8]\nThe Lord of the Rings [9]\nWar Horse [10]",
+			"body_html": "<p>Perrault’s fairy tales [6]</p><p>The Swiss Family Robinson [7]</p><p>The Nutcracker and the Mouse King [8]</p><p>The Lord of the Rings [9]</p><p>War Horse [10]</p>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Perrault’s fairy tales",
+					"answer": "F",
+					"quotes": [
+						"They must be important, because no stories of that type had been written before**, there** were the first."
+					]
+				},
+				{
+					"number": 7,
+					"text": "The Swiss Family Robinson",
+					"answer": "E",
+					"quotes": [
+						"STEPHANIE: The English name makes it sound as though Robinson is the family’s surname, but a more accurate translation would be The Swiss Robinsons, because it’s about a Swiss family who are shipwrecked, like Robinson Crusoe in the novel of a century earlier."
+					]
+				},
+				{
+					"number": 8,
+					"text": "The Nutcracker and the Mouse King",
+					"answer": "C",
+					"quotes": [
+						"TREVOR: Wasn’t that the basis for Tchaikovsky’s ballet The Nutcracker?"
+					]
+				},
+				{
+					"number": 9,
+					"text": "The Lord of the Rings",
+					"answer": "B",
+					"quotes": [
+						"STEPHANIE: Yeah, but whereas something like The Happy Prince just carried me along with it, The Lord of the Rings took more effort than I was prepared to give it."
+					]
+				},
+				{
+					"number": 10,
+					"text": "War Horse",
+					"answer": "G",
+					"quotes": [
+						"It’s about the First Word War, isn’t it? Hardly what you’d expect for a children’s story."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

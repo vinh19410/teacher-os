@@ -7,8 +7,10 @@ import {
 	quizAttemptActionSchema,
 	type StartPracticeResponse,
 	type StudentQuizDetail,
+	type StudentQuizGroup,
 	startPracticeResponseSchema,
 	studentQuizDetailSchema,
+	studentQuizGroupSchema,
 } from "@teacher-os/api/contracts";
 import { formatBand, ieltsOverallBand } from "@teacher-os/api/lib/ielts-band";
 import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
@@ -135,6 +137,17 @@ function practiceScoreLabel(
 	return `${row.correctCount}/${total}`;
 }
 
+function parseStudentQuizGroups(raw: string | undefined): StudentQuizGroup[] {
+	if (!raw) return [];
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		const checked = studentQuizGroupSchema.array().safeParse(parsed);
+		return checked.success ? checked.data : [];
+	} catch {
+		return [];
+	}
+}
+
 /** Query take/review dùng chung shape với đề luồng assignment. Chrome
  * (passage/prompt/cue/audio/optionBank) lấy từ prompt của part ĐẦU — đề
  * luyện tập nhiều part dùng chung một khung giấy như flow assignment
@@ -149,6 +162,8 @@ function toPracticeQuizDetail(
 		type: header?.type ?? "",
 		band: header?.band ?? "7.0",
 	};
+	const groups =
+		loaded.parts.length === 1 ? parseStudentQuizGroups(header?.groups) : [];
 	return {
 		// Tự luyện không có lượt giao — trường giữ shape contract, client điều
 		// hướng qua testId.
@@ -179,7 +194,9 @@ function toPracticeQuizDetail(
 			// client phân cụm đúng đề trộn dạng.
 			type: question.type ?? effectiveDefaults.type,
 			pin: question.pin ?? null,
+			...(question.answerSet ? { answerSet: question.answerSet } : {}),
 		})),
+		...(groups.length > 0 ? { groups } : {}),
 		attempt: attempt
 			? {
 					id: attempt.id,

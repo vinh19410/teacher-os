@@ -1,0 +1,199 @@
+{
+	"id": "533db091-1cdc-45fc-9dfc-ade06451a129",
+	"url": "https://stepielts.com/student/listening/533db091-1cdc-45fc-9dfc-ade06451a129?mode=practice",
+	"title": "Problems of Mona",
+	"source": "Actual Test",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/55689edd-91b5-4a87-b462-642f51550c7c.mp3",
+	"transcript": "Mona: Hello, Tom. Sorry I'm late. Tom: Hi, Mona. No problem. I heard you finished the essay for the management course. Which company did you focus on? Mona: It was finished last week. I chose the hotel where I interned last summer and mainly concentrated on my work experience there. Tom: Could you give me some details? I'm interested. Mona: Well, during my three-month internship, I observed every part of the hotel carefully each day and also talked with some of my colleagues. I found some problems in different parts of the hotel and made a conclusion in the essay. Let me start from the reception desk. I noticed the staff there kept doing the same thing every day, like answering the phone, helping guests with check-in and check-out, etc. There was nothing special for them. Tom: That must be very boring. Mona: Yeah, I think so. And in the restaurant, the employees told me that they must obey the rules exactly. For example, if they don't wear uniforms during working hours, 20% of their daily wages will be deducted. Then about the coffee bar: during peak hours, I was asked to help there several times because a shortage of hands always made many customers wait long for ordering, eating, or paying the bills. Their own staff could not control customer flow. Tom: Oh, that seems a little messy. Mona: Yes, definitely. And the place where I worked was a shop selling towels and pyjamas as well as souvenirs. Every day, I had to be there from 9 AM to 6 PM. My duty was to set up the window display and serve the customers. At first, it seemed interesting, but later, I found this work was a bit tough. Every night when I got off work, I was nearly exhausted. What I wanted was just a good rest and sleep. Tom: Doesn't sound like an easy job. Mona: It definitely wasn't. Then there was the personnel office. I went there on the first day when I arrived at the hotel. As I was not familiar with everything, I asked the staff several questions, but the employee of the personnel office seemed a bit annoyed and started complaining, which gave me a very bad impression. Lastly, as regards cleaning, it wasn't too bad compared with other parts of the hotel except the vacuum cleaners, which were probably bought such a long time ago that the sound seemed too loud when they were working. Fortunately, the hotel hasn't received any complaint from the customers so far. Tom: I think you've benefited a lot from the internship. Mona: Yeah, absolutely. In the beginning, I just wanted to complete the essay for the course. But in the end, I found it has given me some practical examples which are helpful to what I intend to do after graduation. As you know, I've always wanted to do something related to hotel management. Due to the time limitation, I still haven't got a clear idea of some specific work positions. Tom: Well, I heard you're going to give us a presentation of your essay next time in class? Mona: Yes. Actually, I'm not so good at giving a presentation, but the tutor says that's just what he wants me to do—to know what is important when doing a presentation, like how to attract the audience, make eye contact and make gestures, etc—and other students can learn from my presentation. Tom: I'm looking forward to it. You know, now I'm only in the second year of the course, and I have to write an essay next semester. But I have no idea about where I can do an internship. There are several hotels which I'm interested in. Do you think I should call their managers? Mona: Well, I suggest you'd better not because you're more likely to be rejected by them. There is a career office on campus that has got a list of companies offering internship opportunities to students. The office will help you contact where you want to go. You just have to prepare your personal information, like the CV. Oh, don't forget to provide a reference from the tutor. Tom: Great. I've got it. Mona: So have you got any plans for your essay? Tom: I've noticed that the hotel industry is developing at a high speed. People are more and more concerned about the quality of accommodation. What I'm struck by is numerous statistics showing the ever-increasing number of five-star hotels, so I intend to carry out extensive research on this aspect. I'm thinking about using videos or research methods, but I haven't decided yet. Mona: I think it's an interesting topic. Anyway, if you have any questions later, I will be happy to help. Tom: Thanks a lot, Mona. Mona: You're welcome.",
+	"body": {
+		"text": "Parts of the Hotel\n21 Reception [21]\n22 Restaurant [22]\n23 Coffee bar [23]\n24 Shop [24]\n25 Personnel office [25]\n26 Cleaning [26]",
+		"html": "<strong>Parts of the Hotel</strong><p>21 Reception [21]</p><p>22 Restaurant [22]</p><p>23 Coffee bar [23]</p><p>24 Shop [24]</p><p>25 Personnel office [25]</p><p>26 Cleaning [26]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-26",
+			"type": "MATCHING",
+			"instructions": "What problem does Mona point out about each part of the hotel where she interned? Write the correct letter, A–F, next to Questions 21–26.",
+			"options": [
+				{
+					"label": "A",
+					"text": "It lacks patience"
+				},
+				{
+					"label": "B",
+					"text": "It is very strict"
+				},
+				{
+					"label": "C",
+					"text": "It is a daily routine"
+				},
+				{
+					"label": "D",
+					"text": "It lacks sufficient staff"
+				},
+				{
+					"label": "E",
+					"text": "It is noisy"
+				},
+				{
+					"label": "F",
+					"text": "It is very tiring"
+				}
+			],
+			"body": "Parts of the Hotel\n21 Reception [21]\n22 Restaurant [22]\n23 Coffee bar [23]\n24 Shop [24]\n25 Personnel office [25]\n26 Cleaning [26]",
+			"body_html": "<strong>Parts of the Hotel</strong><p>21 Reception [21]</p><p>22 Restaurant [22]</p><p>23 Coffee bar [23]</p><p>24 Shop [24]</p><p>25 Personnel office [25]</p><p>26 Cleaning [26]</p>",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Reception",
+					"answer": "C",
+					"quotes": [
+						"I noticed the staff there kept doing the same thing every day, like answering the phone, helping guests with check-in and check-out, etc."
+					]
+				},
+				{
+					"number": 22,
+					"text": "Restaurant",
+					"answer": "B",
+					"quotes": [
+						"And in the restaurant, the employees told me that they must obey the rules exactly."
+					]
+				},
+				{
+					"number": 23,
+					"text": "Coffee bar",
+					"answer": "D",
+					"quotes": [
+						"Then about the coffee bar: during peak hours, I was asked to help there several times because a shortage of hands always made many customers wait long for ordering, eating, or paying the bills."
+					]
+				},
+				{
+					"number": 24,
+					"text": "Shop",
+					"answer": "F",
+					"quotes": [
+						"At first, it seemed interesting, but later, I found this work was a bit tough.",
+						"Every night when I got off work, I was nearly exhausted."
+					]
+				},
+				{
+					"number": 25,
+					"text": "Personnel office",
+					"answer": "A",
+					"quotes": [
+						"As I was not familiar with everything, I asked the staff several questions, but the employee of the personnel office seemed a bit annoyed and started complaining, which gave me a very bad impression."
+					]
+				},
+				{
+					"number": 26,
+					"text": "Cleaning",
+					"answer": "E",
+					"quotes": [
+						"Lastly, as regards cleaning, it wasn't too bad compared with other parts of the hotel except the vacuum cleaners, which were probably bought such a long time ago that the sound seemed too loud when they were working."
+					]
+				}
+			]
+		},
+		{
+			"range": "27-30",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 27,
+					"text": "How does the experience benefit Mona?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It is good for her future job."
+						},
+						{
+							"label": "B",
+							"text": "It is good for her dissertation."
+						},
+						{
+							"label": "C",
+							"text": "It can let her know something about the specific job."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But in the end, I found it has given me some practical examples which are helpful to what I intend to do after graduation.",
+						"As you know, I've always wanted to do something related to hotel management."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Why does the tutor want Mona to do the presentation?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Because she can do it skilfully."
+						},
+						{
+							"label": "B",
+							"text": "Because she wants to do it herself."
+						},
+						{
+							"label": "C",
+							"text": "Because she can show other students how to do a presentation."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Actually, I'm not so good at giving a presentation, but the tutor says that's just what he wants me to do—to know what is important when doing a presentation, like how to attract the audience, make eye contact and make gestures, etc—and other students can learn from my presentation."
+					]
+				},
+				{
+					"number": 29,
+					"text": "What does Mona suggest Tom do?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Talk to the university's career centre."
+						},
+						{
+							"label": "B",
+							"text": "Talk to his tutor."
+						},
+						{
+							"label": "C",
+							"text": "Contact the hotel manager."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"There is a career office on campus that has got a list of companies offering internship opportunities to students.",
+						"The office will help you contact where you want to go."
+					]
+				},
+				{
+					"number": 30,
+					"text": "What is Tom's plan for his own essay?",
+					"options": [
+						{
+							"label": "A",
+							"text": "To study about the rise of five-star hotels."
+						},
+						{
+							"label": "B",
+							"text": "To use a video approach."
+						},
+						{
+							"label": "C",
+							"text": "To do research into how the hotel industry works."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"What I'm struck by is numerous statistics showing the ever-increasing number of five-star hotels, so I intend to carry out extensive research on this aspect."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

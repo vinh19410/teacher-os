@@ -49,6 +49,9 @@ export const assignmentPrompt = sqliteTable(
 		 * 8 giá trị (A–H / i–viii).
 		 */
 		optionBank: text("option_bank").notNull().default("[]"),
+		/** Nhóm câu hỏi có cấu trúc (copy từ library_test_part.groups) để giữ
+		 * hướng dẫn và optionBank độc lập cho từng nhóm trên màn làm bài học viên. */
+		groups: text("groups").notNull().default("[]"),
 		note: text("note").notNull().default(""),
 		status: text("status").notNull().default("draft"), // "draft" | "ready"
 		/** #574: phần Writing đính kèm tuỳ chọn trên đề tự chấm (`writing_part IS NOT NULL` = đề gộp). */

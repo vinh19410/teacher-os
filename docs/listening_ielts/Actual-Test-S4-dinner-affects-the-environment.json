@@ -1,0 +1,107 @@
+{
+	"id": "2788c46e-785e-4a29-96b1-0c83ec809e9d",
+	"url": "https://stepielts.com/student/listening/2788c46e-785e-4a29-96b1-0c83ec809e9d?mode=practice",
+	"title": "Dinner affects the environment",
+	"source": "Actual Test",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "31-40",
+	"audio_url": "https://audio.stepielts.com/listening-audio/cea169a0-09a2-411c-baca-bd0cd65889a0.mp3",
+	"transcript": "Speaker 0: Lecturer: Good afternoon. Thanks for coming to today's lecture. In the last few decades, the environmental impact of food production and consumption has become one of the greatest concerns. When we look at what we eat and how we produce the food, we can find extensive evidence for how we damage our environment. Greenhouse gas emissions may come from livestock such as cows, agricultural soils, and rice production. According to statistics, the carbon dioxide emissions from the production of the food people consume every day are almost the same as the emissions we make when we are driving. Let's look at some more specific examples. The cultivation and processing of 100 grams of coffee beans are responsible for 140 grams of carbon dioxide. Now, some international organizations are training farmers in many countries to use sustainable agricultural methods as a way of reducing their carbon dioxide emissions. All agricultural practices have been found to have a variety of effects on the environment. Some of the environmental effects are associated with meat production. The popular red meat requires 28 times more land to produce than chicken, 11 times more water, and results in five times more climate warming emissions. According to another research, cooking process also causes greenhouse gas emissions. Scientists now are working on how to best minimize its impact. Another problem that we cannot neglect is the packaging of food products, as packaging takes a lot of energy, water, and other natural resources to produce. So, a lot of natural resources are wasted when we throw the packaging materials away. Furthermore, packaging waste produces a big amount of greenhouse gas. To make things even worse, the food we eat often comes from places far away. Therefore, the transportation of our food across long distances contributes to air and water pollution. In recent decades, with the growing number of population, more food is in demand, so more land has been used to produce food. Hundreds and even thousands of forests have been cut down. It had a devastating effect on the climate because forests can absorb greenhouse gases. People in different parts of the world apply various kinds of farming practices. In most countries, cows and other livestock are kept on the farms, while in some countries, they are kept in a restricted area on a mountain. But they all contribute to the carbon dioxide emissions. And for animal agriculture, the problem can be more serious because the livestock need food all the time. In America, cows eat an overwhelming amount of corn and soybeans each year. In order to create a better world for us and our future generations, we should adopt sustainable agriculture. The goal of sustainable agriculture is to meet the world's growing demand for food at the present without affecting future generations. Every person involved in the food system, growers, food processors, distributors, retailers, consumers, and waste managers, can play a role in ensuring a sustainable agricultural system. There are many practices commonly used by people working in sustainable agriculture and sustainable food systems. Crop growers may change their food production methods to prevent pollution, although some other areas of agriculture are very hard to change, such as fishing. Consumers and retailers concerned with sustainability can look for foods that are environmentally friendly. However, sustainable agriculture is more than a collection of practices. It is also a process of negotiation, a push and pull between the competing interests of an individual farmer or of people in the community as they work to solve complex problems about how we grow our food. In conclusion, I want to emphasize that we may not be able to go back to the old times and live a simpler lifestyle, but we can take an active role in preventing more environmental problems caused by carbon dioxide emissions. In the next lecture, I will share some of the studies and effective solutions with you.",
+	"body": {
+		"text": "Food industry\n- The amount of CO2 from producing our daily meals is the same as that from [31]\n- The process of making 100g [32] beans can result in 140g CO2.\n- The [33] production process contributes to climate & warming emissions.\n- Scientists are working on reducing the impact of [34] process.\n- Packaging needs [35] as well as water and other resources for production.\n- Long distance [36] leads to more pollution.\n- Due to the damage of [37] the total amount of CO2 increases greatly\nAgriculture\n- Livestock are either kept on farms or on a [38] in different parts of the world.\n- In animal agriculture, [39] required constantly\n- Some agricultural activities like [40] are unlikely to be changed",
+		"html": "<table><tbody><tr><td><ul><li><strong>Food industry</strong></li></ul><p>- The amount of CO2 from producing our daily meals is the same as that from [31]</p><p>- The process of making 100g [32] beans can result in 140g CO2.</p><p>- The [33] production process contributes to climate &amp; warming emissions.</p><p>- Scientists are working on reducing the impact of [34] process.</p><p>- Packaging needs [35] as well as water and other resources for production.</p><p>- Long distance [36] leads to more pollution.</p><p>- Due to the damage of [37] the total amount of CO2 increases greatly</p><ul><li><strong>Agriculture</strong></li></ul><p>- Livestock are either kept on farms or on a [38] in different parts of the world.</p><p>- In animal agriculture, [39] required constantly</p><p>- Some agricultural activities like [40] are unlikely to be changed</p></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "31-40",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "Food industry\n- The amount of CO2 from producing our daily meals is the same as that from [31]\n- The process of making 100g [32] beans can result in 140g CO2.\n- The [33] production process contributes to climate & warming emissions.\n- Scientists are working on reducing the impact of [34] process.\n- Packaging needs [35] as well as water and other resources for production.\n- Long distance [36] leads to more pollution.\n- Due to the damage of [37] the total amount of CO2 increases greatly\nAgriculture\n- Livestock are either kept on farms or on a [38] in different parts of the world.\n- In animal agriculture, [39] required constantly\n- Some agricultural activities like [40] are unlikely to be changed",
+			"body_html": "<table><tbody><tr><td><ul><li><strong>Food industry</strong></li></ul><p>- The amount of CO2 from producing our daily meals is the same as that from [31]</p><p>- The process of making 100g [32] beans can result in 140g CO2.</p><p>- The [33] production process contributes to climate &amp; warming emissions.</p><p>- Scientists are working on reducing the impact of [34] process.</p><p>- Packaging needs [35] as well as water and other resources for production.</p><p>- Long distance [36] leads to more pollution.</p><p>- Due to the damage of [37] the total amount of CO2 increases greatly</p><ul><li><strong>Agriculture</strong></li></ul><p>- Livestock are either kept on farms or on a [38] in different parts of the world.</p><p>- In animal agriculture, [39] required constantly</p><p>- Some agricultural activities like [40] are unlikely to be changed</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 31,
+					"text": "The amount of CO2 from producing our daily meals is the same as that from [31].",
+					"answer": "driving",
+					"quotes": [
+						"According to statistics, the carbon dioxide emissions from the production of the food people consume every day are almost the same as the emissions we make when we are driving."
+					]
+				},
+				{
+					"number": 32,
+					"text": "The process of making 100g [32] beans can result in 140g CO2.",
+					"answer": "coffee",
+					"quotes": [
+						"The cultivation and processing of 100 grams of coffee beans are responsible for 140 grams of carbon dioxide."
+					]
+				},
+				{
+					"number": 33,
+					"text": "The [33] production process contributes to climate & warming emissions.",
+					"answer": "meat",
+					"quotes": [
+						"The popular red meat requires 28 times more land to produce than chicken, 11 times more water, and results in five times more climate warming emissions."
+					]
+				},
+				{
+					"number": 34,
+					"text": "Scientists are working on reducing the impact of [34] process.",
+					"answer": "cooking",
+					"quotes": [
+						"According to another research, cooking process also causes greenhouse gas emissions."
+					]
+				},
+				{
+					"number": 35,
+					"text": "Packaging needs [35] as well as water and other resources for production.",
+					"answer": "energy",
+					"quotes": [
+						"Another problem that we cannot neglect is the packaging of food products, as packaging takes a lot of energy, water, and other natural resources to produce."
+					]
+				},
+				{
+					"number": 36,
+					"text": "Long distance [36] leads to more pollution.",
+					"answer": "transportation",
+					"quotes": [
+						"Therefore, the transportation of our food across long distances contributes to air and water pollution."
+					]
+				},
+				{
+					"number": 37,
+					"text": "Due to the damage of [37] the total amount of CO2 increases greatly",
+					"answer": "forests",
+					"quotes": [
+						"It had a devastating effect on the climate because forests can absorb greenhouse gases."
+					]
+				},
+				{
+					"number": 38,
+					"text": "Livestock are either kept on farms or on a [38] in different parts of the world.",
+					"answer": "mountain",
+					"quotes": [
+						"In most countries, cows and other livestock are kept on the farms, while in some countries, they are kept in a restricted area on a mountain."
+					]
+				},
+				{
+					"number": 39,
+					"text": "In animal agriculture, [39] required constantly",
+					"answer": "food",
+					"quotes": [
+						"And for animal agriculture, the problem can be more serious because the livestock need food all the time."
+					]
+				},
+				{
+					"number": 40,
+					"text": "Some agricultural activities like [40] are unlikely to be changed",
+					"answer": "fishing",
+					"quotes": [
+						"Crop growers may change their food production methods to prevent pollution, although some other areas of agriculture are very hard to change, such as fishing."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

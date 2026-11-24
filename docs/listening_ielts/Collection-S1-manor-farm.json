@@ -1,0 +1,134 @@
+{
+	"id": "5a905a70-f1e7-47c2-99ec-0f6c817918c9",
+	"url": "https://stepielts.com/student/listening/5a905a70-f1e7-47c2-99ec-0f6c817918c9?mode=practice",
+	"title": "Manor Farm",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/0217fb85-b0d6-416d-b2cc-38bbca10a593.mp3",
+	"transcript": "Speaker 0: IELTS listening version five four two nine nine. You will hear a number of different recordings, and you will have to answer questions on what you hear. There will be time for you to read the instructions and questions, and you will have a chance to check your work. All the recordings will be played once only. The test is in four sections. Write all your answers in the listening question booklet. At the end of the test, you will be given ten minutes to transfer your answers to an answer sheet. Now turn to section one on page two of your question booklet. Section one. You'll hear a telephone conversation between a man who is looking for a summer job as a fruit picker and a woman who owns a farm. First, you have some time to look at questions one to three on page two. You will see that there is an example that has been done for you. On this occasion only, the conversation relating to this will be played first.\nSpeaker 1: Manor Farm. Hello.\nSpeaker 2: Hi there. I'd like to apply to do fruit picking this summer.\nSpeaker 1: Oh, hello. I'm missus Chandler. My husband and I own Manor Farm. Let me take some details. I'll just get a form to fill in. Hold on.\nSpeaker 2: Sure.\nSpeaker 1: Sorry. Right. Your name is?\nSpeaker 2: It's Ben Miller.\nSpeaker 0: The man's name is Ben Miller. So Ben Miller has been written in the space. Now we shall begin. You should answer the questions as you listen because you will not hear the recording a second time. Listen carefully and answer questions one to three.\nSpeaker 1: Manor Farm. Hello.\nSpeaker 2: Hi there. I'd like to apply to do fruit picking this summer.\nSpeaker 1: Oh, hello. I'm missus Chandler. My husband and I own Manor Farm. Let me take some details. I'll just get a form to fill in. Hold on. Sure. Sorry. Right. Your name is?\nSpeaker 2: It's Ben Miller.\nSpeaker 1: And where are you from?\nSpeaker 2: I'm from The USA.\nSpeaker 1: Fine. Can I ask your age?\nSpeaker 2: I'm 20. You only take people over the age of 16, don't you?\nSpeaker 1: Yes. That's right. Are you able to work in The UK?\nSpeaker 2: Sorry?\nSpeaker 1: I mean, do you have a visa?\nSpeaker 2: Oh, yeah. I have a thing called a blue card. It's valid until November.\nSpeaker 1: That's fine then. We'll need fruit pickers from the middle of June until the end of September. What's your availability?\nSpeaker 2: When can I work? I'd like to do July, August, and September, and could do October if there's any work then.\nSpeaker 1: Okay. Did you find out about us through our website?\nSpeaker 2: That's right. It's much easier than going through an agency.\nSpeaker 0: Before you hear the rest of the conversation, you have some time to look at questions four to 10 on page three. Now listen and answer questions four to 10.\nSpeaker 2: I see you need most pickers in September for apples and pears, but the whole picking season can last about sixteen weeks.\nSpeaker 1: Well, yes, but it's a question of the weather. That determines how much fruit we grow, of course. That's why I can't give you exact picking dates now.\nSpeaker 2: I see. Oh, well, no problem. Can you tell me what pickers earn?\nSpeaker 1: Well, that depends on age. The rate is £4.50 an hour for the under eighteens. But as you're 18, it would rise to £5.60 an hour.\nSpeaker 2: Uh-huh. Your website says that you don't provide accommodation for pickers, so I guess I should arrange that in advance.\nSpeaker 1: Yes. There is no accommodation on the farm, but there is a campsite about fifteen minutes away.\nSpeaker 2: Is that walking distance? What do you think? No. Maybe I should bring my bike to get around.\nSpeaker 1: Yes. We always recommend that. Some pickers bring a car, but then find the roads rather narrow, and the bus is very infrequent. Do you have any questions?\nSpeaker 2: I know that fruit picking is hard work, but is there anything special I need to bring with me?\nSpeaker 1: Well, firstly, documentation is extremely important. We will need proof of age, so we'll expect to see your passport. Pickers without one won't be allowed to work.\nSpeaker 2: Oh, even if their age is written on their driving license?\nSpeaker 1: Sorry. A driving license isn't suitable.\nSpeaker 2: Fair enough. I guess some lunch is provided for all the hungry fruit pickers.\nSpeaker 1: I'm afraid not. You'll need to bring your own food for lunch and more importantly, enough water to last a full day. It can get very hot, so drinking is vital.\nSpeaker 2: Right. Like back home. Okay. Well, thanks for all the information. What happens now?\nSpeaker 1: Well, I'll post a contract to you at the\nSpeaker 0: That is the end of section one. You now have half a minute to check your answers.",
+	"question_groups": [
+		{
+			"range": "1-3",
+			"type": "FORM_COMPLETION",
+			"instructions": "Complete the form below. Write NO MORE THAN TWO WORDS for each answer.",
+			"body": "Manor Farm\nApplication Form-Summer fruit picking\nExample\nName : Ben Miller\nCountry of origin : the USA\nAge: 20\nVisa type: a [1]\nVisa valid until: November\nAvailability for work: from [2] to October\nHeard about job: from the [3]",
+			"body_table": [
+				["Manor Farm"],
+				["Application Form-Summer fruit picking"],
+				["Example"],
+				["Name :", "Ben Miller"],
+				["Country of origin :", "the USA"],
+				["Age:", "20"],
+				["Visa type:", "a [1]"],
+				["Visa valid until:", "November"],
+				["Availability for work:", "from [2] to October"],
+				["Heard about job:", "from the [3]"]
+			],
+			"body_html": "<table><tbody><tr><td colspan=\"2\"><p><strong>Manor Farm</strong></p></td></tr><tr><td colspan=\"2\"><p>Application Form-Summer fruit picking</p></td></tr><tr><td colspan=\"2\"><strong>Example</strong></td></tr><tr><td><strong>Name :</strong></td><td>Ben Miller</td></tr><tr><td><strong>Country of origin :</strong></td><td>the USA</td></tr><tr><td><strong>Age:</strong></td><td>20</td></tr><tr><td><strong>Visa type:</strong></td><td>a [1]</td></tr><tr><td><strong>Visa valid until:</strong></td><td>November</td></tr><tr><td><strong>Availability for work:</strong></td><td>from [2] to October</td></tr><tr><td><strong>Heard about job:</strong></td><td>from the [3]</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Visa type: a [1]",
+					"answer": "blue card",
+					"quotes": ["I have a thing called a blue card."]
+				},
+				{
+					"number": 2,
+					"text": "Availability for work: from [2] to October",
+					"answer": "July",
+					"quotes": [
+						"I'd like to do July, August, and September, and could do October if there's any work then."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Heard about job: from the [3]",
+					"answer": "website",
+					"quotes": [
+						"Did you find out about us through our website?",
+						"That's right."
+					]
+				}
+			]
+		},
+		{
+			"range": "4-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below.\nWrite NO MORE THAN ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Manor Farm\nImportant information for fruit pickers\nPicking season:\nBusiest month is [4]\nExact picking dates depend on the [5]\nPayment:\nPickers over 18 will earn £[6] an hour\nAccommodation:\nNone on the farm but there is a [7] nearby\nTransport:\nPickers are advised to travel around by [8]\nDocumentation:\nOnly pickers with a [9] will be allowed to work\nMeals:\nPickers must bring lunch and a day's supply of [10]",
+			"body_table": [
+				["Manor Farm"],
+				["Important information for fruit pickers"],
+				["Picking season:"],
+				["Busiest month is [4]"],
+				["Exact picking dates depend on the [5]"],
+				["Payment:"],
+				["Pickers over 18 will earn £[6] an hour"],
+				["Accommodation:"],
+				["None on the farm but there is a [7] nearby"],
+				["Transport:"],
+				["Pickers are advised to travel around by [8]"],
+				["Documentation:"],
+				["Only pickers with a [9] will be allowed to work"],
+				["Meals:"],
+				["Pickers must bring lunch and a day's supply of [10]"]
+			],
+			"body_html": "<table><tbody><tr><td colspan=\"2\"><p><strong>Manor Farm</strong></p></td></tr><tr><td colspan=\"2\"><p>Important information for fruit pickers</p></td></tr><tr><td colspan=\"2\"><strong>Picking season:</strong></td></tr><tr><td colspan=\"2\"><ul><li>Busiest month is [4]</li></ul></td></tr><tr><td colspan=\"2\"><ul><li>Exact picking dates depend on the [5]</li></ul></td></tr><tr><td colspan=\"2\"><strong>Payment:</strong></td></tr><tr><td colspan=\"2\"><ul><li>Pickers over 18 will earn £[6] an hour</li></ul></td></tr><tr><td colspan=\"2\"><strong>Accommodation:</strong></td></tr><tr><td colspan=\"2\"><ul><li>None on the farm but there is a [7] nearby</li></ul></td></tr><tr><td colspan=\"2\"><strong>Transport:</strong></td></tr><tr><td colspan=\"2\"><ul><li>Pickers are advised to travel around by [8]</li></ul></td></tr><tr><td colspan=\"2\"><strong>Documentation:</strong></td></tr><tr><td colspan=\"2\"><ul><li>Only pickers with a [9] will be allowed to work</li></ul></td></tr><tr><td colspan=\"2\"><strong>Meals:</strong></td></tr><tr><td colspan=\"2\"><ul><li>Pickers must bring lunch and a day's supply of [10]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 4,
+					"text": "Busiest month is [4]",
+					"answer": "September",
+					"quotes": [
+						"I see you need most pickers in September for apples and pears, but the whole picking season can last about sixteen weeks."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Exact picking dates depend on the [5]",
+					"answer": "weather",
+					"quotes": ["Well, yes, but it's a question of the weather."]
+				},
+				{
+					"number": 6,
+					"text": "Pickers over 18 will earn £[6] an hour",
+					"answer": "5.60",
+					"quotes": ["But as you're 18, it would rise to £5.60 an hour."]
+				},
+				{
+					"number": 7,
+					"text": "None on the farm but there is a [7] nearby",
+					"answer": "campsite",
+					"quotes": [
+						"There is no accommodation on the farm, but there is a campsite about fifteen minutes away."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Pickers are advised to travel around by [8]",
+					"answer": "bike",
+					"quotes": ["Maybe I should bring my bike to get around."]
+				},
+				{
+					"number": 9,
+					"text": "Only pickers with a [9] will be allowed to work",
+					"answer": "passport",
+					"quotes": [
+						"We will need proof of age, so we'll expect to see your passport."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Pickers must bring lunch and a day's supply of [10]",
+					"answer": "water",
+					"quotes": [
+						"You'll need to bring your own food for lunch and more importantly, enough water to last a full day."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

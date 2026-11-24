@@ -1,0 +1,120 @@
+{
+	"id": "85a3f645-8bfb-4bdf-8efd-7de67e48dd32",
+	"url": "https://stepielts.com/student/listening/85a3f645-8bfb-4bdf-8efd-7de67e48dd32?mode=practice",
+	"title": "Music Alive Agency",
+	"source": "Actual Test",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/7b2342fa-60c1-4795-9e70-1c71aee0b5dd.mp3",
+	"transcript": "Speaker 1: Hello. Music Alive. How can I help you?\nSpeaker 2: Hi. I've just moved to the area, and I saw your advert. I wanted to find out about your services.\nSpeaker 1: Sure. What would you like to know?\nSpeaker 2: Well, I've got a number of questions if that's okay. Have you got a few minutes?\nSpeaker 1: Of course.\nSpeaker 2: Can I make a note of your name?\nSpeaker 1: Yes. I'm Jim, Jim Granley.\nSpeaker 2: Thanks. And do you represent every type of musician? Can you tell me a bit about that?\nSpeaker 1: Well, we're basically a networking agency for musicians, but we don't actually find you work. We have all our members on our database, the type of music they play, and also we can put people in touch if they want to form a band, for example.\nSpeaker 2: Is there a lot of live music here?\nSpeaker 1: Yes, and venues contact us when they need musicians, etc. We deal with modern music, especially rock, which is what most people seem to enjoy around here. But we do also represent some jazz musicians. We don't accept classical music, I'm afraid.\nSpeaker 2: No. That's fine.\nSpeaker 1: What do you play?\nSpeaker 2: Guitar and violin and a bit of flute. As I'm new here, I thought you could help me get in touch with people.\nSpeaker 1: I see. Sure. We actually have a newsletter I could send you that would give you a good idea of what we do and how you can benefit from joining. The latest one came out this week. Would you like me to send you a copy?\nSpeaker 2: That would be great. Is it weekly?\nSpeaker 1: No. Every month. Weekly would be too much work, I think.\nSpeaker 2: Right. And what are the costs for joining and becoming a member? Is it expensive? I'm on a tight budget.\nSpeaker 1: You and every other musician in the region. No. We do everything to keep costs down because we know what it's like. We're pretty much all musicians ourselves too. So to join is just £35, and that's a one off payment. Oh, actually, that's the discounted rate for young musicians under eighteens. The standard rate is £45.\nSpeaker 2: Unfortunately, I'm over 18. And how about joining? Can I join when I want? Now, for example. Or do you have a limit on numbers?\nSpeaker 1: No. You can join anytime. We don't have a limit on the numbers of members we can have. The more, the merrier, in fact. Our membership's gone up recently from 700 to 750.\nSpeaker 2: That's good. And your ad says you also have facilities there that musicians can use. Can you explain a bit about that?\nSpeaker 1: Sure. Well, it's not huge, but we do have a couple of rooms where you can rehearse. They're soundproof. And we've just opened a studio, a small one. And it's already proving popular with bands that want to send demo tapes to venues and record labels.\nSpeaker 2: Wow. That sounds brilliant. And is that free? Guess not.\nSpeaker 1: No. That's extra. But we do have some free services. For example, we can offer legal advice if you need it for contracts and things like that. Pretty useful stuff, you know.\nSpeaker 2: Great. So if I'm interested, what's the next step? How do I become a member?\nSpeaker 1: Well, simple, really. Just send us a letter with your contact details and a recording made within the last couple of months. That'll give other members an idea of what you play.\nSpeaker 2: And where are you based?\nSpeaker 1: We're at 707 Kippax Street, Marbury.\nSpeaker 2: How do you spell Kippax?\nSpeaker 1: It's K I, P P, A X.\nSpeaker 2: And is there an email address?\nSpeaker 1: Yes. It's music.talent@bsu.co.uk.\nSpeaker 2: Talent is in the word?\nSpeaker 1: Yes.\nSpeaker 2: Right. Just one last thing.",
+	"body": {
+		"text": "Example\nContact person: Jim Granley\nMembers' details are on a [1]\nType of music represented: modern music ([2] and jazz)\nNewsletter comes out once a [3]\nCost of adult membership: £[4]\nCurrent number of members: [5]\nFacilities include: rehearsal rooms and a [6]\nThere is no charge for [7] advice\nTo become a member, send:\na letter with contact details\na recent [8]\nAddress: 707, [9] Street, Marbury\nContact email: music.[10]@bsu.co.uk",
+		"html": "<table><tbody><tr><td><p><strong>Example</strong><br>Contact person: Jim Granley</p><ul><li>Members' details are on a [1]</li><li>Type of music represented: modern music ([2] and jazz)</li><li>Newsletter comes out once a [3]</li><li>Cost of adult membership: £[4]</li><li>Current number of members: [5]</li><li>Facilities include: rehearsal rooms and a [6]</li><li>There is no charge for [7] advice</li></ul><p><strong>To become a member, send:</strong></p><ul><li>a letter with contact details</li><li>a recent [8]</li></ul><p><strong>Address:</strong> 707, [9] Street, Marbury</p><p><strong>Contact email:</strong> music.[10]@bsu.co.uk</p></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below.\nWrite ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Example\nContact person: Jim Granley\nMembers' details are on a [1]\nType of music represented: modern music ([2] and jazz)\nNewsletter comes out once a [3]\nCost of adult membership: £[4]\nCurrent number of members: [5]\nFacilities include: rehearsal rooms and a [6]\nThere is no charge for [7] advice\nTo become a member, send:\na letter with contact details\na recent [8]\nAddress: 707, [9] Street, Marbury\nContact email: music.[10]@bsu.co.uk",
+			"body_html": "<table><tbody><tr><td><p><strong>Example</strong><br>Contact person: Jim Granley</p><ul><li>Members' details are on a [1]</li><li>Type of music represented: modern music ([2] and jazz)</li><li>Newsletter comes out once a [3]</li><li>Cost of adult membership: £[4]</li><li>Current number of members: [5]</li><li>Facilities include: rehearsal rooms and a [6]</li><li>There is no charge for [7] advice</li></ul><p><strong>To become a member, send:</strong></p><ul><li>a letter with contact details</li><li>a recent [8]</li></ul><p><strong>Address:</strong> 707, [9] Street, Marbury</p><p><strong>Contact email:</strong> music.[10]@bsu.co.uk</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Members' details are on a [1]",
+					"answer": "database",
+					"quotes": [
+						"We have all our members on our database, the type of music they play, and also we can put people in touch if they want to form a band, for example."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Type of music represented: modern music ([2] and jazz)",
+					"answer": "rock",
+					"quotes": [
+						"We deal with modern music, especially rock, which is what most people seem to enjoy around here.",
+						"But we do also represent some jazz musicians."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Newsletter comes out once a [3]",
+					"answer": "month",
+					"quotes": [
+						"Every month.",
+						"We actually have a newsletter I could send you that would give you a good idea of what we do and how you can benefit from joining.",
+						"Is it weekly?",
+						"No."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Cost of adult membership: [4] £",
+					"answer": "45",
+					"quotes": [
+						"The standard rate is £45.",
+						"So to join is just £35, and that's a one off payment.",
+						"Oh, actually, that's the discounted rate for young musicians under eighteens."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Current number of members: [5]",
+					"answer": "750",
+					"quotes": [
+						"Our membership's gone up recently from 700 to 750.",
+						"We don't have a limit on the numbers of members we can have."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Facilities include: rehearsal rooms and a [6]",
+					"answer": "studio",
+					"quotes": [
+						"And we've just opened a studio, a small one.",
+						"Well, it's not huge, but we do have a couple of rooms where you can rehearse."
+					]
+				},
+				{
+					"number": 7,
+					"text": "There is no charge for [7] advice",
+					"answer": "legal",
+					"quotes": [
+						"For example, we can offer legal advice if you need it for contracts and things like that.",
+						"But we do have some free services."
+					]
+				},
+				{
+					"number": 8,
+					"text": "To become a member, send: a recent [8]",
+					"answer": "recording",
+					"quotes": [
+						"Just send us a letter with your contact details and a recording made within the last couple of months.",
+						"How do I become a member?"
+					]
+				},
+				{
+					"number": 9,
+					"text": "Address: 707, [9] Street, Marbury",
+					"answer": "Kippax",
+					"quotes": [
+						"We're at 707 Kippax Street, Marbury.",
+						"And where are you based?",
+						"It's K I, P P, A X."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Contact email: music.[10]@bsu.co.uk",
+					"answer": "talent",
+					"quotes": [
+						"It's music.talent@bsu.co.uk.",
+						"And is there an email address?"
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

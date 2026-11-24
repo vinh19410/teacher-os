@@ -1,0 +1,97 @@
+{
+	"id": "280d9bc0-aaec-44cf-ae52-096de3f3b9df",
+	"url": "https://stepielts.com/student/listening/280d9bc0-aaec-44cf-ae52-096de3f3b9df?mode=practice",
+	"title": "House Insurance",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/41c24561-0f88-402e-91b1-7eef3c5153f8.mp3",
+	"transcript": "Speaker 1: Woman: Good morning, Star Insurance. How can I help?\nSpeaker 2: Man: Oh, good morning. I’m calling to make an insurance claim. It’s for damage to my house.\nSpeaker 1: Woman: All right. I’m just going to get a few details down first. What’s your name, please?\nSpeaker 2: Man: It’s Greg Williams.\nSpeaker 1: Woman: Okay. Thank you. And what’s your policy reference, please?\nSpeaker 2: Man: Is that the long number with the letters in the middle?\nSpeaker 1: Woman: That’s right.\nSpeaker 2: Man: It’s 0-5-4-4-3-C-H-I-7-7-1.\nSpeaker 1: Woman: Okay, right. Yes. I’ve got your details on the computer now. So can I confirm your address? According to our records, you live at 102 Market Street in North Bridge. Is that right?\nSpeaker 2: Man: That’s correct.\nSpeaker 1: Woman: All right. Good. And the last thing I need to check. What’s the best phone number to get you on? Is it the number you’re calling on now?\nSpeaker 2: Man: No, I’m calling from work. Let me give you my mobile phone number. It’s 018 669 25\nSpeaker 1: Woman: Thanks. So, can you give me a description of the damage? When did the incident occur?\nSpeaker 2: Man: Sunday, the 17 June.\nSpeaker 1: Woman: I see. And what was the cause of the incident? How did the damage happen?\nSpeaker 2: Man: Right. No one was home at the time, which was fortunate, I suppose. There was a big storm and I guess it blew down one of the trees at the back of our garden and it smashed through the window in our daughter’s bedroom.\nSpeaker 1: Woman: Yes. A good thing you were all out. So have you got the window fixed?\nSpeaker 2: Man: Not yet.\nSpeaker 1: Woman: All right. And so, apart from the window, what are you claiming for?\nSpeaker 2: Man: Okay, like I said, it was my young daughter’s room. Anyway, right below the window is her desk. That’s all right. But she’d left her glasses on it and they got really badly scratched. She’ll need a new pair. Luckily, she hadn’t left her headphones there like she normally does.\nSpeaker 1: Woman: Is there anything else?\nSpeaker 2: Man: Yes. Because the window was broken, The rain got in and what’s really annoying is that when was it? Just last month, we’d gone shopping and bought a carpet. We’d only had it for a couple of weeks, and it got soaked. We had to remove it.\nSpeaker 1: Woman: Oh, dear. Are there any other items you’d like to claim for?\nSpeaker 2: Man: Yes. I suppose we should be grateful that the rain didn’t reach her computer, but when the tree came through the window, it tore a hole through the curtain that was hanging there.\nSpeaker 1: Woman: Okay, I’m making a note of all this\nSpeaker 2: Man: And one more thing I need to claim for.\nSpeaker 1: Woman: Yes\nSpeaker 2: Man: We’ve had some repairs done already. For a door, we can’t open\nSpeaker 1: Woman: To the back of the house?\nSpeaker 2: Man: No, it’s for the garage. The tree hit that as well.\nSpeaker 1: Woman: Okay. So, have you contacted a professional builder yet?\nSpeaker 2: Man: Yes. It’s the same builder we always use. Do you want his name?\nSpeaker 1: Woman: Yes, please.\nSpeaker 2: Man: Okay. It’s Stephen Honeywell. H-O-N-E-Y-W-E-L-L.\nSpeaker 1: Woman: All right. Now, apart from damage to the house itself, what else do you think the builder will be looking at? Because we’re going to need photographs.\nSpeaker 2: Man: Oh, yes. Well, he’ll be putting up a fence for us between our house and the neighbors, because the one we’ve got now was smashed by the tree. So I’ll take some pictures before he does the work.\nSpeaker 1: Woman: Please do that. And then you can send them in with your claim",
+	"body": {
+		"text": "Example\nClient details\nName: Greg Williams Policy reference: [1]\nAddress: 102 [2] Street, Northbridge\nPhone number: [3]\nDescription of damage\nDate of incident: Sunday, 17th June\nCause of incident: the house was damaged during a [4]\nItems client is claiming for:\n- a pair of child’s [5]\n- a new [6]\n- a torn [7]\n- repairs to the door of the [8]\nBuilder dealing with damage\nFull name: Steven [9]\nClient to send in photographs of damaged [10] before building work starts",
+		"html": "<table><tbody><tr><td><strong>Example  </strong><br><h3><strong>Client details</strong></h3><p>Name:    <strong>Greg</strong> Williams Policy reference:    [1]  <br>Address:     102 [2] Street, Northbridge <br>Phone number:  [3]</p><h3><strong>Description of damage</strong></h3><p>Date of incident:    Sunday, 17th June  <br>Cause of incident:    the house was damaged during a [4]<br>Items client is claiming for:  <br>     - a pair of child’s [5] <br>     - a new [6]  <br>     - a torn [7] <br>     - repairs to the door of the [8]</p><h3><strong>Builder dealing with damage </strong></h3><p>Full name:     Steven [9]  <br>Client to send in photographs of damaged [10] before building work starts </p></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "FORM_COMPLETION",
+			"instructions": "Complete the form below. Write ONE WORD AND / OR A NUMBER for each answer.",
+			"body": "Example\nClient details\nName: Greg Williams Policy reference: [1]\nAddress: 102 [2] Street, Northbridge\nPhone number: [3]\nDescription of damage\nDate of incident: Sunday, 17th June\nCause of incident: the house was damaged during a [4]\nItems client is claiming for:\n- a pair of child’s [5]\n- a new [6]\n- a torn [7]\n- repairs to the door of the [8]\nBuilder dealing with damage\nFull name: Steven [9]\nClient to send in photographs of damaged [10] before building work starts",
+			"body_html": "<table><tbody><tr><td><strong>Example  </strong><br><h3><strong>Client details</strong></h3><p>Name:    <strong>Greg</strong> Williams Policy reference:    [1]  <br>Address:     102 [2] Street, Northbridge <br>Phone number:  [3]</p><h3><strong>Description of damage</strong></h3><p>Date of incident:    Sunday, 17th June  <br>Cause of incident:    the house was damaged during a [4]<br>Items client is claiming for:  <br>     - a pair of child’s [5] <br>     - a new [6]  <br>     - a torn [7] <br>     - repairs to the door of the [8]</p><h3><strong>Builder dealing with damage </strong></h3><p>Full name:     Steven [9]  <br>Client to send in photographs of damaged [10] before building work starts </p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Name: Greg Williams Policy reference: [1]",
+					"answer": "05443CHI771",
+					"quotes": ["Man: It’s 0-5-4-4-3-C-H-I-7-7-1."]
+				},
+				{
+					"number": 2,
+					"text": "Address: 102 [2] Street, Northbridge",
+					"answer": "Market",
+					"quotes": [
+						"According to our records, you live at 102 Market Street in North Bridge."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Phone number: [3]",
+					"answer": "018 669 925 / 018669925",
+					"quotes": ["It’s 018 669 25"]
+				},
+				{
+					"number": 4,
+					"text": "Cause of incident: the house was damaged during a [4]",
+					"answer": "storm",
+					"quotes": [
+						"There was a big storm and I guess it blew down one of the trees at the back of our garden and it smashed through the window in our daughter’s bedroom."
+					]
+				},
+				{
+					"number": 5,
+					"text": "- a pair of child’s [5]",
+					"answer": "glasses",
+					"quotes": [
+						"But she’d left her glasses on it and they got really badly scratched."
+					]
+				},
+				{
+					"number": 6,
+					"text": "- a new [6]",
+					"answer": "carpet",
+					"quotes": ["Just last month, we’d gone shopping and bought a carpet."]
+				},
+				{
+					"number": 7,
+					"text": "- a torn [7]",
+					"answer": "curtain",
+					"quotes": [
+						"I suppose we should be grateful that the rain didn’t reach her computer, but when the tree came through the window, it tore a hole through the curtain that was hanging there."
+					]
+				},
+				{
+					"number": 8,
+					"text": "- repairs to the door of the [8]",
+					"answer": "garage",
+					"quotes": ["Man: No, it’s for the garage."]
+				},
+				{
+					"number": 9,
+					"text": "Full name: Steven [9]",
+					"answer": "Honeywell",
+					"quotes": ["It’s Stephen Honeywell."]
+				},
+				{
+					"number": 10,
+					"text": "Client to send in photographs of damaged [10] before building work starts",
+					"answer": "fence",
+					"quotes": [
+						"Well, he’ll be putting up a fence for us between our house and the neighbors, because the one we’ve got now was smashed by the tree."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

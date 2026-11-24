@@ -1,13 +1,13 @@
 import {
 	answerKindByType,
 	effectiveAnswerChoices,
-	isImageBasedType,
 	LIBRARY_OPTION_BANK_MAX,
 	mcqOptionsIssue,
 	quizTypeDisplay,
 } from "@teacher-os/api/contracts";
 import {
 	countClozeMarkers,
+	isLibraryImageBasedType,
 	LIBRARY_CLOZE_TYPES,
 	type LibraryQuestionGroup,
 	type LibrarySkill,
@@ -19,7 +19,6 @@ import { CardControls } from "@teacher-os/ui/components/assignments/editor/card-
 import { QuestionKeyEditor } from "@teacher-os/ui/components/assignments/editor/question-key-editor";
 import { Button } from "@teacher-os/ui/components/web-kit/button";
 import { Field, Select } from "@teacher-os/ui/components/web-kit/field";
-import { CLOZE_EDITOR_TYPES } from "@teacher-os/ui/lib/cloze";
 import { useEffect, useRef, useState } from "react";
 import { CardTabs } from "./card-tabs";
 
@@ -142,7 +141,7 @@ export function GroupCard({
 		(item) => countClozeMarkers(item.stem) === 1,
 	).length;
 	const blanksMismatch = group.answersInline && blankCount !== items.length;
-	const isImageGroup = isImageBasedType(skill, group.type);
+	const isImageGroup = isLibraryImageBasedType(skill, group.type);
 	const questionsTabError =
 		optionBankError !== undefined ||
 		(isImageGroup && errorFor("imageUrl") !== undefined) ||
@@ -282,6 +281,7 @@ export function GroupCard({
 						onOpenRowChange={onOpenRowChange}
 						maxBank={LIBRARY_OPTION_BANK_MAX}
 						libraryReadingMode={skill === "reading"}
+						libraryMode
 						maxQuestions={maxQuestions}
 						lockAddQuestion={lockAddQuestion}
 					/>
@@ -325,13 +325,7 @@ export function GroupCard({
 							<input
 								type="checkbox"
 								checked={group.answersInline}
-								disabled={
-									!(
-										skill === "reading"
-											? LIBRARY_CLOZE_TYPES
-											: CLOZE_EDITOR_TYPES
-									).has(group.type)
-								}
+								disabled={!LIBRARY_CLOZE_TYPES.has(group.type)}
 								onChange={(event) =>
 									onPatch({ answersInline: event.target.checked })
 								}

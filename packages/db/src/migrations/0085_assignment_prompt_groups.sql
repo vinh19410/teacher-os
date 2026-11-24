@@ -1,0 +1,1 @@
+ALTER TABLE `assignment_prompt` ADD `groups` text DEFAULT '[]' NOT NULL;

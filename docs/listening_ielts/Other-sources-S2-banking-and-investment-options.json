@@ -1,0 +1,180 @@
+{
+	"id": "7de519d9-078e-4575-9894-bababa6c3ed4",
+	"url": "https://stepielts.com/student/listening/7de519d9-078e-4575-9894-bababa6c3ed4?mode=practice",
+	"title": "Banking and Investment Options",
+	"source": "Other sources",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/7c3ff6ad-514d-4412-a024-e25ce720a5cb.mp3",
+	"transcript": "Speaker 1: Information Officer: Welcome to the information line of the State Investment Society. Why would you choose to put your money into an investment society and not a bank? Well, SIS offers everything you’d expect from a bank, but the difference is we’re a cooperative.We’re 100% owned by our customers, people like you, and that means we always put your best interests first. You won’t see our profits going into large foreign owned finance corporations. No. You’ll see them coming back to you and your local community. As a cooperative, we work hard to keep our fees competitive and absolutely minimal. Even better, we can advise you about ways to avoid fees. Here are some suggestions. Firstly, we recommend you carry out as much of your personal banking as possible with us. We won’t charge account fees unless your account becomes inactive for some reason. See, no unnecessary fees. Secondly, if you maintain certain minimum account balances, you won’t have to pay any transaction charges for transferring money between any accounts that have the same customer number, although there may be some service charges that apply, such as the establishment of automatic payments. So how can we help you? Let’s look first at savings options. We can give you three options. Our Internet account earns you interest from your very first dollar deposited. You don’t have to maintain a minimum balance, and you earn a good interest rate from the start. Interest calculated daily and paid into your account monthly. You always have immediate access to your money by using the Internet, text, or telephone banking. What’s more, there are no account or transaction fees. With our stair saver scheme, the more you save, the higher interest you earn. Again, there’s no minimum balance, but as your balance grows, you’ll earn higher interest rates. There are three interest tiers or steps plus bonus interest. Interest is calculated daily and paid monthly. Now, what about access to your money? You are free to make as many withdrawals as you like. But if you restrict them to one a month and your balance increases over that month, then you’ll earn that bonus interest. With our simple saver scheme, access is available anytime and we don’t impose penalties for withdrawals. This scheme has one interest rate, no minimum balance, and interest is calculated daily and paid annually at the end of the financial year, the 30th of June. So you can see that savings accounts are ideal if you’re starting from scratch. Do you know you can open a savings account with as little as $10? They’re usually the best choice for short term financial goals. For the longer term, we recommend some kind of investment account. Let’s take a look at our investment options. Starting with the safest, the most secure, low risk option is a basic term deposit, starting with a minimum deposit of $1,000. Interest is calculated daily, but you can choose whether to have it paid out monthly, quarterly, or at maturity. What we recommend if you really want to see money grow is having interest compounded quarterly. You’ll only get access to your funds when your term deposit matures, so be sure to think carefully about the amount of time before you lock it away. It could be anything from six months to five years. Bonds are generally a longer commitment, but they may bring better rewards in the future. There is a minimum deposit of $5,000 and interest is calculated daily. You may choose to have interest compounded quarterly or paid out quarterly. And, of course, you’ll have access to your money when your bond reaches maturity. Looking really long term, there is our retirement fund, which is of course a savings plan for retirement. There is no minimum deposit, but the good news is that you can choose to contribute a certain percentage of your income before tax is paid on it. As for interest, well, you choose a particular type of fund which has a different level of return depending on the level of risk. And access? Well, not before you turn 60 years old. As I said, it’s a retirement scheme.",
+	"body": {
+		"text": "SAVING OPTIONS\nSavings account\nMinimum balance\nInterest information\nAccess\nInternet account\nNone\nEarn good rate from first dollar. Calculated daily and paid monthly\nVia internet, TXT, telephone. No account or [4] fees\nStairs saver\nNone but higher rates for bigger balances\n3 tiers plus [5]. Calculated daily and paid monthly\nUnlimited withdrawals but better to limit to once a month\n[6]\nNone\nOne interest rate, calculated daily and paid on [7]\nAnytime - no penalty for withdrawals\nINVESTMENT OPTIONS\nInvestment account\nMinimum deposit\nInterest information\nAccess\nTerm deposit Safe and [8] – low risk\n$1,000\nCalculated daily and paid monthly, quarterly or at maturity.\nOnly at maturity\n[9] Longer term but better returns.\n$5,000\nCalculated daily and compounded or paid out quarterly\nOnly at maturity\nRetirement fund\nA certain percentage of [10] before tax\nDifferent levels of risk and return\nAt 60",
+		"html": "<h3><strong>SAVING OPTIONS</strong></h3><table><tbody><tr><td><strong>Savings account</strong></td><td><strong>Minimum balance</strong></td><td><strong>Interest information</strong></td><td><strong>Access</strong></td></tr><tr><td>Internet account</td><td>None</td><td>Earn good rate from first dollar. Calculated daily and paid monthly</td><td>Via internet, TXT, telephone. No account or [4] fees</td></tr><tr><td>Stairs saver</td><td>None but higher rates for bigger balances</td><td>3 tiers plus [5]. Calculated daily and paid monthly</td><td>Unlimited withdrawals but better to limit to once a month</td></tr><tr><td>[6]</td><td>None</td><td>One interest rate, calculated daily and paid on [7]</td><td>Anytime - no penalty for withdrawals</td></tr></tbody></table><h3><strong>INVESTMENT OPTIONS</strong></h3><table><tbody><tr><td><strong>Investment account</strong></td><td><strong>Minimum deposit</strong></td><td><strong>Interest information</strong></td><td><strong>Access</strong></td></tr><tr><td>Term deposit Safe and [8] – low risk</td><td>$1,000</td><td>Calculated daily and paid monthly, quarterly or at maturity.</td><td>Only at maturity</td></tr><tr><td>[9] Longer term but better returns.</td><td>$5,000</td><td>Calculated daily and compounded or paid out quarterly</td><td>Only at maturity</td></tr><tr><td>Retirement fund</td><td>A certain percentage of [10] before tax</td><td>Different levels of risk and return</td><td>At 60</td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-3",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letters A, B, or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The SIS is",
+					"options": [
+						{
+							"label": "A",
+							"text": "a non-profit making organization"
+						},
+						{
+							"label": "B",
+							"text": "owned by an international corporation"
+						},
+						{
+							"label": "C",
+							"text": "a collective owned by ordinary people"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Well, SIS offers everything you’d expect from a bank, but the difference is we’re a cooperative.We’re 100% owned by our customers, people like you, and that means we always put your best interests first."
+					]
+				},
+				{
+					"number": 2,
+					"text": "The SIS",
+					"options": [
+						{
+							"label": "A",
+							"text": "has no fees"
+						},
+						{
+							"label": "B",
+							"text": "has low fees"
+						},
+						{
+							"label": "C",
+							"text": "avoids paying fees"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"As a cooperative, we work hard to keep our fees competitive and absolutely minimal."
+					]
+				},
+				{
+					"number": 3,
+					"text": "SIS accounts with the same customer number",
+					"options": [
+						{
+							"label": "A",
+							"text": "will be charged for setting up automatic payments"
+						},
+						{
+							"label": "B",
+							"text": "attract no service charges"
+						},
+						{
+							"label": "C",
+							"text": "must have a minimum balance"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Secondly, if you maintain certain minimum account balances, you won’t have to pay any transaction charges for transferring money between any accounts that have the same customer number, although there may be some service charges that apply, such as the establishment of automatic payments."
+					]
+				}
+			]
+		},
+		{
+			"range": "4-10",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "SAVING OPTIONS\nSavings account\nMinimum balance\nInterest information\nAccess\nInternet account\nNone\nEarn good rate from first dollar. Calculated daily and paid monthly\nVia internet, TXT, telephone. No account or [4] fees\nStairs saver\nNone but higher rates for bigger balances\n3 tiers plus [5]. Calculated daily and paid monthly\nUnlimited withdrawals but better to limit to once a month\n[6]\nNone\nOne interest rate, calculated daily and paid on [7]\nAnytime - no penalty for withdrawals\nINVESTMENT OPTIONS\nInvestment account\nMinimum deposit\nInterest information\nAccess\nTerm deposit Safe and [8] – low risk\n$1,000\nCalculated daily and paid monthly, quarterly or at maturity.\nOnly at maturity\n[9] Longer term but better returns.\n$5,000\nCalculated daily and compounded or paid out quarterly\nOnly at maturity\nRetirement fund\nA certain percentage of [10] before tax\nDifferent levels of risk and return\nAt 60",
+			"body_table": [
+				[
+					"Savings account",
+					"Minimum balance",
+					"Interest information",
+					"Access"
+				],
+				[
+					"Internet account",
+					"None",
+					"Earn good rate from first dollar. Calculated daily and paid monthly",
+					"Via internet, TXT, telephone. No account or [4] fees"
+				],
+				[
+					"Stairs saver",
+					"None but higher rates for bigger balances",
+					"3 tiers plus [5]. Calculated daily and paid monthly",
+					"Unlimited withdrawals but better to limit to once a month"
+				],
+				[
+					"[6]",
+					"None",
+					"One interest rate, calculated daily and paid on [7]",
+					"Anytime - no penalty for withdrawals"
+				]
+			],
+			"body_html": "<h3><strong>SAVING OPTIONS</strong></h3><table><tbody><tr><td><strong>Savings account</strong></td><td><strong>Minimum balance</strong></td><td><strong>Interest information</strong></td><td><strong>Access</strong></td></tr><tr><td>Internet account</td><td>None</td><td>Earn good rate from first dollar. Calculated daily and paid monthly</td><td>Via internet, TXT, telephone. No account or [4] fees</td></tr><tr><td>Stairs saver</td><td>None but higher rates for bigger balances</td><td>3 tiers plus [5]. Calculated daily and paid monthly</td><td>Unlimited withdrawals but better to limit to once a month</td></tr><tr><td>[6]</td><td>None</td><td>One interest rate, calculated daily and paid on [7]</td><td>Anytime - no penalty for withdrawals</td></tr></tbody></table><h3><strong>INVESTMENT OPTIONS</strong></h3><table><tbody><tr><td><strong>Investment account</strong></td><td><strong>Minimum deposit</strong></td><td><strong>Interest information</strong></td><td><strong>Access</strong></td></tr><tr><td>Term deposit Safe and [8] – low risk</td><td>$1,000</td><td>Calculated daily and paid monthly, quarterly or at maturity.</td><td>Only at maturity</td></tr><tr><td>[9] Longer term but better returns.</td><td>$5,000</td><td>Calculated daily and compounded or paid out quarterly</td><td>Only at maturity</td></tr><tr><td>Retirement fund</td><td>A certain percentage of [10] before tax</td><td>Different levels of risk and return</td><td>At 60</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 4,
+					"text": "Via internet, TXT, telephone. No account or [4] fees",
+					"answer": "transaction",
+					"quotes": ["What’s more, there are no account or transaction fees."]
+				},
+				{
+					"number": 5,
+					"text": "3 tiers plus [5]. Calculated daily and paid monthly",
+					"answer": "bonus interest",
+					"quotes": [
+						"There are three interest tiers or steps plus bonus interest."
+					]
+				},
+				{
+					"number": 6,
+					"text": "",
+					"answer": "Simple saver",
+					"quotes": [
+						"With our simple saver scheme, access is available anytime and we don’t impose penalties for withdrawals."
+					]
+				},
+				{
+					"number": 7,
+					"text": "One interest rate, calculated daily and paid on [7]",
+					"answer": "June 30th / June 30 / 30 June / 30th June",
+					"quotes": [
+						"This scheme has one interest rate, no minimum balance, and interest is calculated daily and paid annually at the end of the financial year, the 30th of June."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Term deposit Safe and [8] – low risk",
+					"answer": "secure",
+					"quotes": [
+						"Starting with the safest, the most secure, low risk option is a basic term deposit, starting with a minimum deposit of $1,000."
+					]
+				},
+				{
+					"number": 9,
+					"text": "[9] Longer term but better returns.",
+					"answer": "bonds",
+					"quotes": [
+						"Bonds are generally a longer commitment, but they may bring better rewards in the future."
+					]
+				},
+				{
+					"number": 10,
+					"text": "A certain percentage of [10] before tax",
+					"answer": "income",
+					"quotes": [
+						"There is no minimum deposit, but the good news is that you can choose to contribute a certain percentage of your income before tax is paid on it."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

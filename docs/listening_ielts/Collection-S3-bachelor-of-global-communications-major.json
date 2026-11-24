@@ -1,0 +1,239 @@
+{
+	"id": "148db06f-afa3-47c1-8626-1c0074f72c1e",
+	"url": "https://stepielts.com/student/listening/148db06f-afa3-47c1-8626-1c0074f72c1e?mode=practice",
+	"title": "Bachelor of Global Communications Major",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/991ae091-1bbd-41b9-baba-bc94bca9acf8.mp3",
+	"transcript": "Speaker 1: Simon: Excuse me. Are you Anna Jenkins?\nSpeaker 2: Anna: Yes.\nSpeaker 1: Simon: My name's Simon. I'm on the Bachelor of Communications course, Year 1, and I really need some advice from someone who's ahead of me. I was told you were in Year 3.\nSpeaker 2: Anna: That's right. How's it going?\nSpeaker 1: Simon: Hmm. I'm not convinced I chose the right major. At present, I'm doing Public Relations. That's why I want to talk to you. You're doing the Global Communications major, right?\nSpeaker 2: Anna: Yes. Are you going to change to that?\nSpeaker 1: Simon: Possibly, if it helps my career.\nSpeaker 2: Anna: Won't the Public Relations course do that?\nSpeaker 1: Simon: If I just wanted to work in New Zealand, yes. I mean, I've heard of graduates finding work here almost immediately, and with good salaries. But I'd like to go abroad, and I imagine the Global major would give me the skills so I could go off and work anywhere. I know it'll be hard work starting again, but I would be motivated.\nSpeaker 2: Anna: I see. But I'm still not sure you need to change majors to achieve your goal. Aren't some of the courses the same for both majors?\nSpeaker 1: Simon: Some are the same. But I'm not sure I'm cut out for the business aspects of Public Relations. Economic principles, for example. I understand what it's all about. I did economics at high school. But I just found it dull. I want to study something creative. Something that connects you to people.\nSpeaker 2: Anna: Well, the Global major certainly does that.\nSpeaker 1: Simon: Is it right you have to learn a language?\nSpeaker 2: Anna: Well, it was compulsory when I started, but it's up to you now.\nSpeaker 1: Simon: Do you think it's necessary to learn one?\nSpeaker 2: Anna: Well, so much of the major is looking at ways that culture and language influence communication. And if you learn a second language yourself, you definitely get more of an insight into what the theory is all about.\nSpeaker 1: Simon: But I'm no good at languages. Which one is the easiest?\nSpeaker 2: Anna: I'm not sure that's the best rationale for a choice. In my first year, we could go for Chinese, Japanese or Maori. I went for Chinese because New Zealand has so many trade deals with China now. But Japanese would be good if you think you might end up in tourism. I did Maori at high school and it was fascinating. But it would restrict you to doing business within New Zealand.\nSpeaker 1: Simon: What did you think of your lecturers?\nSpeaker 2: Anna: Oh, I have to say they're great. And when we were working on our individual proposals for the internships, they pushed us to keep working on producing the best work possible. And even though I kept having to adapt it, I actually felt proud of mine eventually.\nSpeaker 1: Simon: Yes, ours push us too, which is good. Sometimes you don't know what you're capable of and it makes you a lot more enthusiastic. Sometimes, if the lecturer sits down with you for a chat, it's more motivating than a written report.\nSpeaker 2: Anna: I completely agree.\nSpeaker 1: Anna: And I suppose one thing I really like is the way they encourage us to challenge their opinions, as long as we can come up with a sound argument to support our case. I think that's helped me develop some useful critical thinking skills.\nSpeaker 2: Simon: That's good. I think whatever major you do, all the lecturers want to encourage that. At least, that's my experience.\nSpeaker 1: Simon: What did you enjoy most about the Global Communications major?\nSpeaker 2: Anna: Well, Communication 1 was really useful. I was never very confident at speaking in front of large groups, but that showed us how to use different voice techniques and how to give interactive presentations. I had to give a presentation to some executives during my internship and I did quite well after that.\nSpeaker 1: Simon: Sounds interesting.\nSpeaker 2: Anna: Psychology was absolutely fascinating. You get to look at what motivates people and how people operate within a big team. That's really essential when you're trying to get all the people to cooperate on a project that has the pressure of a deadline.\nSpeaker 1: Simon: In the brochure, Interpersonal Skills looks good.\nSpeaker 2: Anna: I didn't do that course.\nSpeaker 1: Simon: It says it's about how to listen properly, how to manage conflict in relationships, you know, when colleagues are arguing, the first step to improve things is better communication.\nSpeaker 2: Anna: That's pretty logical.\nSpeaker 1: Simon: And this one, Communication 3. What kinds of behaviour are likely to cause offence or misunderstanding between nationalities in the global business world?\nSpeaker 2: Anna: Yes, I enjoyed that.",
+	"body": {
+		"text": "Communication 1 [7]\nPsychology [8]\nInterpersonal Skills [9]\nCommunication 3 [10]",
+		"html": "<p>Communication 1 [7]</p><p>Psychology [8]</p><p>Interpersonal Skills [9]</p><p>Communication 3 [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Simon thinks the Global Communications major",
+					"options": [
+						{
+							"label": "A",
+							"text": "will help him get work in other countries."
+						},
+						{
+							"label": "B",
+							"text": "has easier courses than the Public Relations major."
+						},
+						{
+							"label": "C",
+							"text": "could lead to a well-paid job in New Zealand."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But I'd like to go abroad, and I imagine the Global major would give me the skills so I could go off and work anywhere."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Simon says that the Economic Principles course was",
+					"options": [
+						{
+							"label": "A",
+							"text": "too challenging for him."
+						},
+						{
+							"label": "B",
+							"text": "uninteresting as a subject."
+						},
+						{
+							"label": "C",
+							"text": "similar to other courses on the major."
+						}
+					],
+					"answer": "B",
+					"quotes": ["But I just found it dull."]
+				},
+				{
+					"number": 3,
+					"text": "Anna thinks that the foreign language courses",
+					"options": [
+						{
+							"label": "A",
+							"text": "give students a better understanding of the whole major."
+						},
+						{
+							"label": "B",
+							"text": "are less useful than the courses dealing with culture."
+						},
+						{
+							"label": "C",
+							"text": "should remain optional to students."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"And if you learn a second language yourself, you definitely get more of an insight into what the theory is all about."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What reason does Anna give for her choice of foreign language?",
+					"options": [
+						{
+							"label": "A",
+							"text": "it was a language she had previously studied."
+						},
+						{
+							"label": "B",
+							"text": "it would enable her to travel."
+						},
+						{
+							"label": "C",
+							"text": "it could be useful in commerce."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"I went for Chinese because New Zealand has so many trade deals with China now."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-6",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Which TWO things do Anna and Simon both appreciate about their lecturers?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They encourage freedom of thought."
+						},
+						{
+							"label": "B",
+							"text": "They help individual students in seminars."
+						},
+						{
+							"label": "C",
+							"text": "They are willing to adapt courses."
+						},
+						{
+							"label": "D",
+							"text": "They are enthusiastic about their subject."
+						},
+						{
+							"label": "E",
+							"text": "They encourage students to improve."
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 6,
+					"text": "Which TWO things do Anna and Simon both appreciate about their lecturers?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They encourage freedom of thought."
+						},
+						{
+							"label": "B",
+							"text": "They help individual students in seminars."
+						},
+						{
+							"label": "C",
+							"text": "They are willing to adapt courses."
+						},
+						{
+							"label": "D",
+							"text": "They are enthusiastic about their subject."
+						},
+						{
+							"label": "E",
+							"text": "They encourage students to improve."
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Which skills are developed in the following courses?",
+			"options": [
+				{
+					"label": "A",
+					"text": "making decisions under pressure"
+				},
+				{
+					"label": "B",
+					"text": "working in large groups"
+				},
+				{
+					"label": "C",
+					"text": "reducing problems between co-workers"
+				},
+				{
+					"label": "D",
+					"text": "talking in public"
+				},
+				{
+					"label": "E",
+					"text": "understanding cultural differences"
+				},
+				{
+					"label": "F",
+					"text": "using logical argument"
+				}
+			],
+			"body": "Communication 1 [7]\nPsychology [8]\nInterpersonal Skills [9]\nCommunication 3 [10]",
+			"body_html": "<p>Communication 1 [7]</p><p>Psychology [8]</p><p>Interpersonal Skills [9]</p><p>Communication 3 [10]</p>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "Communication 1",
+					"answer": "D",
+					"quotes": [
+						"I was never very confident at speaking in front of large groups, but that showed us how to use different voice techniques and how to give interactive presentations."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Psychology",
+					"answer": "B",
+					"quotes": [
+						"You get to look at what motivates people and how people operate within a big team."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Interpersonal Skills",
+					"answer": "C",
+					"quotes": [
+						"Simon: It says it's about how to listen properly, how to manage conflict in relationships, you know, when colleagues are arguing, the first step to improve things is better communication."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Communication 3",
+					"answer": "E",
+					"quotes": [
+						"What kinds of behaviour are likely to cause offence or misunderstanding between nationalities in the global business world?"
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

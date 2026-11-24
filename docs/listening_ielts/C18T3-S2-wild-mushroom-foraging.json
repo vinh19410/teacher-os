@@ -1,0 +1,273 @@
+{
+	"id": "599ef7b0-77de-4064-80cb-1f7650ab44d2",
+	"url": "https://stepielts.com/student/listening/599ef7b0-77de-4064-80cb-1f7650ab44d2?mode=practice",
+	"title": "Wild Mushroom Foraging",
+	"source": "C18T3",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/2b361fbb-a995-4311-8dea-5e90237580f9.mp3",
+	"transcript": "Speaker 0: Part two. You will hear an expert on picking wild mushrooms called Dan talking on the radio. First, you have some time to look at questions 11 to 14. Now listen carefully and answer questions 11 to 14.\nSpeaker 1: This evening, we're delighted to welcome Dan Beagle, who's just written a book on looking for and finding food in the wild. He's going to tell us everything we need to know about picking wild mushrooms.\nSpeaker 2: Thank you very much. Well, I need to start by talking about safety. You really need to know what you're doing because some mushrooms are extremely poisonous. Having said that, once you know what to look for, it's really worth doing for the amazing variety of mushrooms available, which you can't get in the shops. But, of course, you have to be very careful, and that's why I always say you should never consume mushrooms picked by friends or neighbors. Always remember that some poisonous mushrooms look very similar to edible ones, and it's easy for people to get confused. The other thing to avoid is mushrooms growing beside busy roads for obvious reasons. But nothing beats the taste of freshly picked mushrooms. Don't forget that the ones in the shops are often several days old and past their best. There are certain ideas about wild mushrooms that it's important to be aware of. Don't listen to people who tell you that it's only okay to eat mushrooms that are pale or dull. This is completely untrue. Some edible mushrooms are bright red, for example. Personally, I prefer mushrooms cooked, but it won't do you any harm to eat them uncooked in salads. It's not necessary to peel them. Another thing you should remember is that you can't tell if a mushroom is safe to eat by its smell. Some of the most deadly mushrooms have no smell and taste quite nice, apparently. Finally, just because deer or squirrels eat a particular mushroom doesn't mean that you can.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 15 to 20. Now listen and answer questions 15 to 20.\nSpeaker 2: Of course, mushroom picking is associated with the countryside. But if you haven't got a car, your local park can be a great place to start. There are usually a range of habitats where mushrooms grow, such as playing fields and wooded areas. But you need to be there first thing in the morning as there's likely to be a lot of competition, not just from people, but wildlife too. The deer often get the best mushrooms in my local park. If you're a complete beginner, I wouldn't recommend going alone or relying on photos in a book, even the one I've written. There are some really good phone apps for identifying mushrooms, but you can't always rely on getting a good signal in the middle of a wood. If possible, you should go with a group led by an expert. You'll stay safe and learn a lot that way. Conservation is a really important consideration, and you must follow a few basic rules. You should never pick all the mushrooms in one area. Collect only enough for your own needs. Be very careful that you don't trample on young mushrooms or other plants. And make sure you don't pick any mushrooms that are endangered and protected by law. There's been a decline in some varieties of wild mushrooms in this part of the country. Restaurants are becoming more interested in locally sourced food like wild mushrooms. But the biggest problem is that so many new houses have been built in this area in the last ten years. And more water is being taken from rivers and reservoirs because of this, and mushroom habitats have been destroyed. Anyway, a word of advice on storing mushrooms. Collect them in a brown paper bag, and as soon as you get home, put them in the fridge. They'll be fine for a couple of days, but it's best to cook them as soon as possible. After washing them really carefully first, of course. So everybody knows what a mushroom tastes like. Right? Well, you'll be surprised by the huge variety of wild mushrooms there are. Be adventurous. They're great in so many dishes, stir fries, risottos, pasta. But just be aware that some people can react badly to certain varieties, so it's a good idea not to eat huge quantities to begin with. Okay. So now I'm going to show you a few examples of poisonous\nSpeaker 0: That is the end of part two. You now have thirty seconds to check your answers to part two.",
+	"question_groups": [
+		{
+			"range": "11-12",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. Which TWO warnings does Dan give about picking mushrooms?",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Choose TWO letters, A-E. Which TWO warnings does Dan give about picking mushrooms?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Don’t pick more than one variety of mushroom at a time."
+						},
+						{
+							"label": "B",
+							"text": "Don’t pick mushrooms near busy roads."
+						},
+						{
+							"label": "C",
+							"text": "Don’t eat mushrooms given to you."
+						},
+						{
+							"label": "D",
+							"text": "Don’t eat mushrooms while picking them."
+						},
+						{
+							"label": "E",
+							"text": "Don’t pick old mushrooms."
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 12,
+					"text": "Choose TWO letters, A-E. Which TWO warnings does Dan give about picking mushrooms?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Don’t pick more than one variety of mushroom at a time."
+						},
+						{
+							"label": "B",
+							"text": "Don’t pick mushrooms near busy roads."
+						},
+						{
+							"label": "C",
+							"text": "Don’t eat mushrooms given to you."
+						},
+						{
+							"label": "D",
+							"text": "Don’t eat mushrooms while picking them."
+						},
+						{
+							"label": "E",
+							"text": "Don’t pick old mushrooms."
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "13-14",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. Which TWO warnings does Dan give about picking mushrooms?",
+			"questions": [
+				{
+					"number": 13,
+					"text": "Choose TWO letters, A-E. Which TWO ideas about wild mushrooms does Dan say are correct?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Mushrooms should always be peeled before eating."
+						},
+						{
+							"label": "B",
+							"text": "Mushrooms eaten by animals may be unsafe."
+						},
+						{
+							"label": "C",
+							"text": "Cooking destroys toxins in mushrooms."
+						},
+						{
+							"label": "D",
+							"text": "Brightly coloured mushrooms can be edible."
+						},
+						{
+							"label": "E",
+							"text": "All poisonous mushrooms have a bad smell."
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 14,
+					"text": "Choose TWO letters, A-E. Which TWO ideas about wild mushrooms does Dan say are correct?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Mushrooms should always be peeled before eating."
+						},
+						{
+							"label": "B",
+							"text": "Mushrooms eaten by animals may be unsafe."
+						},
+						{
+							"label": "C",
+							"text": "Cooking destroys toxins in mushrooms."
+						},
+						{
+							"label": "D",
+							"text": "Brightly coloured mushrooms can be edible."
+						},
+						{
+							"label": "E",
+							"text": "All poisonous mushrooms have a bad smell."
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "15-20",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 15,
+					"text": "What advice does Dan give about picking mushrooms in parks?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Choose wooded areas."
+						},
+						{
+							"label": "B",
+							"text": "Don’t disturb wildlife."
+						},
+						{
+							"label": "C",
+							"text": "Get there early."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But you need to be there first thing in the morning as there's likely to be a lot of competition, not just from people, but wildlife too."
+					]
+				},
+				{
+					"number": 16,
+					"text": "Dan says it is a good idea for beginners to",
+					"options": [
+						{
+							"label": "A",
+							"text": "use a mushroom app."
+						},
+						{
+							"label": "B",
+							"text": "join a group."
+						},
+						{
+							"label": "C",
+							"text": "take a reference book."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"If possible, you should go with a group led by an expert."
+					]
+				},
+				{
+					"number": 17,
+					"text": "What does Dan say is important for conservation?",
+					"options": [
+						{
+							"label": "A",
+							"text": "selecting only fully grown mushrooms"
+						},
+						{
+							"label": "B",
+							"text": "picking a limited amount of mushrooms"
+						},
+						{
+							"label": "C",
+							"text": "avoiding areas where rare mushroom species grow"
+						}
+					],
+					"answer": "B",
+					"quotes": ["Collect only enough for your own needs."]
+				},
+				{
+					"number": 18,
+					"text": "According to Dan, some varieties of wild mushrooms are in decline because there is",
+					"options": [
+						{
+							"label": "A",
+							"text": "a huge demand for them from restaurants."
+						},
+						{
+							"label": "B",
+							"text": "a lack of rain in this part of the country."
+						},
+						{
+							"label": "C",
+							"text": "a rise in building developments locally."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But the biggest problem is that so many new houses have been built in this area in the last ten years."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Dan says that when storing mushrooms, people should",
+					"options": [
+						{
+							"label": "A",
+							"text": "keep them in the fridge for no more than two days."
+						},
+						{
+							"label": "B",
+							"text": "keep them in a brown bag in a dark room."
+						},
+						{
+							"label": "C",
+							"text": "leave them for a period after washing them."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Collect them in a brown paper bag, and as soon as you get home, put them in the fridge. They'll be fine for a couple of days, but it's best to cook them as soon as possible."
+					]
+				},
+				{
+					"number": 20,
+					"text": "What does Dan say about trying new varieties of mushrooms?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Experiment with different recipes."
+						},
+						{
+							"label": "B",
+							"text": "Expect some to have a strong taste."
+						},
+						{
+							"label": "C",
+							"text": "Cook them for a long time."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Be adventurous. They're great in so many dishes, stir fries, risottos, pasta."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

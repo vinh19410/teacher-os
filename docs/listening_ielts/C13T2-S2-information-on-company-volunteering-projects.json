@@ -1,0 +1,273 @@
+{
+	"id": "14890bc5-732d-40fb-9567-0e7c189b0489",
+	"url": "https://stepielts.com/student/listening/14890bc5-732d-40fb-9567-0e7c189b0489?mode=practice",
+	"title": "Information on company volunteering projects",
+	"source": "C13T2",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/53d0b217-c1b9-45ae-92b1-69dc51daf271.mp3",
+	"transcript": "Speaker 0: Now turn to section two. Section two. You will hear a manager in a company talking to employees about volunteering for charity work. First, you have some time to look at questions 11 to 16. Now listen carefully and answer questions 11 to 16.\nSpeaker 1: Thanks for coming, everyone. Okay. So this meeting is for new staff and staff who haven't been involved with our volunteering projects yet. So, basically, the idea is that we allow staff to give up some of their work time to help on various charity projects to benefit the local community. We've been doing this for the last five years, and it's been very successful. Participating doesn't necessarily involve a huge time commitment. The company will pay for eight hours of your time. That can be used over one or two days all at once or spread over several months throughout the year. There are some staff who enjoy volunteering so much, they also give up their own free time for a couple of hours every week. It's completely up to you. Obviously, many people will have family commitments and aren't as available as other members of staff. Feedback from staff has been overwhelmingly positive. Because they felt they were doing something really useful, nearly everyone agreed that volunteering made them feel more motivated at work. They also liked building relationships with the people in the local community, and felt valued by them. One or two people also said it was a good thing to have on their CVs. One particularly successful project last year was the Get Working project. This was aimed at helping unemployed people in the area get back to work. Our staff were able to help them improve their telephone skills, such as writing down messages and speaking with confidence to potential customers, which they had found quite difficult. This is something many employers look for in job applicants, and something we all do without even thinking about every day at work. We've got an exciting new project starting this year. Up until now, we've mainly focused on projects to do with education and training, and we'll continue with our reading project in schools and our work with local charities. But we've also agreed to help out on a conservation project in Redfern Park. So if any of you fancy being outside and getting your hands dirty, this is the project for you. I also wanted to mention the annual digital inclusion day, which is coming up next month. The aim of this is to help older people keep up with technology. And this year, instead of hosting the event in our own training facility, we're using the ICT suite at Hill College as it can hold far more people. We've invited over 60 people from the Silver Age Community Center to take part, so we'll need a lot of volunteers to help with this event. If you're interested in taking part, please go to the volunteering section of our website and complete the relevant form. We won't be providing any training for this, but you'll be paired with an experienced volunteer if you've never done it before. By the way, don't forget to tell your manager about any volunteering activities you decide to do.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 17 to 20. Now listen and answer questions 17 to 20.\nSpeaker 1: The participants on the digital inclusion day really benefited. The majority were in their seventies, though some were younger, and a few were even in their nineties. Quite a few owned both a computer and a mobile phone, but these tended to be outdated models. They generally knew how to do simple things like send texts but weren't aware of recent developments in mobile phone technology. A few were keen to learn, but most were quite dismissive at first. They couldn't see the point of updating their skills. But that soon changed. The feedback was very positive. The really encouraging thing was that participants all said they felt much more confident about using social media to keep in touch with their grandchildren, who prefer this form of communication to phoning or sending emails. A lot of them also said playing online games would help them make new friends and keep their brains active. They weren't that impressed with being able to order their groceries online as they liked going out to the shops, but some said it would come in handy if they were ill or the weather was really bad. One thing they asked about was using tablets for things like reading newspapers. Some people had been given tablets as presents but had never used them. So that's something we'll make sure we include this time.\nSpeaker 0: That is the end of section two. You now have half a minute to check your answers.",
+	"question_groups": [
+		{
+			"range": "11-16",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "How much time for volunteering does the company allow per employee?",
+					"options": [
+						{
+							"label": "A",
+							"text": "two hours per week"
+						},
+						{
+							"label": "B",
+							"text": "one day per month"
+						},
+						{
+							"label": "C",
+							"text": "8 hours per year"
+						}
+					],
+					"answer": "C",
+					"quotes": ["The company will pay for eight hours of your time."]
+				},
+				{
+					"number": 12,
+					"text": "In feedback almost all employees said that volunteering improved their",
+					"options": [
+						{
+							"label": "A",
+							"text": "chances of promotion."
+						},
+						{
+							"label": "B",
+							"text": "job satisfaction."
+						},
+						{
+							"label": "C",
+							"text": "relationships with colleagues."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Because they felt they were doing something really useful, nearly everyone agreed that volunteering made them feel more motivated at work."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Last year some staff helped unemployed people with their",
+					"options": [
+						{
+							"label": "A",
+							"text": "literacy skills."
+						},
+						{
+							"label": "B",
+							"text": "job applications."
+						},
+						{
+							"label": "C",
+							"text": "communication skills."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Our staff were able to help them improve their telephone skills, such as writing down messages and speaking with confidence to potential customers, which they had found quite difficult."
+					]
+				},
+				{
+					"number": 14,
+					"text": "This year the company will start a new volunteering project with a local",
+					"options": [
+						{
+							"label": "A",
+							"text": "school."
+						},
+						{
+							"label": "B",
+							"text": "park."
+						},
+						{
+							"label": "C",
+							"text": "charity."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But we've also agreed to help out on a conservation project in Redfern Park."
+					]
+				},
+				{
+					"number": 15,
+					"text": "Where will the Digital Inclusion Day be held?",
+					"options": [
+						{
+							"label": "A",
+							"text": "at the company’s training facility"
+						},
+						{
+							"label": "B",
+							"text": "at a college"
+						},
+						{
+							"label": "C",
+							"text": "in a community centre"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"And this year, instead of hosting the event in our own training facility, we're using the ICT suite at Hill College as it can hold far more people."
+					]
+				},
+				{
+					"number": 16,
+					"text": "What should staff do if they want to take part in the Digital Inclusion Day?",
+					"options": [
+						{
+							"label": "A",
+							"text": "fill in a form"
+						},
+						{
+							"label": "B",
+							"text": "attend a training workshop"
+						},
+						{
+							"label": "C",
+							"text": "get permission from their manager"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"If you're interested in taking part, please go to the volunteering section of our website and complete the relevant form."
+					]
+				}
+			]
+		},
+		{
+			"range": "17-18",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 17,
+					"text": "What TWO things are mentioned about the participants on the last Digital Inclusion Day?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They were all over 70."
+						},
+						{
+							"label": "B",
+							"text": "They never used their computer."
+						},
+						{
+							"label": "C",
+							"text": "Their phones were mostly old-fashioned."
+						},
+						{
+							"label": "D",
+							"text": "They only used their phones for making calls."
+						},
+						{
+							"label": "E",
+							"text": "They initially showed little interest."
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 18,
+					"text": "What TWO things are mentioned about the participants on the last Digital Inclusion Day?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They were all over 70."
+						},
+						{
+							"label": "B",
+							"text": "They never used their computer."
+						},
+						{
+							"label": "C",
+							"text": "Their phones were mostly old-fashioned."
+						},
+						{
+							"label": "D",
+							"text": "They only used their phones for making calls."
+						},
+						{
+							"label": "E",
+							"text": "They initially showed little interest."
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "19-20",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 19,
+					"text": "What TWO activities on the last Digital Inclusion Day did participants describe as useful?",
+					"options": [
+						{
+							"label": "A",
+							"text": "learning to use tablets"
+						},
+						{
+							"label": "B",
+							"text": "communicating with family"
+						},
+						{
+							"label": "C",
+							"text": "shopping online"
+						},
+						{
+							"label": "D",
+							"text": "playing online games"
+						},
+						{
+							"label": "E",
+							"text": "sending emails"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 20,
+					"text": "What TWO activities on the last Digital Inclusion Day did participants describe as useful?",
+					"options": [
+						{
+							"label": "A",
+							"text": "learning to use tablets"
+						},
+						{
+							"label": "B",
+							"text": "communicating with family"
+						},
+						{
+							"label": "C",
+							"text": "shopping online"
+						},
+						{
+							"label": "D",
+							"text": "playing online games"
+						},
+						{
+							"label": "E",
+							"text": "sending emails"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		}
+	],
+	"images": []
+}

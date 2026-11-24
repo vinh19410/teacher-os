@@ -1,0 +1,92 @@
+{
+	"id": "ae998891-282f-4334-b72b-8afce8c4e0a2",
+	"url": "https://stepielts.com/student/listening/ae998891-282f-4334-b72b-8afce8c4e0a2?mode=practice",
+	"title": "Land Diving in Vanuatu",
+	"source": "Forecast Quý 2-2025",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/409f1101-6da2-4b3e-9553-00a0ed46b601.mp3",
+	"transcript": "Speaker 1: Hello everyone, my name is Thomas Johnson. Thank you for coming along to today’s lecture. I have recently returned from a tour of the Pacific Islands, and today I will speak on the topic of the land diving ceremonies of Pentecost Island in Vanuatu. You may have heard about this practice or seen it on television, but it is still quite unbelievable to see it in person. For those who are not aware of it, I would like to give you a basic introduction. The practice involves the native people tying vines around their ankles and jumping off platforms in a way similar to bungee jumping. In fact, it is said to have been the original inspiration for bungee jumping. You might first wonder who the participants are in this ceremony. Well, only men can take part, whereas women are not allowed to participate, despite the fact that the legend from which the ceremony originates names a woman as the original diver. Boys can begin to participate around the ages of seven or eight as a rite of passage or initiation, however, other children are not included. The ceremonies are held each year during the dry season between April and June. This is for two reasons - firstly lianas, the vines which are used in the ceremony, are at their most elastic during this period. Secondly, the ceremony is said to celebrate and bring blessings on the annual yam harvest and it is a great attraction for the villagers, with everyone attending to sing, dance and encourage the bravery of the divers. The ceremony is also said to bring personal benefits to divers such as increasing the masculinity and strength of a man - taking part is considered a kind of cleansing for the man. Now I would like to provide you with some details about land diving. Well, the preparation of the towers is a major event for the village, and many men in the village prepare them for the ceremony in preceding weeks. The tower and platforms are built . Additionally, the soil is worked over to ensure it is moistened and raked to make it softer. If the soil is too dry, the diver will be injured when he touches the ground. You might wonder how the jumpers protect themselves from injury.",
+	"body": {
+		"text": "Land Diving in Vanuatu\nParticipants:\nExclude [1] and most [2]\nSpecial meaning:\nBring good luck for the [3] of a certain crop.\nFor men, the ceremony increases strengths and is regarded as a type of [4].\nDetails:\n[5] soil will cause injuries to divers.\nDivers should touch the ground with their [6] to avoid injury.\nJumpers should get rid of barriers such as [7] .\nDivers jump from towers of different heights because of their different age and [8]\nToday:\nPurpose of reporting the ceremony: to develop [9] directly\nFilms for [10] purposes are not allowed for over a decade.",
+		"html": "<h3><strong>Land Diving in Vanuatu</strong></h3><p><strong>Participants:</strong></p><ul><li><p>Exclude [1] and most [2]</p></li></ul><p><strong>Special meaning:</strong></p><ul><li><p>Bring good luck for the [3]  of a certain crop.</p></li><li><p>For men, the ceremony increases strengths and is regarded as a type of [4].</p></li></ul><p><strong>Details:</strong></p><ul><li><p>[5] soil will cause injuries to divers.</p></li><li><p>Divers should touch the ground with their [6]  to avoid injury.</p></li><li><p>Jumpers should get rid of barriers such as [7]  .</p></li><li><p>Divers jump from towers of different heights because of their different age and  [8]</p></li></ul><p><strong>Today:</strong></p><ul><li><p>Purpose of reporting the ceremony: to develop [9]  directly</p></li><li><p>Films for  [10] purposes are not allowed for over a decade.</p></li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "Land Diving in Vanuatu\nParticipants:\nExclude [1] and most [2]\nSpecial meaning:\nBring good luck for the [3] of a certain crop.\nFor men, the ceremony increases strengths and is regarded as a type of [4].\nDetails:\n[5] soil will cause injuries to divers.\nDivers should touch the ground with their [6] to avoid injury.\nJumpers should get rid of barriers such as [7] .\nDivers jump from towers of different heights because of their different age and [8]\nToday:\nPurpose of reporting the ceremony: to develop [9] directly\nFilms for [10] purposes are not allowed for over a decade.",
+			"body_html": "<h3><strong>Land Diving in Vanuatu</strong></h3><p><strong>Participants:</strong></p><ul><li><p>Exclude [1] and most [2]</p></li></ul><p><strong>Special meaning:</strong></p><ul><li><p>Bring good luck for the [3]  of a certain crop.</p></li><li><p>For men, the ceremony increases strengths and is regarded as a type of [4].</p></li></ul><p><strong>Details:</strong></p><ul><li><p>[5] soil will cause injuries to divers.</p></li><li><p>Divers should touch the ground with their [6]  to avoid injury.</p></li><li><p>Jumpers should get rid of barriers such as [7]  .</p></li><li><p>Divers jump from towers of different heights because of their different age and  [8]</p></li></ul><p><strong>Today:</strong></p><ul><li><p>Purpose of reporting the ceremony: to develop [9]  directly</p></li><li><p>Films for  [10] purposes are not allowed for over a decade.</p></li></ul>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Exclude [1] and most [2]",
+					"answer": "women",
+					"quotes": [
+						"Well, only men can take part, whereas women are not allowed to participate, despite the fact that the legend from which the ceremony originates names a woman as the original diver."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Exclude [1] and most [2]",
+					"answer": "children",
+					"quotes": [
+						"Boys can begin to participate around the ages of seven or eight as a rite of passage or initiation, however, other children are not included."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Bring good luck for the [3] of a certain crop.",
+					"answer": "harvest",
+					"quotes": [
+						"Secondly, the ceremony is said to celebrate and bring blessings on the annual yam harvest and it is a great attraction for the villagers, with everyone attending to sing, dance and encourage the bravery of the divers."
+					]
+				},
+				{
+					"number": 4,
+					"text": "For men, the ceremony increases strengths and is regarded as a type of [4].",
+					"answer": "cleansing",
+					"quotes": [
+						"The ceremony is also said to bring personal benefits to divers such as increasing the masculinity and strength of a man - taking part is considered a kind of cleansing for the man."
+					]
+				},
+				{
+					"number": 5,
+					"text": "[5] soil will cause injuries to divers.",
+					"answer": "dry",
+					"quotes": [
+						"If the soil is too dry, the diver will be injured when he touches the ground."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Divers should touch the ground with their [6] to avoid injury.",
+					"answer": "shoulders"
+				},
+				{
+					"number": 7,
+					"text": "Jumpers should get rid of barriers such as [7] .",
+					"answer": "rocks"
+				},
+				{
+					"number": 8,
+					"text": "Divers jump from towers of different heights because of their different age and [8]",
+					"answer": "experience"
+				},
+				{
+					"number": 9,
+					"text": "Purpose of reporting the ceremony: to develop [9] directly",
+					"answer": "tourism"
+				},
+				{
+					"number": 10,
+					"text": "Films for [10] purposes are not allowed for over a decade.",
+					"answer": "commercial"
+				}
+			]
+		}
+	],
+	"images": []
+}

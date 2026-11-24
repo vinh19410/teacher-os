@@ -1,0 +1,168 @@
+{
+	"id": "d9a55a09-77b0-49ce-b6b4-fedec5df824a",
+	"url": "https://stepielts.com/student/listening/d9a55a09-77b0-49ce-b6b4-fedec5df824a?mode=practice",
+	"title": "Visiting the Sheepmarket area",
+	"source": "C12T4",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/f85bf37d-7a4f-444e-9816-6bac30681d5c.mp3",
+	"transcript": "Speaker 0: Now turn to section two. Section two You will hear a podcast about an area called the Sheep Market in a New Zealand city. First, you have some time to look at questions 11 to 14. Now listen carefully and answer questions 11 to 14.\nSpeaker 1: Welcome to this podcast about the Sheep market, which is one of the oldest parts of the city. As its name suggests, there was originally a market here where farmers brought their sheep, but now it's been redeveloped into a buzzing, vibrant area of the city, which is also home to one of the city's fastest growing communities. The nearby university has always meant the area is popular with students who come in to enjoy the lively nightlife. But now graduates embarking on careers in the worlds of fashion and design are buying up the new apartments recently built here to replace the small houses where the market workers used to live. The narrow old side streets are great places for finding original pictures, jewelry, and ceramics which won't break the bank, as well as local produce like fruit and vegetables. There's also lots of pavement cafes where you can have a coffee and watch tourists from all over the world go by. The oldest buildings in the area are on the main streets, including the city's first apartment store, built in the eighteen eighties, which is still open today. The sheep market is a centre for fashion, and there's a policy of encouraging new young designers. The young fashion competition is open to local young people who are passionate about fashion. This year, they've been asked to design an outfit based on ideas from the music and technology that's part of their everyday life, using both natural and man made fibres. The garments will be judged by a panel of experts and fashion designers, and the winning entries will be modelled at a special gala evening. Parking at the Sheepmarket is easy. There are plenty of pay and display car parking spaces on the roadsides, which are fine if you just want to stay for an hour or two. But if you want to spend the day there, it's better to park in one of the four underground car parks. It's not expensive, and if you can present a receipt from one of the local stores, you'll not be charged at all. After 6PM, many of the car parks have a flat rate which varies, but it is usually very reasonable.\nSpeaker 0: Before you hear the rest of the podcast, you have some time to look at questions 15 to 20.\nSpeaker 1: The Sheepmarket is one of the main centres for art and history in the whole of the country. If you look at our map, you'll see some of the main attractions there. Most visitors start from Crawley Road at the bottom of the map. The Reynolds House is one of the oldest houses in the city and is open to the public. It's on the north side of Crawley Road, next to the footpath that leads to the public gardens. The area's particularly interesting for its unusual sculptures. The thumb is just what its name suggests, but it's about 10 metres high. You'll see it on Hill Road, across the road from the bank. The museum's got a particularly fine collection of New Zealand landscapes. It's on the East Side of the Sheep Market, on City Road. It's on the other side of the road from the Public Gardens, immediately facing the junction with Hill Road. The Contemporary Art Gallery is on a little road that leads off Station Square, not far from the public gardens. The road ends at the gallery. It doesn't go anywhere else. That's open every day except Mondays. The Warner Gallery specialises in nineteenth century art. It's on City Road, near the junction with Crawley Road, on the same side of the road as the public gardens. It's open on weekdays from nine to five, and entry is free. Finally, if you're interested in purchasing high quality artwork, the place to go is Nucleus. You need to go from Crawley Road up through Station Square and east along Hill Road until you get to a small winding road turning off. Go up there, and it's on your right. If you get to City Road, you've gone too far.\nSpeaker 0: That is the end of Section 2. You now have half a minute to check your answers.",
+	"question_groups": [
+		{
+			"range": "11-14",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Which is the most rapidly-growing group of residents in the Sheepmarket area?",
+					"options": [
+						{
+							"label": "A",
+							"text": "young professional people"
+						},
+						{
+							"label": "B",
+							"text": "students from the university"
+						},
+						{
+							"label": "C",
+							"text": "employees in the local market"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But now graduates embarking on careers in the worlds of fashion and design are buying up the new apartments recently built here to replace the small houses where the market workers used to live."
+					]
+				},
+				{
+					"number": 12,
+					"text": "The speaker recommends the side streets in the Sheepmarket for their",
+					"options": [
+						{
+							"label": "A",
+							"text": "international restaurants."
+						},
+						{
+							"label": "B",
+							"text": "historical buildings."
+						},
+						{
+							"label": "C",
+							"text": "arts and crafts."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The narrow old side streets are great places for finding original pictures, jewelry, and ceramics which won't break the bank, as well as local produce like fruit and vegetables."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Clothes designed by entrants for the Young Fashion competition must",
+					"options": [
+						{
+							"label": "A",
+							"text": "be modelled by the designers themselves."
+						},
+						{
+							"label": "B",
+							"text": "be inspired by aspects of contemporary culture."
+						},
+						{
+							"label": "C",
+							"text": "be made from locally produced materials."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"This year, they've been asked to design an outfit based on ideas from the music and technology that's part of their everyday life, using both natural and man made fibres."
+					]
+				},
+				{
+					"number": 14,
+					"text": "Car parking is free in some car parks if you",
+					"options": [
+						{
+							"label": "A",
+							"text": "stay for less than an hour."
+						},
+						{
+							"label": "B",
+							"text": "buy something in the shops."
+						},
+						{
+							"label": "C",
+							"text": "park in the evenings or at weekends."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"It's not expensive, and if you can present a receipt from one of the local stores, you'll not be charged at all."
+					]
+				}
+			]
+		},
+		{
+			"range": "15-20",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below\nWrite the correct letter, A-I, next to Questions 15 - 20.",
+			"instructions_html": "<p>Label the map below</p><p><em>Write the correct letter, <strong>A-I</strong>, next to Questions 15 - 20.</em></p><p><em><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/18d7f54c-5013-4529-9558-f9daa84ddce7.jpg\" alt=\"Cam 12 Test 4 Q15 20 980x743\"></em></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
+			"questions": [
+				{
+					"number": 15,
+					"text": "The Reynolds House",
+					"answer": "H",
+					"quotes": [
+						"The Reynolds House is one of the oldest houses in the city and is open to the public. It's on the north side of Crawley Road, next to the footpath that leads to the public gardens."
+					]
+				},
+				{
+					"number": 16,
+					"text": "The Thumb",
+					"answer": "C",
+					"quotes": [
+						"The thumb is just what its name suggests, but it's about 10 metres high. You'll see it on Hill Road, across the road from the bank."
+					]
+				},
+				{
+					"number": 17,
+					"text": "The Museum",
+					"answer": "F",
+					"quotes": [
+						"The museum's got a particularly fine collection of New Zealand landscapes. It's on the East Side of the Sheep Market, on City Road. It's on the other side of the road from the Public Gardens, immediately facing the junction with Hill Road."
+					]
+				},
+				{
+					"number": 18,
+					"text": "The Contemporary Art Gallery",
+					"answer": "G",
+					"quotes": [
+						"The Contemporary Art Gallery is on a little road that leads off Station Square, not far from the public gardens."
+					]
+				},
+				{
+					"number": 19,
+					"text": "The Warner Gallery",
+					"answer": "I",
+					"quotes": [
+						"The Warner Gallery specialises in nineteenth century art. It's on City Road, near the junction with Crawley Road, on the same side of the road as the public gardens."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Nucleus",
+					"answer": "B",
+					"quotes": [
+						"Finally, if you're interested in purchasing high quality artwork, the place to go is Nucleus. You need to go from Crawley Road up through Station Square and east along Hill Road until you get to a small winding road turning off. Go up there, and it's on your right. If you get to City Road, you've gone too far."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/18d7f54c-5013-4529-9558-f9daa84ddce7.jpg"
+	]
+}

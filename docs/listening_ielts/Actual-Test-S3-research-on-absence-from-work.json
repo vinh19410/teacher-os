@@ -1,0 +1,290 @@
+{
+	"id": "4ac2112c-c50a-4851-ab4c-57207e5da5ac",
+	"url": "https://stepielts.com/student/listening/4ac2112c-c50a-4851-ab4c-57207e5da5ac?mode=practice",
+	"title": "Research on absence from work",
+	"source": "Actual Test",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/d401a61b-711f-407a-81cf-943b31a68200.mp3",
+	"transcript": "Speaker 1: Tutor: Hello, Laura. Have a seat. So I understand you’re planning to investigate absence from work for your research project.\nSpeaker 2: Laura: That’s right. I’m going to base it on a local company called Burcok Engineering.\nSpeaker 1: Tutor: Is there any particular reason why you’ve chosen Burcok?\nSpeaker 2: Laura: Well, I’d originally thought of asking another company, FG Engineering, because I did my placement there and I knew the staff there, but the CEO wasn’t very keen. But she knows the managing director at Burghock, and she spoke to him, and then he got in touch with me. Apparently, absence is a major problem there, so he’s quite interested in having it investigated.\nSpeaker 1: Tutor: Okay.\nSpeaker 2: Laura: So my central theme is absence, but I’m thinking of concentrating on long term absence. I thought that might allow me to give more helpful feedback to the company.\nSpeaker 1: Tutor: If I were you, I wouldn’t be that specific. I’d look at absence as a whole. You might get more interesting results.\nSpeaker 2: Laura: Oh, okay.\nSpeaker 1: Tutor: So what’s the main thing you expect to find? Rises in absence rates over time?\nSpeaker 2: Laura: Not really. Initially, I wondered if workers often take time off without real justification, but I think that’ll be hard to determine. So, well, I think I may find that it’s something to do with what sort of job the employee is doing. Tutor: Okay.\nSpeaker 1: Now, have you thought how you’ll get your information?\nSpeaker 2: Laura: Well, first of all, I need access to the company records.\nSpeaker 1: Tutor: Yes. Obviously, you’ll need overall absence figures, though it’s unlikely they’ll let you have them for individual workers. And you probably won’t have access to personal information like when they were born, but you should be able to use anonymous details like the type of work they do or how long they’ve been with the company.\nSpeaker 2: Laura: Okay.\nSpeaker 1: Tutor: So let’s think a bit more about your questionnaire.\nSpeaker 2: Laura: I know that it shouldn’t be too long or people get bored.\nSpeaker 1: Tutor: No. But if it’s too short, you don’t get enough information. The trick is to get the balance right.\nSpeaker 2: Laura: I think the questions should be closed questions too. I mean, where people choose an answer from a list.\nSpeaker 1: Tutor: But then you miss the chance of getting unexpected information, so I’d include one or two open ended questions too.\nSpeaker 2: Laura: Okay. And I won’t ask for names or addresses or anything?\nSpeaker 1: Tutor: No. It needs to be anonymous. And after you’ve drafted it, you need to give it to at least one person to check there aren’t any problems. So you need to leave enough time for that and any revisions necessary.\nSpeaker 2: Laura: What about the covering letter that I’ll send out with the questionnaire? I’ll need to introduce myself and explain what the questionnaire is for, but what else should I include?\nSpeaker 1: Tutor: I’d reassure people that the survey isn’t going to be used to assess them personally. Otherwise they might choose not to take part.\nSpeaker 2: Laura: Yes, I’ll make that clear. And what about when they do it? Will they be allowed to use work time?\nSpeaker 1: Tutor: That’s really up to their manager, but you should say roughly how much time it’ll take.\nSpeaker 2: Laura: Okay.\nSpeaker 1: Tutor: So now you need to produce a schedule with dates, for example, when you’ll send out the questionnaire.\nSpeaker 2: Laura: Yes. Okay. Once I can arrange that date with the manager, I’ll be able to fix the deadline for getting the completed questionnaires back. And I want to use the time in between to analyze the figures that HR is going to give me from their database, though they haven’t said exactly when I’ll get them.\nSpeaker 1: Tutor: And you have to submit your assignment by the June.\nSpeaker 2: Laura: Actually, I have to get it finished by the second because I’ve arranged a work placement after that.\nSpeaker 1: Tutor: Okay.\nSpeaker 2: Laura: So our next meeting is two weeks today. Is that still okay?\nSpeaker 1: Tutor: Yes. And in the meantime, I’ll send you an...",
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Laura chose Burcock Engineering for her research because",
+					"options": [
+						{
+							"label": "A",
+							"text": "she was contacted by the managing director"
+						},
+						{
+							"label": "B",
+							"text": "she knew several people who worked there"
+						},
+						{
+							"label": "C",
+							"text": "she had already done a work placement there"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But she knows the managing director at Burghock, and she spoke to him, and then he got in touch with me."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What does Laura agree to do regarding the central theme of her research?",
+					"options": [
+						{
+							"label": "A",
+							"text": "check it is relevant"
+						},
+						{
+							"label": "B",
+							"text": "broaden the focus"
+						},
+						{
+							"label": "C",
+							"text": "be more specific in her aims"
+						}
+					],
+					"answer": "B",
+					"quotes": ["Laura: Oh, okay."]
+				},
+				{
+					"number": 3,
+					"text": "What does Laura expect to find from her research?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Absence rates are related to the type of work done"
+						},
+						{
+							"label": "B",
+							"text": "A lot of worker absence is actually unnecessary"
+						},
+						{
+							"label": "C",
+							"text": "Employee absence rates are increasing"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"So, well, I think I may find that it’s something to do with what sort of job the employee is doing."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What employee information does the tutor think Laura will be able to obtain from company records?",
+					"options": [
+						{
+							"label": "A",
+							"text": "dates of birth"
+						},
+						{
+							"label": "B",
+							"text": "details of employment"
+						},
+						{
+							"label": "C",
+							"text": "individual records of absence"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"And you probably won’t have access to personal information like when they were born, but you should be able to use anonymous details like the type of work they do or how long they’ve been with the company."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-6",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Which TWO recommendations does the tutor make about Laura's questionnaire?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Leave a space for contact details"
+						},
+						{
+							"label": "B",
+							"text": "Specify a completion date"
+						},
+						{
+							"label": "C",
+							"text": "Provide a mixture of question types"
+						},
+						{
+							"label": "D",
+							"text": "Keep the length to a minimum"
+						},
+						{
+							"label": "E",
+							"text": "Trial it on someone before finalising it"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 6,
+					"text": "Which TWO recommendations does the tutor make about Laura's questionnaire?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Leave a space for contact details"
+						},
+						{
+							"label": "B",
+							"text": "Specify a completion date"
+						},
+						{
+							"label": "C",
+							"text": "Provide a mixture of question types"
+						},
+						{
+							"label": "D",
+							"text": "Keep the length to a minimum"
+						},
+						{
+							"label": "E",
+							"text": "Trial it on someone before finalising it"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "7-8",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 7,
+					"text": "Which TWO things will Laura explain in her covering letter to participants?",
+					"options": [
+						{
+							"label": "A",
+							"text": "when the questionnaire should be completed"
+						},
+						{
+							"label": "B",
+							"text": "the fact that participation in the survey is voluntary"
+						},
+						{
+							"label": "C",
+							"text": "how long the questionnaire is likely to take"
+						},
+						{
+							"label": "D",
+							"text": "the purpose of the survey"
+						},
+						{
+							"label": "E",
+							"text": "the benefits of participation in the survey"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 8,
+					"text": "Which TWO things will Laura explain in her covering letter to participants?",
+					"options": [
+						{
+							"label": "A",
+							"text": "when the questionnaire should be completed"
+						},
+						{
+							"label": "B",
+							"text": "the fact that participation in the survey is voluntary"
+						},
+						{
+							"label": "C",
+							"text": "how long the questionnaire is likely to take"
+						},
+						{
+							"label": "D",
+							"text": "the purpose of the survey"
+						},
+						{
+							"label": "E",
+							"text": "the benefits of participation in the survey"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "9-10",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 9,
+					"text": "Which TWO activities does Laura already have definite dates for?",
+					"options": [
+						{
+							"label": "A",
+							"text": "completion of her finished assignment"
+						},
+						{
+							"label": "B",
+							"text": "questionnaire distribution"
+						},
+						{
+							"label": "C",
+							"text": "collection of completed questionnaires"
+						},
+						{
+							"label": "D",
+							"text": "the next meeting with her tutor"
+						},
+						{
+							"label": "E",
+							"text": "analysis of figures from the company's database"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 10,
+					"text": "Which TWO activities does Laura already have definite dates for?",
+					"options": [
+						{
+							"label": "A",
+							"text": "completion of her finished assignment"
+						},
+						{
+							"label": "B",
+							"text": "questionnaire distribution"
+						},
+						{
+							"label": "C",
+							"text": "collection of completed questionnaires"
+						},
+						{
+							"label": "D",
+							"text": "the next meeting with her tutor"
+						},
+						{
+							"label": "E",
+							"text": "analysis of figures from the company's database"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		}
+	],
+	"images": []
+}

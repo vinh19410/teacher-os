@@ -1,0 +1,96 @@
+{
+	"id": "56ab84fa-d006-4213-bc0e-faf5241c4471",
+	"url": "https://stepielts.com/student/listening/56ab84fa-d006-4213-bc0e-faf5241c4471?mode=practice",
+	"title": "Oz Housesitters - Home Owner Registration Form",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/240882db-ecfd-4981-90b6-025c9efebf2e.mp3",
+	"transcript": "Speaker 1: Adam: Hello, Aus House Sitters. Adam here.\nSpeaker 2: Jenny: Oh, hello. My husband and I are going on a trip overseas, and we’d like someone to stay in our house and look after it while we’re away. Is that something you can help us with?\nSpeaker 1: Adam: It most certainly is. We can take care of all the arrangements for you.\nSpeaker 2: Jenny: Okay. Great.\nSpeaker 1: Adam: Now can I just get some contact details from you for the form? Your name is? Jenny. Jenny Hall. Thank you. Now what’s your address?\nSpeaker 2: Jenny: 14 Grey Street.\nSpeaker 1: Adam: Is that G R E Y or G R A Y?\nSpeaker 2: Jenny: A Y.\nSpeaker 1: Adam: Right. And what’s the suburb? Greenfield. Oh, I know it. And if I can just get a contact telephone number?\nSpeaker 2: Jenny: I’ll give you my mobile number. That’s probably the best one to use. It’s 0491577248.\nSpeaker 1: Adam: Thanks. Now when did you want the house sitter to start?\nSpeaker 2: Jenny: We’re flying out on the September 25, but my brother will be in the house for a few days until the twenty eighth. So from the September 29, please.\nSpeaker 1: Adam: I’ll note that down. And how long do you want the house sitter for?\nSpeaker 2: Jenny: Well, I’ll be attending a training course in Paris for two weeks, but we’re also going to visit my niece in Singapore on the way home to Australia for a few days.\nSpeaker 1: Adam: So shall I put down three weeks?\nSpeaker 2: Jenny: That sounds about right. I think four would be too long.\nSpeaker 1: Adam: Sure. Now, Jenny, can you tell me more about the features of your house? This helps us to match house sitters and homeowners.\nSpeaker 2: Jenny: Sure. What do you want to know?\nSpeaker 1: Adam: Does the house have air conditioning?\nSpeaker 2: Jenny: No. We don’t like using it. We prefer the fresh air. But last year, we did put in a pool.\nSpeaker 1: Adam: Very nice. And are there any other attractive features? Is your house near a beach, for example?\nSpeaker 2: Jenny: No. Not really. We’re about an hour’s drive away, but we are close to a station, so it’s handy for anyone getting into work and so on.\nSpeaker 1: Adam: Okay. Great. Now if our house sitter has their own transport, is there any space for them to park?\nSpeaker 2: Jenny: Well, we won’t be taking our car, but it’s a large double garage. There will be space for one more.\nSpeaker 1: Adam: Okay. Great. I’ll note that down too. Adam: And are there any special duties that you’ll need the house sitter to carry out?\nSpeaker 2: Jenny: Oh, I don’t know. What do people normally ask for?\nSpeaker 1: Adam: Well, for example, one common shore is looking after the garden.\nSpeaker 2: Jenny: Oh, yes. We have an orange tree and an apple tree, which are both watered automatically, but we haven’t connected the sprinkler to our lemon tree yet, so they’ll need to water that one.\nSpeaker 1: Adam: Sure. Now, Jenny, do you have any special requirements for your house sitter?\nSpeaker 2: Jenny: Well, I don’t know if this is possible, but I’d probably rather have a couple than someone who’s single. The house might be a bit too big for just one person.\nSpeaker 1: Adam: Sure. Now many of our owners ask for sitters without children. What’s your preference?\nSpeaker 2: Jenny: Oh, that’s no problem. There’s nothing they can break.\nSpeaker 1: Adam: What about smoking?\nSpeaker 2: Jenny: Oh, no. I can’t stand the smell. Definitely not. Now how do I know that my house is going to be safe with the house sitters?\nSpeaker 1: Adam: Well, we check all of our house sitters very carefully. They have to provide references. But as well as that, you can ask for a police check if you want to.\nSpeaker 2: Jenny: Oh, yes. I’d like to do that, please.\nSpeaker 1: Adam: Okay. No problem. That’s all I need for now.\nSpeaker 2: Jenny: Okay.",
+	"body": {
+		"text": "Name: Jenny Hall\nAddress: 14 [1] St Greenfield\nMobile no: [2]\nDate required from: [3]\nLength of time required: [4] weeks\nHouse features:\nit has a new [5]\nit is near a station\nthere is room for the housesitter's [6]\nSpecial duties required:\nwater the [7] tree\nHousesitter requirements:\nthe house is large so a [8] is preferred.\nno [9] allowed\nwould like a check carried out by the [10]",
+		"html": "<table><tbody><tr><td><p><strong>Name:</strong>  Jenny Hall</p><p><strong>Address:</strong>  14 [1] St Greenfield</p><p><strong>Mobile no:</strong> [2]</p><p><strong>Date required from:</strong> [3]</p><p><strong>Length of time required:</strong> [4] weeks</p><p><strong>House features:</strong></p><ul><li>it has a new [5]</li><li>it is near a station</li><li>there is room for the housesitter's [6]</li></ul><p><strong>Special duties required:</strong></p><ul><li>water the [7] tree</li></ul><p><strong>Housesitter requirements:</strong></p><ul><li>the house is large so a [8] is preferred.</li><li>no [9] allowed</li><li>would like a check carried out by the [10]</li></ul></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "FORM_COMPLETION",
+			"instructions": "Complete the form below.\nWrite ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Name: Jenny Hall\nAddress: 14 [1] St Greenfield\nMobile no: [2]\nDate required from: [3]\nLength of time required: [4] weeks\nHouse features:\nit has a new [5]\nit is near a station\nthere is room for the housesitter's [6]\nSpecial duties required:\nwater the [7] tree\nHousesitter requirements:\nthe house is large so a [8] is preferred.\nno [9] allowed\nwould like a check carried out by the [10]",
+			"body_html": "<table><tbody><tr><td><p><strong>Name:</strong>  Jenny Hall</p><p><strong>Address:</strong>  14 [1] St Greenfield</p><p><strong>Mobile no:</strong> [2]</p><p><strong>Date required from:</strong> [3]</p><p><strong>Length of time required:</strong> [4] weeks</p><p><strong>House features:</strong></p><ul><li>it has a new [5]</li><li>it is near a station</li><li>there is room for the housesitter's [6]</li></ul><p><strong>Special duties required:</strong></p><ul><li>water the [7] tree</li></ul><p><strong>Housesitter requirements:</strong></p><ul><li>the house is large so a [8] is preferred.</li><li>no [9] allowed</li><li>would like a check carried out by the [10]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Address: 14 [1] St Greenfield",
+					"answer": "Gray",
+					"quotes": ["Adam: Is that G R E Y or G R A Y?"]
+				},
+				{
+					"number": 2,
+					"text": "Mobile no: [2]",
+					"answer": "0491577248",
+					"quotes": ["It’s 0491577248."]
+				},
+				{
+					"number": 3,
+					"text": "Date required from: [3]",
+					"answer": "29th September / September 29th / 29 September / September 29",
+					"quotes": ["So from the September 29, please."]
+				},
+				{
+					"number": 4,
+					"text": "Length of time required: [4] weeks",
+					"answer": "3 / three",
+					"quotes": ["Adam: So shall I put down three weeks?"]
+				},
+				{
+					"number": 5,
+					"text": "it has a new [5]",
+					"answer": "pool",
+					"quotes": ["But last year, we did put in a pool."]
+				},
+				{
+					"number": 6,
+					"text": "there is room for the housesitter's [6]",
+					"answer": "transport",
+					"quotes": [
+						"Jenny: Well, we won’t be taking our car, but it’s a large double garage.",
+						"Now if our house sitter has their own transport, is there any space for them to park?"
+					]
+				},
+				{
+					"number": 7,
+					"text": "water the [7] tree",
+					"answer": "lemon",
+					"quotes": [
+						"We have an orange tree and an apple tree, which are both watered automatically, but we haven’t connected the sprinkler to our lemon tree yet, so they’ll need to water that one."
+					]
+				},
+				{
+					"number": 8,
+					"text": "the house is large so a [8] is preferred.",
+					"answer": "couple",
+					"quotes": [
+						"Jenny: Well, I don’t know if this is possible, but I’d probably rather have a couple than someone who’s single."
+					]
+				},
+				{
+					"number": 9,
+					"text": "no [9] allowed",
+					"answer": "smoking",
+					"quotes": ["Adam: What about smoking?"]
+				},
+				{
+					"number": 10,
+					"text": "would like a check carried out by the [10]",
+					"answer": "police",
+					"quotes": [
+						"But as well as that, you can ask for a police check if you want to."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

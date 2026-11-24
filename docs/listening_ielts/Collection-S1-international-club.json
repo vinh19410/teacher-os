@@ -1,0 +1,198 @@
+{
+	"id": "e77a6485-2407-4f05-8d91-a5800bb6aac1",
+	"url": "https://stepielts.com/student/listening/e77a6485-2407-4f05-8d91-a5800bb6aac1?mode=practice",
+	"title": "International Club",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/5c351e7f-5ed5-4b90-8865-7dc1593ba8ae.mp3",
+	"transcript": "Speaker 1: Mary: Hello, South City International Club. How can I help you?\nSpeaker 2: Jim Hunter: Oh, good morning. I want to find out about joining the club.\nSpeaker 1: Mary: Right. I can help you there. I’m the club secretary, and my name’s Mary.\nSpeaker 2: Jim Hunter: Hi, Mary. My name’s Jim Hunter. Can you tell me about the events you have there?\nSpeaker 1: Mary: Sure. There are several events here. Let me give you some details. First of all, we have a library. You can use all the facilities there, and opening times are from 11AM to 6PM.\nSpeaker 2: Jim Hunter: Thank you.\nSpeaker 1: Mary: Just to note, there’s a deposit of $15 for using the library, which is returnable, of course, as long as there’s no damage.\nSpeaker 2: Jim Hunter: That sounds fine. What else do you have?\nSpeaker 1: Mary: Well, we also have an ice skating center, which is next to a telephone booth. The admission fee is $3. It’s only open on Sundays. Also, we have a special offer for new members. If you come to the center with a guest, then the guest can experience one class for free.\nSpeaker 2: Jim Hunter: That is really a big attraction for me. I remember walking past there yesterday. I saw a poster about swimming. Do you have any swimming classes?\nSpeaker 1: Mary: Yes. That is a new class. It starts on the October 16.\nSpeaker 2: Jim Hunter: Right. Is it very expensive?\nSpeaker 1: Mary: Well, the joining fee is only $1. Oh, no. I’m sorry. It’s recently gone up by $2. So it’s now $3 for each person. And we don’t provide any swimming suits here, so you need to bring your own.\nSpeaker 2: Jim Hunter: I see. What about dance lessons? You mentioned that you have classes once a week.\nSpeaker 1: Mary: Yes. The dance classes are very popular here. It’s a little expensive. The joining fee is $5, but that includes free drinks. We open all day, and you can bring your own water and food.\nSpeaker 2: Jim Hunter: Well, it’s still more expensive than I thought. I’m a student here, and I’m only here for six months.\nSpeaker 1: Mary: Ah, then we offer you a great way to learn about Britain. We usually visit the Grand Hotel, a historical site, but this time, we are going to the local museum. The joining fee is $3. It is open between 10:30AM and 03:30PM during weekdays, and on weekends, it’s half an hour earlier.\nSpeaker 2: Jim Hunter: That should be alright. I could come in my free periods. Jim Hunter: By the way, I’m quite interested in tennis. I enjoy playing with my friends after work. Do you have tennis events I could join?\nSpeaker 1: Mary: No. I’m afraid we don’t. Perhaps you are thinking about North City Centre. They’ve got a lot of events we don’t have and vice versa. But we organize events such as movie watching as long as there are over 30 viewers, and we have a lecture every four weeks.\nSpeaker 2: Jim Hunter: Do you have any yoga classes?\nSpeaker 1: Mary: Yes. We do have some yoga lessons, but the timetable is still in discussion. However, we arrange a Saturday excursion every month. You can come and check it out.\nSpeaker 2: Jim Hunter: Great. I heard there would be other outdoor activities like a tour or something.\nSpeaker 1: Mary: Yes. That’s right. We will offer a night city tour if you are interested. And as well as that, there’s a cultural evening event once a month.\nSpeaker 2: Jim Hunter: That sounds good, but it is a pity that there’s no tennis at your club.\nSpeaker 1: Mary: I will pass on your feedback to management. So if you would like to join in the club, you need to fill out a form and pay a $108 if you are over 19 and $95 if you are under. Both will need to be submitted to the club office. They will help you apply for the membership card.\nSpeaker 2: Jim Hunter: Okay. Thanks for that information. I think I have all I need for now.\nSpeaker 1: Mary: Thank you for calling South City International Club. Bye.",
+	"body": {
+		"text": "Event/Venue\nTime/Dates\nFees\nNotes\nLibrary\nExample: From 11:00 am to 6 pm\nDeposit: $[1]\nReturn the deposit there is no damage\n[2] centre\nOpen on [3]\n$3\nBring one guest for free\nSwimming\nStarts on [4]\n$[5]\nBring your own swimming suit\nDance class\nOpen all day\n$5 ([6] included)\nBring enough water and food\n[7]\nOpen between 10:30 am and 3:30 pm (weekdays)\n$3\nReplacement for the visit to Grand hotel",
+		"html": "<table><tbody><tr><td><strong>Event/Venue</strong></td><td><strong>Time/Dates</strong></td><td><strong>Fees</strong></td><td><strong>Notes</strong></td></tr><tr><td><strong>Library</strong></td><td>Example: From 11:00 am to 6 pm</td><td>Deposit: $[1]</td><td>Return the deposit there is no damage</td></tr><tr><td><strong>[2] centre</strong></td><td>Open on [3]</td><td>$3</td><td>Bring one guest for free</td></tr><tr><td><strong>Swimming</strong></td><td>Starts on [4]</td><td>$[5]</td><td>Bring your own swimming suit</td></tr><tr><td><strong>Dance class</strong></td><td>Open all day</td><td>$5 ([6] included)</td><td>Bring enough water and food</td></tr><tr><td><strong>[7]</strong></td><td>Open between 10:30 am and 3:30 pm (weekdays)</td><td>$3</td><td>Replacement for the visit to Grand hotel</td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "Event/Venue\nTime/Dates\nFees\nNotes\nLibrary\nExample: From 11:00 am to 6 pm\nDeposit: $[1]\nReturn the deposit there is no damage\n[2] centre\nOpen on [3]\n$3\nBring one guest for free\nSwimming\nStarts on [4]\n$[5]\nBring your own swimming suit\nDance class\nOpen all day\n$5 ([6] included)\nBring enough water and food\n[7]\nOpen between 10:30 am and 3:30 pm (weekdays)\n$3\nReplacement for the visit to Grand hotel",
+			"body_table": [
+				["Event/Venue", "Time/Dates", "Fees", "Notes"],
+				[
+					"Library",
+					"Example: From 11:00 am to 6 pm",
+					"Deposit: $[1]",
+					"Return the deposit there is no damage"
+				],
+				["[2] centre", "Open on [3]", "$$3", "Bring one guest for free"],
+				["Swimming", "Starts on [4]", "$$[5]", "Bring your own swimming suit"],
+				[
+					"Dance class",
+					"Open all day",
+					"$$5 ([6] included)",
+					"Bring enough water and food"
+				],
+				[
+					"[7]",
+					"Open between 10:30 am and 3:30 pm (weekdays)",
+					"$$3",
+					"Replacement for the visit to Grand hotel"
+				]
+			],
+			"body_html": "<table><tbody><tr><td><strong>Event/Venue</strong></td><td><strong>Time/Dates</strong></td><td><strong>Fees</strong></td><td><strong>Notes</strong></td></tr><tr><td><strong>Library</strong></td><td>Example: From 11:00 am to 6 pm</td><td>Deposit: $[1]</td><td>Return the deposit there is no damage</td></tr><tr><td><strong>[2] centre</strong></td><td>Open on [3]</td><td>$3</td><td>Bring one guest for free</td></tr><tr><td><strong>Swimming</strong></td><td>Starts on [4]</td><td>$[5]</td><td>Bring your own swimming suit</td></tr><tr><td><strong>Dance class</strong></td><td>Open all day</td><td>$5 ([6] included)</td><td>Bring enough water and food</td></tr><tr><td><strong>[7]</strong></td><td>Open between 10:30 am and 3:30 pm (weekdays)</td><td>$3</td><td>Replacement for the visit to Grand hotel</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Deposit: $[1]",
+					"answer": "15",
+					"quotes": [
+						"Mary: Just to note, there’s a deposit of $15 for using the library, which is returnable, of course, as long as there’s no damage."
+					]
+				},
+				{
+					"number": 2,
+					"text": "[2] centre",
+					"answer": "Ice skating",
+					"quotes": [
+						"Mary: Well, we also have an ice skating center, which is next to a telephone booth."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Open on [3]",
+					"answer": "Sunday / Sundays",
+					"quotes": ["It’s only open on Sundays."]
+				},
+				{
+					"number": 4,
+					"text": "Starts on [4]",
+					"answer": "16th October / 16 October / October 16 / October 16th",
+					"quotes": ["It starts on the October 16."]
+				},
+				{
+					"number": 5,
+					"text": "$[5]",
+					"answer": "3",
+					"quotes": ["So it’s now $3 for each person."]
+				},
+				{
+					"number": 6,
+					"text": "$5 ([6] included)",
+					"answer": "free drinks",
+					"quotes": ["The joining fee is $5, but that includes free drinks."]
+				},
+				{
+					"number": 7,
+					"text": "",
+					"answer": "Museum / Local museum",
+					"quotes": [
+						"We usually visit the Grand Hotel, a historical site, but this time, we are going to the local museum."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-10",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Choose THREE correct answers. Which THREE events are held every month by the club?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Lecture"
+						},
+						{
+							"label": "B",
+							"text": "Film"
+						},
+						{
+							"label": "C",
+							"text": "Saturday excursion"
+						},
+						{
+							"label": "D",
+							"text": "Culture evening"
+						},
+						{
+							"label": "E",
+							"text": "Night tour"
+						},
+						{
+							"label": "F",
+							"text": "Yoga classes"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 9,
+					"text": "Choose THREE correct answers. Which THREE events are held every month by the club?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Lecture"
+						},
+						{
+							"label": "B",
+							"text": "Film"
+						},
+						{
+							"label": "C",
+							"text": "Saturday excursion"
+						},
+						{
+							"label": "D",
+							"text": "Culture evening"
+						},
+						{
+							"label": "E",
+							"text": "Night tour"
+						},
+						{
+							"label": "F",
+							"text": "Yoga classes"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 10,
+					"text": "Choose THREE correct answers. Which THREE events are held every month by the club?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Lecture"
+						},
+						{
+							"label": "B",
+							"text": "Film"
+						},
+						{
+							"label": "C",
+							"text": "Saturday excursion"
+						},
+						{
+							"label": "D",
+							"text": "Culture evening"
+						},
+						{
+							"label": "E",
+							"text": "Night tour"
+						},
+						{
+							"label": "F",
+							"text": "Yoga classes"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		}
+	],
+	"images": []
+}

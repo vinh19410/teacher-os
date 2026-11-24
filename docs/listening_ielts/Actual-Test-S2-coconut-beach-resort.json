@@ -1,0 +1,275 @@
+{
+	"id": "325c1ac9-6399-4701-899a-68032aaf78a7",
+	"url": "https://stepielts.com/student/listening/325c1ac9-6399-4701-899a-68032aaf78a7?mode=practice",
+	"title": "Coconut Beach Resort",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/9e29240a-efec-4f55-a7c5-1575a8a8a3d9.mp3",
+	"transcript": "Speaker 1: Radio Presenter (Anna): Welcome to our radio program: Travel with me in Australia. I’m Anna, the presenter of the radio show. In today’s session, I will introduce a fantastic place to you, the Coconut Beach Resort, which was newly built and opened to the public several months ago. I visited the resort last week and had a wonderful time there. Now I will give some details. First of all, who is the target group? As it is a beach resort, it’s not suitable for backpackers, of course. With little houses alongside the beach, this resort is the best place to spend time with your beloved one. I know several newlyweds booked cabins there to spend their honeymoon. However, it isn’t an ideal destination for families with several children because it may be beyond the budget. About the accommodation, you can choose from different types of rooms, and the price differs a lot. Take the bathing facilities, for example. I booked a room with a spa bath for the first two days, which is the most cost effective one. But for the three days left, I changed the room and lived in the one with a private pool. It was my favorite, I had to say. Every night, I could relax in the pool, which is so personal and secluded. And the third option is a room with a private beach, which I want to experience next time. The resort has various facilities catering to the needs of different visitors. There is a golf course, and if you want to play, you can either hire the equipment on the course or buy it in the golf shop. If you’re going to bring some snacks and drinks and relax in the open air, you can go to the picnic area, which was extended recently. The good news is that a horse ranch was added to the resort, so you can try horse riding if interested. You can also visit a range of attractions, like the farm, waterfall, etc. I went to the town on the first day to enjoy the local food and talk with the local people. Then the next day, I joined a tour group to the rainforest. It was my first time seeing a rainforest, and I was struck by the thick vegetation and diverse species, so I recommend it to you. If you like, you can even explore the rainforest. Walking among the densely covered forest, you can find different species of plants and animals. It is an exciting activity for both young and old, so all the people who have been there loved it. Don’t worry. You won’t get lost as a guide will lead you throughout the exploration. The most popular attraction is called The Sound Of The Birds. It used to be open at weekends, but it was always crowded with people. As a result, it has changed the schedule and put it on the last two days of the weekdays. I think it will give visitors a better experience. Radio Presenter (Anna): Besides the recreational facilities, I’d also like to introduce you to some other facilities in the resort center that may be useful. First, it offers a transfer service. You don’t have to rent a car or take a taxi when you arrive at the airport. A bus will pick you up and take you directly to the resort. It leaves every twenty four minutes, and there is no extra charge. For coffee lovers, there is a cafe in the center, and it opens from 8AM to 11PM. If you want to reserve a guided tour of the attractions, go to the tour booking office, which is located next to the cafe. However, the tourist shop is being refurbished and isn’t open at the moment. So if you want to buy some souvenirs for your families or friends, maybe you have to go to the town. The last thing I want to mention is there is an Aboriginal tribe near the resort, and if you are interested, there is a visit every Wednesday. Maybe some of you have learned Aboriginal history or Aboriginal traditions at school, like traditional dancing and blanket weaving. But this time, you can experience by yourselves, appreciating aboriginal rock painting and even talking to well known painters. What’s more, a local herbalist will introduce you to the herbal treatment, which is commonly used in the aboriginal tribe. It is an educational visit, and I’m sure you will learn much about the Aboriginal tribe. Okay. That’s all I want to introduce today. If you want to know more exciting holiday resorts in Australia, please wait for our program next week. Bye!",
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Who are suitable for Coconut Beach Resort?",
+					"options": [
+						{
+							"label": "A",
+							"text": "backpackers"
+						},
+						{
+							"label": "B",
+							"text": "couples"
+						},
+						{
+							"label": "C",
+							"text": "families with children"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"With little houses alongside the beach, this resort is the best place to spend time with your beloved one. I know several newlyweds booked cabins there to spend their honeymoon."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Which type of room does Anna prefer?",
+					"options": [
+						{
+							"label": "A",
+							"text": "room with a spa bath"
+						},
+						{
+							"label": "B",
+							"text": "room with a private beach"
+						},
+						{
+							"label": "C",
+							"text": "room with an individual pool"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But for the three days left, I changed the room and lived in the one with a private pool. It was my favorite, I had to say."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Which facility was recently built?",
+					"options": [
+						{
+							"label": "A",
+							"text": "picnic area"
+						},
+						{
+							"label": "B",
+							"text": "golf shop"
+						},
+						{
+							"label": "C",
+							"text": "horse ranch for horse riding"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The good news is that a horse ranch was added to the resort, so you can try horse riding if interested."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What impressed Anna most?",
+					"options": [
+						{
+							"label": "A",
+							"text": "town"
+						},
+						{
+							"label": "B",
+							"text": "rainforest"
+						},
+						{
+							"label": "C",
+							"text": "waterfall"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"It was my first time seeing a rainforest, and I was struck by the thick vegetation and diverse species, so I recommend it to you."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Why do the visitors like the rainforest exploration?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It suits all ages"
+						},
+						{
+							"label": "B",
+							"text": "It is excellent for guiding"
+						},
+						{
+							"label": "C",
+							"text": "It is the most interesting activity"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"It is an exciting activity for both young and old, so all the people who have been there loved it."
+					]
+				},
+				{
+					"number": 6,
+					"text": "The Sound of the Birds is only opened on",
+					"options": [
+						{
+							"label": "A",
+							"text": "Mondays and Tuesdays"
+						},
+						{
+							"label": "B",
+							"text": "Thursdays and Fridays"
+						},
+						{
+							"label": "C",
+							"text": "Weekends"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"As a result, it has changed the schedule and put it on the last two days of the weekdays."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-8",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 7,
+					"text": "Which TWO facilities does the resort centre provide?",
+					"options": [
+						{
+							"label": "A",
+							"text": "24-hour café"
+						},
+						{
+							"label": "B",
+							"text": "free bus transfer"
+						},
+						{
+							"label": "C",
+							"text": "tourist shop"
+						},
+						{
+							"label": "D",
+							"text": "car transfer"
+						},
+						{
+							"label": "E",
+							"text": "tour booking office"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 8,
+					"text": "Which TWO facilities does the resort centre provide?",
+					"options": [
+						{
+							"label": "A",
+							"text": "24-hour café"
+						},
+						{
+							"label": "B",
+							"text": "free bus transfer"
+						},
+						{
+							"label": "C",
+							"text": "tourist shop"
+						},
+						{
+							"label": "D",
+							"text": "car transfer"
+						},
+						{
+							"label": "E",
+							"text": "tour booking office"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "9-10",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 9,
+					"text": "In the tour of visiting educational aboriginal tribe, visitors can",
+					"options": [
+						{
+							"label": "A",
+							"text": "learn about aboriginal history"
+						},
+						{
+							"label": "B",
+							"text": "watch blanket weaving"
+						},
+						{
+							"label": "C",
+							"text": "meet the artists"
+						},
+						{
+							"label": "D",
+							"text": "enjoy local traditional dancing"
+						},
+						{
+							"label": "E",
+							"text": "learn about medicines"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 10,
+					"text": "In the tour of visiting educational aboriginal tribe, visitors can",
+					"options": [
+						{
+							"label": "A",
+							"text": "learn about aboriginal history"
+						},
+						{
+							"label": "B",
+							"text": "watch blanket weaving"
+						},
+						{
+							"label": "C",
+							"text": "meet the artists"
+						},
+						{
+							"label": "D",
+							"text": "enjoy local traditional dancing"
+						},
+						{
+							"label": "E",
+							"text": "learn about medicines"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -109,7 +109,7 @@ describe("validatePartForReady", () => {
 		expect(issues.some((issue) => issue.path === "questions")).toBe(true);
 	});
 
-	test("image-based: reading diagram chỉ cần imageUrl (pin tuỳ chọn); listening map vẫn cần imageUrl + pin mọi câu", () => {
+	test("image-based: reading diagram và listening map/diagram chỉ cần imageUrl (pin tuỳ chọn)", () => {
 		const diagramWithPins = readingPart({
 			type: "diagram",
 			imageUrl: "https://cdn.example.com/d.png",
@@ -135,29 +135,52 @@ describe("validatePartForReady", () => {
 		);
 		expect(noImage.some((issue) => issue.path === "imageUrl")).toBe(true);
 
-		// listening map — vẫn bắt buộc imageUrl + pin mọi câu.
+		// listening map & diagram: bắt buộc imageUrl, pin tuỳ chọn.
 		const mapNoImage = validatePartForReady(
 			"listening",
 			listeningPart({ type: "map", audioName: "s2.mp3" }),
 		);
 		expect(mapNoImage.some((issue) => issue.path === "imageUrl")).toBe(true);
 
-		const mapMissingPin = validatePartForReady(
+		const mapWithoutPins = validatePartForReady(
 			"listening",
 			listeningPart({
 				type: "map",
 				audioName: "s2.mp3",
 				imageUrl: "https://cdn.example.com/map.png",
-				optionBank: ["Cafe", "Library"],
+				optionBank: ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
 				questions: [
-					{ stem: "q1", answer: "A", alts: "", pin: { x: 10, y: 20 } },
-					{ stem: "q2", answer: "B", alts: "" },
+					{ stem: "Registration area", answer: "G", alts: "" },
+					{ stem: "Judging area", answer: "I", alts: "" },
 				],
 			}),
 		);
+		expect(mapWithoutPins).toEqual([]);
+
+		const listeningDiagramNoImage = validatePartForReady(
+			"listening",
+			listeningPart({
+				part: "s4",
+				type: "diagram",
+				audioName: "s4.mp3",
+				questions: [{ stem: "lid made of ____", answer: "glass", alts: "" }],
+			}),
+		);
 		expect(
-			mapMissingPin.some((issue) => issue.path === "questions.1.pin"),
+			listeningDiagramNoImage.some((issue) => issue.path === "imageUrl"),
 		).toBe(true);
+
+		const listeningDiagramOk = validatePartForReady(
+			"listening",
+			listeningPart({
+				part: "s4",
+				type: "diagram",
+				audioName: "s4.mp3",
+				imageUrl: "https://cdn.example.com/diagram.png",
+				questions: [{ stem: "lid made of ____", answer: "glass", alts: "" }],
+			}),
+		);
+		expect(listeningDiagramOk).toEqual([]);
 	});
 
 	test("type không thuộc catalog của part bị từ chối", () => {
@@ -642,7 +665,18 @@ describe("Issue #762 — 15 IELTS Reading types & validation rules", () => {
 			"flow",
 			"notes",
 			"sent4",
+			"mcq",
 			"mcq_many",
+			"tablecomp",
+			"summary",
+			"fill_blank",
+			"shortans",
+			"diagram",
+			"matching",
+			"info",
+			"match_names",
+			"features",
+			"tfng",
 		]);
 		for (const legacy of ["note", "tablecomp", "flowchart"]) {
 			const issues = validatePartForReady(
@@ -1429,5 +1463,162 @@ describe("library test list pagination contracts", () => {
 				},
 			}).success,
 		).toBe(false);
+	});
+});
+
+describe("Extended IELTS Listening library types & rules", () => {
+	test("listening summary & flow hỗ trợ optional word bank và tái dùng chữ cái", () => {
+		expect(isLibraryBankableType("listening", "summary")).toBe(true);
+		expect(isLibraryBankableType("listening", "flow")).toBe(true);
+		expect(
+			libraryOptionBankKindFor("listening", "summary", [], []),
+		).toBeUndefined();
+		expect(
+			libraryOptionBankKindFor("listening", "summary", [], ["Opt A", "Opt B"]),
+		).toBe("letter");
+		expect(
+			libraryOptionBankKindFor("listening", "flow", [], []),
+		).toBeUndefined();
+		expect(
+			libraryOptionBankKindFor("listening", "flow", [], ["Step A", "Step B"]),
+		).toBe("letter");
+
+		// Summary điền từ tự do (không bank)
+		expect(
+			validatePartForReady(
+				"listening",
+				listeningPart({
+					type: "summary",
+					questions: [
+						{ stem: "The river flows ____", answer: "north", alts: "" },
+					],
+					optionBank: [],
+				}),
+			),
+		).toEqual([]);
+
+		// Summary có word bank + tái dùng chữ cái (4 câu dùng 2 options)
+		expect(
+			validatePartForReady(
+				"listening",
+				listeningPart({
+					type: "summary",
+					optionBank: ["higher", "lower"],
+					questions: [
+						{ stem: "Group 1", answer: "A", alts: "" },
+						{ stem: "Group 2", answer: "B", alts: "" },
+						{ stem: "Group 3", answer: "A", alts: "" },
+						{ stem: "Group 4", answer: "B", alts: "" },
+					],
+				}),
+			),
+		).toEqual([]);
+
+		// Flow có word bank
+		expect(
+			validatePartForReady(
+				"listening",
+				listeningPart({
+					part: "s3",
+					type: "flow",
+					optionBank: ["draft", "review", "submit"],
+					questions: [
+						{ stem: "Step 1 ____", answer: "A", alts: "" },
+						{ stem: "Step 2 ____", answer: "C", alts: "" },
+					],
+				}),
+			),
+		).toEqual([]);
+	});
+
+	test("listening matching types cho phép tái dùng chữ cái (bank nhỏ hơn số câu) và hỗ trợ mcq 4 đáp án, tablecomp, shortans, fill_blank, tfng", () => {
+		for (const mType of [
+			"match2",
+			"matching",
+			"info",
+			"match_names",
+			"features",
+		] as const) {
+			expect(
+				validatePartForReady(
+					"listening",
+					listeningPart({
+						part: "s2",
+						type: mType,
+						optionBank: [
+							"very interested",
+							"slightly interested",
+							"not interested",
+						],
+						questions: [
+							{ stem: "Sports", answer: "C", alts: "" },
+							{ stem: "Music", answer: "B", alts: "" },
+							{ stem: "Drama", answer: "A", alts: "" },
+							{ stem: "News", answer: "B", alts: "" },
+						],
+					}),
+				),
+			).toEqual([]);
+		}
+
+		// MCQ 4 đáp án A-D cho listening
+		expect(
+			validatePartForReady(
+				"listening",
+				listeningPart({
+					type: "mcq",
+					questions: [
+						{
+							stem: "Why do people stay?",
+							opts: ["Chairs", "Cheap", "Quiet", "Staff"],
+							answer: "D",
+							alts: "",
+						},
+					],
+				}),
+			),
+		).toEqual([]);
+
+		// tablecomp, shortans, fill_blank, tfng
+		expect(
+			validatePartForReady(
+				"listening",
+				listeningPart({
+					type: "tablecomp",
+					questions: [{ stem: "Bus colour: ____", answer: "green", alts: "" }],
+				}),
+			),
+		).toEqual([]);
+		expect(
+			validatePartForReady(
+				"listening",
+				listeningPart({
+					type: "shortans",
+					questions: [
+						{ stem: "What does it buy?", answer: "computers", alts: "" },
+					],
+				}),
+			),
+		).toEqual([]);
+		expect(
+			validatePartForReady(
+				"listening",
+				listeningPart({
+					type: "fill_blank",
+					questions: [{ stem: "No ____ limit.", answer: "age", alts: "" }],
+				}),
+			),
+		).toEqual([]);
+		expect(
+			validatePartForReady(
+				"listening",
+				listeningPart({
+					type: "tfng",
+					questions: [
+						{ stem: "The mother saves money.", answer: "TRUE", alts: "" },
+					],
+				}),
+			),
+		).toEqual([]);
 	});
 });

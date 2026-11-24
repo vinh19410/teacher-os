@@ -1,0 +1,107 @@
+{
+	"id": "6470c74f-f6b7-4cfd-87b5-3b666a55abb3",
+	"url": "https://stepielts.com/student/listening/6470c74f-f6b7-4cfd-87b5-3b666a55abb3?mode=practice",
+	"title": "Food Safety",
+	"source": "Forecast Quý 2-2025",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/9280f0fe-49df-4a53-b1df-3e3c9765982e.mp3",
+	"transcript": "Speaker 1: Welcome to the introduction of our food safety course. Our course will last for two years, with the first year dedicated to learning foundational elements that will prepare you for your future job. One important aspect we will cover is the role of food distribution in food safety. As products are often manufactured far from where they are consumed, improper sanitation of containers and vehicles used for transportation can easily lead to contamination. Moving on, let’s discuss the job prospects associated with this course. Due to the critical nature of food safety, the role of food inspectors emerged years ago. Their noble responsibilities include supervising factories and restaurants to ensure compliance with official regulations and food safety rules. This profession is deeply connected to the safety of many people. It is crucial to note that candidates aspiring to excel in this field should possess specific expertise and knowledge related to biology. By acquiring relevant knowledge, your job as a food inspector will become more manageable. So, I hope you can all work hard and prepare yourself for this meaningful and rewarding job. Moving on to the second year, you will participate in a series of one-on-one training sessions focused on food safety management. These sessions will cover various skills, such as supervising the production of different types of food products and creating regulations to address improper operations. These aspects are not typically covered in food science programs, which mainly concentrate on the biological aspects of food. At the end of the training, you will be required to submit papers discussing fresh perspectives on factors that are often overlooked by food manufacturers. Now, let me give you some ideas about on what to include in your papers. Most manufacturers produce food products in large quantities, so, companies should leave certain rooms or a warehouse for food storage. Extra ingredients and products can be kept there before they are used or transported. If there is no fixed place for piling up these things, they are very likely to be contaminated, which could cause food poisoning. Some food manufacturers fail to do this, so it becomes your duty to regulate them. In the stage of food processing, the factories should make sure their machines and equipment are sanitized and the workers should wear uniforms to avoid food contamination. You will set the standards and rules and see how they are carried out. Many people and companies neglect the importance of food packaging. They didn’t know that dirty or even poisonous materials used in this step can pollute the food and even harm the customers. Therefore, factories should use packaging materials that meet the food safety standards. Finally, you can also write about the potential issues that customers may encounter once the food is placed on supermarket shelves. Customers should read the labels on the food products carefully before they make the purchase. They should check things like expiration date to see how much longer the food can be kept. Expired food is harmful to health, so everyone should avoid consuming it. Moreover, some food should be cooked in the right way. For example, if beef or other meat products are cooked in a microwave, the high temperature can alter the chemical structure of the protein, potentially compromising its nutritional value. And certain foods can even become poisonous if cooked with others. Food safety is widely recognized as a critical issue, and it requires the collaboration of various social units to promote continuous improvement. Therefore, I believe it is essential for food manufacturers and businesses to extend financial support to universities, as it directly impacts the well-being of all citizens. Alright, now I will briefly talk about how your ...",
+	"body": {
+		"text": "First year:\nGiven the ease of contamination during transportation, food [1] stands as a highly significant factor in ensuring food safety.\nFuture career for this course: food [2]\nPrerequisite: it requires knowledge related to [3]\nSecond year:\nThis special training course focuses on food safety [4]\nBusinesses should reserve extra area for food [5]\nEquipment should be sanitized in the step of food [6]\nFood [7] may harm the customers if the material is not right.\nCustomers awareness\n- Shopping for food: pay attention to the information on product [8]\n- Cooking: the chemical structure of [9] in meat will change under high temperature.\nOpinion\nBusinesses should offer financial support to [10] for their research.",
+		"html": "<h3><strong>First year: </strong></h3><ul><li>Given the ease of contamination during transportation, food [1]  stands as a highly significant factor in ensuring food safety.</li><li>Future career for this course: food [2]</li><li>Prerequisite: it requires knowledge related to [3]</li></ul><h3><strong>Second year: </strong></h3><ul><li>This special training course focuses on food safety  [4]</li><li>Businesses should reserve extra area for food [5]</li><li>Equipment should be sanitized in the step of food [6]</li><li>Food [7] may harm the customers if the material is not right. </li><li>Customers awareness</li></ul><p>   - Shopping for food: pay attention to the information on product [8]</p><p>   - Cooking: the chemical structure of [9] in meat will change under high temperature. </p><h3><strong>Opinion</strong></h3><ul><li>Businesses should offer financial support to [10] for their research.</li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "First year:\nGiven the ease of contamination during transportation, food [1] stands as a highly significant factor in ensuring food safety.\nFuture career for this course: food [2]\nPrerequisite: it requires knowledge related to [3]\nSecond year:\nThis special training course focuses on food safety [4]\nBusinesses should reserve extra area for food [5]\nEquipment should be sanitized in the step of food [6]\nFood [7] may harm the customers if the material is not right.\nCustomers awareness\n- Shopping for food: pay attention to the information on product [8]\n- Cooking: the chemical structure of [9] in meat will change under high temperature.\nOpinion\nBusinesses should offer financial support to [10] for their research.",
+			"body_html": "<h3><strong>First year: </strong></h3><ul><li>Given the ease of contamination during transportation, food [1]  stands as a highly significant factor in ensuring food safety.</li><li>Future career for this course: food [2]</li><li>Prerequisite: it requires knowledge related to [3]</li></ul><h3><strong>Second year: </strong></h3><ul><li>This special training course focuses on food safety  [4]</li><li>Businesses should reserve extra area for food [5]</li><li>Equipment should be sanitized in the step of food [6]</li><li>Food [7] may harm the customers if the material is not right. </li><li>Customers awareness</li></ul><p>   - Shopping for food: pay attention to the information on product [8]</p><p>   - Cooking: the chemical structure of [9] in meat will change under high temperature. </p><h3><strong>Opinion</strong></h3><ul><li>Businesses should offer financial support to [10] for their research.</li></ul>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Given the ease of contamination during transportation, food [1] stands as a highly significant factor in ensuring food safety.",
+					"answer": "distribution",
+					"quotes": [
+						"One important aspect we will cover is the role of food distribution in food safety."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Future career for this course: food [2]",
+					"answer": "inspectors",
+					"quotes": [
+						"Due to the critical nature of food safety, the role of food inspectors emerged years ago."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Prerequisite: it requires knowledge related to [3]",
+					"answer": "biology",
+					"quotes": [
+						"It is crucial to note that candidates aspiring to excel in this field should possess specific expertise and knowledge related to biology."
+					]
+				},
+				{
+					"number": 4,
+					"text": "This special training course focuses on food safety [4]",
+					"answer": "management",
+					"quotes": [
+						"Moving on to the second year, you will participate in a series of one-on-one training sessions focused on food safety management."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Businesses should reserve extra area for food [5]",
+					"answer": "storage",
+					"quotes": [
+						"Most manufacturers produce food products in large quantities, so, companies should leave certain rooms or a warehouse for food storage."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Equipment should be sanitized in the step of food [6]",
+					"answer": "processing",
+					"quotes": [
+						"In the stage of food processing, the factories should make sure their machines and equipment are sanitized and the workers should wear uniforms to avoid food contamination."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Food [7] may harm the customers if the material is not right.",
+					"answer": "packaging",
+					"quotes": [
+						"Therefore, factories should use packaging materials that meet the food safety standards."
+					]
+				},
+				{
+					"number": 8,
+					"text": "- Shopping for food: pay attention to the information on product [8]",
+					"answer": "labels",
+					"quotes": [
+						"Customers should read the labels on the food products carefully before they make the purchase."
+					]
+				},
+				{
+					"number": 9,
+					"text": "- Cooking: the chemical structure of [9] in meat will change under high temperature.",
+					"answer": "protein",
+					"quotes": [
+						"For example, if beef or other meat products are cooked in a microwave, the high temperature can alter the chemical structure of the protein, potentially compromising its nutritional value."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Businesses should offer financial support to [10] for their research.",
+					"answer": "universities",
+					"quotes": [
+						"Therefore, I believe it is essential for food manufacturers and businesses to extend financial support to universities, as it directly impacts the well-being of all citizens."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

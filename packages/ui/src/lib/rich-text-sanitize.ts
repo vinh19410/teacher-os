@@ -25,8 +25,15 @@ const CONFIG = {
 		"h2",
 		"h3",
 		"h4",
+		"table",
+		"thead",
+		"tbody",
+		"tfoot",
+		"tr",
+		"th",
+		"td",
 	],
-	ALLOWED_ATTR: ["href", "target"],
+	ALLOWED_ATTR: ["href", "target", "colspan", "rowspan"],
 	ALLOW_DATA_ATTR: false,
 };
 

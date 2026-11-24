@@ -1,0 +1,131 @@
+{
+	"id": "a6bcb2bb-3a46-492f-8302-3d809313e87a",
+	"url": "https://stepielts.com/student/listening/a6bcb2bb-3a46-492f-8302-3d809313e87a?mode=practice",
+	"title": "The Forest",
+	"source": "C11T3",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/e1243bb3-7431-4490-9dd2-bc0f70260adc.mp3",
+	"transcript": "Speaker 0: Now turn to section three. Section three. You will hear two students called Helen and Jeremy who are studying creative writing discussing a project for their course which involves writing and illustrating stories for children. First, you have some time to look at questions 21 to 26. Now listen carefully and answer questions 21 to 26.\nSpeaker 1: Hello, Helen. Sorry I'm late.\nSpeaker 2: Hi, Jeremy. No problem. Well, we'd better work out where we are on our project, I suppose.\nSpeaker 1: Yeah. I've looked at the drawings you've done for my story, the forest, and I think they're brilliant. They really create the atmosphere I had in mind when I was writing it.\nSpeaker 2: I'm glad you like them.\nSpeaker 1: There are just a few suggestions I'd like to make.\nSpeaker 2: Go ahead.\nSpeaker 1: Now, I'm not sure about the drawing of the cave. It's got trees all around it, which is great, but the drawing's a bit too static, isn't it? I think it needs some action.\nSpeaker 2: Yes. There's nothing happening. Perhaps I should add the boy, Malcolm, isn't it? He would be walking up to it.\nSpeaker 1: Yes. Let's have Malcolm in the drawing. And what about putting in a tiger? The one that he makes friends with a bit later. Maybe it could be sitting under a tree washing itself.\nSpeaker 2: And the tiger stops in the middle of what it's doing when it sees Malcolm walking past.\nSpeaker 1: That's a good idea.\nSpeaker 2: Okay. I'll have a go at that.\nSpeaker 1: Then there's the drawing of the crowd of men and women dancing. They're just outside the forest, and there's a lot going on.\nSpeaker 2: That's right. You wanted them to be watching a carnival procession, but I thought it would be too crowded. Do you think it works like this?\nSpeaker 1: Yes. I like what you've done. The only thing is, could you add Malcolm to it without changing what's already there?\nSpeaker 2: What about having him sitting on the tree trunk on the right of the picture?\nSpeaker 1: Yes. That would be fine.\nSpeaker 2: And do you want him watching the other people?\nSpeaker 1: No. He's been left out of all the fun, so I'd like him to be crying. That'll contrast nicely with the next picture where he's laughing at the clowns in the carnival.\nSpeaker 2: Right. I'll do that.\nSpeaker 1: And then the drawing of the people ice skating in the forest.\nSpeaker 2: I wasn't too happy with that one because they're supposed to be skating on grass, aren't they?\nSpeaker 1: That's right. And it's frozen over. At the moment, it doesn't look quite right.\nSpeaker 2: I see what you mean. I'll have another go at that.\nSpeaker 1: And I like the wool hats they're wearing. Maybe you could give each of them a scarf as well?\nSpeaker 2: Yeah. That's easy enough.\nSpeaker 0: They can\nSpeaker 2: be streaming out behind the people to suggest they're skating really fast.\nSpeaker 1: Great. Well, that's all on the drawings.\nSpeaker 2: Right. So you finish writing your story, and I just need to finish illustrating it. And my story and your drawings are done.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 27 to 30. Now listen and answer questions 27 to 30.\nSpeaker 2: So the next thing is to decide what exactly we need to write about in the report that goes with the stories and how we're going to divide the work.\nSpeaker 1: Right, Helen.\nSpeaker 2: What do you think about including a section on how we planned the project as a whole, Jeremy? That's probably quite important.\nSpeaker 1: Yeah. Well, you've had most of the good ideas so far. How do you feel about drafting something? Then we can go through it together and discuss it.\nSpeaker 2: Okay. That seems reasonable. And I could include something on how we came up with the ideas for our two stories, couldn't I?\nSpeaker 1: Well, I've started writing something about that, so why don't you do the same and we can include the two things?\nSpeaker 2: Right. So what about our interpretation of the stories? Do we need to write about what we think they show, like the value of helping other people or that sort of thing?\nSpeaker 1: That's going to come up later, isn't it? I think everyone in the class is going to read each other's stories and come up with their own interpretations which we're going to discuss.\nSpeaker 2: Oh, I missed that. So it isn't going to be part of the report at all.\nSpeaker 1: No but we need to write about the illustrations because they're an essential element of children's experience of reading the stories. It's probably easiest for you to write that section as you know more about drawing than I do.\nSpeaker 2: Maybe, but I find it quite hard to write about. I'd be happier if you did it.\nSpeaker 1: Okay. So when do you think we can get this\nSpeaker 0: That is the end of section three. You now have half a minute to check your answers.",
+	"question_groups": [
+		{
+			"range": "21-26",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD ONLY for each answer.",
+			"body": "Subject of drawing\nChange to be made\nA [21] surrounded by trees\nAdd Malcolm and a [22] noticing him\nPeople who are [23] outside the forest\nAdd Malcolm sitting on a tree trunk and [24]\nIce-skaters on [25] covered with ice\nAdd a [26] for each person",
+			"body_table": [
+				["Subject of drawing", "Change to be made"],
+				["A [21] surrounded by trees", "Add Malcolm and a [22] noticing him"],
+				[
+					"People who are [23] outside the forest",
+					"Add Malcolm sitting on a tree trunk and [24]"
+				],
+				["Ice-skaters on [25] covered with ice", "Add a [26] for each person"]
+			],
+			"body_html": "<table><tbody><tr><td><p><strong>Subject of drawing</strong></p></td><td><p><strong>Change to be made</strong></p></td></tr><tr><td><p>A [21] surrounded by trees</p></td><td><p>Add Malcolm and a [22] noticing him</p></td></tr><tr><td><p>People who are [23] outside the forest</p></td><td><p>Add Malcolm sitting on a tree trunk and [24]</p></td></tr><tr><td><p>Ice-skaters on [25] covered with ice</p></td><td><p>Add a [26] for each person</p></td></tr></tbody></table><p></p>",
+			"questions": [
+				{
+					"number": 21,
+					"text": "A [21] surrounded by trees",
+					"answer": "cave",
+					"quotes": ["Now, I'm not sure about the drawing of the cave."]
+				},
+				{
+					"number": 22,
+					"text": "Add Malcolm and a [22] noticing him",
+					"answer": "tiger",
+					"quotes": ["And what about putting in a tiger?"]
+				},
+				{
+					"number": 23,
+					"text": "People who are [23] outside the forest",
+					"answer": "dancing",
+					"quotes": [
+						"Then there's the drawing of the crowd of men and women dancing."
+					]
+				},
+				{
+					"number": 24,
+					"text": "Add Malcolm sitting on a tree trunk and [24]",
+					"answer": "crying",
+					"quotes": [
+						"He's been left out of all the fun, so I'd like him to be crying."
+					]
+				},
+				{
+					"number": 25,
+					"text": "Ice-skaters on [25] covered with ice",
+					"answer": "grass",
+					"quotes": [
+						"I wasn't too happy with that one because they're supposed to be skating on grass, aren't they?"
+					]
+				},
+				{
+					"number": 26,
+					"text": "Add a [26] for each person",
+					"answer": "scarf",
+					"quotes": ["Maybe you could give each of them a scarf as well?"]
+				}
+			]
+		},
+		{
+			"range": "27-30",
+			"type": "MATCHING",
+			"instructions": "Who is going to write each of the following parts of the report?\nWrite the correct letter, A-D, next to Questions 27 - 30.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Helen only"
+				},
+				{
+					"label": "B",
+					"text": "Jeremy only"
+				},
+				{
+					"label": "C",
+					"text": "both Helen and Jeremy"
+				},
+				{
+					"label": "D",
+					"text": "neither Helen nor Jeremy"
+				}
+			],
+			"body": "how they planned the project [27]\nhow they had ideas for their stories [28]\nan interpretation of their stories [29]\ncomments on the illustrations [30]",
+			"body_html": "<p>how they planned the project [27]</p><p>how they had ideas for their stories [28]</p><p>an interpretation of their stories [29]</p><p>comments on the illustrations [30]</p>",
+			"questions": [
+				{
+					"number": 27,
+					"text": "how they planned the project",
+					"answer": "A",
+					"quotes": [
+						"What do you think about including a section on how we planned the project as a whole, Jeremy? That's probably quite important. Yeah. Well, you've had most of the good ideas so far. How do you feel about drafting something? Then we can go through it together and discuss it. Okay. That seems reasonable."
+					]
+				},
+				{
+					"number": 28,
+					"text": "how they had ideas for their stories",
+					"answer": "C",
+					"quotes": [
+						"And I could include something on how we came up with the ideas for our two stories, couldn't I? Well, I've started writing something about that, so why don't you do the same and we can include the two things?"
+					]
+				},
+				{
+					"number": 29,
+					"text": "an interpretation of their stories",
+					"answer": "D",
+					"quotes": ["So it isn't going to be part of the report at all."]
+				},
+				{
+					"number": 30,
+					"text": "comments on the illustrations",
+					"answer": "B",
+					"quotes": [
+						"It's probably easiest for you to write that section as you know more about drawing than I do. Maybe, but I find it quite hard to write about. I'd be happier if you did it."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

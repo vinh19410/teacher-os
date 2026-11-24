@@ -1,0 +1,127 @@
+{
+	"id": "1f8298ef-d059-426d-b533-f3963f8bc079",
+	"url": "https://stepielts.com/student/listening/1f8298ef-d059-426d-b533-f3963f8bc079?mode=practice",
+	"title": "Community College Courses",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/d8ab8709-538d-4ff1-b813-f4033ca9788d.mp3",
+	"transcript": "Speaker 1: WOMAN：Welcome to Houston Community College, how can I help you?\nSpeaker 2: MAN：I’m thinking of signing up for a course. I have some free time these days and would like to try something different. What courses are available?\nSpeaker 1: WOMAN：We have a few available at the moment. Is there any particular day that suits you best?\nSpeaker 2: MAN：Any day is good except for Thursday.\nSpeaker 1: WOMAN：Ok, we have lots of courses on the other days. For example, we have our Skating class on Tuesday.\nSpeaker 2: MAN：That sounds interesting. I’ve never skated before. Are there any courses for novices?\nSpeaker 1: WOMAN：Sure, actually this course mainly includes basic skills and our professional coaches will teach you.\nSpeaker 2: MAN：That’s great. When does it begin?\nSpeaker 1: WOMAN：It used to begin at 8pm, but since it’s very popular, now it starts at 7. 45 pm and goes until quite late in the evening. It is a lot of fun.\nSpeaker 2: MAN：Those times work perfectly for me. How much does it cost then?\nSpeaker 1: WOMAN：It’s 650 dollars.\nSpeaker 2: MAN：Oh. I see.\n. .\nSpeaker 2: That’s going to be quite expensive for me. I mean, I’m going to have to buy the equipment too.\nSpeaker 1: WOMAN：You don’t need to buy any equipment. The skates are included in the price.\nSpeaker 2: MAN：Oh. Ok, maybe that’s not so bad then.\nSpeaker 1: WOMAN：But you will need to wear warm clothes since it can be very cold late at night. It would be good to have something to keep you warm.",
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Course\nContent & features\nTime\nPrice\nNeeds to bring\nSkating\nbasic skills\non Tuesday at [1]\n$650\nwarm clothes\nFirst aid\nhelp old family members\non Wednesday at 7 pm\n$ [2]\na [3] to write on\nCooking\nobtain a [4]\non Sunday at 5 pm\n$100 for five classes\n$ [5] for ingredients provided\nan [6]",
+			"body_table": [
+				["Course", "Content & features", "Time", "Price", "Needs to bring"],
+				[
+					"Skating",
+					"basic skills",
+					"on Tuesday at [1]",
+					"$$650",
+					"warm clothes"
+				],
+				[
+					"First aid",
+					"help old family members",
+					"on Wednesday at 7 pm",
+					"$$ [2]",
+					"a [3] to write on"
+				],
+				[
+					"Cooking",
+					"obtain a [4]",
+					"on Sunday at 5 pm",
+					"$$100 for five classes\n$ [5] for ingredients provided",
+					"an [6]"
+				]
+			],
+			"body_html": "<table><tbody><tr><td><strong>Course</strong></td><td><strong>Content &amp; features</strong></td><td><strong>Time</strong></td><td><strong>Price</strong></td><td><strong>Needs to bring</strong></td></tr><tr><td><strong>Skating</strong></td><td>basic skills</td><td>on Tuesday at [1]</td><td>$650</td><td>warm clothes</td></tr><tr><td><strong>First aid</strong></td><td>help old family members</td><td>on Wednesday at 7 pm</td><td>$ [2]</td><td>a [3] to write on</td></tr><tr><td><strong>Cooking</strong></td><td>obtain a [4]</td><td>on Sunday at 5 pm</td><td><p>$100 for five classes</p><p>$ [5] for ingredients provided</p></td><td>an [6]</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "on Tuesday at [1]",
+					"answer": "7.45 p.m. / 7:45 p.m. / 7.45 pm / 7:45 pm",
+					"quotes": [
+						"WOMAN：It used to begin at 8pm, but since it’s very popular, now it starts at 7. 45 pm and goes until quite late in the evening."
+					]
+				},
+				{
+					"number": 2,
+					"text": "$ [2]",
+					"answer": "140"
+				},
+				{
+					"number": 3,
+					"text": "a [3] to write on",
+					"answer": "notebook"
+				},
+				{
+					"number": 4,
+					"text": "obtain a [4]",
+					"answer": "certificate"
+				},
+				{
+					"number": 5,
+					"text": "$ [5] for ingredients provided",
+					"answer": "56",
+					"quotes": ["45 pm and goes until quite late in the evening."]
+				},
+				{
+					"number": 6,
+					"text": "an [6]",
+					"answer": "apron"
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD ONLY for each answer.",
+			"body": "Course\nLocation\nBenefit\nPrice\nNeeds to bring\nYoga\n[7] Community Center\ngood for health problem with [8]\n$50 for a group lesson\n$150 per private lesson\na towel\na yoga [9]\nMake-up training\nLondon Campus\nhelpful for job interviews\n$200 for two months\n[10]\na small mirror",
+			"body_table": [
+				["Course", "Location", "Benefit", "Price", "Needs to bring"],
+				[
+					"Yoga",
+					"[7] Community Center",
+					"good for health problem with [8]",
+					"$$50 for a group lesson\n$150 per private lesson",
+					"a towel\na yoga [9]"
+				],
+				[
+					"Make-up training",
+					"London Campus",
+					"helpful for job interviews",
+					"$$200 for two months",
+					"[10]\na small mirror"
+				]
+			],
+			"body_html": "<table><tbody><tr><td><p><strong>Course</strong></p></td><td><p><strong>Location</strong></p></td><td><p><strong>Benefit</strong></p></td><td><p><strong>Price</strong></p></td><td><p><strong>Needs to bring</strong></p></td></tr><tr><td><p><strong>Yoga</strong></p></td><td><p>[7] Community Center</p></td><td><p>good for health problem with [8]</p></td><td><ul><li>$50 for a group lesson</li><li>$150 per private lesson</li></ul></td><td><ul><li>a towel</li><li>a yoga [9]</li></ul></td></tr><tr><td><p><strong>Make-up training</strong></p></td><td><p>London Campus</p></td><td><p>helpful for job interviews</p></td><td><p>$200 for two months</p></td><td><ul><li>[10]</li><li>a small mirror</li></ul></td></tr></tbody></table><p></p>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "[7] Community Center",
+					"answer": "Lawton"
+				},
+				{
+					"number": 8,
+					"text": "good for health problem with [8]",
+					"answer": "neck"
+				},
+				{
+					"number": 9,
+					"text": "a yoga [9]",
+					"answer": "mat"
+				},
+				{
+					"number": 10,
+					"text": "",
+					"answer": "brushes"
+				}
+			]
+		}
+	],
+	"images": []
+}

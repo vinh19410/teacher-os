@@ -1,0 +1,116 @@
+{
+	"id": "5cd00c1d-d465-45fe-bed8-0cc02c48fe70",
+	"url": "https://stepielts.com/student/listening/5cd00c1d-d465-45fe-bed8-0cc02c48fe70?mode=practice",
+	"title": "Analyzing Media Coverage",
+	"source": "C15T3",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/a2bdcb96-0806-4983-a8b5-0249878316b0.mp3",
+	"transcript": "Speaker 0: Part three. You will hear two students called Hazel and Tom talking about Hazel's media studies assignment. First, you have some time to look at questions 21 to 26. Now listen carefully and answer questions 21 to 26.\nSpeaker 1: Tom, could I ask you for some advice, please?\nSpeaker 2: Yes. Of course. If you think I can help. What's it about?\nSpeaker 1: It's my first media studies assignment, and I'm not sure how to go about it. You must have done it last year.\nSpeaker 2: Is that the one comparing the coverage of a particular story in a range of newspapers? That's right. Oh, yes. I really enjoyed writing it.\nSpeaker 1: So what sort of things do I need to compare?\nSpeaker 2: Well, there are several things. For example, there's the question of which page of the newspaper the item appears on.\nSpeaker 1: You mean because there's a big difference between having it on the front page and the bottom of page 10, for instance?\nSpeaker 2: Exactly. And that shows how important the editor thinks the story is. Then there's the size, how many column inches the story is given, how many columns it spreads over.\nSpeaker 1: And I suppose that includes the headline.\nSpeaker 2: It certainly does. It's all part of attracting the reader's attention.\nSpeaker 1: What about graphics? Whether there's anything visual in addition to the text?\nSpeaker 2: Yes. You need to consider those too because they can have a big effect on the reader's understanding of the story, sometimes a bigger effect than the text itself. Then you'll need to look at how the item is put together. What structure is it given? Bear in mind that not many people read beyond the first paragraph. So what has the journalist put at the beginning? And if, say, there are conflicting opinions about something, does one appear near the end where people probably won't read it?\nSpeaker 1: And newspapers sometimes give wrong or misleading information, don't they? Either deliberately or by accident. Should I be looking at that too?\nSpeaker 2: Yes. If you can. Compare what's in different versions. And as far as possible, try and work out what's true and what isn't. And that relates to a very important point. What's the writer's purpose? Or at least the most important one, if they have several. It may seem to be to inform the public, but often it's that they want to create fear or controversy or to make somebody look ridiculous.\nSpeaker 1: Gosh. I see what you mean. And I suppose the writer may make assumptions about the reader.\nSpeaker 2: That's right. About their knowledge of the subject, their attitudes, and their level of education, which means writing so that the readers understand without feeling patronized. All of that will make a difference to how the story is presented.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 27 to 30. Now listen and answer questions 27 to 30.\nSpeaker 1: Does it matter what type of story I write about? No.\nSpeaker 2: National or international politics, the arts, anything, as long as it's covered in two or three newspapers. Though, of course, it'll be easier and more fun if it's something you're interested in and know something about.\nSpeaker 1: And on that basis, a national news item would be worth analyzing. I'm quite keen on politics, so I'll try and find a suitable topic. What did you choose for your analysis, Tom?\nSpeaker 2: I was in how newspapers expressed their opinions explicitly, so I wanted to compare editorials in different papers. But when I started looking, I couldn't find two on the same topic that I felt like analysing.\nSpeaker 1: In that case, I won't even bother to look.\nSpeaker 2: So in the end, I chose a human interest story, a terribly emotional story about a young girl who was very ill, and lots of other people, mostly strangers, raised money so she could go abroad for treatment. Actually, I was surprised. Some papers just wrote about how wonderful everyone was, but others considered the broader picture, like why treatment wasn't available here.\nSpeaker 1: I usually find stories like that raise quite strong feelings in me. I'll avoid that. Perhaps I'll choose an arts topic, like different reviews of a film or something about funding for the arts. I'll think about that.\nSpeaker 2: Yes. That might be interesting.\nSpeaker 1: Okay. Well, thanks a lot for your help, Tom. It's been really useful.\nSpeaker 2: You're welcome. Good luck with the assignment, Hazel.\nSpeaker 0: That is the end of part three. You now have thirty seconds to check your answers to part three.",
+	"question_groups": [
+		{
+			"range": "21-26",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "What Hazel should analyse about items in newspapers:\n● what [21] the item is on\n● the [22] of the item, including the headline\n● any [23] accompanying the item\n● the [24] of the item, e.g. what’s made prominent\n● the writer’s main [25]\n● the [26] the writer may make about the reader",
+			"body_html": "<p>What Hazel should analyse about items in newspapers:</p><p>●   what [21] the item is on</p><p>●   the [22] of the item, including the headline</p><p>●   any [23] accompanying the item</p><p>●   the [24] of the item, e.g. what’s made prominent</p><p>●   the writer’s main [25]</p><p>●   the [26] the writer may make about the reader</p>",
+			"questions": [
+				{
+					"number": 21,
+					"text": "● what [21] the item is on",
+					"answer": "page",
+					"quotes": [
+						"For example, there's the question of which page of the newspaper the item appears on."
+					]
+				},
+				{
+					"number": 22,
+					"text": "● the [22] of the item, including the headline",
+					"answer": "size",
+					"quotes": [
+						"Then there's the size, how many column inches the story is given, how many columns it spreads over."
+					]
+				},
+				{
+					"number": 23,
+					"text": "● any [23] accompanying the item",
+					"answer": "graphic / graphics",
+					"quotes": ["What about graphics?"]
+				},
+				{
+					"number": 24,
+					"text": "● the [24] of the item, e.g. what’s made prominent",
+					"answer": "structure",
+					"quotes": ["What structure is it given?"]
+				},
+				{
+					"number": 25,
+					"text": "● the writer’s main [25]",
+					"answer": "purpose",
+					"quotes": ["What's the writer's purpose?"]
+				},
+				{
+					"number": 26,
+					"text": "● the [26] the writer may make about the reader",
+					"answer": "assumption / assumptions",
+					"quotes": [
+						"And I suppose the writer may make assumptions about the reader."
+					]
+				}
+			]
+		},
+		{
+			"range": "27-30",
+			"type": "MATCHING",
+			"instructions": "What does Hazel decide to do about each of the following types of articles? Choose the correct answer and move it into the gap\n\nTypes of articles",
+			"options": [
+				{
+					"label": "A",
+					"text": "She will definitely look for a suitable article."
+				},
+				{
+					"label": "B",
+					"text": "She may look for a suitable article."
+				},
+				{
+					"label": "C",
+					"text": "She definitely won’t look for an article."
+				}
+			],
+			"body": "National news item [27]\nEditorial [28]\nHuman interest [29]\nArts [30]",
+			"body_html": "<p>National news item [27]</p><p>Editorial [28]</p><p>Human interest [29]</p><p>Arts [30]</p>",
+			"questions": [
+				{
+					"number": 27,
+					"text": "National news item",
+					"answer": "A",
+					"quotes": [
+						"I'm quite keen on politics, so I'll try and find a suitable topic."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Editorial",
+					"answer": "C",
+					"quotes": ["In that case, I won't even bother to look."]
+				},
+				{
+					"number": 29,
+					"text": "Human interest",
+					"answer": "C",
+					"quotes": ["I'll avoid that."]
+				},
+				{
+					"number": 30,
+					"text": "Arts",
+					"answer": "B",
+					"quotes": [
+						"Perhaps I'll choose an arts topic, like different reviews of a film or something about funding for the arts."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,214 @@
+{
+	"id": "7083fb29-f545-40a8-bb1a-f9cd9ce4af2a",
+	"url": "https://stepielts.com/student/listening/7083fb29-f545-40a8-bb1a-f9cd9ce4af2a?mode=practice",
+	"title": "Stages in the experiment",
+	"source": "C13T1",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/739e2162-2eb3-4c0f-9d69-5599caf80593.mp3",
+	"transcript": "Speaker 0: Now turn to section three. Section three You will hear two biology students called Emma and Jack discussing an experiment they are going to do together. First, you have some time to look at questions 20 one-twenty five. Now listen carefully and answer questions 21 to 25.\nSpeaker 1: We've got to choose a topic for our experiment, haven't we, Jack? Were you thinking of something to do with seeds?\nSpeaker 2: That's right. I thought we could look at seed germination, how a seed begins to grow.\nSpeaker 1: Okay. Any particular reason? I know you're hoping to work in plant science eventually.\nSpeaker 2: Yeah. But practically everything we do is going to feed into that. No. There's an optional module on seed structure and function in the third year that I might do. So I thought it might be useful for that. If I choose that option, I don't have to do a dissertation module.\nSpeaker 1: Good idea.\nSpeaker 2: Well, I thought for this experiment, we could look at the relationship between seed size and the way the seeds are planted. So we could plant different sized seeds in different ways and see which grow best.\nSpeaker 1: Okay. Would need to allow time for the seeds to come up.\nSpeaker 2: That should be fine if we start now. A lot of the other possible experiments need quite a bit longer.\nSpeaker 1: So that'd make it a good one to choose. And I don't suppose it'd need much equipment. We're not doing chemical analysis or anything. Though that's not really an issue. We've got plenty of equipment in the laboratory.\nSpeaker 2: Yeah. We need to have a word with the tutor if we're going to go ahead with it, though. I'm sure our aim's okay. It's not very ambitious, but the assignment's only 10% of our final mark, isn't it? But we need to be sure we're the only ones doing it.\nSpeaker 1: Yeah. It's only 5%, actually, But it'd be a bit boring if everyone was doing it.\nSpeaker 2: Did you read that book on seed germination on our reading list?\nSpeaker 1: The one by Graves. I looked through it for my last experiment, though it wasn't all that relevant there. It would be for this experiment, though. I found it quite hard to follow lots about the theory, which I hadn't expected.\nSpeaker 2: Yes. I'd been hoping for something more practical. It does include references to the recent findings on genetically modified seeds, though.\nSpeaker 1: Yes. That was interesting.\nSpeaker 2: I read an article about seed germination by Lee Hall.\nSpeaker 1: About seeds that lie in the ground for ages and only germinate after a fire.\nSpeaker 2: That's the one. I knew a bit about it already, but not about this research. His analysis of figures comparing the times of the fires and the proportion of seeds that germinated was done in a lot of detail. Very impressive.\nSpeaker 1: Was that the article with the illustrations of early stages of plant development? They were very clear.\nSpeaker 2: I think those diagrams were in another article.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 26 to 30. Now listen and answer questions 26 to 30.\nSpeaker 1: Anyway, shall we have a look at the procedure for our experiment? We'll need to get going with it quite soon.\nSpeaker 2: Right. So the first thing we have to do is find our seeds. I think vegetable seeds would be best, and obviously they mustn't all be the same size. So how many sorts do we need? About four different ones?\nSpeaker 1: I think that would be enough. There'll be quite a large number of seeds for each one.\nSpeaker 2: Then for each seed, we need to find out how much it weighs and also measure its dimensions, and we need to keep a careful record of all that.\nSpeaker 1: That'll be quite time consuming. And we also need to decide how deep we're going to plant the seeds, right on the surface a few millimeters down or several centimeters.\nSpeaker 2: Okay. So then we get planting. Do you think we can plant several seeds together in the same plant pot?\nSpeaker 1: No. I think we need a different one for each seed.\nSpeaker 2: Right. And we'll need to label them. We can use different colored labels. Then we wait for the seeds to germinate. I reckon that'll be about three weeks, depending on what the weather's like. Then we see if our plants have come up, and write down how tall they've grown.\nSpeaker 1: Then all we have to do is look at our numbers and see if there's any relation between them.\nSpeaker 2: That's right. So then we get\nSpeaker 0: That is the end of section three. You now have half a minute to check your answers.",
+	"body": {
+		"text": "Stages in the experiment\nSelect seeds of different [26] and sizes.\n↓\nMeasure and record the [27] and size of each one.\n↓\nDecide on the [28] to be used.\n↓\nUse a different [29] for each seed and label it.\n↓\nAfter about 3 weeks, record the plant’s [30].\n↓\nInvestigate the findings.",
+		"html": "<p><strong>Stages in the experiment</strong></p><p>Select seeds of different [26] and sizes.</p><p>↓</p><p>Measure and record the [27] and size of each one.</p><p>↓</p><p>Decide on the [28] to be used.</p><p>↓</p><p>Use a different [29] for each seed and label it.</p><p>↓</p><p>After about 3 weeks, record the plant’s [30].</p><p>↓</p><p>Investigate the findings.</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-25",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Why is Jack interested in investigating seed germination?",
+					"options": [
+						{
+							"label": "A",
+							"text": "He may do a module on a related topic later on."
+						},
+						{
+							"label": "B",
+							"text": "He wants to have a career in plant science."
+						},
+						{
+							"label": "C",
+							"text": "He is thinking of choosing this topic for his dissertation."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"There's an optional module on seed structure and function in the third year that I might do. So I thought it might be useful for that."
+					]
+				},
+				{
+					"number": 22,
+					"text": "Jack and Emma agree the main advantage of their present experiment is that it can be",
+					"options": [
+						{
+							"label": "A",
+							"text": "described very easily."
+						},
+						{
+							"label": "B",
+							"text": "carried out inside the laboratory."
+						},
+						{
+							"label": "C",
+							"text": "completed in the time available."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"That should be fine if we start now. A lot of the other possible experiments need quite a bit longer. So that'd make it a good one to choose."
+					]
+				},
+				{
+					"number": 23,
+					"text": "What do they decide to check with their tutor?",
+					"options": [
+						{
+							"label": "A",
+							"text": "whether their aim is appropriate"
+						},
+						{
+							"label": "B",
+							"text": "whether anyone else has chosen this topic"
+						},
+						{
+							"label": "C",
+							"text": "whether the assignment contributes to their final grade"
+						}
+					],
+					"answer": "B",
+					"quotes": ["But we need to be sure we're the only ones doing it."]
+				},
+				{
+					"number": 24,
+					"text": "They agree that Graves’ book on seed germination is disappointing because",
+					"options": [
+						{
+							"label": "A",
+							"text": "it fails to cover recent advances in seed science."
+						},
+						{
+							"label": "B",
+							"text": "the content is irrelevant for them."
+						},
+						{
+							"label": "C",
+							"text": "its focus is very theoretical."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"I found it quite hard to follow lots about the theory, which I hadn't expected. Yes. I'd been hoping for something more practical."
+					]
+				},
+				{
+					"number": 25,
+					"text": "What does Jack say about the article on seed germination by Lee Hall?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The diagrams of plant development are useful."
+						},
+						{
+							"label": "B",
+							"text": "The analysis of seed germination statistics is thorough."
+						},
+						{
+							"label": "C",
+							"text": "The findings on seed germination after fires are surprising."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"His analysis of figures comparing the times of the fires and the proportion of seeds that germinated was done in a lot of detail."
+					]
+				}
+			]
+		},
+		{
+			"range": "26-30",
+			"type": "FLOWCHART_COMPLETION",
+			"instructions": "Complete the flow-chart below. Choose FIVE answers from the box and write the correct letter, A-H, next to Questions 6 - 10",
+			"options": [
+				{
+					"label": "A",
+					"text": "container"
+				},
+				{
+					"label": "B",
+					"text": "soil"
+				},
+				{
+					"label": "C",
+					"text": "weight"
+				},
+				{
+					"label": "D",
+					"text": "condition"
+				},
+				{
+					"label": "E",
+					"text": "height"
+				},
+				{
+					"label": "F",
+					"text": "colour"
+				},
+				{
+					"label": "G",
+					"text": "types"
+				},
+				{
+					"label": "H",
+					"text": "depths"
+				}
+			],
+			"body": "Stages in the experiment\nSelect seeds of different [26] and sizes.\n↓\nMeasure and record the [27] and size of each one.\n↓\nDecide on the [28] to be used.\n↓\nUse a different [29] for each seed and label it.\n↓\nAfter about 3 weeks, record the plant’s [30].\n↓\nInvestigate the findings.",
+			"body_html": "<p><strong>Stages in the experiment</strong></p><p>Select seeds of different [26] and sizes.</p><p>↓</p><p>Measure and record the [27] and size of each one.</p><p>↓</p><p>Decide on the [28] to be used.</p><p>↓</p><p>Use a different [29] for each seed and label it.</p><p>↓</p><p>After about 3 weeks, record the plant’s [30].</p><p>↓</p><p>Investigate the findings.</p>",
+			"questions": [
+				{
+					"number": 26,
+					"text": "Select seeds of different [26] and sizes.",
+					"answer": "G",
+					"quotes": ["So how many sorts do we need?"]
+				},
+				{
+					"number": 27,
+					"text": "Measure and record the [27] and size of each one.",
+					"answer": "C",
+					"quotes": [
+						"Then for each seed, we need to find out how much it weighs and also measure its dimensions, and we need to keep a careful record of all that."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Decide on the [28] to be used.",
+					"answer": "H",
+					"quotes": [
+						"And we also need to decide how deep we're going to plant the seeds, right on the surface a few millimeters down or several centimeters."
+					]
+				},
+				{
+					"number": 29,
+					"text": "Use a different [29] for each seed and label it.",
+					"answer": "A",
+					"quotes": [
+						"I think we need a different one for each seed. Right. And we'll need to label them."
+					]
+				},
+				{
+					"number": 30,
+					"text": "After about 3 weeks, record the plant’s [30].",
+					"answer": "E",
+					"quotes": [
+						"Then we see if our plants have come up, and write down how tall they've grown."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

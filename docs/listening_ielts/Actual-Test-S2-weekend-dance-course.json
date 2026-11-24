@@ -1,0 +1,195 @@
+{
+	"id": "6f1427de-e382-420e-887c-063b49a46b20",
+	"url": "https://stepielts.com/student/listening/6f1427de-e382-420e-887c-063b49a46b20?mode=practice",
+	"title": "Weekend Dance Course",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/a3e4997c-100e-4136-8e27-38fa805abd1f.mp3",
+	"transcript": "Speaker 1: Organizer: Hello, everyone, and welcome to this weekend dancing course. Nice that you’re here safely. Since you’ve all just arrived, I’d like to tell you firstly a bit about today’s program, and secondly, how to get around this community centre. Firstly, straight after this talk, you’ll go off to the office where you should check-in at the registration desk. Make sure you’re wearing the name tags that we posted you out in the mail last week. The staff there will give you each a cloth bag as a little present from us to keep your dancing shoes in for the weekend. Other things useful to take to class each day will be a bottle of water. Hopefully, you’ve all brought one with you, and a towel for your face if it’s hot and you feel you need one. Also at registration, you can pick up a list for the level class that you’re in so you can start learning people’s names. After checking in, this first afternoon is free for everyone. You could use this time to start thinking about your costumes for the final show, but we won’t be making them until tomorrow. For those of you who are interested, there’s a lecture this afternoon in the main hall on the history of dance, or you could practice for Sunday’s concert in the music room. There is also an informal gathering planned for tonight consisting of mainly easy dances where you can get to know each other. The tests of different levels won’t be held until the final afternoon, so there’s no need to worry about those yet. Now I said I would tell you how to find your way around the community center. Well, we’re standing at the south end of the site. I’ll tell you where the bathrooms are first. That’s the most important thing. Walk straight ahead from here past this first big block on your left, and you’ll find the bathrooms on your left just after it. Now equally important, of course, is where you’ll sleep. So the bunk rooms are just here on our left. You can see them beside where we’re standing now. Now we also have a games room where you can entertain yourself during your free time. Well, you’ll get there if you go straight ahead from where we’re standing now, take the first turning right, and carry on to the second building. It’s on your right just before the bike racks. Games and books are in the cupboard there, and there’s a ping pong table, air hockey, things like that. Good for a rainy day. Okay. What else? The hall is where we’ll be for class photos. You can find that in the middle of the site, just south of the music room. The medical room, in case any of you get injured while you’re dancing, can be found in the center of the site also. Go straight on from here, past two pathways, and it’s on your right beside the music room. The nurse there is very good with sports injuries, so don’t hesitate to visit her if you need to. Any questions? Oh, yes. The reception office, of course. You’ll need to go over there after this talk to register. That’s quite a long walk away from here. Go straight ahead and take the third turning on your right, then you will find that the office is the second building on your left. The staff there are very friendly. And if you have any problems during the weekend, go to see them, and they’ll help you out.",
+	"question_groups": [
+		{
+			"range": "1-2",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Which TWO items will participants on the dancing course receive when they check in?",
+					"options": [
+						{
+							"label": "A",
+							"text": "a class list"
+						},
+						{
+							"label": "B",
+							"text": "a face towel"
+						},
+						{
+							"label": "C",
+							"text": "a name tag"
+						},
+						{
+							"label": "D",
+							"text": "a shoe bag"
+						},
+						{
+							"label": "E",
+							"text": "a water bottle"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 2,
+					"text": "Which TWO items will participants on the dancing course receive when they check in?",
+					"options": [
+						{
+							"label": "A",
+							"text": "a class list"
+						},
+						{
+							"label": "B",
+							"text": "a face towel"
+						},
+						{
+							"label": "C",
+							"text": "a name tag"
+						},
+						{
+							"label": "D",
+							"text": "a shoe bag"
+						},
+						{
+							"label": "E",
+							"text": "a water bottle"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "3-4",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 3,
+					"text": "Which TWO activities will take place on the first afternoon and evening?",
+					"options": [
+						{
+							"label": "A",
+							"text": "costume making"
+						},
+						{
+							"label": "B",
+							"text": "a musical show"
+						},
+						{
+							"label": "C",
+							"text": "an informal dance"
+						},
+						{
+							"label": "D",
+							"text": "a talk on dance history"
+						},
+						{
+							"label": "E",
+							"text": "dancing tests"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 4,
+					"text": "Which TWO activities will take place on the first afternoon and evening?",
+					"options": [
+						{
+							"label": "A",
+							"text": "costume making"
+						},
+						{
+							"label": "B",
+							"text": "a musical show"
+						},
+						{
+							"label": "C",
+							"text": "an informal dance"
+						},
+						{
+							"label": "D",
+							"text": "a talk on dance history"
+						},
+						{
+							"label": "E",
+							"text": "dancing tests"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the plan below.",
+			"instructions_html": "<p>Label the plan below.</p><p></p><p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/d1b0c0b9-f6a7-44d9-bd8f-6b5b75a16ef1.png\" alt=\"Youpass Ielts Listening Dancing Course Community Centre\"></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
+			"questions": [
+				{
+					"number": 5,
+					"text": "the bathrooms",
+					"answer": "C",
+					"quotes": [
+						"Walk straight ahead from here past this first big block on your left, and you’ll find the bathrooms on your left just after it."
+					]
+				},
+				{
+					"number": 6,
+					"text": "the bunkrooms",
+					"answer": "E",
+					"quotes": [
+						"So the bunk rooms are just here on our left. You can see them beside where we’re standing now."
+					]
+				},
+				{
+					"number": 7,
+					"text": "the games room",
+					"answer": "I",
+					"quotes": [
+						"Now we also have a games room where you can entertain yourself during your free time. Well, you’ll get there if you go straight ahead from where we’re standing now, take the first turning right, and carry on to the second building. It’s on your right just before the bike racks."
+					]
+				},
+				{
+					"number": 8,
+					"text": "the hall",
+					"answer": "F",
+					"quotes": [
+						"The hall is where we’ll be for class photos. You can find that in the middle of the site, just south of the music room."
+					]
+				},
+				{
+					"number": 9,
+					"text": "the medical room",
+					"answer": "D",
+					"quotes": [
+						"The medical room, in case any of you get injured while you’re dancing, can be found in the center of the site also. Go straight on from here, past two pathways, and it’s on your right beside the music room."
+					]
+				},
+				{
+					"number": 10,
+					"text": "the reception office",
+					"answer": "B",
+					"quotes": [
+						"The reception office, of course. You’ll need to go over there after this talk to register. That’s quite a long walk away from here. Go straight ahead and take the third turning on your right, then you will find that the office is the second building on your left."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/d1b0c0b9-f6a7-44d9-bd8f-6b5b75a16ef1.png"
+	]
+}

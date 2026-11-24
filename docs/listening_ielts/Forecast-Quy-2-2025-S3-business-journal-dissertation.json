@@ -1,0 +1,207 @@
+{
+	"id": "5fb613d9-687a-4b48-a1d1-7cb2f09f52af",
+	"url": "https://stepielts.com/student/listening/5fb613d9-687a-4b48-a1d1-7cb2f09f52af?mode=practice",
+	"title": "Business Journal Dissertation",
+	"source": "Forecast Quý 2-2025",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/cf18abc5-6d8b-4468-8df4-bf3d53f41ba1.mp3",
+	"transcript": "Speaker 1: TUTOR: Diana, I’ve been reading your dissertation that you’re planning to submit to the Business Journal. Overall, I think it is really good. The topic that you chose, absence in the workplace, is also a good choice. Can you tell me why you decided to write about that?\nSpeaker 2: DIANA: When I decided to publish a paper, several ideas came into my mind. At first, I wanted to write about the rising price caused partly by the increased cost of products. Then, after reading some reference books and business reports, I found that many companies are experiencing a tough problem: there are more and more employees being absent during work hours these days. The employees were either on all kinds of leaves, or just absent for no reason. There are quite a few papers discussing the pros and cons of this phenomenon. For me, I’d like to work out solutions for this problem. I want my writing to be practical and useful in reality, not just academic in value.\nSpeaker 1: TUTOR: I see. How did you gather necessary data and information in your research?\nSpeaker 2: DIANA: I used questionnaires. I made a list of questions along with choices. But I had a problem in terms of how I could distribute my questionnaires. I thought of printing out the forms and handing them out in the office blocks. There are a lot of companies in those buildings, I could visit them one after another.\nSpeaker 1: TUTOR: That might be useful. But I’m not sure if it’s the best way to do it. Why don’t you just collect the email addresses of companies online and send all of them in an email? It could save you a lot of work.\nSpeaker 2: DIANA: That’s a good idea. But some companies don’t respond to emails from non-business partners. So I might have to remind them repeatedly.\nSpeaker 1: TUTOR: Well, that’s unavoidable during the process. But it’s faster than visiting them one by one.\nSpeaker 2: DIANA: That’s right. And I plan to conduct the survey in different groups, according to various types of companies and industries.Such as food industry, manufacturing industry or education, so on and so forth.\nSpeaker 1: TUTOR: Oh. What is this for? To make it more convenient for data analysis later on? Or you need more smaller-sized groups?\nSpeaker 2: DIANA: Neither. The most important reason is that I could have a better control of the survey.\nSpeaker 1: TUTOR: Understandable. As for the employment history, some of the students chose to collect information from the latest journal publications, which could provide more accurate data.\nSpeaker 2: DIANA: Hmm, it’s time-consuming for me to do that, though. The number of my targets is quite large, and some of the subjects are startups. They may not have been noticed by the journal editors yet. I tried calling some of the HR managers for the information, but they are either reluctant to reveal too much or too busy to respond. Luckily, I later realized that most companies would put that information on their websites, especially their recruiting page. TUTOR: And my guess was right. I spent around three days visiting all the websites and got all I needed.\nSpeaker 1: Information Age, right? All you have to know is where to dig. You may even find out something that their HR managers don’t know about.\nSpeaker 2: DIANA: True. When I was looking into the data, I was kind of surprised with my findings. About 10% of the managers in the companies don’t really care about the absence of the employees as long as they finish their work on time. And the majority of the supervisors, about 70%, think companies should set more rules to punish those who were absent during work hours strictly. Another 20% of them said they were worried about the physical as well as mental health of the absent employees.\nSpeaker 1: TUTOR: Alright. Let’s look at the content of your paper.\nSpeaker 2: DIANA: Do you think I have provided enough information in it?\nSpeaker 1: TUTOR: Well, the introduction is short and clear. I’m quite satisfied with it.\nSpeaker 2: DIANA: OK.\nSpeaker 1: TUTOR: The background, umm, it was okay, but I would recommend not placing it at the beginning. It might be better to add it to the second paragraph. It won’t be so abrupt that way.\nSpeaker 2: DIANA: Right. What do you think of the references I listed?\nSpeaker 1: TUTOR: I have a feeling that you cited a bit too much, you should drop some words. And the methodology seems a bit messy. You need to clarify the relationships between different methods to make it clearer for the readers.\nSpeaker 2: DIANA: I apologize for that. I will address those issues and make the necessary improvements.\nSpeaker 1: TUTOR: Lastly, the result at the end, I don’t think it’s necessary. You have already included a lot of concrete details and the overall length of the paper is approaching the limits. It would be simpler without it.\nSpeaker 2: DIANA: Thank you so much for the advice.",
+	"body": {
+		"text": "introduction [6]\nbackground [7]\nreference [8]\nmethodology [9]\nresult [10]",
+		"html": "<p>introduction [6]</p><p>background [7]</p><p>reference [8]</p><p>methodology [9]</p><p>result [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "What is the aim of Diana’s dissertation?",
+					"options": [
+						{
+							"label": "A",
+							"text": "discover ways to reduce the number of absent workers"
+						},
+						{
+							"label": "B",
+							"text": "discuss whether the situation should be changed"
+						},
+						{
+							"label": "C",
+							"text": "evaluate whether the cost of management is increased"
+						}
+					],
+					"answer": "A",
+					"quotes": ["For me, I’d like to work out solutions for this problem."]
+				},
+				{
+					"number": 2,
+					"text": "What does the tutor suggest to make the questionnaires work effectively?",
+					"options": [
+						{
+							"label": "A",
+							"text": "use the email as a reminder"
+						},
+						{
+							"label": "B",
+							"text": "hand out one by one"
+						},
+						{
+							"label": "C",
+							"text": "make shorter ones"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Why don’t you just collect the email addresses of companies online and send all of them in an email?",
+						"TUTOR: Well, that’s unavoidable during the process."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Why does Diana want to divide the research into four groups?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It is better to manage the survey."
+						},
+						{
+							"label": "B",
+							"text": "It is convenient for analyzing the data."
+						},
+						{
+							"label": "C",
+							"text": "She needs smaller groups."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"The most important reason is that I could have a better control of the survey."
+					]
+				},
+				{
+					"number": 4,
+					"text": "How did Diana find out about a company's employment history?",
+					"options": [
+						{
+							"label": "A",
+							"text": "collect articles"
+						},
+						{
+							"label": "B",
+							"text": "talk to HR managers"
+						},
+						{
+							"label": "C",
+							"text": "check official websites"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Luckily, I later realized that most companies would put that information on their websites, especially their recruiting page."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What is the reaction of most managers on the current problem of workers' absence?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They can accept it."
+						},
+						{
+							"label": "B",
+							"text": "They expect more severe punishment."
+						},
+						{
+							"label": "C",
+							"text": "They show concern for employees' well-being."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"And the majority of the supervisors, about 70%, think companies should set more rules to punish those who were absent during work hours strictly."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What does the tutor suggest to do with each of the following parts?",
+			"options": [
+				{
+					"label": "A",
+					"text": "move it"
+				},
+				{
+					"label": "B",
+					"text": "expand it"
+				},
+				{
+					"label": "C",
+					"text": "reorganize it"
+				},
+				{
+					"label": "D",
+					"text": "leave it as it is"
+				},
+				{
+					"label": "E",
+					"text": "cut it short"
+				},
+				{
+					"label": "F",
+					"text": "delete it"
+				}
+			],
+			"body": "introduction [6]\nbackground [7]\nreference [8]\nmethodology [9]\nresult [10]",
+			"body_html": "<p>introduction [6]</p><p>background [7]</p><p>reference [8]</p><p>methodology [9]</p><p>result [10]</p>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "introduction",
+					"answer": "D",
+					"quotes": [
+						"TUTOR: Well, the introduction is short and clear. I’m quite satisfied with it."
+					]
+				},
+				{
+					"number": 7,
+					"text": "background",
+					"answer": "A",
+					"quotes": ["It might be better to add it to the second paragraph."]
+				},
+				{
+					"number": 8,
+					"text": "reference",
+					"answer": "E",
+					"quotes": [
+						"TUTOR: I have a feeling that you cited a bit too much, you should drop some words."
+					]
+				},
+				{
+					"number": 9,
+					"text": "methodology",
+					"answer": "C",
+					"quotes": [
+						"You need to clarify the relationships between different methods to make it clearer for the readers."
+					]
+				},
+				{
+					"number": 10,
+					"text": "result",
+					"answer": "F",
+					"quotes": [
+						"TUTOR: Lastly, the result at the end, I don’t think it’s necessary."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

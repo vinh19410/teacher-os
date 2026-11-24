@@ -1,0 +1,131 @@
+{
+	"id": "43ea067a-99e5-4605-98a3-01ae4c80fd8a",
+	"url": "https://stepielts.com/student/listening/43ea067a-99e5-4605-98a3-01ae4c80fd8a?mode=practice",
+	"title": "Oyster Bay Sailing Club.",
+	"source": "C21T1",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/41465c85-7a85-44d4-9846-c76dfc28fce9.mp3",
+	"transcript": "Speaker 0: Part one. You will hear a man phoning a sailing club to ask about learning to sail. First, you have some time to look at questions one to six. Now listen carefully and answer questions one to six.\nSpeaker 1: Hello. Oyster Bay Sailing Club. How can I help you?\nSpeaker 2: Oh, hi. I'd like to find out about sailing courses for beginners.\nSpeaker 1: No problem. Is it for yourself?\nSpeaker 2: Yes. I had a look online, but I'm not sure which course would be best.\nSpeaker 1: Okay. Well, you might be interested in our Taster Days.\nSpeaker 2: Possibly.\nSpeaker 1: So these are for people who've never sailed before. It's basically an introduction to sailing to find out whether you enjoy it and want to carry on with it.\nSpeaker 2: And how much is that?\nSpeaker 1: It's a £120 for the day, but it's reduced to a £110 each if there are two of you.\nSpeaker 2: No, it would just be me.\nSpeaker 1: Oh, that's fine. You'd be in a small group, usually about eight people, but no more than 10, and everyone's always very friendly.\nSpeaker 2: Uh-huh. And are there any other suitable courses?\nSpeaker 1: The other option is the level one course. These are two day weekend courses, and we run those all year round.\nSpeaker 2: Okay. And what do you learn on that course?\nSpeaker 1: This is a mix of theory and practical skills. So you learn about things like the weather, which is obviously really important, and also the tides, as well as learning basic sailing skills. You go out into the harbour in special training dinghies for beginners two people in each dinghy and an instructor. He or she will make sure you understand everything you need to know about safety.\nSpeaker 2: It sounds like hard work.\nSpeaker 1: Yes, but you'll have a lot of fun too.\nSpeaker 2: And the cost of that one is?\nSpeaker 1: £200, but it's a bit cheaper if you decide to join the club. There's a discount for members.\nSpeaker 2: Well, I'm not sure about that yet.\nSpeaker 1: You've got plenty of time to decide.\nSpeaker 2: And does the cost include everything?\nSpeaker 1: Yes, everything's included, and you also get a really good dictionary, explaining all the sailing terminology. A lot of people struggle with this at first. It's got lots of pictures, so I'm sure you'd find it really helpful. And on completion of the course, you get a certificate. Then you're ready to move on to the level two course.\nSpeaker 2: Sounds good.\nSpeaker 0: Before you hear the rest of the conversation, you have some time to look at questions seven to 10. Now listen and answer questions seven to 10.\nSpeaker 1: I think that's all the info you need for now. Just a couple of general things. For example, it's really important that you know how to swim.\nSpeaker 2: Yes. I'm pretty confident in the water.\nSpeaker 1: Great. The other thing I should tell you is that we provide wet suits and life jackets, but you need to bring swimming trunks and some old trainers.\nSpeaker 2: And a towel?\nSpeaker 1: Yes, definitely. And you might want to bring your own toiletries, things like shampoo.\nSpeaker 2: Okay. What about food and drink? Do I need to bring that, or is there a cafe at the club?\nSpeaker 1: Yes. You can get sandwiches, cakes, and snacks there. The food's pretty reasonable.\nSpeaker 2: Okay. Good. Well, I think I'm interested in the level one course, but I know absolutely nothing about sailing. So is there anything I can do to prepare myself a bit?\nSpeaker 1: I recommend you watch some videos we use for training. They're available online. I can send you the link. They'll give you an idea of what to expect.\nSpeaker 2: Perfect. Thanks. That would be very helpful. Oh, and just one other thing. I'll be cycling to the club, and we'll need somewhere to put valuables. I'm just wondering if there are lockers for people to use?\nSpeaker 1: Yes. There are plenty in the changing rooms.\nSpeaker 2: Great. Okay. Well, could you book me onto the\nSpeaker 0: That is the end of part one. You now have one minute to check your answers to part one.",
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Name of course\nWhat you learn\nCost\nOther information\nTaster day introduction to sailing £120 if booking one place small groups (max [1] people)\nLevel 1 basic theory e.g. understanding the [2] and tides\nbasic sailing skills including [3] £200\n[4] available for club members all inclusive (plus a useful [5])\na [6] at the end of the course for all participants",
+			"body_table": [
+				["Name of course", "What you learn", "Cost", "Other information"],
+				[
+					"Taster day",
+					"introduction to sailing",
+					"£120 if booking one place",
+					"small groups (max [1] people)"
+				],
+				[
+					"Level 1",
+					"basic theory e.g. understanding the [2] and tides\nbasic sailing skills including [3]",
+					"£200\n[4] available for club members",
+					"all inclusive (plus a useful [5])\na [6] at the end of the course for all participants"
+				]
+			],
+			"body_html": "<table><thead><tr><th><p>Name of course</p></th><th><p>What you learn</p></th><th><p>Cost</p></th><th><p>Other information</p></th></tr></thead><tbody><tr><td><strong>Taster day</strong></td><td>introduction to sailing</td><td>£120 if booking one place</td><td>small groups (max [1] people)</td></tr><tr><td><strong>Level 1</strong></td><td>basic theory e.g. understanding the [2] and tides<br>basic sailing skills including [3]</td><td>£200<br>[4] available for club members</td><td>all inclusive (plus a useful [5])<br>a [6] at the end of the course for all participants</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "small groups (max [1] people)",
+					"answer": "10",
+					"quotes": [
+						"You'd be in a small group, usually about eight people, but no more than 10, and everyone's always very friendly."
+					]
+				},
+				{
+					"number": 2,
+					"text": "understanding the [2] and tides",
+					"answer": "weather",
+					"quotes": [
+						"So you learn about things like the weather, which is obviously really important, and also the tides, as well as learning basic sailing skills."
+					]
+				},
+				{
+					"number": 3,
+					"text": "basic sailing skills including [3]",
+					"answer": "safety",
+					"quotes": [
+						"He or she will make sure you understand everything you need to know about safety."
+					]
+				},
+				{
+					"number": 4,
+					"text": "£200 [4] available for club members",
+					"answer": "discount",
+					"quotes": ["There's a discount for members."]
+				},
+				{
+					"number": 5,
+					"text": "all inclusive (plus a useful [5])",
+					"answer": "dictionary",
+					"quotes": [
+						"Yes, everything's included, and you also get a really good dictionary, explaining all the sailing terminology."
+					]
+				},
+				{
+					"number": 6,
+					"text": "a [6] at the end of the course for all participants",
+					"answer": "certificate",
+					"quotes": ["And on completion of the course, you get a certificate."]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "General information\nParticipants must be able to swim.\nBring suitable clothing, a [7] and toiletries (e.g. shampoo).\nThere is a [8] at the club.\nOnline training [9] are recommended.\n[10] are available for course participants.",
+			"body_table": [
+				["Participants must be able to swim."],
+				["Bring suitable clothing, a [7] and toiletries (e.g. shampoo)."],
+				["There is a [8] at the club."],
+				["Online training [9] are recommended."],
+				["[10] are available for course participants."]
+			],
+			"body_html": "<h4><strong>General information</strong></h4><table><tbody><tr><td><ul><li>Participants must be able to swim.</li></ul></td></tr><tr><td><ul><li>Bring suitable clothing, a [7] and toiletries (e.g. shampoo).</li></ul></td></tr><tr><td><ul><li>There is a [8] at the club.</li></ul></td></tr><tr><td><ul><li>Online training [9] are recommended.</li></ul></td></tr><tr><td><ul><li>[10] are available for course participants.</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "Bring suitable clothing, a [7] and toiletries (e.g. shampoo).",
+					"answer": "towel",
+					"quotes": ["And a towel?", "Yes, definitely."]
+				},
+				{
+					"number": 8,
+					"text": "There is a [8] at the club.",
+					"answer": "cafe",
+					"quotes": [
+						"Do I need to bring that, or is there a cafe at the club?",
+						"Yes."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Online training [9] are recommended.",
+					"answer": "videos",
+					"quotes": [
+						"I recommend you watch some videos we use for training.",
+						"They're available online."
+					]
+				},
+				{
+					"number": 10,
+					"text": "[10] are available for course participants.",
+					"answer": "lockers",
+					"quotes": [
+						"I'm just wondering if there are lockers for people to use?",
+						"Yes."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

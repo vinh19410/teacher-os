@@ -1,0 +1,98 @@
+# Workflow import bộ đề IELTS Listening từ `docs/listening_ielts/` vào môi trường staging
+# (upload audio MP3 + ảnh bản đồ/biểu đồ lên R2 staging và upsert vào D1 staging).
+#
+# Ràng buộc an toàn (test gate: scripts/ci-workflow.test.mjs):
+# - Chỉ chạy bằng manual workflow_dispatch; không trigger tự động.
+# - Mặc định ở chế độ audit (read-only); chế độ apply bắt buộc gõ đúng "staging" vào confirm_stage.
+# - Chỉ nhắm GitHub Environment "staging" (chặn production ở cả workflow và CLI).
+# - Serialize với deploy qua cùng concurrency group deploy-staging.
+# - Quyền contents: read duy nhất ở cấp top-level; không upload artifact nhạy cảm.
+name: Import Listening Library Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: "Target stage (bảo vệ an toàn: chỉ cho phép staging)"
+        type: choice
+        options:
+          - staging
+        default: staging
+        required: true
+      mode:
+        description: "Chế độ thực thi: audit (chỉ đọc & kiểm tra R2/D1) hoặc apply (tải media lên R2 + ghi D1)"
+        type: choice
+        options:
+          - audit
+          - apply
+        default: audit
+        required: true
+      confirm_stage:
+        description: "Gõ đúng chữ 'staging' để xác nhận khi chạy mode=apply"
+        type: string
+        required: false
+        default: ""
+      concurrency:
+        description: "Số luồng song song tải/upload R2 (1..16)"
+        type: string
+        required: false
+        default: "8"
+      limit:
+        description: "Tuỳ chọn giới hạn N đề đầu tiên để smoke test (để trống = chạy toàn bộ)"
+        type: string
+        required: false
+        default: ""
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  import-listening:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: staging
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Confirm safety gate for apply mode
+        env:
+          IMPORT_MODE: ${{ inputs.mode }}
+          STAGE: ${{ inputs.stage }}
+          CONFIRM_STAGE: ${{ inputs.confirm_stage }}
+        run: |
+          if [ "$STAGE" != "staging" ]; then
+            echo "::error::Chỉ hỗ trợ stage 'staging' (nhận được: '$STAGE')"
+            exit 1
+          fi
+          if [ "$IMPORT_MODE" = "apply" ]; then
+            if [ "$CONFIRM_STAGE" != "staging" ]; then
+              echo "::error::Mode 'apply' bắt buộc phải gõ đúng chữ 'staging' trong confirm_stage (nhận được: '$CONFIRM_STAGE')"
+              exit 1
+            fi
+            echo "Đã xác nhận chính xác stage '$CONFIRM_STAGE'. Tiếp tục thực thi apply."
+          fi
+
+      - name: Run listening library import
+        working-directory: packages/db
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          IMPORT_MODE: ${{ inputs.mode }}
+          CONFIRM_STAGE: ${{ inputs.confirm_stage }}
+          IMPORT_CONCURRENCY: ${{ inputs.concurrency }}
+          IMPORT_LIMIT: ${{ inputs.limit }}
+        run: |
+          set -euo pipefail
+          args=(--d1 --d1-stage staging --mode "$IMPORT_MODE" --concurrency "${IMPORT_CONCURRENCY:-8}" --public-logs)
+          if [ -n "${IMPORT_LIMIT:-}" ]; then
+            args+=(--limit "$IMPORT_LIMIT")
+          fi
+          if [ "$IMPORT_MODE" = "apply" ]; then
+            args+=(--confirm-stage "$CONFIRM_STAGE" --verify)
+          fi
+          pnpm exec tsx scripts/import-listening-library.ts "${args[@]}"

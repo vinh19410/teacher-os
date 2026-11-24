@@ -1,0 +1,130 @@
+{
+	"id": "5cfadb91-51dd-4744-8a30-5ef1a550cac8",
+	"url": "https://stepielts.com/student/listening/5cfadb91-51dd-4744-8a30-5ef1a550cac8?mode=practice",
+	"title": "Poppy Reserve",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/5255833b-e659-45c5-9fc5-217f6dd9d1ca.mp3",
+	"transcript": "Speaker 1: Almond Valley Poppy Reserve. May I help you?\nSpeaker 2: Is the Nature Reserve open now?\nSpeaker 1: Yes. We are actually open all year, although this is the best time of year to see the wildflowers.\nSpeaker 2: Are the poppies blooming yet?\nSpeaker 1: Absolutely. They started to bloom last week and are already beautiful, but they should peak and be in full bloom at the end of the month.\nSpeaker 2: Oh, I was planning on coming at the end of this week. Is that too early?\nSpeaker 1: No. Not at all. The hills are already covered with orange poppies.\nSpeaker 2: I thought poppies were red.\nSpeaker 1: Not in California. I've never seen a red poppy here.\nSpeaker 2: The poppy reserve is in Ocean County. Right?\nSpeaker 1: Right. From Lakeside, you'll need to drive about an hour east.\nSpeaker 2: What time does the reserve open?\nSpeaker 1: The reserve is open from sunrise to sunset. It's best to come early in the morning to beat the crowds, but for the best photography, you might want to consider a mid afternoon visit on a weekday.\nSpeaker 2: I heard that there are a lot of rattlesnakes in the desert. Is it dangerous to walk about?\nSpeaker 1: Most wildlife is quite safe. There are very few people bitten by rattlesnakes, so we do recommend wearing trousers just to be on the safe side.\nSpeaker 2: Alright. I was hoping that I might have the chance to see some wildlife too. Oh, how much is the admission to the reserve?\nSpeaker 1: It's $5.\nSpeaker 2: Can I use my National Park Pass to enter the reserve?\nSpeaker 1: Unfortunately not, since it is a state park, not a national park.\nSpeaker 2: Alright. I heard from a friend that there is a nature tour available. Can you tell me about it?\nSpeaker 1: Certainly. But can you excuse me just a sec? I'll be right back.\nSpeaker 2: Okay.\nSpeaker 1: Hello?\nSpeaker 2: Yes. I'm still here.\nSpeaker 1: Now you are interested in the nature tours. Right?\nSpeaker 2: Oh, there's more than one?\nSpeaker 1: Yes. We have the general tour, which is the one your friend may have taken, but we also have two more specialized tours. Starting at 07:30AM is our general tour. That's early for some people, I know. It's offered every hour too, But it's a great time, and it only lasts thirty minutes.\nSpeaker 2: Is that the tour that takes you to the Vista Points?\nSpeaker 1: Yes. That is one of the highlights along with a film introducing the park and the museum. You're welcome to tour the museum at your leisure. It's a great tour for those who just want to take panoramic pictures with automatic cameras.\nSpeaker 2: Well, if I come all that way, I'd like to have a more detailed tour.\nSpeaker 1: Then you are in luck because we have a wonderful wildflower tour every two hours from 8AM. It lasts one hour, and the volunteer will give you information about many of the flowers on the reserve.\nSpeaker 2: Besides the poppies, will cream cups be in bloom?\nSpeaker 1: Yes. And you will see lots of sage too. We have a volunteer who is really good at giving tips on close-up photography.\nSpeaker 2: You mentioned another tour.\nSpeaker 1: Yes. The last one is the wildlife tour, but it is offered at very limited times.\nSpeaker 2: Is that because most of the wildlife is nocturnal?\nSpeaker 1: Yes. So we offer this tour only two times, 05:30AM or 7PM.\nSpeaker 2: Wow. That early? But don't the snakes and lizards like the sun?\nSpeaker 1: Right. First, let me say it takes about an hour and a half, but you will have the opportunity to see other animals like coyotes, quail, and roadrunners. You have to get here before the crowds arrive or after most of them leave.\nSpeaker 2: Well, that makes sense. Does it require a lot of walking?\nSpeaker 1: More like a lot of standing. But most of the time, you will be at one or two locations, so we recommend bringing a tripod and zoom lens if you want to take pictures.\nSpeaker 2: Well, thank you very much. You've been extremely helpful and informative.\nSpeaker 1: You're welcome. Glad I could be of service.\nSpeaker 2: Goodbye.\nSpeaker 1: Goodbye.",
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "FILL_BLANK",
+			"instructions": "Write ONE WORD ONLY for each answer.",
+			"body": "Poppy Reserve\nAlmond Valley Poppy Reserve is a nature reserve\nThe poppies will be at their best at the end of the [1].\nThe poppies on the hills are [2] in colour.\nThe reserve is located to the [3] of Lakeside.\nThe best time for photography is mid-afternoon.\nWear [4] because of rattlesnakes.\nThe reserve is a [5] park.",
+			"body_html": "<table><tbody><tr><td><h4><strong>Poppy Reserve</strong></h4><ul><li>Almond Valley Poppy Reserve is a nature reserve</li><li>The poppies will be at their best at the end of the [1].</li><li>The poppies on the hills are [2] in colour.</li><li>The reserve is located to the [3] of Lakeside.</li><li>The best time for photography is mid-afternoon.</li><li>Wear [4] because of rattlesnakes.</li><li>The reserve is a [5] park.</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The poppies will be at their best at the end of the [1].",
+					"answer": "month",
+					"quotes": [
+						"They started to bloom last week and are already beautiful, but they should peak and be in full bloom at the end of the month."
+					]
+				},
+				{
+					"number": 2,
+					"text": "The poppies on the hills are [2] in colour.",
+					"answer": "orange",
+					"quotes": ["The hills are already covered with orange poppies."]
+				},
+				{
+					"number": 3,
+					"text": "The reserve is located to the [3] of Lakeside.",
+					"answer": "east",
+					"quotes": ["From Lakeside, you'll need to drive about an hour east."]
+				},
+				{
+					"number": 4,
+					"text": "Wear [4] because of rattlesnakes.",
+					"answer": "trousers",
+					"quotes": [
+						"There are very few people bitten by rattlesnakes, so we do recommend wearing trousers just to be on the safe side."
+					]
+				},
+				{
+					"number": 5,
+					"text": "The reserve is a [5] park.",
+					"answer": "state",
+					"quotes": [
+						"Unfortunately not, since it is a state park, not a national park."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "FILL_BLANK",
+			"instructions": "Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Tour Start time Duration Highlights Photography\nThe [6] tour every hour from 7:30 a.m. 30 minutes viewpoints, film, and the [7] panoramic pictures\nThe Wildflower tour every two hours from 8:00 a.m. [8] poppy, cream cup, and sage close-up tips\nThe Wildlife tour [9] a.m. or 7:00 p.m. 1.5 hours coyote, quail, roadrunners bring tripod and a [10] lens",
+			"body_table": [
+				["Tour", "Start time", "Duration", "Highlights", "Photography"],
+				[
+					"The [6] tour",
+					"every hour from 7:30 a.m.",
+					"30 minutes",
+					"viewpoints, film, and the [7]",
+					"panoramic pictures"
+				],
+				[
+					"The Wildflower tour",
+					"every two hours from 8:00 a.m.",
+					"[8]",
+					"poppy, cream cup, and sage",
+					"close-up tips"
+				],
+				[
+					"The Wildlife tour",
+					"[9] a.m. or 7:00 p.m.",
+					"1.5 hours",
+					"coyote, quail, roadrunners",
+					"bring tripod and a [10] lens"
+				]
+			],
+			"body_html": "<table><thead><tr><th>Tour</th><th>Start time</th><th>Duration</th><th>Highlights</th><th>Photography</th></tr></thead><tbody><tr><td>The [6] tour</td><td>every hour from 7:30 a.m.</td><td>30 minutes</td><td>viewpoints, film, and the [7]</td><td>panoramic pictures</td></tr><tr><td>The Wildflower tour</td><td>every two hours from 8:00 a.m.</td><td>[8]</td><td>poppy, cream cup, and sage</td><td>close-up tips</td></tr><tr><td>The Wildlife tour</td><td>[9] a.m. or 7:00 p.m.</td><td>1.5 hours</td><td>coyote, quail, roadrunners</td><td>bring tripod and a [10] lens</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "The [6] tour",
+					"answer": "general",
+					"quotes": [
+						"We have the general tour, which is the one your friend may have taken, but we also have two more specialized tours."
+					]
+				},
+				{
+					"number": 7,
+					"text": "viewpoints, film, and the [7]",
+					"answer": "museum",
+					"quotes": [
+						"That is one of the highlights along with a film introducing the park and the museum."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Duration for Wildflower tour",
+					"answer": "1 hour",
+					"quotes": [
+						"It lasts one hour, and the volunteer will give you information about many of the flowers on the reserve."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Start time for Wildlife tour: [9] a.m. or 7:00 p.m.",
+					"answer": "5:30 / 05:30 / 5.30",
+					"quotes": ["So we offer this tour only two times, 05:30AM or 7PM."]
+				},
+				{
+					"number": 10,
+					"text": "bring tripod and a [10] lens",
+					"answer": "zoom",
+					"quotes": [
+						"But most of the time, you will be at one or two locations, so we recommend bringing a tripod and zoom lens if you want to take pictures."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

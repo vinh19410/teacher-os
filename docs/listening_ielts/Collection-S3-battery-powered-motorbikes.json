@@ -1,0 +1,231 @@
+{
+	"id": "c8131f13-580b-41c2-aee1-bfd85b6f7952",
+	"url": "https://stepielts.com/student/listening/c8131f13-580b-41c2-aee1-bfd85b6f7952?mode=practice",
+	"title": "Battery-powered Motorbikes",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/abc686e0-2df9-47ae-ba10-1ed6c41be496.mp3",
+	"transcript": "Speaker 1: Hi, Sarah. Shall we make a start on that presentation about our battery powered motorbike project?\nSpeaker 0: Yes, let's. It'd be nice to do a good job for the university open day. I hope the lecturer's right that it'll interest people thinking about coming here to study.\nSpeaker 1: Well, they certainly should, and at least it won't be assessed.\nSpeaker 0: Yes. And I guess we should be proud our project was chosen rather than anything done by others in our class. And our project's unusual because people usually think of environmentally friendly vehicles as being relatively slow. But our battery powered motorbike can get up to 165 kilometers an hour, the same as lots of petrol driven bikes.\nSpeaker 1: And it has an efficiency of 90%, whereas ordinary bikes are far less. They waste a huge amount of energy.\nSpeaker 0: And our bike doesn't need a petrol tank or an exhaust system either, so markedly the design is more straightforward and it's also lighter.\nSpeaker 1: Anyway, it's going to be quite a challenge to prepare something interesting and appropriate for all the people who might come.\nSpeaker 0: Well, time is certainly going to be an issue.\nSpeaker 1: You mean in terms of how much we have to deal with in only fifteen minutes?\nSpeaker 0: Well, I was thinking more about the fact that the talk's next week, and we have a lot of other stuff on just now.\nSpeaker 1: Absolutely. So how shall we organize things? We could just do a short talk and allow most of the time for questions.\nSpeaker 0: Well, it'd be good to allow plenty of time for those, but I think we need to present quite a lot too. We could start by showing a couple of minutes from the film of the race it took part in.\nSpeaker 1: Brilliant. I'm sure they'd love that. Then we can talk about how we built and tested the motorbike and so on. For example, one of us could talk through the project from the initial brief to prototype stage, and then the other take it on to testing and development.\nSpeaker 0: Well, let's deal with that later. It might be better to have just you or me doing the talking, but we don't need to decide just yet.\nSpeaker 1: Okay. So what about the slides for our presentation? Shall we work on the text for those now? Well, we could just use keywords. That'll help structure our talk.\nSpeaker 0: How about using mainly visuals? I took lots of photos as we went along, so it'd be easy to illustrate the progress of the project that way, more interesting than diagrams, and slides with lots of text can be boring.\nSpeaker 1: Okay. Right you are. So, do you think we should discuss things with the lecturer before going much further? We could do that this afternoon.\nSpeaker 0: Wouldn't it be better to get a first draft done? Then we've got something more concrete to discuss with him.\nSpeaker 1: Sure, but I'd quite like a bit more input before we spend a lot of time preparing something that might not be what's needed.\nSpeaker 0: Okay. When did we have a work with Amish in the fourth year? His tutor had him doing something similar last summer, so I'm sure he'd give us some useful pointers.\nSpeaker 1: Great. Let's do that after lunch. Let's think a bit more about how the project went. That might give us some ideas.\nSpeaker 0: Okay.\nSpeaker 1: Well, first, I'd say that writing the report was hard.\nSpeaker 0: Yes. I was dreading having to write 80 pages in just a month. But actually, it was harder making sure we didn't go over length. Anyway, I never imagined we'd deal with it with a day to spare.\nSpeaker 1: No. It was lucky your sister had time to proofread it. She picked up on several careless mistakes, especially in the bibliography.\nSpeaker 0: Yes, well, she works in publishing, so she's used to checking things. I suppose it helped that we kept detailed notebooks throughout the year. That was a chore, but worth it.\nSpeaker 1: Yes, I didn't enjoy keeping mine up to date. I actually found it really time consuming, noting down all the adaptations we made to the design as we went along. I hadn't anticipated that.\nSpeaker 0: Me too. And I thought the tutor could have given us a bit more advice at the beginning of the process.\nSpeaker 1: That's right. I like doing the concept sketches. For me, that was one of the best bits. I've always enjoyed those initial stages of the design process.\nSpeaker 0: I was relieved that the tutor picked up on that mistake we made in our aerodynamic sketches. It would have been disastrous if that hadn't been picked up at an early stage. Exactly. Finding sponsors took quite some time, of course.\nSpeaker 1: Yes. But we knew that'd be an issue, and I never expected it to be enjoyable. Not like the actual hands on project work. The tutor certainly came into his own at that stage.\nSpeaker 0: Yes. I never expected him to have such useful contacts in industry. Good thing for us he did though.\nSpeaker 1: Right.",
+	"body": {
+		"text": "writing the report [27]\nkeeping a log book [28]\ndoing the sketches [29]\nfinding sponsors [30]",
+		"html": "<ul><li>writing the report [27]</li><li>keeping a log book [28]</li><li>doing the sketches [29]</li><li>finding sponsors [30]</li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "21-26",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "The students are preparing the presentation",
+					"options": [
+						{
+							"label": "A",
+							"text": "as part of their final assessment"
+						},
+						{
+							"label": "B",
+							"text": "to attract potential future students"
+						},
+						{
+							"label": "C",
+							"text": "to share their work with their classmates"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I hope the lecturer's right that it'll interest people thinking about coming here to study."
+					]
+				},
+				{
+					"number": 22,
+					"text": "What do the students say about the battery-powered motorbike in their project?",
+					"options": [
+						{
+							"label": "A",
+							"text": "it is more efficient than ordinary motorbikes"
+						},
+						{
+							"label": "B",
+							"text": "it is faster than ordinary motorbikes"
+						},
+						{
+							"label": "C",
+							"text": "it is more complex than ordinary motorbikes"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"And it has an efficiency of 90%, whereas ordinary bikes are far less."
+					]
+				},
+				{
+					"number": 23,
+					"text": "The students agree the presentation will be difficult because",
+					"options": [
+						{
+							"label": "A",
+							"text": "they have a lot to cover in 15 minutes"
+						},
+						{
+							"label": "B",
+							"text": "several different people are involved"
+						},
+						{
+							"label": "C",
+							"text": "they do not have long to prepare it"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Well, I was thinking more about the fact that the talk's next week, and we have a lot of other stuff on just now."
+					]
+				},
+				{
+					"number": 24,
+					"text": "The students decide to deal with the presentation by",
+					"options": [
+						{
+							"label": "A",
+							"text": "each giving part of the talk"
+						},
+						{
+							"label": "B",
+							"text": "opening with a short video clip"
+						},
+						{
+							"label": "C",
+							"text": "allowing most of the time for the questions"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"We could start by showing a couple of minutes from the film of the race it took part in."
+					]
+				},
+				{
+					"number": 25,
+					"text": "What do the students agree to use in their slides?",
+					"options": [
+						{
+							"label": "A",
+							"text": "photos of their project at its different stages"
+						},
+						{
+							"label": "B",
+							"text": "keywords reflecting the characteristic of the project"
+						},
+						{
+							"label": "C",
+							"text": "diagrams illustrating the process of the project"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I took lots of photos as we went along, so it'd be easy to illustrate the progress of the project that way, more interesting than diagrams, and slides with lots of text can be boring."
+					]
+				},
+				{
+					"number": 26,
+					"text": "What do the students decide to do that afternoon?",
+					"options": [
+						{
+							"label": "A",
+							"text": "talk to a student in a different year"
+						},
+						{
+							"label": "B",
+							"text": "prepare a first draft of their slides"
+						},
+						{
+							"label": "C",
+							"text": "discuss their outline with a tutor"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"When did we have a work with Amish in the fourth year?",
+						"His tutor had him doing something similar last summer, so I'm sure he'd give us some useful pointers."
+					]
+				}
+			]
+		},
+		{
+			"range": "27-30",
+			"type": "MATCHING",
+			"instructions": "Which option is expressed by the students about each of the following aspects of the project?\nChoose FOUR answers from the box and write the correct letter, A-F, next to questions 27-30.",
+			"options": [
+				{
+					"label": "A",
+					"text": "It took longer than expected."
+				},
+				{
+					"label": "B",
+					"text": "It was unexpectedly enjoyable."
+				},
+				{
+					"label": "C",
+					"text": "A member of staff was surprisingly helpful."
+				},
+				{
+					"label": "D",
+					"text": "They benefited from a relative's help."
+				},
+				{
+					"label": "E",
+					"text": "A member of staff identified one serious problem."
+				},
+				{
+					"label": "F",
+					"text": "A different student made a careless mistake."
+				}
+			],
+			"body": "writing the report [27]\nkeeping a log book [28]\ndoing the sketches [29]\nfinding sponsors [30]",
+			"body_html": "<ul><li>writing the report [27]</li><li>keeping a log book [28]</li><li>doing the sketches [29]</li><li>finding sponsors [30]</li></ul>",
+			"questions": [
+				{
+					"number": 27,
+					"text": "writing the report",
+					"answer": "D",
+					"quotes": [
+						"It was lucky your sister had time to proofread it.",
+						"Well, first, I'd say that writing the report was hard.",
+						"I was dreading having to write 80 pages in just a month."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Keeping a log book",
+					"answer": "A",
+					"quotes": [
+						"I actually found it really time consuming, noting down all the adaptations we made to the design as we went along.",
+						"I suppose it helped that we kept detailed notebooks throughout the year."
+					]
+				},
+				{
+					"number": 29,
+					"text": "doing the sketches",
+					"answer": "E",
+					"quotes": [
+						"I was relieved that the tutor picked up on that mistake we made in our aerodynamic sketches.",
+						"It would have been disastrous if that hadn't been picked up at an early stage."
+					]
+				},
+				{
+					"number": 30,
+					"text": "finding sponsors",
+					"answer": "C",
+					"quotes": [
+						"I never expected him to have such useful contacts in industry.",
+						"The tutor certainly came into his own at that stage.",
+						"Good thing for us he did though."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

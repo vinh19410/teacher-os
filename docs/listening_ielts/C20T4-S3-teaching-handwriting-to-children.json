@@ -1,0 +1,290 @@
+{
+	"id": "c6eb11ab-55ba-449b-acde-4cb31507c26e",
+	"url": "https://stepielts.com/student/listening/c6eb11ab-55ba-449b-acde-4cb31507c26e?mode=practice",
+	"title": "Teaching handwriting to children",
+	"source": "C20T4",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/85b35833-0b8d-43e7-acce-ed12d11cc58e.mp3",
+	"transcript": "Speaker 0: Part three. You will hear two education students discussing an assignment on teaching handwriting to children. First, you have some time to look at questions 21 to 24. Now listen carefully and answer questions 21 to 24.\nSpeaker 1: How are you getting on with the assignment on handwriting?\nSpeaker 2: Not too bad. You know, I hadn't realized that children benefit in so many ways from learning to write. It's such an important skill, and yet most people think handwriting is less important than in the past because people hardly ever write by hand these days.\nSpeaker 1: Yes. And all the evidence suggests children should learn to write by hand before they learn to type, not least because it helps their memory.\nSpeaker 2: That's right. The physical act of writing helps children to remember letters. That seems pretty obvious when you think about it.\nSpeaker 1: What's less obvious is how it helps develop their concentration they have to sit still and focus on one thing.\nSpeaker 2: Yeah. That aspect of handwriting had never occurred to me before.\nSpeaker 1: Same here. I'm not sure I understand how it improves children's imagination, though.\nSpeaker 2: Well, there was that study which showed that primary age children generated more ideas when they were writing by hand than using a keyboard. I would have guessed that would be the case.\nSpeaker 1: Yeah. I'd never associated spatial awareness with handwriting either. I thought spatial awareness was more to do with knowing where you are in relation to objects or other people.\nSpeaker 2: I thought that too. But good spatial awareness is essential for writing because you have to space words correctly. It's not just fine motor skills that improve through writing, as I'd always assumed.\nSpeaker 1: Handwriting is so much harder for children with dyspraxia who have problems coordinating movement. It's good there are lots of things you can do in the classroom to help them. They need so much more support with letter formation. You need to play lots of games to help them distinguish letter shapes. It takes a lot of patience.\nSpeaker 2: Yeah. I like the idea of using one of those pens that lights up if you press too hard. That seems like a really simple solution.\nSpeaker 1: Yes, absolutely. I'm not sure there's much you can do about children with dyspraxia writing very slowly. It's more important to focus on accuracy, and as they get more confident, I think they eventually speed up.\nSpeaker 2: One quite simple thing you can do is to use grid paper. So they write each letter in a box, and that trains them to space the letters correctly.\nSpeaker 1: Indeed. That's more important for legibility than trying to get them to write in a straight line.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 25 to 30. Now listen and answer questions 25 to 30.\nSpeaker 1: For some children, it might be better to teach them to write on a laptop rather than by hand, like children with dyslexia. They often really struggle with handwriting, and some just give up.\nSpeaker 2: Yeah. It's not as frustrating for them if they get things wrong. On a keyboard, they can be more willing to have a go. But I read that developing fluency isn't any faster.\nSpeaker 1: That's right. Did you read that article on the benefits of teaching print rather than cursive handwriting, where the letters are joined up?\nSpeaker 2: Yes. Well, in the past, cursive writing was certainly considered more stylish and educated, but not anymore. Teachers' attitudes have changed because it's been proved that cursive is more difficult to learn, especially for children with learning difficulties who find joining up letters really challenging.\nSpeaker 1: I agree. I was always worried that my poor handwriting affected my exam results, and now research shows that I was right to worry. I'm sure a lot of students think it's unfair that they're being judged on their handwriting, not just their knowledge.\nSpeaker 2: Marks are definitely affected if examiners can't read the script. That's why it's always been so important to teach children to write legibly. Do you think the role of handwriting will change in the future?\nSpeaker 1: I can't see that changing much. Touch typing still isn't taught in most schools, which is a shame. But maybe that won't be necessary in the future because people will also be able to write by hand on digital devices. Anyway, teachers understand the value of handwriting. It's a basic life skill.\nSpeaker 2: True. However, the fact is that people are writing by hand less and less and relying on digital devices. That does cause some problems.\nSpeaker 1: You mean like note taking. There are lots of apps for that.\nSpeaker 2: And for reading historical documents, apparently. But my mum is shocked by my awful spelling and the fact that my punctuation is really inconsistent. I think you can put that down to lack of practice.\nSpeaker 1: I expect so. Personally, I miss writing by hand. I hardly ever write anything now. I remember my grandparents had such beautiful handwriting, and it was so individual. Nobody I know would be able to identify my handwriting now. It's a shame.\nSpeaker 2: I know. I feel the same way. I used to write a diary by hand, and now I do that digitally. It just seems less effort to do it that way. So it's not just a problem.\nSpeaker 0: That is the end of part three. You now have thirty seconds to check your answers to part three.",
+	"question_groups": [
+		{
+			"range": "21-22",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Which TWO benefits for children of learning to write did both students find surprising?",
+					"options": [
+						{
+							"label": "A",
+							"text": "improved fine motor skills"
+						},
+						{
+							"label": "B",
+							"text": "improved memory"
+						},
+						{
+							"label": "C",
+							"text": "improved concentration"
+						},
+						{
+							"label": "D",
+							"text": "improved imagination"
+						},
+						{
+							"label": "E",
+							"text": "improved spatial awareness"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 22,
+					"text": "Which TWO benefits for children of learning to write did both students find surprising?",
+					"options": [
+						{
+							"label": "A",
+							"text": "improved fine motor skills"
+						},
+						{
+							"label": "B",
+							"text": "improved memory"
+						},
+						{
+							"label": "C",
+							"text": "improved concentration"
+						},
+						{
+							"label": "D",
+							"text": "improved imagination"
+						},
+						{
+							"label": "E",
+							"text": "improved spatial awareness"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "23-24",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 23,
+					"text": "For children with dyspraxia, which TWO problems with handwriting do the students think are easiest to correct?",
+					"options": [
+						{
+							"label": "A",
+							"text": "not spacing letters correctly"
+						},
+						{
+							"label": "B",
+							"text": "not writing in a straight line"
+						},
+						{
+							"label": "C",
+							"text": "applying too much pressure when writing"
+						},
+						{
+							"label": "D",
+							"text": "confusing letter shapes"
+						},
+						{
+							"label": "E",
+							"text": "writing very slowly"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 24,
+					"text": "For children with dyspraxia, which TWO problems with handwriting do the students think are easiest to correct?",
+					"options": [
+						{
+							"label": "A",
+							"text": "not spacing letters correctly"
+						},
+						{
+							"label": "B",
+							"text": "not writing in a straight line"
+						},
+						{
+							"label": "C",
+							"text": "applying too much pressure when writing"
+						},
+						{
+							"label": "D",
+							"text": "confusing letter shapes"
+						},
+						{
+							"label": "E",
+							"text": "writing very slowly"
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "25-30",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 25,
+					"text": "What does the woman say about using laptops to teach writing to children with dyslexia?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Children often lack motivation to learn that way."
+						},
+						{
+							"label": "B",
+							"text": "Children become fluent relatively quickly."
+						},
+						{
+							"label": "C",
+							"text": "Children react more positively if they make a mistake."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"It's not as frustrating for them if they get things wrong.",
+						"On a keyboard, they can be more willing to have a go."
+					]
+				},
+				{
+					"number": 26,
+					"text": "When discussing whether to teach cursive or print writing, the woman thinks that",
+					"options": [
+						{
+							"label": "A",
+							"text": "cursive writing disadvantages a certain group of children."
+						},
+						{
+							"label": "B",
+							"text": "print writing is associated with lower academic performance."
+						},
+						{
+							"label": "C",
+							"text": "most teachers in the UK prefer a traditional approach to handwriting."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Teachers' attitudes have changed because it's been proved that cursive is more difficult to learn, especially for children with learning difficulties who find joining up letters really challenging."
+					]
+				},
+				{
+					"number": 27,
+					"text": "According to the students, what impact does poor handwriting have on exam performance?",
+					"options": [
+						{
+							"label": "A",
+							"text": "There is evidence to suggest grades are affected by poor handwriting."
+						},
+						{
+							"label": "B",
+							"text": "Neat handwriting is less important now than it used to be."
+						},
+						{
+							"label": "C",
+							"text": "Candidates write more slowly and produce shorter answers."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I was always worried that my poor handwriting affected my exam results, and now research shows that I was right to worry.",
+						"I'm sure a lot of students think it's unfair that they're being judged on their handwriting, not just their knowledge.",
+						"Marks are definitely affected if examiners can't read the script.",
+						"That's why it's always been so important to teach children to write legibly."
+					]
+				},
+				{
+					"number": 28,
+					"text": "What prediction does the man make about the future of handwriting?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Touch typing will be taught before writing by hand."
+						},
+						{
+							"label": "B",
+							"text": "Children will continue to learn to write by hand."
+						},
+						{
+							"label": "C",
+							"text": "People will dislike handwriting on digital devices."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I can't see that changing much.",
+						"Touch typing still isn't taught in most schools, which is a shame.",
+						"But maybe that won't be necessary in the future because people will also be able to write by hand on digital devices.",
+						"Anyway, teachers understand the value of handwriting.",
+						"It's a basic life skill.",
+						"True."
+					]
+				},
+				{
+					"number": 29,
+					"text": "The woman is concerned that relying on digital devices has made it difficult for her to",
+					"options": [
+						{
+							"label": "A",
+							"text": "take detailed notes."
+						},
+						{
+							"label": "B",
+							"text": "spell and punctuate."
+						},
+						{
+							"label": "C",
+							"text": "read old documents."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I agree.",
+						"And for reading historical documents, apparently.",
+						"But my mum is shocked by my awful spelling and the fact that my punctuation is really inconsistent."
+					]
+				},
+				{
+					"number": 30,
+					"text": "How do the students feel about their own handwriting?",
+					"options": [
+						{
+							"label": "A",
+							"text": "concerned they are unable to write quickly"
+						},
+						{
+							"label": "B",
+							"text": "embarrassed by comments made about it"
+						},
+						{
+							"label": "C",
+							"text": "regretful that they have lost the habit"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Marks are definitely affected if examiners can't read the script. That's why it's always been so important to teach children to write legibly. Do you think the role of handwriting will change in the future?",
+						"I can't see that changing much. Touch typing still isn't taught in most schools, which is a shame.",
+						"Personally, I miss writing by hand.",
+						"I hardly ever write anything now.",
+						"I think you can put that down to lack of practice."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

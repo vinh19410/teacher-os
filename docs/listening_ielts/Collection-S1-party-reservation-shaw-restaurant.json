@@ -1,0 +1,104 @@
+{
+	"id": "bf42eeab-31fa-430d-a6e6-07ea36d2583e",
+	"url": "https://stepielts.com/student/listening/bf42eeab-31fa-430d-a6e6-07ea36d2583e?mode=practice",
+	"title": "Party Reservation (Shaw Restaurant)",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/fffc2b06-a5b8-4b60-818d-e5067661f695.mp3",
+	"transcript": "Speaker 1: Restaurant Staff: Good morning, Shaw’s Restaurant.\nSpeaker 0: Maria: Hi. I’d like to book one of your function rooms for a party, please.\nSpeaker 1: Restaurant Staff: Okay. Fine. How many people are you expecting for the party?\nSpeaker 0: Maria: Well, I’m not quite sure yet, but about 60.\nSpeaker 1: Restaurant Staff: Fine. So you will need a big room. And what day were you thinking of?\nSpeaker 0: Maria: The party’s for my daughter’s birthday. It’s her twenty first. Her birthday’s actually on the 18th of November, but that’s a Friday, So we thought we’d have her party on the 18th as that’s a Saturday. There’ll be lots of her friends there as well as all the family.\nSpeaker 1: Restaurant Staff: And what time would you like the room for?\nSpeaker 0: Maria: Oh, I’m not sure. 07:45? Not too late.\nSpeaker 1: Restaurant Staff: Okay.\nSpeaker 0: Maria: And people will probably be leaving about eleven.\nSpeaker 1: Restaurant Staff: Fine. We’re open until 11:30.\nSpeaker 0: Maria: Excellent. And what about the menu?\nSpeaker 1: Restaurant Staff: So do you want a sit down meal with waiter service?\nSpeaker 0: Maria: Yes. Not a buffet.\nSpeaker 1: Restaurant Staff: Right. Well, there are several options including different menus at various prices. So there’s the standard menu, that’s £25 per person.\nSpeaker 0: Maria: Okay.\nSpeaker 1: Restaurant Staff: Or the celebration menu which is three courses, it’s very popular, that’s £35.\nSpeaker 0: Maria: Okay. I think I’d rather go with that.\nSpeaker 1: Restaurant Staff: And there’s also our gold menu. That’s a five course menu at £50.\nSpeaker 0: Maria: No. That’s definitely too expensive.\nSpeaker 1: Restaurant Staff: Okay.\nSpeaker 0: Maria: Now not all the guests eat meat. Will there be something for them?\nSpeaker 1: Restaurant Staff: Of course. We’ll make sure there’s a vegetarian option for each course.\nSpeaker 0: Maria: Great.\nSpeaker 1: Restaurant Staff: And do you know if any of the guests have food allergies? Anything like shellfish, for example?\nSpeaker 0: Maria: I’ll need to check, but I do know that one of my daughter’s friends is very allergic to strawberries. Even just being near them can be a problem.\nSpeaker 1: Restaurant Staff: Okay. I’ll make a note to our chef to avoid those completely. Do you have any other requests for desserts?\nSpeaker 0: Maria: Well, I’d like a choice if possible. And could we have cheese as well?\nSpeaker 1: Restaurant Staff: Of course. No problem. We can provide that. Restaurant Staff: Now do you have any other requests I could help with? What about after dinner entertainment? You can book a band if you’d like live music.\nSpeaker 0: Maria: Actually, I think a disco would be best if you can arrange that.\nSpeaker 1: Restaurant Staff: No problem.\nSpeaker 0: Maria: And I heard you might be able to put on a fireworks display. Is that possible?\nSpeaker 1: Restaurant Staff: We aren’t offering that service anymore, I’m afraid. It was just too expensive.\nSpeaker 0: Maria: Oh, I see.\nSpeaker 1: Restaurant Staff: Now the menu package you’ve chosen includes a few other nice things.\nSpeaker 0: Maria: Oh, like what?\nSpeaker 1: Restaurant Staff: We’ll decorate the room for you, which creates a nice party atmosphere. We can use different colors for the balloons: silver, gold.\nSpeaker 0: Maria: She loves pink, but actually, I think she’d prefer flowers to balloons. So let’s go for them instead in the same color.\nSpeaker 1: Restaurant Staff: No problem. Now you mentioned that the party’s for your daughter. We make birthday cakes if you’d like one.\nSpeaker 0: Maria: Okay. Yes. We’ll definitely want a cake.\nSpeaker 1: Restaurant Staff: And we can put a special message on top. What would you like?\nSpeaker 0: Maria: Congratulations and then her name. That’s Susie.\nSpeaker 1: Restaurant Staff: Fine.\nSpeaker 0: Maria: Now, one or two of the guests are coming by train, but they stop running quite early, so they’ll need a taxi to take them to the Forest Hotel after the party. Is that something you can sort out?\nSpeaker 1: Restaurant Staff: Absolutely. Anything else?\nSpeaker 0: Maria: I think that’s all for now.\nSpeaker 1: Restaurant Staff: Okay. Well, just get in touch if you think of anything else. Now if I can just take some contact details, I just need your name and phone number.\nSpeaker 0: Maria: I’m Maria Nelson, and my number’s 07749132760.\nSpeaker 1: Restaurant Staff: Excellent. We look forward to seeing you soon.",
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below.\nWrite NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "Example: Number of guests for the party: 60 people\nStarting time of the party: [1] pm\nMenu options:\nThe standard ($25)\nThe [2] ($35)\nThe gold ($50)\nEach course has some [3] option\nOne guest is allergic to [4]\nOther requests: desserts and [5]",
+			"body_html": "<table><tbody><tr><td><strong>Example:</strong><strong>Number of guests for the party:</strong> 60 people\n<strong>Starting time of the party:</strong> [1] pm\n<strong>Menu options:</strong><ul><li>\nThe standard ($25)\n</li><li>\nThe [2] ($35)\n</li><li>\nThe gold ($50)\n</li></ul>\nEach course has some [3] option\nOne guest is allergic to [4]\n<strong>Other requests:</strong> desserts and [5]\n\n</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Starting time of the party: [1] pm",
+					"answer": "7.45 / 7:45",
+					"quotes": ["07:45?"]
+				},
+				{
+					"number": 2,
+					"text": "The [2] ($35)",
+					"answer": "celebration",
+					"quotes": [
+						"Restaurant Staff: Or the celebration menu which is three courses, it’s very popular, that’s £35."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Each course has some [3] option",
+					"answer": "vegetarian",
+					"quotes": [
+						"We’ll make sure there’s a vegetarian option for each course."
+					]
+				},
+				{
+					"number": 4,
+					"text": "One guest is allergic to [4]",
+					"answer": "strawberries",
+					"quotes": [
+						"Maria: I’ll need to check, but I do know that one of my daughter’s friends is very allergic to strawberries."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Other requests: desserts and [5]",
+					"answer": "cheese",
+					"quotes": ["And could we have cheese as well?"]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Entertainment: book a [6] after dinner\nRoom decoration: pink [7]\nSpecial request:\nwrite [8] 'Susie' on the birthday cake\nbook a [9] to take guests to the Forest Hotel\nPhone number: [10]",
+			"body_html": "<table><tbody><tr><td><strong>Entertainment:</strong> book a [6] after dinner\n<strong>Room decoration: </strong>pink [7]\n<strong>Special request:</strong><ul><li>write [8] 'Susie' on the birthday cake</li></ul><ul><li>book a [9] to take guests to the Forest Hotel</li></ul><strong>Phone number</strong>: [10]\n\n</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Entertainment: book a [6] after dinner",
+					"answer": "disco",
+					"quotes": [
+						"Maria: Actually, I think a disco would be best if you can arrange that."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Room decoration: pink [7]",
+					"answer": "flowers",
+					"quotes": [
+						"Maria: She loves pink, but actually, I think she’d prefer flowers to balloons."
+					]
+				},
+				{
+					"number": 8,
+					"text": "write [8] 'Susie' on the birthday cake",
+					"answer": "congratulations",
+					"quotes": ["Maria: Congratulations and then her name."]
+				},
+				{
+					"number": 9,
+					"text": "book a [9] to take guests to the Forest Hotel",
+					"answer": "taxi",
+					"quotes": [
+						"Maria: Now, one or two of the guests are coming by train, but they stop running quite early, so they’ll need a taxi to take them to the Forest Hotel after the party."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Phone number: [10]",
+					"answer": "07749132760",
+					"quotes": ["Maria: I’m Maria Nelson, and my number’s 07749132760."]
+				}
+			]
+		}
+	],
+	"images": []
+}

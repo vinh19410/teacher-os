@@ -1,0 +1,218 @@
+{
+	"id": "eca4f610-49f0-4079-8268-29eb04a6e225",
+	"url": "https://stepielts.com/student/listening/eca4f610-49f0-4079-8268-29eb04a6e225?mode=practice",
+	"title": "Environmental Innovation Discussion",
+	"source": "Actual Test",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/15f544f7-29e7-42a0-afa9-b8d2c780c1bb.mp3",
+	"transcript": "Speaker 1: Tutor: Okay, everyone. Get into pairs and look at the innovative environmental solutions we’ve been reading about this week. Discuss some of the pros and cons of each one.\nSpeaker 2: Dominic: You want to work together, Ella?\nSpeaker 3: Ella: Sure, Dominic. Which solution do you wanna look at first?\nSpeaker 2: Dominic: I think the supermarket garden project’s interesting.\nSpeaker 3: Ella: That’s where the supermarket grows fruit and vegetables in the store and sells them.\nSpeaker 1: Dominic: Yes. Understandably, only a few shops have decided to adopt this idea. It’s hard to set up.\nSpeaker 3: Ella: What’s the reaction from customers?\nSpeaker 1: Dominic: Well, of course, they love the idea. One thing I didn’t expect though...\nSpeaker 3: Ella: What was that?\nSpeaker 2: Dominic: The idea is hugely popular with local chefs, and many of them are finding new ways to use the plants in all their different stages of growth.\nSpeaker 3: Ella: I see. I found the solar car park idea to be really practical.\nSpeaker 2: Dominic: I know what you mean. Putting solar panels on the roofs of car parks to generate electricity might be a cost effective way to power a whole shopping center.\nSpeaker 3: Ella: The difficulty could be finding space to put all the panels. Some smaller shopping centers probably don’t have covered car parks.\nSpeaker 2: Dominic: That’s right. It’s a shame because the technology seems to be all there and ready to go if the conditions are right.\nSpeaker 3: Ella: What do you think of the wildlife crossing solution? You know, when a bridge or a tunnel is built over or under a major roadway so that animals can cross.\nSpeaker 2: Dominic: That idea has become very popular and has so many benefits. A lot of research has been done, hasn’t it?\nSpeaker 3: Ella: Yes. It’s not surprising that the data reveals a huge drop in the number of road accidents in areas where there are wildlife crossings. That’s one of the predicted outcomes.\nSpeaker 2: Dominic: Something I read about in the research, which I’d never considered before, was how the animal populations in these areas are affected. Naturally, more of them survive, but because their habitat is not interrupted too much by the roads, the genetic diversity of local species has improved.\nSpeaker 3: Ella: That’s true. It’s worth the huge cost of building them if the result is a win-win for people and animals. I found the a 100% renewable energy campaign, like solar and wind energy, to be really impressive.\nSpeaker 2: Dominic: Yes. It’s not so much the size of the movement. I mean, only a few countries are involved. It’s the amount of support offered once a community joins.\nSpeaker 3: Ella: Considering the sheer amount of time and planning it takes for a city to convert completely to renewables, the organizers of the movement would need to do that. Did you read about carrot mobbing as an environmental movement?\nSpeaker 2: Dominic: What’s that?\nSpeaker 3: Ella: It’s where huge numbers of people learn through the Internet about where to shop at stores that use the profits to support environmental projects.\nSpeaker 2: Dominic: So they stop buying products that aren’t eco friendly, like a boycott?\nSpeaker 3: Ella: No. Actually, it’s the opposite of that. It allows businesses to fund initiatives to help protect the environment by boosting their profiles. It’s a pity that most participants don’t get to know each other personally. It’s all through online notices.\nSpeaker 1: Tutor: Now, everyone, let’s look at one particular environmental innovation, aerial reforestation. With your partner, discuss the process involved in this idea.\nSpeaker 3: Ella: So aerial reforestation is where they drop mixtures from plains to sow vegetables, grains, or trees, and so on in areas that might be hard to reach. Let’s see. What are the steps?\nSpeaker 2: Dominic: Well, the first step is choosing the right area. Whatever size land you’re working on, ensuring there’s enough light is crucial.\nSpeaker 3: Ella: The next step, whatever you’re planting, is to make sure you have the right seeds.\nSpeaker 2: Dominic: To give them a better chance against the competition from other plants, you need to use a lot.\nSpeaker 3: Ella: So then you make a mixture with decent quality durable compost for nourishment.\nSpeaker 2: Dominic: Then do they infuse it with insecticide?\nSpeaker 3: Ella: That’s not necessary in this model. The next step is pressing the whole thing into a small chunk of clay to make a ball. This may then be covered in an outer material such as paper.\nSpeaker 2: Dominic: Right. That way, when it lands, it will add balanced nutrients to the mixture.\nSpeaker 3: Ella: Yes. And it may also protect it from insects and other plants.\nSpeaker 2: Dominic: So a few days before they release it from the plane onto the land below, the final step is dipping it in water, just enough to get the germination process started.\nSpeaker 3: Ella: Yes. And after that.....",
+	"body": {
+		"text": "Aerial Reforestation Process\nChoose a reforestation area with plenty of [6]\n↓\nTake a lot of suitable [7] appropriate to your purposes.\n↓\nMix with long-lasting [8]\n↓\nPress into lumps of [9]\n↓\nApply an outer coating, e.g. paper, to provide appropriate levels of [10] and protection.",
+		"html": "<p></p><h3><strong>Aerial Reforestation Process</strong></h3><table><tbody><tr><td><p>Choose a reforestation area with plenty of [6]</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>Take a lot of suitable [7] appropriate to your purposes.</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>Mix with long-lasting [8]</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>Press into lumps of [9]</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>Apply an outer coating, e.g. paper, to provide appropriate levels of [10] and protection.</p></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "According to Dominic, what is surprising about the supermarket garden project?",
+					"options": [
+						{
+							"label": "A",
+							"text": "At first, it was unpopular with customers"
+						},
+						{
+							"label": "B",
+							"text": "It has gained a lot of interest from chefs"
+						},
+						{
+							"label": "C",
+							"text": "Many shops are using the idea now"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Dominic: The idea is hugely popular with local chefs, and many of them are finding new ways to use the plants in all their different stages of growth."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What do the speakers identify as a possible problem with the solar carpark idea?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The technology might not be well developed"
+						},
+						{
+							"label": "B",
+							"text": "The cost could be too high"
+						},
+						{
+							"label": "C",
+							"text": "There may not be enough room"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Ella: The difficulty could be finding space to put all the panels."
+					]
+				},
+				{
+					"number": 3,
+					"text": "According to the speakers, the unexpected benefit of wildlife crossings is that",
+					"options": [
+						{
+							"label": "A",
+							"text": "they are much cheaper to build than was predicted"
+						},
+						{
+							"label": "B",
+							"text": "animal populations become more genetically diverse"
+						},
+						{
+							"label": "C",
+							"text": "they greatly reduce the number of car accidents"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Naturally, more of them survive, but because their habitat is not interrupted too much by the roads, the genetic diversity of local species has improved."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What is impressive about the 100% renewable energy campaign?",
+					"options": [
+						{
+							"label": "A",
+							"text": "how many countries the movement has spread to"
+						},
+						{
+							"label": "B",
+							"text": "how fast cities can convert to 100% renewable energy"
+						},
+						{
+							"label": "C",
+							"text": "how much help is given to participating communities"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"It’s the amount of support offered once a community joins."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What positive point about \"carrot-mobbing\" does Ella describe?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It helps businesses undertake eco-friendly projects"
+						},
+						{
+							"label": "B",
+							"text": "It encourages people to buy sustainable products"
+						},
+						{
+							"label": "C",
+							"text": "It creates a sense of community in the people who participate"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"It allows businesses to fund initiatives to help protect the environment by boosting their profiles."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "FLOWCHART_COMPLETION",
+			"instructions": "Complete the process below",
+			"options": [
+				{
+					"label": "A",
+					"text": "land"
+				},
+				{
+					"label": "B",
+					"text": "plants"
+				},
+				{
+					"label": "C",
+					"text": "seeds"
+				},
+				{
+					"label": "D",
+					"text": "nutrients"
+				},
+				{
+					"label": "E",
+					"text": "compost"
+				},
+				{
+					"label": "F",
+					"text": "insecticide"
+				},
+				{
+					"label": "G",
+					"text": "clay"
+				},
+				{
+					"label": "H",
+					"text": "light"
+				}
+			],
+			"body": "Aerial Reforestation Process\nChoose a reforestation area with plenty of [6]\n↓\nTake a lot of suitable [7] appropriate to your purposes.\n↓\nMix with long-lasting [8]\n↓\nPress into lumps of [9]\n↓\nApply an outer coating, e.g. paper, to provide appropriate levels of [10] and protection.",
+			"body_html": "<p></p><h3><strong>Aerial Reforestation Process</strong></h3><table><tbody><tr><td><p>Choose a reforestation area with plenty of [6]</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>Take a lot of suitable [7] appropriate to your purposes.</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>Mix with long-lasting [8]</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>Press into lumps of [9]</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>Apply an outer coating, e.g. paper, to provide appropriate levels of [10] and protection.</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Choose a reforestation area with plenty of [6]",
+					"answer": "H",
+					"quotes": [
+						"Whatever size land you’re working on, ensuring there’s enough light is crucial."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Take a lot of suitable [7] appropriate to your purposes.",
+					"answer": "C",
+					"quotes": [
+						"Ella: The next step, whatever you’re planting, is to make sure you have the right seeds."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Mix with long-lasting [8]",
+					"answer": "E",
+					"quotes": [
+						"Ella: So then you make a mixture with decent quality durable compost for nourishment."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Press into lumps of [9]",
+					"answer": "G",
+					"quotes": [
+						"The next step is pressing the whole thing into a small chunk of clay to make a ball."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Apply an outer coating, e.g. paper, to provide appropriate levels of [10] and protection.",
+					"answer": "D",
+					"quotes": [
+						"That way, when it lands, it will add balanced nutrients to the mixture."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

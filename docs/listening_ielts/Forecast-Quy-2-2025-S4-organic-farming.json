@@ -1,0 +1,153 @@
+{
+	"id": "3dc07c06-edc4-4f4d-8163-38a2ec32e41b",
+	"url": "https://stepielts.com/student/listening/3dc07c06-edc4-4f4d-8163-38a2ec32e41b?mode=practice",
+	"title": "Organic Farming",
+	"source": "Forecast Quý 2-2025",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/987cc037-b412-486a-b84f-c211e6b3b935.mp3",
+	"transcript": "Speaker 1: Good morning. In today’s presentation, I will talk about organic farming. Organic farming is an alternative agricultural system which originated early in the 20th century in reaction to rapidly changing farming practices. It is a method of crop and livestock production that involves much more than choosing not to use pesticides, fertilizers, genetically modified organisms and antibiotics. Why do we adopt organic farming? There are many advantages of it. To begin with, organic farming is labelled as sustainable because it can protect the environment and maintain biological diversity. It’s also rewarding that more and more customers tend to buy organic food nowadays. Product taste, concerns for the environment and the desire to avoid foods from genetically engineered organisms are among the many reasons some consumers prefer to buy organic food products. So this type of farming is expected to contribute to an increase in sales for grocery stores globally. Most studies suggest that organic farming uses significantly less energy than conventional one. This is primarily due to the fact that organic farming eliminates the need for synthetic fertilizers, which require substantial energy for production. In organic farming, soil fertility is maintained through the recycling of organic residues and nutrients produced on the farm. This practice not only reduces energy consumption but also benefits the soil by promoting its health and abundance of organic nutrients. Importantly, organic methods have the potential to effectively control insects that pose threats to crops, unlike artificial fertilizers which may not have the same level of efficacy. For example, a common practice in organic farming to control aphids, which are pests that can damage crops, is the introduction of ladybugs into the fields. Ladybugs are natural predators of aphids and feed on them, effectively reducing their population. This method is environmentally friendly and avoids the use of synthetic pesticides. There are of course some disadvantages of organic farming. This past winter, due to extreme weather condition, the production of potatoes in the north of our country had gone down by 40%. Lots of farmers had to face the severe loss in the production. The top 10 organic company in this country, Winterwild Production, just announced that their sales have been really slow because of the natural disasters. In the past, the sales might increase by 30%. But this year, it’s only gone up by 20%. Despite weather challenges, the production of organic grass has not changed much over the years due to the implementation of various strategies. These include the use of resilient crop varieties that are carefully selected for their ability to withstand varying climatic conditions, the adoption of sustainable farming practices that prioritize soil health and fertility, and the incorporation of innovative irrigation and water management techniques. In the 1950s, organic farming in India experienced several changes. One notable development was the growing production of crops through organic farming practices, especially when compared to the early days when there was a food crisis. This positive outcome encouraged farmers to explore and adopt organic methods. Unlike the common perception that farmers were unwilling to accept organic farming, they actually showed interest in its potential benefits. However, despite their enthusiasm, farmers faced challenges in successfully implementing organic farming techniques. They encountered difficulties in effectively applying the prescribed instructions, which hindered their ability to fully embrace organic farming practices. In the 1990s, the United Nations World Food Programme published an international review on organic farming practices. The review examined the global implications of organic methods, concluding that such practices, which avoid synthetic chemicals, provide a sanctuary for wildlife, thereby enhancing biodiversity and ecological health. Following the publication, an increased number of countries began showing interest in these findings. Subsequently, many took steps to improve their agricultural practices, integrating organic farming principles to support both the environment and local economy. As I have mentioned, compared to conventional farming, organic farming has its advantages and disadvantages. Consumers’ knowledge about organic food is increasing, so are their attitudes, preferences and willingness-to-pay for organic products. The good thing is that the scale of organic farming can be mostly determined by the demand of the market. Governments will respect people’s attitude towards how they want their food to be produced. Of course, environmental protection should never stop however agriculture is developed in the future. What I’m going to share next is …",
+	"body": {
+		"text": "Organic farming\nAdvantages:\n[1]\nenhance [2] in the grocery section for stores worldwide\nsave necessary [3] in producing fertilizers\ngood for soil fertility\nreduce the number of [4] which may attack crops\nChanges in yields:\nThe yield of [5] went down by 40%\nWinterwild Production: the increase in sales is [6] lower than it used to be\nOrganic [7] production remains the same",
+		"html": "<h3>Organic farming</h3><h4>Advantages:</h4><ul><li>[1]</li><li>enhance [2] in the grocery section for stores worldwide</li><li>save necessary [3] in producing fertilizers</li><li>good for soil fertility</li><li>reduce the number of [4] which may attack crops</li></ul><h4>Changes in yields:</h4><ul><li>The yield of [5] went down by 40%</li><li>Winterwild Production: the increase in sales is [6] lower than it used to be</li><li>Organic [7] production remains the same</li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Organic farming\nAdvantages:\n[1]\nenhance [2] in the grocery section for stores worldwide\nsave necessary [3] in producing fertilizers\ngood for soil fertility\nreduce the number of [4] which may attack crops\nChanges in yields:\nThe yield of [5] went down by 40%\nWinterwild Production: the increase in sales is [6] lower than it used to be\nOrganic [7] production remains the same",
+			"body_html": "<h3>Organic farming</h3><h4>Advantages:</h4><ul><li>[1]</li><li>enhance [2] in the grocery section for stores worldwide</li><li>save necessary [3] in producing fertilizers</li><li>good for soil fertility</li><li>reduce the number of [4] which may attack crops</li></ul><h4>Changes in yields:</h4><ul><li>The yield of [5] went down by 40%</li><li>Winterwild Production: the increase in sales is [6] lower than it used to be</li><li>Organic [7] production remains the same</li></ul>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "",
+					"answer": "sustainable",
+					"quotes": [
+						"To begin with, organic farming is labelled as sustainable because it can protect the environment and maintain biological diversity."
+					]
+				},
+				{
+					"number": 2,
+					"text": "enhance [2] in the grocery section for stores worldwide",
+					"answer": "sales",
+					"quotes": [
+						"So this type of farming is expected to contribute to an increase in sales for grocery stores globally."
+					]
+				},
+				{
+					"number": 3,
+					"text": "save necessary [3] in producing fertilizers",
+					"answer": "energy",
+					"quotes": [
+						"This is primarily due to the fact that organic farming eliminates the need for synthetic fertilizers, which require substantial energy for production."
+					]
+				},
+				{
+					"number": 4,
+					"text": "reduce the number of [4] which may attack crops",
+					"answer": "insects",
+					"quotes": [
+						"Importantly, organic methods have the potential to effectively control insects that pose threats to crops, unlike artificial fertilizers which may not have the same level of efficacy."
+					]
+				},
+				{
+					"number": 5,
+					"text": "The yield of [5] went down by 40%",
+					"answer": "potatoes",
+					"quotes": [
+						"This past winter, due to extreme weather condition, the production of potatoes in the north of our country had gone down by 40%."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Winterwild Production: the increase in sales is [6] lower than it used to be",
+					"answer": "10% / 10 percent"
+				},
+				{
+					"number": 7,
+					"text": "Organic [7] production remains the same",
+					"answer": "grass",
+					"quotes": [
+						"Despite weather challenges, the production of organic grass has not changed much over the years due to the implementation of various strategies."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-10",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 8,
+					"text": "What happened to organic farming in India in the 1950s?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It yielded more crops."
+						},
+						{
+							"label": "B",
+							"text": "Farmers were reluctant to accept it."
+						},
+						{
+							"label": "C",
+							"text": "Farmers can apply organic farming successfully by following the instructions."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"One notable development was the growing production of crops through organic farming practices, especially when compared to the early days when there was a food crisis."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Conclusion in an international organic farming review in the late 20th century focuses on",
+					"options": [
+						{
+							"label": "A",
+							"text": "Whether people are interested in organic farming."
+						},
+						{
+							"label": "B",
+							"text": "Comparing different methods of organic farming across countries worldwide."
+						},
+						{
+							"label": "C",
+							"text": "The benefits of organic farming to wildlife."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The review examined the global implications of organic methods, concluding that such practices, which avoid synthetic chemicals, provide a sanctuary for wildlife, thereby enhancing biodiversity and ecological health."
+					]
+				},
+				{
+					"number": 10,
+					"text": "What does the speaker think is the future of organic farming?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It depends on consumers."
+						},
+						{
+							"label": "B",
+							"text": "It depends on the government."
+						},
+						{
+							"label": "C",
+							"text": "It depends on nature."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"The good thing is that the scale of organic farming can be mostly determined by the demand of the market."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,214 @@
+{
+	"id": "93454cf3-61e6-44d3-8753-f5e2af535359",
+	"url": "https://stepielts.com/student/listening/93454cf3-61e6-44d3-8753-f5e2af535359?mode=practice",
+	"title": "Presentation on restoring and reproduction of paintings",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/79e50cce-c1bb-4148-8a80-878565985aff.mp3",
+	"transcript": "Speaker 1: Oliver: Okay, Chloe, let’s put the presentation together. What do you want to include in the introduction?\nSpeaker 2: Chloe: Well, we’re looking at the restoration of old paintings and the reproduction, so we should begin with a definition to show how those two things are different. Oliver: Is that necessary? Let’s start in a visual way, show some paintings that have been restored and talk about why it was necessary.\nSpeaker 1: So, for instance, a painting that was damaged by water and another one by insects or by sunlight.\nSpeaker 2: Chloe: Okay, let’s go with that. It’ll get everyone’s attention.\nSpeaker 1: Oliver: After the introduction, we should tell everyone about our Museum visit.\nSpeaker 2: Chloe: Yes, it was great to see people restoring paintings in front of us. Did you know that most of the restores we met didn’t have a degree in art history? They’ve done things like chemistry and archaeology. I never would have imagined that.\nSpeaker 1: Oliver: Me neither. I had no idea those kinds of skills would be useful.\nSpeaker 2: Chloe: Apparently, a painting can take a year to clean.\nSpeaker 1: Oliver: I guess it would. And one guy I spoke to told me they’re always experimenting, reading up on different ways to clean the paintings.\nSpeaker 2: Chloe: So would you be interested in a career in art restoration? You know, you don’t actually need to be able to draw, so it might suit you.\nSpeaker 1: Oliver: Very funny. Look, I think it would be a great job, but I wouldn’t choose to do it. You get to work in interesting places. That’s true. I mean, sometimes you’d be working in a public place, like restoring the paintings high up on a Church ceiling Chloe: With the public watching? Oliver: I wouldn’t mind that. But the thing is, when someone owns the painting you’re working on, you’ve got to get it right. What if they didn’t like the colors you’d used? Too much pressure.\nSpeaker 2: Chloe: True. Since we visited the Museum, I’d been researching other restored paintings. One was a Dutch landscape. It had been hanging in a Museum for over 100 years, and everyone just thought it was a nice scene of people on the beach. And then a restore started cleaning it and discovered someone had painted over a whale. Oliver: A whale? Chloe: Yes, the original artist had painted a whale on the beach.\nAnd later, I suppose the paint I was bought by someone who sought the whale ruined a pretty scene.\nSpeaker 1: And they paid another artist to cover it up. Oliver: You must be right. Not everyone judges a painting in the same way, obviously. Anyway, we’ll have plenty to say about restoration. What about digital reproduction?\nSpeaker 2: Chloe: Yeah. Digital technology is having quite an impact on the art world. We can now reproduce famous paintings, and you can see something that looks just like the original.\nSpeaker 1: Oliver: I guess the difference between a digital reproduction and a fake painting is no one’s pretending it was painted by the original artist. And what I like about digital reproduction is you could potentially make lots of copies so a wider audience can see them.\nSpeaker 2: Chloe: Maybe I’d rather look at the real painting before you hear the rest of the talk. Chloe: Okay. So if we’re talking about digital reproduction of art, we have to mention the company factum, are they and how they reproduced famous paintings that have been lost or damaged so they can go on public display?\nSpeaker 1: Oliver: Good idea.\nSpeaker 2: Chloe: Let’s note down the challenges the team faced. What about Vincent Van Go’s Six Sunflowers? The original painting was destroyed. The team had a photo of it, but it wasn’t very clear\nSpeaker 1: Oliver: Right. They couldn’t see how Vango had used his brush. They knew the National Gallery had a nearly identical Sunflower painting by Vango, and so they had to ask the Gallery whether the team would be allowed to study and scan it - so they could reproduce the brush strokes in the right way.\nSpeaker 2: Chloe: They got approval in the end.\nSpeaker 1: Oliver: What about The Concert? The original was stolen, right?\nSpeaker 2: Chloe: The team had a photo they could use, but the problem was, it was a photo of The Concert after someone had tried to touch it up with fresh paint.\nSpeaker 1: Oliver: And they’d done a terrible job, haven’t they?\nSpeaker 2: Chloe: Yes.\nBut the team were happy with the reproduction in the end, we should mention the portrait of Sir Winston Churchill.\nSpeaker 1: Oliver: Churchill hated that portrait, so his wife burnt it and nothing was left.\nSpeaker 2: Chloe: So the phantom arty team had to search for the pencil sketches the artist had also made of Churchill as part of his preparation.\nSpeaker 1: Oliver: Right. For me, I was most interested in the water lilies B\nSpeaker 2: Chloe: By Claude Monet. In that case, the painting wasn’t lust, but the top layer of paint had turned completely black because of smoke from a fire. The team had to work out what the colors beneath that layer had been.\nSpeaker 1: Oliver: And then there was Myrto - a painting by Tamara de Lempicka. No one knows for sure what happened to the original. At least a team had a black and white photo they could work from\nSpeaker 2: Chloe: But they needed to know what colors Lim Pico would have used. And most of her other paintings are held in private collections. Because of that, they couldn’t go and see them. That’s a shame, because her work would have been.",
+	"body": {
+		"text": "Six Sunflowers [6]\nThe Concert [7]\nPortrait of Sir Winston Churchill [8]\nThe Water Lilies [9]\nMyrto [10]",
+		"html": "<p>Six Sunflowers [6]</p><p>The Concert [7]</p><p>Portrait of Sir Winston Churchill [8]</p><p>The Water Lilies [9]</p><p>Myrto [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The students agree that the introduction to their presentation should include",
+					"options": [
+						{
+							"label": "A",
+							"text": "reasons why paintings need to be restored."
+						},
+						{
+							"label": "B",
+							"text": "examples of poor restoration work."
+						},
+						{
+							"label": "C",
+							"text": "a general description of what restoration involves."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Let’s start in a visual way, show some paintings that have been restored and talk about why it was necessary. So, for instance, a painting that was damaged by water and another one by insects or by sunlight. Chloe: Okay, let’s go with that."
+					]
+				},
+				{
+					"number": 2,
+					"text": "When the students visited the museum, they were surprised by",
+					"options": [
+						{
+							"label": "A",
+							"text": "the time it took to restore a single painting."
+						},
+						{
+							"label": "B",
+							"text": "the academic backgrounds of the restores."
+						},
+						{
+							"label": "C",
+							"text": "the materials used in restoration work."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Did you know that most of the restores we met didn’t have a degree in art history? They’ve done things like chemistry and archaeology."
+					]
+				},
+				{
+					"number": 3,
+					"text": "What does Oliver say would put him off a career in art restoration?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the reaction of the owners of a painting"
+						},
+						{
+							"label": "B",
+							"text": "the possibility of working in dangerous conditions"
+						},
+						{
+							"label": "C",
+							"text": "the requirements to be able draw very well"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But the thing is, when someone owns the painting you’re working on, you’ve got to get it right. What if they didn’t like the colors you’d used? Too much pressure."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What does students agree about the restored Dutch landscape painting?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It shows how taste in art varies amongst different people."
+						},
+						{
+							"label": "B",
+							"text": "It is an example of a work that was once undervalued."
+						},
+						{
+							"label": "C",
+							"text": "It demonstrates how cleaning techniques have greatly improved."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Not everyone judges a painting in the same way, obviously."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What is Oliver’s attitude to the digital reproduction of famous paintings?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It requires a great deal of skill."
+						},
+						{
+							"label": "B",
+							"text": "There is something dishonest about it."
+						},
+						{
+							"label": "C",
+							"text": "It makes art accessible to more people."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"And what I like about digital reproduction is you could potentially make lots of copies so a wider audience can see them."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What challenge did the Factum Arte team face with reproducing the following paintings?\nPaintings the team wanted to reproduce",
+			"options": [
+				{
+					"label": "A",
+					"text": "they only had a photo of a badly restored version of the painting"
+				},
+				{
+					"label": "B",
+					"text": "they needed to see under the damaged surface of the painting"
+				},
+				{
+					"label": "C",
+					"text": "they had to get permission to analyze a very similar painting"
+				},
+				{
+					"label": "D",
+					"text": "they had to rely on similar drawings of the same subject"
+				},
+				{
+					"label": "E",
+					"text": "they had to negotiate with relations of the original artist"
+				},
+				{
+					"label": "F",
+					"text": "they were unable to view other examples of the artist's work"
+				},
+				{
+					"label": "G",
+					"text": "they had only limited time to reproduce the painting"
+				}
+			],
+			"body": "Six Sunflowers [6]\nThe Concert [7]\nPortrait of Sir Winston Churchill [8]\nThe Water Lilies [9]\nMyrto [10]",
+			"body_html": "<p>Six Sunflowers [6]</p><p>The Concert [7]</p><p>Portrait of Sir Winston Churchill [8]</p><p>The Water Lilies [9]</p><p>Myrto [10]</p>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Six Sunflowers",
+					"answer": "C",
+					"quotes": [
+						"They knew the National Gallery had a nearly identical Sunflower painting by Vango, and so they had to ask the Gallery whether the team would be allowed to study and scan it - so they could reproduce the brush strokes in the right way."
+					]
+				},
+				{
+					"number": 7,
+					"text": "The Concert",
+					"answer": "A",
+					"quotes": [
+						"Chloe: The team had a photo they could use, but the problem was, it was a photo of The Concert after someone had tried to touch it up with fresh paint."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Portrait of Sir Winston Churchill",
+					"answer": "D",
+					"quotes": [
+						"Chloe: So the phantom arty team had to search for the pencil sketches the artist had also made of Churchill as part of his preparation."
+					]
+				},
+				{
+					"number": 9,
+					"text": "The Water Lilies",
+					"answer": "B",
+					"quotes": [
+						"In that case, the painting wasn’t lust, but the top layer of paint had turned completely black because of smoke from a fire. The team had to work out what the colors beneath that layer had been."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Myrto",
+					"answer": "F",
+					"quotes": [
+						"And most of her other paintings are held in private collections. Because of that, they couldn’t go and see them."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

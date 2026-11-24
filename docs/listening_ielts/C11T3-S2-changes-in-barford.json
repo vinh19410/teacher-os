@@ -1,0 +1,214 @@
+{
+	"id": "8a852f96-d0ed-4cf4-91ff-2b9f533755e3",
+	"url": "https://stepielts.com/student/listening/8a852f96-d0ed-4cf4-91ff-2b9f533755e3?mode=practice",
+	"title": "Changes in Barford",
+	"source": "C11T3",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/ff50b0cd-ff34-483b-a8ee-b1349953a8f9.mp3",
+	"transcript": "Speaker 0: Now turn to section two. Section two. You will hear a talk given by a woman called Shona Ferguson about changes in a town called Barford. First, you have some time to look at questions 11 to 15. Now listen carefully and answer questions 11 to 15.\nSpeaker 1: First of all, let me thank you all for coming to this public meeting to discuss the future of our town. Our first speaker is Shona Ferguson from Barford Town Council. Shona.\nSpeaker 2: Thank you. First, I'll briefly give you some background information, then I'll be asking you for your comments on developments in the town. Well, as you don't need me to tell you, Barford has changed a great deal in the last fifty years. These are some of the main changes. Fifty years ago, buses linked virtually every part of the town and the neighboring towns and villages. Most people used them frequently, but not now because the bus companies concentrate on just the routes that attract most passengers. So parts of the town are no longer served by buses. Even replacing old uncomfortable buses with smart new ones has had little impact on passenger numbers. It's sometimes said that bus fares are too high, but in relation to average incomes, fares are not much higher than they were fifty years ago. Changes in the road network are affecting the town. The center was recently closed to traffic on a trial basis, making it much safer for pedestrians. The impact of this is being measured. The new cycle paths separating bikes from cars in most main roads are being used far more than was expected, reducing traffic and improving air quality. And although the council's attempts to have a bypass constructed have failed, we haven't given up hope of persuading the government to change its mind. Shopping in the town centre has changed over the years. Many of us can remember when the town was crowded with people going shopping. Numbers have been falling for several years despite efforts to attract shoppers, for instance, by opening new car parks. Some people combine shopping with visits to the town's restaurants and cafes. Most shops are small independent stores, which is good, but many people prefer to use supermarkets and department stores in nearby large towns, as there are so few well known chain stores here. Turning now to medical facilities. The town is served by family doctors in several medical practices, fewer than fifty years ago but each catering for far more patients. Our hospital closed fifteen years ago, which means journeys to other towns are unavoidable. On the other hand, there are more dentists than there used to be. Employment patterns have changed along with almost everything else. The number of schools and colleges has increased, making that the main employment sector. Services such as website design and accountancy have grown in importance and surprisingly perhaps, manufacturing hasn't seen the decline that has affected it in other parts of the country.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 16 to 20. Now listen and answer questions 16 to 20.\nSpeaker 2: Now I'll very quickly outline current plans for some of the town's facilities before asking for your comments. As you'll know, if you regularly use the car park at the railway station, it's usually full. The railway company applied for permission to replace it with a multistory car park, but that was refused. Instead, the company has bought some adjoining land, and this will be used to increase the number of parking spaces. The Grand, the old cinema in the High Street, will close at the end of the year and reopen on a different site. You've probably seen the building under construction. The plan is to have three screens with fewer seats rather than just the one large auditorium in the old cinema. I expect many of you shop in the indoor market. It's become more and more shabby looking, and because of fears about safety, it was threatened with demolition. The good news is that it will close for six weeks to be made safe and redecorated, and the improved building will open in July. Lots of people use the library, including school and college students who go there to study. The council has managed to secure funding to keep the library open later into the evening, twice a week. We would like to enlarge the building in the not too distant future, but this is by no means definite. There's no limit on access to the nature reserve on the edge of town, and this will continue to be the case. What will change though is that the council will no longer be in charge of the area. Instead, it will become the responsibility of a national body that administers most nature reserves in the country. Okay. Now let me ask you if you have.\nSpeaker 0: That is the end of section two. You now have half a minute to check your answers.",
+	"body": {
+		"text": "railway station car park [16]\ncinema [17]\nindoor market [18]\nlibrary [19]\nnature reserve [20]",
+		"html": "<p>railway station car park [16]</p><p>cinema [17]</p><p>indoor market [18]</p><p>library [19]</p><p>nature reserve [20]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "11-15",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "In Shona’s opinion, why do fewer people use buses in Barford these days?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The buses are old and uncomfortable."
+						},
+						{
+							"label": "B",
+							"text": "Fares have gone up too much."
+						},
+						{
+							"label": "C",
+							"text": "There are not so many bus routes."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Most people used them frequently, but not now because the bus companies concentrate on just the routes that attract most passengers. So parts of the town are no longer served by buses."
+					]
+				},
+				{
+					"number": 12,
+					"text": "What change in the road network is known to have benefited the town most?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the construction of a bypass"
+						},
+						{
+							"label": "B",
+							"text": "the development of cycle paths"
+						},
+						{
+							"label": "C",
+							"text": "the banning of cars from certain streets"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"The new cycle paths separating bikes from cars in most main roads are being used far more than was expected, reducing traffic and improving air quality."
+					]
+				},
+				{
+					"number": 13,
+					"text": "What is the problem affecting shopping in the town centre?",
+					"options": [
+						{
+							"label": "A",
+							"text": "lack of parking spaces"
+						},
+						{
+							"label": "B",
+							"text": "lack of major retailers"
+						},
+						{
+							"label": "C",
+							"text": "lack of restaurants and cafés"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Most shops are small independent stores, which is good, but many people prefer to use supermarkets and department stores in nearby large towns, as there are so few well known chain stores here."
+					]
+				},
+				{
+					"number": 14,
+					"text": "What does Shona say about medical facilities in Barford?",
+					"options": [
+						{
+							"label": "A",
+							"text": "There is no hospital."
+						},
+						{
+							"label": "B",
+							"text": "New medical practices are planned."
+						},
+						{
+							"label": "C",
+							"text": "The number of dentists is too low."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Our hospital closed fifteen years ago, which means journeys to other towns are unavoidable."
+					]
+				},
+				{
+					"number": 15,
+					"text": "The largest number of people are employed in",
+					"options": [
+						{
+							"label": "A",
+							"text": "manufacturing."
+						},
+						{
+							"label": "B",
+							"text": "services."
+						},
+						{
+							"label": "C",
+							"text": "education."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The number of schools and colleges has increased, making that the main employment sector."
+					]
+				}
+			]
+		},
+		{
+			"range": "16-20",
+			"type": "MATCHING",
+			"instructions": "What is planned for each of the following facilities?\nChoose FIVE answers from the box and write the correct letter, A-G, next to Questions 16-20",
+			"options": [
+				{
+					"label": "A",
+					"text": "It will move to a new location."
+				},
+				{
+					"label": "B",
+					"text": "It will have its opening hours extended."
+				},
+				{
+					"label": "C",
+					"text": "It will be refurbished."
+				},
+				{
+					"label": "D",
+					"text": "It will be used for a different purpose."
+				},
+				{
+					"label": "E",
+					"text": "It will have its opening hours reduced."
+				},
+				{
+					"label": "F",
+					"text": "It will have new management."
+				},
+				{
+					"label": "G",
+					"text": "It will be expanded."
+				}
+			],
+			"body": "railway station car park [16]\ncinema [17]\nindoor market [18]\nlibrary [19]\nnature reserve [20]",
+			"body_html": "<p>railway station car park [16]</p><p>cinema [17]</p><p>indoor market [18]</p><p>library [19]</p><p>nature reserve [20]</p>",
+			"questions": [
+				{
+					"number": 16,
+					"text": "railway station car park",
+					"answer": "G",
+					"quotes": [
+						"Instead, the company has bought some adjoining land, and this will be used to increase the number of parking spaces."
+					]
+				},
+				{
+					"number": 17,
+					"text": "cinema",
+					"answer": "A",
+					"quotes": [
+						"The Grand, the old cinema in the High Street, will close at the end of the year and reopen on a different site."
+					]
+				},
+				{
+					"number": 18,
+					"text": "indoor market",
+					"answer": "C",
+					"quotes": [
+						"I expect many of you shop in the indoor market. It's become more and more shabby looking, and because of fears about safety, it was threatened with demolition. The good news is that it will close for six weeks to be made safe and redecorated, and the improved building will open in July."
+					]
+				},
+				{
+					"number": 19,
+					"text": "library",
+					"answer": "B",
+					"quotes": [
+						"The council has managed to secure funding to keep the library open later into the evening, twice a week."
+					]
+				},
+				{
+					"number": 20,
+					"text": "nature reserve",
+					"answer": "F",
+					"quotes": [
+						"Instead, it will become the responsibility of a national body that administers most nature reserves in the country."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

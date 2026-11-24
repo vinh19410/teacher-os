@@ -1,0 +1,110 @@
+{
+	"id": "f6e1a87e-8f27-4b29-8f74-c732d4fbcfdb",
+	"url": "https://stepielts.com/student/listening/f6e1a87e-8f27-4b29-8f74-c732d4fbcfdb?mode=practice",
+	"title": "Dunedin Medical Centre",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/266a888f-c2e7-4e7c-a1b5-6ee9db188cf0.mp3",
+	"transcript": "Good morning, sir. How can I help you? Hello there. Well, I've just moved to this city, and so I'd like to register as a new patient here. Sure. I'll just get the right form. Now first, could I have a name, please? Yes. My first name is Henry. My middle name is Ian, and the family name is Prestndy, P R E S T N D Y. Right. And the date of birth? It's the 03/17/1965. Great. And your address, please? 52 oh oh, no. That that was my old house. My address here is Number 34 Market Road. Right. Could I have your home number, sir? Let me remember it. I haven't learned it yet. 284 sorry. 293-8476. Yes. That's it. I've just had the phone connected. Alrighty. Well, that's the contact details finished. Now I need some other bits of information, if you don't mind. First, I need to ask you which ethnic group do you most identify with out of New Zealand Maori, Cook Island Maori, European, Tongan, or Samoan? European. Right. Thanks. That's just for statistical purposes. You know, we have to gather that info for the Ministry of Health. And are you a New Zealand citizen? Yes. I am. Alright. I'll put that down. That's good. So you qualify for subsidized health care. And now do you hold any special cards such as a high user card or a low income card? Yes. Actually, I am a high user. I've had a lot of trouble with my back over the last ten years. Fine. I'll write that down for our records here so that you'll get that discount. And now so that we can apply to have your medical records transferred here, can you tell me the name of your previous health center? Yes. It was called Castle Hill. Okay. I haven't heard of that practice before, so it can't be on Stewart Island or I'd know it. And you don't sound like a Southlander anyway. So is it the North Island you've come from? Yes. You're quite right. Okay. Well, I'll get you to sign this release form here, which gives us permission to request the transfer of your file, and then I can write to them and have your record sent to us. Thank you. That'll be good. Yes. It only takes a week or so to arrive usually. Now let's think about a doctor for you. There are six doctors at this center, so you have a choice. Do you want to enroll with any particular one of them? Well, no. Not really. Being you here, I don't know any of them, so it doesn't really matter. I'd rather not have a female doctor though if that's possible. That's fine. I'll put down male. That gives you three options, but some of those doctors only work part time hours here. So would that be okay with you? Oh, I see. Well, since I do have a chronic problem, which is why I hold the card we were talking about earlier, I would prefer seeing someone who'd not be hard to get hold of at any time. So you want a full time doctor. I'll write that here. That is no problem, sir. Any other preferences? Yes. My back is actually an old injury from playing rugby, so I'd like to see a sports specialist if possible. Well, let's see. I'll assign you to doctor Chang because he specializes in that branch of medicine. Well Welcome to Dunedin, mister Presley. Thank you very much for all your help. You've been most kind.",
+	"body": {
+		"text": "Type of Patient: New\nContact Details\nName: Henry Ian [1]\nDate of Birth: [2] 1965\nAddress: [3] Road Dunedin\nPhone Numbers: 293-8476\nOther Details\nEthnic Group: [4]\nResidency Status: a New Zealand [5]\nType of Card Holder: [6]\nTransfer of Records\nPrevious Medical Centre: [7] Hill\nLocated in: [8] Island\nAssign to Doctor\nPatient Preferences (if any): Female doctor\nHours: [9]\nSpecialism: [10]\nRegister with: Dr. Chang",
+		"html": "<table><tbody><tr><td><p></p><p>Type of Patient: New</p><p><strong>Contact Details</strong></p><ul><li>Name: Henry Ian [1]</li><li>Date of Birth: [2] 1965</li><li>Address: [3] Road Dunedin</li><li>Phone Numbers: 293-8476</li></ul><p><strong>Other Details</strong></p><ul><li>Ethnic Group: [4]</li><li>Residency Status: a New Zealand [5]</li><li>Type of Card Holder: [6]</li></ul><p><strong>Transfer of Records</strong></p><ul><li>Previous Medical Centre: [7] Hill</li><li>Located in: [8] Island</li></ul><p><strong>Assign to Doctor</strong></p><ul><li>Patient Preferences (if any): Female doctor</li><li>Hours: [9]</li><li>Specialism: [10]</li><li>Register with: Dr. Chang</li></ul></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below.\nWrite NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "Type of Patient: New\nContact Details\nName: Henry Ian [1]\nDate of Birth: [2] 1965\nAddress: [3] Road Dunedin\nPhone Numbers: 293-8476\nOther Details\nEthnic Group: [4]\nResidency Status: a New Zealand [5]\nType of Card Holder: [6]\nTransfer of Records\nPrevious Medical Centre: [7] Hill\nLocated in: [8] Island\nAssign to Doctor\nPatient Preferences (if any): Female doctor\nHours: [9]\nSpecialism: [10]\nRegister with: Dr. Chang",
+			"body_html": "<table><tbody><tr><td><p></p><p>Type of Patient: New</p><p><strong>Contact Details</strong></p><ul><li>Name: Henry Ian [1]</li><li>Date of Birth: [2] 1965</li><li>Address: [3] Road Dunedin</li><li>Phone Numbers: 293-8476</li></ul><p><strong>Other Details</strong></p><ul><li>Ethnic Group: [4]</li><li>Residency Status: a New Zealand [5]</li><li>Type of Card Holder: [6]</li></ul><p><strong>Transfer of Records</strong></p><ul><li>Previous Medical Centre: [7] Hill</li><li>Located in: [8] Island</li></ul><p><strong>Assign to Doctor</strong></p><ul><li>Patient Preferences (if any): Female doctor</li><li>Hours: [9]</li><li>Specialism: [10]</li><li>Register with: Dr. Chang</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Name: Henry Ian [1]",
+					"answer": "Prestney",
+					"quotes": [
+						"My middle name is Ian, and the family name is Prestndy, P R E S T N D Y.",
+						"My first name is Henry."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Date of Birth: [2] 1965",
+					"answer": "March 17th / 17th March / March 17 / 17 March",
+					"quotes": ["It's the 03/17/1965.", "And the date of birth?"]
+				},
+				{
+					"number": 3,
+					"text": "Address: [3] Road Dunedin",
+					"answer": "34 Market",
+					"quotes": [
+						"My address here is Number 34 Market Road.",
+						"And your address, please?"
+					]
+				},
+				{
+					"number": 4,
+					"text": "Ethnic Group: [4]",
+					"answer": "European",
+					"quotes": [
+						"First, I need to ask you which ethnic group do you most identify with out of New Zealand Maori, Cook Island Maori, European, Tongan, or Samoan?",
+						"European."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Residency Status: a New Zealand [5]",
+					"answer": "citizen",
+					"quotes": ["Yes.", "And are you a New Zealand citizen?", "I am."]
+				},
+				{
+					"number": 6,
+					"text": "Type of Card Holder: [6]",
+					"answer": "high user",
+					"quotes": [
+						"And now do you hold any special cards such as a high user card or a low income card?",
+						"Actually, I am a high user.",
+						"Yes."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Previous Medical Centre: [7] Hill",
+					"answer": "Castle",
+					"quotes": [
+						"And now so that we can apply to have your medical records transferred here, can you tell me the name of your previous health center?",
+						"It was called Castle Hill.",
+						"Yes."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Located in: [8] Island",
+					"answer": "North",
+					"quotes": ["So is it the North Island you've come from?", "Yes."]
+				},
+				{
+					"number": 9,
+					"text": "Hours: [9]",
+					"answer": "full time",
+					"quotes": [
+						"Well, since I do have a chronic problem, which is why I hold the card we were talking about earlier, I would prefer seeing someone who'd not be hard to get hold of at any time.",
+						"So you want a full time doctor."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Specialism: [10]",
+					"answer": "sports specialist",
+					"quotes": [
+						"My back is actually an old injury from playing rugby, so I'd like to see a sports specialist if possible.",
+						"Any other preferences?"
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

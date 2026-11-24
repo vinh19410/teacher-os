@@ -1,0 +1,180 @@
+{
+	"id": "a600cd86-2647-4371-aaff-e946476b9039",
+	"url": "https://stepielts.com/student/listening/a600cd86-2647-4371-aaff-e946476b9039?mode=practice",
+	"title": "City Museum",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/7179ce15-6699-4c40-b88c-cada444d302c.mp3",
+	"transcript": "Speaker 1: Museum Director: Silence, please. We are now ready to start the meeting. I have called this meeting to discuss City Museum matters, as there have been a number of changes made and I want to ensure that you are all fully informed. There will be time for questions at the end, so please don’t interrupt until I’m finished. Now that the formalities are out of the way, let’s begin. Firstly, some rumors have been brought to my attention that our regular receptionist, Jane, has been fired for her inexperience. But this is untrue, and I want to set the record straight. Jane has had to take sick leave because she is ill. David is temporarily taking Jane’s place at reception. He is also continuing his work as a security guard, so please be considerate, as he is quite busy. Second on the agenda is the matter of the new Egyptian display at the Museum. A very generous benefactor, who wishes to remain anonymous, has donated a large collection of Egyptian tombs and mummies to improve our display. As we have a surplus of staff, I see no need to hire extra employees to monitor this new display, which means that you will have the exciting opportunity of taking on this responsibility. Any volunteers can put their names forward after the meeting. Thanks to a number of generous donations last year, the museum is certainly not suffering from a lack of money. I do, however, feel that we are short of publicity, so I’m hiring a new public relations team, which will hopefully be able to attract more new visitors to come and view our magnificent displays. I now have a serious matter to address. As you are all aware, a priceless statue was stolen from the museum last week during our annual open night. The police questioned everyone at the scene, and they provided us with a report on how the thieves were able to get past our security precautions. All of the items in our displays are listed in our brochure and on our website, which is a very valuable resource for the public. The security guards at this site are very well trained, but the online information meant that the thieves were able to steal the statue because they knew what they were looking for. We have also looked at our security system to see if it can be upgraded. However, we have been told that it will not be outdated for another five years. It has been suggested by the police that we hire more guards. However, I do not believe this would be the right approach. We would run the danger of having too much security, which would intimidate visitors and cause them to feel unsafe. Instead, I feel that we should buy some new closed circuit television cameras so that we can monitor every part of the gallery without disturbing our visitors. Another benefit of this system is that there is no need to buy any more computers to display the camera feed, as we already have some spares in our store. Now let’s move on to other matters. We have expanded our supply of books at the library, and are therefore looking to hire a new member of staff. This job role does not carry many responsibilities, but our new librarian should have worked in a library. In other words, they should be experienced. We welcome young applicants who are interested in becoming highly trained in the art of book preservation. As the final matter for today’s meeting, I am delighted to show you the plans for our proposed new extension to the reception area. Please turn your attention to the plan in front of you. If you enter through the entrance doors and go around the sharp corner, you will find on your left the new box office. From this position, the box office manager can both sell tickets and ensure that no visitors are able to enter the museum without paying. From here, if you walk towards the door on the far left wall, you will come across our new children’s room, where visitors can leave their children to play whilst they explore our displays. Directly to the right of the children’s room is where we originally intended to locate the cafe, but we felt that it would be better placed in the bottom right corner of the plan where we can create a more intimate atmosphere. Due to generous donations, we now have the available funds to build a fantastic new multimedia room, where visitors will have access to computers, cameras and TVs. This exciting new space will be in the top right corner, where it is safely away from the entrance doors. Finally, the showroom will be built in the top left corner, directly opposite the new multimedia room. I hope that you are all as excited about this new space as I am. And now that I am finished, I would be happy to answer any questions.",
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The reason why David is replacing Jane is that",
+					"options": [
+						{
+							"label": "A",
+							"text": "she is unwell."
+						},
+						{
+							"label": "B",
+							"text": "she is very busy."
+						},
+						{
+							"label": "C",
+							"text": "she is inexperienced."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Jane has had to take sick leave because she is ill. David is temporarily taking Jane’s place at reception."
+					]
+				},
+				{
+					"number": 2,
+					"text": "According to the speaker, what is the problem for the museum currently?",
+					"options": [
+						{
+							"label": "A",
+							"text": "lack of staff"
+						},
+						{
+							"label": "B",
+							"text": "lack of publicity"
+						},
+						{
+							"label": "C",
+							"text": "lack of money"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I do, however, feel that we are short of publicity, so I’m hiring a new public relations team, which will hopefully be able to attract more new visitors to come and view our magnificent displays."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Why were the thieves able to successfully steal the statue?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The security device is outdated."
+						},
+						{
+							"label": "B",
+							"text": "The security guard is not well-trained."
+						},
+						{
+							"label": "C",
+							"text": "They knew what they were searching for."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The security guards at this site are very well trained, but the online information meant that the thieves were able to steal the statue because they knew what they were looking for."
+					]
+				},
+				{
+					"number": 4,
+					"text": "In order to improve security, they are going to",
+					"options": [
+						{
+							"label": "A",
+							"text": "get more closed-circuit television cameras."
+						},
+						{
+							"label": "B",
+							"text": "hire more security guards."
+						},
+						{
+							"label": "C",
+							"text": "buy more computers."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Instead, I feel that we should buy some new closed circuit television cameras so that we can monitor every part of the gallery without disturbing our visitors."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What kind of librarian are they looking for?",
+					"options": [
+						{
+							"label": "A",
+							"text": "responsible"
+						},
+						{
+							"label": "B",
+							"text": "experienced"
+						},
+						{
+							"label": "C",
+							"text": "highly-trained"
+						}
+					],
+					"answer": "B",
+					"quotes": ["In other words, they should be experienced."]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below.",
+			"instructions_html": "<p>Label the map below.</p><p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/1559ea42-0e5a-446e-9842-cf8b5e88290a.jpg\" alt=\"Save 20251127 075925\"></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H"],
+			"questions": [
+				{
+					"number": 6,
+					"text": "Box Office",
+					"answer": "C",
+					"quotes": [
+						"If you enter through the entrance doors and go around the sharp corner, you will find on your left the new box office."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Children's Room",
+					"answer": "B",
+					"quotes": [
+						"From here, if you walk towards the door on the far left wall, you will come across our new children’s room, where visitors can leave their children to play whilst they explore our displays."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Cafe",
+					"answer": "E",
+					"quotes": [
+						"Directly to the right of the children’s room is where we originally intended to locate the cafe, but we felt that it would be better placed in the bottom right corner of the plan where we can create a more intimate atmosphere."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Multimedia Room",
+					"answer": "H",
+					"quotes": [
+						"This exciting new space will be in the top right corner, where it is safely away from the entrance doors."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Showroom",
+					"answer": "G",
+					"quotes": [
+						"Finally, the showroom will be built in the top left corner, directly opposite the new multimedia room."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/1559ea42-0e5a-446e-9842-cf8b5e88290a.jpg"
+	]
+}

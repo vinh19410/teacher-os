@@ -1,0 +1,195 @@
+{
+	"id": "5a11d47e-5193-4134-81b1-e19989422b97",
+	"url": "https://stepielts.com/student/listening/5a11d47e-5193-4134-81b1-e19989422b97?mode=practice",
+	"title": "The Cartesian Diver Experiment",
+	"source": "Other sources",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/8d45a54a-489e-403b-8f46-850ddeb7c124.mp3",
+	"transcript": "Speaker 0: Julia: Hi, Bob. Thought about the science project yet? Bob: Which one? The presentations are scheduled for next month. Julia: The experiments that you and I are working on to demonstrate density, buoyancy, and the compression of gases. Bob: That’ll be complicated. Julia: Well, it’s not supposed to be. It’ll be part of the Making Science Simple series that’s being showcased next year, and we have to be ready to demonstrate by the end of next week. Bob: Oh, well, simple, you say. Julia: Yes. Not just the concept, but the materials too. We have to use cheap, readily available common items. Expensive lab equipment is out of the question. Bob: I remember something about using recycled or throwaway items if possible. Anything portable that we can bring into the lab. Julia: That’s right. Bob: Well, any ideas for the project? Julia: What about the classic Cartesian diver? Bob: Is that the same as a Cartesian devil? The invention named after the famous French physicist, Rene Descartes. Julia: Yes. A long time ago, superstitious people labeled it that because they couldn’t comprehend the scientific principles it demonstrated. They thought it was black magic. Bob: How shall we do it? Julia: By keeping it as simple, transparent, and economical as possible. Bob: So to start with... Julia: Open your pencil case and let’s have a look. Bob: You haven’t got any... Julia: Any what? Bob: Paper clips. Julia: Oh, there are lots of them in the bottom of my bag. They slip off my papers and collect in the bottom. Look. Here’s half a dozen. Bob: But they’re all big metal ones. I want little ones, small vinyl covered multicolored ones. Julia: Oh, I’ve got one or two of them too. Bob: Great. And if we look around, especially on the floor, we’re bound to find a few more. See? Here. Julia: What else do we need? Bob: A small rubber band. Julia: Well, I’ve got one of those in my pocket. Bob: No. Not that kind. Let’s go and ask Tara. Julia: Why? Bob: Those really small colored bands for making ponytails are ideal. Julia: Hey, Tara. Tara: Yes. Julia: Have you got any spare rubber bands like the ones you fasten your hair with? Tara: Oh, heaps. A whole packet full. Help yourselves. Julia: Terrific. So far, it hasn’t cost us anything. What now? Bob: Let’s go and rummage through the recycling bins beside Joe’s Mini Market. Julia: What for? Bob: We want a two liter plastic soft drink bottle with lids. Julia: Hey. I draw the line at sorting through other people’s rubbish, and we’re also not likely to find one with a lid. Bob: Well, go into the store and buy two liters of soft drink. Julia: What flavor? It doesn’t matter what kind of drink you get. Just make sure it comes in a clear PET bottle. Bob: Where are you going? Julia: To the cafeteria behind the resource center. Bob: What for? Julia: I’m after some straws. Bob: I can get them from the shop when I buy the drink. Julia: No. I’ve seen theirs. They’re the waxed paper ones. We need clear plastic, and I know they’ve got them in the cafeteria. I’ll also see if I can get a tall plastic cup from there. Bob: Good luck. Julia: Meet you back here in five minutes. Maybe longer because I want to go over to my locker and get a wire coat hanger. Julia: Right. Have we got everything now? Bob: I think so. I’ve got extras of most things, so don’t worry if this doesn’t work first time. Julia: Okay. Assembly. Step one. Bob: Take a straw and fold it in two. No. Not like that. These plastic ones are quite hard to fold. Try pinching it in the middle. That should make it easier to bend. You may even have to bite it, but not too hard. You want a sharp crease, but you don’t want to break it. Julia: How’s this? Bob: Good. Now second step. Wrap a rubber band several times around the ends to hold them together. Julia: Then? Bob: Add weight to the diver. Julia: So this straw is the diver? Bob: Yes. See how I’m pulling the outside end of a paper clip out a bit. Now hook the part I bent out into the rubber band that’s holding the straw together. No. Not that way. It’ll fall off. That’s right. Turn it over. Now hook two or three more paper clips on. It’s hard to say how many we’ll need. The idea is to get the diver to be almost all the way submerged, but not quite. We can put it in this tall cup of water to test it. Julia: What do you think? Too buoyant? Add another paper clip. Bob: I think so. Okay. On to the next step. Have you got the empty bottle? Julia: Not quite. Bob: What do you mean? Julia: Well, it’s not quite empty. Bob: Pour some into this cup for later. Good. Now fill the bottle with water all the way to the top, and we’ll gently lower the diver in. Great. Now put the cap back on. Julia: And then? Bob: The final step is the demonstration of our experiment. Julia: You will see that when I squeeze the bottle, the diver sinks. And when I let it go, the diver rises. Bob: When you squeeze, the air bubble trapped in the straw compresses and the water rushes in, making it heavier so it sinks. And the reverse happens when you release the bottle. What’s the coat hanger for? Julia: Oh, that. If our experiment didn’t work the first time and our divers stayed on the bottom, we’d have had to fish it out with a piece of wire or a hook of some kind. It’s best to be prepared.",
+	"body": {
+		"text": "Step 1: fold [6] in half\nStep 2: use [7]\nStep 3: attach [8] to secure the ends to diver\nStep 4: fill bottle with water and replace [9]\nStep 5: Compression causes diver to sink because diver becomes [10]",
+		"html": "<ul><li><strong>Step 1:</strong> fold [6] in half</li></ul><ul><li><strong>Step 2:</strong> use [7]</li></ul><ul><li><strong>Step 3:</strong> attach [8] to secure the ends to diver</li></ul><ul><li><strong>Step 4:</strong> fill bottle with water and replace [9]</li></ul><ul><li><strong>Step 5:</strong> Compression causes diver to sink because diver becomes [10]</li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "1-3",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct option A, B or C",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Julia and Bob's science project is due",
+					"options": [
+						{
+							"label": "A",
+							"text": "next week"
+						},
+						{
+							"label": "B",
+							"text": "next month"
+						},
+						{
+							"label": "C",
+							"text": "next year"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"It’ll be part of the Making Science Simple series that’s being showcased next year, and we have to be ready to demonstrate by the end of next week."
+					]
+				},
+				{
+					"number": 2,
+					"text": "All the materials they use must be",
+					"options": [
+						{
+							"label": "A",
+							"text": "recycled"
+						},
+						{
+							"label": "B",
+							"text": "inexpensive"
+						},
+						{
+							"label": "C",
+							"text": "available in the lab"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"We have to use cheap, readily available common items. Expensive lab equipment is out of the question."
+					]
+				},
+				{
+					"number": 3,
+					"text": "A Cartesian diver was called a devil by some people because",
+					"options": [
+						{
+							"label": "A",
+							"text": "they saw it was black Assembly"
+						},
+						{
+							"label": "B",
+							"text": "they believed in the supernatural"
+						},
+						{
+							"label": "C",
+							"text": "they wanted the inventor to be famous"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"A long time ago, superstitious people labeled it that because they couldn’t comprehend the scientific principles it demonstrated. They thought it was black magic."
+					]
+				}
+			]
+		},
+		{
+			"range": "4-5",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters A-E.",
+			"questions": [
+				{
+					"number": 4,
+					"text": "Julia and Bob find some of the items they need",
+					"options": [
+						{
+							"label": "A",
+							"text": "in Bob's pencil case and the recycling bin"
+						},
+						{
+							"label": "B",
+							"text": "in the cafeteria and the Resource Centre"
+						},
+						{
+							"label": "C",
+							"text": "in the shop and Julia's locker"
+						},
+						{
+							"label": "D",
+							"text": "in Bob's bag and his pocket"
+						},
+						{
+							"label": "E",
+							"text": "in Tara's packet and on the floor"
+						}
+					],
+					"answer": "D"
+				},
+				{
+					"number": 5,
+					"text": "Julia and Bob find some of the items they need",
+					"options": [
+						{
+							"label": "A",
+							"text": "in Bob's pencil case and the recycling bin"
+						},
+						{
+							"label": "B",
+							"text": "in the cafeteria and the Resource Centre"
+						},
+						{
+							"label": "C",
+							"text": "in the shop and Julia's locker"
+						},
+						{
+							"label": "D",
+							"text": "in Bob's bag and his pocket"
+						},
+						{
+							"label": "E",
+							"text": "in Tara's packet and on the floor"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THAN TWO WORDS for each answer.",
+			"body": "Step 1: fold [6] in half\nStep 2: use [7]\nStep 3: attach [8] to secure the ends to diver\nStep 4: fill bottle with water and replace [9]\nStep 5: Compression causes diver to sink because diver becomes [10]",
+			"body_html": "<ul><li><strong>Step 1:</strong> fold [6] in half</li></ul><ul><li><strong>Step 2:</strong> use [7]</li></ul><ul><li><strong>Step 3:</strong> attach [8] to secure the ends to diver</li></ul><ul><li><strong>Step 4:</strong> fill bottle with water and replace [9]</li></ul><ul><li><strong>Step 5:</strong> Compression causes diver to sink because diver becomes [10]</li></ul>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Step 1: fold [6] in half",
+					"answer": "a straw / straw",
+					"quotes": ["Bob: Take a straw and fold it in two."]
+				},
+				{
+					"number": 7,
+					"text": "Step 2: use [7]",
+					"answer": "rubber band",
+					"quotes": [
+						"Wrap a rubber band several times around the ends to hold them together."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Step 3: attach [8] to secure the ends to diver",
+					"answer": "paper clips",
+					"quotes": ["Now hook two or three more paper clips on."]
+				},
+				{
+					"number": 9,
+					"text": "Step 4: fill bottle with water and replace [9]",
+					"answer": "the cap / cap",
+					"quotes": ["Now put the cap back on."]
+				},
+				{
+					"number": 10,
+					"text": "Step 5: Compression causes diver to sink because diver becomes [10]",
+					"answer": "heavier",
+					"quotes": [
+						"Bob: When you squeeze, the air bubble trapped in the straw compresses and the water rushes in, making it heavier so it sinks."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

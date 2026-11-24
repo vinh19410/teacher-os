@@ -1,0 +1,254 @@
+{
+	"id": "d5b469ab-a32d-429e-bea5-47d4b0a1798c",
+	"url": "https://stepielts.com/student/listening/d5b469ab-a32d-429e-bea5-47d4b0a1798c?mode=practice",
+	"title": "Wildlife Park",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/f3ec1c58-3b30-4f64-9b99-96447abba926.mp3",
+	"transcript": "Speaker 0: You will hear a man sharing his experiences with the Oceanic island traveling. First, you have some time to look at questions 11 to 17. Now listen carefully and answer questions 11 to 17.\nSpeaker 1: Hello. My name is Damon, and I would like to share my experiences of oceanic island traveling. First of all, some of you have been asking me how Oceanic Island traveling keeps its tour group members updated while they're on the travel trip. Please note that the information board is updated daily, and we encourage you to check it every morning before you begin your day on the beach, in the cottage or participating in any of the many activities offered. So please remember to check it at the reception area in the front of the visitor center of the resort. You are probably aware of the many different activities offered on our trips. There is something you should know before booking. Reservations are not necessary for most activities, such as sand soccer, beach volleyball, and even scuba diving. However, if you are planning to participate in our water skiing activity, we encourage you to book that activity at least forty eight hours beforehand as we hire an outside group to conduct this activity, and we need to notify them of how many participants will be involved. One of the many activities available to the guests is the mystery cave tour. Some people interested in participating in those tours don't know what the ticket price includes. The ticket price includes transportation to the caves. All participants are required to wear a safety helmet inside the caves, and the ticket has covered that for you. If you are joining this tour, you will need to wear some comfortable shoes as there will be some walking involved with this tour. If you are interested to see a map of the mystery cave in advance of your trip, you can see it on the Oceanic Island Traveling website. Of course, we will offer you a map of the cave if you need it during the tour, but it will cost an extra fee. For those of you interested in visiting the Davison Wildlife Park, you should know that the park is an excellent site for families, though it does attract a lot of zoologists to do some research. Again, transportation to the park is included in your ticket price. And please note that children aged 12 and under receive a discounted ticket price. In the wildlife park, children can often watch elephant shows, which are really an attraction. But now some elephants are ill, and they need some time to recover. Still, there is another activity that should entertain kids. They're allowed to feed the animals. This activity is extremely popular with kids. Among the most popular animals at the zoo are the collection of red kangaroos. The size of these kangaroos is similar to that of black bears, but generally, they are bigger than adults. And if you're lucky, you might even be able to see some baby kangaroos while you are visiting. The crocodiles are also very popular at the wildlife park. These prehistoric animals have a lifespan of over fifty years. A male crocodile can even be expected to live to the age of 80. You won't get as close to the crocodiles as you will to some of the other animals in the park as they are somewhat dangerous. You will be able to view these animals from a distance in their natural habitats.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 18 to 20. Now listen and answer questions 18 to 20.\nSpeaker 1: For those of you that have previously participated in this tour, please know that some of the activities which were previously available are no longer available and have been replaced with new activities. The barbecue and the bonfire are now restricted by ordinance due to fire precautions in the area. Instead of going hiking on the hills, most of our tourists prefer to visit many of the gift shops in the area to buy souvenirs for themselves or for family and friends who are not on the tour. The Emu Farm, which has previously been a popular place to visit, is now temporarily closed for business. But newly available to you is a popular trip offered to the Nelson Cheese Factory in which visitors can take a tour and learn all about the process of manufacturing cheese. And finally, a visit to the Saint John's Fruit Farm is another very popular day trip. The fruit farm is within walking distance of our cottages, and you can get there by minibus this time, but we'll have a few nature trails that go past the cottages in the future. At the farm, you will be able to pick strawberries and apples in the farm's orchards and fields. Many tourists enjoy this activity a lot. We don't have hill hiking in the area, but we do have tours that involve in other destinations. Contact me if you are interested.\nSpeaker 0: That is the end of section two. You now have half a minute to check your answers.",
+	"body": {
+		"text": "14. Davison Wildlife Park is a great place for [14]\n15. Children are allowed to [15]\n16. Red kangaroos are larger than [16]\n17. Crocodiles can live for at least [17]",
+		"html": "<p>14. Davison Wildlife Park is a great place for [14]</p><p>15. Children are allowed to [15]</p><p>16. Red kangaroos are larger than [16]</p><p>17. Crocodiles can live for at least [17]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "11-13",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Where is the information board?",
+					"options": [
+						{
+							"label": "A",
+							"text": "At the reception"
+						},
+						{
+							"label": "B",
+							"text": "Inside the cottage"
+						},
+						{
+							"label": "C",
+							"text": "On the beach"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"So please remember to check it at the reception area in the front of the visitor center of the resort."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Which sport do customers have to book in advance?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Beach soccer"
+						},
+						{
+							"label": "B",
+							"text": "Water-skiing"
+						},
+						{
+							"label": "C",
+							"text": "Scuba diving"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"However, if you are planning to participate in our water skiing activity, we encourage you to book that activity at least forty eight hours beforehand as we hire an outside group to conduct this activity, and we need to notify them of how many participants will be involved."
+					]
+				},
+				{
+					"number": 13,
+					"text": "What does the cave tour ticket price include?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Shoes"
+						},
+						{
+							"label": "B",
+							"text": "A map of cave"
+						},
+						{
+							"label": "C",
+							"text": "Safety helmet"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"All participants are required to wear a safety helmet inside the caves, and the ticket has covered that for you."
+					]
+				}
+			]
+		},
+		{
+			"range": "14-17",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences for questions 14–17.\nChoose NO MORE THAN THREE WORDS AND/OR A NUMBER.",
+			"body": "14. Davison Wildlife Park is a great place for [14]\n15. Children are allowed to [15]\n16. Red kangaroos are larger than [16]\n17. Crocodiles can live for at least [17]",
+			"body_html": "<p>14. Davison Wildlife Park is a great place for [14]</p><p>15. Children are allowed to [15]</p><p>16. Red kangaroos are larger than [16]</p><p>17. Crocodiles can live for at least [17]</p>",
+			"questions": [
+				{
+					"number": 14,
+					"text": "Davison Wildlife Park is a great place for [14]",
+					"answer": "families",
+					"quotes": [
+						"For those of you interested in visiting the Davison Wildlife Park, you should know that the park is an excellent site for families, though it does attract a lot of zoologists to do some research."
+					]
+				},
+				{
+					"number": 15,
+					"text": "Children are allowed to [15]",
+					"answer": "feed the animals",
+					"quotes": ["They're allowed to feed the animals."]
+				},
+				{
+					"number": 16,
+					"text": "Red kangaroos are larger than [16]",
+					"answer": "adults",
+					"quotes": [
+						"The size of these kangaroos is similar to that of black bears, but generally, they are bigger than adults."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Crocodiles can live for at least [17]",
+					"answer": "fifty years / 50 years",
+					"quotes": [
+						"These prehistoric animals have a lifespan of over fifty years."
+					]
+				}
+			]
+		},
+		{
+			"range": "18-20",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose THREE correct answers",
+			"questions": [
+				{
+					"number": 18,
+					"text": "Which THREE activities are popular now for tourists in inland region?",
+					"options": [
+						{
+							"label": "A",
+							"text": "hill hiking"
+						},
+						{
+							"label": "B",
+							"text": "barbecue and bonfire"
+						},
+						{
+							"label": "C",
+							"text": "buying souvenirs"
+						},
+						{
+							"label": "D",
+							"text": "visiting EMU farm"
+						},
+						{
+							"label": "E",
+							"text": "visiting cheese factory"
+						},
+						{
+							"label": "F",
+							"text": "following nature trails"
+						},
+						{
+							"label": "G",
+							"text": "fruit picking"
+						},
+						{
+							"label": "H",
+							"text": "staff"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 19,
+					"text": "Which THREE activities are popular now for tourists in inland region?",
+					"options": [
+						{
+							"label": "A",
+							"text": "hill hiking"
+						},
+						{
+							"label": "B",
+							"text": "barbecue and bonfire"
+						},
+						{
+							"label": "C",
+							"text": "buying souvenirs"
+						},
+						{
+							"label": "D",
+							"text": "visiting EMU farm"
+						},
+						{
+							"label": "E",
+							"text": "visiting cheese factory"
+						},
+						{
+							"label": "F",
+							"text": "following nature trails"
+						},
+						{
+							"label": "G",
+							"text": "fruit picking"
+						},
+						{
+							"label": "H",
+							"text": "staff"
+						}
+					],
+					"answer": "E"
+				},
+				{
+					"number": 20,
+					"text": "Which THREE activities are popular now for tourists in inland region?",
+					"options": [
+						{
+							"label": "A",
+							"text": "hill hiking"
+						},
+						{
+							"label": "B",
+							"text": "barbecue and bonfire"
+						},
+						{
+							"label": "C",
+							"text": "buying souvenirs"
+						},
+						{
+							"label": "D",
+							"text": "visiting EMU farm"
+						},
+						{
+							"label": "E",
+							"text": "visiting cheese factory"
+						},
+						{
+							"label": "F",
+							"text": "following nature trails"
+						},
+						{
+							"label": "G",
+							"text": "fruit picking"
+						},
+						{
+							"label": "H",
+							"text": "staff"
+						}
+					],
+					"answer": "G"
+				}
+			]
+		}
+	],
+	"images": []
+}

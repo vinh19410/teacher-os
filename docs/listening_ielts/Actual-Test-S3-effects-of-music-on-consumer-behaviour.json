@@ -1,0 +1,244 @@
+{
+	"id": "4b7e9539-7236-424c-b549-a6cfb1c7e43d",
+	"url": "https://stepielts.com/student/listening/4b7e9539-7236-424c-b549-a6cfb1c7e43d?mode=practice",
+	"title": "Effects of Music on Consumer Behaviour",
+	"source": "Actual Test",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/890924e0-1ac9-4f90-b8f6-0de40e4ccc1b.mp3",
+	"transcript": "Speaker 0: Part three. You will hear two students called Jeannie and Dan discussing some research on the effects of music on consumer behaviour. First, you have some time to look at questions 21 to 26. Now listen carefully and answer questions 21 to 26. Hi, Dan. How's it going?\nSpeaker 1: Hello, Jeannie. Pretty well. Thanks. Have you finished your research yet?\nSpeaker 0: Yes. It's all done. I've spent several weeks on it, from the very beginning of deciding the topic to carrying out the research and writing the essay.\nSpeaker 1: Congratulations. Seems like a big project. I know the research has to do with music, but what is it exactly about?\nSpeaker 0: Well, at first, I didn't have a specific purpose until one day I read a report that said, if appropriate music is played while people are eating, it may cause some changes in their behavior, but the report didn't illustrate the changes in detail. So I wanted to carry out a thorough investigation into this.\nSpeaker 1: That's quite unique. So how did you conduct your research?\nSpeaker 0: I started by looking for five different restaurants and then went to each of the restaurants to order some food and observe other people. I mainly focused on how the music is played instead of how people eat. Findings of my observations indicate that the five restaurants have something in common. They all have a special section to play the music. More importantly, although the music is played at different times, the volume is unchanged.\nSpeaker 1: Sounds attractive. I've never read anything about this before. In addition to observation, what other research methods have you used?\nSpeaker 0: I also distributed the survey questionnaire to people dining there.\nSpeaker 1: What questions are posed in your questionnaire?\nSpeaker 0: Well, the first section of the questionnaire asks subjects to indicate the number of times they have been to the restaurant previously, the number of people they dine with, and whether they think they will return to the restaurant. These early questions don't involve musical preferences but largely act as distractors, the intention being that subjects will be less inclined to think that the survey is about the music being played.\nSpeaker 1: That sounds very reasonable. Did you design the questionnaire by yourself?\nSpeaker 0: Actually, no. I read an assignment a student wrote last year, which was just kept beside a dictionary in the library. I came across it when I was looking something up in the dictionary.\nSpeaker 1: Oh, you're so lucky. Is there any other question included in the questionnaire?\nSpeaker 0: Yes. Subjects are also asked why they choose to dine at a particular restaurant. Several reasons are listed in the questionnaire. I thought people would put service first, but that's not the case. Only about 12% of them have chosen this reason, while the majority of respondents think whether they will pick this restaurant depends on how many available seats it has. They think it's terrible to eat in a crowded place.\nSpeaker 1: Yes. Everyone wants to enjoy a meal comfortably. Then I guess maybe the location of a restaurant is an important factor since no one likes to waste too much time on the way.\nSpeaker 0: It used to be. But nowadays, nearly every household has a private car, so they don't have to be worried about the traffic problem. What I find interesting, however, is that a large percentage of people say they will compare different restaurants in the neighborhood on the Internet first. If one of them stands out from its rivals, they will choose it.\nSpeaker 1: Wow. It's really interesting.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 27 to 30. Now listen and answer questions 27 to 30.\nSpeaker 1: What else then?\nSpeaker 0: Well, the second section of the questionnaire asks subjects to respond to the music being played by rating so that the relationship between music and perceived atmosphere could be examined directly. As a means of examining purchase intention, the final section of the questionnaire asks them to indicate the maximum amount of money they are prepared to spend on their main meal.\nSpeaker 1: So what have you finally discovered?\nSpeaker 0: I collected all the questionnaires and analyzed people's answers to get a clear idea of their reactions to different music conditions. The result shows that music has become an indispensable part of restaurants. If people find there isn't any music during the meal, they will think the restaurant charges too much.\nSpeaker 1: Yes. Now music is everywhere in our life. Is there any difference in people's attitudes towards different musical styles?\nSpeaker 0: Yes. Most people think that if jazz is being played when eating, they tend to stay at the restaurant longer and order more food to enjoy the music. But this is quite the opposite of what happens when classical music is played. Many customers think if the restaurant plays classical music, they wouldn't like to stay there for another minute but to finish the food quickly and hurry away because they don't like this type of music at all. And lastly, about pop music. It's very popular these days, especially among young people, as I've noticed in restaurants. They like listening to this type of music during their meals. As a result, this greatly increases the possibility of their presence at the same restaurant.\nSpeaker 1: Great. I've learned a lot from your research. I think it's meaningful and innovative. Thanks for telling me, Jeannie.\nSpeaker 0: You're welcome, Dan. That is the end of part three. You now have thirty seconds to check your answers to part three.",
+	"body": {
+		"text": "27 no music [27]\n28 jazz [28]\n29 classical music [29]\n30 pop music [30]",
+		"html": "<p>27 no music [27]</p><p>28 jazz [28]</p><p>29 classical music [29]</p><p>30 pop music [30]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-24",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letters, A, B or C",
+			"questions": [
+				{
+					"number": 21,
+					"text": "What is the topic of the research?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the effect of music on consumers"
+						},
+						{
+							"label": "B",
+							"text": "the effect of music on eating"
+						},
+						{
+							"label": "C",
+							"text": "the effect of music on the price of food"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Well, at first, I didn't have a specific purpose until one day I read a report that said, if appropriate music is played while people are eating, it may cause some changes in their behavior, but the report didn't illustrate the changes in detail."
+					]
+				},
+				{
+					"number": 22,
+					"text": "The research finds out in the restaurant",
+					"options": [
+						{
+							"label": "A",
+							"text": "the music is played everywhere"
+						},
+						{
+							"label": "B",
+							"text": "the music is played at a uniform volume level"
+						},
+						{
+							"label": "C",
+							"text": "the music is played at a certain time"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"More importantly, although the music is played at different times, the volume is unchanged."
+					]
+				},
+				{
+					"number": 23,
+					"text": "The first few questions in the questionnaire are",
+					"options": [
+						{
+							"label": "A",
+							"text": "to understand people's taste in music"
+						},
+						{
+							"label": "B",
+							"text": "to clarify the research aim"
+						},
+						{
+							"label": "C",
+							"text": "to disguise the purpose of the survey"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"These early questions don't involve musical preferences but largely act as distractors, the intention being that subjects will be less inclined to think that the survey is about the music being played."
+					]
+				},
+				{
+					"number": 24,
+					"text": "The questions in the questionnaire came from",
+					"options": [
+						{
+							"label": "A",
+							"text": "a previous study"
+						},
+						{
+							"label": "B",
+							"text": "a professional dictionary"
+						},
+						{
+							"label": "C",
+							"text": "the student herself"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I read an assignment a student wrote last year, which was just kept beside a dictionary in the library."
+					]
+				}
+			]
+		},
+		{
+			"range": "25-26",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E",
+			"questions": [
+				{
+					"number": 25,
+					"text": "Choose TWO are the main reasons given for choosing a restaurant?",
+					"options": [
+						{
+							"label": "A",
+							"text": "competitors nearby"
+						},
+						{
+							"label": "B",
+							"text": "environment"
+						},
+						{
+							"label": "C",
+							"text": "transport facilities"
+						},
+						{
+							"label": "D",
+							"text": "service"
+						},
+						{
+							"label": "E",
+							"text": "seat capacity"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 26,
+					"text": "Choose TWO are the main reasons given for choosing a restaurant?",
+					"options": [
+						{
+							"label": "A",
+							"text": "competitors nearby"
+						},
+						{
+							"label": "B",
+							"text": "environment"
+						},
+						{
+							"label": "C",
+							"text": "transport facilities"
+						},
+						{
+							"label": "D",
+							"text": "service"
+						},
+						{
+							"label": "E",
+							"text": "seat capacity"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "27-30",
+			"type": "MATCHING",
+			"instructions": "What is people's attitude toward playing each for the following music in restaurants?\nChoose Four answers from the box and write the correct letter, A-F, next to Questions 27-30",
+			"options": [
+				{
+					"label": "A",
+					"text": "people will spend more money in the restaurant."
+				},
+				{
+					"label": "B",
+					"text": "people don't even notice the music"
+				},
+				{
+					"label": "C",
+					"text": "people will come back again"
+				},
+				{
+					"label": "D",
+					"text": "people don't think the restaurant is worth the price"
+				},
+				{
+					"label": "E",
+					"text": "people will leave the restaurant right after eating"
+				},
+				{
+					"label": "F",
+					"text": "people don't like the restaurant at all."
+				}
+			],
+			"body": "27 no music [27]\n28 jazz [28]\n29 classical music [29]\n30 pop music [30]",
+			"body_html": "<p>27 no music [27]</p><p>28 jazz [28]</p><p>29 classical music [29]</p><p>30 pop music [30]</p>",
+			"questions": [
+				{
+					"number": 27,
+					"text": "no music",
+					"answer": "D",
+					"quotes": [
+						"If people find there isn't any music during the meal, they will think the restaurant charges too much."
+					]
+				},
+				{
+					"number": 28,
+					"text": "jazz",
+					"answer": "A",
+					"quotes": [
+						"Most people think that if jazz is being played when eating, they tend to stay at the restaurant longer and order more food to enjoy the music."
+					]
+				},
+				{
+					"number": 29,
+					"text": "classical music",
+					"answer": "E",
+					"quotes": [
+						"Many customers think if the restaurant plays classical music, they wouldn't like to stay there for another minute but to finish the food quickly and hurry away because they don't like this type of music at all."
+					]
+				},
+				{
+					"number": 30,
+					"text": "pop music",
+					"answer": "C",
+					"quotes": [
+						"And lastly, about pop music.",
+						"It's very popular these days, especially among young people, as I've noticed in restaurants.",
+						"They like listening to this type of music during their meals.",
+						"As a result, this greatly increases the possibility of their presence at the same restaurant."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}
