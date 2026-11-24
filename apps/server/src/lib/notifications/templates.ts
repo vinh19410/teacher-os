@@ -21,6 +21,8 @@ export interface NotificationEvent {
 	body: string;
 	/** Nội dung HTML đã render sẵn cho email giàu định dạng; bỏ trống/null dùng renderer mặc định. */
 	htmlBody?: string | null;
+	/** Nội dung plain-text đầy đủ cho email giàu định dạng; bỏ trống/null dùng renderer mặc định từ body + linkPath. */
+	textBody?: string | null;
 	/** Đường dẫn trên cổng học viên, vd "/assignments/a-1". */
 	linkPath: string;
 	refType: string;
@@ -217,8 +219,31 @@ export function placementSubmittedEvent(input: {
 }
 
 /**
- * Sự kiện thông báo chốt / cập nhật lịch khai giảng lớp học — sinh HTML thương
- * hiệu riêng từng học viên, khóa chống trùng theo (classId, version, studentId).
+ * Kiểm tra học viên đã nhận đủ thông báo khai giảng chưa:
+ * - Chưa có bản ghi nào → `false`.
+ * - Hiện đã có email → chỉ `true` khi từng có ít nhất 1 bản ghi chứa kênh `"email"`
+ *   (học viên trước đó chỉ nhận `in_app` vì thiếu email sẽ được nâng cấp gửi email ở lần `new_only`).
+ * - Hiện chưa có email → `true` (đã nhận `in_app`, tránh gửi lặp vô hạn).
+ */
+export function isOpeningStudentNotified(
+	studentEmail: string,
+	priorChannels: ReadonlySet<string> | undefined,
+): boolean {
+	if (!priorChannels || priorChannels.size === 0) return false;
+	if (studentEmail.trim().length > 0) {
+		for (const channels of priorChannels) {
+			if (channels.includes("email")) return true;
+		}
+		return false;
+	}
+	return true;
+}
+
+/**
+ * Sự kiện thông báo chốt / cập nhật lịch khai giảng lớp học — sinh HTML và
+ * plain-text thương hiệu riêng từng học viên, khóa chống trùng theo
+ * `(classId, version, studentId, channel)` để học viên từng chỉ nhận `in_app`
+ * có thể nâng cấp sang `email` trong cùng phiên bản mà không bị trùng khóa.
  */
 export function classOpeningConfirmedEvents(input: {
 	classId: string;
@@ -233,14 +258,16 @@ export function classOpeningConfirmedEvents(input: {
 	teacherNote: string;
 	orgName: string;
 	studentOrigin?: string;
-	students: Array<{ id: string; name: string }>;
+	students: Array<{ id: string; name: string; hasEmail?: boolean }>;
 }): NotificationEvent[] {
 	const trimmedOrigin = input.studentOrigin?.trim() ?? "";
-	const portalUrl = trimmedOrigin
-		? `${trimmedOrigin.replace(/\/+$/, "")}/classes`
-		: "/classes";
+	const normalizedOrigin = trimmedOrigin.replace(/\/+$/, "");
+	const portalUrl = normalizedOrigin
+		? `${normalizedOrigin}/classes`
+		: undefined;
 
 	return input.students.map((s) => {
+		const channelSuffix = s.hasEmail === false ? ":in_app" : ":email";
 		const rendered = renderClassOpeningEmail({
 			className: input.className,
 			startDate: input.startDate,
@@ -258,10 +285,11 @@ export function classOpeningConfirmedEvents(input: {
 		return {
 			studentId: s.id,
 			eventType: "class_opening_confirmed",
-			idempotencyKey: `class_opening_confirmed:${input.classId}:v${input.version}:${s.id}`,
+			idempotencyKey: `class_opening_confirmed:${input.classId}:v${input.version}:${s.id}${channelSuffix}`,
 			title: rendered.subject,
 			body: rendered.inboxBody,
 			htmlBody: rendered.html,
+			textBody: rendered.text,
 			linkPath: "/classes",
 			refType: "class",
 			refId: input.classId,

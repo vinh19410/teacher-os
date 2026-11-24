@@ -690,6 +690,7 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 		);
 		expect(newOnlyBody.openingAnnouncementVersion).toBe(1);
 		expect(newOnlyBody.openingConfirmedAt).toBe("2026-05-01T08:00:00.000Z");
+		expect(newOnlyBody.openingNote).toBe("Lần đầu khai giảng");
 		expect(newOnlyBody.queuedEmailCount).toBe(1);
 		expect(newOnlyBody.inAppOnlyCount).toBe(0);
 		expect(newOnlyBody.skippedAlreadySentCount).toBe(1);
@@ -821,12 +822,14 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 		const [storedRow] = await t.libsql
 			.select({
 				htmlBody: schema.notificationRecord.htmlBody,
+				textBody: schema.notificationRecord.textBody,
 				body: schema.notificationRecord.body,
 				linkPath: schema.notificationRecord.linkPath,
 			})
 			.from(schema.notificationRecord)
 			.where(eq(schema.notificationRecord.id, failedLog.id));
 		expect(storedRow?.htmlBody).toBeTruthy();
+		expect(storedRow?.textBody).toBeTruthy();
 
 		// Recover mailer and trigger resend via HTTP endpoint
 		const resentMails: MailPayload[] = [];
@@ -846,6 +849,7 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 		if (!resent) throw new Error("expected resent email");
 		expect(resent.to).toBe("khoa@example.com");
 		expect(resent.html).toBe(storedRow?.htmlBody);
+		expect(resent.text).toBe(storedRow?.textBody);
 		expect(resent.html).not.toBe(
 			renderHtml(
 				storedRow?.body ?? "",
@@ -854,5 +858,318 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 		);
 		expect(resent.html).toContain("Chào Lê Minh Khoa,");
 		expect(resent.html).toContain("Chuẩn bị sẵn bài luận mẫu");
+		expect(resent.text).toContain("Chào Lê Minh Khoa,");
+		expect(resent.text).toContain("Chuẩn bị sẵn bài luận mẫu");
+	});
+
+	test("new_only rejects startDate change (400) without mutating class, no-ops cleanly with 0 new students, and validates startDate against injected now clock", async () => {
+		const fixedNow = new Date("2026-06-10T05:00:00.000Z"); // 2026-06-10 12:00 VN
+		const t = await setupTestApp({ now: () => fixedNow });
+		const teacher = await t.insertUser("Teacher NewOnly Invariants");
+		const initialStart = "2026-06-15";
+		const changedStart = "2026-06-22";
+		const classId = await t.createClass(teacher.token, {
+			name: "IELTS Focus",
+			startDate: initialStart,
+		});
+		const orgId = await t.getOrgIdForUser(teacher.id);
+
+		const s1 = await t.seedStudentAndEnroll({
+			orgId,
+			classId,
+			name: "Nguyễn Minh Anh",
+			email: "minhanh@example.com",
+			status: "active",
+		});
+
+		// Past date relative to injected `now` (2026-06-09 < 2026-06-10) -> 400
+		const pastRelativeToClock = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/confirm-opening`,
+			{
+				body: {
+					mode: "initial",
+					startDate: "2026-06-09",
+					note: "Ngày quá khứ theo đồng hồ inject",
+					expectedVersion: 0,
+				},
+			},
+		);
+		expect(pastRelativeToClock.status).toBe(400);
+
+		// Initial confirm with startDate === vietnamTodayISO(fixedNow) succeeds
+		const initialRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/confirm-opening`,
+			{
+				body: {
+					mode: "initial",
+					startDate: "2026-06-10",
+					note: "Ghi chú ban đầu",
+					expectedVersion: 0,
+				},
+			},
+		);
+		expect(initialRes.status).toBe(200);
+		expect(t.sentMails).toHaveLength(1);
+		t.sentMails.length = 0;
+
+		// new_only attempting to change startDate -> 400 and does NOT mutate class
+		const rejectStartChange = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/confirm-opening`,
+			{
+				body: {
+					mode: "new_only",
+					startDate: changedStart,
+					note: "Không được ghi đè",
+					expectedVersion: 1,
+				},
+			},
+		);
+		expect(rejectStartChange.status).toBe(400);
+		expect(t.sentMails).toHaveLength(0);
+
+		const [clsAfterReject] = await t.libsql
+			.select()
+			.from(schema.classTable)
+			.where(eq(schema.classTable.id, classId));
+		expect(clsAfterReject?.startDate).toBe("2026-06-10");
+		expect(clsAfterReject?.openingNote).toBe("Ghi chú ban đầu");
+		expect(clsAfterReject?.openingAnnouncementVersion).toBe(1);
+		expect(clsAfterReject?.openingConfirmedAt?.toISOString()).toBe(
+			fixedNow.toISOString(),
+		);
+
+		// new_only with 0 new students -> 200, 0 queued, leaves class untouched
+		const zeroTargetsRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/confirm-opening`,
+			{
+				body: {
+					mode: "new_only",
+					note: "Ghi chú không được ghi đè khi 0 học viên mới",
+					expectedVersion: 1,
+				},
+			},
+		);
+		expect(zeroTargetsRes.status).toBe(200);
+		const zeroBody = classConfirmOpeningResponseSchema.parse(
+			await zeroTargetsRes.json(),
+		);
+		expect(zeroBody.queuedEmailCount).toBe(0);
+		expect(zeroBody.inAppOnlyCount).toBe(0);
+		expect(zeroBody.skippedNoEmail).toEqual([]);
+		expect(zeroBody.skippedAlreadySentCount).toBe(1);
+		expect(zeroBody.startDate).toBe("2026-06-10");
+		expect(zeroBody.openingNote).toBe("Ghi chú ban đầu");
+		expect(zeroBody.openingAnnouncementVersion).toBe(1);
+		expect(zeroBody.openingConfirmedAt).toBe(fixedNow.toISOString());
+		expect(zeroBody.notifiedStudentIds).toEqual([s1]);
+		expect(t.sentMails).toHaveLength(0);
+
+		const [clsAfterZero] = await t.libsql
+			.select()
+			.from(schema.classTable)
+			.where(eq(schema.classTable.id, classId));
+		expect(clsAfterZero?.startDate).toBe("2026-06-10");
+		expect(clsAfterZero?.openingNote).toBe("Ghi chú ban đầu");
+		expect(clsAfterZero?.openingAnnouncementVersion).toBe(1);
+	});
+
+	test("upgrades student from in_app to email on new_only after email is added, sends full textBody without broken /classes link when studentOrigin is empty, and stays idempotent", async () => {
+		const t = await setupTestApp({ studentOrigin: "" });
+		const teacher = await t.insertUser("Teacher Upgrade Email");
+		const startDate = futureMondayISO(7);
+		const classId = await t.createClass(teacher.token, {
+			name: "IELTS Speaking Upgrade",
+			startDate,
+		});
+		const orgId = await t.getOrgIdForUser(teacher.id);
+
+		const sWithEmail = await t.seedStudentAndEnroll({
+			orgId,
+			classId,
+			name: "Nguyễn Hải An",
+			email: "haian@example.com",
+			status: "active",
+		});
+		const sNoEmail = await t.seedStudentAndEnroll({
+			orgId,
+			classId,
+			name: "Phạm Quốc Bảo",
+			email: "",
+			status: "active",
+		});
+
+		// Initial confirm: sWithEmail gets email, sNoEmail gets in_app only
+		const initialRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/confirm-opening`,
+			{
+				body: {
+					mode: "initial",
+					note: "Chuẩn bị tai nghe và micro",
+					expectedVersion: 0,
+				},
+			},
+		);
+		expect(initialRes.status).toBe(200);
+		const initialBody = classConfirmOpeningResponseSchema.parse(
+			await initialRes.json(),
+		);
+		expect(initialBody.queuedEmailCount).toBe(1);
+		expect(initialBody.inAppOnlyCount).toBe(1);
+		expect(initialBody.skippedNoEmail).toEqual([
+			{ studentId: sNoEmail, studentName: "Phạm Quốc Bảo" },
+		]);
+		expect(new Set(initialBody.notifiedStudentIds)).toEqual(
+			new Set([sWithEmail, sNoEmail]),
+		);
+
+		// Verify initial email has full textBody and no broken relative /classes link
+		expect(t.sentMails).toHaveLength(1);
+		expect(t.sentMails[0]?.to).toBe("haian@example.com");
+		expect(t.sentMails[0]?.html).not.toContain('href="/classes"');
+		expect(t.sentMails[0]?.html).not.toContain("Mở cổng học viên");
+		expect(t.sentMails[0]?.text).toContain("Chào Nguyễn Hải An,");
+		expect(t.sentMails[0]?.text).toContain("Chuẩn bị tai nghe và micro");
+		expect(t.sentMails[0]?.text).not.toContain("/classes");
+
+		// Teacher later adds an email to sNoEmail
+		await t.libsql
+			.update(schema.student)
+			.set({ email: "bao@example.com" })
+			.where(eq(schema.student.id, sNoEmail));
+
+		// Snapshot now excludes sNoEmail from openingNotifiedStudentIds because they only got in_app
+		const snapBeforeUpgrade = await t.kernel(teacher.token);
+		const clsBeforeUpgrade = snapBeforeUpgrade.classes.find(
+			(c) => c.id === classId,
+		);
+		expect(clsBeforeUpgrade?.openingNotifiedStudentIds).toEqual([sWithEmail]);
+
+		// Calling new_only upgrades sNoEmail to receive the rich HTML + full textBody email
+		t.sentMails.length = 0;
+		const upgradeRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/confirm-opening`,
+			{
+				body: {
+					mode: "new_only",
+					note: "Chuẩn bị tai nghe và micro",
+					expectedVersion: 1,
+				},
+			},
+		);
+		expect(upgradeRes.status).toBe(200);
+		const upgradeBody = classConfirmOpeningResponseSchema.parse(
+			await upgradeRes.json(),
+		);
+		expect(upgradeBody.openingAnnouncementVersion).toBe(1);
+		expect(upgradeBody.queuedEmailCount).toBe(1);
+		expect(upgradeBody.inAppOnlyCount).toBe(0);
+		expect(upgradeBody.skippedAlreadySentCount).toBe(1);
+		expect(upgradeBody.skippedNoEmail).toEqual([]);
+		expect(new Set(upgradeBody.notifiedStudentIds)).toEqual(
+			new Set([sWithEmail, sNoEmail]),
+		);
+
+		expect(t.sentMails).toHaveLength(1);
+		const upgradedMail = t.sentMails[0];
+		expect(upgradedMail?.to).toBe("bao@example.com");
+		expect(upgradedMail?.html).toContain("Chào Phạm Quốc Bảo,");
+		expect(upgradedMail?.html).not.toContain('href="/classes"');
+		expect(upgradedMail?.html).not.toContain("Mở cổng học viên");
+		expect(upgradedMail?.text).toContain("Chào Phạm Quốc Bảo,");
+		expect(upgradedMail?.text).toContain("Chuẩn bị tai nghe và micro");
+		expect(upgradedMail?.text).not.toContain("/classes");
+
+		// Snapshot now includes both students
+		const snapAfterUpgrade = await t.kernel(teacher.token);
+		const clsAfterUpgrade = snapAfterUpgrade.classes.find(
+			(c) => c.id === classId,
+		);
+		expect(new Set(clsAfterUpgrade?.openingNotifiedStudentIds ?? [])).toEqual(
+			new Set([sWithEmail, sNoEmail]),
+		);
+
+		// Repeating new_only is strictly idempotent (0 emails sent)
+		t.sentMails.length = 0;
+		const secondNewOnlyRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/confirm-opening`,
+			{
+				body: {
+					mode: "new_only",
+					note: "Chuẩn bị tai nghe và micro",
+					expectedVersion: 1,
+				},
+			},
+		);
+		expect(secondNewOnlyRes.status).toBe(200);
+		const secondNewOnlyBody = classConfirmOpeningResponseSchema.parse(
+			await secondNewOnlyRes.json(),
+		);
+		expect(secondNewOnlyBody.queuedEmailCount).toBe(0);
+		expect(secondNewOnlyBody.inAppOnlyCount).toBe(0);
+		expect(secondNewOnlyBody.skippedAlreadySentCount).toBe(2);
+		expect(t.sentMails).toHaveLength(0);
+	});
+
+	test("confirms opening cleanly for a class with 10 students across chunked inserts", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher Large Class");
+		const classId = await t.createClass(teacher.token, {
+			name: "IELTS Intensive Cohort",
+			startDate: futureMondayISO(10),
+		});
+		const orgId = await t.getOrgIdForUser(teacher.id);
+
+		const studentIds: string[] = [];
+		for (let i = 1; i <= 10; i += 1) {
+			const sid = await t.seedStudentAndEnroll({
+				orgId,
+				classId,
+				name: `Học viên ${i}`,
+				email: i === 10 ? "" : `hv${i}@example.com`,
+				status: i % 2 === 0 ? "invited" : "active",
+			});
+			studentIds.push(sid);
+		}
+
+		const res = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/confirm-opening`,
+			{
+				body: {
+					mode: "initial",
+					note: "Hẹn gặp cả lớp đúng giờ!",
+					expectedVersion: 0,
+				},
+			},
+		);
+		expect(res.status).toBe(200);
+		const body = classConfirmOpeningResponseSchema.parse(await res.json());
+		expect(body.queuedEmailCount).toBe(9);
+		expect(body.inAppOnlyCount).toBe(1);
+		expect(body.skippedNoEmail).toHaveLength(1);
+		expect(new Set(body.notifiedStudentIds)).toEqual(new Set(studentIds));
+		expect(t.sentMails).toHaveLength(9);
+
+		const persisted = await t.libsql
+			.select()
+			.from(schema.notificationRecord)
+			.where(
+				and(
+					eq(schema.notificationRecord.orgId, orgId),
+					eq(schema.notificationRecord.refId, classId),
+				),
+			);
+		expect(persisted).toHaveLength(10);
+		for (const row of persisted) {
+			expect(row.htmlBody).toContain("<!DOCTYPE html>");
+			expect(row.textBody).toContain("Hẹn gặp cả lớp đúng giờ!");
+		}
 	});
 });

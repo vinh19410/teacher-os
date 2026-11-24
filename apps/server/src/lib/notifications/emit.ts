@@ -83,9 +83,11 @@ export async function emitNotifications(
 		if (deps.runInBackground) {
 			deps.runInBackground(
 				delivery.catch((error) => {
+					const message =
+						error instanceof Error ? error.message : String(error);
 					console.error(
-						"[notifications] background deliver failed (business op unaffected)",
-						error,
+						"[notifications] background deliver failed (business op unaffected):",
+						sanitizeDeliveryError(message).rawError,
 					);
 				}),
 			);
@@ -94,9 +96,10 @@ export async function emitNotifications(
 		}
 		return enqueued;
 	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
 		console.error(
-			"[notifications] emit failed (business op unaffected)",
-			error,
+			"[notifications] emit failed (business op unaffected):",
+			sanitizeDeliveryError(message).rawError,
 		);
 		return enqueued;
 	}

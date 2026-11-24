@@ -7,6 +7,7 @@ import {
 	gradeReturnedEvent,
 	holidayCreatedEvents,
 	invoiceIssuedEvent,
+	isOpeningStudentNotified,
 	placementSubmittedEvent,
 	scheduleChangedEvents,
 } from "./templates";
@@ -142,7 +143,7 @@ describe("notification template builders (phase 3 #454)", () => {
 		expect(eventGroupOf(e.eventType)).toBe("assignment");
 	});
 
-	test("classOpeningConfirmedEvents — sinh email HTML cá nhân hóa, khóa theo (classId, version, studentId)", () => {
+	test("classOpeningConfirmedEvents — sinh email HTML và textBody cá nhân hóa, khóa theo (classId, version, studentId, channel)", () => {
 		const events = classOpeningConfirmedEvents({
 			classId: "cls-1",
 			className: "IELTS 6.5 Intensive",
@@ -161,20 +162,22 @@ describe("notification template builders (phase 3 #454)", () => {
 			orgName: "Trung tâm Anh ngữ Minh Anh",
 			studentOrigin: "https://student.teacheros.example///",
 			students: [
-				{ id: "s-1", name: "Nguyễn Văn An" },
-				{ id: "s-2", name: "Trần Thu Hà" },
+				{ id: "s-1", name: "Nguyễn Văn An", hasEmail: true },
+				{ id: "s-2", name: "Trần Thu Hà", hasEmail: false },
+				{ id: "s-3", name: "Phạm Minh Đức" },
 			],
 		});
 
-		expect(events).toHaveLength(2);
+		expect(events).toHaveLength(3);
 		expect(events.map((e) => e.idempotencyKey)).toEqual([
-			"class_opening_confirmed:cls-1:v1:s-1",
-			"class_opening_confirmed:cls-1:v1:s-2",
+			"class_opening_confirmed:cls-1:v1:s-1:email",
+			"class_opening_confirmed:cls-1:v1:s-2:in_app",
+			"class_opening_confirmed:cls-1:v1:s-3:email",
 		]);
 
 		const first = events[0];
 		const second = events[1];
-		if (!first || !second) throw new Error("expected 2 events");
+		if (!first || !second) throw new Error("expected events");
 
 		expect(first.eventType).toBe("class_opening_confirmed");
 		expect(eventGroupOf(first.eventType)).toBe("schedule");
@@ -201,10 +204,21 @@ describe("notification template builders (phase 3 #454)", () => {
 		expect(first.htmlBody).toContain(
 			'href="https://student.teacheros.example/classes"',
 		);
+		expect(first.textBody).toBeTruthy();
+		expect(first.textBody).toContain("Chào Nguyễn Văn An,");
+		expect(first.textBody).toContain("19:00 – 20:30");
+		expect(first.textBody).toContain("24 buổi");
+		expect(first.textBody).toContain(
+			"Mang theo <b>vở ghi</b>\nVào phòng sớm 10 phút",
+		);
+		expect(first.textBody).toContain(
+			"https://student.teacheros.example/classes",
+		);
 		expect(second.htmlBody).toContain("Chào Trần Thu Hà,");
+		expect(second.textBody).toContain("Chào Trần Thu Hà,");
 	});
 
-	test("classOpeningConfirmedEvents — chế độ cập nhật dùng tiêu đề cập nhật và fallback portalUrl an toàn", () => {
+	test("classOpeningConfirmedEvents — chế độ cập nhật bỏ CTA khi thiếu studentOrigin và chặn scheme lạ", () => {
 		const updateEvents = classOpeningConfirmedEvents({
 			classId: "cls-2",
 			className: "Giao tiếp cơ bản",
@@ -216,16 +230,22 @@ describe("notification template builders (phase 3 #454)", () => {
 			teacherNote: "",
 			orgName: "",
 			studentOrigin: "   ",
-			students: [{ id: "s-3", name: "Lê Minh" }],
+			students: [{ id: "s-3", name: "Lê Minh", hasEmail: true }],
 		});
 
 		expect(updateEvents).toHaveLength(1);
 		const ev = updateEvents[0];
 		if (!ev) throw new Error("expected 1 event");
-		expect(ev.idempotencyKey).toBe("class_opening_confirmed:cls-2:v2:s-3");
+		expect(ev.idempotencyKey).toBe(
+			"class_opening_confirmed:cls-2:v2:s-3:email",
+		);
 		expect(ev.title).toContain("Cập nhật lịch khai giảng lớp Giao tiếp cơ bản");
 		expect(ev.htmlBody).toContain("Cập nhật lịch khai giảng");
-		expect(ev.htmlBody).toContain('href="/classes"');
+		expect(ev.htmlBody).not.toContain('href="/classes"');
+		expect(ev.htmlBody).not.toContain("Mở cổng học viên");
+		expect(ev.textBody).toBeTruthy();
+		expect(ev.textBody).not.toContain("/classes");
+		expect(ev.textBody).not.toContain("Mở cổng học viên");
 
 		const unsafeOriginEvents = classOpeningConfirmedEvents({
 			classId: "cls-2",
@@ -238,8 +258,44 @@ describe("notification template builders (phase 3 #454)", () => {
 			teacherNote: "",
 			orgName: "",
 			studentOrigin: "javascript:alert(1)",
-			students: [{ id: "s-3", name: "Lê Minh" }],
+			students: [{ id: "s-3", name: "Lê Minh", hasEmail: false }],
 		});
+		expect(unsafeOriginEvents[0]?.idempotencyKey).toBe(
+			"class_opening_confirmed:cls-2:v3:s-3:in_app",
+		);
 		expect(unsafeOriginEvents[0]?.htmlBody).not.toContain("javascript:");
+		expect(unsafeOriginEvents[0]?.htmlBody).not.toContain("Mở cổng học viên");
+		expect(unsafeOriginEvents[0]?.textBody).not.toContain("javascript:");
+	});
+
+	test("isOpeningStudentNotified — phân biệt chưa gửi, đã gửi in_app cần nâng cấp email, và đã gửi đủ", () => {
+		expect(isOpeningStudentNotified("an@example.com", undefined)).toBe(false);
+		expect(isOpeningStudentNotified("", undefined)).toBe(false);
+		expect(isOpeningStudentNotified("an@example.com", new Set())).toBe(false);
+		expect(isOpeningStudentNotified("", new Set())).toBe(false);
+
+		// Học viên đã có email nhưng trước đó chỉ nhận in_app → cần gửi bổ sung email
+		expect(
+			isOpeningStudentNotified("an@example.com", new Set(["in_app"])),
+		).toBe(false);
+		expect(
+			isOpeningStudentNotified("  an@example.com  ", new Set(["in_app"])),
+		).toBe(false);
+
+		// Học viên đã có email và từng nhận bản ghi có kênh email → đã thông báo
+		expect(
+			isOpeningStudentNotified("an@example.com", new Set(["email,in_app"])),
+		).toBe(true);
+		expect(
+			isOpeningStudentNotified(
+				"an@example.com",
+				new Set(["in_app", "email,in_app"]),
+			),
+		).toBe(true);
+
+		// Học viên không có email và đã có in_app → coi như đã thông báo để không lặp vô hạn
+		expect(isOpeningStudentNotified("", new Set(["in_app"]))).toBe(true);
+		expect(isOpeningStudentNotified("   ", new Set(["in_app"]))).toBe(true);
+		expect(isOpeningStudentNotified("", new Set(["email,in_app"]))).toBe(true);
 	});
 });

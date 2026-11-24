@@ -111,6 +111,7 @@ import {
 	classEnrolledEvent,
 	classOpeningConfirmedEvents,
 	invoiceIssuedEvent,
+	isOpeningStudentNotified,
 	scheduleChangedEvents,
 	tuitionReminderEvent,
 } from "../lib/notifications/templates";
@@ -2472,10 +2473,71 @@ export function kernelRoutes(deps: {
 		return c.json({ ok: true });
 	});
 
+	async function loadOpeningNotifState(
+		db: Db,
+		orgId: string,
+		classId: string,
+	): Promise<{
+		channelsByStudent: Map<string, Set<string>>;
+		emailByStudent: Map<string, string>;
+	}> {
+		const rows = await db
+			.selectDistinct({
+				studentId: notificationRecord.studentId,
+				channels: notificationRecord.channels,
+				email: student.email,
+			})
+			.from(notificationRecord)
+			.innerJoin(
+				student,
+				and(
+					eq(student.id, notificationRecord.studentId),
+					eq(student.orgId, orgId),
+				),
+			)
+			.where(
+				and(
+					eq(notificationRecord.orgId, orgId),
+					eq(notificationRecord.eventType, "class_opening_confirmed"),
+					eq(notificationRecord.refType, "class"),
+					eq(notificationRecord.refId, classId),
+				),
+			);
+		const channelsByStudent = new Map<string, Set<string>>();
+		const emailByStudent = new Map<string, string>();
+		for (const row of rows) {
+			let channels = channelsByStudent.get(row.studentId);
+			if (!channels) {
+				channels = new Set();
+				channelsByStudent.set(row.studentId, channels);
+			}
+			channels.add(row.channels);
+			emailByStudent.set(row.studentId, row.email);
+		}
+		return { channelsByStudent, emailByStudent };
+	}
+
+	function computeOpeningNotifiedStudentIds(
+		channelsByStudent: ReadonlyMap<string, ReadonlySet<string>>,
+		emailByStudent: ReadonlyMap<string, string>,
+	): string[] {
+		const ids: string[] = [];
+		for (const [studentId, channels] of channelsByStudent) {
+			if (
+				isOpeningStudentNotified(emailByStudent.get(studentId) ?? "", channels)
+			) {
+				ids.push(studentId);
+			}
+		}
+		return ids;
+	}
+
 	/**
 	 * Chốt hoặc gửi lại thông báo lịch khai giảng lớp học kèm email HTML thương hiệu.
-	 * Bảo vệ bằng CAS trên `openingAnnouncementVersion` (và khóa đổi `startDate`
-	 * nguyên tử bằng `NOT EXISTS` khi lớp đã có buổi học thực tế).
+	 * Chế độ `initial` / `all` bảo vệ bằng CAS trên `openingAnnouncementVersion`
+	 * (và khóa đổi `startDate` nguyên tử bằng `NOT EXISTS` khi lớp đã có buổi học
+	 * thực tế); chế độ `new_only` không ghi đè bản ghi lớp mà chỉ gửi bổ sung cho
+	 * học viên chưa nhận đủ thông báo.
 	 */
 	kernel.post("/classes/:id/confirm-opening", async (c) => {
 		const ctx = c.get("kernelCtx");
@@ -2521,12 +2583,22 @@ export function kernelRoutes(deps: {
 			);
 		}
 
+		const now = deps.now ? deps.now() : new Date();
 		const existingStartDate = cls.startDate.trim();
 		const effectiveStartDate =
 			input.startDate !== undefined ? input.startDate : existingStartDate;
 		const startDateChanged =
 			input.startDate !== undefined && input.startDate !== existingStartDate;
 
+		if (input.mode === "new_only" && startDateChanged) {
+			return c.json(
+				{
+					error:
+						"Không thể đổi ngày khai giảng khi chỉ gửi bổ sung. Hãy chọn gửi thông báo cập nhật cho cả lớp.",
+				},
+				400,
+			);
+		}
 		if (!effectiveStartDate) {
 			return c.json(
 				{
@@ -2536,75 +2608,87 @@ export function kernelRoutes(deps: {
 				400,
 			);
 		}
-		if (startDateChanged && effectiveStartDate < vietnamTodayISO()) {
+		if (startDateChanged && effectiveStartDate < vietnamTodayISO(now)) {
 			return c.json(
 				{ error: "Ngày khai giảng mới phải từ hôm nay trở đi." },
 				400,
 			);
 		}
 
-		const now = deps.now ? deps.now() : new Date();
-		const nextVersion =
-			input.mode === "new_only" ? currentVersion : currentVersion + 1;
-		const nextConfirmedAt =
-			input.mode === "new_only" ? (cls.openingConfirmedAt ?? now) : now;
+		let confirmedAt: Date;
+		let announcementVersion: number;
+		let persistedStartDate: string;
+		let persistedNote: string;
 
-		const whereConditions = [
-			eq(classTable.id, classId),
-			eq(classTable.orgId, ctx.orgId),
-			eq(classTable.status, "active"),
-			eq(classTable.openingAnnouncementVersion, currentVersion),
-		];
-		if (startDateChanged) {
-			whereConditions.push(
-				sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.classId} = ${classId} AND ${lesson.orgId} = ${ctx.orgId})`,
-				sql`NOT EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId})`,
-			);
+		if (input.mode === "new_only") {
+			confirmedAt = cls.openingConfirmedAt ?? now;
+			announcementVersion = currentVersion;
+			persistedStartDate = existingStartDate;
+			persistedNote = cls.openingNote;
+		} else {
+			const nextVersion = currentVersion + 1;
+			const whereConditions = [
+				eq(classTable.id, classId),
+				eq(classTable.orgId, ctx.orgId),
+				eq(classTable.status, "active"),
+				eq(classTable.openingAnnouncementVersion, currentVersion),
+			];
+			if (startDateChanged) {
+				whereConditions.push(
+					sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.classId} = ${classId} AND ${lesson.orgId} = ${ctx.orgId})`,
+					sql`NOT EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId})`,
+				);
+			}
+
+			const updated = await db
+				.update(classTable)
+				.set({
+					openingConfirmedAt: now,
+					openingNote: input.note,
+					openingAnnouncementVersion: nextVersion,
+					...(startDateChanged ? { startDate: effectiveStartDate } : {}),
+				})
+				.where(and(...whereConditions))
+				.returning({
+					id: classTable.id,
+					openingConfirmedAt: classTable.openingConfirmedAt,
+					openingAnnouncementVersion: classTable.openingAnnouncementVersion,
+					startDate: classTable.startDate,
+					openingNote: classTable.openingNote,
+				});
+
+			const updatedRow = updated[0];
+			if (!updatedRow) {
+				if (
+					startDateChanged &&
+					(await hasRealClassSessions(db, ctx.orgId, classId))
+				) {
+					return scheduleLockedResponse(c);
+				}
+				const stillExists = await findClass(db, classId, ctx.orgId);
+				if (!stillExists) {
+					return c.json({ error: "class not found" }, 404);
+				}
+				if (stillExists.status !== "active") {
+					return classPausedResponse(c);
+				}
+				return c.json(
+					{
+						error:
+							"Trạng thái chốt khai giảng của lớp vừa thay đổi, vui lòng tải lại.",
+						code: CLASS_ERROR_CODES.OPENING_VERSION_CONFLICT,
+					},
+					409,
+				);
+			}
+
+			confirmedAt = updatedRow.openingConfirmedAt ?? now;
+			announcementVersion = updatedRow.openingAnnouncementVersion;
+			persistedStartDate = updatedRow.startDate;
+			persistedNote = updatedRow.openingNote;
 		}
 
-		const updated = await db
-			.update(classTable)
-			.set({
-				openingConfirmedAt: nextConfirmedAt,
-				openingNote: input.note,
-				openingAnnouncementVersion: nextVersion,
-				...(startDateChanged ? { startDate: effectiveStartDate } : {}),
-			})
-			.where(and(...whereConditions))
-			.returning({
-				id: classTable.id,
-				openingConfirmedAt: classTable.openingConfirmedAt,
-				openingAnnouncementVersion: classTable.openingAnnouncementVersion,
-				startDate: classTable.startDate,
-				openingNote: classTable.openingNote,
-			});
-
-		const updatedRow = updated[0];
-		if (!updatedRow) {
-			if (
-				startDateChanged &&
-				(await hasRealClassSessions(db, ctx.orgId, classId))
-			) {
-				return scheduleLockedResponse(c);
-			}
-			const stillExists = await findClass(db, classId, ctx.orgId);
-			if (!stillExists) {
-				return c.json({ error: "class not found" }, 404);
-			}
-			if (stillExists.status !== "active") {
-				return classPausedResponse(c);
-			}
-			return c.json(
-				{
-					error:
-						"Trạng thái chốt khai giảng của lớp vừa thay đổi, vui lòng tải lại.",
-					code: CLASS_ERROR_CODES.OPENING_VERSION_CONFLICT,
-				},
-				409,
-			);
-		}
-
-		const [rosterRows, prevNotifRows, { senderName }] = await Promise.all([
+		const [rosterRows, priorNotifState, { senderName }] = await Promise.all([
 			db
 				.select({
 					studentId: student.id,
@@ -2626,17 +2710,9 @@ export function kernelRoutes(deps: {
 						inArray(enrollment.status, ["active", "invited"]),
 					),
 				),
-			db
-				.select({ studentId: notificationRecord.studentId })
-				.from(notificationRecord)
-				.where(
-					and(
-						eq(notificationRecord.orgId, ctx.orgId),
-						eq(notificationRecord.eventType, "class_opening_confirmed"),
-						eq(notificationRecord.refType, "class"),
-						eq(notificationRecord.refId, classId),
-					),
-				),
+			input.mode === "new_only"
+				? loadOpeningNotifState(db, ctx.orgId, classId)
+				: Promise.resolve(null),
 			resolveOrgMailSender(db, ctx.orgId),
 		]);
 
@@ -2648,13 +2724,41 @@ export function kernelRoutes(deps: {
 			roster.push(row);
 		}
 
-		const previouslyNotified = new Set(prevNotifRows.map((r) => r.studentId));
 		const targets =
 			input.mode === "new_only"
-				? roster.filter((r) => !previouslyNotified.has(r.studentId))
+				? roster.filter(
+						(r) =>
+							!isOpeningStudentNotified(
+								r.email,
+								priorNotifState?.channelsByStudent.get(r.studentId),
+							),
+					)
 				: roster;
 		const skippedAlreadySentCount =
 			input.mode === "new_only" ? roster.length - targets.length : 0;
+
+		if (input.mode === "new_only" && targets.length === 0) {
+			const notifiedStudentIds = priorNotifState
+				? computeOpeningNotifiedStudentIds(
+						priorNotifState.channelsByStudent,
+						priorNotifState.emailByStudent,
+					)
+				: [];
+			const payload = {
+				ok: true as const,
+				openingConfirmedAt: confirmedAt.toISOString(),
+				openingAnnouncementVersion: announcementVersion,
+				startDate: persistedStartDate,
+				openingNote: persistedNote,
+				queuedEmailCount: 0,
+				inAppOnlyCount: 0,
+				skippedNoEmail: [],
+				skippedAlreadySentCount: roster.length,
+				notifiedStudentIds,
+			} satisfies ClassConfirmOpeningResponse;
+			return c.json(payload, 200);
+		}
+
 		const skippedNoEmail = targets
 			.filter((r) => r.email.trim() === "")
 			.map((r) => ({
@@ -2665,17 +2769,21 @@ export function kernelRoutes(deps: {
 		const events = classOpeningConfirmedEvents({
 			classId,
 			className: cls.name,
-			startDate: updatedRow.startDate,
+			startDate: persistedStartDate,
 			scheduleRaw: cls.schedule,
 			mode: cls.mode,
 			sessionsTotal: cls.sessionsTotal,
 			level: cls.level,
-			version: updatedRow.openingAnnouncementVersion,
+			version: announcementVersion,
 			isUpdate: input.mode === "all",
 			teacherNote: input.note,
 			orgName: senderName,
 			studentOrigin: deps.studentOrigin,
-			students: targets.map((t) => ({ id: t.studentId, name: t.studentName })),
+			students: targets.map((t) => ({
+				id: t.studentId,
+				name: t.studentName,
+				hasEmail: t.email.trim().length > 0,
+			})),
 		});
 
 		const { createdIds, queuedEmailIds } = await emitNotifications(
@@ -2689,29 +2797,18 @@ export function kernelRoutes(deps: {
 			createdIds.length - queuedEmailIds.length,
 		);
 
-		const afterNotifRows = await db
-			.select({ studentId: notificationRecord.studentId })
-			.from(notificationRecord)
-			.where(
-				and(
-					eq(notificationRecord.orgId, ctx.orgId),
-					eq(notificationRecord.eventType, "class_opening_confirmed"),
-					eq(notificationRecord.refType, "class"),
-					eq(notificationRecord.refId, classId),
-				),
-			);
-		const notifiedStudentIds = [
-			...new Set(afterNotifRows.map((r) => r.studentId)),
-		];
+		const afterNotifState = await loadOpeningNotifState(db, ctx.orgId, classId);
+		const notifiedStudentIds = computeOpeningNotifiedStudentIds(
+			afterNotifState.channelsByStudent,
+			afterNotifState.emailByStudent,
+		);
 
 		const payload = {
 			ok: true as const,
-			openingConfirmedAt: (
-				updatedRow.openingConfirmedAt ?? nextConfirmedAt
-			).toISOString(),
-			openingAnnouncementVersion: updatedRow.openingAnnouncementVersion,
-			startDate: updatedRow.startDate,
-			openingNote: updatedRow.openingNote,
+			openingConfirmedAt: confirmedAt.toISOString(),
+			openingAnnouncementVersion: announcementVersion,
+			startDate: persistedStartDate,
+			openingNote: persistedNote,
 			queuedEmailCount,
 			inAppOnlyCount,
 			skippedNoEmail,

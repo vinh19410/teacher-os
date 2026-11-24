@@ -5,8 +5,10 @@ import type { Db } from "../../app";
 import { resolveOrgMailSender } from "./org-mail-sender";
 import { eventGroupOf, type NotificationEvent } from "./templates";
 
-/** Giới hạn biến D1: mỗi INSERT tối đa số dòng này. */
-const INSERT_CHUNK = 50;
+/** Giới hạn tham số bind của Cloudflare D1 (≤ 100): SELECT `IN (...)` tối đa 50 id (≤ 51 params). */
+const SELECT_CHUNK = 50;
+/** Mỗi dòng `notification_record` bind ~20 tham số (kể cả `html_body` + `text_body`): 4 × 20 = 80 ≤ 100. */
+const INSERT_ROW_CHUNK = 4;
 
 export interface EnqueueResult {
 	/** id của các bản ghi MỚI được tạo (trùng khóa bị onConflictDoNothing bỏ). */
@@ -28,8 +30,8 @@ export async function enqueueNotifications(
 
 	const studentIds = [...new Set(events.map((e) => e.studentId))];
 	const emailByStudent = new Map<string, string>();
-	for (let i = 0; i < studentIds.length; i += INSERT_CHUNK) {
-		const chunk = studentIds.slice(i, i + INSERT_CHUNK);
+	for (let i = 0; i < studentIds.length; i += SELECT_CHUNK) {
+		const chunk = studentIds.slice(i, i + SELECT_CHUNK);
 		const students = await db
 			.select({ id: student.id, email: student.email })
 			.from(student)
@@ -57,6 +59,7 @@ export async function enqueueNotifications(
 				title: event.title,
 				body: event.body,
 				htmlBody: event.htmlBody ?? null,
+				textBody: event.textBody ?? null,
 				linkPath: event.linkPath,
 				refType: event.refType,
 				refId: event.refId,
@@ -72,8 +75,8 @@ export async function enqueueNotifications(
 
 	const createdIds: string[] = [];
 	const queuedEmailIds: string[] = [];
-	for (let i = 0; i < rows.length; i += INSERT_CHUNK) {
-		const chunk = rows.slice(i, i + INSERT_CHUNK);
+	for (let i = 0; i < rows.length; i += INSERT_ROW_CHUNK) {
+		const chunk = rows.slice(i, i + INSERT_ROW_CHUNK);
 		const inserted = await db
 			.insert(notificationRecord)
 			.values(chunk)

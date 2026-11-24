@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { createClient } from "@libsql/client";
+import { createClient, type InArgs, type InStatement } from "@libsql/client";
 import { NOTIFICATION_ERROR_CODES } from "@teacher-os/api/contracts";
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import { user as authUser } from "@teacher-os/db/schema/auth";
@@ -13,7 +13,7 @@ import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test, vi } from "vitest";
 import type { Db } from "../../app";
-import { deliverNotifications, renderHtml } from "./deliver";
+import { deliverNotifications, renderHtml, renderText } from "./deliver";
 import { emitNotifications } from "./emit";
 import { enqueueNotifications } from "./enqueue";
 import {
@@ -588,7 +588,7 @@ describe("notifications service (#454 phase 2)", () => {
 		expect(row8d.recipientEmail).toBeNull();
 	});
 
-	test("htmlBody được lưu nguyên vẹn và gửi trực tiếp tới mailer; bản ghi htmlBody=null vẫn dùng renderHtml", async () => {
+	test("htmlBody và textBody được lưu nguyên vẹn và gửi trực tiếp tới mailer; bản ghi null vẫn dùng renderHtml/renderText", async () => {
 		await seedOrg("org-html-1", "HTML Academy");
 		await seedOwner("org-html-1", "user-html-1", "owner@html-academy.vn");
 		await seedStudent("org-html-1", "stu-html-1", "rich@example.com");
@@ -610,10 +610,15 @@ describe("notifications service (#454 phase 2)", () => {
 			teacherNote: "Chuẩn bị micro rõ tiếng",
 			orgName: "HTML Academy",
 			studentOrigin: "https://student.teacheros.example",
-			students: [{ id: "stu-html-1", name: "Student stu-html-1" }],
+			students: [
+				{ id: "stu-html-1", name: "Student stu-html-1", hasEmail: true },
+			],
 		});
 		const expectedRichHtml = openingEvents[0]?.htmlBody ?? "";
+		const expectedRichText = openingEvents[0]?.textBody ?? "";
 		expect(expectedRichHtml.length).toBeGreaterThan(100);
+		expect(expectedRichText).toContain("Chào Student stu-html-1,");
+		expect(expectedRichText).toContain("Chuẩn bị micro rõ tiếng");
 
 		const plainEvent = {
 			studentId: "stu-plain-1",
@@ -633,7 +638,7 @@ describe("notifications service (#454 phase 2)", () => {
 				mailer: fakeMailer(async (input) => {
 					sentInputs.push(input);
 				}),
-				studentOrigin: "https://student.teacheros.example",
+				studentOrigin: "https://student.teacheros.example///",
 			},
 			"org-html-1",
 			[...openingEvents, plainEvent],
@@ -645,17 +650,23 @@ describe("notifications service (#454 phase 2)", () => {
 		const richRow = await rowOf("stu-html-1");
 		const plainRow = await rowOf("stu-plain-1");
 		expect(richRow.htmlBody).toBe(expectedRichHtml);
+		expect(richRow.textBody).toBe(expectedRichText);
 		expect(plainRow.htmlBody).toBeNull();
+		expect(plainRow.textBody).toBeNull();
 
 		const richSent = sentInputs.find((s) => s.to === "rich@example.com");
 		const plainSent = sentInputs.find((s) => s.to === "plain@example.com");
 		expect(richSent?.html).toBe(expectedRichHtml);
+		expect(richSent?.text).toBe(expectedRichText);
 		expect(plainSent?.html).toBe(
 			renderHtml(plainEvent.body, "https://student.teacheros.example/classes"),
 		);
+		expect(plainSent?.text).toBe(
+			renderText(plainEvent.body, "https://student.teacheros.example/classes"),
+		);
 	});
 
-	test("gửi lại bản ghi failed (requeueSingleFailedNotification + deliverNotifications) giữ nguyên htmlBody đã lưu", async () => {
+	test("gửi lại bản ghi failed (requeueSingleFailedNotification + deliverNotifications) giữ nguyên htmlBody và textBody đã lưu", async () => {
 		await seedOrg("org-html-resend", "Resend Academy");
 		await seedStudent(
 			"org-html-resend",
@@ -679,9 +690,10 @@ describe("notifications service (#454 phase 2)", () => {
 			teacherNote: "Đọc trước bài mẫu unit 1",
 			orgName: "Resend Academy",
 			studentOrigin: "https://student.teacheros.example",
-			students: [{ id: "stu-html-resend", name: "Minh Quân" }],
+			students: [{ id: "stu-html-resend", name: "Minh Quân", hasEmail: true }],
 		});
 		const expectedHtml = openingEvents[0]?.htmlBody ?? "";
+		const expectedText = openingEvents[0]?.textBody ?? "";
 
 		const enqueued = await enqueueNotifications(
 			db,
@@ -704,6 +716,7 @@ describe("notifications service (#454 phase 2)", () => {
 		const failedRow = await rowOf("stu-html-resend");
 		expect(failedRow.status).toBe("failed");
 		expect(failedRow.htmlBody).toBe(expectedHtml);
+		expect(failedRow.textBody).toBe(expectedText);
 
 		const requeued = await requeueSingleFailedNotification(
 			db,
@@ -726,8 +739,211 @@ describe("notifications service (#454 phase 2)", () => {
 
 		expect(resentInputs).toHaveLength(1);
 		expect(resentInputs[0]?.html).toBe(expectedHtml);
+		expect(resentInputs[0]?.text).toBe(expectedText);
 		const finalRow = await rowOf("stu-html-resend");
 		expect(finalRow.status).toBe("sent");
+	});
+
+	test("enqueueNotifications chia nhỏ batch insert với 12 học viên để mọi câu SQL đều ≤ 100 tham số bind (giới hạn D1)", async () => {
+		const trackedClient = createClient({ url: "file::memory:" });
+		const executed: Array<{ sql: string; paramCount: number }> = [];
+		let recording = false;
+		const rawExecute = trackedClient.execute.bind(trackedClient);
+		const wrappedClient = new Proxy(trackedClient, {
+			get(target, prop) {
+				if (prop === "execute") {
+					return (stmt: InStatement, extraArgs?: InArgs) => {
+						if (recording) {
+							const sqlText = typeof stmt === "string" ? stmt : stmt.sql;
+							const bound = typeof stmt === "string" ? extraArgs : stmt.args;
+							const paramCount = Array.isArray(bound)
+								? bound.length
+								: bound
+									? Object.keys(bound).length
+									: 0;
+							executed.push({ sql: sqlText, paramCount });
+						}
+						return typeof stmt === "string"
+							? rawExecute(stmt, extraArgs)
+							: rawExecute(stmt);
+					};
+				}
+				const value: unknown = Reflect.get(target, prop, target);
+				return typeof value === "function"
+					? (value as (...args: unknown[]) => unknown).bind(target)
+					: value;
+			},
+		});
+		const trackedLibsql = drizzle(wrappedClient, { schema });
+		await migrate(trackedLibsql, { migrationsFolder: MIGRATIONS_DIR });
+		const trackedDb = trackedLibsql as unknown as Db;
+
+		await trackedLibsql
+			.insert(organization)
+			.values({ id: "org-d1-chunk", name: "D1 Chunk Academy" });
+		const studentList = Array.from({ length: 12 }, (_, idx) => ({
+			id: `stu-d1-${idx + 1}`,
+			name: `Học viên ${idx + 1}`,
+			email: `stu-d1-${idx + 1}@example.com`,
+		}));
+		for (const s of studentList) {
+			await trackedLibsql.insert(student).values({
+				id: s.id,
+				orgId: "org-d1-chunk",
+				name: s.name,
+				email: s.email,
+			});
+		}
+
+		const openingEvents = classOpeningConfirmedEvents({
+			classId: "cls-d1-12",
+			className: "IELTS Batch 12",
+			startDate: "2026-10-05",
+			scheduleRaw: JSON.stringify({
+				days: [0, 2, 4],
+				start: "19:00",
+				end: "20:30",
+			}),
+			mode: "Online",
+			sessionsTotal: 24,
+			version: 1,
+			isUpdate: false,
+			teacherNote: "Kiểm tra chia batch 4 dòng mỗi lần INSERT",
+			orgName: "D1 Chunk Academy",
+			studentOrigin: "https://student.teacheros.example",
+			students: studentList.map((s) => ({
+				id: s.id,
+				name: s.name,
+				hasEmail: true,
+			})),
+		});
+
+		recording = true;
+		try {
+			const res = await enqueueNotifications(
+				trackedDb,
+				"org-d1-chunk",
+				openingEvents,
+			);
+			expect(res.createdIds).toHaveLength(12);
+			expect(res.queuedEmailIds).toHaveLength(12);
+		} finally {
+			recording = false;
+		}
+
+		const insertStatements = executed.filter((q) =>
+			q.sql.toLowerCase().includes('insert into "notification_record"'),
+		);
+		expect(insertStatements).toHaveLength(3);
+		for (const stmt of executed) {
+			expect(stmt.paramCount).toBeLessThanOrEqual(100);
+		}
+		for (const stmt of insertStatements) {
+			expect(stmt.paramCount).toBeGreaterThan(0);
+			expect(stmt.paramCount).toBeLessThanOrEqual(100);
+		}
+
+		const persisted = await trackedLibsql
+			.select()
+			.from(notificationRecord)
+			.where(eq(notificationRecord.orgId, "org-d1-chunk"));
+		expect(persisted).toHaveLength(12);
+		for (const row of persisted) {
+			expect(row.htmlBody).toContain("<!DOCTYPE html>");
+			expect(row.textBody).toContain(
+				"Kiểm tra chia batch 4 dòng mỗi lần INSERT",
+			);
+		}
+	});
+
+	test("emitNotifications ẩn bí mật/raw error khi log lỗi ở cả nhánh sync và runInBackground", async () => {
+		const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		try {
+			const brokenDb = {
+				select: () => {
+					throw new Error(
+						"query failed Authorization: Bearer re_live_secret_token_999",
+					);
+				},
+			} as unknown as Db;
+
+			await emitNotifications(
+				{ db: brokenDb, mailer: fakeMailer() },
+				"org-redact",
+				[
+					{
+						studentId: "stu-redact",
+						eventType: "class_enrolled",
+						idempotencyKey: "class_enrolled:enr-redact",
+						title: "T",
+						body: "B",
+						linkPath: "/classes",
+						refType: "enrollment",
+						refId: "enr-redact",
+					},
+				],
+			);
+
+			expect(errorSpy).toHaveBeenCalledTimes(1);
+			const loggedArgs = errorSpy.mock.calls[0] ?? [];
+			expect(typeof loggedArgs[1]).toBe("string");
+			expect(String(loggedArgs[1])).toContain("Bearer [REDACTED]");
+			expect(String(loggedArgs[1])).not.toContain("re_live_secret_token_999");
+
+			errorSpy.mockClear();
+			await seedOrg("org-redact-bg", "Redact BG");
+			await seedStudent("org-redact-bg", "stu-redact-bg", "bg@example.com");
+
+			let bgPromise: Promise<unknown> | undefined;
+			let selectCount = 0;
+			const failingSelectDb = new Proxy(db, {
+				get(target, prop, receiver) {
+					if (prop === "select") {
+						return (...args: unknown[]) => {
+							selectCount += 1;
+							if (selectCount > 3) {
+								throw new Error(
+									"bg db failed re_live_bg_secret_456 Authorization: Bearer topsecret",
+								);
+							}
+							return (target.select as (...a: unknown[]) => unknown)(...args);
+						};
+					}
+					return Reflect.get(target, prop, receiver);
+				},
+			}) as Db;
+
+			await emitNotifications(
+				{
+					db: failingSelectDb,
+					mailer: fakeMailer(),
+					runInBackground: (promise) => {
+						bgPromise = promise;
+					},
+				},
+				"org-redact-bg",
+				[
+					{
+						studentId: "stu-redact-bg",
+						eventType: "class_enrolled",
+						idempotencyKey: "class_enrolled:enr-redact-bg",
+						title: "T",
+						body: "B",
+						linkPath: "/classes",
+						refType: "enrollment",
+						refId: "enr-redact-bg",
+					},
+				],
+			);
+			await bgPromise;
+			expect(errorSpy).toHaveBeenCalledTimes(1);
+			const bgLoggedArgs = errorSpy.mock.calls[0] ?? [];
+			expect(typeof bgLoggedArgs[1]).toBe("string");
+			expect(String(bgLoggedArgs[1])).not.toContain("re_live_bg_secret_456");
+			expect(String(bgLoggedArgs[1])).not.toContain("topsecret");
+		} finally {
+			errorSpy.mockRestore();
+		}
 	});
 });
 

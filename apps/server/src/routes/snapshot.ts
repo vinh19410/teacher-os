@@ -57,6 +57,7 @@ import {
 } from "@teacher-os/db/schema/vocab";
 import { and, asc, desc, eq, isNull, notLike } from "drizzle-orm";
 import type { Db } from "../app";
+import { isOpeningStudentNotified } from "../lib/notifications/templates";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
 import { loadCommentBank, loadNotifs, loadReports } from "./reporting/loaders";
 
@@ -489,9 +490,10 @@ export async function loadSnapshot(
 				asc(syllabusLessonMaterial.createdAt),
 			),
 		db
-			.select({
+			.selectDistinct({
 				refId: notificationRecord.refId,
 				studentId: notificationRecord.studentId,
+				channels: notificationRecord.channels,
 			})
 			.from(notificationRecord)
 			.where(
@@ -672,14 +674,38 @@ export async function loadSnapshot(
 		modulesBySyllabus.set(mod.syllabusId, list);
 	}
 
-	const openingNotifiedByClass = new Map<string, Set<string>>();
+	const emailByStudentId = new Map<string, string>();
+	for (const row of studentRows) {
+		emailByStudentId.set(row.id, row.email);
+	}
+	const openingChannelsByClass = new Map<string, Map<string, Set<string>>>();
 	for (const row of openingNotifRows) {
-		let set = openingNotifiedByClass.get(row.refId);
-		if (!set) {
-			set = new Set();
-			openingNotifiedByClass.set(row.refId, set);
+		let byStudent = openingChannelsByClass.get(row.refId);
+		if (!byStudent) {
+			byStudent = new Map();
+			openingChannelsByClass.set(row.refId, byStudent);
 		}
-		set.add(row.studentId);
+		let channels = byStudent.get(row.studentId);
+		if (!channels) {
+			channels = new Set();
+			byStudent.set(row.studentId, channels);
+		}
+		channels.add(row.channels);
+	}
+	const openingNotifiedByClass = new Map<string, string[]>();
+	for (const [classId, byStudent] of openingChannelsByClass) {
+		const notifiedIds: string[] = [];
+		for (const [studentId, channels] of byStudent) {
+			if (
+				isOpeningStudentNotified(
+					emailByStudentId.get(studentId) ?? "",
+					channels,
+				)
+			) {
+				notifiedIds.push(studentId);
+			}
+		}
+		openingNotifiedByClass.set(classId, notifiedIds);
 	}
 
 	return {
@@ -716,9 +742,7 @@ export async function loadSnapshot(
 				: null,
 			openingNote: row.openingNote ?? "",
 			openingAnnouncementVersion: row.openingAnnouncementVersion ?? 0,
-			openingNotifiedStudentIds: [
-				...(openingNotifiedByClass.get(row.id) ?? []),
-			],
+			openingNotifiedStudentIds: openingNotifiedByClass.get(row.id) ?? [],
 		})),
 		enrollments: enrollmentRows.map((row) => ({
 			id: row.id,
