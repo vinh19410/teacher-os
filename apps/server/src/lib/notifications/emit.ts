@@ -1,7 +1,7 @@
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import type { Db } from "../../app";
 import { deliverNotifications, sanitizeDeliveryError } from "./deliver";
-import { enqueueNotifications } from "./enqueue";
+import { type EnqueueResult, enqueueNotifications } from "./enqueue";
 import type { NotificationEvent } from "./templates";
 
 /** Deps tối thiểu để phát thông báo — route không cần biết chi tiết (D4/D6). */
@@ -67,30 +67,40 @@ export async function emitNotifications(
 	deps: NotificationDeps,
 	orgId: string,
 	events: NotificationEvent[],
-): Promise<void> {
+): Promise<EnqueueResult> {
+	if (events.length === 0) return { createdIds: [], queuedEmailIds: [] };
+	let enqueued: EnqueueResult = { createdIds: [], queuedEmailIds: [] };
 	try {
-		const { queuedEmailIds } = await enqueueNotifications(
-			deps.db,
-			orgId,
-			events,
-		);
-		if (queuedEmailIds.length === 0) return;
+		enqueued = await enqueueNotifications(deps.db, orgId, events);
+		if (enqueued.queuedEmailIds.length === 0) return enqueued;
 		const delivery = deliverNotifications(
 			deps.db,
 			deps.mailer,
-			queuedEmailIds,
+			enqueued.queuedEmailIds,
 			deps.studentOrigin,
 			deps.retryDelaysMs ? { retryDelaysMs: deps.retryDelaysMs } : undefined,
 		);
 		if (deps.runInBackground) {
-			deps.runInBackground(delivery);
+			deps.runInBackground(
+				delivery.catch((error) => {
+					const message =
+						error instanceof Error ? error.message : String(error);
+					console.error(
+						"[notifications] background deliver failed (business op unaffected):",
+						sanitizeDeliveryError(message).rawError,
+					);
+				}),
+			);
 		} else {
 			await delivery;
 		}
+		return enqueued;
 	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
 		console.error(
-			"[notifications] emit failed (business op unaffected)",
-			error,
+			"[notifications] emit failed (business op unaffected):",
+			sanitizeDeliveryError(message).rawError,
 		);
+		return enqueued;
 	}
 }

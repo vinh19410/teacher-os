@@ -11,6 +11,8 @@ import { BRAND_NAME, formatSenderName } from "../brand";
 /** last_error cắt 500 ký tự; message lỗi Resend không chứa API key (chỉ header Bearer). */
 const LAST_ERROR_MAX = 500;
 const DEFAULT_RETRY_DELAYS_MS = [2000, 5000] as const;
+/** Giới hạn tham số bind của Cloudflare D1 cho SELECT `IN (...)`. */
+const SELECT_CHUNK = 50;
 
 function retryIncrement() {
 	// SQL increment để chạy song song không ghi đè retry_count của nhau.
@@ -56,6 +58,8 @@ interface QueuedRow {
 	id: string;
 	title: string;
 	body: string;
+	htmlBody: string | null;
+	textBody: string | null;
 	linkPath: string;
 	recipientEmail: string | null;
 	senderName: string;
@@ -135,6 +139,7 @@ export async function deliverNotifications(
 	}
 
 	const delays = options?.retryDelaysMs ?? DEFAULT_RETRY_DELAYS_MS;
+	const normalizedOrigin = studentOrigin.trim().replace(/\/+$/, "");
 	let pendingIds = [...ids];
 
 	for (
@@ -147,27 +152,34 @@ export async function deliverNotifications(
 			await sleep(delayMs);
 		}
 
-		const rows = (await db
-			.select({
-				id: notificationRecord.id,
-				title: notificationRecord.title,
-				body: notificationRecord.body,
-				linkPath: notificationRecord.linkPath,
-				recipientEmail: notificationRecord.recipientEmail,
-				senderName: notificationRecord.senderName,
-				replyToEmail: notificationRecord.replyToEmail,
-				channels: notificationRecord.channels,
-				readAt: notificationRecord.readAt,
-				retryCount: notificationRecord.retryCount,
-			})
-			.from(notificationRecord)
-			.where(
-				and(
-					inArray(notificationRecord.id, pendingIds),
-					eq(notificationRecord.status, "queued"),
-					lt(notificationRecord.retryCount, MAX_EMAIL_ATTEMPTS),
-				),
-			)) as QueuedRow[];
+		const rows: QueuedRow[] = [];
+		for (let i = 0; i < pendingIds.length; i += SELECT_CHUNK) {
+			const chunk = pendingIds.slice(i, i + SELECT_CHUNK);
+			const batch = (await db
+				.select({
+					id: notificationRecord.id,
+					title: notificationRecord.title,
+					body: notificationRecord.body,
+					htmlBody: notificationRecord.htmlBody,
+					textBody: notificationRecord.textBody,
+					linkPath: notificationRecord.linkPath,
+					recipientEmail: notificationRecord.recipientEmail,
+					senderName: notificationRecord.senderName,
+					replyToEmail: notificationRecord.replyToEmail,
+					channels: notificationRecord.channels,
+					readAt: notificationRecord.readAt,
+					retryCount: notificationRecord.retryCount,
+				})
+				.from(notificationRecord)
+				.where(
+					and(
+						inArray(notificationRecord.id, chunk),
+						eq(notificationRecord.status, "queued"),
+						lt(notificationRecord.retryCount, MAX_EMAIL_ATTEMPTS),
+					),
+				)) as QueuedRow[];
+			rows.push(...batch);
+		}
 
 		const nextPendingIds: string[] = [];
 
@@ -176,14 +188,14 @@ export async function deliverNotifications(
 			if (!row.recipientEmail) continue;
 
 			const linkUrl = row.linkPath
-				? `${studentOrigin}${row.linkPath}`
-				: studentOrigin;
+				? `${normalizedOrigin}${row.linkPath}`
+				: normalizedOrigin;
 			try {
 				await mailer.send({
 					to: row.recipientEmail,
 					subject: row.title,
-					html: renderHtml(row.body, linkUrl),
-					text: renderText(row.body, linkUrl),
+					html: row.htmlBody || renderHtml(row.body, linkUrl),
+					text: row.textBody || renderText(row.body, linkUrl),
 					idempotencyKey: row.id,
 					...(row.replyToEmail ? { replyTo: row.replyToEmail } : {}),
 					...(row.senderName

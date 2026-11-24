@@ -483,4 +483,22 @@ describe("NotificationsRoute (#454 phase 5)", () => {
 			screen.getByText("Không có thông báo nào phù hợp với bộ lọc."),
 		).toBeTruthy();
 	});
+
+	it("hiển thị nhãn Thông báo khai giảng cho sự kiện class_opening_confirmed", async () => {
+		renderRoute(
+			seedResponse({
+				rows: [
+					row({
+						id: "nt-opening",
+						eventType: "class_opening_confirmed",
+						eventGroup: "schedule",
+						title: "Thông báo khai giảng lớp IELTS Writing 7.0 — 10/05/2099",
+					}),
+				],
+				total: 1,
+			}),
+		);
+		const table = await screen.findByTestId("notifications-table");
+		expect(table.textContent).toContain("Thông báo khai giảng");
+	});
 });

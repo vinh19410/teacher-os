@@ -33,6 +33,16 @@ export const classTable = sqliteTable(
 		 * Per-student theo yêu cầu — KHÔNG phải tổng học phí cả lớp; không derive từ invoice (persist-vs-derive carve-out). */
 		tuitionFee: integer("tuition_fee"),
 		notes: text("notes").notNull().default(""),
+		/** Thời điểm giáo viên xác nhận khai giảng lớp; null = chưa xác nhận. */
+		openingConfirmedAt: integer("opening_confirmed_at", {
+			mode: "timestamp_ms",
+		}),
+		/** Ghi chú gần nhất của giáo viên gửi kèm thông báo khai giảng. */
+		openingNote: text("opening_note").notNull().default(""),
+		/** Bộ đếm phiên bản đơn điệu cho thông báo khai giảng (CAS chống gửi trùng & idempotency). */
+		openingAnnouncementVersion: integer("opening_announcement_version")
+			.notNull()
+			.default(0),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),

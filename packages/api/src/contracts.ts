@@ -223,6 +223,8 @@ export const CLASS_ERROR_CODES = {
 	SCHEDULE_LOCKED: "CLASS_SCHEDULE_LOCKED",
 	/** Lớp đang tạm dừng — chặn tuyển sinh mới và thao tác ghi giảng dạy (#694). */
 	CLASS_PAUSED: "CLASS_PAUSED",
+	/** Phiên bản thông báo khai giảng đã thay đổi bởi thao tác đồng thời khác. */
+	OPENING_VERSION_CONFLICT: "CLASS_OPENING_VERSION_CONFLICT",
 } as const;
 export type ClassErrorCode =
 	(typeof CLASS_ERROR_CODES)[keyof typeof CLASS_ERROR_CODES];
@@ -270,6 +272,59 @@ export const classUpdateSchema = z
 	.strict()
 	.superRefine(refineClassFields);
 export type ClassUpdate = z.infer<typeof classUpdateSchema>;
+
+export const CLASS_OPENING_SEND_MODES = ["initial", "new_only", "all"] as const;
+export type ClassOpeningSendMode = (typeof CLASS_OPENING_SEND_MODES)[number];
+
+export const CLASS_OPENING_NOTE_MAX_LENGTH = 1000;
+
+export const classConfirmOpeningSchema = z
+	.object({
+		mode: z.enum(CLASS_OPENING_SEND_MODES),
+		startDate: z
+			.string()
+			.trim()
+			.refine((v) => isValidIsoCalendarDate(v), "Ngày khai giảng không hợp lệ")
+			.optional(),
+		note: z
+			.string()
+			.trim()
+			.max(CLASS_OPENING_NOTE_MAX_LENGTH, "Lời nhắn tối đa 1.000 ký tự")
+			.default(""),
+		expectedVersion: z.number().int().min(0),
+	})
+	.strict();
+export type ClassConfirmOpeningInput = z.infer<
+	typeof classConfirmOpeningSchema
+>;
+
+export const classConfirmOpeningSkippedStudentSchema = z
+	.object({
+		studentId: z.string(),
+		studentName: z.string(),
+	})
+	.strict();
+export type ClassConfirmOpeningSkippedStudent = z.infer<
+	typeof classConfirmOpeningSkippedStudentSchema
+>;
+
+export const classConfirmOpeningResponseSchema = z
+	.object({
+		ok: z.literal(true),
+		openingConfirmedAt: z.string(),
+		openingAnnouncementVersion: z.number().int().min(1),
+		startDate: z.string(),
+		openingNote: z.string(),
+		queuedEmailCount: z.number().int().min(0),
+		inAppOnlyCount: z.number().int().min(0),
+		skippedNoEmail: z.array(classConfirmOpeningSkippedStudentSchema),
+		skippedAlreadySentCount: z.number().int().min(0),
+		notifiedStudentIds: z.array(z.string()),
+	})
+	.strict();
+export type ClassConfirmOpeningResponse = z.infer<
+	typeof classConfirmOpeningResponseSchema
+>;
 
 /**
  * Bulk content cho syllabus create (Excel/CSV import).
@@ -1866,6 +1921,10 @@ export interface KernelClassRow {
 	tuitionFee: number | null;
 	notes: string;
 	schedulingMode?: "auto" | "manual" | string;
+	openingConfirmedAt?: string | null;
+	openingNote?: string;
+	openingAnnouncementVersion?: number;
+	openingNotifiedStudentIds?: string[];
 }
 
 export const ENROLLMENT_STATUSES = ["invited", "active"] as const;
@@ -4385,6 +4444,7 @@ export const NOTIFICATION_EVENT_TYPES = [
 	"tuition_reminder",
 	"schedule_changed",
 	"holiday_created",
+	"class_opening_confirmed",
 ] as const;
 
 /** #454 — 4 nhóm chip lọc màn notification log (plan TOS-21 D2). */
@@ -4411,6 +4471,7 @@ export const NOTIFICATION_EVENT_GROUP_BY_TYPE: Record<
 	tuition_reminder: "tuition",
 	schedule_changed: "schedule",
 	holiday_created: "schedule",
+	class_opening_confirmed: "schedule",
 };
 
 export const NOTIFICATION_STATUSES = [

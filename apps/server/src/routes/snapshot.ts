@@ -34,6 +34,7 @@ import {
 	material,
 	syllabusLessonMaterial,
 } from "@teacher-os/db/schema/material";
+import { notificationRecord } from "@teacher-os/db/schema/notification-record";
 import { orgEvent } from "@teacher-os/db/schema/org-event";
 import {
 	holidaySessionCancel,
@@ -56,6 +57,7 @@ import {
 } from "@teacher-os/db/schema/vocab";
 import { and, asc, desc, eq, isNull, notLike } from "drizzle-orm";
 import type { Db } from "../app";
+import { isOpeningStudentNotified } from "../lib/notifications/templates";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
 import { loadCommentBank, loadNotifs, loadReports } from "./reporting/loaders";
 
@@ -267,6 +269,7 @@ export async function loadSnapshot(
 		classSessionRows,
 		classSessionMeetingRows,
 		bankMaterialLinkRows,
+		openingNotifRows,
 	] = await Promise.all([
 		db
 			.select()
@@ -486,6 +489,20 @@ export async function loadSnapshot(
 				asc(syllabusLessonMaterial.position),
 				asc(syllabusLessonMaterial.createdAt),
 			),
+		db
+			.selectDistinct({
+				refId: notificationRecord.refId,
+				studentId: notificationRecord.studentId,
+				channels: notificationRecord.channels,
+			})
+			.from(notificationRecord)
+			.where(
+				and(
+					eq(notificationRecord.orgId, orgId),
+					eq(notificationRecord.eventType, "class_opening_confirmed"),
+					eq(notificationRecord.refType, "class"),
+				),
+			),
 	]);
 
 	// #208: headers BEFORE targets, strictly sequential — a write landing
@@ -657,6 +674,40 @@ export async function loadSnapshot(
 		modulesBySyllabus.set(mod.syllabusId, list);
 	}
 
+	const emailByStudentId = new Map<string, string>();
+	for (const row of studentRows) {
+		emailByStudentId.set(row.id, row.email);
+	}
+	const openingChannelsByClass = new Map<string, Map<string, Set<string>>>();
+	for (const row of openingNotifRows) {
+		let byStudent = openingChannelsByClass.get(row.refId);
+		if (!byStudent) {
+			byStudent = new Map();
+			openingChannelsByClass.set(row.refId, byStudent);
+		}
+		let channels = byStudent.get(row.studentId);
+		if (!channels) {
+			channels = new Set();
+			byStudent.set(row.studentId, channels);
+		}
+		channels.add(row.channels);
+	}
+	const openingNotifiedByClass = new Map<string, string[]>();
+	for (const [classId, byStudent] of openingChannelsByClass) {
+		const notifiedIds: string[] = [];
+		for (const [studentId, channels] of byStudent) {
+			if (
+				isOpeningStudentNotified(
+					emailByStudentId.get(studentId) ?? "",
+					channels,
+				)
+			) {
+				notifiedIds.push(studentId);
+			}
+		}
+		openingNotifiedByClass.set(classId, notifiedIds);
+	}
+
 	return {
 		students: studentRows.map((row) => ({
 			id: row.id,
@@ -686,6 +737,12 @@ export async function loadSnapshot(
 			tuitionFee: row.tuitionFee ?? null,
 			schedulingMode: row.schedulingMode ?? "auto",
 			notes: row.notes,
+			openingConfirmedAt: row.openingConfirmedAt
+				? row.openingConfirmedAt.toISOString()
+				: null,
+			openingNote: row.openingNote ?? "",
+			openingAnnouncementVersion: row.openingAnnouncementVersion ?? 0,
+			openingNotifiedStudentIds: openingNotifiedByClass.get(row.id) ?? [],
 		})),
 		enrollments: enrollmentRows.map((row) => ({
 			id: row.id,

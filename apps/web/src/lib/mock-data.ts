@@ -214,6 +214,10 @@ export interface ClassGroup {
 	tuitionFee: number | null;
 	notes: string;
 	schedulingMode?: "auto" | "manual" | string;
+	openingConfirmedAt?: string | null;
+	openingNote?: string;
+	openingAnnouncementVersion?: number;
+	openingNotifiedStudentIds?: string[];
 }
 
 export interface ClassSessionItem {
