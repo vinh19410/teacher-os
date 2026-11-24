@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "fbd591ab-539e-48b2-ad3c-57176214249a",
+  "id": "8abc5b85-833f-4888-bbe7-3388b1444447",
   "prevId": "a0a0e1f2-1fe4-49d5-b893-10885ca02709",
   "tables": {
     "ai_grading_draft": {
@@ -4235,6 +4235,13 @@
         },
         "html_body": {
           "name": "html_body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "text_body": {
+          "name": "text_body",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
