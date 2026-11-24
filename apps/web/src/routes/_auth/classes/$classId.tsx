@@ -270,6 +270,9 @@ function ClassDetailRoute() {
 	if (!cls) {
 		throw notFound();
 	}
+	const isOpeningConfirmed =
+		(cls.openingAnnouncementVersion ?? 0) > 0 ||
+		Boolean(cls.openingConfirmedAt);
 	const classLessons = data.lessons.filter((l) =>
 		cls.studentIds.includes(l.sid),
 	);
@@ -347,7 +350,7 @@ function ClassDetailRoute() {
 						>
 							{isPaused ? "Tạm dừng" : "Đang hoạt động"}
 						</Badge>
-						{cls.openingConfirmedAt && (
+						{isOpeningConfirmed && (
 							<Badge variant="success" data-testid="opening-confirmed-badge">
 								Đã chốt khai giảng
 							</Badge>
@@ -369,7 +372,7 @@ function ClassDetailRoute() {
 								}
 								onClick={() => setConfirmOpeningOpen(true)}
 							>
-								{cls.openingConfirmedAt
+								{isOpeningConfirmed
 									? "Thông báo khai giảng"
 									: "Chốt khai giảng"}
 							</Button>

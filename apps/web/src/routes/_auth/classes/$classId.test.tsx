@@ -2436,6 +2436,30 @@ describe("class detail → confirm opening confirmation", () => {
 		).toBeTruthy();
 	});
 
+	it("treats class as opening-confirmed when openingAnnouncementVersion > 0 even if openingConfirmedAt is null", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						name: "IELTS Writing",
+						startDate: "2099-05-10",
+						openingConfirmedAt: null,
+						openingAnnouncementVersion: 1,
+						openingNotifiedStudentIds: ["st-1"],
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<ClassDetail />);
+
+		const badge = await screen.findByTestId("opening-confirmed-badge");
+		expect(badge.textContent).toBe("Đã chốt khai giảng");
+		expect(
+			screen.getByRole("button", { name: "Thông báo khai giảng" }),
+		).toBeTruthy();
+	});
+
 	it("hides opening confirmation button for ta role", async () => {
 		startKernelServer({
 			...twoClasses(),

@@ -29,11 +29,13 @@ vi.mock("sonner", () => ({ toast: toastMock }));
 vi.mock("@/lib/reauth", () => ({ reauth: reauthMock }));
 
 import {
+	buildSuccessToast,
 	ConfirmOpeningModal,
 	type OpeningRosterEntry,
 } from "./confirm-opening-modal";
 
 const futureDate = addDaysISO(vietnamTodayISO(), 10);
+const laterFutureDate = addDaysISO(vietnamTodayISO(), 20);
 const pastDate = addDaysISO(vietnamTodayISO(), -5);
 
 function makeStudent(overrides: Partial<Student> = {}): Student {
@@ -588,5 +590,448 @@ describe("ConfirmOpeningModal", () => {
 		const alert = await screen.findByRole("alert");
 		expect(alert.textContent).toContain("Lớp đã có buổi học thực tế");
 		expect(onConfirmed).toHaveBeenCalledTimes(1);
+	});
+
+	it("locks startDate in new_only mode with switch guidance, unlocks in all mode, resets on switch back, and omits startDate in new_only payload", async () => {
+		const fetchMock = vi.fn(async () =>
+			jsonResponse(200, {
+				ok: true,
+				openingConfirmedAt: "2026-11-24T06:00:00.000Z",
+				openingAnnouncementVersion: 2,
+				startDate: futureDate,
+				openingNote: "",
+				queuedEmailCount: 1,
+				inAppOnlyCount: 0,
+				skippedNoEmail: [],
+				skippedAlreadySentCount: 1,
+				notifiedStudentIds: ["st-1", "st-2"],
+			}),
+		);
+		vi.stubGlobal("fetch", fetchMock);
+		const onConfirmed = vi.fn(async () => undefined);
+		const onClose = vi.fn();
+
+		const confirmedWithNew = makeClassGroup({
+			startDate: futureDate,
+			openingConfirmedAt: "2026-11-20T02:30:00.000Z",
+			openingAnnouncementVersion: 1,
+			openingNotifiedStudentIds: ["st-1"],
+		});
+
+		render(
+			<ConfirmOpeningModal
+				open
+				onClose={onClose}
+				cls={confirmedWithNew}
+				hasRealSessions={false}
+				roster={makeDefaultRoster().slice(0, 2)}
+				onConfirmed={onConfirmed}
+			/>,
+		);
+
+		const dialog = screen.getByRole("dialog");
+
+		// Divider sits on the wrapper div above fieldset so top border never cuts through legend.
+		const fieldset = dialog.querySelector("fieldset");
+		expect(fieldset).toBeTruthy();
+		expect(fieldset?.className).not.toContain("border-t");
+		expect(fieldset?.parentElement?.className).toContain("border-t");
+
+		// In default new_only mode, startDate is read-only with guidance to switch to "all".
+		expect(within(dialog).queryByLabelText(/Ngày khai giảng/)).toBeNull();
+		expect(
+			within(dialog).getByTestId("opening-date-readonly").textContent,
+		).toContain(formatViWeekdayDate(futureDate));
+		expect(
+			within(dialog).getByTestId("opening-date-locked-note").textContent,
+		).toContain(
+			'Chọn "Gửi thông báo cập nhật cho cả lớp" nếu cần thay đổi ngày khai giảng.',
+		);
+
+		// Switching to "all" makes startDate editable when there are no real sessions.
+		const allRadio = within(dialog).getByRole("radio", {
+			name: /Gửi thông báo cập nhật cho cả lớp \(2\)/,
+		});
+		const newOnlyRadio = within(dialog).getByRole("radio", {
+			name: /Chỉ gửi cho học viên mới chưa nhận \(1\)/,
+		});
+		fireEvent.click(allRadio);
+
+		const dateInput = within(dialog).getByLabelText(
+			/Ngày khai giảng/,
+		) as HTMLInputElement;
+		expect(dateInput.value).toBe(formatViDateDisplay(futureDate));
+
+		fireEvent.change(dateInput, {
+			target: { value: formatViDateDisplay(laterFutureDate) },
+		});
+		const iframe = within(dialog).getByTitle(
+			"Xem trước email thông báo khai giảng",
+		) as HTMLIFrameElement;
+		expect(iframe.getAttribute("srcdoc")).toContain(
+			formatViDateDisplay(laterFutureDate),
+		);
+
+		// Switching back to new_only resets startDate to cls.startDate and restores preview.
+		fireEvent.click(newOnlyRadio);
+		expect(within(dialog).queryByLabelText(/Ngày khai giảng/)).toBeNull();
+		expect(
+			within(dialog)
+				.getByTitle("Xem trước email thông báo khai giảng")
+				.getAttribute("srcdoc"),
+		).toContain(formatViDateDisplay(futureDate));
+		expect(
+			within(dialog)
+				.getByTitle("Xem trước email thông báo khai giảng")
+				.getAttribute("srcdoc"),
+		).not.toContain(formatViDateDisplay(laterFutureDate));
+
+		// Re-entering "all" confirms the edited draft date was reset cleanly.
+		fireEvent.click(allRadio);
+		expect(
+			(within(dialog).getByLabelText(/Ngày khai giảng/) as HTMLInputElement)
+				.value,
+		).toBe(formatViDateDisplay(futureDate));
+
+		// Type an invalid date in "all" mode, then switch back to "new_only" and
+		// verify startDateInvalid is cleared cleanly on submit and when re-entering "all".
+		fireEvent.change(within(dialog).getByLabelText(/Ngày khai giảng/), {
+			target: { value: "99/99" },
+		});
+
+		// Switch back to new_only and submit — payload must omit startDate.
+		fireEvent.click(newOnlyRadio);
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Gửi bổ sung (1 email)" }),
+		);
+
+		await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		const [, init] = fetchMock.mock.calls[0] as unknown as [
+			string,
+			RequestInit,
+		];
+		const sentBody = JSON.parse(String(init.body)) as Record<string, unknown>;
+		expect(sentBody).toEqual({
+			mode: "new_only",
+			note: "",
+			expectedVersion: 1,
+		});
+		expect("startDate" in sentBody).toBe(false);
+	});
+
+	it("prioritizes real-sessions lock notice over new_only guidance when class has real sessions", () => {
+		const confirmedWithNew = makeClassGroup({
+			startDate: futureDate,
+			openingConfirmedAt: "2026-11-20T02:30:00.000Z",
+			openingAnnouncementVersion: 1,
+			openingNotifiedStudentIds: ["st-1"],
+		});
+
+		render(
+			<ConfirmOpeningModal
+				open
+				onClose={vi.fn()}
+				cls={confirmedWithNew}
+				hasRealSessions
+				roster={makeDefaultRoster().slice(0, 2)}
+				onConfirmed={vi.fn(async () => undefined)}
+			/>,
+		);
+
+		const dialog = screen.getByRole("dialog");
+		expect(
+			within(dialog).getByTestId("opening-date-locked-note").textContent,
+		).toContain("Lớp đã có buổi học thực tế");
+
+		fireEvent.click(
+			within(dialog).getByRole("radio", {
+				name: /Gửi thông báo cập nhật cho cả lớp \(2\)/,
+			}),
+		);
+		expect(within(dialog).queryByLabelText(/Ngày khai giảng/)).toBeNull();
+		expect(
+			within(dialog).getByTestId("opening-date-locked-note").textContent,
+		).toContain("Lớp đã có buổi học thực tế");
+	});
+
+	it("submits form cleanly via Enter and footer type=submit button bound to form id", async () => {
+		const fetchMock = vi.fn(async () =>
+			jsonResponse(200, {
+				ok: true,
+				openingConfirmedAt: "2026-11-24T06:00:00.000Z",
+				openingAnnouncementVersion: 1,
+				startDate: futureDate,
+				openingNote: "",
+				queuedEmailCount: 2,
+				inAppOnlyCount: 0,
+				skippedNoEmail: [],
+				skippedAlreadySentCount: 0,
+				notifiedStudentIds: ["st-1", "st-2"],
+			}),
+		);
+		vi.stubGlobal("fetch", fetchMock);
+		const onConfirmed = vi.fn(async () => undefined);
+		const onClose = vi.fn();
+
+		render(
+			<ConfirmOpeningModal
+				open
+				onClose={onClose}
+				cls={makeClassGroup()}
+				hasRealSessions={false}
+				roster={makeDefaultRoster().slice(0, 2)}
+				onConfirmed={onConfirmed}
+			/>,
+		);
+
+		const dialog = screen.getByRole("dialog");
+		const form = dialog.querySelector("form");
+		expect(form).toBeTruthy();
+		expect(form?.id).toBeTruthy();
+
+		const submitBtn = within(dialog).getByRole("button", {
+			name: "Chốt & gửi 2 email",
+		}) as HTMLButtonElement;
+		expect(submitBtn.type).toBe("submit");
+		expect(submitBtn.getAttribute("form")).toBe(form?.id);
+
+		const dateInput = within(dialog).getByLabelText(/Ngày khai giảng/);
+		const enterNotPrevented = fireEvent.keyDown(dateInput, { key: "Enter" });
+		expect(enterNotPrevented).toBe(true);
+
+		fireEvent.submit(form as HTMLFormElement);
+
+		await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+		expect(onConfirmed).toHaveBeenCalledTimes(1);
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("synchronizes startDate, note, and sendMode when openingAnnouncementVersion refreshes after a 409 conflict while keeping the alert visible", async () => {
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce(
+				jsonResponse(409, {
+					error: "Thông tin khai giảng đã thay đổi bởi thao tác khác.",
+					code: CLASS_ERROR_CODES.OPENING_VERSION_CONFLICT,
+				}),
+			)
+			.mockResolvedValueOnce(
+				jsonResponse(200, {
+					ok: true,
+					openingConfirmedAt: "2026-11-24T06:10:00.000Z",
+					openingAnnouncementVersion: 2,
+					startDate: laterFutureDate,
+					openingNote: "Ghi chú đã cập nhật từ máy khác",
+					queuedEmailCount: 1,
+					inAppOnlyCount: 0,
+					skippedNoEmail: [],
+					skippedAlreadySentCount: 1,
+					notifiedStudentIds: ["st-1", "st-2"],
+				}),
+			);
+		vi.stubGlobal("fetch", fetchMock);
+		const onConfirmed = vi.fn(async () => undefined);
+		const onClose = vi.fn();
+		const roster = makeDefaultRoster().slice(0, 2);
+
+		const { rerender } = render(
+			<ConfirmOpeningModal
+				open
+				onClose={onClose}
+				cls={makeClassGroup({ startDate: futureDate, openingNote: "" })}
+				hasRealSessions={false}
+				roster={roster}
+				onConfirmed={onConfirmed}
+			/>,
+		);
+
+		const dialog = screen.getByRole("dialog");
+		fireEvent.change(
+			within(dialog).getByLabelText("Lời nhắn cho học viên (tùy chọn)"),
+			{ target: { value: "Bản nháp cũ" } },
+		);
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Chốt & gửi 2 email" }),
+		);
+
+		const alert = await within(dialog).findByRole("alert");
+		expect(alert.textContent).toContain(
+			"Thông tin khai giảng đã thay đổi bởi thao tác khác.",
+		);
+		expect(onConfirmed).toHaveBeenCalledTimes(1);
+
+		const refreshedCls = makeClassGroup({
+			startDate: laterFutureDate,
+			openingConfirmedAt: "2026-11-24T06:00:00.000Z",
+			openingAnnouncementVersion: 1,
+			openingNote: "Ghi chú đã cập nhật từ máy khác",
+			openingNotifiedStudentIds: ["st-1"],
+		});
+
+		rerender(
+			<ConfirmOpeningModal
+				open
+				onClose={onClose}
+				cls={refreshedCls}
+				hasRealSessions={false}
+				roster={roster}
+				onConfirmed={onConfirmed}
+			/>,
+		);
+
+		// Alert stays visible while fields sync to the refreshed class state.
+		expect(within(dialog).getByRole("alert").textContent).toContain(
+			"Thông tin khai giảng đã thay đổi bởi thao tác khác.",
+		);
+		expect(
+			(
+				within(dialog).getByLabelText(
+					"Lời nhắn cho học viên (tùy chọn)",
+				) as HTMLTextAreaElement
+			).value,
+		).toBe("Ghi chú đã cập nhật từ máy khác");
+		expect(
+			(
+				within(dialog).getByRole("radio", {
+					name: /Chỉ gửi cho học viên mới chưa nhận \(1\)/,
+				}) as HTMLInputElement
+			).checked,
+		).toBe(true);
+		expect(
+			within(dialog).getByTestId("opening-date-readonly").textContent,
+		).toContain(formatViWeekdayDate(laterFutureDate));
+
+		// Retrying sends the refreshed version and omits startDate in new_only mode.
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Gửi bổ sung (1 email)" }),
+		);
+
+		await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+		const [, secondInit] = fetchMock.mock.calls[1] as unknown as [
+			string,
+			RequestInit,
+		];
+		expect(JSON.parse(String(secondInit.body))).toEqual({
+			mode: "new_only",
+			note: "Ghi chú đã cập nhật từ máy khác",
+			expectedVersion: 1,
+		});
+	});
+
+	it("shows warning toast when target students exist but neither email nor in-app notification was queued", async () => {
+		const fetchMock = vi.fn(async () =>
+			jsonResponse(200, {
+				ok: true,
+				openingConfirmedAt: "2026-11-24T06:00:00.000Z",
+				openingAnnouncementVersion: 1,
+				startDate: futureDate,
+				openingNote: "",
+				queuedEmailCount: 0,
+				inAppOnlyCount: 0,
+				skippedNoEmail: [{ studentId: "st-3", studentName: "Lê Thu Hà" }],
+				skippedAlreadySentCount: 0,
+				notifiedStudentIds: [],
+			}),
+		);
+		vi.stubGlobal("fetch", fetchMock);
+		const onClose = vi.fn();
+
+		render(
+			<ConfirmOpeningModal
+				open
+				onClose={onClose}
+				cls={makeClassGroup()}
+				hasRealSessions={false}
+				roster={makeDefaultRoster()}
+				onConfirmed={vi.fn(async () => undefined)}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Chốt & gửi 2 email" }));
+
+		await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+		expect(toastMock.success).not.toHaveBeenCalled();
+		expect(toastMock.warning).toHaveBeenCalledWith(
+			"Đã chốt khai giảng, nhưng chưa thể xếp hàng thông báo cho học viên. Vui lòng kiểm tra Nhật ký thông báo.",
+		);
+	});
+});
+
+describe("buildSuccessToast", () => {
+	const baseRes = {
+		ok: true as const,
+		openingConfirmedAt: "2026-11-24T06:00:00.000Z",
+		openingAnnouncementVersion: 1,
+		startDate: futureDate,
+		openingNote: "",
+		queuedEmailCount: 0,
+		inAppOnlyCount: 0,
+		skippedNoEmail: [],
+		skippedAlreadySentCount: 0,
+		notifiedStudentIds: [],
+	};
+
+	it("checks inAppOnlyCount instead of skippedNoEmail before mentioning portal-only notifications", () => {
+		const res = {
+			...baseRes,
+			queuedEmailCount: 2,
+			inAppOnlyCount: 0,
+			skippedNoEmail: [{ studentId: "st-3", studentName: "Lê Thu Hà" }],
+		};
+		expect(buildSuccessToast("initial", res, 3)).toEqual({
+			kind: "success",
+			message: "Đã chốt khai giảng và đưa 2 email vào hàng đợi gửi.",
+		});
+	});
+
+	it("returns warning outcome when targetCount > 0 and both queuedEmailCount and inAppOnlyCount are 0", () => {
+		expect(buildSuccessToast("initial", baseRes, 2)).toEqual({
+			kind: "warning",
+			message:
+				"Đã chốt khai giảng, nhưng chưa thể xếp hàng thông báo cho học viên. Vui lòng kiểm tra Nhật ký thông báo.",
+		});
+		expect(buildSuccessToast("new_only", baseRes, 1)).toEqual({
+			kind: "warning",
+			message: "Chưa có thông báo mới nào được xếp hàng gửi.",
+		});
+		expect(buildSuccessToast("all", baseRes, 2)).toEqual({
+			kind: "warning",
+			message: "Chưa có thông báo mới nào được xếp hàng gửi.",
+		});
+	});
+
+	it("returns success outcome when targetCount is 0 and no notifications were queued", () => {
+		expect(buildSuccessToast("initial", baseRes, 0)).toEqual({
+			kind: "success",
+			message: "Đã chốt khai giảng.",
+		});
+		expect(buildSuccessToast("all", baseRes, 0)).toEqual({
+			kind: "success",
+			message: "Đã cập nhật thông báo khai giảng.",
+		});
+	});
+
+	it("uses inAppOnlyCount for portal-only notifications when queuedEmailCount is 0", () => {
+		const res = {
+			...baseRes,
+			inAppOnlyCount: 2,
+			skippedNoEmail: [
+				{ studentId: "st-1", studentName: "A" },
+				{ studentId: "st-2", studentName: "B" },
+				{ studentId: "st-3", studentName: "C" },
+			],
+		};
+		expect(buildSuccessToast("initial", res, 3)).toEqual({
+			kind: "success",
+			message:
+				"Đã chốt khai giảng. 2 học viên chưa có email chỉ nhận thông báo trong cổng học viên.",
+		});
+		expect(buildSuccessToast("new_only", res, 3)).toEqual({
+			kind: "success",
+			message:
+				"Đã gửi thông báo trong cổng học viên cho 2 học viên chưa có email.",
+		});
 	});
 });

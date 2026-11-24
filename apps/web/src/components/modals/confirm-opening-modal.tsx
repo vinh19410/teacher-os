@@ -84,29 +84,54 @@ function formatConfirmedTimestamp(iso: string): string {
 	return `${get("day")}/${get("month")}/${get("year")} ${get("hour")}:${get("minute")}`;
 }
 
-function buildSuccessToast(
+export interface OpeningToastOutcome {
+	kind: "success" | "warning";
+	message: string;
+}
+
+export function buildSuccessToast(
 	mode: ClassOpeningSendMode,
 	res: ClassConfirmOpeningResponse,
-): string {
-	const skippedNoEmailCount = res.skippedNoEmail.length;
+	targetCount: number,
+): OpeningToastOutcome {
 	if (res.queuedEmailCount > 0) {
 		const lead =
 			mode === "initial"
 				? `Đã chốt khai giảng và đưa ${res.queuedEmailCount} email vào hàng đợi gửi.`
 				: `Đã đưa ${res.queuedEmailCount} email thông báo khai giảng vào hàng đợi gửi.`;
-		if (skippedNoEmailCount > 0) {
-			return `${lead} ${skippedNoEmailCount} học viên chưa có email chỉ nhận thông báo trong cổng học viên.`;
+		if (res.inAppOnlyCount > 0) {
+			return {
+				kind: "success",
+				message: `${lead} ${res.inAppOnlyCount} học viên chưa có email chỉ nhận thông báo trong cổng học viên.`,
+			};
 		}
-		return lead;
+		return { kind: "success", message: lead };
 	}
-	if (skippedNoEmailCount > 0) {
-		return mode === "initial"
-			? `Đã chốt khai giảng. ${skippedNoEmailCount} học viên chưa có email chỉ nhận thông báo trong cổng học viên.`
-			: `Đã gửi thông báo trong cổng học viên cho ${skippedNoEmailCount} học viên chưa có email.`;
+	if (res.inAppOnlyCount > 0) {
+		return {
+			kind: "success",
+			message:
+				mode === "initial"
+					? `Đã chốt khai giảng. ${res.inAppOnlyCount} học viên chưa có email chỉ nhận thông báo trong cổng học viên.`
+					: `Đã gửi thông báo trong cổng học viên cho ${res.inAppOnlyCount} học viên chưa có email.`,
+		};
 	}
-	return mode === "initial"
-		? "Đã chốt khai giảng."
-		: "Đã cập nhật thông báo khai giảng.";
+	if (targetCount > 0) {
+		return {
+			kind: "warning",
+			message:
+				mode === "initial"
+					? "Đã chốt khai giảng, nhưng chưa thể xếp hàng thông báo cho học viên. Vui lòng kiểm tra Nhật ký thông báo."
+					: "Chưa có thông báo mới nào được xếp hàng gửi.",
+		};
+	}
+	return {
+		kind: "success",
+		message:
+			mode === "initial"
+				? "Đã chốt khai giảng."
+				: "Đã cập nhật thông báo khai giảng.",
+	};
 }
 
 function resolveDefaultSendMode(
@@ -126,12 +151,13 @@ export function ConfirmOpeningModal({
 	orgName,
 	onConfirmed,
 }: ConfirmOpeningModalProps) {
+	const formId = useId();
 	const noteId = useId();
 	const previewPanelId = useId();
 
+	const openingVersion = cls.openingAnnouncementVersion ?? 0;
 	const isAlreadyConfirmed =
-		(cls.openingAnnouncementVersion ?? 0) > 0 ||
-		Boolean(cls.openingConfirmedAt);
+		openingVersion > 0 || Boolean(cls.openingConfirmedAt);
 
 	const notifiedSet = useMemo(
 		() => new Set(cls.openingNotifiedStudentIds ?? []),
@@ -155,6 +181,7 @@ export function ConfirmOpeningModal({
 
 	const wasOpenRef = useRef(false);
 	const prevClassIdRef = useRef(cls.id);
+	const prevOpeningVersionRef = useRef(openingVersion);
 	const mountedRef = useRef(true);
 
 	useEffect(() => {
@@ -166,8 +193,12 @@ export function ConfirmOpeningModal({
 
 	useEffect(() => {
 		const classChanged = prevClassIdRef.current !== cls.id;
+		const versionChanged = prevOpeningVersionRef.current !== openingVersion;
 		if (classChanged) {
 			prevClassIdRef.current = cls.id;
+		}
+		if (versionChanged) {
+			prevOpeningVersionRef.current = openingVersion;
 		}
 		if ((open && !wasOpenRef.current) || classChanged) {
 			setStartDate(cls.startDate);
@@ -179,9 +210,16 @@ export function ConfirmOpeningModal({
 			setPreviewOpen(true);
 			setError(null);
 			setSaving(false);
+		} else if (open && versionChanged) {
+			setStartDate(cls.startDate);
+			setStartDateInvalid(false);
+			setNote(cls.openingNote ?? "");
+			setSendMode(
+				resolveDefaultSendMode(isAlreadyConfirmed, newStudents.length),
+			);
 		}
 		wasOpenRef.current = open;
-	}, [open, cls, isAlreadyConfirmed, newStudents.length]);
+	}, [open, cls, openingVersion, isAlreadyConfirmed, newStudents.length]);
 
 	const effectiveSendMode: ClassOpeningSendMode = !isAlreadyConfirmed
 		? "initial"
@@ -190,6 +228,9 @@ export function ConfirmOpeningModal({
 				? "new_only"
 				: "all"
 			: sendMode;
+
+	const startDateReadOnly =
+		hasRealSessions || (isAlreadyConfirmed && effectiveSendMode === "new_only");
 
 	const todayVN = vietnamTodayISO();
 	const trimmedStartDate = startDate.trim();
@@ -201,7 +242,7 @@ export function ConfirmOpeningModal({
 		!isValidIsoCalendarDate(cls.startDate.trim()) &&
 		trimmedStartDate === cls.startDate.trim();
 
-	const effectiveStartDate = hasRealSessions
+	const effectiveStartDate = startDateReadOnly
 		? cls.startDate.trim()
 		: trimmedStartDate;
 
@@ -307,7 +348,7 @@ export function ConfirmOpeningModal({
 			return;
 		}
 
-		if (!hasRealSessions) {
+		if (!startDateReadOnly) {
 			if (startDateInvalid) {
 				setError("Ngày khai giảng không hợp lệ (dd/mm/yyyy).");
 				return;
@@ -328,9 +369,11 @@ export function ConfirmOpeningModal({
 
 		const startDateChanged = trimmedStartDate !== cls.startDate.trim();
 		const canSendStartDate =
-			!hasRealSessions &&
+			!startDateReadOnly &&
+			effectiveSendMode !== "new_only" &&
 			isValidIsoCalendarDate(trimmedStartDate) &&
 			(startDateChanged || trimmedStartDate >= todayVN);
+		const targetCount = targetRoster.length;
 
 		setSaving(true);
 		try {
@@ -338,12 +381,17 @@ export function ConfirmOpeningModal({
 				mode: effectiveSendMode,
 				...(canSendStartDate ? { startDate: trimmedStartDate } : {}),
 				note: note.trim(),
-				expectedVersion: cls.openingAnnouncementVersion ?? 0,
+				expectedVersion: openingVersion,
 			});
 
 			try {
 				await onConfirmed();
-				toast.success(buildSuccessToast(effectiveSendMode, res));
+				const outcome = buildSuccessToast(effectiveSendMode, res, targetCount);
+				if (outcome.kind === "warning") {
+					toast.warning(outcome.message);
+				} else {
+					toast.success(outcome.message);
+				}
 			} catch {
 				toast.warning(
 					"Đã chốt khai giảng nhưng chưa tải lại được dữ liệu mới nhất. Vui lòng tải lại trang.",
@@ -403,12 +451,10 @@ export function ConfirmOpeningModal({
 						Hủy
 					</Button>
 					<Button
-						type="button"
+						type="submit"
+						form={formId}
 						variant="default"
 						size="sm"
-						onClick={() => {
-							void handleSubmit();
-						}}
 						disabled={isSubmitDisabled}
 					>
 						<Send aria-hidden="true" className="size-3.5" />
@@ -417,7 +463,11 @@ export function ConfirmOpeningModal({
 				</div>
 			}
 		>
-			<form onSubmit={onFormSubmit} className="flex min-w-0 flex-col gap-5">
+			<form
+				id={formId}
+				onSubmit={onFormSubmit}
+				className="flex min-w-0 flex-col gap-5"
+			>
 				{/* Section 1: Thông tin khai giảng */}
 				<section className="flex flex-col gap-3">
 					<div className="flex flex-wrap items-center justify-between gap-2">
@@ -431,7 +481,7 @@ export function ConfirmOpeningModal({
 						)}
 					</div>
 
-					{!hasRealSessions ? (
+					{!startDateReadOnly ? (
 						<Field
 							label="Ngày khai giảng *"
 							help={
@@ -471,8 +521,9 @@ export function ConfirmOpeningModal({
 								data-testid="opening-date-locked-note"
 								className="rounded-md border border-border bg-muted/50 px-3 py-2 text-muted-foreground text-xs"
 							>
-								Lớp đã có buổi học thực tế nên ngày khai giảng được giữ cố định
-								theo lịch học.
+								{hasRealSessions
+									? "Lớp đã có buổi học thực tế nên ngày khai giảng được giữ cố định theo lịch học."
+									: 'Chọn "Gửi thông báo cập nhật cho cả lớp" nếu cần thay đổi ngày khai giảng.'}
 							</p>
 						</div>
 					)}
@@ -503,109 +554,113 @@ export function ConfirmOpeningModal({
 
 				{/* Section 2: Phạm vi gửi (chỉ hiển thị khi đã chốt trước đó) */}
 				{isAlreadyConfirmed && (
-					<fieldset className="flex flex-col gap-2.5 border-0 border-border border-t p-0 pt-4">
-						<legend className="mb-1 font-medium text-muted-foreground text-xs">
-							Phạm vi gửi
-						</legend>
-						<div
-							role="radiogroup"
-							aria-label="Phạm vi gửi thông báo khai giảng"
-							className="grid grid-cols-1 gap-2.5 sm:grid-cols-2"
-						>
-							<label
-								className={cn(
-									"relative flex cursor-pointer items-start justify-between gap-3 rounded-lg border p-3 transition-colors has-[:focus-visible]:shadow-[var(--focus-ring)]",
-									effectiveSendMode === "new_only"
-										? "border-primary bg-muted text-foreground ring-1 ring-primary"
-										: "border-input bg-card text-foreground hover:bg-accent/50",
-									saving && "pointer-events-none opacity-60",
-								)}
+					<div className="border-border border-t pt-4">
+						<fieldset className="flex flex-col gap-2.5 border-0 p-0">
+							<legend className="mb-1 font-medium text-muted-foreground text-xs">
+								Phạm vi gửi
+							</legend>
+							<div
+								role="radiogroup"
+								aria-label="Phạm vi gửi thông báo khai giảng"
+								className="grid grid-cols-1 gap-2.5 sm:grid-cols-2"
 							>
-								<input
-									type="radio"
-									name="opening-send-mode"
-									value="new_only"
-									checked={effectiveSendMode === "new_only"}
-									disabled={saving}
-									onChange={() => {
-										setSendMode("new_only");
-										setError(null);
-									}}
-									className="sr-only"
-								/>
-								<span className="min-w-0 flex-1">
-									<span className="block font-medium text-sm">
-										{`Chỉ gửi cho học viên mới chưa nhận (${newStudents.length})`}
-									</span>
-									<span className="mt-1 block text-muted-foreground text-xs">
-										{newStudents.length === 0
-											? "Tất cả học viên hiện tại đã nhận thông báo khai giảng."
-											: "Học viên đã nhận trước đó sẽ không bị gửi trùng."}
-									</span>
-								</span>
-								{effectiveSendMode === "new_only" && (
-									<Check
-										aria-hidden="true"
-										className="mt-0.5 size-4 shrink-0 text-primary"
+								<label
+									className={cn(
+										"relative flex cursor-pointer items-start justify-between gap-3 rounded-lg border p-3 transition-colors has-[:focus-visible]:shadow-[var(--focus-ring)]",
+										effectiveSendMode === "new_only"
+											? "border-primary bg-muted text-foreground ring-1 ring-primary"
+											: "border-input bg-card text-foreground hover:bg-accent/50",
+										saving && "pointer-events-none opacity-60",
+									)}
+								>
+									<input
+										type="radio"
+										name="opening-send-mode"
+										value="new_only"
+										checked={effectiveSendMode === "new_only"}
+										disabled={saving}
+										onChange={() => {
+											setSendMode("new_only");
+											setStartDate(cls.startDate);
+											setStartDateInvalid(false);
+											setError(null);
+										}}
+										className="sr-only"
 									/>
-								)}
-							</label>
+									<span className="min-w-0 flex-1">
+										<span className="block font-medium text-sm">
+											{`Chỉ gửi cho học viên mới chưa nhận (${newStudents.length})`}
+										</span>
+										<span className="mt-1 block text-muted-foreground text-xs">
+											{newStudents.length === 0
+												? "Tất cả học viên hiện tại đã nhận thông báo khai giảng."
+												: "Học viên đã nhận trước đó sẽ không bị gửi trùng."}
+										</span>
+									</span>
+									{effectiveSendMode === "new_only" && (
+										<Check
+											aria-hidden="true"
+											className="mt-0.5 size-4 shrink-0 text-primary"
+										/>
+									)}
+								</label>
 
-							<label
-								className={cn(
-									"relative flex cursor-pointer items-start justify-between gap-3 rounded-lg border p-3 transition-colors has-[:focus-visible]:shadow-[var(--focus-ring)]",
-									effectiveSendMode === "all"
-										? "border-primary bg-muted text-foreground ring-1 ring-primary"
-										: "border-input bg-card text-foreground hover:bg-accent/50",
-									saving && "pointer-events-none opacity-60",
-								)}
-							>
-								<input
-									type="radio"
-									name="opening-send-mode"
-									value="all"
-									checked={effectiveSendMode === "all"}
-									disabled={saving}
-									onChange={() => {
-										setSendMode("all");
-										setError(null);
-									}}
-									className="sr-only"
-								/>
-								<span className="min-w-0 flex-1">
-									<span className="block font-medium text-sm">
-										{`Gửi thông báo cập nhật cho cả lớp (${roster.length})`}
-									</span>
-									<span className="mt-1 block text-muted-foreground text-xs">
-										Gửi email với tiêu đề cập nhật lịch khai giảng cho toàn bộ
-										danh sách lớp.
-									</span>
-								</span>
-								{effectiveSendMode === "all" && (
-									<Check
-										aria-hidden="true"
-										className="mt-0.5 size-4 shrink-0 text-primary"
+								<label
+									className={cn(
+										"relative flex cursor-pointer items-start justify-between gap-3 rounded-lg border p-3 transition-colors has-[:focus-visible]:shadow-[var(--focus-ring)]",
+										effectiveSendMode === "all"
+											? "border-primary bg-muted text-foreground ring-1 ring-primary"
+											: "border-input bg-card text-foreground hover:bg-accent/50",
+										saving && "pointer-events-none opacity-60",
+									)}
+								>
+									<input
+										type="radio"
+										name="opening-send-mode"
+										value="all"
+										checked={effectiveSendMode === "all"}
+										disabled={saving}
+										onChange={() => {
+											setSendMode("all");
+											setError(null);
+										}}
+										className="sr-only"
 									/>
-								)}
-							</label>
-						</div>
+									<span className="min-w-0 flex-1">
+										<span className="block font-medium text-sm">
+											{`Gửi thông báo cập nhật cho cả lớp (${roster.length})`}
+										</span>
+										<span className="mt-1 block text-muted-foreground text-xs">
+											Gửi email với tiêu đề cập nhật lịch khai giảng cho toàn bộ
+											danh sách lớp.
+										</span>
+									</span>
+									{effectiveSendMode === "all" && (
+										<Check
+											aria-hidden="true"
+											className="mt-0.5 size-4 shrink-0 text-primary"
+										/>
+									)}
+								</label>
+							</div>
 
-						{effectiveSendMode === "all" && (
-							<p
-								role="note"
-								className="flex items-start gap-2 rounded-md border border-warn/30 bg-warn-soft px-3 py-2 text-foreground text-xs"
-							>
-								<AlertTriangle
-									aria-hidden="true"
-									className="mt-0.5 size-3.5 shrink-0 text-warn"
-								/>
-								<span>
-									Học viên đã nhận trước đó sẽ nhận thêm một email cập nhật lịch
-									khai giảng.
-								</span>
-							</p>
-						)}
-					</fieldset>
+							{effectiveSendMode === "all" && (
+								<p
+									role="note"
+									className="flex items-start gap-2 rounded-md border border-warn/30 bg-warn-soft px-3 py-2 text-foreground text-xs"
+								>
+									<AlertTriangle
+										aria-hidden="true"
+										className="mt-0.5 size-3.5 shrink-0 text-warn"
+									/>
+									<span>
+										Học viên đã nhận trước đó sẽ nhận thêm một email cập nhật
+										lịch khai giảng.
+									</span>
+								</p>
+							)}
+						</fieldset>
+					</div>
 				)}
 
 				{/* Section 3: Người nhận email */}
