@@ -10,6 +10,32 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-11-24
+
+### Added
+- **Hợp nhất cổng LMS trên một domain duy nhất `lms.<domain>` (`apps/lms`, `packages/auth`, `packages/infra`, `apps/web`, `apps/student`, `apps/admin`, `apps/server`, `apps/profile`):**
+  - Hợp nhất 3 Worker cũ (`web`, `student`, `admin`) vào một Worker `lms` dùng `assets.runWorkerFirst: true` phục vụ `/login`, `/teacher/*`, `/student/*`, `/admin/*`, `/pay/:token`, tự phân loại vai trò theo allowlist (`ADMIN_EMAILS > TEACHER_EMAILS > student`) kèm điều hướng chéo vai trò và redirect 301 từ domain cũ `app./student./admin.<domain>` (giữ nguyên stub `/sw.js` và `/registerSW.js`).
+  - Bổ sung script idempotent `packages/infra/scripts/detach-legacy-worker-domains.ts` trong `deploy.yml` / `deploy-staging.yml` và sửa chuyển tiếp `define` Vite env vào build sub-portal + smoke check bundle live (#867, #868, #869).
+- **Gửi email nhắc bài tập về nhà và tự học lúc 06:00 sáng (giờ Việt Nam) mỗi ngày (`packages/api`, `packages/infra`, `apps/server`, `apps/web`):** bổ sung cron `0 23 * * *`, sự kiện `daily_deadline_reminder` (kênh email-only, digest HTML + text, giãn nhịp 550ms/email cho giới hạn 2 req/s của Resend) và nhãn lọc trong nhật ký thông báo (#901, #907).
+- **Chốt thời gian khai giảng lớp và gửi email HTML thông báo cho học viên (`packages/db`, `packages/api`, `apps/server`, `apps/web`):** migration `0086_class_opening_email.sql` (cột xác nhận khai giảng trên `class`, `html_body`/`text_body` trên `notification_record`), modal xác nhận khai giảng kèm xem trước email HTML trong `<iframe sandbox="">`, chế độ `all`/`new_only` và giãn nhịp 550ms khi gửi nền qua `emitNotifications` (#874, #900).
+- **Ô nhập đáp án trực tiếp (inline inputs) và chọn từ ngân hàng đáp án trong `QuizPaper` (`packages/ui`, `apps/student`):** phân tích và làm sạch hai lớp (DOMPurify + AST allowlist) để render ô điền từ và select inline bằng React JSX ở cả màn hình làm bài lẫn xem lại (#873, #903).
+- **Mở rộng bài luyện nghe IELTS & công cụ import staging (`packages/db`, `packages/api`, `apps/server`, `apps/admin`, `apps/student`, `docs/listening_ielts`):** migration `0085_assignment_prompt_groups.sql`, bổ sung bộ dữ liệu luyện nghe IELTS, hỗ trợ đầy đủ dạng câu nghe + nhóm lựa chọn, endpoint `/public/library-images/:filename` (chặn `.svg`, `CSP sandbox`), CLI import idempotent và workflow `import-listening-staging.yml` (#872).
+- **Xuất PDF kết quả bài kiểm tra đầu vào phía client & đồng bộ tiêu chí chấm IELTS (`packages/db`, `packages/api`, `apps/web`, `apps/student`, `apps/profile`):**
+  - Migration `0083`–`0084` bổ sung danh mục khóa học 2 cấp (`course_catalog_seed`, `course_category`, `course`) và dropdown chọn khóa học gợi ý bắt buộc khi chấm đầu vào (#851, #858).
+  - Xuất PDF kết quả bằng `pdfmake` + font `Be Vietnam Pro` tự host, thay thế khối chia sẻ link công khai trong panel chấm bài giáo viên (#853, #862).
+  - Đồng bộ danh mục lỗi theo kỹ năng, thang màu slider IELTS và nhận xét từng tiêu chí trên Web, Student Portal, Profile và PDF (#863, #865).
+- **Phân trang phía server cho trang thư viện đề quản trị (`/admin/library/tests`) (`packages/api`, `apps/server`, `apps/admin`)** (#850).
+- **CLI và workflow promote bộ từ vựng từ staging sang production (`packages/db`, `.github/workflows/promote-vocab-prod.yml`):** tự định giải org giáo viên đang hoạt động qua `TEACHER_EMAILS` và hỗ trợ di chuyển org an toàn (#855, #856, #859, #860).
+
+### Changed
+- **Ẩn menu "Luyện tập" và "Lịch sử" của học viên trên production, bật sẵn trên staging (`apps/student`, `packages/infra`, `.github/workflows/deploy*.yml`):** gắn cờ `VITE_STUDENT_PRACTICE_ENABLED` fail-closed trên `PROD_APP_DOMAIN`, bật trên staging qua `STUDENT_PRACTICE_ENABLED="true"`, kèm xác thực hậu-build và smoke check live (#852, #854, #857, #870, #871).
+- **Gỡ hiển thị nhãn độ khó (band) trên thẻ đề và màn hình làm bài học viên (`packages/ui`, `apps/student`, `apps/web`)** (#849).
+
+### Fixed
+- Bổ sung header `Cross-Origin-Resource-Policy: same-site` và `Referrer-Policy: no-referrer` cho endpoint `/api/student/practice/:testId/audio` (`apps/server`).
+- Giãn nhịp gửi email nền (`sendIntervalMs: 550`) trong `emitNotifications` khi chạy qua `runInBackground` để tránh lỗi HTTP 429 burst của Resend khi gửi thông báo cho lớp đông (`apps/server`).
+- Dùng ngày tương lai theo giờ Việt Nam trong test `holiday-modal` để tránh fail theo mốc thời gian (`apps/web`).
+
 ## 2026-11-20
 
 ### Added
