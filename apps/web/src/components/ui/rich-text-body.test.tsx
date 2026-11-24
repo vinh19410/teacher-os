@@ -51,6 +51,16 @@ describe("sanitizeRichText", () => {
 	it("does not double-encode entities", () => {
 		expect(sanitizeRichText("<p>a &amp; b</p>")).toContain("a &amp; b");
 	});
+
+	it("preserves semantic table markup with colspan/rowspan while stripping XSS inside cells", () => {
+		const out = sanitizeRichText(
+			'<table><thead><tr><th colspan="2" onclick="x()">Header</th></tr></thead><tbody><tr><td rowspan="1">Cell<script>alert(1)</script></td><td>Value</td></tr></tbody></table>',
+		);
+		expect(out).toContain("<table>");
+		expect(out).toContain('<th colspan="2">Header</th>');
+		expect(out).toContain('<td rowspan="1">Cell</td>');
+		expect(out).not.toMatch(/<script|onclick/i);
+	});
 });
 
 describe("RichTextBody", () => {

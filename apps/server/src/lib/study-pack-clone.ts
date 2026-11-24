@@ -29,7 +29,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { Db } from "../app";
 
-/** 30 columns on assignment_prompt × 3 rows = 90 binds <= 100 D1 bind limit (#574, #702, #814). */
+/** 31 columns on assignment_prompt × 3 rows = 93 binds <= 100 D1 bind limit (#574, #702, #814). */
 export const D1_PROMPT_CLONE_INSERT_CHUNK = 3;
 /** 7 columns × 10 rows = 70 binds <= 100 D1 bind limit. */
 export const D1_PACK_ITEM_INSERT_CHUNK = 10;
@@ -758,6 +758,7 @@ export async function materializePrompts(
 					imageUrl: partRow.imageUrl,
 					questions: JSON.stringify(flattened.questions),
 					optionBank: JSON.stringify(flattened.optionBank),
+					groups: partRow.groups,
 					note: partRow.note,
 					status: "ready",
 					libraryRef,

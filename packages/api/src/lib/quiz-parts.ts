@@ -1,4 +1,4 @@
-import type { StudentQuizQuestion } from "../contracts";
+import type { StudentQuizGroup, StudentQuizQuestion } from "../contracts";
 import { splitQuizIntro } from "./quiz-intro-sections";
 
 /** Một câu hỏi trong part, mang sẵn index `q` (0-based, key của answers
@@ -152,6 +152,63 @@ export function buildQuizParts(
 		);
 	}
 	return finalizeParts(parts);
+}
+
+/**
+ * Dựng QuizPart từ danh sách nhóm có cấu trúc (`groups`) nếu có và phủ đúng
+ * mảng `questions`; ngược lại fallback về `buildQuizParts` (đề cũ hoặc đề không nhóm).
+ * Giữ nguyên `optionBank` và `instructionHtml` riêng từng nhóm khi học viên làm bài
+ * (hỗ trợ đề nhiều nhóm có nhiều option bank độc lập, ví dụ map + summary/matching).
+ */
+export function buildQuizPartsFromGroups(
+	questions: readonly QuizPartSourceQuestion[],
+	groups: readonly StudentQuizGroup[] | undefined,
+	promptType: string,
+	intro = "",
+	qOffset = 0,
+): QuizPart[] {
+	if (!groups || groups.length === 0) {
+		return buildQuizParts(questions, promptType, intro, qOffset);
+	}
+	let cursor = 0;
+	let validCoverage = true;
+	for (const group of groups) {
+		if (group.startIndex !== cursor || group.count < 1) {
+			validCoverage = false;
+			break;
+		}
+		cursor += group.count;
+	}
+	if (!validCoverage || cursor !== questions.length) {
+		return buildQuizParts(questions, promptType, intro, qOffset);
+	}
+	const parts: QuizPart[] = groups.map((group, index) => {
+		const slice = questions.slice(
+			group.startIndex,
+			group.startIndex + group.count,
+		);
+		const qStart = qOffset + group.startIndex + 1;
+		const last = qStart + slice.length - 1;
+		return {
+			id: `part-${index + 1}`,
+			label:
+				qStart === last ? `Questions ${qStart}` : `Questions ${qStart}–${last}`,
+			qStart,
+			typeId: group.type,
+			instructionHtml: group.instruction,
+			...(group.optionBank.length > 0
+				? { optionBank: [...group.optionBank] }
+				: {}),
+			source: "group",
+			questions: slice.map((question, offset) => ({
+				q: qOffset + group.startIndex + offset,
+				number: qOffset + group.startIndex + offset + 1,
+				...question,
+				type: question.type ?? group.type,
+			})),
+		};
+	});
+	return parts;
 }
 
 /** Câu được tính là đã trả lời khi value tồn tại và khác rỗng sau trim

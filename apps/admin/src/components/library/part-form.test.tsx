@@ -2,6 +2,7 @@
 
 import { quizTypeDisplay } from "@teacher-os/api/contracts";
 import {
+	LIBRARY_LISTENING_TYPES,
 	LIBRARY_READING_TYPES,
 	type LibraryPartDto,
 } from "@teacher-os/api/library-contracts";
@@ -162,7 +163,7 @@ describe("slotTypes / emptyPartValue", () => {
 			expect(types).not.toContain("tablecomp");
 			expect(types).not.toContain("flowchart");
 		}
-		expect(slotTypes("listening", "s1")).toEqual(["form", "mcq1"]);
+		expect(slotTypes("listening", "s1")).toEqual([...LIBRARY_LISTENING_TYPES]);
 	});
 
 	it("part rỗng có 1 câu với shape của dạng mặc định", () => {

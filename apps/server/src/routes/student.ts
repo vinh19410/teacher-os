@@ -25,11 +25,13 @@ import {
 	type StudentOrgItem,
 	type StudentOverview,
 	type StudentQuizDetail,
+	type StudentQuizGroup,
 	type StudentScheduleLesson,
 	type StudentScheduleResponse,
 	type StudentZoomJoinError,
 	type StudentZoomJoinResponse,
 	studentOnboardingPayloadSchema,
+	studentQuizGroupSchema,
 } from "@teacher-os/api/contracts";
 import { essayToPlain } from "@teacher-os/api/lib/essay-plain";
 import { gradeQuiz } from "@teacher-os/api/lib/grade-quiz";
@@ -340,6 +342,10 @@ export function parseQuizQuestions(
 					...(typeof record.explanation === "string" &&
 					record.explanation.trim().length > 0
 						? { explanation: record.explanation }
+						: {}),
+					...(typeof record.answerSet === "string" &&
+					record.answerSet.trim().length > 0
+						? { answerSet: record.answerSet.trim() }
 						: {}),
 				},
 			];
@@ -1780,6 +1786,16 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		);
 
 		const effectiveTypes = inferQuestionTypes(questions, prompt.type);
+		const promptGroups: StudentQuizGroup[] = (() => {
+			if (!prompt.groups) return [];
+			try {
+				const parsed: unknown = JSON.parse(prompt.groups);
+				const checked = studentQuizGroupSchema.array().safeParse(parsed);
+				return checked.success ? checked.data : [];
+			} catch {
+				return [];
+			}
+		})();
 
 		const detail: StudentQuizDetail = {
 			assignmentId,
@@ -1816,7 +1832,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				// Y/N/NG) được suy ra tfng/ynng để học viên có lựa chọn.
 				type: effectiveTypes[index] ?? prompt.type,
 				pin: question.pin ?? null,
+				...(question.answerSet ? { answerSet: question.answerSet } : {}),
 			})),
+			...(promptGroups.length > 0 ? { groups: promptGroups } : {}),
 			...(prompt.writingPart !== null
 				? {
 						writing: {
@@ -2855,6 +2873,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					// review screen phân cụm cùng cấu trúc bài làm.
 					type: effectiveTypes[index] ?? promptType,
 					pin: question.pin ?? null,
+					...(question.answerSet ? { answerSet: question.answerSet } : {}),
 					key: question.answer,
 					alts: question.alts,
 					verdict: grade.verdicts[index] ?? "skipped",

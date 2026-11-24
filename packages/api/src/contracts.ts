@@ -3057,9 +3057,27 @@ export const studentQuizQuestionSchema = z
 		 * detail.type` (fallback kép). */
 		type: z.string().optional(),
 		pin: z.object({ x: z.number(), y: z.number() }).nullish(),
+		/** Khóa tập đáp án không thứ tự cho `mcq_many` — optional để tương thích ngược. */
+		answerSet: z.string().trim().min(1).max(20).nullish(),
 	})
 	.strict();
 export type StudentQuizQuestion = z.infer<typeof studentQuizQuestionSchema>;
+
+/** Nhóm câu hỏi gửi xuống màn làm bài học viên (giữ nguyên hướng dẫn + optionBank riêng từng nhóm). */
+export const studentQuizGroupSchema = z
+	.object({
+		id: z.string(),
+		type: z.string(),
+		instruction: z.string(),
+		startIndex: z.number().int().min(0),
+		count: z.number().int().min(1).max(40),
+		optionBank: z.array(z.string()).default([]),
+		answersInline: z.boolean().optional(),
+		splitContent: z.boolean().optional(),
+		dragDrop: z.boolean().optional(),
+	})
+	.strict();
+export type StudentQuizGroup = z.infer<typeof studentQuizGroupSchema>;
 
 /**
  * GET /api/student/assignments/:assignmentId/quiz — đề sạch cho take screen.
@@ -3094,6 +3112,8 @@ export const studentQuizDetailSchema = z
 		 * đề tự chấm vẫn giữ kín note tới sau khi nộp (RT#6). */
 		note: z.string().optional(),
 		questions: z.array(studentQuizQuestionSchema),
+		/** Nhóm câu hỏi có cấu trúc từ thư viện đề — giữ optionBank + instruction riêng từng nhóm. */
+		groups: z.array(studentQuizGroupSchema).optional(),
 		/** #574: đề phần Writing đính kèm của bài gộp (chỉ gửi khi có). */
 		writing: studentWritingSectionSchema.optional(),
 		attempt: z

@@ -1,7 +1,7 @@
-import { isImageBasedType } from "@teacher-os/api/contracts";
-import type {
-	LibraryPartDto,
-	LibrarySkill,
+import {
+	isLibraryImageBasedType,
+	type LibraryPartDto,
+	type LibrarySkill,
 } from "@teacher-os/api/library-contracts";
 import { Field, Input, Select } from "@teacher-os/ui/components/web-kit/field";
 import { RichTextEditor } from "@teacher-os/ui/components/web-kit/rich-text-editor";
@@ -44,8 +44,8 @@ export function PartContentFields({
 }) {
 	const isListening = skill === "listening";
 	const isImage =
-		isImageBasedType(skill, value.type) ||
-		value.groups.some((group) => isImageBasedType(skill, group.type));
+		isLibraryImageBasedType(skill, value.type) ||
+		value.groups.some((group) => isLibraryImageBasedType(skill, group.type));
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -125,9 +125,8 @@ export function PartContentFields({
 
 			{isImage && (
 				<p className="text-muted-foreground text-xs">
-					{skill === "reading"
-						? "Dạng bài dùng ảnh — nhập URL ảnh (và đặt ghim tùy chọn) ở khối «Câu hỏi và đáp án đúng» bên dưới."
-						: "Dạng bài dùng ảnh — nhập URL ảnh và đặt ghim cho từng câu ở khối «Câu hỏi và đáp án đúng» bên dưới."}
+					Dạng bài dùng ảnh — nhập URL ảnh (và đặt ghim tùy chọn) ở khối «Câu
+					hỏi và đáp án đúng» bên dưới.
 				</p>
 			)}
 
