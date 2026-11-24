@@ -44,7 +44,9 @@ import {
 	parseInlineInstruction,
 } from "@teacher-os/ui/lib/inline-instruction";
 import {
+	COMPLETION_TYPE_REGEX,
 	deduplicateGroupIntroPreamble,
+	isEffectivelyEmptyInstruction,
 	resolvePartInstruction,
 } from "@teacher-os/ui/lib/quiz-instruction";
 import { cn } from "@teacher-os/ui/lib/utils";
@@ -102,6 +104,8 @@ const NON_INLINE_QUESTION_TYPES = new Set([
 	"tfng",
 	"ynng",
 ]);
+
+const EMPTY_MATCHED_INSTRUCTIONS: ReadonlyMap<string, string> = new Map();
 
 type PartRenderUnit =
 	| { kind: "single"; question: QuizPartQuestion; effectiveType: string }
@@ -516,18 +520,19 @@ export function QuizPaper({
 	const introSplit = parts.some((part) => part.source === "intro")
 		? splitQuizIntro(detail.intro, questions.length)
 		: null;
+	const hasIntroSplit = introSplit !== null;
 	const rawIntroPreamble = introSplit ? introSplit.preamble : detail.intro;
 	const hasGroupSource = parts.some((part) => part.source === "group");
 	const { cleanedPreamble: introPreamble, matchedInstructionsByPartId } =
 		useMemo(() => {
-			if (!hasGroupSource) {
+			if (!hasGroupSource && (hasIntroSplit || parts.length <= 1)) {
 				return {
 					cleanedPreamble: rawIntroPreamble,
-					matchedInstructionsByPartId: new Map<string, string>(),
+					matchedInstructionsByPartId: EMPTY_MATCHED_INSTRUCTIONS,
 				};
 			}
 			return deduplicateGroupIntroPreamble(rawIntroPreamble, parts);
-		}, [hasGroupSource, rawIntroPreamble, parts]);
+		}, [hasGroupSource, hasIntroSplit, rawIntroPreamble, parts]);
 	// Bank vẫn prompt-level nhưng hiện khi type đề HOẶC bất kỳ câu bankable
 	// (đề trộn dạng) — cụm bankable phải có list để học viên chọn (#286 H2).
 	// Part nhóm (#433) bank nằm trên từng part: KHÔNG render bank cấp đề khi
@@ -571,13 +576,18 @@ export function QuizPaper({
 			parts.length === 1 && !isEmptyRichText(introPreamble);
 
 		for (const part of parts) {
-			const hasOwnInstruction =
-				part.instructionHtml !== undefined &&
-				!isEmptyRichText(part.instructionHtml ?? "");
+			const hasOwnInstruction = !isEffectivelyEmptyInstruction(
+				part.instructionHtml,
+			);
+			const matchedInstruction = matchedInstructionsByPartId.get(part.id);
+			const hasMatchedInstruction =
+				!isEffectivelyEmptyInstruction(matchedInstruction);
 			let candidateHtml = "";
 			let usesIntro = false;
 			if (hasOwnInstruction) {
 				candidateHtml = part.instructionHtml ?? "";
+			} else if (hasMatchedInstruction) {
+				candidateHtml = matchedInstruction ?? "";
 			} else if (hasIntroCandidate) {
 				candidateHtml = introPreamble;
 				usesIntro = true;
@@ -610,7 +620,17 @@ export function QuizPaper({
 			parsedInlineByPartId: byPartId,
 			introConsumedByInline: introConsumed,
 		};
-	}, [isAuto, parts, introPreamble, typeId, usePinOverlay]);
+	}, [
+		isAuto,
+		parts,
+		introPreamble,
+		matchedInstructionsByPartId,
+		typeId,
+		usePinOverlay,
+	]);
+	const completionPartCount = parts.filter(
+		(part) => part.typeId in COMPLETION_TYPE_REGEX,
+	).length;
 	// Bank riêng của part (nhóm) ưu tiên bank cấp đề — câu trong part nhóm
 	// chọn từ bank của nhóm mình (red-team R5). Part nhóm không bank tuyệt
 	// đối không mượn detail.optionBank (#875).
@@ -845,18 +865,26 @@ export function QuizPaper({
 						{
 							partBank: effectivePartBank,
 							matchedInstruction,
-							contextIntro: detail.intro,
+							contextIntro:
+								parts.length <= 1
+									? detail.intro
+									: hasIntroSplit || completionPartCount === 1
+										? introPreamble
+										: undefined,
 						},
 					);
+					const hasPartOwnInstruction = !isEffectivelyEmptyInstruction(
+						part.instructionHtml,
+					);
+					const hasMatchedInstruction =
+						!isEffectivelyEmptyInstruction(matchedInstruction);
 					const hasOwnInstruction =
-						(part.instructionHtml !== undefined &&
-							!isEmptyRichText(part.instructionHtml ?? "")) ||
-						Boolean(matchedInstruction);
-					const instructionToShow =
-						part.instructionHtml !== undefined &&
-						!isEmptyRichText(part.instructionHtml ?? "")
-							? part.instructionHtml
-							: matchedInstruction;
+						hasPartOwnInstruction || hasMatchedInstruction;
+					const instructionToShow = hasPartOwnInstruction
+						? part.instructionHtml
+						: hasMatchedInstruction
+							? matchedInstruction
+							: undefined;
 					// Part nhóm (#433): header không kèm nhãn dạng bài khi có
 					// instruction riêng — cùng ngôn ngữ với section intro.
 					const fromOwnSource =

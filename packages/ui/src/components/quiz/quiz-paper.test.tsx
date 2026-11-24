@@ -1,6 +1,10 @@
 // @vitest-environment jsdom
 
-import type { QuizPart } from "@teacher-os/api/lib/quiz-parts";
+import {
+	buildQuizParts,
+	buildQuizPartsFromGroups,
+	type QuizPart,
+} from "@teacher-os/api/lib/quiz-parts";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import { useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -1593,6 +1597,251 @@ describe("QuizPaper — inline answer inputs", () => {
 			// Summary part không dùng hướng dẫn chọn từ list của word bank
 			expect(container.textContent).not.toContain(
 				"Complete the summary using the list of words below",
+			);
+		});
+	});
+
+	describe("QuizPaper — Issue #876: The History of Tea instruction consistency & review detail", () => {
+		const teaQuestions = [
+			...Array.from({ length: 7 }, (_, i) => ({
+				stem:
+					i === 2
+						? "It was ____ (3) from Japan who brought tea to their native country from China."
+						: `Tea sentence ${i + 1} ____.`,
+				opts: null,
+				pin: null,
+				type: "sent",
+			})),
+			...Array.from({ length: 6 }, (_, i) => ({
+				stem: `Tea statement ${i + 8}.`,
+				opts: null,
+				pin: null,
+				type: "tfng",
+			})),
+		];
+
+		const teaSentInstruction =
+			"Complete the sentences below with words taken from Reading Passage 1. Use ONE WORD for each answer.";
+		const teaTfngInstruction = [
+			"Do the following statements agree with the information given in Reading Passage 1?",
+			"Write",
+			"TRUE if the statement agrees with the information",
+			"FALSE if the statement contradicts the information",
+			"NOT GIVEN if there is no information on this",
+		].join("\n");
+		const teaFlattenedIntro = `${teaSentInstruction}\n${teaTfngInstruction}`;
+
+		const teaReview: Record<number, QuizReviewInfo> = Object.fromEntries(
+			teaQuestions.map((_, idx) => [
+				idx,
+				{
+					verdict: idx === 2 ? ("wrong" as const) : ("correct" as const),
+					key: idx === 2 ? "monks" : idx < 7 ? "word" : "TRUE",
+					alts: "",
+					answer: idx === 2 ? "Buddhist monks" : idx < 7 ? "word" : "TRUE",
+					note: "",
+				},
+			]),
+		);
+
+		it("pre-0085 fallback (không groups) ở cả mode take và review tách sạch hướng dẫn Q1–7 (Use ONE WORD) và Q8–13 (TFNG), không còn NO MORE THAN THREE WORDS hay preamble lẫn", () => {
+			const parts = buildQuizParts(teaQuestions, "sent", teaFlattenedIntro);
+			const detail = baseDetail({
+				skill: "reading",
+				type: "sent",
+				intro: teaFlattenedIntro,
+			});
+
+			for (const mode of ["take", "review"] as const) {
+				const { container, unmount } = render(
+					<QuizPaper
+						detail={detail}
+						parts={parts}
+						answers={mode === "review" ? { 2: "Buddhist monks" } : {}}
+						onAnswer={vi.fn()}
+						currentQuestion={null}
+						mode={mode}
+						review={mode === "review" ? teaReview : undefined}
+					/>,
+				);
+
+				// Không còn preamble lẫn ở đầu <article>
+				const topPreamble = container.querySelector(
+					"article > div.text-muted-foreground",
+				);
+				expect(topPreamble).toBeNull();
+
+				// Tuyệt đối không còn fallback sai NO MORE THAN THREE WORDS
+				expect(container.textContent).not.toContain("NO MORE THAN THREE WORDS");
+
+				const sections = container.querySelectorAll("article section");
+				expect(sections).toHaveLength(2);
+
+				const section1 = sections[0]?.textContent ?? "";
+				const section2 = sections[1]?.textContent ?? "";
+
+				expect(section1).toContain("Use ONE WORD for each answer.");
+				expect(section1).not.toContain("TRUE if the statement");
+				expect(section2).toContain("Do the following statements agree");
+				expect(section2).toContain("TRUE if the statement");
+				expect(section2).not.toContain("Use ONE WORD");
+
+				unmount();
+			}
+		});
+
+		it("post-0087 có groups (kèm bảng inline ở Group 1 + plain-text TFNG ở Group 2) ở mode review không lặp preamble và hiển thị đúng hướng dẫn từng nhóm", () => {
+			const group1Html = `<p>${teaSentInstruction}</p><table><tbody><tr><td><ul><li>Containers in [1].</li><li>Lu Yu wrote a [2].</li><li>It was [3] from Japan.</li><li>Carried by the [4].</li><li>Crime of [5].</li><li>Planted in [6].</li><li>Used [7] for the race.</li></ul></td></tr></tbody></table>`;
+			const parts = buildQuizPartsFromGroups(
+				teaQuestions,
+				[
+					{
+						id: "grp-1",
+						type: "sent",
+						instruction: group1Html,
+						startIndex: 0,
+						count: 7,
+						optionBank: [],
+					},
+					{
+						id: "grp-2",
+						type: "tfng",
+						instruction: teaTfngInstruction,
+						startIndex: 7,
+						count: 6,
+						optionBank: [],
+					},
+				],
+				"sent",
+				`${group1Html}\n${teaTfngInstruction}`,
+			);
+			const detail = baseDetail({
+				skill: "reading",
+				type: "sent",
+				intro: `${group1Html}\n${teaTfngInstruction}`,
+			});
+
+			const { container } = render(
+				<QuizPaper
+					detail={detail}
+					parts={parts}
+					answers={{ 2: "Buddhist monks" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={teaReview}
+				/>,
+			);
+
+			const topPreamble = container.querySelector(
+				"article > div.text-muted-foreground",
+			);
+			expect(topPreamble).toBeNull();
+			expect(container.textContent).not.toContain("NO MORE THAN THREE WORDS");
+
+			const sections = container.querySelectorAll("article section");
+			expect(sections).toHaveLength(2);
+			expect(sections[0]?.textContent).toContain(
+				"Use ONE WORD for each answer.",
+			);
+			expect(sections[0]?.textContent).not.toContain("TRUE if the statement");
+			expect(sections[1]?.textContent).toContain("TRUE if the statement");
+			expect(sections[1]?.textContent).not.toContain("Use ONE WORD");
+		});
+
+		it("pre-0085 fallback (không groups) với bảng inline trong detail.intro bật QuizInlineInstruction qua hasMatchedInstruction ở cả take và review", () => {
+			const inlineIntro = `<p>${teaSentInstruction}</p><table><tbody><tr><td><ul><li>Containers in [1].</li><li>Lu Yu wrote a [2].</li><li>It was [3] from Japan.</li><li>Carried by the [4].</li><li>Crime of [5].</li><li>Planted in [6].</li><li>Used [7] for the race.</li></ul></td></tr></tbody></table>\n${teaTfngInstruction}`;
+			const parts = buildQuizParts(teaQuestions, "sent", inlineIntro);
+			const detail = baseDetail({
+				skill: "reading",
+				type: "sent",
+				intro: inlineIntro,
+			});
+
+			for (const mode of ["take", "review"] as const) {
+				const { container, getAllByTestId, unmount } = render(
+					<QuizPaper
+						detail={detail}
+						parts={parts}
+						answers={mode === "review" ? { 2: "Buddhist monks" } : {}}
+						onAnswer={vi.fn()}
+						currentQuestion={null}
+						mode={mode}
+						review={mode === "review" ? teaReview : undefined}
+					/>,
+				);
+
+				expect(
+					container.querySelector("article > div.text-muted-foreground"),
+				).toBeNull();
+				expect(getAllByTestId("quiz-inline-instruction")).toHaveLength(1);
+				expect(getAllByTestId("quiz-inline-slot")).toHaveLength(7);
+				expect(container.textContent).not.toContain("NO MORE THAN THREE WORDS");
+				unmount();
+			}
+		});
+
+		it("không làm rò rỉ word limit qua contextIntro khi đề có >= 2 nhóm completion", () => {
+			// Case 3a: Part 1 (sent) đã tiêu thụ Use ONE WORD, Part 2 (notes) không có instruction riêng
+			const partsA = buildQuizParts(
+				[
+					{ stem: "Sent 1 ____", opts: null, pin: null, type: "sent" },
+					{ stem: "Note 2 ____", opts: null, pin: null, type: "notes" },
+				],
+				"sent",
+				teaSentInstruction,
+			);
+			const { container: containerA, unmount: unmountA } = render(
+				<QuizPaper
+					detail={baseDetail({
+						skill: "reading",
+						type: "sent",
+						intro: teaSentInstruction,
+					})}
+					parts={partsA}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+				/>,
+			);
+			const sectionsA = containerA.querySelectorAll("article section");
+			expect(sectionsA[0]?.textContent).toContain(
+				"Use ONE WORD for each answer.",
+			);
+			expect(sectionsA[1]?.textContent).toContain("NO MORE THAN THREE WORDS");
+			expect(sectionsA[1]?.textContent).not.toContain("Choose ONE WORD");
+			unmountA();
+
+			// Case 3b: 2 nhóm completion (shortans + summary) cùng không khớp keyword -> intro còn lại không được lây từ Part 1 sang Part 2
+			const unmatchedIntro = [
+				"Choose ONE WORD ONLY from the passage for each answer.",
+				"Complete the table below. Choose ONE WORD AND/OR A NUMBER from the passage for each answer.",
+			].join("\n");
+			const partsB = buildQuizParts(
+				[
+					{ stem: "Q1 ____", opts: null, pin: null, type: "shortans" },
+					{ stem: "Q2 ____", opts: null, pin: null, type: "summary" },
+				],
+				"shortans",
+				unmatchedIntro,
+			);
+			const { container: containerB } = render(
+				<QuizPaper
+					detail={baseDetail({
+						skill: "reading",
+						type: "shortans",
+						intro: unmatchedIntro,
+					})}
+					parts={partsB}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+				/>,
+			);
+			const sectionsB = containerB.querySelectorAll("article section");
+			// Part 1 (shortans) không bị lây ONE WORD ONLY sai từ intro chung nhiều nhóm
+			expect(sectionsB[0]?.textContent).toContain(
+				"NO MORE THAN THREE WORDS AND/OR A NUMBER",
 			);
 		});
 	});
