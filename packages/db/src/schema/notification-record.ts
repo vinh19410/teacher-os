@@ -32,6 +32,8 @@ export const notificationRecord = sqliteTable(
 		idempotencyKey: text("idempotency_key").notNull(),
 		title: text("title").notNull(),
 		body: text("body").notNull(),
+		/** Nội dung HTML đã render sẵn cho email giàu định dạng; null = dùng plain renderer mặc định. */
+		htmlBody: text("html_body"),
 		linkPath: text("link_path").notNull().default(""),
 		refType: text("ref_type").notNull().default(""),
 		refId: text("ref_id").notNull().default(""),
@@ -67,6 +69,12 @@ export const notificationRecord = sqliteTable(
 			table.orgId,
 			table.studentId,
 			table.createdAt,
+		),
+		index("notification_record_org_event_ref_idx").on(
+			table.orgId,
+			table.eventType,
+			table.refType,
+			table.refId,
 		),
 	],
 );
