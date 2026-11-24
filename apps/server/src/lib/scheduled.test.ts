@@ -6,7 +6,10 @@ import {
 	type runDailyDeadlineReminderCron,
 	ZOOM_RECORDING_SYNC_CRON,
 } from "./notifications/daily-deadline-reminder";
-import { dispatchScheduledCron } from "./scheduled";
+import {
+	dispatchScheduledCron,
+	isDailyDeadlineReminderWindow,
+} from "./scheduled";
 import type { runRecordingSyncCron } from "./zoom/session-zoom-service";
 
 const fakeDb = {} as Db;
@@ -176,5 +179,114 @@ describe("dispatchScheduledCron", () => {
 		expect(runZoomSync).not.toHaveBeenCalled();
 		expect(runDailyReminder).not.toHaveBeenCalled();
 		expect(getMailer).not.toHaveBeenCalled();
+	});
+
+	test("multiplexes daily deadline reminder on the 23:00 UTC (06:00 VN) tick of */10 * * * *", async () => {
+		const mailer: Mailer = { send: vi.fn(async () => {}) };
+		const getMailer = vi.fn(() => mailer);
+		const runZoomSync = vi.fn<typeof runRecordingSyncCron>(async () => ({
+			checked: 0,
+			updated: 0,
+			failed: 0,
+		}));
+		const runDailyReminder = vi.fn<typeof runDailyDeadlineReminderCron>(
+			async () => ({
+				dateISO: "2026-05-15",
+				studentsMatched: 2,
+				recordsCreated: 2,
+				emailsQueued: 2,
+				skippedNoEmail: 0,
+				orgsProcessed: 1,
+			}),
+		);
+
+		const atSixAmVn = Date.parse("2026-05-14T23:00:00.000Z");
+		expect(isDailyDeadlineReminderWindow(new Date(atSixAmVn))).toBe(true);
+		expect(
+			isDailyDeadlineReminderWindow(new Date("2026-05-14T23:10:00.000Z")),
+		).toBe(false);
+
+		await dispatchScheduledCron(
+			{ cron: ZOOM_RECORDING_SYNC_CRON, scheduledTime: atSixAmVn },
+			{
+				db: fakeDb,
+				zoom: fakeZoom,
+				getMailer,
+				studentOrigin: "https://lms.msmy.io.vn/student",
+				retryDelaysMs: [0, 0],
+				sendIntervalMs: 100,
+				runZoomSync,
+				runDailyReminder,
+			},
+		);
+
+		expect(runZoomSync).toHaveBeenCalledTimes(1);
+		expect(runDailyReminder).toHaveBeenCalledTimes(1);
+		expect(runDailyReminder.mock.calls[0]?.[0]?.now?.().toISOString()).toBe(
+			"2026-05-14T23:00:00.000Z",
+		);
+
+		// At 23:10 UTC (06:10 VN), only Zoom sync runs.
+		runZoomSync.mockClear();
+		runDailyReminder.mockClear();
+		getMailer.mockClear();
+		await dispatchScheduledCron(
+			{
+				cron: ZOOM_RECORDING_SYNC_CRON,
+				scheduledTime: Date.parse("2026-05-14T23:10:00.000Z"),
+			},
+			{
+				db: fakeDb,
+				zoom: fakeZoom,
+				getMailer,
+				runZoomSync,
+				runDailyReminder,
+			},
+		);
+		expect(runZoomSync).toHaveBeenCalledTimes(1);
+		expect(runDailyReminder).not.toHaveBeenCalled();
+		expect(getMailer).not.toHaveBeenCalled();
+	});
+
+	test("still runs daily deadline reminder at 23:00 UTC if Zoom sync fails, then rethrows Zoom error", async () => {
+		const mailer: Mailer = { send: vi.fn(async () => {}) };
+		const getMailer = vi.fn(() => mailer);
+		const runZoomSync = vi.fn<typeof runRecordingSyncCron>(async () => {
+			throw new Error("zoom api timeout");
+		});
+		const runDailyReminder = vi.fn<typeof runDailyDeadlineReminderCron>(
+			async () => ({
+				dateISO: "2026-05-15",
+				studentsMatched: 1,
+				recordsCreated: 1,
+				emailsQueued: 1,
+				skippedNoEmail: 0,
+				orgsProcessed: 1,
+			}),
+		);
+		const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+		try {
+			await expect(
+				dispatchScheduledCron(
+					{
+						cron: ZOOM_RECORDING_SYNC_CRON,
+						scheduledTime: Date.parse("2026-05-14T23:00:00.000Z"),
+					},
+					{
+						db: fakeDb,
+						zoom: fakeZoom,
+						getMailer,
+						runZoomSync,
+						runDailyReminder,
+					},
+				),
+			).rejects.toThrow("zoom api timeout");
+			expect(errSpy).toHaveBeenCalledTimes(1);
+		} finally {
+			errSpy.mockRestore();
+		}
+
+		expect(runDailyReminder).toHaveBeenCalledTimes(1);
 	});
 });
