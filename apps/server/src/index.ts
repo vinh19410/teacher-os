@@ -16,7 +16,7 @@ import {
 import type { PlacementAiGrader } from "./lib/placement-ai/grader";
 import { createPlacementAiGrader } from "./lib/placement-ai/openai-grader";
 import { createR2MediaStore } from "./lib/r2-media-store";
-import { runRecordingSyncCron } from "./lib/zoom/session-zoom-service";
+import { dispatchScheduledCron } from "./lib/scheduled";
 import { getSessionUser } from "./session";
 
 export function parseCORSOrigins(raw: string): string[] {
@@ -119,6 +119,13 @@ const zoomConfig = {
 	hostUser: env.ZOOM_HOST_USER || "me",
 };
 
+// Base URL học viên trên domain LMS hợp nhất cho link tuyệt đối trong email.
+const studentOrigin = appendPathPrefix(
+	parseCORSOrigins(env.STUDENT_ORIGINS ?? "")[0] ??
+		parseCORSOrigins(env.CORS_ORIGIN)[0],
+	"/student",
+);
+
 const app = buildApp({
 	getDb: () => (db ??= createDb() as unknown as Db),
 	corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
@@ -191,11 +198,7 @@ const app = buildApp({
 		return getMailer();
 	},
 	// Base URL học viên trên domain LMS hợp nhất cho link tuyệt đối trong email.
-	studentOrigin: appendPathPrefix(
-		parseCORSOrigins(env.STUDENT_ORIGINS ?? "")[0] ??
-			parseCORSOrigins(env.CORS_ORIGIN)[0],
-		"/student",
-	),
+	studentOrigin,
 	// Lead intake (#506): org đích từ env (fail-closed khi rỗng), origin
 	// profile tách khỏi CORS_ORIGIN (D5), secret HMAC tái dùng
 	// BETTER_AUTH_SECRET, appOrigin cho link trong email báo lead (D13).
@@ -210,7 +213,7 @@ const app = buildApp({
 export default {
 	fetch: app.fetch,
 	scheduled(
-		_controller: { cron: string; scheduledTime: number },
+		controller: { cron: string; scheduledTime: number },
 		_env: unknown,
 		ctx: { waitUntil: (promise: Promise<unknown>) => void },
 	) {
@@ -218,11 +221,13 @@ export default {
 			db = createDb() as unknown as Db;
 		}
 		ctx.waitUntil(
-			runRecordingSyncCron({
+			dispatchScheduledCron(controller, {
 				db,
 				zoom: zoomConfig,
+				getMailer,
+				studentOrigin,
 			}).catch((err) => {
-				console.error("[zoom] recording sync cron failed", err);
+				console.error("[cron] scheduled dispatch failed", controller.cron, err);
 			}),
 		);
 	},

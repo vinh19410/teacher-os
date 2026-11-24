@@ -326,4 +326,157 @@ describe("student inbox (/api/student/inbox)", () => {
 		expect(row?.readAt).not.toBeNull();
 		expect(row?.status).toBe("failed");
 	});
+
+	test("excludes email-only daily_deadline_reminder from GET /inbox and unread count, and rejects POST read with 404", async () => {
+		const beforeRes = await get("/api/student/inbox", "hoa");
+		expect(beforeRes.status).toBe(200);
+		const beforeBody = (await beforeRes.json()) as {
+			items: Array<{ id: string }>;
+			unread: number;
+		};
+
+		await libsql.insert(schema.notificationRecord).values({
+			id: "n-hoa-email-only",
+			orgId: "org-1",
+			studentId: "student-hoa",
+			eventType: "daily_deadline_reminder",
+			eventGroup: "assignment",
+			idempotencyKey: "k-hoa-email-only",
+			title: "Nhắc hạn nộp bài hằng ngày",
+			body: "Bạn có bài tập sắp đến hạn.",
+			linkPath: "/assignments",
+			channels: "email",
+			recipientEmail: "hoa@test.local",
+			status: "sent",
+			sentAt: new Date(),
+			createdAt: new Date(),
+		});
+
+		const afterRes = await get("/api/student/inbox", "hoa");
+		expect(afterRes.status).toBe(200);
+		const afterBody = (await afterRes.json()) as {
+			items: Array<{ id: string }>;
+			unread: number;
+		};
+		expect(afterBody.items.map((i) => i.id)).toEqual(
+			beforeBody.items.map((i) => i.id),
+		);
+		expect(afterBody.items.some((i) => i.id === "n-hoa-email-only")).toBe(
+			false,
+		);
+		expect(afterBody.unread).toBe(beforeBody.unread);
+
+		const readRes = await postRead("n-hoa-email-only", "hoa");
+		expect(readRes.status).toBe(404);
+
+		const [row] = await libsql
+			.select()
+			.from(schema.notificationRecord)
+			.where(eq(schema.notificationRecord.id, "n-hoa-email-only"));
+		expect(row?.readAt).toBeNull();
+		expect(row?.status).toBe("sent");
+	});
+
+	test("matches exact in_app channel token: allows in_app,email and excludes empty or non-matching channels", async () => {
+		const beforeRes = await get("/api/student/inbox", "hoa");
+		expect(beforeRes.status).toBe(200);
+		const beforeBody = (await beforeRes.json()) as {
+			items: Array<{ id: string }>;
+			unread: number;
+		};
+
+		const now = Date.now();
+		await libsql.insert(schema.notificationRecord).values([
+			{
+				id: "n-hoa-in-app-first",
+				orgId: "org-1",
+				studentId: "student-hoa",
+				eventType: "assignment_published",
+				eventGroup: "assignment",
+				idempotencyKey: "k-hoa-in-app-first",
+				title: "Bài tập đọc hiểu mới",
+				body: "Bạn có bài tập mới cần hoàn thành.",
+				linkPath: "/assignments/a-2",
+				channels: "in_app,email",
+				recipientEmail: "hoa@test.local",
+				status: "sent",
+				sentAt: new Date(now),
+				createdAt: new Date(now),
+			},
+			{
+				id: "n-hoa-empty-channels",
+				orgId: "org-1",
+				studentId: "student-hoa",
+				eventType: "daily_deadline_reminder",
+				eventGroup: "assignment",
+				idempotencyKey: "k-hoa-empty-channels",
+				title: "Thông báo không có kênh",
+				body: "Không thuộc hộp thư trong ứng dụng.",
+				linkPath: "/assignments",
+				channels: "",
+				status: "sent",
+				sentAt: new Date(now + 1000),
+				createdAt: new Date(now + 1000),
+			},
+			{
+				id: "n-hoa-wildcard-channel",
+				orgId: "org-1",
+				studentId: "student-hoa",
+				eventType: "daily_deadline_reminder",
+				eventGroup: "assignment",
+				idempotencyKey: "k-hoa-wildcard-channel",
+				title: "Thông báo kênh không khớp",
+				body: "Không được khớp nhầm wildcard.",
+				linkPath: "/assignments",
+				channels: "inXapp",
+				status: "sent",
+				sentAt: new Date(now + 2000),
+				createdAt: new Date(now + 2000),
+			},
+		]);
+
+		const listRes = await get("/api/student/inbox", "hoa");
+		expect(listRes.status).toBe(200);
+		const listBody = (await listRes.json()) as {
+			items: Array<{ id: string }>;
+			unread: number;
+		};
+		expect(listBody.items.some((i) => i.id === "n-hoa-in-app-first")).toBe(
+			true,
+		);
+		expect(listBody.items.some((i) => i.id === "n-hoa-empty-channels")).toBe(
+			false,
+		);
+		expect(listBody.items.some((i) => i.id === "n-hoa-wildcard-channel")).toBe(
+			false,
+		);
+		expect(listBody.unread).toBe(beforeBody.unread + 1);
+
+		const emptyReadRes = await postRead("n-hoa-empty-channels", "hoa");
+		expect(emptyReadRes.status).toBe(404);
+		const [emptyRow] = await libsql
+			.select()
+			.from(schema.notificationRecord)
+			.where(eq(schema.notificationRecord.id, "n-hoa-empty-channels"));
+		expect(emptyRow?.readAt).toBeNull();
+		expect(emptyRow?.status).toBe("sent");
+
+		const wildcardReadRes = await postRead("n-hoa-wildcard-channel", "hoa");
+		expect(wildcardReadRes.status).toBe(404);
+		const [wildcardRow] = await libsql
+			.select()
+			.from(schema.notificationRecord)
+			.where(eq(schema.notificationRecord.id, "n-hoa-wildcard-channel"));
+		expect(wildcardRow?.readAt).toBeNull();
+		expect(wildcardRow?.status).toBe("sent");
+
+		const validReadRes = await postRead("n-hoa-in-app-first", "hoa");
+		expect(validReadRes.status).toBe(200);
+		const [validRow] = await libsql
+			.select()
+			.from(schema.notificationRecord)
+			.where(eq(schema.notificationRecord.id, "n-hoa-in-app-first"));
+		expect(validRow?.readAt).not.toBeNull();
+		expect(validRow?.status).toBe("read");
+	});
 });

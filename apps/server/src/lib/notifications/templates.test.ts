@@ -3,12 +3,15 @@ import {
 	assignmentPublishedEvents,
 	classEnrolledEvent,
 	classOpeningConfirmedEvents,
+	dailyDeadlineReminderEvent,
 	eventGroupOf,
 	gradeReturnedEvent,
 	holidayCreatedEvents,
 	invoiceIssuedEvent,
 	isOpeningStudentNotified,
 	placementSubmittedEvent,
+	renderDailyDeadlineReminderHtml,
+	renderDailyDeadlineReminderText,
 	scheduleChangedEvents,
 } from "./templates";
 
@@ -297,5 +300,165 @@ describe("notification template builders (phase 3 #454)", () => {
 		expect(isOpeningStudentNotified("", new Set(["in_app"]))).toBe(true);
 		expect(isOpeningStudentNotified("   ", new Set(["in_app"]))).toBe(true);
 		expect(isOpeningStudentNotified("", new Set(["email,in_app"]))).toBe(true);
+	});
+});
+
+describe("dailyDeadlineReminderEvent & digest renderers", () => {
+	test("builds email-only digest event with homework and self-study sections in body, htmlBody, and textBody", () => {
+		const event = dailyDeadlineReminderEvent({
+			studentId: "stu-1",
+			studentName: "Minh Anh",
+			dateISO: "2026-05-15",
+			studentOrigin: "https://lms.msmy.io.vn/student/",
+			homework: [
+				{
+					assignmentId: "hw-1",
+					title: "Writing Task 2",
+					className: "IELTS 6.5",
+					dueTimeLabel: "23:59",
+				},
+			],
+			selfStudy: [
+				{
+					assignmentId: "ss-1",
+					title: "Reading Day 3",
+					className: "IELTS 6.5",
+					dueTimeLabel: "17:00",
+					opensAtLabel: "08:00",
+				},
+			],
+		});
+
+		expect(event.studentId).toBe("stu-1");
+		expect(event.eventType).toBe("daily_deadline_reminder");
+		expect(eventGroupOf(event.eventType)).toBe("assignment");
+		expect(event.idempotencyKey).toBe(
+			"daily_deadline_reminder:stu-1:2026-05-15",
+		);
+		expect(event.title).toBe("Nhắc bài tập đến hạn hôm nay (15/05/2026)");
+		expect(event.linkPath).toBe("/assignments");
+		expect(event.refType).toBe("daily_deadline_reminder");
+		expect(event.refId).toBe("2026-05-15");
+		expect(event.channels).toBe("email");
+
+		expect(event.body).toContain("Chào Minh Anh,");
+		expect(event.body).toContain(
+			"Bạn có 2 bài tập cần hoàn thành trong hôm nay (15/05/2026):",
+		);
+		expect(event.body).toContain("Bài tập về nhà (1):");
+		expect(event.body).toContain("- Writing Task 2 (IELTS 6.5) — Hạn 23:59");
+		expect(event.body).toContain("Bộ đề tự học (1):");
+		expect(event.body).toContain(
+			"- Reading Day 3 (IELTS 6.5) — Hạn 17:00 (mở lúc 08:00)",
+		);
+		expect(event.body).not.toContain("<");
+		expect(event.body).not.toContain(">");
+
+		expect(event.htmlBody).toContain("Bài tập về nhà (1)");
+		expect(event.htmlBody).toContain("Bộ đề tự học (1)");
+		expect(event.htmlBody).toContain(
+			'href="https://lms.msmy.io.vn/student/learn/quizzes/hw-1"',
+		);
+		expect(event.htmlBody).toContain(
+			'href="https://lms.msmy.io.vn/student/learn/quizzes/ss-1"',
+		);
+		expect(event.htmlBody).toContain(
+			'href="https://lms.msmy.io.vn/student/assignments"',
+		);
+		expect(event.textBody).toContain(
+			"https://lms.msmy.io.vn/student/learn/quizzes/hw-1",
+		);
+		expect(event.textBody).toContain(
+			"https://lms.msmy.io.vn/student/learn/quizzes/ss-1",
+		);
+		expect(event.textBody).toContain(
+			"https://lms.msmy.io.vn/student/assignments",
+		);
+	});
+
+	test("falls back greeting name to 'bạn' and omits empty sections and blank metadata", () => {
+		const hwOnly = dailyDeadlineReminderEvent({
+			studentId: "stu-2",
+			studentName: "   ",
+			dateISO: "2026-05-15",
+			homework: [
+				{
+					assignmentId: "hw-2",
+					title: "Grammar Review",
+					className: "",
+					dueTimeLabel: "Trong ngày",
+				},
+			],
+			selfStudy: [],
+		});
+		expect(hwOnly.body).toContain("Chào bạn,");
+		expect(hwOnly.body).toContain("Bài tập về nhà (1):");
+		expect(hwOnly.body).toContain("- Grammar Review — Hạn Trong ngày");
+		expect(hwOnly.body).not.toContain("Bộ đề tự học");
+		expect(hwOnly.htmlBody).not.toContain("Bộ đề tự học");
+
+		const ssOnly = dailyDeadlineReminderEvent({
+			studentId: "stu-3",
+			studentName: "Lan",
+			dateISO: "2026-05-15",
+			homework: [],
+			selfStudy: [
+				{
+					assignmentId: "ss-2",
+					title: "Listening Day 1",
+					className: "IELTS Foundation",
+					dueTimeLabel: "17:00",
+					opensAtLabel: null,
+				},
+			],
+		});
+		expect(ssOnly.body).not.toContain("Bài tập về nhà");
+		expect(ssOnly.htmlBody).not.toContain("Bài tập về nhà");
+		expect(ssOnly.body).toContain("Bộ đề tự học (1):");
+		expect(ssOnly.body).toContain(
+			"- Listening Day 1 (IELTS Foundation) — Hạn 17:00",
+		);
+		expect(ssOnly.body).not.toContain("mở lúc");
+	});
+
+	test("renderDailyDeadlineReminderHtml and Text escape HTML, encode IDs, and reject unsafe origins", () => {
+		const xssDigest = {
+			dateISO: "2026-05-15",
+			studentName: '<img src=x onerror="alert(1)">',
+			homework: [
+				{
+					assignmentId: "a/b?c=1",
+					title: '<script>alert("hw")</script>',
+					className: 'IELTS "Pro" & <A>',
+					dueTimeLabel: "23:59",
+				},
+			],
+			selfStudy: [],
+		};
+		const html = renderDailyDeadlineReminderHtml(
+			xssDigest,
+			"https://lms.msmy.io.vn/student/",
+		);
+		expect(html).not.toContain("<script>");
+		expect(html).not.toContain("<img ");
+		expect(html).toContain(
+			"&lt;script&gt;alert(&quot;hw&quot;)&lt;/script&gt;",
+		);
+		expect(html).toContain(
+			'href="https://lms.msmy.io.vn/student/learn/quizzes/a%2Fb%3Fc%3D1"',
+		);
+
+		const unsafeHtml = renderDailyDeadlineReminderHtml(
+			xssDigest,
+			"javascript:alert(1)",
+		);
+		expect(unsafeHtml).not.toContain("javascript:");
+		expect(unsafeHtml).not.toContain("<a ");
+
+		const unsafeText = renderDailyDeadlineReminderText(
+			xssDigest,
+			"javascript:alert(1)",
+		);
+		expect(unsafeText).not.toContain("javascript:");
 	});
 });

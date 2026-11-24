@@ -15,6 +15,7 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { type Context, Hono } from "hono";
 import { beforeAll, beforeEach, describe, expect, test } from "vitest";
 import { buildApp, type Db, type KernelCtx } from "../app";
+import { dailyDeadlineReminderEvent } from "../lib/notifications/templates";
 import { kernelRoutes } from "./kernel";
 import { notificationLogRoutes } from "./notification-logs";
 
@@ -798,5 +799,115 @@ describe("POST /api/notification-logs resend (#464)", () => {
 			},
 		);
 		expect(noContentTypeRes.status).toBe(415);
+	});
+
+	test("daily_deadline_reminder failed hiện ở GET /notification-logs và resend giữ nguyên channels=email cùng HTML digest có link từng bài", async () => {
+		const event = dailyDeadlineReminderEvent({
+			studentId: "st-1",
+			studentName: "Minh Tran",
+			dateISO: "2026-11-24",
+			homework: [
+				{
+					assignmentId: "asg-hw-1",
+					title: "Writing Task 2",
+					className: "IELTS 6.5",
+					dueTimeLabel: "21:00",
+				},
+			],
+			selfStudy: [
+				{
+					assignmentId: "asg-ss-1",
+					title: "Reading Day 5",
+					className: "IELTS 6.5",
+					dueTimeLabel: "17:00",
+					opensAtLabel: "08:00",
+				},
+			],
+			studentOrigin: "https://student.example.com",
+		});
+
+		await rawDb
+			.insert(schema.notificationRecord)
+			.values({
+				id: "nt-daily-failed",
+				orgId: "org-1",
+				studentId: "st-1",
+				eventType: event.eventType,
+				eventGroup: "assignment",
+				idempotencyKey: event.idempotencyKey,
+				title: event.title,
+				body: event.body,
+				htmlBody: event.htmlBody ?? null,
+				textBody: event.textBody ?? null,
+				linkPath: event.linkPath,
+				refType: event.refType,
+				refId: event.refId,
+				channels: "email",
+				recipientEmail: "minh@gmail.com",
+				senderName: "Academy 1",
+				replyToEmail: "teacher@academy1.vn",
+				status: "failed",
+				retryCount: 3,
+				lastError: "E-selfomy-alignment-010: temporary smtp error",
+				createdAt: new Date("2026-11-24T00:00:00Z"),
+			})
+			.run();
+
+		const sentCalls: Parameters<Mailer["send"]>[0][] = [];
+		const app = buildResendApp({
+			mailer: {
+				async send(input) {
+					sentCalls.push(input);
+				},
+			},
+		});
+
+		const listRes = await app.request("/?event=assignment&status=failed");
+		expect(listRes.status).toBe(200);
+		const listBody = notificationLogResponseSchema.parse(await listRes.json());
+		const listed = listBody.rows.find((r) => r.id === "nt-daily-failed");
+		expect(listed).toBeDefined();
+		expect(listed?.eventType).toBe("daily_deadline_reminder");
+		expect(listed?.channels).toBe("email");
+		expect("htmlBody" in (listed ?? {})).toBe(false);
+		expect("textBody" in (listed ?? {})).toBe(false);
+
+		const resendRes = await app.request("/nt-daily-failed/resend", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: "{}",
+		});
+		expect(resendRes.status).toBe(200);
+		expect(
+			notificationResendResponseSchema.parse(await resendRes.json()),
+		).toEqual({
+			requeued: 1,
+			skipped: [],
+			remaining: 0,
+		});
+
+		expect(sentCalls).toHaveLength(1);
+		expect(sentCalls[0]?.to).toBe("minh@gmail.com");
+		expect(sentCalls[0]?.html).toContain("Bài tập về nhà (1)");
+		expect(sentCalls[0]?.html).toContain("Bộ đề tự học (1)");
+		expect(sentCalls[0]?.html).toContain(
+			"https://student.example.com/learn/quizzes/asg-hw-1",
+		);
+		expect(sentCalls[0]?.html).toContain(
+			"https://student.example.com/learn/quizzes/asg-ss-1",
+		);
+		expect(sentCalls[0]?.html).toContain("mở lúc 08:00");
+		expect(sentCalls[0]?.html).toContain(
+			"https://student.example.com/assignments",
+		);
+
+		const [updated] = await rawDb
+			.select()
+			.from(schema.notificationRecord)
+			.where(eq(schema.notificationRecord.id, "nt-daily-failed"));
+		expect(updated?.status).toBe("sent");
+		expect(updated?.channels).toBe("email");
+		expect(updated?.retryCount).toBe(0);
+		expect(updated?.lastError).toBeNull();
 	});
 });
