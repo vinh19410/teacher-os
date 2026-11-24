@@ -1,5 +1,5 @@
 # Staging deploy to Cloudflare stage "staging"
-# (app/api.staging.teacheros.io.vn) — the QA environment.
+# (lms/api.staging.teacheros.io.vn) — the QA environment.
 #
 # Trigger: every push to `develop` (a merged PR included) deploys staging, so
 # QA always sees the latest develop. The dedicated `staging` branch no longer
@@ -16,7 +16,7 @@
 #   progress: alchemy applies forward-only D1 migrations, and two overlapping
 #   deploys would race the migration ledger.
 # - CORS_ORIGIN must NOT be set here — with APP_DOMAIN present it defaults to
-#   the derived https://app.staging.teacheros.io.vn and an explicit disagreeing
+#   the derived https://lms.staging.teacheros.io.vn and an explicit disagreeing
 #   value fails the whole run by design.
 # - ci-workflow.test.mjs forbids secrets in ci.yml/quality.yml/e2e.yml; staging
 #   credentials live in the GitHub environment "staging" (same secret names as
@@ -46,7 +46,8 @@ permissions:
 
 env:
   # Single source of topology: packages/infra/src/topology.ts derives
-  # app.<domain>, api.<domain>, cookie domain and the Google redirect URI.
+  # lms.<domain> (with legacy aliases app/student/admin.<domain>), api.<domain>,
+  # cookie domain and the Google redirect URI.
   APP_DOMAIN: staging.teacheros.io.vn
   # The prod apex whose cookie zone nests staging's (issue #125): the auth
   # smoke plants a prod-shaped parent-domain session cookie from this zone.
@@ -54,8 +55,10 @@ env:
   # stays correct even if APP_DOMAIN ever stops being a subdomain of prod.
   PARENT_DOMAIN: teacheros.io.vn
   API_READY_URL: https://api.staging.teacheros.io.vn/readyz
-  APP_ORIGIN: https://app.staging.teacheros.io.vn
-  STUDENT_ORIGIN: https://student.staging.teacheros.io.vn
+  LMS_ORIGIN: https://lms.staging.teacheros.io.vn
+  LEGACY_APP_ORIGIN: https://app.staging.teacheros.io.vn
+  LEGACY_STUDENT_ORIGIN: https://student.staging.teacheros.io.vn
+  LEGACY_ADMIN_ORIGIN: https://admin.staging.teacheros.io.vn
   LANDING_ORIGIN: https://staging.teacheros.io.vn
   API_BASE_URL: https://api.staging.teacheros.io.vn
   PROFILE_ORIGIN: https://profile.staging.teacheros.io.vn
@@ -79,6 +82,13 @@ jobs:
           # Full history: the Discord beta number counts commits since the last version bump.
           fetch-depth: 0
       - uses: ./.github/actions/setup-workspace
+      - name: Detach legacy Worker custom domains before unified LMS cutover
+        if: ${{ !inputs.dry_run }}
+        timeout-minutes: 2
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node packages/infra/scripts/detach-legacy-worker-domains.ts --stage staging
       - name: Deploy to Cloudflare (stage staging)
         working-directory: packages/infra
         env:
@@ -103,7 +113,7 @@ jobs:
           MAIL_FROM: ${{ vars.MAIL_FROM }}
           # QA cần tài khoản admin test trên staging (#489); rỗng = không ai là admin.
           ADMIN_EMAILS: ${{ vars.ADMIN_EMAILS }}
-          # Single-org (#513): rỗng trên staging = không giới hạn.
+          # Single-org (#513): danh sách email giáo viên (phân loại role teacher trên unified LMS và allowlist).
           TEACHER_EMAILS: ${{ vars.TEACHER_EMAILS }}
           # Lead intake & placement test (#506, #515, #524): truyền từ GitHub Environment staging.
           LEAD_ORG_ID: ${{ vars.LEAD_ORG_ID }}
@@ -111,6 +121,8 @@ jobs:
           AI_ENABLED: ${{ vars.AI_ENABLED }}
           # Staging không gửi mail: mọi tài khoản coi như đã xác minh email.
           AUTH_ASSUME_EMAIL_VERIFIED: "true"
+          # Staging bật lại menu Luyện tập & Lịch sử ở apps/student (#852 tắt mặc định trên PROD).
+          STUDENT_PRACTICE_ENABLED: "true"
         run: pnpm alchemy deploy --stage staging ${{ inputs.dry_run && '--dry-run' || '--yes' }}
         # --yes auto-approves the plan: without it Alchemy exits code 0 in a
         # non-interactive terminal WITHOUT applying anything ("Non-interactive
@@ -153,10 +165,10 @@ jobs:
         # apps/server/src/auth-roundtrip.test.ts. One throwaway account per
         # deploy; credentials are generated per run and never echoed.
         #
-        # Signs up through the student portal origin: when TEACHER_EMAILS is
-        # set, the teacher origin rejects every email outside the allowlist
-        # with 403 TEACHER_SIGNUP_FORBIDDEN, so a random smoke email can only
-        # register as a student. Auth wiring and cookies are the same for both.
+        # Signs up through the unified LMS origin: even when TEACHER_EMAILS is
+        # set, unified-origin sign-up auto-classifies any email outside
+        # ADMIN_EMAILS/TEACHER_EMAILS as student. Auth wiring and cookies are
+        # the same across roles.
         #
         # The jar is POISONED before sign-up with a prod-shaped parent-domain
         # session cookie (round-2 repro): any browser that ever held a session
@@ -188,7 +200,7 @@ jobs:
               -o /tmp/smoke-signup.json -w '%{http_code}' \
               -X POST "$API_BASE_URL/api/auth/sign-up/email" \
               -H "Content-Type: application/json" \
-              -H "Origin: $STUDENT_ORIGIN" \
+              -H "Origin: $LMS_ORIGIN" \
               -d "{\"name\":\"Deploy Smoke\",\"email\":\"$email\",\"password\":\"$pass\"}"
           }
           code=$(attempt_signup "") || fail "sign-up smoke request failed"
@@ -215,35 +227,134 @@ jobs:
         if: ${{ !inputs.dry_run }}
         # Issue #125: the removed PWA SW's self-heal chain depends on these
         # files being served as real JavaScript with cache headers that keep
-        # the SW update check on the network — the SPA fallback would return
-        # 200 HTML and silently strand every already-affected browser.
+        # the SW update check on the network on BOTH the canonical lms.<domain>
+        # origin and the legacy app.<domain> host (where existing browsers may
+        # still hold an old SW registration).
         # Retries mirror /readyz: first deploys wait on DNS/cert provisioning.
         run: |
           fail() { echo "::error::$1"; exit 1; }
           stubs_ok() {
-            local f code
-            for f in sw.js registerSW.js; do
-              code=$(curl -sS --connect-timeout 5 --max-time 30 \
-                -D /tmp/stub-headers.txt -o "/tmp/$f" -w '%{http_code}' \
-                "$APP_ORIGIN/$f") || return 1
-              [ "$code" = "200" ] || { echo "GET /$f returned HTTP $code"; return 1; }
-              grep -qi '^content-type: text/javascript' /tmp/stub-headers.txt \
-                || { echo "/$f is not served as JavaScript (SPA fallback HTML as SW update target?)"; return 1; }
-              grep -Eiq '^cache-control:.*(max-age=0|no-store|no-cache)' /tmp/stub-headers.txt \
-                || { echo "/$f cache-control must pin the update check to the network (max-age=0, no-store, or no-cache)"; return 1; }
+            local origin f code
+            for origin in "$LMS_ORIGIN" "$LEGACY_APP_ORIGIN"; do
+              for f in sw.js registerSW.js; do
+                code=$(curl -sS --connect-timeout 5 --max-time 30 \
+                  -D /tmp/stub-headers.txt -o "/tmp/$f" -w '%{http_code}' \
+                  "$origin/$f") || { echo "curl failed for $origin/$f"; return 1; }
+                [ "$code" = "200" ] || { echo "GET $origin/$f returned HTTP $code"; return 1; }
+                grep -qi '^content-type: text/javascript' /tmp/stub-headers.txt \
+                  || { echo "$origin/$f is not served as JavaScript (SPA fallback HTML as SW update target?)"; return 1; }
+                grep -Eiq '^cache-control:.*(max-age=0|no-store|no-cache)' /tmp/stub-headers.txt \
+                  || { echo "$origin/$f cache-control must pin the update check to the network (max-age=0, no-store, or no-cache)"; return 1; }
+              done
+              grep -q unregister /tmp/sw.js || { echo "$origin/sw.js must be the self-unregister stub"; return 1; }
+              grep -q "caches.delete" /tmp/sw.js || { echo "$origin/sw.js stub lost its cache purge"; return 1; }
             done
-            grep -q unregister /tmp/sw.js || { echo "/sw.js must be the self-unregister stub"; return 1; }
-            grep -q "caches.delete" /tmp/sw.js || { echo "/sw.js stub lost its cache purge"; return 1; }
             return 0
           }
           ok=""
-          for attempt in 1 2 3; do
+          for attempt in $(seq 1 30); do
             if reason=$(stubs_ok); then ok=1; break; fi
             echo "attempt $attempt failed: $reason — retrying in 20s"
-            [ "$attempt" = "3" ] || sleep 20
+            [ "$attempt" = "30" ] || sleep 20
           done
-          [ -n "$ok" ] || fail "stub smoke failed after 3 attempts: /sw.js + /registerSW.js not correctly served"
-          echo "stub smoke OK: /sw.js + /registerSW.js served as JS with network-first cache headers"
+          [ -n "$ok" ] || fail "stub smoke failed after 30 attempts: /sw.js + /registerSW.js not correctly served on $LMS_ORIGIN and $LEGACY_APP_ORIGIN"
+          echo "stub smoke OK: /sw.js + /registerSW.js served as JS with network-first cache headers on $LMS_ORIGIN and $LEGACY_APP_ORIGIN"
+      - name: Smoke check LMS & legacy 301 redirects
+        if: ${{ !inputs.dry_run }}
+        # Unified LMS custom domain (lms.<domain>) and legacy aliases
+        # (app/student/admin.<domain> -> 301 to lms.<domain>). Polls up to ~10
+        # minutes to allow first-deploy custom-domain cert propagation.
+        run: |
+          fail() { echo "::error::$1"; exit 1; }
+          check_redirect() {
+            local url="$1" expected="$2" code location
+            code=$(curl -sS --connect-timeout 5 --max-time 30 \
+              -D /tmp/lms-redir-headers.txt -o /dev/null -w '%{http_code}' \
+              "$url") || { echo "curl failed for $url"; return 1; }
+            [ "$code" = "301" ] || { echo "GET $url returned HTTP $code, expected 301"; return 1; }
+            location=$(grep -i '^location:' /tmp/lms-redir-headers.txt | head -n 1 | sed -E 's/^[Ll][Oo][Cc][Aa][Tt][Ii][Oo][Nn]:[[:space:]]*//' | tr -d '\r' || true)
+            [ "$location" = "$expected" ] || { echo "GET $url redirected to '$location', expected '$expected'"; return 1; }
+            return 0
+          }
+          check_shell_headers() {
+            local url="$1" verify_bundle="${2:-false}" required_pattern="${3:-}" code asset_path asset_prefix lazy_ref found_api found_required
+            code=$(curl -sS --connect-timeout 5 --max-time 30 \
+              -D /tmp/lms-shell-headers.txt -o /tmp/lms-shell.html -w '%{http_code}' \
+              -H "Accept: text/html" \
+              "$url") || { echo "curl failed for $url"; return 1; }
+            [ "$code" = "200" ] || { echo "GET $url returned HTTP $code, expected 200"; return 1; }
+            grep -qi '^content-type: text/html' /tmp/lms-shell-headers.txt \
+              || { echo "GET $url is not served as text/html"; return 1; }
+            grep -qi '^strict-transport-security:' /tmp/lms-shell-headers.txt \
+              || { echo "GET $url missing Strict-Transport-Security header (runWorkerFirst regression?)"; return 1; }
+            grep -qi "^content-security-policy:.*media-src[^;]*${API_BASE_URL}" /tmp/lms-shell-headers.txt \
+              || { echo "GET $url missing CSP media-src for $API_BASE_URL"; return 1; }
+            if [ "$verify_bundle" = "true" ]; then
+              found_api=""
+              found_required=""
+              : > /tmp/lms-lazy-assets.txt
+              for asset_path in $( (grep -oE '(src|href)="(/([^"]*/)?assets/[^"]+\.js)"' /tmp/lms-shell.html || true) | sed -E 's/^(src|href)="([^"]+)"$/\2/' | awk '/auth-client|\/dist-|\/index-/ { print "0 " $0; next } { print "1 " $0 }' | sort -u | cut -d' ' -f2); do
+                if curl -sS --connect-timeout 5 --max-time 30 -o /tmp/lms-asset.js "$LMS_ORIGIN$asset_path"; then
+                  if [ -z "$found_api" ] && grep -Fq "$API_BASE_URL" /tmp/lms-asset.js; then
+                    found_api=1
+                  fi
+                  if [ -n "$required_pattern" ] && [ -z "$found_required" ] && grep -Eq -- "$required_pattern" /tmp/lms-asset.js; then
+                    found_required=1
+                  fi
+                  if [ -n "$found_api" ] && { [ -z "$required_pattern" ] || [ -n "$found_required" ]; }; then
+                    break
+                  fi
+                  asset_prefix="${asset_path%/assets/*}"
+                  (grep -oE '"(/?([^"]*/)?assets/[^"]+\.js)"' /tmp/lms-asset.js || true) | tr -d '"' | awk -v prefix="$asset_prefix" '{ if ($0 ~ /^\//) print $0; else print prefix "/" $0 }' >> /tmp/lms-lazy-assets.txt
+                fi
+              done
+              if { [ -z "$found_api" ] || { [ -n "$required_pattern" ] && [ -z "$found_required" ]; }; } && [ -s /tmp/lms-lazy-assets.txt ]; then
+                for lazy_ref in $(awk '/auth-client|\/dist-|\/index-/ { print "0 " $0; next } { print "1 " $0 }' /tmp/lms-lazy-assets.txt | sort -u | cut -d' ' -f2); do
+                  if curl -sS --connect-timeout 5 --max-time 30 -o /tmp/lms-asset.js "$LMS_ORIGIN$lazy_ref"; then
+                    if [ -z "$found_api" ] && grep -Fq "$API_BASE_URL" /tmp/lms-asset.js; then
+                      found_api=1
+                    fi
+                    if [ -n "$required_pattern" ] && [ -z "$found_required" ] && grep -Eq -- "$required_pattern" /tmp/lms-asset.js; then
+                      found_required=1
+                    fi
+                    if [ -n "$found_api" ] && { [ -z "$required_pattern" ] || [ -n "$found_required" ]; }; then
+                      break
+                    fi
+                  fi
+                done
+              fi
+              [ -n "$found_api" ] || { echo "GET $url JS bundle missing VITE_SERVER_URL ($API_BASE_URL) — runtime env validation would white-screen"; return 1; }
+              if [ -n "$required_pattern" ] && [ -z "$found_required" ]; then
+                echo "GET $url JS bundle missing required build flag pattern ($required_pattern) — staging feature flag wiring regression"
+                return 1
+              fi
+            fi
+            return 0
+          }
+          lms_ok() {
+            local practice_flag_regex='VITE_STUDENT_PRACTICE_ENABLED["'\''`]?[[:space:]]*:[[:space:]]*["'\''`]true["'\''`]'
+            check_shell_headers "$LMS_ORIGIN/" || return 1
+            check_shell_headers "$LMS_ORIGIN/login" "true" || return 1
+            check_shell_headers "$LMS_ORIGIN/teacher/" "true" || return 1
+            check_shell_headers "$LMS_ORIGIN/student/" "true" "$practice_flag_regex" || return 1
+            check_shell_headers "$LMS_ORIGIN/admin/" "true" || return 1
+            check_redirect "$LEGACY_APP_ORIGIN/" "$LMS_ORIGIN/teacher" || return 1
+            check_redirect "$LEGACY_APP_ORIGIN/classes" "$LMS_ORIGIN/teacher/classes" || return 1
+            check_redirect "$LEGACY_APP_ORIGIN/pay/smoke-token" "$LMS_ORIGIN/pay/smoke-token" || return 1
+            check_redirect "$LEGACY_STUDENT_ORIGIN/" "$LMS_ORIGIN/student" || return 1
+            check_redirect "$LEGACY_STUDENT_ORIGIN/schedule" "$LMS_ORIGIN/student/schedule" || return 1
+            check_redirect "$LEGACY_ADMIN_ORIGIN/" "$LMS_ORIGIN/admin" || return 1
+            check_redirect "$LEGACY_ADMIN_ORIGIN/library/tests" "$LMS_ORIGIN/admin/library/tests" || return 1
+            return 0
+          }
+          ok=""
+          for attempt in $(seq 1 30); do
+            if reason=$(lms_ok); then ok=1; break; fi
+            echo "attempt $attempt failed: $reason — retrying in 20s"
+            [ "$attempt" = "30" ] || sleep 20
+          done
+          [ -n "$ok" ] || fail "LMS & legacy 301 redirect smoke failed after 30 attempts"
+          echo "LMS & legacy 301 redirect smoke OK"
       - name: Smoke check landing apex (/)
         if: ${{ !inputs.dry_run }}
         # Apex handover (web → landing StaticSite): the first attach of the

@@ -1,0 +1,172 @@
+{
+	"id": "08b65056-8618-4a26-bc5f-b28e44381631",
+	"url": "https://stepielts.com/student/listening/08b65056-8618-4a26-bc5f-b28e44381631?mode=practice",
+	"title": "Driverless vehicle competition",
+	"source": "Actual Test",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "31-40",
+	"audio_url": "https://audio.stepielts.com/listening-audio/f10eca9c-5e90-4f8a-83d8-e74318b8e1ed.mp3",
+	"transcript": "Speaker 1: Tutor: Hello, everyone. I have an exciting announcement to make. The university has decided to enter an international competition next year, and we are going to need some enthusiastic undergraduates to help us with the project. The competition is to make an automated vehicle, a kind of robot that will be able to move quickly and accurately on its own. All the vehicles will then enter a race which will take place here in The US. So the engineering school will be collaborating with the computer science department and possibly the automotive design department, although that’s yet to be confirmed. What they have to do is try to design an automated vehicle which will be able to complete the course. To give you an idea of how tough this race is, one vehicle last year only managed 12 kilometers of the 280 kilometer stretch of California Desert that forms the racetrack. The vehicles in the race must cover the whole distance without a human driver and quite autonomously, identify and steer around corners and avoid unexpected hazards things like rocks, for example. It’s a challenging task because there are lots of obstacles of this kind along the route. As I said in last year’s event, the most successful vehicle only drove 12 kilometers. Then its team decided to deactivate it because it had gotten too near a cliff. In the race held earlier this year, there still wasn’t a winner. But they did much better, and there was one design which we will be analyzing carefully in seminars. Its strength was in its onboard technology. That particular vehicle built a three-dimensional picture of its surroundings using video cameras and lasers. It was equipped with seven laptop computers, which analyze the incoming information 10 times a second, and it drove along at a comfortable 55 kilometers per hour. The design details have been published, so we hope to learn from them and go on to make ours even better for next year’s competition. The competition is open to all universities, and there’s a prize of $2,000,000 for the winner. But it’s really about more than that. The sponsors are hoping to see innovative design ideas that they can transfer into commercial production. You’ll get a lot out of this project as well in terms of working as a team and broadening your knowledge of the subject. The key to winning is unlikely to be anything to do with what the vehicle looks like. Programming skills will decide who eventually wins first prize. The design will need technological expertise in this area above all, and that’s what the team who work on the project will need to focus on. I’ll be handing out some scientific reports about this year’s vehicle shortly. It’s interesting to read that even after months and months of planning, building, and trials, many of the teams were amazed that the vehicles did what they wanted them to do at all because so many things can go wrong on the day. So even though no vehicle actually completed the course, they were pleased they got as far as they did. Right. If any of you are interested, this is the plan of action. Keep an eye on the main notice board for details. Firstly, at the May, we’ll be scheduling a seminar to introduce the project to anyone who might be interested. Later in the month, we’ll be asking you to submit a short essay letting us know why you feel you should be chosen to take part in the project. You’ll need to tell us about any particular skills that you have and can bring to the team and any experience you may have had in the field. Then in June, we’re organizing a trip to a factory to chat over some design considerations with specialists there who have kindly agreed to act as consultants throughout the project. Then at the beginning of the next semester in September, we thought we’d hold a weekend workshop to share ideas and see computer aided design demonstrations. We have a brand new package, which sponsors have kindly financed. You’ll need to be able to use it with confidence before we start. In December, we’ll be asking you to submit your outline designs, and the following month, we’ll choose the team and start work in earnest. Okay. It sounds like a lot of fun, but it will also require serious commitment. So please think this through carefully. Some handouts are coming around now. Any questions?",
+	"question_groups": [
+		{
+			"range": "31-33",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Write NO MORE THAN TWO WORDS for each answer.",
+			"body": "Undergraduates from both the engineering school and the [31] department can definitely take part in the project.\nThe automated vehicles will have to avoid obstacles such as [32] .\nThe tutor mentions one vehicle which used technology such as [33] , lasers, and laptops to measure its surroundings.",
+			"body_html": "<table><tbody><tr><td colspan=\"1\" rowspan=\"1\"><ul><li>Undergraduates from both the engineering school and the [31] department can definitely take part in the project.</li><li>The automated vehicles will have to avoid obstacles such as [32] .</li><li>The tutor mentions one vehicle which used technology such as [33] , lasers, and laptops to measure its surroundings.</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 31,
+					"text": "Undergraduates from both the engineering school and the [31] department can definitely take part in the project.",
+					"answer": "computer science",
+					"quotes": [
+						"So the engineering school will be collaborating with the computer science department and possibly the automotive design department, although that’s yet to be confirmed."
+					]
+				},
+				{
+					"number": 32,
+					"text": "The automated vehicles will have to avoid obstacles such as [32] .",
+					"answer": "rocks",
+					"quotes": [
+						"The vehicles in the race must cover the whole distance without a human driver and quite autonomously, identify and steer around corners and avoid unexpected hazards things like rocks, for example."
+					]
+				},
+				{
+					"number": 33,
+					"text": "The tutor mentions one vehicle which used technology such as [33] , lasers, and laptops to measure its surroundings.",
+					"answer": "video cameras",
+					"quotes": [
+						"That particular vehicle built a three-dimensional picture of its surroundings using video cameras and lasers."
+					]
+				}
+			]
+		},
+		{
+			"range": "34-36",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 34,
+					"text": "The purpose of holding the race is to",
+					"options": [
+						{
+							"label": "A",
+							"text": "Interest students in careers in industry."
+						},
+						{
+							"label": "B",
+							"text": "Help provide finance for universities."
+						},
+						{
+							"label": "C",
+							"text": "Find useful new design features."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The sponsors are hoping to see innovative design ideas that they can transfer into commercial production."
+					]
+				},
+				{
+					"number": 35,
+					"text": "The tutor says success will depend on",
+					"options": [
+						{
+							"label": "A",
+							"text": "The software design."
+						},
+						{
+							"label": "B",
+							"text": "Good, solid construction."
+						},
+						{
+							"label": "C",
+							"text": "Sophisticated mechanisms."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Programming skills will decide who eventually wins first prize."
+					]
+				},
+				{
+					"number": 36,
+					"text": "This year’s competitors were surprised that the vehicles",
+					"options": [
+						{
+							"label": "A",
+							"text": "Were so easy to design."
+						},
+						{
+							"label": "B",
+							"text": "Were as successful as they were."
+						},
+						{
+							"label": "C",
+							"text": "Took such a short time to construct."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"It’s interesting to read that even after months and months of planning, building, and trials, many of the teams were amazed that the vehicles did what they wanted them to do at all because so many things can go wrong on the day."
+					]
+				}
+			]
+		},
+		{
+			"range": "37-40",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD ONLY for each answer.",
+			"body": "Schedule\nEarly May\nIntroductory [37] about the project\nLate May\nEssay giving information about relevant [38] and experience\nJune\nVisit to a factory\nWorkshop\nSeptember\ndiscuss [39]\nlearn to use design package\nDecember\nSubmission of initial designs\nJanuary\nSelection of the [40]",
+			"body_table": [
+				["Early May", "Introductory [37] about the project"],
+				[
+					"Late May",
+					"Essay giving information about relevant [38] and experience"
+				],
+				["June", "Visit to a factory\nWorkshop"],
+				["September", "discuss [39]\nlearn to use design package"],
+				["December", "Submission of initial designs"],
+				["January", "Selection of the [40]"]
+			],
+			"body_html": "<h3>Schedule</h3><table><tbody><tr><td><strong>Early May</strong></td><td><ul><li>\nIntroductory [37] about the project\n</li></ul></td></tr><tr><td><strong>Late May</strong></td><td><ul><li>\nEssay giving information about relevant [38] and experience\n</li></ul></td></tr><tr><td><strong>June</strong></td><td><ul><li>\nVisit to a factory\n</li><li>\nWorkshop\n</li></ul></td></tr><tr><td><strong>September</strong></td><td><ul><li>\ndiscuss [39]\n</li><li>\nlearn to use design package\n</li></ul></td></tr><tr><td><strong>December</strong></td><td><ul><li>\nSubmission of initial designs\n</li></ul></td></tr><tr><td><strong>January</strong></td><td><ul><li>\nSelection of the [40]\n</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 37,
+					"text": "Introductory [37] about the project",
+					"answer": "seminar",
+					"quotes": [
+						"Firstly, at the May, we’ll be scheduling a seminar to introduce the project to anyone who might be interested."
+					]
+				},
+				{
+					"number": 38,
+					"text": "Essay giving information about relevant [38] and experience",
+					"answer": "skills",
+					"quotes": [
+						"You’ll need to tell us about any particular skills that you have and can bring to the team and any experience you may have had in the field."
+					]
+				},
+				{
+					"number": 39,
+					"text": "discuss [39]",
+					"answer": "ideas",
+					"quotes": [
+						"Then at the beginning of the next semester in September, we thought we’d hold a weekend workshop to share ideas and see computer aided design demonstrations."
+					]
+				},
+				{
+					"number": 40,
+					"text": "Selection of the [40]",
+					"answer": "team",
+					"quotes": [
+						"In December, we’ll be asking you to submit your outline designs, and the following month, we’ll choose the team and start work in earnest."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

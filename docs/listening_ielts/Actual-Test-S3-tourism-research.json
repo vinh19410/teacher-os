@@ -1,0 +1,230 @@
+{
+	"id": "4ec01277-99c5-4d56-afb2-355213204036",
+	"url": "https://stepielts.com/student/listening/4ec01277-99c5-4d56-afb2-355213204036?mode=practice",
+	"title": "Tourism Research",
+	"source": "Actual Test",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/3dd9b84b-6999-4833-8ed3-8ee5da214f16.mp3",
+	"transcript": "Speaker 0: Now turn to Section three. Section three. You will hear two students called Eva and Mike discussing their research project on tourism. First, you have some time to look at questions 21 to 26. Now listen carefully and answer questions 21 to 26.\nSpeaker 1: Hi Eva. Is this a good time for us to look at our research project? Our tutor told us to keep the focus narrow. So what about we go for why people choose to go to certain places and attractions and leave the rest out?\nSpeaker 0: You're right. Otherwise, we'll have far too much information to cope with. Okay. So what about the survey?\nSpeaker 1: Well, I've looked through the ideas we had for questions for it, and I think it's not clear how we use the word area. Sometimes it seems to mean a place, other times the field of our research, and even tourist attraction in some cases.\nSpeaker 0: Oh, I think that's my fault. I typed out our notes.\nSpeaker 1: Oh, it's probably best to use it for place in the sense of province or whatever.\nSpeaker 0: Yes, I think so. You know, we decided to concentrate on culture and tourism. I wonder if we're really saying culture in the same way as most people do because on our list of places to carry out our surveys, I see you've put the Round Music Festival, which is contemporary music. I thought we were going to be looking at more traditional forms of culture.\nSpeaker 1: That would be confirming these old fashioned ideas that culture has to be something that's at least 100 years old.\nSpeaker 0: But that is what most people think.\nSpeaker 1: Well, let's not get into an argument about that right now. Let's think about the number of completed questionnaires we need. In total, how many questionnaires do you think we have to get? One hundred? Two hundred? And over how many different events?\nSpeaker 0: Our tutor said we should have at least 200, otherwise the information won't actually mean that much. And I think it's not practical to try to go to more than about five events. We've got to get the first draft in by the February.\nSpeaker 1: And do you think we should interview everybody or just tourists?\nSpeaker 0: Because presumably there'd be local people, domestic tourists, and international tourists at some events.\nSpeaker 1: In fact, the more I think about it, the more I think we should just go for the tourists, but from overseas as well as national. I'm sure we'd be able to provide more interesting results if we did that.\nSpeaker 0: Right.\nSpeaker 1: There's one thing that worries me though.\nSpeaker 0: What's that?\nSpeaker 1: We said it's important to get some background on the people who answer our questions, like what's their job, what they thought about the event. But the idea of asking people how old they are\nSpeaker 0: We can just ask them to tick a box with an age in it, and tell them they don't have to do it if they don't want to. We could write in our own estimate when we've finished.\nSpeaker 1: Are you sure that would be okay?\nSpeaker 0: Yes, It's not the most crucial piece of information they're giving. We're going to have a lot of facts and figures to present. Have you any preference for putting them into a pie chart, a table, or a graph?\nSpeaker 1: Tables are easy to do, but I read that most people find pie charts visually stimulating. I hate reading graphs because unless they're quite big, you don't get exact figures.\nSpeaker 0: Pie chart sounds good. How are we going to divide up the work?\nSpeaker 1: If it's okay with you, I'd like us to meet as often as possible to look at what we've each written up, but we should do the actual writing on our own.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 27 to 30. Now listen and answer questions 27 to 30.\nSpeaker 1: Okay. Would this be a good time to discuss our introduction, an overview of tourism around the world, looking at different tourist attractions in different countries? But there are so many to choose from, though, so let's narrow it down. Absolutely. I found out that Mexico celebrates the fact that it produces a huge number of varieties of chilies, and people flock to this special event to taste dishes using them. A lot of people think of Mexico as being the best place to see fantastic museums. That's true. But let's take a different tact. What about Greece, one of the world's most famous countries for tourists?\nSpeaker 0: Yes. And I think we should go for the ruins in this case, the temples and theaters and so on rather than the food.\nSpeaker 1: And for Britain, instead of focusing on the countryside and parks, I'd like to find out more about why people go to see plays and musicals. Is it because there's such a good choice?\nSpeaker 0: Interesting point. And for India, instead of concentrating on the temples or the game parks, we could mention all the different folk dances. Every region has its own, and they don't just perform them at festivals. They're part of everyday life.\nSpeaker 1: Okay. We've got more than enough. Let's draft the introduction.\nSpeaker 0: That is the end of part three. You now have half a minute to check your answers.",
+	"body": {
+		"text": "Countries\n27 Mexico [27]\n28 Greece [28]\n29 Britain [29]\n30 India [30]",
+		"html": "<h4>Countries</h4><p><strong>27</strong> Mexico [27]</p><p><strong>28</strong> Greece [28]</p><p><strong>29</strong> Britain [29]</p><p><strong>30</strong> India [30]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-26",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter A, B or C.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Mike suggests they use the word area to mean",
+					"options": [
+						{
+							"label": "A",
+							"text": "geographical location."
+						},
+						{
+							"label": "B",
+							"text": "tourist site."
+						},
+						{
+							"label": "C",
+							"text": "research field."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Well, I've looked through the ideas we had for questions for it, and I think it's not clear how we use the word area.",
+						"Sometimes it seems to mean a place, other times the field of our research, and even tourist attraction in some cases.",
+						"Oh, I think that's my fault.",
+						"I typed out our notes.",
+						"Oh, it's probably best to use it for place in the sense of province or whatever."
+					]
+				},
+				{
+					"number": 22,
+					"text": "According to Eva, most people believe that culture",
+					"options": [
+						{
+							"label": "A",
+							"text": "refers to long-established events and places."
+						},
+						{
+							"label": "B",
+							"text": "includes modern forms of art and entertainment."
+						},
+						{
+							"label": "C",
+							"text": "is becoming less linked to particular regions."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"That would be confirming these old fashioned ideas that culture has to be something that's at least 100 years old.",
+						"But that is what most people think."
+					]
+				},
+				{
+					"number": 23,
+					"text": "Why should they carry out about 200 surveys?",
+					"options": [
+						{
+							"label": "A",
+							"text": "to provide information about a range of events"
+						},
+						{
+							"label": "B",
+							"text": "to be able to meet the deadline"
+						},
+						{
+							"label": "C",
+							"text": "to get valid results"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Our tutor said we should have at least 200, otherwise the information won't actually mean that much."
+					]
+				},
+				{
+					"number": 24,
+					"text": "Which groups of people do they decide to interview?",
+					"options": [
+						{
+							"label": "A",
+							"text": "domestic tourists and local residents"
+						},
+						{
+							"label": "B",
+							"text": "local residents and international tourists"
+						},
+						{
+							"label": "C",
+							"text": "international and domestic tourists"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"In fact, the more I think about it, the more I think we should just go for the tourists, but from overseas as well as national."
+					]
+				},
+				{
+					"number": 25,
+					"text": "Mike expresses concern at having to ask about",
+					"options": [
+						{
+							"label": "A",
+							"text": "the amount of money a person has spent"
+						},
+						{
+							"label": "B",
+							"text": "a person's age"
+						},
+						{
+							"label": "C",
+							"text": "a person's occupation"
+						}
+					],
+					"answer": "B",
+					"quotes": ["But the idea of asking people how old they are"]
+				},
+				{
+					"number": 26,
+					"text": "Which form will their results be presented in?",
+					"options": [
+						{
+							"label": "A",
+							"text": "a table"
+						},
+						{
+							"label": "B",
+							"text": "a pie chart"
+						},
+						{
+							"label": "C",
+							"text": "a graph"
+						}
+					],
+					"answer": "B",
+					"quotes": ["Pie chart sounds good."]
+				}
+			]
+		},
+		{
+			"range": "27-30",
+			"type": "MATCHING",
+			"instructions": "Which tourist attraction will be highlighted in each of the following countries?\nChoose FOUR answers from the box and write the correct letter, A-G.\nTourist Attractions\nA ancient buildings\nB contemporary art gallery\nC food festival\nD museums displaying traditional objects\nE national parks\nF theatre performances\nG traditional dances",
+			"instructions_html": "<p>Which tourist attraction will be highlighted in each of the following countries?</p><p>Choose <strong>FOUR answers</strong> from the box and write the correct letter, <strong>A-G.</strong></p><table><tbody><tr><td><h4><strong>Tourist Attractions</strong></h4><p><strong>A</strong> ancient buildings</p><p><strong>B</strong> contemporary art gallery</p><p><strong>C</strong> food festival</p><p><strong>D</strong> museums displaying traditional objects</p><p><strong>E</strong> national parks</p><p><strong>F</strong> theatre performances</p><p><strong>G</strong> traditional dances</p></td></tr></tbody></table>",
+			"options": [
+				{
+					"label": "A",
+					"text": "ancient buildings"
+				},
+				{
+					"label": "B",
+					"text": "contemporary art gallery"
+				},
+				{
+					"label": "C",
+					"text": "food festival"
+				},
+				{
+					"label": "D",
+					"text": "museums displaying traditional objects"
+				},
+				{
+					"label": "E",
+					"text": "national parks"
+				},
+				{
+					"label": "F",
+					"text": "theatre performances"
+				},
+				{
+					"label": "G",
+					"text": "traditional dances"
+				}
+			],
+			"body": "Countries\n27 Mexico [27]\n28 Greece [28]\n29 Britain [29]\n30 India [30]",
+			"body_html": "<h4>Countries</h4><p><strong>27</strong> Mexico [27]</p><p><strong>28</strong> Greece [28]</p><p><strong>29</strong> Britain [29]</p><p><strong>30</strong> India [30]</p>",
+			"questions": [
+				{
+					"number": 27,
+					"text": "Mexico",
+					"answer": "C",
+					"quotes": [
+						"I found out that Mexico celebrates the fact that it produces a huge number of varieties of chilies, and people flock to this special event to taste dishes using them."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Greece",
+					"answer": "A",
+					"quotes": [
+						"And I think we should go for the ruins in this case, the temples and theaters and so on rather than the food."
+					]
+				},
+				{
+					"number": 29,
+					"text": "Britain",
+					"answer": "F",
+					"quotes": [
+						"And for Britain, instead of focusing on the countryside and parks, I'd like to find out more about why people go to see plays and musicals."
+					]
+				},
+				{
+					"number": 30,
+					"text": "India",
+					"answer": "G",
+					"quotes": [
+						"And for India, instead of concentrating on the temples or the game parks, we could mention all the different folk dances."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

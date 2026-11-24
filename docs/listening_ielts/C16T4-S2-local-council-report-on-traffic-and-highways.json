@@ -1,0 +1,168 @@
+{
+	"id": "f9c53ebb-4f34-4026-83cb-7b712ec9819a",
+	"url": "https://stepielts.com/student/listening/f9c53ebb-4f34-4026-83cb-7b712ec9819a?mode=practice",
+	"title": "Local council report on traffic and highways",
+	"source": "C16T4",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/be356cf4-fffc-45df-a8e8-82759de6a411.mp3",
+	"transcript": "Speaker 0: Part two. You will hear a town councillor reporting on the local transport network and a recreation facility. First, you have some time to look at questions 11 to 14. Now listen carefully and answer questions 11 to 14.\nSpeaker 1: Right. Next on the agenda, we have traffic and highways. Councillor Thornton.\nSpeaker 2: Thank you. Well, we now have the results of the survey carried out last month about traffic and road transport in the town. People were generally satisfied with the state of the roads. There were one or two complaints about potholes, which will be addressed, but a significant number of people complained about the increasing number of heavy vehicles using our local roads to avoid traffic elsewhere. We'd expected more complaints by commuters about the reduction in the train service, but it doesn't seem to have affected people too much. The cycle path that runs alongside the river is very well used by both cyclists and pedestrians since the surface was improved last year, but overtaking can be a problem, so we're going to add a bit on the side to make it wider. At some stage, we'd like to extend the path so that it goes all the way through the town, but that won't be happening in the immediate future. The plans to have a pedestrian crossing next to the post office have unfortunately had to be put on hold for the time being. We'd budgeted for this to be done this financial year, but then there were rumors that the post office was going to move, which would have meant there wasn't really a need for a crossing. Now they've confirmed that they're staying where they are, but the highways department have told us that it would be dangerous to have a pedestrian crossing where we'd originally planned it as there's a bend in the road there, so that'll need some more thought. On Station Road near the station and level crossing, drivers can face quite long waits if the level crossing's closed, and we've now got signs up requesting them not to leave their engines running at that time. This means pedestrians waiting on the pavement to cross the railway line don't have to breathe in car fumes. We've had some problems with cyclists leaving their bikes chained to the railings outside the ticket office, but the station has agreed to provide bike racks there.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 15 to 20. Now listen and answer questions 15 to 20.\nSpeaker 1: So next on the agenda is proposals for improvements to the recreation ground. Councillor Thornton again.\nSpeaker 2: Well, since we managed to extend the recreation ground, we've spent some time talking to local people about how it could be made a more attractive and useful space. If you have a look at the map up on the screen, you can see the river up in the north and the community hall near the entrance from the road. At present, cars can park between the community hall and that line of trees to the east, but this is quite dangerous for pedestrians. So we're suggesting a new car park on the opposite side of the community hall right next to it. We also have a new location for the cricket pitch. As we've now purchased additional space to the east of the recreation ground beyond the trees, we plan to move it away from its current location, which is rather near the road, into this new area beyond the line of trees. This means there's less danger of stray balls hitting cars or pedestrians. We've got plans for a children's playground, which will be accessible by a footpath from the community hall and will be alongside the river. We'd originally thought of having it close to the road, but we think this will be a more attractive location. The skateboard ramp is very popular with both younger and older children. We had considered moving this up towards the river, but in the end, we decided to have it in the southeast corner near the road. The pavilion is very well used at present by both football players and cricketers. It will stay where it is now, to the left of the line of trees and near to the river, handy for both the football and cricket pitches. And finally, we'll be getting a new notice board for local information, and that will be directly on people's right as they go from the road into the recreation ground.\nSpeaker 0: That is the end of part two. You now have half a minute to check your answers to part two.",
+	"question_groups": [
+		{
+			"range": "11-14",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "A survey found people’s main concern about traffic in the area was",
+					"options": [
+						{
+							"label": "A",
+							"text": "cuts to public transport."
+						},
+						{
+							"label": "B",
+							"text": "poor maintenance of roads."
+						},
+						{
+							"label": "C",
+							"text": "changes in the type of traffic."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"There were one or two complaints about potholes, which will be addressed, but a significant number of people complained about the increasing number of heavy vehicles using our local roads to avoid traffic elsewhere."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Which change will shortly be made to the cycle path next to the river?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It will be widened."
+						},
+						{
+							"label": "B",
+							"text": "It will be extended."
+						},
+						{
+							"label": "C",
+							"text": "It will be resurfaced."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"The cycle path that runs alongside the river is very well used by both cyclists and pedestrians since the surface was improved last year, but overtaking can be a problem, so we're going to add a bit on the side to make it wider."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Plans for a pedestrian crossing have been postponed because",
+					"options": [
+						{
+							"label": "A",
+							"text": "the Post Office has moved."
+						},
+						{
+							"label": "B",
+							"text": "the proposed location is unsafe."
+						},
+						{
+							"label": "C",
+							"text": "funding is not available at present."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Now they've confirmed that they're staying where they are, but the highways department have told us that it would be dangerous to have a pedestrian crossing where we'd originally planned it as there's a bend in the road there, so that'll need some more thought."
+					]
+				},
+				{
+					"number": 14,
+					"text": "On Station Road, notices have been erected",
+					"options": [
+						{
+							"label": "A",
+							"text": "telling cyclists not to leave their bikes outside the station ticket office."
+						},
+						{
+							"label": "B",
+							"text": "asking motorists to switch off engines when waiting at the level crossing."
+						},
+						{
+							"label": "C",
+							"text": "warning pedestrians to leave enough time when crossing the railway line."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"On Station Road near the station and level crossing, drivers can face quite long waits if the level crossing's closed, and we've now got signs up requesting them not to leave their engines running at that time."
+					]
+				}
+			]
+		},
+		{
+			"range": "15-20",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below.\nWrite the correct letter, A-I, next to Questions 15-20.",
+			"instructions_html": "<p>Label the map below.</p><p><em>Write the correct letter, <strong>A-I</strong>, next to Questions 15-20.</em></p><p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/630ab829-028f-433b-b965-a7a2817673e8.jpg\" alt=\"Cam 16 Listening Test 4 1024x682\"></p><p></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
+			"questions": [
+				{
+					"number": 15,
+					"text": "New car park",
+					"answer": "C",
+					"quotes": [
+						"So we're suggesting a new car park on the opposite side of the community hall right next to it."
+					]
+				},
+				{
+					"number": 16,
+					"text": "New cricket pitch",
+					"answer": "F",
+					"quotes": [
+						"As we've now purchased additional space to the east of the recreation ground beyond the trees, we plan to move it away from its current location, which is rather near the road, into this new area beyond the line of trees."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Children’s playground",
+					"answer": "A",
+					"quotes": [
+						"We've got plans for a children's playground, which will be accessible by a footpath from the community hall and will be alongside the river."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Skateboard ramp",
+					"answer": "I",
+					"quotes": [
+						"The skateboard ramp is very popular with both younger and older children. We had considered moving this up towards the river, but in the end, we decided to have it in the southeast corner near the road."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Pavilion",
+					"answer": "E",
+					"quotes": [
+						"It will stay where it is now, to the left of the line of trees and near to the river, handy for both the football and cricket pitches."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Notice board",
+					"answer": "H",
+					"quotes": [
+						"And finally, we'll be getting a new notice board for local information, and that will be directly on people's right as they go from the road into the recreation ground."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/630ab829-028f-433b-b965-a7a2817673e8.jpg"
+	]
+}

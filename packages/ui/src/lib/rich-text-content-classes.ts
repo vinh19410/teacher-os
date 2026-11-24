@@ -23,4 +23,7 @@ export const RICH_TEXT_CONTENT_CLASSES = [
 	"[&_h3]:text-[1.1em] [&_h3]:font-semibold",
 	"[&_h4]:font-semibold",
 	"[&_hr]:my-2 [&_hr]:border-border",
+	"[&_table]:my-2 [&_table]:w-full [&_table]:border-collapse [&_table]:text-sm",
+	"[&_th]:border [&_th]:border-border [&_th]:bg-muted/60 [&_th]:px-2.5 [&_th]:py-1.5 [&_th]:text-left [&_th]:font-semibold",
+	"[&_td]:border [&_td]:border-border [&_td]:px-2.5 [&_td]:py-1.5 [&_td]:align-top",
 ].join(" ");

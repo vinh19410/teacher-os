@@ -37,29 +37,19 @@ const PORT = Number(process.env.E2E_API_PORT ?? 8000);
 // Loopback-only: this shim serves a real better-auth instance; never expose
 // it beyond the test machine.
 const HOSTNAME = process.env.E2E_HOSTNAME ?? "::";
-const CORS_ORIGINS = [
-	`http://localhost:${Number(process.env.E2E_WEB_PORT ?? 8001)}`,
-	`http://localhost:${Number(process.env.E2E_STUDENT_PORT ?? 8003)}`,
-	// Console admin (plan #413) — CORS cho fetch từ app admin lẫn CSRF
-	// Origin guard của /api/admin.
-	`http://localhost:${Number(process.env.E2E_ADMIN_PORT ?? 8004)}`,
-];
-// Plan #413: allowlist email admin của e2e — phase 7 đăng ký account admin
-// qua /api/auth từ origin 8004 với email nằm trong danh sách này.
+const LMS_ORIGIN = `http://localhost:${Number(process.env.E2E_LMS_PORT ?? process.env.E2E_WEB_PORT ?? 8001)}`;
+// Allowlist email admin của e2e — đăng ký qua unified origin với email
+// nằm trong danh sách này sẽ được gán role admin.
 const ADMIN_EMAILS = (process.env.E2E_ADMIN_EMAILS ?? "admin@e2e.local")
 	.split(",")
 	.map((s) => s.trim())
 	.filter((s) => s.length > 0);
-// #742: allowlist email giáo viên động trong E2E (rỗng mặc định để các spec
-// signUpViaApi cũ không bị chặn; spec drift đặt rồi reset trong beforeEach/afterEach).
+// #742: allowlist email giáo viên động trong E2E (rỗng mặc định; spec đặt rồi
+// reset trong beforeEach/afterEach).
 const runtimeTeacherEmails: string[] = (process.env.E2E_TEACHER_EMAILS ?? "")
 	.split(",")
 	.map((s) => s.trim())
 	.filter((s) => s.length > 0);
-// Portal origin is the role-classification student origin (plan #260,
-// red-team #7): requests carrying it classify as student instead of
-// failing the better-auth origin check.
-const STUDENT_ORIGIN = `http://localhost:${Number(process.env.E2E_STUDENT_PORT ?? 8003)}`;
 const MAIL_LOG_PATH = fileURLToPath(
 	new URL("../.mail-log.jsonl", import.meta.url).href,
 );
@@ -141,13 +131,10 @@ try {
 
 const auth = createAuth({
 	db: libsql,
-	corsOrigin: CORS_ORIGINS,
-	studentOrigins: [STUDENT_ORIGIN],
-	// Plan #413: đăng ký account admin từ origin console với email trong
-	// allowlist (phase 7 dùng để sign-up admin thật).
-	adminOrigins: [
-		`http://localhost:${Number(process.env.E2E_ADMIN_PORT ?? 8004)}`,
-	],
+	corsOrigin: [LMS_ORIGIN],
+	unifiedOrigins: [LMS_ORIGIN],
+	studentOrigins: [LMS_ORIGIN],
+	adminOrigins: [LMS_ORIGIN],
 	adminEmails: ADMIN_EMAILS,
 	teacherEmails: runtimeTeacherEmails,
 	secret: "e2e-local-secret-0123456789abcdef0123456789abcdef",
@@ -206,7 +193,7 @@ let runtimeNowMs: number | null = null;
 
 const app = buildApp({
 	getDb: () => libsql as unknown as Db,
-	corsOrigin: CORS_ORIGINS,
+	corsOrigin: [LMS_ORIGIN],
 	getSessionUser: (headers) => getSessionUser(auth, headers),
 	authHandler: (req) => auth.handler(req),
 	getMediaStore: () => mediaStore,
@@ -227,14 +214,12 @@ const app = buildApp({
 	now: () => (runtimeNowMs !== null ? new Date(runtimeNowMs) : new Date()),
 	adminEmails: ADMIN_EMAILS,
 	teacherEmails: runtimeTeacherEmails,
-	adminOrigins: [
-		`http://localhost:${Number(process.env.E2E_ADMIN_PORT ?? 8004)}`,
-	],
+	adminOrigins: [LMS_ORIGIN],
 	getBankHub: () => fakeBankHub.hub,
 	// Plan TOS-21 (#454): hàng đợi thông báo dùng recordingMailer để E2E đọc được thư đã gửi.
 	mailer: recordingMailer,
 	// Link tuyệt đối trong email thông báo trỏ cổng học viên e2e.
-	studentOrigin: STUDENT_ORIGIN,
+	studentOrigin: `${LMS_ORIGIN}/student`,
 	// Plan TOS-22 (#463): không chờ 2s/5s giữa các lượt retry trong E2E.
 	notificationRetryDelaysMs: [0, 0],
 	// #570: tắt chờ 60s khi gửi lại lời mời học viên trong E2E.
@@ -242,11 +227,11 @@ const app = buildApp({
 	// Plan TOS-33 (#481): không chờ 1s/2s giữa 3 lượt retry chấm bài trong E2E.
 	aiRetryDelaysMs: [0, 0],
 	// Lead intake (#506): org đích cố định + origin profile e2e (port 8105);
-	// secret HMAC tái dùng secret auth; email link trỏ app web e2e.
+	// secret HMAC tái dùng secret auth; email link trỏ app giáo viên e2e.
 	leadOrgId: LEAD_ORG_ID,
 	leadOrigins: [LEAD_ORIGIN],
 	leadIpSecret: "e2e-local-secret-0123456789abcdef0123456789abcdef",
-	appOrigin: CORS_ORIGINS[0],
+	appOrigin: `${LMS_ORIGIN}/teacher`,
 	// #702: deterministic offline MP3 stub for curated Listening audio proxy in E2E
 	fetchExternalAudio: async (input) => {
 		const url =

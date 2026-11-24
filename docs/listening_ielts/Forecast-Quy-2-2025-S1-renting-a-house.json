@@ -1,0 +1,91 @@
+{
+	"id": "31326479-4118-4d40-9622-c4dc7c40c447",
+	"url": "https://stepielts.com/student/listening/31326479-4118-4d40-9622-c4dc7c40c447?mode=practice",
+	"title": "Renting a house",
+	"source": "Forecast Quý 2-2025",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/22b074cf-b93f-46ca-b4be-07e62a22a140.mp3",
+	"transcript": "Speaker 1: Hello. Welcome to Charles Rental Service. What can I do for you?\nSpeaker 2: Hello. I just want to find out about the house that was advertised in the local newspaper this morning. Is it still available?\nSpeaker 1: One moment, please. Yes, it is. Can I have your name please?\nSpeaker 2: Adrain, that’s A-D-R-A-I-N. And my last name is Smith.\nSpeaker 1: Okay, Adrain. What do you want to know about it?\nSpeaker 2: The newspaper said it’s in the city center. I was wondering...Where exactly is it?\nSpeaker 1: It’s at No. 19 Hallway Deighton. That’s D-E-I-G-H-T-O-N. The house is quite central if you are familiar with that area. And the postcode is YN224PT.\nSpeaker 2: Okay. That’s nice. I really need a house that is close to everything. If I need to check out the place, do you have a number that I can call?\nSpeaker 1: Yes. The landline number is 01295 477039.\nSpeaker 2: Thank you. Do you know how many rooms there are?\nSpeaker 1: There are 2 living rooms and 3 bedrooms.\nSpeaker 2: Oh. It’s quite big. Maybe I will ask my friend to share the place with me. How old is it?\nSpeaker 1: The current landlord has lived there for 22 years, yet the house was built 40 years ago. It’s got a historical feeling.\nSpeaker 2: Okay, I think this house sounds really good. Can I pay a deposit now?\nSpeaker 1: Yes. We need to fill in a form first. So, property type, as you already know, it’s a house. Construction material…Oh, yes, even though most houses in that area are made of bricks, this one was made of stone.\nSpeaker 2: That’s OK. Actually, I think it’s cool. Oh, does it come with a garage?\nSpeaker 1: Yes, it does.\nSpeaker 2: My car is pretty big, so does it have enough space?\nSpeaker 1: The landlord used to park two of his pick-up trucks there, unless your car is larger than those two.\nSpeaker 2: Wow, that’s pretty impressive. I’m sure my car will fit in.\nSpeaker 1: Right, so let’s look at the next thing.\nSecurity…hmm.\nSpeaker 1: It is a very safe neighborhood, and the house has fences. But we will install an alarm for you before you move in. I’ll write it down here.\nSpeaker 2: That would be great. Oh, so what’s the equipment listed here?\nSpeaker 1: It’s the office equipment. The landlord will leave it in the house, and you can use it. But it’s worth 1000 pounds. And the items in the freezer, they are worth 500 pounds.\nSpeaker 2: OK, I will take care of them. Is there a TV in the house?\nSpeaker 1: No, there isn’t. The tenant has to bring their own if needed. But we currently have a second-hand TV for sale. Are you interested?\nSpeaker 2: No, thanks. I’ll just buy a new one then.\nSpeaker 1: Alright. I think that’s all. When do you want to move in?\nSpeaker 2: This week is tough. I have five papers due, so there is no time to pack up and get ready. I also have exams on the 30th this month. So I think I can move in on the first day of April.\nSpeaker 1: Great. And here is my reference number: BR372K. Please pick up the form at our office before you rent the house.\nSpeaker 2: Ok. Thank you.",
+	"body": {
+		"text": "Address: 19 Hallway, [1]\nPostcode: YN224PT\nDaytime telephone: [2]\nHouse layout: two living rooms and [3]\nAge of the house: [4] years old\nConstruction material: [5]\nParking choice: a [6]\nSecurity feature needs to be installed: [7]\nIncludes:\n- [8] equipment (worth £1000)\n- Content in the [9](worth £500)\nMove-in date: [10]\nReference number: BR372K",
+		"html": "<p><strong>Address:</strong> 19 Hallway, [1]        <br><strong>Postcode:</strong> YN224PT<br><strong>Daytime telephone:</strong> [2]            <br><strong>House layout: </strong>two living rooms and [3]        <br><strong>Age of the house:</strong> [4] years old<br><strong>Construction material:</strong> [5]      <br><strong>Parking choice:</strong>  a [6]  <br><strong>Security feature needs to be installed:</strong> [7]      <br><strong>Includes: <br></strong>- [8] equipment (worth £1000)<br>- Content in the [9](worth £500)<br><strong>Move-in date: </strong>[10]        <br><strong>Reference number:</strong> BR372K</p><p></p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Address: 19 Hallway, [1]\nPostcode: YN224PT\nDaytime telephone: [2]\nHouse layout: two living rooms and [3]\nAge of the house: [4] years old\nConstruction material: [5]\nParking choice: a [6]\nSecurity feature needs to be installed: [7]\nIncludes:\n- [8] equipment (worth £1000)\n- Content in the [9](worth £500)\nMove-in date: [10]\nReference number: BR372K",
+			"body_html": "<p><strong>Address:</strong> 19 Hallway, [1]        <br><strong>Postcode:</strong> YN224PT<br><strong>Daytime telephone:</strong> [2]            <br><strong>House layout: </strong>two living rooms and [3]        <br><strong>Age of the house:</strong> [4] years old<br><strong>Construction material:</strong> [5]      <br><strong>Parking choice:</strong>  a [6]  <br><strong>Security feature needs to be installed:</strong> [7]      <br><strong>Includes: <br></strong>- [8] equipment (worth £1000)<br>- Content in the [9](worth £500)<br><strong>Move-in date: </strong>[10]        <br><strong>Reference number:</strong> BR372K</p><p></p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Address: 19 Hallway, [1]",
+					"answer": "Deighton",
+					"quotes": ["19 Hallway Deighton."]
+				},
+				{
+					"number": 2,
+					"text": "Daytime telephone: [2]",
+					"answer": "01295477039",
+					"quotes": ["The landline number is 01295 477039."]
+				},
+				{
+					"number": 3,
+					"text": "House layout: two living rooms and [3]",
+					"answer": "3 bedrooms",
+					"quotes": ["There are 2 living rooms and 3 bedrooms."]
+				},
+				{
+					"number": 4,
+					"text": "Age of the house: [4] years old",
+					"answer": "40 / forty",
+					"quotes": [
+						"The current landlord has lived there for 22 years, yet the house was built 40 years ago."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Construction material: [5]",
+					"answer": "stone",
+					"quotes": [
+						"Construction material…Oh, yes, even though most houses in that area are made of bricks, this one was made of stone."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Parking choice: a [6]",
+					"answer": "garage",
+					"quotes": ["Oh, does it come with a garage?"]
+				},
+				{
+					"number": 7,
+					"text": "Security feature needs to be installed: [7]",
+					"answer": "alarm",
+					"quotes": ["But we will install an alarm for you before you move in."]
+				},
+				{
+					"number": 8,
+					"text": "- [8] equipment (worth £1000)",
+					"answer": "office",
+					"quotes": ["It’s the office equipment."]
+				},
+				{
+					"number": 9,
+					"text": "- Content in the [9](worth £500)",
+					"answer": "freezer",
+					"quotes": ["And the items in the freezer, they are worth 500 pounds."]
+				},
+				{
+					"number": 10,
+					"text": "Move-in date: [10]",
+					"answer": "1st April / April 1st / 1 April / April 1",
+					"quotes": ["So I think I can move in on the first day of April."]
+				}
+			]
+		}
+	],
+	"images": []
+}

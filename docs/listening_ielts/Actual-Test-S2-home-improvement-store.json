@@ -1,0 +1,185 @@
+{
+	"id": "c2c8a21d-ebda-4491-b8e3-70d3aee352d9",
+	"url": "https://stepielts.com/student/listening/c2c8a21d-ebda-4491-b8e3-70d3aee352d9?mode=practice",
+	"title": "Home Improvement Store",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/294d8fdf-62a1-4d92-a5bd-d03ad19a16ce.mp3",
+	"transcript": "Speaker 0: Section two. You will hear the supervisor of a home improvement store giving a tour of the store to some new staff. First, you have some time to look at questions 11 to 15 on page four. Now listen carefully and answer questions 11 to 15.\nSpeaker 1: Welcome to today's staff orientation at the home improvement store. My name is John. I look after new staff, and I'll be with you here in the training room all morning. We are the biggest hardware store in the country. And as home improvement is now so popular, hundreds of customers visit our store each week to buy products to improve every part of their house, inside or out. First, let me introduce you to the most popular sections of our superstore. Can you all take a look at the store plan you have in front of you? We stock every kind of flooring, including carpets, wooden flooring, and tiling. Our paint department is next to flooring. That's it in the bottom right hand corner of the map. We offer advice to customers on color combinations inside or outside before they purchase. We've become well known in the last few years for selling the latest kitchen designs for all budgets, and we also stock quality appliances recommended by top chefs. These products can be found right in the middle of the store just next to electrical goods. You may not be aware that one reason we are such a popular store is our great cafe, which serves cheap, nutritious lunches. That's in the top right of your map. Staff should also make customers aware of the children's play area, which is between the cafe and flooring, so mom and dad can get something to eat or drink or even continue their shopping while the kids are safe with our trained child care workers. Now what else should I mention? Ah, yes. We recently moved our stock of showers and baths from the left side of the store to the area along the back wall next to the tool section. We offer practical advice to customers about their bathrooms before they buy, such as where to locate a new toilet or shower. I have left my favorite area till last, Gardens. It's marked on the left side of the map after the staff area and before the tool section. There, you'll find our extensive range of plants, flowers, and related products inside or outside. If you get to work there, I'm sure you'll find it a very pleasant section to work in. Right. Well, that's it for the store plan.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 16 to 20 on page five. Now listen and answer questions 16 to 20.\nSpeaker 1: Now there is some other general information I need to give you before you start your specific training. The first thing staff need to know is what makes us different to our competitors. Our main advantage, due to our size, is that we can cut our costs and offer the best deals. Of course, we are proud of the great service we provide to our customers, especially through our help desk. We also have an excellent choice of goods so that we can provide plenty of options to our customers, but, of course, that isn't unique to us. The home improvement store has 60 stores nationwide, and we promote our stores and products in a range of different ways. First, there's our catalog, which lists all our items. It's been around for years, but we still have a policy of staff use only. The most important marketing material, and the one you want to ensure is given to every customer, is our store magazine, showing the latest products, workshops, and offers. The website is being redeveloped at the moment, so customers can't access it right now. The home improvement store is a great place to work. Like most of the staff, I'm sure you'll appreciate the fact that you can choose your hours to fit your lifestyle, family, or study. We hope you'll find that there's a nice atmosphere here. We are thinking of introducing a staff discount on our products, so that would be a real benefit to all staff. Every weekend, we offer workshops to help customers carry out their own home improvements. Workshops range from indoor painting to outdoor gardening and plant ideas. This coming weekend, there'll be one on mending a broken fence. Please remind customers of the workshops, especially if there is one related to your section. Finally, I wanted to let you know about a special deal for people renovating their kitchen. As you know, we sell all products and appliances connected to the kitchen, and we also have a delivery service. If customers buy one of our total kitchen designs, we will install it free of charge. So let's take a short break, and then we'll start.\nSpeaker 0: That is the end of section two. You now have half a minute to check your answers.",
+	"question_groups": [
+		{
+			"range": "11-15",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below.\nWrite the correct letter, A-G, next to the questions 11-15.",
+			"instructions_html": "<p>Label the map below. <br>Write the correct letter, <strong>A-G</strong>, next to the questions <strong>11-15</strong>.</p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/1b918ae7-57e0-404a-83e6-616c9841f976.png\" alt=\"Map/Diagram\">",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H"],
+			"questions": [
+				{
+					"number": 11,
+					"text": "Paint",
+					"answer": "H",
+					"quotes": [
+						"Our paint department is next to flooring.",
+						"That's it in the bottom right hand corner of the map."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Kitchen",
+					"answer": "C",
+					"quotes": [
+						"We've become well known in the last few years for selling the latest kitchen designs for all budgets, and we also stock quality appliances recommended by top chefs.",
+						"These products can be found right in the middle of the store just next to electrical goods."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Children's play area",
+					"answer": "G",
+					"quotes": [
+						"Staff should also make customers aware of the children's play area, which is between the cafe and flooring, so mom and dad can get something to eat or drink or even continue their shopping while the kids are safe with our trained child care workers."
+					]
+				},
+				{
+					"number": 14,
+					"text": "Shower and bath",
+					"answer": "E",
+					"quotes": [
+						"We recently moved our stock of showers and baths from the left side of the store to the area along the back wall next to the tool section."
+					]
+				},
+				{
+					"number": 15,
+					"text": "Garden",
+					"answer": "D",
+					"quotes": [
+						"I have left my favorite area till last, Gardens.",
+						"It's marked on the left side of the map after the staff area and before the tool section."
+					]
+				}
+			]
+		},
+		{
+			"range": "16-20",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 16,
+					"text": "What makes the Home Improve Store special?",
+					"options": [
+						{
+							"label": "A",
+							"text": "their low prices"
+						},
+						{
+							"label": "B",
+							"text": "their wide range of products"
+						},
+						{
+							"label": "C",
+							"text": "their customer service"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Our main advantage, due to our size, is that we can cut our costs and offer the best deals."
+					]
+				},
+				{
+					"number": 17,
+					"text": "What should staff promote to customers?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the catalogue"
+						},
+						{
+							"label": "B",
+							"text": "the magazine"
+						},
+						{
+							"label": "C",
+							"text": "the website"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"The most important marketing material, and the one you want to ensure is given to every customer, is our store magazine, showing the latest products, workshops, and offers."
+					]
+				},
+				{
+					"number": 18,
+					"text": "What do the current staff like best about working in the store?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the general staff discounts"
+						},
+						{
+							"label": "B",
+							"text": "the good atmosphere"
+						},
+						{
+							"label": "C",
+							"text": "the flexible working time"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Like most of the staff, I'm sure you'll appreciate the fact that you can choose your hours to fit your lifestyle, family, or study."
+					]
+				},
+				{
+					"number": 19,
+					"text": "What will the next workshop be about?",
+					"options": [
+						{
+							"label": "A",
+							"text": "how to grow plants"
+						},
+						{
+							"label": "B",
+							"text": "how to fix a fence"
+						},
+						{
+							"label": "C",
+							"text": "how to paint a room"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"This coming weekend, there'll be one on mending a broken fence."
+					]
+				},
+				{
+					"number": 20,
+					"text": "What special deal does the company offer when people buy a new kitchen?",
+					"options": [
+						{
+							"label": "A",
+							"text": "free appliances"
+						},
+						{
+							"label": "B",
+							"text": "free delivery"
+						},
+						{
+							"label": "C",
+							"text": "free installation"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"If customers buy one of our total kitchen designs, we will install it free of charge."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/1b918ae7-57e0-404a-83e6-616c9841f976.png"
+	]
+}

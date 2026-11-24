@@ -1,0 +1,208 @@
+{
+	"id": "ecbe549f-d470-490a-9386-4ad88310f809",
+	"url": "https://stepielts.com/student/listening/ecbe549f-d470-490a-9386-4ad88310f809?mode=practice",
+	"title": "New city developments",
+	"source": "Other sources",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/d4f2577a-724f-484a-b5af-5be9b9b421ea.mp3",
+	"transcript": "Speaker 1: City Council Representative: Good morning. I’m very pleased to have this opportunity to say a little about two exciting new developments in the city, the Brackenside Open Air Swimming Pool and the Children’s Adventure Playground in Central Park. As many of you may know, the idea for these initiatives came from you, the public, in the extensive consultation exercise which the city council conducted last year, and they have been realized using money from the SWRDC, the South West Regional Development Commission. First of all, Brackenside Pool. As many of the older members of the audience will remember, there used to be a wonderful open air pool on the seafront thirty years ago, but it had to close when it was judged to be unsafe. For the design of this new heated pool, we were very happy to secure the talents of internationally renowned architect Ellen Wendon, who has managed to combine a charming 1930s design, which fits in so well with many of the other buildings in the area, with up to the minute features such as a recycling system, the only one of its kind in the world, which enables seawater to be used in the pool. Now there’s been quite a bit of discussion in the local press about whether there would be enough room for the number of visitors we’re hoping to attract, but the design is deceptive and there have been rigorous checks about capacity. Also, just in case you were wondering, we’re on schedule for a June 15 opening date and well within budget, a testimony to the excellent work of local contractors, Hickman’s. We hope that as many people as possible will be there on June 15. We have engaged award winning actress Coral White to declare the pool open, and there’ll be drinks and snacks available at the poolside. There’ll also be a competition for the public to decide on the sculpture we plan to have at the entrance. You will decide which famous historical figure from the city we should have. And now moving on to the Central Park Playground, which we’re pleased to announce has just won the Douglas Award for safety. The news came through only last week. The unique design is based on the concept of the global village, with the playground being divided into six areas showing different parts of the world, each with a representative feature. For example, there is a section on Asia, and this is represented by rides and equipment in the shape of snakes, orangutans, tigers and so on, fauna native to the forests of the region. Moving south to the Antarctic we couldn’t run to an ice rink, I’m afraid but opted instead for climbing blocks in the shape of mountains. I thought they could have had slides for the glaciers, but the designers did want to avoid being too literal. Then on to South America, and here the theme is El Dorado games replicating the search for mines full of precious stones. And then moving up to North America, here there was considerable debate. I know the contribution of cinema and jazz was considered, but the designers finally opted for rockets and the International Space Station. Eastwards to Europe then, and perhaps the most traditional choice of all the areas medieval castles and other fortifications. Then last but not least, moving south to Africa and a whole set of wonderful mosaics and trails to represent the great rivers of this fascinating and varied continent. Now the opening date for our global playground is the 10th of July. And again, we’d love to see you there. So make a date and come and see this magnificent original new amenity right in the heart of the city.",
+	"body": {
+		"text": "Asia [5]\nAntarctica [6]\nSouth America [7]\nNorth America [8]\nEurope [9]\nAfrica [10]",
+		"html": "<p>Asia [5]</p><p>Antarctica [6]</p><p>South America [7]</p><p>North America [8]</p><p>Europe [9]</p><p>Africa [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The idea for the two new developments in the city came from",
+					"options": [
+						{
+							"label": "A",
+							"text": "local people"
+						},
+						{
+							"label": "B",
+							"text": "the City Council"
+						},
+						{
+							"label": "C",
+							"text": "the SWRDC"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"As many of you may know, the idea for these initiatives came from you, the public, in the extensive consultation exercise which the city council conducted last year, and they have been realized using money from the SWRDC, the South West Regional Development Commission."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What is unusual about Brackenside pool?",
+					"options": [
+						{
+							"label": "A",
+							"text": "its architectural style"
+						},
+						{
+							"label": "B",
+							"text": "its heating system"
+						},
+						{
+							"label": "C",
+							"text": "its method of water treatment"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"For the design of this new heated pool, we were very happy to secure the talents of internationally renowned architect Ellen Wendon, who has managed to combine a charming 1930s design, which fits in so well with many of the other buildings in the area, with up to the minute features such as a recycling system, the only one of its kind in the world, which enables seawater to be used in the pool."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Local newspapers have raised worries about",
+					"options": [
+						{
+							"label": "A",
+							"text": "the late opening date"
+						},
+						{
+							"label": "B",
+							"text": "the cost of the project"
+						},
+						{
+							"label": "C",
+							"text": "the size of the facilities"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Now there’s been quite a bit of discussion in the local press about whether there would be enough room for the number of visitors we’re hoping to attract, but the design is deceptive and there have been rigorous checks about capacity."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What decision has not yet been made about the pool?",
+					"options": [
+						{
+							"label": "A",
+							"text": "whose statue will be at the door"
+						},
+						{
+							"label": "B",
+							"text": "the exact opening times"
+						},
+						{
+							"label": "C",
+							"text": "who will open it"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"There’ll also be a competition for the public to decide on the sculpture we plan to have at the entrance. You will decide which famous historical figure from the city we should have."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Which feature is related to each of the following areas of the world represented in the playground?",
+			"options": [
+				{
+					"label": "A",
+					"text": "ancient forts"
+				},
+				{
+					"label": "B",
+					"text": "waterways"
+				},
+				{
+					"label": "C",
+					"text": "ice and snow"
+				},
+				{
+					"label": "D",
+					"text": "jewels"
+				},
+				{
+					"label": "E",
+					"text": "local animals"
+				},
+				{
+					"label": "F",
+					"text": "mountains"
+				},
+				{
+					"label": "G",
+					"text": "music and film"
+				},
+				{
+					"label": "H",
+					"text": "space travel"
+				},
+				{
+					"label": "I",
+					"text": "volcanoes"
+				}
+			],
+			"body": "Asia [5]\nAntarctica [6]\nSouth America [7]\nNorth America [8]\nEurope [9]\nAfrica [10]",
+			"body_html": "<p>Asia [5]</p><p>Antarctica [6]</p><p>South America [7]</p><p>North America [8]</p><p>Europe [9]</p><p>Africa [10]</p>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Asia",
+					"answer": "E",
+					"quotes": [
+						"For example, there is a section on Asia, and this is represented by rides and equipment in the shape of snakes, orangutans, tigers and so on, fauna native to the forests of the region."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Antarctica",
+					"answer": "F",
+					"quotes": [
+						"Moving south to the Antarctic we couldn’t run to an ice rink, I’m afraid but opted instead for climbing blocks in the shape of mountains."
+					]
+				},
+				{
+					"number": 7,
+					"text": "South America",
+					"answer": "D",
+					"quotes": [
+						"Then on to South America, and here the theme is El Dorado games replicating the search for mines full of precious stones."
+					]
+				},
+				{
+					"number": 8,
+					"text": "North America",
+					"answer": "H",
+					"quotes": [
+						"I know the contribution of cinema and jazz was considered, but the designers finally opted for rockets and the International Space Station."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Europe",
+					"answer": "A",
+					"quotes": [
+						"Eastwards to Europe then, and perhaps the most traditional choice of all the areas medieval castles and other fortifications."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Africa",
+					"answer": "B",
+					"quotes": [
+						"Then last but not least, moving south to Africa and a whole set of wonderful mosaics and trails to represent the great rivers of this fascinating and varied continent."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

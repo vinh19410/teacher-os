@@ -1,0 +1,241 @@
+{
+	"id": "bd19fd65-773e-40a1-9c96-8bcedba6d6eb",
+	"url": "https://stepielts.com/student/listening/bd19fd65-773e-40a1-9c96-8bcedba6d6eb?mode=practice",
+	"title": "University Crime Prevention",
+	"source": "Forecast Quý 2-2025",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/2c8b5468-cfff-4412-b2ce-9ad96dafb35e.mp3",
+	"transcript": "Speaker 1: Hello. My name is Dave Rayson. You can call me Officer Dave. I am here to talk to you about crime on college campuses and to provide recommendations on how you can prevent becoming a victim of some of the crimes which are prevalent on this campus and other campuses across the country.\nBefore I get started on the subject matter, I would like to thank your Student Union for arranging this event and inviting me to speak to you.\nSpeaker 1: As a member of the campus police force and the Social Safety Association, I welcome the opportunity to inform university students about some of the criminal activities which are unfortunately taking place on most college campuses. Here on this campus, we have been fortunate as we have not had any robberies in recent years. And our campus police force here has done a good job of eliminating most illegal drug sales. However, we have had quite a few reports from students saying that their personal belongings got stolen over the past three months. As you can probably guess, items such as laptop computers and mobile phones are popular items for thieves, once again we encourage you to take extra precautions with these items. Another good thing that I am proud to tell you is we have had fewer and fewer campus crimes for three years in a row now. This improvement coincides with an increase in the number of campus security guards. We should be thankful, as the situation was nearly unmanageable decades ago. I also credit our success to our efforts in educating students about precautionary measures to prevent such crimes. Before the presentation today, I was approached by a young woman who just enrolled in the first year of study. She was quite concerned with crime as she read in the news about some incidents happened here recently. When I looked into the stories, some were completely fabricated. I want everyone to be aware that, the media loves to sprinkle some extra drama on those crime reports, turning a small incident into a blockbuster thriller! We have had some students’ parents being paranoid about the perils of crime.\nBut in reality, we should be safe if we take precautions to prevent crimes.\nSpeaker 1: Now let’s learn the dos and don’ts about self-protection. If you come across a crime, it is likely to have reactions like resisting or running away, but contacting the police or asking others for help should be at the top of your list when witnessing or experiencing a crime. When it comes to staying safe in our daily lives, it’s good to know those emergency numbers, but let’s be real - trying to remember a bunch of phone numbers can be a bit much. And if you’re worried about your safety, maybe consider taking a self-defense class. But for most folks on campus, just keeping an eye out for any fishy situations is the way to go. For those of you who work or study late, we encourage you not to walk alone on campus. Ask a friend or contact a campus security guard to accompany you to your destination on campus. Remember, even if you have a mobile phone, we don’t recommend you go home by yourself after midnight. I previously mentioned the idea of taking a defense course. Please note that the goal of a self-defense course is not necessarily to make you stronger, but to help you to identify and raise your awareness of possible dangerous situations. In doing so, you’ll know how to deal with a possible assault. In the past five years, I have received numerous calls from students inquiring about tools for self-protection. While they are aware that guns are prohibited on this campus, some believe that carrying a knife would be a good idea. I strongly advise against this, as it is illegal to possess weapons on campus and there is a risk of self-inflicted harm. Instead, you can consider non-lethal options such as whistles and pepper spray, which can be effective in various situations where personal safety is a concern. With this in mind, we encourage you to remember what a “university” is? A university is definitely not a military base–we’re all about open spaces and free-flowing vibes, no walls needed here! The fewer weapons we have on campus, the safer we will all be.",
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Who organized this lecture?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Social Safety Association"
+						},
+						{
+							"label": "B",
+							"text": "Student Union"
+						},
+						{
+							"label": "C",
+							"text": "Campus Police Force"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Before I get started on the subject matter, I would like to thank your Student Union for arranging this event and inviting me to speak to you."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What is the main category of crime on campus?",
+					"options": [
+						{
+							"label": "A",
+							"text": "robbery"
+						},
+						{
+							"label": "B",
+							"text": "illegal drugs trade"
+						},
+						{
+							"label": "C",
+							"text": "theft"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"However, we have had quite a few reports from students saying that their personal belongings got stolen over the past three months."
+					]
+				},
+				{
+					"number": 3,
+					"text": "What is the recent change of campus crime?",
+					"options": [
+						{
+							"label": "A",
+							"text": "increase"
+						},
+						{
+							"label": "B",
+							"text": "decrease"
+						},
+						{
+							"label": "C",
+							"text": "stay the same"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Another good thing that I am proud to tell you is we have had fewer and fewer campus crimes for three years in a row now."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Where did the concern of the young woman come from?",
+					"options": [
+						{
+							"label": "A",
+							"text": "misleading information in the media"
+						},
+						{
+							"label": "B",
+							"text": "her parents' worries"
+						},
+						{
+							"label": "C",
+							"text": "witnessed too many incidents happened"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"She was quite concerned with crime as she read in the news about some incidents happened here recently. When I looked into the stories, some were completely fabricated. I want everyone to be aware that, the media loves to sprinkle some extra drama on those crime reports, turning a small incident into a blockbuster thriller!"
+					]
+				},
+				{
+					"number": 5,
+					"text": "What is suggested to do when students come cross a crime?",
+					"options": [
+						{
+							"label": "A",
+							"text": "run away"
+						},
+						{
+							"label": "B",
+							"text": "resist"
+						},
+						{
+							"label": "C",
+							"text": "seek help"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"If you come across a crime, it is likely to have reactions like resisting or running away, but contacting the police or asking others for help should be at the top of your list when witnessing or experiencing a crime."
+					]
+				},
+				{
+					"number": 6,
+					"text": "What is the general method of keeping oneself safe?",
+					"options": [
+						{
+							"label": "A",
+							"text": "increase awareness of safety"
+						},
+						{
+							"label": "B",
+							"text": "sign up a self-defense course"
+						},
+						{
+							"label": "C",
+							"text": "remember emergency numbers"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But for most folks on campus, just keeping an eye out for any fishy situations is the way to go."
+					]
+				},
+				{
+					"number": 7,
+					"text": "What does the speaker say about getting off work or finishing study late?",
+					"options": [
+						{
+							"label": "A",
+							"text": "go back home immediately"
+						},
+						{
+							"label": "B",
+							"text": "go back with a friend"
+						},
+						{
+							"label": "C",
+							"text": "bring mobile phone with you on your way home"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Ask a friend or contact a campus security guard to accompany you to your destination on campus."
+					]
+				},
+				{
+					"number": 8,
+					"text": "What is the purpose of taking a defense course?",
+					"options": [
+						{
+							"label": "A",
+							"text": "be aware of dangers"
+						},
+						{
+							"label": "B",
+							"text": "physically stronger"
+						},
+						{
+							"label": "C",
+							"text": "look confident"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Please note that the goal of a self-defense course is not necessarily to make you stronger, but to help you to identify and raise your awareness of possible dangerous situations."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Which of the following self-protection tools is not recommended?",
+					"options": [
+						{
+							"label": "A",
+							"text": "whistles"
+						},
+						{
+							"label": "B",
+							"text": "knives"
+						},
+						{
+							"label": "C",
+							"text": "pepper spray"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"While they are aware that guns are prohibited on this campus, some believe that carrying a knife would be a good idea. I strongly advise against this, as it is illegal to possess weapons on campus and there is a risk of self-inflicted harm."
+					]
+				},
+				{
+					"number": 10,
+					"text": "What is a “university”?",
+					"options": [
+						{
+							"label": "A",
+							"text": "a place without walls"
+						},
+						{
+							"label": "B",
+							"text": "an army campus"
+						},
+						{
+							"label": "C",
+							"text": "a safe place"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"A university is definitely not a military base–we’re all about open spaces and free-flowing vibes, no walls needed here!"
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

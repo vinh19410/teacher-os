@@ -1,0 +1,107 @@
+{
+	"id": "b674a19f-22ad-4461-9337-5b24328d709c",
+	"url": "https://stepielts.com/student/listening/b674a19f-22ad-4461-9337-5b24328d709c?mode=practice",
+	"title": "A Renovation Project",
+	"source": "Actual Test",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/c19306fc-a238-4578-998c-723d9c639491.mp3",
+	"transcript": "Speaker 0: You will hear a man asking a renovation company for details on a renovation project. First, you have some time to look at questions one to five. Listen carefully and answer questions one to five.\nSpeaker 1: Hello. Shining Decorations. How can I help you?\nSpeaker 2: Hello. We are thinking of renovating our hotel this year. It was built fifteen years ago, and it's quite old now. So I'm calling to see if your company can do that.\nSpeaker 1: Oh, yes. We do all kinds of decoration and renovation projects. Last month, we just renovated the city library. The client was really pleased with the outcome.\nSpeaker 2: Oh, really? I heard that one was pretty tough, but the new library does get a fresh look.\nSpeaker 1: Yes. It was a tough one. May I have the name of your hotel?\nSpeaker 2: Yes. It's Central Hotel. Should I tell you about some changes we want to make before you come and check it out?\nSpeaker 1: Yes, please. I will write them down. Just a moment, please. Okay. What are the changes you want to make?\nSpeaker 2: First, the address on our signboard in the front of the hotel is not big enough. We would like to have it enlarged.\nSpeaker 1: I see. It's important for the guests to see the information clearly. No problem.\nSpeaker 2: Okay. Next is our swimming pool. It's now in the basement. Our guests are not very happy about it. After talking to the designers, we've decided to move it to the roof of the hotel.\nSpeaker 1: Oh, that's a big change as it'll be an outdoor site, but I believe it's a wonderful idea.\nSpeaker 2: Yes. Our hotel is right beside a river, so it's got a good view from up there.\nSpeaker 1: That's true. I'm sure more people would stay at your hotel because of it. It's a very competitive feature. We can do that for you.\nSpeaker 2: We have a big lounge on the Ground Floor where our guests can rest. We don't think we are making the most of it, and my manager said we should use the room for reception. The old one is too small.\nSpeaker 1: So you don't need an area for guests to rest?\nSpeaker 2: The hall will serve the purpose.\nSpeaker 1: Alright. I've written it down. Anything else?\nSpeaker 0: Before you hear the rest of the conversation, you have some time to look at questions six to 10. Now listen and answer questions six to 10.\nSpeaker 2: Let me see. I think the words on the notice board should be translated, but I'll need to confirm with my supervisor if we need to translate into Chinese or not. We have quite a lot of Chinese guests now, but Spanish translation is definitely needed. German is not necessary, neither is Japanese. We don't have many guests from those countries.\nSpeaker 1: Okay. I'll just need to go and see how to plan the layout later.\nSpeaker 2: Yes, please. We don't know if we should upgrade the design of the price board or not. It looks a bit old fashioned.\nSpeaker 1: What color is it?\nSpeaker 2: It's red. I was wondering if white looks better.\nSpeaker 1: It's hard to tell unless we see it in person.\nSpeaker 2: Okay. When can the construction team come and start their work?\nSpeaker 1: Well, we are currently working on another project, but we think we can finish the work there sometime in June. So we can come before July, and it depends on how much time you have for the renovation project. If it's quite urgent, we'll need to discuss the starting time.\nSpeaker 2: We hope to start early, but it's not too urgent. We will wait till the end of peak season.\nSpeaker 1: Yeah. You don't wanna miss the peak time right now. So who should I contact for the initial check and evaluation?\nSpeaker 2: You can call my manager. His name is Clifton Baron.\nSpeaker 1: Excuse me. How do you spell his first name?\nSpeaker 2: C l I f f t o n.\nSpeaker 1: And his phone number?\nSpeaker 2: It's 093036602. You can call during work hours.\nSpeaker 1: Got it. As for the contract details and the cost of the project, should I contact him? Or?\nSpeaker 2: Yes. You could talk to him for all these details.\nSpeaker 1: Okay. Thanks.\nSpeaker 0: That is the end of section one. You now have half a minute to check your answers.",
+	"body": {
+		"text": "Name of the hotel: [1] Hotel\nMajor changes:\nsignboard: the [2] needs to be bigger\nswimming pool: to be relocated from the [3] to the [4]\nresting area: turn the [5] room into reception\nNotice board\ntranslation needed: [6]\nPrice board\ncurrent colour: [7]\nConstruction: starts before [8]\nManager's name: [9] Barron\nTelephone number: [10]",
+		"html": "<table><tbody><tr><td><ul><li>Name of the hotel: [1] Hotel</li></ul></td></tr><tr><td><p><strong>Major changes:</strong></p><ul><li>signboard: the [2] needs to be bigger</li><li>swimming pool: to be relocated from the [3] to the [4]</li><li>resting area: turn the [5] room into reception</li></ul></td></tr><tr><td><p><strong>Notice board</strong></p><ul><li>translation needed: [6]</li></ul></td></tr><tr><td><p><strong>Price board</strong></p><ul><li>current colour: [7]</li><li>Construction: starts before [8]</li><li>Manager's name: [9] Barron</li><li>Telephone number: [10]</li></ul></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "Name of the hotel: [1] Hotel\nMajor changes:\nsignboard: the [2] needs to be bigger\nswimming pool: to be relocated from the [3] to the [4]\nresting area: turn the [5] room into reception\nNotice board\ntranslation needed: [6]\nPrice board\ncurrent colour: [7]\nConstruction: starts before [8]\nManager's name: [9] Barron\nTelephone number: [10]",
+			"body_table": [
+				["Name of the hotel: [1] Hotel"],
+				[
+					"Major changes:\nsignboard: the [2] needs to be bigger\nswimming pool: to be relocated from the [3] to the [4]\nresting area: turn the [5] room into reception"
+				],
+				["Notice board\ntranslation needed: [6]"],
+				[
+					"Price board\ncurrent colour: [7]\nConstruction: starts before [8]\nManager's name: [9] Barron\nTelephone number: [10]"
+				]
+			],
+			"body_html": "<table><tbody><tr><td><ul><li>Name of the hotel: [1] Hotel</li></ul></td></tr><tr><td><p><strong>Major changes:</strong></p><ul><li>signboard: the [2] needs to be bigger</li><li>swimming pool: to be relocated from the [3] to the [4]</li><li>resting area: turn the [5] room into reception</li></ul></td></tr><tr><td><p><strong>Notice board</strong></p><ul><li>translation needed: [6]</li></ul></td></tr><tr><td><p><strong>Price board</strong></p><ul><li>current colour: [7]</li><li>Construction: starts before [8]</li><li>Manager's name: [9] Barron</li><li>Telephone number: [10]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Name of the hotel: [1] Hotel",
+					"answer": "Central",
+					"quotes": ["It's Central Hotel."]
+				},
+				{
+					"number": 2,
+					"text": "Signboard: the [2] needs to be bigger",
+					"answer": "address",
+					"quotes": [
+						"First, the address on our signboard in the front of the hotel is not big enough."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Swimming pool: to be relocated from the _____ to the _____",
+					"answer": "basement",
+					"quotes": ["It's now in the basement."]
+				},
+				{
+					"number": 4,
+					"text": "Swimming pool: to be relocated from the basement to the [4]",
+					"answer": "roof",
+					"quotes": [
+						"After talking to the designers, we've decided to move it to the roof of the hotel."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Resting area: turn the [5] room into reception",
+					"answer": "lounge",
+					"quotes": [
+						"We have a big lounge on the Ground Floor where our guests can rest."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Notice board - Translation needed: [6]",
+					"answer": "Spanish",
+					"quotes": [
+						"We have quite a lot of Chinese guests now, but Spanish translation is definitely needed."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Price board - Current colour: [7]",
+					"answer": "red",
+					"quotes": ["It's red.", "What color is it?"]
+				},
+				{
+					"number": 8,
+					"text": "Construction: starts before [8]",
+					"answer": "July",
+					"quotes": [
+						"So we can come before July, and it depends on how much time you have for the renovation project."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Manager's name: [9] Barron",
+					"answer": "Clifton",
+					"quotes": ["His name is Clifton Baron.", "C l I f f t o n."]
+				},
+				{
+					"number": 10,
+					"text": "Telephone number: [10]",
+					"answer": "093036602",
+					"quotes": ["It's 093036602."]
+				}
+			]
+		}
+	],
+	"images": []
+}

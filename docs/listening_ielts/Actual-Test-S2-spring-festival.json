@@ -1,0 +1,170 @@
+{
+	"id": "a30860ff-9c3a-4953-b010-e541252c5ccc",
+	"url": "https://stepielts.com/student/listening/a30860ff-9c3a-4953-b010-e541252c5ccc?mode=practice",
+	"title": "Spring Festival",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/aba843c0-2455-4e40-bb43-34f02347431a.mp3",
+	"transcript": "Speaker 0: Now turn to section two on page three. Section two. You will hear a woman talking on a radio program about a festival that is about to take place. First, you have some time to look at questions 11 to 18 on page three. Now listen carefully and answer questions 11 to 18.\nSpeaker 1: I have in the studio with me Mary Smith from Yorktown tourism, who is here to tell us about some of the events happening in our state capital over the next three weeks at the Spring Festival. So, Mary, what can we expect to see?\nSpeaker 2: Well, it's such an exciting time to be in Yorktown. To kick off the spring festival, there'll be a huge firework display down by the lake starting at 9PM this Saturday, September 4. Over 10,000 fireworks will be set off, all choreographed to music and broadcast simultaneously here on Radio Yorkie. You should get there early if you want to get close to the action. So bring along a picnic and a blanket as it could get chilly in the evening. One of the things that attracts visitors to the festival from all over the country is the amazing collection of flowers on show in Central Park throughout the festival. Special buses will run from the town center to the show at twenty minute intervals for those of you who prefer to take public transport. If you're interested in seeing the latest in cars from the fastest to the most expensive, then head over to the motor show at the Exhibition Center from the tenth to the September 15. It'll be open daily from 9AM until 10PM, so you can even pop there after work. Do you like photography? Then go along to grow your imagination, an exhibition of photographs of famous gardens, which will be held at the art gallery from the eleventh to the nineteenth of September. Come and be inspired by some of the world's most beautiful gardens. I've had a sneak preview of some of the photographs, and they are magnificent. If music is more your scene, then you should come and hear the Australian Philharmonic Orchestra performing swing in spring at the concert hall on Friday the seventeenth and Saturday September 18. It's a celebration of dance music from the nineteen forties and fifties. There'll be three performances. Both evenings start at 7PM and a matinee performance at 02:30 on the Saturday. So get your dancing shoes on and head there. It's guaranteed to get your feet tapping.\nSpeaker 0: Before you hear the rest of the program, you have some time to look at questions nineteen and twenty on Page four. Now listen and answer questions nineteen and twenty.\nSpeaker 2: Those are just a few of the attractions on offer. But for something a little different, you could try balloons down under, which is the largest gathering of hot air balloons in the Southern Hemisphere. It's well worth it because there'll be over 25 balloons of all shapes and sizes, which is a truly amazing sight. I'm also happy to announce that one lucky person will get the chance to go up in one of these balloons absolutely free. That's the prize in our special spring festival competition. It'd normally cost you $200, so it's not a bad prize. I'm sure you all want a chance to win, so you'll need to fill out the entry form in today's edition of the Yorktown news. Don't forget to include your phone number, and send it to Radio Yorkie. Make sure your entry reaches us by 5PM on Thursday, September 9. Then to see if you've won, just check out the festival's website on Saturday, September 11, where we'll publish the name of the lucky winner. It's such a fantastic prize, so hurry up and get your entry in. So there you have it. Just a few of the special events happening here in Yorktown over the spring festival. And if you'd like any more details about the festival\nSpeaker 0: That is the end of section two. You now have half a minute to check your answers.",
+	"body": {
+		"text": "Event Location Date and Time Other Information\nFirework display Near the [11] 4 September 9 p.m. Pack a [12] and blanket\nDisplay of [13] Central Park daily Buses run from the town centre every [14] minutes\nThe [15] Show Exhibition Centre 10–15 September 9 a.m. – 10 p.m.\n'Grow Your Imagination' in the [16] 11 – 19 September\n'Swing in Spring' in the [17] 17 & 18 September Saturday matinee performance at [18]",
+		"html": "<table><thead><tr><th>Event</th><th>Location</th><th>Date and Time</th><th>Other Information</th></tr></thead><tbody><tr><td>Firework display</td><td>Near the [11]</td><td>4 September 9 p.m.</td><td>Pack a [12] and blanket</td></tr><tr><td>Display of [13]</td><td>Central Park</td><td>daily</td><td>Buses run from the town centre every [14] minutes</td></tr><tr><td>The [15] Show</td><td>Exhibition Centre</td><td>10–15 September 9 a.m. – 10 p.m.</td><td></td></tr><tr><td>'Grow Your Imagination'</td><td>in the [16]</td><td>11 – 19 September</td><td></td></tr><tr><td>'Swing in Spring'</td><td>in the [17]</td><td>17 &amp; 18 September</td><td>Saturday matinee performance at [18]</td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "11-18",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "Event Location Date and Time Other Information\nFirework display Near the [11] 4 September 9 p.m. Pack a [12] and blanket\nDisplay of [13] Central Park daily Buses run from the town centre every [14] minutes\nThe [15] Show Exhibition Centre 10–15 September 9 a.m. – 10 p.m.\n'Grow Your Imagination' in the [16] 11 – 19 September\n'Swing in Spring' in the [17] 17 & 18 September Saturday matinee performance at [18]",
+			"body_table": [
+				["Event", "Location", "Date and Time", "Other Information"],
+				[
+					"Firework display",
+					"Near the [11]",
+					"4 September 9 p.m.",
+					"Pack a [12] and blanket"
+				],
+				[
+					"Display of [13]",
+					"Central Park",
+					"daily",
+					"Buses run from the town centre every [14] minutes"
+				],
+				[
+					"The [15] Show",
+					"Exhibition Centre",
+					"10–15 September 9 a.m. – 10 p.m.",
+					""
+				],
+				["'Grow Your Imagination'", "in the [16]", "11 – 19 September", ""],
+				[
+					"'Swing in Spring'",
+					"in the [17]",
+					"17 & 18 September",
+					"Saturday matinee performance at [18]"
+				]
+			],
+			"body_html": "<table><thead><tr><th>Event</th><th>Location</th><th>Date and Time</th><th>Other Information</th></tr></thead><tbody><tr><td>Firework display</td><td>Near the [11]</td><td>4 September 9 p.m.</td><td>Pack a [12] and blanket</td></tr><tr><td>Display of [13]</td><td>Central Park</td><td>daily</td><td>Buses run from the town centre every [14] minutes</td></tr><tr><td>The [15] Show</td><td>Exhibition Centre</td><td>10–15 September 9 a.m. – 10 p.m.</td><td></td></tr><tr><td>'Grow Your Imagination'</td><td>in the [16]</td><td>11 – 19 September</td><td></td></tr><tr><td>'Swing in Spring'</td><td>in the [17]</td><td>17 &amp; 18 September</td><td>Saturday matinee performance at [18]</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Near the [11]",
+					"answer": "lake",
+					"quotes": [
+						"To kick off the spring festival, there'll be a huge firework display down by the lake starting at 9PM this Saturday, September 4."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Pack a [12]",
+					"answer": "picnic",
+					"quotes": [
+						"So bring along a picnic and a blanket as it could get chilly in the evening."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Display of [13]",
+					"answer": "flowers",
+					"quotes": [
+						"One of the things that attracts visitors to the festival from all over the country is the amazing collection of flowers on show in Central Park throughout the festival."
+					]
+				},
+				{
+					"number": 14,
+					"text": "Buses run from the town centre every [14] minutes",
+					"answer": "twenty / 20",
+					"quotes": [
+						"Special buses will run from the town center to the show at twenty minute intervals for those of you who prefer to take public transport."
+					]
+				},
+				{
+					"number": 15,
+					"text": "The [15] Show",
+					"answer": "motor",
+					"quotes": [
+						"If you're interested in seeing the latest in cars from the fastest to the most expensive, then head over to the motor show at the Exhibition Center from the tenth to the September 15."
+					]
+				},
+				{
+					"number": 16,
+					"text": "'Grow Your Imagination' in the [16]",
+					"answer": "art gallery",
+					"quotes": [
+						"Then go along to grow your imagination, an exhibition of photographs of famous gardens, which will be held at the art gallery from the eleventh to the nineteenth of September."
+					]
+				},
+				{
+					"number": 17,
+					"text": "'Swing in Spring' in the [17]",
+					"answer": "concert hall",
+					"quotes": [
+						"If music is more your scene, then you should come and hear the Australian Philharmonic Orchestra performing swing in spring at the concert hall on Friday the seventeenth and Saturday September 18."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Saturday matinee performance at [18]",
+					"answer": "02:30 / 2:30 pm / 2.30pm /",
+					"quotes": [
+						"Both evenings start at 7PM and a matinee performance at 02:30 on the Saturday."
+					]
+				}
+			]
+		},
+		{
+			"range": "19-20",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 19,
+					"text": "In the Spring Festival competition, you can win",
+					"options": [
+						{
+							"label": "A",
+							"text": "a family pass to 'Balloons Down Under'"
+						},
+						{
+							"label": "B",
+							"text": "a cheque for $200"
+						},
+						{
+							"label": "C",
+							"text": "a flight in a hot air balloon"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"I'm also happy to announce that one lucky person will get the chance to go up in one of these balloons absolutely free."
+					]
+				},
+				{
+					"number": 20,
+					"text": "You can get an entry form for the competition from",
+					"options": [
+						{
+							"label": "A",
+							"text": "the radio station"
+						},
+						{
+							"label": "B",
+							"text": "the newspaper"
+						},
+						{
+							"label": "C",
+							"text": "the Festival's website"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I'm sure you all want a chance to win, so you'll need to fill out the entry form in today's edition of the Yorktown news."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

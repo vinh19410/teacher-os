@@ -45,6 +45,7 @@ export const PLACEMENT_UPLOAD_TOKEN_TTL_MS = 15 * 60 * 1000;
 export const PLACEMENT_DRAFT_BODY_MAX_BYTES = 512 * 1024;
 export const PLACEMENT_WRITING_TEXT_MAX = 10_000;
 export const PLACEMENT_TEACHER_FEEDBACK_MAX = 2000;
+export const PLACEMENT_CRITERION_COMMENT_MAX = 1000;
 export const LEAD_PLACEMENT_SUMMARY_MAX = 300;
 
 export const PLACEMENT_QUESTION_KINDS = ["grammar", "vocab"] as const;
@@ -1773,6 +1774,76 @@ export function parseStoredSpeakingRubric(
 	return legacy.success ? legacy.data : null;
 }
 
+const placementCriterionCommentSchema = z
+	.string()
+	.trim()
+	.max(PLACEMENT_CRITERION_COMMENT_MAX)
+	.default("");
+
+export const placementWritingCriterionCommentsSchema = z
+	.object({
+		task: placementCriterionCommentSchema,
+		coherence: placementCriterionCommentSchema,
+		lexical: placementCriterionCommentSchema,
+		grammar: placementCriterionCommentSchema,
+	})
+	.strict();
+export type PlacementWritingCriterionComments = z.infer<
+	typeof placementWritingCriterionCommentsSchema
+>;
+
+export const placementSpeakingCriterionCommentsSchema = z
+	.object({
+		fluency: placementCriterionCommentSchema,
+		lexical: placementCriterionCommentSchema,
+		grammar: placementCriterionCommentSchema,
+		pronunciation: placementCriterionCommentSchema,
+	})
+	.strict();
+export type PlacementSpeakingCriterionComments = z.infer<
+	typeof placementSpeakingCriterionCommentsSchema
+>;
+
+export function emptyWritingCriterionComments(): PlacementWritingCriterionComments {
+	return {
+		task: "",
+		coherence: "",
+		lexical: "",
+		grammar: "",
+	};
+}
+
+export function emptySpeakingCriterionComments(): PlacementSpeakingCriterionComments {
+	return {
+		fluency: "",
+		lexical: "",
+		grammar: "",
+		pronunciation: "",
+	};
+}
+
+export function parseStoredWritingCriterionComments(
+	raw: string | null,
+): PlacementWritingCriterionComments | null {
+	const parsed = parseRawJson(raw);
+	if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+		return null;
+	}
+	const result = placementWritingCriterionCommentsSchema.safeParse(parsed);
+	return result.success ? result.data : null;
+}
+
+export function parseStoredSpeakingCriterionComments(
+	raw: string | null,
+): PlacementSpeakingCriterionComments | null {
+	const parsed = parseRawJson(raw);
+	if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+		return null;
+	}
+	const result = placementSpeakingCriterionCommentsSchema.safeParse(parsed);
+	return result.success ? result.data : null;
+}
+
 export interface PlacementObjectiveItemResult {
 	id: string;
 	section: "listening" | "vocab-grammar" | "reading";
@@ -2316,16 +2387,138 @@ export type PlacementPublicSubmit = z.infer<typeof placementPublicSubmitSchema>;
 // Chấm nháp AI Writing/Speaking + highlight lỗi (#730)
 // ---------------------------------------------------------------------------
 
-/** Loại lỗi — key ổn định (API/DB), nhãn tiếng Việt cho UI. */
+export type PlacementErrorSkill = "writing" | "speaking";
+
+/** 4 loại lỗi Writing tương ứng 1-1 với 4 tiêu chí chấm IELTS Writing. */
+export const PLACEMENT_WRITING_ERROR_CATEGORIES = [
+	{ key: "task", label: criterionLabel("writing", "task", "task2") },
+	{ key: "coherence", label: criterionLabel("writing", "coherence", "task2") },
+	{ key: "lexical", label: criterionLabel("writing", "lexical", "task2") },
+	{ key: "grammar", label: criterionLabel("writing", "grammar", "task2") },
+] as const;
+export type PlacementWritingErrorCategory =
+	(typeof PLACEMENT_WRITING_ERROR_CATEGORIES)[number]["key"];
+
+/** 4 loại lỗi Speaking tương ứng 1-1 với 4 tiêu chí chấm IELTS Speaking. */
+export const PLACEMENT_SPEAKING_ERROR_CATEGORIES = [
+	{ key: "fluency", label: criterionLabel("speaking", "fluency", "") },
+	{ key: "lexical", label: criterionLabel("speaking", "lexical", "") },
+	{ key: "grammar", label: criterionLabel("speaking", "grammar", "") },
+	{
+		key: "pronunciation",
+		label: criterionLabel("speaking", "pronunciation", ""),
+	},
+] as const;
+export type PlacementSpeakingErrorCategory =
+	(typeof PLACEMENT_SPEAKING_ERROR_CATEGORIES)[number]["key"];
+
+/** Tập hợp 6 loại lỗi IELTS chuẩn của cả Writing và Speaking (nhãn tiếng Anh). */
 export const PLACEMENT_ERROR_CATEGORIES = [
-	{ key: "grammar", label: "Ngữ pháp" },
-	{ key: "vocabulary", label: "Từ vựng" },
-	{ key: "spelling", label: "Chính tả" },
-	{ key: "coherence", label: "Mạch lạc" },
-	{ key: "pronunciation", label: "Phát âm" },
+	{ key: "task", label: criterionLabel("writing", "task", "task2") },
+	{ key: "coherence", label: criterionLabel("writing", "coherence", "task2") },
+	{ key: "fluency", label: criterionLabel("speaking", "fluency", "") },
+	{ key: "lexical", label: criterionLabel("writing", "lexical", "task2") },
+	{ key: "grammar", label: criterionLabel("writing", "grammar", "task2") },
+	{
+		key: "pronunciation",
+		label: criterionLabel("speaking", "pronunciation", ""),
+	},
 ] as const;
 export type PlacementErrorCategory =
-	(typeof PLACEMENT_ERROR_CATEGORIES)[number]["key"];
+	| PlacementWritingErrorCategory
+	| PlacementSpeakingErrorCategory;
+
+export interface PlacementErrorCategoryOption<
+	K extends PlacementErrorCategory = PlacementErrorCategory,
+> {
+	readonly key: K;
+	readonly label: string;
+}
+
+export function placementErrorCategoriesForSkill(
+	skill: "writing",
+): readonly PlacementErrorCategoryOption<PlacementWritingErrorCategory>[];
+export function placementErrorCategoriesForSkill(
+	skill: "speaking",
+): readonly PlacementErrorCategoryOption<PlacementSpeakingErrorCategory>[];
+export function placementErrorCategoriesForSkill(
+	skill: PlacementErrorSkill,
+): readonly PlacementErrorCategoryOption<PlacementErrorCategory>[];
+export function placementErrorCategoriesForSkill(
+	skill: PlacementErrorSkill,
+): readonly PlacementErrorCategoryOption<PlacementErrorCategory>[] {
+	return skill === "writing"
+		? PLACEMENT_WRITING_ERROR_CATEGORIES
+		: PLACEMENT_SPEAKING_ERROR_CATEGORIES;
+}
+
+/**
+ * Chuẩn hóa key loại lỗi (kể cả key cũ trong DB như `vocabulary`, `spelling`,
+ * hay key lệch kỹ năng) về 4 tiêu chí IELTS hợp lệ của từng kỹ năng. Key lạ → null.
+ */
+export function normalizePlacementErrorCategory(
+	raw: string,
+	skill: "writing",
+): PlacementWritingErrorCategory | null;
+export function normalizePlacementErrorCategory(
+	raw: string,
+	skill: "speaking",
+): PlacementSpeakingErrorCategory | null;
+export function normalizePlacementErrorCategory(
+	raw: string,
+	skill: PlacementErrorSkill,
+): PlacementErrorCategory | null;
+export function normalizePlacementErrorCategory(
+	raw: string,
+	skill: PlacementErrorSkill,
+): PlacementErrorCategory | null {
+	const key = raw.trim().toLowerCase();
+	if (skill === "writing") {
+		switch (key) {
+			case "task":
+				return "task";
+			case "coherence":
+			case "fluency":
+				return "coherence";
+			case "lexical":
+			case "vocabulary":
+			case "spelling":
+			case "pronunciation":
+				return "lexical";
+			case "grammar":
+				return "grammar";
+			default:
+				return null;
+		}
+	}
+	switch (key) {
+		case "fluency":
+		case "coherence":
+		case "task":
+			return "fluency";
+		case "lexical":
+		case "vocabulary":
+		case "spelling":
+			return "lexical";
+		case "grammar":
+			return "grammar";
+		case "pronunciation":
+			return "pronunciation";
+		default:
+			return null;
+	}
+}
+
+const PLACEMENT_WRITING_ERROR_CATEGORY_KEYS =
+	PLACEMENT_WRITING_ERROR_CATEGORIES.map((c) => c.key) as [
+		PlacementWritingErrorCategory,
+		...PlacementWritingErrorCategory[],
+	];
+const PLACEMENT_SPEAKING_ERROR_CATEGORY_KEYS =
+	PLACEMENT_SPEAKING_ERROR_CATEGORIES.map((c) => c.key) as [
+		PlacementSpeakingErrorCategory,
+		...PlacementSpeakingErrorCategory[],
+	];
 const PLACEMENT_ERROR_CATEGORY_KEYS = PLACEMENT_ERROR_CATEGORIES.map(
 	(c) => c.key,
 ) as [PlacementErrorCategory, ...PlacementErrorCategory[]];
@@ -2334,27 +2527,55 @@ export const PLACEMENT_ERRORS_MAX = 60;
 export const PLACEMENT_ERROR_QUOTE_MAX = 300;
 export const PLACEMENT_ERROR_EXPLANATION_MAX = 600;
 
+function createPlacementErrorSchema<
+	const K extends readonly [string, ...string[]],
+>(keys: K) {
+	return z
+		.object({
+			id: z.string().trim().min(1).max(40),
+			category: z.enum(keys),
+			quote: z.string().min(1).max(PLACEMENT_ERROR_QUOTE_MAX),
+			start: z.number().int().min(0).nullable().default(null),
+			end: z.number().int().min(0).nullable().default(null),
+			correction: z.string().max(PLACEMENT_ERROR_QUOTE_MAX).default(""),
+			explanation: z.string().max(PLACEMENT_ERROR_EXPLANATION_MAX).default(""),
+		})
+		.strict();
+}
+
 /**
  * Một lỗi được đánh dấu trên bài viết (Writing) hoặc transcript (Speaking).
  * `quote` là đoạn nguyên văn bị sai; `start`/`end` là offset ký tự (UTF-16,
  * `end` loại trừ) trong văn bản nguồn do SERVER định vị lại từ `quote`
  * (`locatePlacementErrors`) — null khi không tìm thấy (thẻ vẫn hiện, không tô).
  */
-export const placementErrorSchema = z
-	.object({
-		id: z.string().trim().min(1).max(40),
-		category: z.enum(PLACEMENT_ERROR_CATEGORY_KEYS),
-		quote: z.string().min(1).max(PLACEMENT_ERROR_QUOTE_MAX),
-		start: z.number().int().min(0).nullable().default(null),
-		end: z.number().int().min(0).nullable().default(null),
-		correction: z.string().max(PLACEMENT_ERROR_QUOTE_MAX).default(""),
-		explanation: z.string().max(PLACEMENT_ERROR_EXPLANATION_MAX).default(""),
-	})
-	.strict();
+export const placementErrorSchema = createPlacementErrorSchema(
+	PLACEMENT_ERROR_CATEGORY_KEYS,
+);
 export type PlacementError = z.infer<typeof placementErrorSchema>;
 
 export const placementErrorListSchema = z
 	.array(placementErrorSchema)
+	.max(PLACEMENT_ERRORS_MAX);
+
+export const placementWritingErrorSchema = createPlacementErrorSchema(
+	PLACEMENT_WRITING_ERROR_CATEGORY_KEYS,
+);
+export type PlacementWritingError = z.infer<typeof placementWritingErrorSchema>;
+
+export const placementWritingErrorListSchema = z
+	.array(placementWritingErrorSchema)
+	.max(PLACEMENT_ERRORS_MAX);
+
+export const placementSpeakingErrorSchema = createPlacementErrorSchema(
+	PLACEMENT_SPEAKING_ERROR_CATEGORY_KEYS,
+);
+export type PlacementSpeakingError = z.infer<
+	typeof placementSpeakingErrorSchema
+>;
+
+export const placementSpeakingErrorListSchema = z
+	.array(placementSpeakingErrorSchema)
 	.max(PLACEMENT_ERRORS_MAX);
 
 /**
@@ -2442,10 +2663,21 @@ export const placementTeacherGradeSchema = z
 		writingScore: placementIeltsBandSchema,
 		speakingRubric: placementSpeakingRubricSchema.nullable().default(null),
 		speakingScore: placementIeltsBandSchema.nullable().default(null),
+		writingCriterionComments: placementWritingCriterionCommentsSchema.default(
+			() => emptyWritingCriterionComments(),
+		),
+		speakingCriterionComments: placementSpeakingCriterionCommentsSchema
+			.nullable()
+			.default(null),
+		courseId: z
+			.string()
+			.trim()
+			.min(1, "Vui lòng chọn khóa học đề xuất.")
+			.max(128),
 		teacherFeedback: z.string().max(PLACEMENT_TEACHER_FEEDBACK_MAX).default(""),
-		/** #730: lỗi giáo viên chốt cho bài viết / transcript (đã sửa/xoá/thêm). */
-		writingErrors: placementErrorListSchema.default([]),
-		speakingErrors: placementErrorListSchema.default([]),
+		/** Lỗi giáo viên chốt cho bài viết / transcript theo 4 tiêu chí từng kỹ năng. */
+		writingErrors: placementWritingErrorListSchema.default([]),
+		speakingErrors: placementSpeakingErrorListSchema.default([]),
 	})
 	.strict()
 	.superRefine((val, ctx) => {
@@ -2485,10 +2717,13 @@ export interface PlacementSubmissionDetail {
 	speakingDurationSec: number | null;
 	writingRubric: PlacementStoredWritingRubric | null;
 	writingScore: number | null;
+	writingCriterionComments: PlacementWritingCriterionComments | null;
 	speakingRubric: PlacementStoredSpeakingRubric | null;
 	speakingScore: number | null;
+	speakingCriterionComments: PlacementSpeakingCriterionComments | null;
 	teacherFeedback: string;
 	finalBandLevel: string | null;
+	finalCourseId: string | null;
 	finalCourse: string | null;
 	finalDisplayCourse: string | null;
 	finalScorePct: number | null;
@@ -2527,11 +2762,13 @@ export interface PlacementPublicResultView {
 	writingText: string;
 	writingRubric: PlacementStoredWritingRubric | null;
 	writingScore: number | null;
+	writingCriterionComments: PlacementWritingCriterionComments | null;
 	writingErrors: PlacementError[];
 	speakingStatus: "none" | "pending_upload" | "uploaded" | "skipped";
 	speakingTranscript: string;
 	speakingRubric: PlacementStoredSpeakingRubric | null;
 	speakingScore: number | null;
+	speakingCriterionComments: PlacementSpeakingCriterionComments | null;
 	speakingErrors: PlacementError[];
 	finalBandLevel: string | null;
 	finalDisplayCourse: string | null;
@@ -2593,11 +2830,13 @@ export interface StudentPlacementSubmissionView {
 	writingWordCount: number;
 	writingRubric: PlacementStoredWritingRubric | null;
 	writingScore: number | null;
+	writingCriterionComments: PlacementWritingCriterionComments | null;
 	writingErrors: PlacementError[];
 	speakingStatus: "none" | "pending_upload" | "uploaded" | "skipped";
 	speakingTranscript: string;
 	speakingRubric: PlacementStoredSpeakingRubric | null;
 	speakingScore: number | null;
+	speakingCriterionComments: PlacementSpeakingCriterionComments | null;
 	speakingErrors: PlacementError[];
 	finalBandLevel: string | null;
 	finalDisplayCourse: string | null;

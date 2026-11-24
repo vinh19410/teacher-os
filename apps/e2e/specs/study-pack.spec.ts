@@ -7,7 +7,13 @@ import {
 	verifyStudentEmailFromMailLog,
 	vietnamTodayISO,
 } from "./helpers";
-import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import {
+	API_ORIGIN,
+	LMS_ORIGIN,
+	STUDENT_BASE_URL,
+	STUDENT_ORIGIN,
+	WEB_ORIGIN,
+} from "./origins";
 
 const PASSWORD = "password-8chars";
 
@@ -53,7 +59,7 @@ async function signUpAndVerifyStudent(
 	name: string,
 	email: string,
 ): Promise<void> {
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signup").click();
 	await page.locator("#signup-name").fill(name);
 	await page.locator("#signup-email").fill(email);
@@ -63,7 +69,7 @@ async function signUpAndVerifyStudent(
 		timeout: 15_000,
 	});
 	await verifyStudentEmailFromMailLog(page, email);
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 }
@@ -129,7 +135,7 @@ test("study pack end-to-end: create grammar & reading prompts -> build 2-day pac
 	await acceptAllClassEnrollments(page, classId);
 
 	// 3. Teacher creates a ready Grammar MCQ prompt (Day 1)
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 	await page.getByRole("button", { name: "Grammar", exact: true }).click();
 	await page.getByLabel("Tiêu đề").fill(GRAMMAR_TITLE);
 	await page
@@ -166,7 +172,7 @@ test("study pack end-to-end: create grammar & reading prompts -> build 2-day pac
 	).toBeVisible();
 
 	// 5. Teacher creates a 2-day Study Pack at /assignments/packs
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await page.getByRole("button", { name: "Bộ đề tự học" }).click();
 	await expect(page).toHaveURL(/\/assignments\/packs$/);
 
@@ -197,7 +203,7 @@ test("study pack end-to-end: create grammar & reading prompts -> build 2-day pac
 
 	// 6. Teacher assigns the 2-day Study Pack to the class starting today (00:00 - 23:59)
 	const todayISO = vietnamTodayISO();
-	await page.goto(`/classes/${classId}`);
+	await page.goto(`/teacher/classes/${classId}`);
 	await page.getByRole("button", { name: "Bộ đề tự học", exact: true }).click();
 	await page.getByRole("button", { name: "Gán bộ đề" }).first().click();
 
@@ -317,14 +323,14 @@ test("study pack end-to-end: create grammar & reading prompts -> build 2-day pac
 	expect(shiftRes.status()).toBe(200);
 
 	// Student 1 reloads overview and immediately sees Day 2 without any cron tick
-	await studentPage.goto(`${STUDENT_ORIGIN}/`);
+	await studentPage.goto(`${STUDENT_BASE_URL}/`);
 	await expect(
 		studentPage.getByRole("link", { name: `Làm bài: ${READING_TITLE}` }),
 	).toBeVisible();
 	await studentContext.close();
 
 	// 10. Late student enrollment activated into the class receives active pack targets (due_at > now)
-	await page.goto(`/classes/${classId}`);
+	await page.goto(`/teacher/classes/${classId}`);
 	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
 	const enrollDialog2 = page.getByRole("dialog");
@@ -393,7 +399,7 @@ test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page 
 	await acceptAllClassEnrollments(page, classId);
 
 	// 2. Navigate to /assignments/packs -> System Library -> IELTS Foundation chip filter
-	await page.goto("/assignments/packs");
+	await page.goto("/teacher/assignments/packs");
 	await page.getByRole("button", { name: "Hệ thống" }).click();
 	await expect(page).toHaveURL(/scope=system/);
 
@@ -549,7 +555,7 @@ test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page 
 
 	// 3. Assign the 69-day system study pack to the class starting today (00:00 - 23:59)
 	const todayISO = vietnamTodayISO();
-	await page.goto(`/classes/${classId}`);
+	await page.goto(`/teacher/classes/${classId}`);
 	await page.getByRole("button", { name: "Bộ đề tự học", exact: true }).click();
 	await page.getByRole("button", { name: "Gán bộ đề" }).first().click();
 
@@ -569,7 +575,7 @@ test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page 
 	await expect(page.getByText(DAY_1_TITLE)).toBeVisible({ timeout: 20_000 });
 	await expect(page.getByRole("link", { name: PACK_TITLE })).toHaveAttribute(
 		"href",
-		"/assignments/packs/syspack-foun-gt1-discipline",
+		"/teacher/assignments/packs/syspack-foun-gt1-discipline",
 	);
 
 	// Fetch Day 1 & Day 2 assignmentIds from API

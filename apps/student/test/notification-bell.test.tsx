@@ -113,6 +113,24 @@ describe("NotificationBell — inbox-only (#716)", () => {
 		});
 	});
 
+	it("chuẩn hóa linkPath có tiền tố /student để không lặp /student/student", async () => {
+		inbox = {
+			items: [{ ...inboxItem, id: "n-2", linkPath: "/student/classes/c1" }],
+			unread: 1,
+		};
+		renderBell();
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Thông báo (1 mục chưa xử lý)" }),
+		);
+		const item = await waitFor(() => screen.getByTestId("inbox-item"));
+		fireEvent.click(item);
+
+		await waitFor(() => {
+			expect(navigateMock).toHaveBeenCalledWith({ to: "/classes/c1" });
+		});
+	});
+
 	it("hiển thị tiêu đề, nội dung của item và không có UI lời mời org", () => {
 		inbox = { items: [inboxItem], unread: 1 };
 		renderBell();

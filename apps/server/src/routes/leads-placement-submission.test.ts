@@ -424,6 +424,7 @@ describe("leads placement-submission routes (#721)", () => {
 						pronunciation: 1,
 					},
 					speakingScore: 1,
+					courseId: "org-1:course:comm-level-1",
 					teacherFeedback: "Cần phản xạ nói nhanh hơn.",
 				}),
 			},
@@ -446,9 +447,16 @@ describe("leads placement-submission routes (#721)", () => {
 		expect(graded.writingScore).toBe(7);
 		expect(graded.speakingScore).toBe(1);
 		expect(graded.finalBandLevel).toBe("A2");
+		expect(graded.finalCourseId).toBe("org-1:course:comm-level-1");
+		expect(graded.finalDisplayCourse).toBe(
+			"Giao Tiếp - Communication English Level 1",
+		);
 		expect(graded.finalNote).toContain("hạ 1 bậc");
 		expect(graded.zaloText).toContain("Band 7.0/9");
 		expect(graded.zaloText).toContain("Band 1.0/9");
+		expect(graded.zaloText).toContain(
+			"Khoa de xuat: Giao Tiếp - Communication English Level 1",
+		);
 		expect(graded.zaloText).toContain(
 			"Nhan xet cua Co My: Cần phản xạ nói nhanh hơn.",
 		);
@@ -461,12 +469,18 @@ describe("leads placement-submission routes (#721)", () => {
 		expect(subRow?.writingScore).toBeNull();
 		expect(subRow?.speakingBand).toBe(1);
 		expect(subRow?.speakingScore).toBeNull();
+		expect(subRow?.finalCourseId).toBe("org-1:course:comm-level-1");
+		expect(subRow?.finalDisplayCourse).toBe(
+			"Giao Tiếp - Communication English Level 1",
+		);
 
 		const [updatedLead] = await db
 			.select()
 			.from(schema.lead)
 			.where(eq(schema.lead.id, leadId));
-		expect(updatedLead?.course).toBe("comm-1");
+		expect(updatedLead?.course).toBe(
+			"Giao Tiếp - Communication English Level 1",
+		);
 		expect(updatedLead?.placement).toContain("CEFR A2 (78%");
 		expect(updatedLead?.placement).toContain("W 7.0/9");
 		expect(updatedLead?.placement).toContain("S 1.0/9");
@@ -478,6 +492,143 @@ describe("leads placement-submission routes (#721)", () => {
 		expect(
 			list.rows.find((r) => r.id === leadId)?.placementSubmissionStatus,
 		).toBe("graded");
+	});
+
+	test("PATCH /placement-submission bắt buộc chọn courseId hợp lệ; từ chối khóa bị ẩn nhưng cho phép giữ nguyên khi chấm lại", async () => {
+		const baseBody = {
+			writingRubric: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+			writingScore: 6,
+			speakingRubric: {
+				fluency: 6,
+				lexical: 6,
+				grammar: 6,
+				pronunciation: 6,
+			},
+			speakingScore: 6,
+			teacherFeedback: "Ổn.",
+		};
+		const headers = {
+			"x-test-user": "t1",
+			origin: CORS_ORIGIN,
+			"content-type": "application/json",
+		};
+
+		// 1. Thiếu courseId -> 400
+		const missingRes = await app.request(
+			`/api/leads/${leadId}/placement-submission`,
+			{
+				method: "PATCH",
+				headers,
+				body: JSON.stringify(baseBody),
+			},
+		);
+		expect(missingRes.status).toBe(400);
+
+		// 2. courseId không tồn tại hoặc thuộc org khác -> 422 COURSE_NOT_FOUND
+		const missingCourseRes = await app.request(
+			`/api/leads/${leadId}/placement-submission`,
+			{
+				method: "PATCH",
+				headers,
+				body: JSON.stringify({
+					...baseBody,
+					courseId: "org-2:course:comm-level-1",
+				}),
+			},
+		);
+		expect(missingCourseRes.status).toBe(422);
+		expect(((await missingCourseRes.json()) as { code: string }).code).toBe(
+			"COURSE_NOT_FOUND",
+		);
+
+		// 3. Ẩn khóa IELTS Pre IELTS -> chọn khi chấm lần đầu bị 422 COURSE_INACTIVE
+		const hideRes = await app.request(
+			"/api/courses/items/org-1:course:ielts-pre",
+			{
+				method: "PATCH",
+				headers,
+				body: JSON.stringify({ isActive: false }),
+			},
+		);
+		expect(hideRes.status).toBe(200);
+
+		const inactiveRes = await app.request(
+			`/api/leads/${leadId}/placement-submission`,
+			{
+				method: "PATCH",
+				headers,
+				body: JSON.stringify({
+					...baseBody,
+					courseId: "org-1:course:ielts-pre",
+				}),
+			},
+		);
+		expect(inactiveRes.status).toBe(422);
+		expect(((await inactiveRes.json()) as { code: string }).code).toBe(
+			"COURSE_INACTIVE",
+		);
+
+		// 4. Chấm với khóa IELTS Foundation đang active -> 200
+		const firstGrade = await app.request(
+			`/api/leads/${leadId}/placement-submission`,
+			{
+				method: "PATCH",
+				headers,
+				body: JSON.stringify({
+					...baseBody,
+					courseId: "org-1:course:ielts-foundation",
+				}),
+			},
+		);
+		expect(firstGrade.status).toBe(200);
+		const firstDetail = (await firstGrade.json()) as PlacementSubmissionDetail;
+		expect(firstDetail.finalCourseId).toBe("org-1:course:ielts-foundation");
+		expect(firstDetail.finalDisplayCourse).toBe("IELTS - Foundation");
+
+		// 5. Sau đó ẩn cả nhóm IELTS -> chấm lại vẫn giữ nguyên khóa cũ được (200),
+		// nhưng đổi sang khóa khác cũng đang ẩn (ielts-pre) vẫn bị 422 COURSE_INACTIVE.
+		const hideCatRes = await app.request(
+			"/api/courses/categories/org-1:cat:ielts",
+			{
+				method: "PATCH",
+				headers,
+				body: JSON.stringify({ isActive: false }),
+			},
+		);
+		expect(hideCatRes.status).toBe(200);
+
+		const regradeSame = await app.request(
+			`/api/leads/${leadId}/placement-submission`,
+			{
+				method: "PATCH",
+				headers,
+				body: JSON.stringify({
+					...baseBody,
+					courseId: "org-1:course:ielts-foundation",
+					teacherFeedback: "Cập nhật nhận xét.",
+				}),
+			},
+		);
+		expect(regradeSame.status).toBe(200);
+		const regraded = (await regradeSame.json()) as PlacementSubmissionDetail;
+		expect(regraded.finalCourseId).toBe("org-1:course:ielts-foundation");
+		expect(regraded.teacherFeedback).toBe("Cập nhật nhận xét.");
+
+		const regradeOtherHidden = await app.request(
+			`/api/leads/${leadId}/placement-submission`,
+			{
+				method: "PATCH",
+				headers,
+				body: JSON.stringify({
+					...baseBody,
+					courseId: "org-1:course:ielts-advanced",
+				}),
+			},
+		);
+		expect(regradeOtherHidden.status).toBe(422);
+		expect(((await regradeOtherHidden.json()) as { code: string }).code).toBe(
+			"COURSE_INACTIVE",
+		);
 	});
 
 	test("tương thích ngược: đọc được bài đã chấm theo thang cũ (/15, /20) ở detail và public result", async () => {
@@ -528,6 +679,88 @@ describe("leads placement-submission routes (#721)", () => {
 		expect(pub.writingScore).toBe(12);
 		expect(pub.speakingRubric).toEqual({ gv: 4, dm: 3, pr: 4, ic: 3 });
 		expect(pub.speakingScore).toBe(14);
+		expect(detail.writingCriterionComments).toBeNull();
+		expect(detail.speakingCriterionComments).toBeNull();
+	});
+
+	test("PATCH /placement-submission lưu nhận xét từng tiêu chí (trim, null khi không chấm Speaking, giữ nguyên zaloText)", async () => {
+		const headers = {
+			"x-test-user": "t1",
+			origin: CORS_ORIGIN,
+			"content-type": "application/json",
+		};
+
+		// Quá 1000 ký tự trên một tiêu chí -> 400
+		const tooLong = await app.request(
+			`/api/leads/${leadId}/placement-submission`,
+			{
+				method: "PATCH",
+				headers,
+				body: JSON.stringify({
+					writingRubric: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+					writingScore: 6,
+					courseId: "org-1:course:comm-level-1",
+					writingCriterionComments: {
+						task: "a".repeat(1001),
+					},
+				}),
+			},
+		);
+		expect(tooLong.status).toBe(400);
+
+		// Không chấm Speaking -> lưu speakingCriterionCommentsJson = null ngay cả khi client gửi kèm comments
+		const writingOnlyRes = await app.request(
+			`/api/leads/${leadId}/placement-submission`,
+			{
+				method: "PATCH",
+				headers,
+				body: JSON.stringify({
+					writingRubric: { task: 6.5, coherence: 6, lexical: 6.5, grammar: 6 },
+					writingScore: 6.5,
+					speakingRubric: null,
+					speakingScore: null,
+					writingCriterionComments: {
+						task: "  Đủ ý chính.  ",
+						coherence: "  Nối câu mượt. ",
+						lexical: "",
+						grammar: "  Cẩn thận chia thì.  ",
+					},
+					speakingCriterionComments: {
+						fluency: "Sẽ bị bỏ qua khi speakingRubric là null",
+					},
+					courseId: "org-1:course:comm-level-1",
+					teacherFeedback: "Nhận xét chung.",
+				}),
+			},
+		);
+		expect(writingOnlyRes.status).toBe(200);
+		const writingOnly =
+			(await writingOnlyRes.json()) as PlacementSubmissionDetail;
+		expect(writingOnly.writingCriterionComments).toEqual({
+			task: "Đủ ý chính.",
+			coherence: "Nối câu mượt.",
+			lexical: "",
+			grammar: "Cẩn thận chia thì.",
+		});
+		expect(writingOnly.speakingCriterionComments).toBeNull();
+		expect(writingOnly.zaloText).not.toContain("Đủ ý chính.");
+		expect(writingOnly.zaloText).toContain(
+			"Nhan xet cua Co My: Nhận xét chung.",
+		);
+
+		const [subRow] = await db
+			.select()
+			.from(schema.placementTestSubmission)
+			.where(eq(schema.placementTestSubmission.id, writingOnly.id));
+		expect(subRow?.writingCriterionCommentsJson).toBe(
+			JSON.stringify({
+				task: "Đủ ý chính.",
+				coherence: "Nối câu mượt.",
+				lexical: "",
+				grammar: "Cẩn thận chia thì.",
+			}),
+		);
+		expect(subRow?.speakingCriterionCommentsJson).toBeNull();
 	});
 });
 
@@ -727,6 +960,7 @@ describe("TEACHER_EMAILS org drift cho public placement & leads (#742)", () => {
 						pronunciation: 7,
 					},
 					speakingScore: 7,
+					courseId: "org-my:course:ielts-pre",
 					teacherFeedback: "Tốt.",
 				}),
 			},

@@ -2,12 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { type Client, createClient } from "@libsql/client";
 import { type APIRequestContext, expect, type Page } from "@playwright/test";
-import {
-	ADMIN_ORIGIN,
-	API_ORIGIN,
-	STUDENT_ORIGIN,
-	WEB_ORIGIN,
-} from "./origins";
+import { ADMIN_BASE_URL, API_ORIGIN, LMS_ORIGIN, WEB_ORIGIN } from "./origins";
 
 const MAIL_LOG_PATH = fileURLToPath(
 	new URL("../.mail-log.jsonl", import.meta.url).href,
@@ -15,36 +10,43 @@ const MAIL_LOG_PATH = fileURLToPath(
 const LOCAL_DB_PATH = fileURLToPath(
 	new URL("../local.db", import.meta.url).href,
 );
-/** Sign up through the real UI; a fresh context lands on the default
- * "Create account" tab (apps/web/src/routes/login.tsx), and the first
- * authenticated GET /api/kernel bootstraps the org server-side.
- * Opts override the generated identity (profile.spec seeds deterministic
- * emails for DB lookups); defaults keep existing specs unchanged.
+/** Sign up through the unified `/login?tab=signup` UI (`apps/lms`).
+ * Under the unified LMS origin, role is resolved by allowlist (`ADMIN_EMAILS` >
+ * `TEACHER_EMAILS` > `student`), so ordinary emails land under `/student` while
+ * allowlisted teacher/admin emails land under `/teacher` or `/admin`.
  * Returns the email used so specs can address the created user row. */
 export async function signUpViaUi(
 	page: Page,
-	opts: { name?: string; email?: string; password?: string } = {},
+	opts: {
+		name?: string;
+		email?: string;
+		password?: string;
+		expectedUrl?: RegExp;
+	} = {},
 ): Promise<string> {
 	const email =
 		opts.email ??
 		`e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.local`;
-	await page.goto("/login");
-	await page.locator("#su-name").fill(opts.name ?? "E2E Teacher");
-	await page.locator("#su-email").fill(email);
-	await page.locator("#su-password").fill(opts.password ?? "password-8chars");
-	await page.getByRole("button", { name: "Create account" }).click();
-	// Cold vite dev on CI can make the sign-up + bootstrap round-trip slow;
-	// the default 5s expect timeout is too tight for this flow-critical wait.
-	await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+	await page.goto("/login?tab=signup");
+	await page.locator("#signup-name").fill(opts.name ?? "E2E User");
+	await page.locator("#signup-email").fill(email);
+	await page
+		.locator("#signup-password")
+		.fill(opts.password ?? "password-8chars");
+	await page.locator("#panel-signup button[type='submit']").click();
+	await expect(page).toHaveURL(
+		opts.expectedUrl ?? /\/(student|teacher|admin)/,
+		{
+			timeout: 30_000,
+		},
+	);
 	return email;
 }
 
-/** Sign up through the API and land on /dashboard. Same outcome as
- * `signUpViaUi` (fresh teacher session, org bootstrapped by the first
- * authenticated GET /api/kernel) without the per-test cost of loading and
- * hydrating the sign-up page. `page.request` shares the context cookie jar,
- * so the browser is already signed in when it navigates. The real sign-up
- * form stays covered by `signup-ui-smoke.spec.ts`. */
+/** Sign up through the API, promote the row to verified `teacher` in `local.db`,
+ * and land on `/teacher/dashboard` with `/api/kernel` bootstrapped.
+ * `page.request` shares the context cookie jar, so the browser is already
+ * signed in when it navigates to `/teacher/dashboard`. */
 export async function signUpViaApi(
 	page: Page,
 	opts: { name?: string; email?: string; password?: string } = {},
@@ -58,20 +60,37 @@ export async function signUpViaApi(
 			email,
 			password: opts.password ?? "password-8chars",
 		},
-		headers: { "Content-Type": "application/json", Origin: WEB_ORIGIN },
+		headers: { "Content-Type": "application/json", Origin: LMS_ORIGIN },
 	});
 	if (res.status() !== 200) {
 		throw new Error(`sign-up failed (${res.status()}): ${await res.text()}`);
 	}
-	// Chờ phản hồi bootstrap /api/kernel: URL đổi sang /dashboard trước khi app
-	// nạp xong, và một goto kế tiếp của spec sẽ bị net::ERR_ABORTED cắt ngang.
+	const client = createClient({
+		url: `file:${LOCAL_DB_PATH}`,
+	});
+	try {
+		await client.execute("PRAGMA busy_timeout = 5000;");
+		await withBusyRetry(async () => {
+			const rs = await client.execute({
+				sql: "UPDATE user SET role = 'teacher', email_verified = 1 WHERE lower(email) = lower(?)",
+				args: [email],
+			});
+			if (Number(rs.rowsAffected) < 1) {
+				throw new Error("teacher user row not found yet");
+			}
+		}, 20);
+	} finally {
+		client.close();
+	}
+	// Chờ phản hồi bootstrap /api/kernel: URL đổi sang /teacher/dashboard trước
+	// khi app nạp xong, và một goto kế tiếp của spec sẽ bị net::ERR_ABORTED cắt ngang.
 	const kernelLoaded = page.waitForResponse(
 		(r) => r.url().includes("/api/kernel") && r.ok(),
 		{ timeout: 30_000 },
 	);
-	await page.goto("/dashboard");
+	await page.goto("/teacher/dashboard");
 	await kernelLoaded;
-	await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+	await expect(page).toHaveURL(/\/teacher\/dashboard/, { timeout: 30_000 });
 	return email;
 }
 
@@ -143,8 +162,8 @@ export async function verifyStudentEmailFromMailLog(
 	await expect(page.getByText("Email đã được xác thực")).toBeVisible();
 
 	await page.getByRole("button", { name: "Vào cổng học viên" }).click();
-	// Pin đúng origin student đích; gate tự quyết /onboarding hay portal.
-	await expect(page).toHaveURL(new RegExp(`^${STUDENT_ORIGIN}`), {
+	// Pin đúng origin + prefix student đích; gate tự quyết /onboarding hay portal.
+	await expect(page).toHaveURL(new RegExp(`^${LMS_ORIGIN}/student`), {
 		timeout: 20_000,
 	});
 }
@@ -323,7 +342,7 @@ export async function gotoWeek(
 	page: Page,
 	weekStartISO: string,
 ): Promise<void> {
-	await page.goto(`/schedule?week=${weekStartISO}`);
+	await page.goto(`/teacher/schedule?week=${weekStartISO}`);
 }
 
 /** Fill a rich text editor (Tiptap contenteditable) by its Field label.
@@ -422,17 +441,17 @@ export const ADMIN_PASSWORD = "password-8chars";
 
 /**
  * Đảm bảo có đúng MỘT tài khoản admin hợp lệ cho cả run: đăng ký qua API
- * thật với Origin admin (allowlist của boot chấp nhận ADMIN_EMAIL), sau đó
- * khóa DB đảm bảo `role='admin'` + `email_verified=1` (requireAdmin đòi cả
- * hai; đăng ký mới của better-auth để email chưa verify). Idempotent —
- * chạy lại khi account đã tồn tại chỉ còn nhánh UPDATE.
+ * thật với unified LMS origin (allowlist của boot tự gán role `admin` cho
+ * `ADMIN_EMAIL`), sau đó khóa DB đảm bảo `role='admin'` + `email_verified=1`
+ * (requireAdmin đòi cả hai; đăng ký mới của better-auth để email chưa verify).
+ * Idempotent — chạy lại khi account đã tồn tại chỉ còn nhánh UPDATE.
  */
 export async function ensureAdminAccount(
 	request: APIRequestContext,
 ): Promise<void> {
 	const res = await request.post(`${API_ORIGIN}/api/auth/sign-up/email`, {
 		data: { name: "E2E Admin", email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
-		headers: { "Content-Type": "application/json", Origin: ADMIN_ORIGIN },
+		headers: { "Content-Type": "application/json", Origin: LMS_ORIGIN },
 	});
 	if (res.status() !== 200) {
 		// Đã tồn tại (422/400) là đường lặp lại hợp lệ; từ chối khác → fail loud.
@@ -460,14 +479,13 @@ export async function ensureAdminAccount(
 	}
 }
 
-/** Đăng nhập admin qua form thật của cổng 8004 → hạ cánh trang danh sách. */
+/** Đăng nhập admin qua form hợp nhất `/login` → tự redirect `/admin/library/tests`. */
 export async function adminSignInViaUi(page: Page): Promise<void> {
-	await page.goto(`${ADMIN_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#signin-email").fill(ADMIN_EMAIL);
 	await page.locator("#signin-password").fill(ADMIN_PASSWORD);
 	await page.locator("#panel-signin button[type='submit']").click();
-	// Cold vite dev của app admin có thể chậm; flow-critical → 30s.
-	await expect(page).toHaveURL(/\/library\/tests/, { timeout: 30_000 });
+	await expect(page).toHaveURL(/\/admin\/library\/tests/, { timeout: 30_000 });
 	await expect(
 		page.getByRole("heading", { name: "Thư viện đề" }),
 	).toBeVisible();
@@ -477,7 +495,7 @@ export async function adminSignInViaUi(page: Page): Promise<void> {
  * khi list rỗng — đi thẳng URL cho ổn định). */
 export async function adminOpenNewTestPage(page: Page): Promise<void> {
 	await adminSignInViaUi(page);
-	await page.goto(`${ADMIN_ORIGIN}/library/tests/new`);
+	await page.goto(`${ADMIN_BASE_URL}/library/tests/new`);
 	await expect(
 		page.getByRole("heading", { name: "Tạo bộ đề mới" }),
 	).toBeVisible();
@@ -550,6 +568,10 @@ export async function seedOrgMember(
 
 		const now = Date.now();
 		await withBusyRetry(async () => {
+			await client.execute({
+				sql: "UPDATE user SET role = 'teacher', email_verified = 1 WHERE id = ?",
+				args: [userId],
+			});
 			await client.execute({
 				sql: "DELETE FROM membership WHERE user_id = ?",
 				args: [userId],

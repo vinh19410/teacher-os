@@ -1,0 +1,226 @@
+{
+	"id": "d916d3c2-403f-4a45-bf9b-2cea28f6a756",
+	"url": "https://stepielts.com/student/listening/d916d3c2-403f-4a45-bf9b-2cea28f6a756?mode=practice",
+	"title": "Music Research",
+	"source": "Forecast Quý 2-2025",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/bc3402ee-8651-4fd3-9e38-58a4d8c00512.mp3",
+	"transcript": "Speaker 0: Susan and Chris, how is your group work going?\nSpeaker 1: We chose music and its influence on people as our topic.\nSpeaker 0: It is a very interesting and creative topic. You have made a good choice.\nSpeaker 2: What have you learned so far, Chris? Music undoubtedly has an influence on people, and people know how to use this. For example, some music festivals use rock music as background music even though it may not suit the overall style, but it can make people memorize the festival better.\nSpeaker 1: Yes. I think it’s the same reason why some restaurants are always playing music for the customers.\nSpeaker 0: That’s right. What reference books are you using, Susan?\nSpeaker 1: I’m currently using a book named Music and the Nerve. It is a quite popular book and it’s just updated recently. But I chose it mainly because it’s a very practical book.\nSpeaker 2: Yes, I think it’s a great book too.\nSpeaker 1: And I use the data analysis method recommended by the book when I’m writing the report. Even though it looks a little boring, it is helpful because numbers are very persuasive.\nSpeaker 0: It’s true. Data, by all means, makes your writing more reliable and trustworthy. Have you found anything inspiring for creating experiments to test the influence of music?\nSpeaker 2: Yeah, the University of Warwick is doing a very interesting study. Instead of trying to study the psychological impact of music like whether if it makes you happy, they studied how people ‘s bodies react to different kinds of music. When people listen to rock, their heart rate may increase. I think it’s very interesting.\nSpeaker 1: And some postgraduates from University of Sydney have been doing a similar experiment. They play jazz, classical and other kinds of music to different groups of office workers who all have a deadline to meet. The result shows that music can help people release their stress from work.\nSpeaker 0: That’s why many people go to a concert or symphony hall to listen to music after work or on the weekends.\nSpeaker 2: That can be a reason. A research carried out by the University of Iowa focuses on whether music can improve people’s work efficiency. In fact, people did seem to work more efficiently in the experiment.\nSpeaker 1: Yeah, I’ve seen that research too. One serious drawback of that experiment is they used 4 farmers, 4 office workers and 4 truck drivers in the test, only 12 people in total. I don’t really think the results can be generalized.\nSpeaker 0: It’s true. They need more volunteers to justify their findings. I agree. From what I have just heard, everything is going smooth for your project.\nSpeaker 1: Actually, we’ve got some problems.\nSpeaker 2: Yeah, we are preparing a questionnaire. I think there should be at least 30 or 40 questions, but we only came up with about 15 and we’re running out of ideas.\nSpeaker 0: This area is very professional. It might be difficult for you. There are some materials on the Internet. If you know the right websites to visit, I’m sure you will find something.\nSpeaker 2: Oh, we only went to the library. And some headphones we used for the experiment seem to be broken. There is noise in them. It might influence the results. We don’t know what to do. That’s easy.\nSpeaker 0: You can go to the equipment department and tell them the issue. Maybe you will need to fill out a form.\nSpeaker 1: What about the CD player? It doesn’t seem to be working. Do we also need to go the equipment department for this?\nSpeaker 0: You can check the IT department. They will find out what’s wrong and get it fixed for you.\nSpeaker 2: And we have one final thing which is really bothering us. We are supposed to hand in the report by the end of the week, but there are still many things we haven’t finished. We might not be able to meet the deadline.\nSpeaker 0: Yeah, I know. If you do them one by one, it’s not the most efficient way. I think you should divide your work. Say, Chris, you can take care of the hardware problems while Susan can work on gathering information. This will speed up your work.\nSpeaker 1: Thank you so much for your help!\nSpeaker 0: My pleasure. Feel free to email me if you come across new problems.",
+	"body": {
+		"text": "lack of questions in questionnaire [7]\nnoise in the headphone [8]\nbroken CD player [9]\ninsufficient time for report writing [10]",
+		"html": "<p>lack of questions in questionnaire [7]</p><p>noise in the headphone [8]</p><p>broken CD player [9]</p><p>insufficient time for report writing [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Why is rock music used as background music at music festivals?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It makes the event more memorable."
+						},
+						{
+							"label": "B",
+							"text": "It suits the style."
+						},
+						{
+							"label": "C",
+							"text": "It is easy to have an identity."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"For example, some music festivals use rock music as background music even though it may not suit the overall style, but it can make people memorize the festival better."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What does Susan think of her reference book?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Few people know this textbook."
+						},
+						{
+							"label": "B",
+							"text": "The content is practical."
+						},
+						{
+							"label": "C",
+							"text": "It is outdated."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But I chose it mainly because it’s a very practical book."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Why did Susan apply the data analysis method?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It is required by the tutor."
+						},
+						{
+							"label": "B",
+							"text": "She thinks it is interesting."
+						},
+						{
+							"label": "C",
+							"text": "She thinks it is persuasive."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Even though it looks a little boring, it is helpful because numbers are very persuasive."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What is the research done by the University of Warwick about?",
+					"options": [
+						{
+							"label": "A",
+							"text": "psychological influence of music"
+						},
+						{
+							"label": "B",
+							"text": "physical influence of music"
+						},
+						{
+							"label": "C",
+							"text": "various types of music"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Instead of trying to study the psychological impact of music like whether if it makes you happy, they studied how people ‘s bodies react to different kinds of music."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What is the study that the University of Sydney focused on?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the relationship between music and relaxation"
+						},
+						{
+							"label": "B",
+							"text": "the cause of anxiety"
+						},
+						{
+							"label": "C",
+							"text": "impact of jazz and classical music"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"The result shows that music can help people release their stress from work."
+					]
+				},
+				{
+					"number": 6,
+					"text": "What is the drawback of the research at the University of Iowa?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The kinds of people tested were not suitable."
+						},
+						{
+							"label": "B",
+							"text": "The number of people used was too small."
+						},
+						{
+							"label": "C",
+							"text": "The emotion of the people was not stable."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"One serious drawback of that experiment is they used 4 farmers, 4 office workers and 4 truck drivers in the test, only 12 people in total."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What does the tutor suggest them to do about each of the following problems?",
+			"options": [
+				{
+					"label": "A",
+					"text": "buy new equipment"
+				},
+				{
+					"label": "B",
+					"text": "ask IT technicians for help"
+				},
+				{
+					"label": "C",
+					"text": "contact customer service"
+				},
+				{
+					"label": "D",
+					"text": "divide workload"
+				},
+				{
+					"label": "E",
+					"text": "find internet resources"
+				},
+				{
+					"label": "F",
+					"text": "contact equipment department"
+				},
+				{
+					"label": "G",
+					"text": "change the seat arrangement"
+				}
+			],
+			"body": "lack of questions in questionnaire [7]\nnoise in the headphone [8]\nbroken CD player [9]\ninsufficient time for report writing [10]",
+			"body_html": "<p>lack of questions in questionnaire [7]</p><p>noise in the headphone [8]</p><p>broken CD player [9]</p><p>insufficient time for report writing [10]</p>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "lack of questions in questionnaire",
+					"answer": "E",
+					"quotes": [
+						"There are some materials on the Internet. If you know the right websites to visit, I’m sure you will find something."
+					]
+				},
+				{
+					"number": 8,
+					"text": "noise in the headphone",
+					"answer": "F",
+					"quotes": [
+						"You can go to the equipment department and tell them the issue."
+					]
+				},
+				{
+					"number": 9,
+					"text": "broken CD player",
+					"answer": "B",
+					"quotes": [
+						"You can check the IT department. They will find out what’s wrong and get it fixed for you."
+					]
+				},
+				{
+					"number": 10,
+					"text": "insufficient time for report writing",
+					"answer": "D",
+					"quotes": ["I think you should divide your work."]
+				}
+			]
+		}
+	],
+	"images": []
+}

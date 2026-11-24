@@ -50,11 +50,11 @@ Then, run the development server:
 pnpm run dev
 ```
 
-Open [http://localhost:8001](http://localhost:8001) in your browser to see the web application.
+Open [http://localhost:8001](http://localhost:8001) in your browser to see the unified LMS application (proxies `/teacher`, `/student`, and `/admin` in dev; or run sub-portals standalone).
 The API is running at [http://localhost:8000](http://localhost:8000).
 The static marketing landing page runs at [http://localhost:8002](http://localhost:8002) (`pnpm run dev:landing`).
-The student portal runs at [http://localhost:8003](http://localhost:8003) (`pnpm run dev:student`). Initial setup: `cp apps/student/.env.example apps/student/.env`.
-Học viên tự đăng ký trên student portal (email + mật khẩu kèm xác thực email, hoặc đăng nhập Google); hồ sơ `student` được tự động provision ở lần đăng nhập portal đầu tiên, sau đó học viên nhận và chấp nhận lời mời vào lớp từ thông báo portal.
+The student portal runs standalone at [http://localhost:8003](http://localhost:8003) (`pnpm run dev:student`). Initial setup: `cp apps/student/.env.example apps/student/.env`.
+Học viên tự đăng ký tại cổng LMS (`/login` — email + mật khẩu kèm xác thực email, hoặc đăng nhập Google); hồ sơ `student` được tự động provision ở lần đăng nhập portal đầu tiên, sau đó học viên nhận và chấp nhận lời mời vào lớp từ thông báo portal.
 ## Authentication
 
 Sign-in uses Better-Auth with Google OAuth as the primary method (email/password is also enabled).
@@ -67,7 +67,7 @@ Sign-in uses Better-Auth with Google OAuth as the primary method (email/password
    - Production (`APP_DOMAIN=<domain>`): `https://api.<domain>/api/auth/callback/google`
 3. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `apps/server/.env`, then restart `pnpm run dev` (or redeploy).
 
-The web origin must be listed in `CORS_ORIGIN` (server `trustedOrigins`) so the OAuth callback can redirect back to the app. With `APP_DOMAIN` set, `CORS_ORIGIN` defaults to `https://app.<domain>`.
+The web origin must be listed in `CORS_ORIGIN` (server `trustedOrigins`) so the OAuth callback can redirect back to the app. With `APP_DOMAIN` set, `CORS_ORIGIN` defaults to `https://lms.<domain>`.
 
 ### Zoom (Server-to-Server OAuth)
 
@@ -113,7 +113,7 @@ If you want to add app-specific blocks instead of shared primitives, run the sha
 ### CI pipelines
 
 - Pull requests and pushes to `main` and `develop` run the shared 4-job parallel quality gates ([.github/workflows/ci.yml](.github/workflows/ci.yml) calling [.github/workflows/quality.yml](.github/workflows/quality.yml), skipping commits that touch only `plans/**/*.md` or `plans/reports/**/*.html`, and skipping the `pull_request` run for PRs from `develop` because the `push` run on the same commit already covers them); pull requests to `main` run the 6-shard Playwright E2E suite ([.github/workflows/e2e.yml](.github/workflows/e2e.yml)), and every prod deploy ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)) reuses `e2e.yml` alongside uncached `quality.yml` (`turbo-cache: false`) and ships only when both pass. Their required shape is asserted by `pnpm run test:ci-workflow`.
-- Staging (QA environment, `https://app.staging.teacheros.io.vn`) deploys on every push to the `develop` branch (merging a PR into `develop` deploys it); the old `staging` branch no longer triggers a deploy. [.github/workflows/deploy-staging.yml](.github/workflows/deploy-staging.yml) also stays runnable as a manual `workflow_dispatch` run — it runs the same reusable `quality.yml` gates uncached, deploys Alchemy stage `staging` with credentials from the GitHub `staging` environment, then polls `/readyz` and runs an auth sign-up round-trip smoke plus service-worker stub checks.
+- Staging (QA environment, `https://lms.staging.teacheros.io.vn`, with legacy 301 aliases `app/student/admin.staging.teacheros.io.vn`) deploys on every push to the `develop` branch (merging a PR into `develop` deploys it); the old `staging` branch no longer triggers a deploy. [.github/workflows/deploy-staging.yml](.github/workflows/deploy-staging.yml) also stays runnable as a manual `workflow_dispatch` run — it runs the same reusable `quality.yml` gates uncached, deploys Alchemy stage `staging` with credentials from the GitHub `staging` environment, then polls `/readyz` and runs an auth sign-up round-trip smoke, service-worker stub checks, and LMS & legacy 301 redirect checks.
 - Merging `develop` into `main` ships production automatically: [.github/workflows/deploy.yml](.github/workflows/deploy.yml) runs the reusable `quality.yml` gates uncached and the reusable `e2e.yml` workflow, deploys Alchemy stage `prod` with credentials from the GitHub `production` environment, then polls `/readyz` until the API reports ready.
 
 ### Alchemy
@@ -131,13 +131,13 @@ Deploys are staged and default to a personal `dev_<username>` stage. Stages isol
 
 ```bash
 cd packages/infra
-env APP_DOMAIN=staging.teacheros.io.vn pnpm alchemy deploy --stage staging   # QC staging: app/api.staging.teacheros.io.vn
+env APP_DOMAIN=staging.teacheros.io.vn pnpm alchemy deploy --stage staging   # QC staging: lms/api.staging.teacheros.io.vn
 pnpm alchemy deploy --stage prod      # production
 ```
 
 ### Production topology
 
-Pass `APP_DOMAIN` (bare lowercase domain) inline on the deploy command — `env "APP_DOMAIN=<domain>" pnpm alchemy deploy --stage prod` from `packages/infra` — to serve the app at `app.<domain>` and the API at `api.<domain>`; CORS origin, Better Auth base URL, the Google redirect URI, cross-subdomain session cookies, and the auth cookie namespace prefix all derive from it (see `packages/infra/src/topology.ts` — staging, as a non-prod member of the prod cookie zone, gets the `teacheros-staging` namespace so prod's parent-domain cookie cannot shadow its sessions). Never persist `APP_DOMAIN` in `.env`: it would flip `pnpm dev` onto a domain topology. Without `APP_DOMAIN` (local dev), deploys keep their generated `workers.dev` URLs and `alchemy dev` defaults `CORS_ORIGIN` to `http://localhost:8001`. Staging uses the same derivation with `APP_DOMAIN=staging.teacheros.io.vn` (see the runbook's "Provision staging").
+Pass `APP_DOMAIN` (bare lowercase domain) inline on the deploy command — `env "APP_DOMAIN=<domain>" pnpm alchemy deploy --stage prod` from `packages/infra` — to serve the unified LMS at `lms.<domain>` (`/teacher`, `/student`, `/admin`, `/login`, `/pay/:token`, with legacy `app.<domain>`, `student.<domain>`, and `admin.<domain>` attached as 301 redirect aliases) and the API at `api.<domain>`; CORS origin, Better Auth base URL, the Google redirect URI, cross-subdomain session cookies, and the auth cookie namespace prefix all derive from it (see `packages/infra/src/topology.ts` — staging, as a non-prod member of the prod cookie zone, gets the `teacheros-staging` namespace so prod's parent-domain cookie cannot shadow its sessions). Never persist `APP_DOMAIN` in `.env`: it would flip `pnpm dev` onto a domain topology. Without `APP_DOMAIN` (local dev), deploys keep their generated `workers.dev` URLs and `alchemy dev` defaults `CORS_ORIGIN` to `http://localhost:8001`. Staging uses the same derivation with `APP_DOMAIN=staging.teacheros.io.vn` (see the runbook's "Provision staging").
 
 Release preflight, smoke tests, rollback, GO/NO-GO, and support procedure live in the [production release runbook](docs/production-release-runbook.md) — that is the entry point for every release and UAT.
 
@@ -150,8 +150,11 @@ Release preflight, smoke tests, rollback, GO/NO-GO, and support procedure live i
 ```
 teacher-os/
 ├── apps/
-│   ├── web/         # Teacher frontend application (React + TanStack Router)
-│   ├── student/     # Student portal (React + TanStack Router)
+│   ├── lms/         # Unified LMS gateway Worker (/login, /pay/:token, /teacher, /student, /admin + legacy 301s)
+│   ├── web/         # Teacher frontend application (React + TanStack Router, mounted at /teacher)
+│   ├── student/     # Student portal (React + TanStack Router, mounted at /student)
+│   ├── admin/       # Admin console (React + TanStack Router, mounted at /admin)
+│   ├── profile/     # Static teacher profile & placement-test site
 │   ├── landing/     # Static marketing landing page
 │   ├── server/      # Backend API (Hono)
 │   └── e2e/         # Playwright end-to-end suite
@@ -169,11 +172,15 @@ teacher-os/
 
 - `pnpm run dev`: Start all applications in development mode
 - `pnpm run build`: Build all applications
+- `pnpm run dev:lms`: Start only the unified LMS gateway
 - `pnpm run dev:web`: Start only the web application
 - `pnpm run dev:server`: Start only the server
 - `pnpm run dev:student`: Start only the student portal
+- `pnpm run dev:admin`: Start only the admin console
+- `pnpm run dev:profile`: Start only the static teacher profile site
+- `pnpm run dev:landing`: Start only the static marketing landing page
 - `pnpm run check-types`: Check TypeScript types across all apps
 - `pnpm run db:generate`: Generate database client/types
-- `pnpm run check`: Run Biome formatting and linting
+- `pnpm run check`: Run Biome formatting and linting (read-only; use `pnpm run check:fix` to auto-fix)
 - `pnpm run test`: Run unit tests via Turborepo plus the CI-workflow and topology-drift contract tests in `scripts/`
-- `pnpm --filter e2e e2e`: Run the Playwright E2E suite (boots the API on :8000 and web on :8001 against a fresh local D1)
+- `pnpm --filter e2e e2e`: Run the Playwright E2E suite (boots the API on :8000 and LMS/portals against a fresh local D1)

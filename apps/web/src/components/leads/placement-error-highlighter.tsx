@@ -5,6 +5,7 @@ import {
 	PLACEMENT_ERRORS_MAX,
 	type PlacementError,
 	type PlacementErrorCategory,
+	type PlacementErrorSkill,
 } from "@teacher-os/api/placement-test-contracts";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import {
@@ -22,11 +23,13 @@ import {
 	circledNumber,
 	domPointToOffset,
 	newPlacementErrorId,
+	normalizePlacementErrorsForSkill,
 	overlappingErrorNumber,
-	PLACEMENT_ERROR_CATEGORY_OPTIONS,
 	PLACEMENT_ERROR_STYLES,
 	type PlacementErrorDraft,
-	placementErrorLabel,
+	placementErrorCategoryOptionsForSkill,
+	placementErrorStyle,
+	resolvePlacementErrorCategory,
 	type TextSpan,
 	trimTextSpan,
 	validatePlacementErrorDraft,
@@ -38,19 +41,24 @@ type EditorState =
 
 const DEFAULT_CATEGORY: PlacementErrorCategory = "grammar";
 
-/** Chú giải màu + kiểu nét cho 5 loại lỗi. */
-export function PlacementErrorLegend() {
+/** Chú giải màu + kiểu nét cho 4 tiêu chí IELTS theo từng kỹ năng. */
+export function PlacementErrorLegend({
+	skill,
+}: {
+	skill: PlacementErrorSkill;
+}) {
+	const options = placementErrorCategoryOptionsForSkill(skill);
 	return (
 		<ul
 			aria-label="Chú giải loại lỗi"
-			className="flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground text-xs"
+			className="flex flex-wrap gap-x-3 gap-y-1.5 text-muted-foreground text-xs"
 		>
-			{PLACEMENT_ERROR_CATEGORY_OPTIONS.map((c) => (
+			{options.map((c) => (
 				<li key={c.key} className="inline-flex items-center gap-1.5">
 					<span
 						aria-hidden="true"
 						className={cn(
-							"inline-block h-3 w-4 rounded-sm border-b-2",
+							"inline-block h-3 w-4 shrink-0 rounded-sm border-b-2",
 							PLACEMENT_ERROR_STYLES[c.key].swatchCls,
 						)}
 					/>
@@ -66,8 +74,8 @@ export function PlacementErrorLegend() {
 
 /**
  * Bài viết / transcript có tô lỗi theo loại + số thứ tự, kèm danh sách thẻ lỗi
- * sửa/xoá được và thêm lỗi bằng cách bôi đen văn bản (#730). Mọi thay đổi chạy
- * lại `locatePlacementErrors` để sắp xếp và đánh số lại.
+ * sửa/xoá được và thêm lỗi bằng cách bôi đen văn bản. Mọi thay đổi chạy lại
+ * `locatePlacementErrors` để sắp xếp và đánh số lại.
  */
 export function PlacementErrorHighlighter({
 	skill,
@@ -76,7 +84,7 @@ export function PlacementErrorHighlighter({
 	errors,
 	onChange,
 }: {
-	skill: "writing" | "speaking";
+	skill: PlacementErrorSkill;
 	text: string;
 	emptyText: string;
 	errors: PlacementError[];
@@ -97,7 +105,12 @@ export function PlacementErrorHighlighter({
 	const skillLabel = skill === "writing" ? "bài viết" : "transcript";
 
 	const commit = (next: PlacementError[]) => {
-		onChange(locatePlacementErrors(text, next));
+		onChange(
+			locatePlacementErrors(
+				text,
+				normalizePlacementErrorsForSkill(next, skill),
+			),
+		);
 	};
 
 	const readSelection = useCallback(() => {
@@ -205,7 +218,7 @@ export function PlacementErrorHighlighter({
 			mode: "edit",
 			id: error.id,
 			draft: {
-				category: error.category,
+				category: resolvePlacementErrorCategory(error.category, skill),
 				quote: error.quote,
 				correction: error.correction,
 				explanation: error.explanation,
@@ -269,12 +282,20 @@ export function PlacementErrorHighlighter({
 					data-testid={`${skill}-highlight-text`}
 					className="max-h-72 overflow-y-auto whitespace-pre-wrap break-words rounded border border-border bg-muted/30 p-2.5 text-foreground text-sm leading-[1.85]"
 				>
-					{segments.map((seg) =>
-						seg.kind === "text" ? (
-							<span key={`t-${seg.start}`} data-start={seg.start}>
-								{seg.text}
-							</span>
-						) : (
+					{segments.map((seg) => {
+						if (seg.kind === "text") {
+							return (
+								<span key={`t-${seg.start}`} data-start={seg.start}>
+									{seg.text}
+								</span>
+							);
+						}
+						const resolvedCategory = resolvePlacementErrorCategory(
+							seg.error.category,
+							skill,
+						);
+						const style = placementErrorStyle(resolvedCategory, skill);
+						return (
 							<span key={`e-${seg.error.id}`}>
 								{/* biome-ignore lint/a11y/useSemanticElements: <button> chặn bôi đen văn bản bên trong — mark cần vừa chọn được chữ vừa bấm/Enter để nhảy tới thẻ lỗi */}
 								<span
@@ -284,15 +305,15 @@ export function PlacementErrorHighlighter({
 									}}
 									data-start={seg.start}
 									data-testid={`${skill}-error-mark`}
-									data-category={seg.error.category}
+									data-category={resolvedCategory}
 									role="button"
 									tabIndex={0}
-									aria-label={`Lỗi ${seg.number}: ${placementErrorLabel(seg.error.category)} — “${seg.text}”`}
+									aria-label={`Lỗi ${seg.number}: ${style.label} — “${seg.text}”`}
 									onClick={() => focusCard(seg.error.id)}
 									onKeyDown={(e) => onMarkKeyDown(e, seg.error.id)}
 									className={cn(
 										"cursor-pointer rounded-sm px-px text-inherit underline decoration-2 underline-offset-4 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
-										PLACEMENT_ERROR_STYLES[seg.error.category].markCls,
+										style.markCls,
 										activeId === seg.error.id && "ring-2 ring-ring",
 									)}
 								>
@@ -307,8 +328,8 @@ export function PlacementErrorHighlighter({
 									{circledNumber(seg.number)}
 								</sup>
 							</span>
-						),
-					)}
+						);
+					})}
 				</div>
 			) : (
 				<p className="rounded border border-border bg-muted/40 px-3 py-2 text-muted-foreground text-xs">
@@ -318,7 +339,7 @@ export function PlacementErrorHighlighter({
 
 			{hasText && (
 				<div className="flex flex-wrap items-center justify-between gap-2">
-					<PlacementErrorLegend />
+					<PlacementErrorLegend skill={skill} />
 					<Button
 						variant="outline"
 						size="sm"
@@ -366,7 +387,11 @@ export function PlacementErrorHighlighter({
 					{errors.map((error, index) => {
 						const number = index + 1;
 						const located = error.start !== null && error.end !== null;
-						const style = PLACEMENT_ERROR_STYLES[error.category];
+						const resolvedCategory = resolvePlacementErrorCategory(
+							error.category,
+							skill,
+						);
+						const style = placementErrorStyle(resolvedCategory, skill);
 						return (
 							<li
 								key={error.id}
@@ -376,10 +401,12 @@ export function PlacementErrorHighlighter({
 								}}
 								tabIndex={-1}
 								data-testid={`${skill}-error-card`}
+								data-category={resolvedCategory}
 								aria-label={`Lỗi ${number}: ${style.label}`}
 								className={cn(
 									"rounded-md border border-border bg-background px-3 py-2 text-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
 									activeId === error.id && "border-ring",
+									style.borderLeftCls,
 								)}
 							>
 								<div className="flex flex-wrap items-start justify-between gap-2">
@@ -397,11 +424,11 @@ export function PlacementErrorHighlighter({
 										>
 											{circledNumber(number)}
 										</button>
-										<span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 font-medium text-foreground">
+										<span className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 font-medium text-foreground">
 											<span
 												aria-hidden="true"
 												className={cn(
-													"inline-block size-2.5 rounded-full border",
+													"inline-block size-2.5 shrink-0 rounded-full border",
 													style.swatchCls,
 												)}
 											/>
@@ -473,7 +500,7 @@ function ErrorForm({
 	onCancel,
 	onSave,
 }: {
-	skill: "writing" | "speaking";
+	skill: PlacementErrorSkill;
 	editor: EditorState;
 	formError: string | null;
 	onDraftChange: (patch: Partial<PlacementErrorDraft>) => void;
@@ -481,6 +508,8 @@ function ErrorForm({
 	onSave: () => void;
 }) {
 	const { draft } = editor;
+	const options = placementErrorCategoryOptionsForSkill(skill);
+	const resolvedCategory = resolvePlacementErrorCategory(draft.category, skill);
 	return (
 		<div
 			data-testid={`${skill}-error-form`}
@@ -492,14 +521,14 @@ function ErrorForm({
 			<div className="grid gap-2.5 sm:grid-cols-2">
 				<Field label="Loại lỗi">
 					<Select
-						value={draft.category}
+						value={resolvedCategory}
 						onChange={(e) =>
 							onDraftChange({
 								category: e.target.value as PlacementErrorCategory,
 							})
 						}
 					>
-						{PLACEMENT_ERROR_CATEGORY_OPTIONS.map((c) => (
+						{options.map((c) => (
 							<option key={c.key} value={c.key}>
 								{c.label}
 							</option>

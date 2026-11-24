@@ -475,3 +475,857 @@ describe("QuizPaper — Wave 2A (mcq_many, extended banks, summary word bank, di
 		expect(mixed).not.toContain("Choose the correct letter A, B, C or D.");
 	});
 });
+
+describe("QuizPaper — header omits difficulty band", () => {
+	it("renders skill without band in take mode when level is absent", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={baseDetail({
+					skill: "listening",
+					band: "7.0",
+					level: undefined,
+				})}
+				parts={[]}
+				answers={{}}
+				onAnswer={vi.fn()}
+				currentQuestion={null}
+			/>,
+		);
+		expect(html).toContain(">Listening</p>");
+		expect(html).not.toContain("Band");
+		expect(html).not.toContain("7.0");
+	});
+
+	it("renders skill and level without band in review mode", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={baseDetail({
+					skill: "listening",
+					band: "7.0",
+					level: "IELTS Academic",
+				})}
+				parts={[]}
+				answers={{}}
+				onAnswer={vi.fn()}
+				currentQuestion={null}
+				mode="review"
+				review={{}}
+			/>,
+		);
+		expect(html).toContain(">Listening · IELTS Academic</p>");
+		expect(html).not.toContain("Band");
+		expect(html).not.toContain("7.0");
+	});
+});
+
+describe("QuizPaper — inline answer inputs", () => {
+	it("renders inline text inputs inside structured table instructions, hides duplicated fieldsets, wraps table in overflow-x-auto, and sizes width from learner value", () => {
+		const part: QuizPart = {
+			id: "part-notes",
+			label: "Questions 1–3",
+			qStart: 1,
+			typeId: "notes",
+			source: "group",
+			instructionHtml:
+				"<p>Complete the notes below. Write ONE WORD ONLY.</p><table><tbody><tr><td><ul><li>Instruments made of <strong>(1)</strong></li><li>Singing at <strong>(2)</strong> events</li><li>Publishers had <strong>(3)</strong> there</li></ul></td></tr></tbody></table>",
+			questions: [
+				{
+					q: 0,
+					number: 1,
+					stem: "Instruments made of ____",
+					opts: null,
+					pin: null,
+					type: "notes",
+				},
+				{
+					q: 1,
+					number: 2,
+					stem: "Singing at ____ events",
+					opts: null,
+					pin: null,
+					type: "notes",
+				},
+				{
+					q: 2,
+					number: 3,
+					stem: "Publishers had ____ there",
+					opts: null,
+					pin: null,
+					type: "notes",
+				},
+			],
+		};
+
+		const onAnswerSpy = vi.fn();
+
+		function Harness() {
+			const [answers, setAnswers] = useState<Record<number, string>>({});
+			return (
+				<QuizPaper
+					detail={baseDetail({
+						skill: "listening",
+						type: "notes",
+						passage: "",
+					})}
+					parts={[part]}
+					answers={answers}
+					onAnswer={(q, value) => {
+						onAnswerSpy(q, value);
+						setAnswers((prev) => ({ ...prev, [q]: value }));
+					}}
+					currentQuestion={0}
+				/>
+			);
+		}
+
+		const { container, getAllByTestId, getByLabelText } = render(<Harness />);
+
+		expect(getAllByTestId("quiz-inline-instruction")).toHaveLength(1);
+		expect(
+			getAllByTestId("quiz-inline-badge").map((el) => el.textContent),
+		).toEqual(["1", "2", "3"]);
+		expect(container.querySelectorAll("fieldset[data-question]")).toHaveLength(
+			0,
+		);
+
+		const table = container.querySelector("table");
+		expect(table).not.toBeNull();
+		expect(table?.parentElement?.className).toContain("overflow-x-auto");
+
+		const input1 = getByLabelText("Điền đáp án câu 1") as HTMLInputElement;
+		const input2 = getByLabelText("Điền đáp án câu 2") as HTMLInputElement;
+		expect(input1.id).toBe("quiz-q-1");
+		expect(input2.id).toBe("quiz-q-2");
+		expect(input1.style.width).toBe("8ch");
+
+		fireEvent.change(input1, { target: { value: "instruments" } });
+		expect(onAnswerSpy).toHaveBeenCalledWith(0, "instruments");
+		expect(input1.value).toBe("instruments");
+		expect(input1.style.width).toBe("13ch");
+	});
+
+	it("renders option bank above inline select slots with offset markers, formatted option labels, and unified 1-based badges", () => {
+		const part: QuizPart = {
+			id: "part-matching",
+			label: "Questions 4–5",
+			qStart: 4,
+			typeId: "matching",
+			source: "group",
+			instructionHtml:
+				"<p>Choose the correct letter A–C.</p><ul><li>Museum 1: <strong>(14)</strong></li><li>Museum 2: <strong>(15)</strong></li></ul>",
+			optionBank: ["Earth science", "Astronomy science", "Decoration and art"],
+			questions: [
+				{
+					q: 3,
+					number: 4,
+					stem: "Museum 1",
+					opts: null,
+					pin: null,
+					type: "matching",
+				},
+				{
+					q: 4,
+					number: 5,
+					stem: "Museum 2",
+					opts: null,
+					pin: null,
+					type: "matching",
+				},
+			],
+		};
+
+		const onAnswer = vi.fn();
+		const {
+			container,
+			getAllByTestId,
+			getByLabelText,
+			getByTestId,
+			getByText,
+		} = render(
+			<QuizPaper
+				detail={baseDetail({
+					skill: "listening",
+					type: "matching",
+					passage: "",
+				})}
+				parts={[part]}
+				answers={{}}
+				onAnswer={onAnswer}
+				currentQuestion={null}
+			/>,
+		);
+
+		const section = container.querySelector(
+			'section[aria-label="Questions 4–5"]',
+		);
+		expect(section).not.toBeNull();
+
+		const bankHeading = getByText("Ngân hàng lựa chọn");
+		const inlineInstruction = getByTestId("quiz-inline-instruction");
+		expect(
+			Boolean(
+				bankHeading.compareDocumentPosition(inlineInstruction) &
+					Node.DOCUMENT_POSITION_FOLLOWING,
+			),
+		).toBe(true);
+
+		expect(
+			getAllByTestId("quiz-inline-badge").map((el) => el.textContent),
+		).toEqual(["4", "5"]);
+		expect(container.querySelectorAll("fieldset[data-question]")).toHaveLength(
+			0,
+		);
+
+		const select4 = getByLabelText("Chọn đáp án câu 4") as HTMLSelectElement;
+		expect(select4.id).toBe("quiz-q-4");
+		const optionLabels = Array.from(select4.options).map(
+			(opt) => opt.textContent,
+		);
+		expect(optionLabels).toEqual([
+			"— Chọn —",
+			"A — Earth science",
+			"B — Astronomy science",
+			"C — Decoration and art",
+		]);
+
+		fireEvent.change(select4, { target: { value: "C" } });
+		expect(onAnswer).toHaveBeenCalledWith(3, "C");
+	});
+
+	it("renders unbound questions as fallback QuizQuestionItem blocks on partial marker matches", () => {
+		const part: QuizPart = {
+			id: "part-partial",
+			label: "Questions 1–3",
+			qStart: 1,
+			typeId: "notes",
+			source: "group",
+			instructionHtml:
+				"<p>First blank <strong>(1)</strong> and second blank <strong>(2)</strong>.</p>",
+			questions: [
+				{
+					q: 0,
+					number: 1,
+					stem: "First ____",
+					opts: null,
+					pin: null,
+					type: "notes",
+				},
+				{
+					q: 1,
+					number: 2,
+					stem: "Second ____",
+					opts: null,
+					pin: null,
+					type: "notes",
+				},
+				{
+					q: 2,
+					number: 3,
+					stem: "Fallback third ____",
+					opts: null,
+					pin: null,
+					type: "notes",
+				},
+			],
+		};
+
+		const { container, getAllByTestId, getByLabelText } = render(
+			<QuizPaper
+				detail={baseDetail({ skill: "listening", type: "notes", passage: "" })}
+				parts={[part]}
+				answers={{}}
+				onAnswer={vi.fn()}
+				currentQuestion={null}
+			/>,
+		);
+
+		expect(getAllByTestId("quiz-inline-slot")).toHaveLength(2);
+		expect(
+			getAllByTestId("quiz-inline-badge").map((el) => el.textContent),
+		).toEqual(["1", "2"]);
+
+		const fallbackFieldsets = container.querySelectorAll(
+			"fieldset[data-question]",
+		);
+		expect(fallbackFieldsets).toHaveLength(1);
+		expect(fallbackFieldsets[0]?.getAttribute("data-question")).toBe("2");
+		expect(getByLabelText("Điền đáp án câu 3")).toBeTruthy();
+	});
+
+	it("renders review mode with disabled controls, verdicts, key hints, collapsible details, and anchor placement differences", () => {
+		const notesPart: QuizPart = {
+			id: "part-review-notes",
+			label: "Questions 1–3",
+			qStart: 1,
+			typeId: "notes",
+			source: "group",
+			instructionHtml:
+				"<p>One <strong>(1)</strong>, two <strong>(2)</strong>, three <strong>(3)</strong>.</p>",
+			questions: [
+				{
+					q: 0,
+					number: 1,
+					stem: "One ____",
+					opts: null,
+					pin: null,
+					type: "notes",
+				},
+				{
+					q: 1,
+					number: 2,
+					stem: "Two ____",
+					opts: null,
+					pin: null,
+					type: "notes",
+				},
+				{
+					q: 2,
+					number: 3,
+					stem: "Three ____",
+					opts: null,
+					pin: null,
+					type: "notes",
+				},
+			],
+		};
+		const matchingPart: QuizPart = {
+			id: "part-review-matching",
+			label: "Questions 4–5",
+			qStart: 4,
+			typeId: "matching",
+			source: "group",
+			instructionHtml:
+				"<p>Four <strong>(4)</strong>, five <strong>(5)</strong>.</p>",
+			optionBank: ["Earth science", "Astronomy science", "Decoration and art"],
+			questions: [
+				{
+					q: 3,
+					number: 4,
+					stem: "Four",
+					opts: null,
+					pin: null,
+					type: "matching",
+				},
+				{
+					q: 4,
+					number: 5,
+					stem: "Five",
+					opts: null,
+					pin: null,
+					type: "matching",
+				},
+			],
+		};
+
+		const review: Record<number, QuizReviewInfo> = {
+			0: {
+				verdict: "correct",
+				key: "brass",
+				alts: "metal",
+				answer: "brass",
+				note: "",
+				explanation: "<p>Brass instruments were played outdoors.</p>",
+			},
+			1: {
+				verdict: "wrong",
+				key: "sports",
+				alts: "",
+				answer: "music",
+				note: "",
+				explanation: "<p>People sang at sports events.</p>",
+			},
+			2: {
+				verdict: "skipped",
+				key: "offices",
+				alts: "",
+				answer: null,
+				note: "",
+				explanation: "<p>Publishers had offices on Tin Pan Alley.</p>",
+			},
+			3: {
+				verdict: "correct",
+				key: "C",
+				alts: "",
+				answer: "C",
+				note: "",
+			},
+			4: {
+				verdict: "wrong",
+				key: "A",
+				alts: "",
+				answer: "B",
+				note: "",
+			},
+		};
+
+		// Take mode anchor check: anchors live directly on <input> / <select>
+		const takeRender = render(
+			<QuizPaper
+				detail={baseDetail({ skill: "listening", type: "notes", passage: "" })}
+				parts={[notesPart, matchingPart]}
+				answers={{ 0: "brass", 3: "C" }}
+				onAnswer={vi.fn()}
+				currentQuestion={0}
+				mode="take"
+			/>,
+		);
+		expect(takeRender.container.querySelector("input#quiz-q-1")).not.toBeNull();
+		expect(
+			takeRender.container.querySelector("select#quiz-q-4"),
+		).not.toBeNull();
+		expect(
+			takeRender.container.querySelector('span[id="quiz-q-1"]'),
+		).toBeNull();
+		cleanup();
+
+		// Review mode check
+		const { container, getAllByTestId, getByLabelText } = render(
+			<QuizPaper
+				detail={baseDetail({ skill: "listening", type: "notes", passage: "" })}
+				parts={[notesPart, matchingPart]}
+				answers={{ 0: "brass", 1: "music", 3: "C", 4: "B" }}
+				onAnswer={vi.fn()}
+				currentQuestion={1}
+				mode="review"
+				review={review}
+			/>,
+		);
+
+		const input1 = getByLabelText("Điền đáp án câu 1") as HTMLInputElement;
+		const input2 = getByLabelText("Điền đáp án câu 2") as HTMLInputElement;
+		const input3 = getByLabelText("Điền đáp án câu 3") as HTMLInputElement;
+		const select4 = getByLabelText("Chọn đáp án câu 4") as HTMLSelectElement;
+		const select5 = getByLabelText("Chọn đáp án câu 5") as HTMLSelectElement;
+
+		expect(input1.disabled).toBe(true);
+		expect(input2.disabled).toBe(true);
+		expect(input3.disabled).toBe(true);
+		expect(input3.placeholder).toBe("—");
+		expect(select4.disabled).toBe(true);
+		expect(select5.disabled).toBe(true);
+
+		// Review anchors live on wrapper <span> with tabIndex=-1 (disabled inputs cannot be focused)
+		expect(input1.id).toBe("");
+		expect(select4.id).toBe("");
+		const slot = (q: number) =>
+			container.querySelector(
+				`[data-testid="quiz-inline-slot"][data-question="${q}"]`,
+			);
+		for (const q of [0, 1, 2, 3, 4]) {
+			const el = slot(q);
+			expect(el?.id).toBe(`quiz-q-${q + 1}`);
+			expect(el?.getAttribute("tabindex")).toBe("-1");
+			expect(el?.querySelector("svg")).not.toBeNull();
+		}
+
+		expect(slot(0)?.getAttribute("data-verdict")).toBe("correct");
+		expect(slot(1)?.getAttribute("data-verdict")).toBe("wrong");
+		expect(slot(2)?.getAttribute("data-verdict")).toBe("skipped");
+		expect(slot(3)?.getAttribute("data-verdict")).toBe("correct");
+		expect(slot(4)?.getAttribute("data-verdict")).toBe("wrong");
+		expect(slot(1)?.className).toContain("ring-2");
+
+		// Inline key hint renders ONLY on wrong/skipped slots
+		expect(
+			slot(0)?.querySelector('[data-testid="quiz-inline-key"]'),
+		).toBeNull();
+		expect(
+			slot(1)?.querySelector('[data-testid="quiz-inline-key"]')?.textContent,
+		).toBe("→ sports");
+		expect(
+			slot(2)?.querySelector('[data-testid="quiz-inline-key"]')?.textContent,
+		).toBe("→ offices");
+		expect(
+			slot(3)?.querySelector('[data-testid="quiz-inline-key"]'),
+		).toBeNull();
+		expect(
+			slot(4)?.querySelector('[data-testid="quiz-inline-key"]')?.textContent,
+		).toBe("→ A");
+
+		// Collapsible details block starts collapsed and includes chips, alts, and explanations
+		const detailsBlocks = getAllByTestId(
+			"quiz-inline-review-details",
+		) as HTMLDetailsElement[];
+		expect(detailsBlocks).toHaveLength(2);
+		expect(detailsBlocks[0]?.open).toBe(false);
+		expect(detailsBlocks[0]?.textContent).toContain(
+			"Đáp án & Giải thích (3 câu)",
+		);
+		expect(detailsBlocks[0]?.textContent).toContain("thay thế: metal");
+		expect(detailsBlocks[0]?.textContent).toContain("Giải thích");
+		expect(detailsBlocks[0]?.textContent).toContain(
+			"Brass instruments were played outdoors.",
+		);
+		expect(
+			Array.from(
+				detailsBlocks[0]?.querySelectorAll(
+					'[data-testid="quiz-review-chip"]',
+				) ?? [],
+			).map((el) => el.textContent),
+		).toEqual(["Đúng", "music", "Chưa trả lời"]);
+		expect(
+			detailsBlocks[0]?.querySelectorAll('[data-testid="quiz-review-item"]'),
+		).toHaveLength(3);
+	});
+
+	it("consumes single-part detail.intro markers inline without rendering a duplicate top RichTextBody", () => {
+		const part: QuizPart = {
+			id: "part-intro",
+			label: "Questions 1–2",
+			qStart: 1,
+			typeId: "notes",
+			questions: [
+				{ q: 0, number: 1, stem: "Name ____", opts: null, pin: null },
+				{ q: 1, number: 2, stem: "Destination ____", opts: null, pin: null },
+			],
+		};
+
+		const { container, getAllByTestId } = render(
+			<QuizPaper
+				detail={baseDetail({
+					skill: "listening",
+					type: "notes",
+					passage: "",
+					intro:
+						"<p>UNIQUE_INTRO_HEADING: Name <strong>(1)</strong> to <strong>(2)</strong>.</p>",
+				})}
+				parts={[part]}
+				answers={{}}
+				onAnswer={vi.fn()}
+				currentQuestion={null}
+			/>,
+		);
+
+		expect(getAllByTestId("quiz-inline-instruction")).toHaveLength(1);
+		expect(getAllByTestId("quiz-inline-slot")).toHaveLength(2);
+		expect(container.querySelectorAll("fieldset[data-question]")).toHaveLength(
+			0,
+		);
+		const introOccurrences = (
+			container.textContent?.match(/UNIQUE_INTRO_HEADING/g) ?? []
+		).length;
+		expect(introOccurrences).toBe(1);
+	});
+
+	it("excludes MCQ questions with opts and PinOverlay questions from inline slot conversion", () => {
+		const mcqPart: QuizPart = {
+			id: "part-mcq",
+			label: "Questions 1–2",
+			qStart: 1,
+			typeId: "mcq",
+			source: "group",
+			instructionHtml:
+				"<p>Answer <strong>(1)</strong> and <strong>(2)</strong>.</p>",
+			questions: [
+				{
+					q: 0,
+					number: 1,
+					stem: "Question 1",
+					opts: ["Option A", "Option B"],
+					pin: null,
+					type: "mcq",
+				},
+				{
+					q: 1,
+					number: 2,
+					stem: "Question 2",
+					opts: ["Option A", "Option B"],
+					pin: null,
+					type: "mcq",
+				},
+			],
+		};
+
+		const mcqRender = render(
+			<QuizPaper
+				detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+				parts={[mcqPart]}
+				answers={{}}
+				onAnswer={vi.fn()}
+				currentQuestion={null}
+			/>,
+		);
+		expect(
+			mcqRender.container.querySelector(
+				'[data-testid="quiz-inline-instruction"]',
+			),
+		).toBeNull();
+		expect(
+			mcqRender.container.querySelectorAll("fieldset[data-question]"),
+		).toHaveLength(2);
+		cleanup();
+
+		const pinPart: QuizPart = {
+			id: "part-pin",
+			label: "Questions 1–2",
+			qStart: 1,
+			typeId: "map",
+			source: "group",
+			instructionHtml:
+				"<p>Label <strong>(1)</strong> and <strong>(2)</strong> on the map.</p>",
+			questions: [
+				{
+					q: 0,
+					number: 1,
+					stem: "Entrance",
+					opts: null,
+					pin: { x: 25, y: 30 },
+					type: "map",
+				},
+				{
+					q: 1,
+					number: 2,
+					stem: "Exit",
+					opts: null,
+					pin: { x: 75, y: 60 },
+					type: "map",
+				},
+			],
+		};
+
+		const pinRender = render(
+			<QuizPaper
+				detail={baseDetail({
+					skill: "listening",
+					type: "map",
+					passage: "",
+					imageUrl: "https://example.com/map.png",
+				})}
+				parts={[pinPart]}
+				answers={{}}
+				onAnswer={vi.fn()}
+				currentQuestion={null}
+			/>,
+		);
+		expect(
+			pinRender.container.querySelector(
+				'[data-testid="quiz-inline-instruction"]',
+			),
+		).toBeNull();
+		expect(
+			pinRender.container.querySelectorAll("fieldset[data-question]"),
+		).toHaveLength(2);
+	});
+
+	it("sanitizes malicious HTML payloads in instructionHtml while keeping inline slots interactive", () => {
+		const part: QuizPart = {
+			id: "part-xss",
+			label: "Questions 1–2",
+			qStart: 1,
+			typeId: "notes",
+			source: "group",
+			instructionHtml:
+				'<script>window.__xss=1</script><img src="x" onerror="window.__xss=2" /><p>Safe <a href="javascript:alert(1)">bad-link</a> <a href="https://example.com/help">help</a> <strong>(1)</strong> and <strong>(2)</strong>.</p>',
+			questions: [
+				{
+					q: 0,
+					number: 1,
+					stem: "One ____",
+					opts: null,
+					pin: null,
+					type: "notes",
+				},
+				{
+					q: 1,
+					number: 2,
+					stem: "Two ____",
+					opts: null,
+					pin: null,
+					type: "notes",
+				},
+			],
+		};
+
+		const { container, getAllByTestId, getByText } = render(
+			<QuizPaper
+				detail={baseDetail({ skill: "listening", type: "notes", passage: "" })}
+				parts={[part]}
+				answers={{}}
+				onAnswer={vi.fn()}
+				currentQuestion={null}
+			/>,
+		);
+
+		expect(getAllByTestId("quiz-inline-slot")).toHaveLength(2);
+		expect(container.querySelector("script")).toBeNull();
+		expect(container.querySelector("img")).toBeNull();
+		expect(container.innerHTML).not.toContain("onerror");
+		expect(container.innerHTML).not.toContain("javascript:");
+
+		const badLink = getByText("bad-link");
+		expect(badLink.tagName).toBe("SPAN");
+
+		const goodLink = getByText("help") as HTMLAnchorElement;
+		expect(goodLink.tagName).toBe("A");
+		expect(goodLink.getAttribute("href")).toBe("https://example.com/help");
+		expect(goodLink.getAttribute("target")).toBe("_blank");
+		expect(goodLink.getAttribute("rel")).toBe("noopener noreferrer");
+	});
+
+	it("excludes tfng, ynng, and optionless mcq from inline binding even when detail.optionBank is present", () => {
+		for (const excludedType of ["tfng", "ynng", "mcq"] as const) {
+			const part: QuizPart = {
+				id: `part-${excludedType}`,
+				label: "Questions 1–2",
+				qStart: 1,
+				typeId: excludedType,
+				source: "group",
+				instructionHtml:
+					"<p>Check statements <strong>(1)</strong> and <strong>(2)</strong>.</p>",
+				questions: [
+					{
+						q: 0,
+						number: 1,
+						stem: "First standalone statement",
+						opts: null,
+						pin: null,
+						type: excludedType,
+					},
+					{
+						q: 1,
+						number: 2,
+						stem: "Second standalone statement",
+						opts: null,
+						pin: null,
+						type: excludedType,
+					},
+				],
+			};
+
+			const { container } = render(
+				<QuizPaper
+					detail={baseDetail({
+						skill: "reading",
+						type: "headings",
+						optionBank: ["Heading One", "Heading Two", "Heading Three"],
+					})}
+					parts={[part]}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+				/>,
+			);
+
+			expect(
+				container.querySelector('[data-testid="quiz-inline-instruction"]'),
+			).toBeNull();
+			expect(
+				container.querySelectorAll("fieldset[data-question]"),
+			).toHaveLength(2);
+			expect(container.textContent).toContain("First standalone statement");
+			expect(container.textContent).not.toContain("TRUE — Heading One");
+			expect(container.textContent).not.toContain("YES — Heading One");
+			cleanup();
+		}
+	});
+
+	it("preserves stale submitted select values in review, formats skipped selects, caps input width, and resets inherited typography", () => {
+		const notesPart: QuizPart = {
+			id: "part-long",
+			label: "Questions 1–2",
+			qStart: 1,
+			typeId: "notes",
+			source: "group",
+			instructionHtml:
+				"<p><strong><strong>(1)</strong> centre</strong> and <em><strong>(2)</strong></em></p>",
+			questions: [
+				{
+					q: 0,
+					number: 1,
+					stem: "Q1 ____",
+					opts: null,
+					pin: null,
+					type: "notes",
+				},
+				{
+					q: 1,
+					number: 2,
+					stem: "Q2 ____",
+					opts: null,
+					pin: null,
+					type: "notes",
+				},
+			],
+		};
+		const matchingPart: QuizPart = {
+			id: "part-stale-bank",
+			label: "Questions 3–4",
+			qStart: 3,
+			typeId: "matching",
+			source: "group",
+			instructionHtml:
+				"<ul><li>Museum 1: <strong>(3)</strong></li><li>Museum 2: <strong>(4)</strong></li></ul>",
+			optionBank: ["Earth science", "Astronomy science", "Decoration and art"],
+			questions: [
+				{
+					q: 2,
+					number: 3,
+					stem: "M1",
+					opts: null,
+					pin: null,
+					type: "matching",
+				},
+				{
+					q: 3,
+					number: 4,
+					stem: "M2",
+					opts: null,
+					pin: null,
+					type: "matching",
+				},
+			],
+		};
+
+		const longAnswer = "a".repeat(120);
+		const { container, getByLabelText } = render(
+			<QuizPaper
+				detail={baseDetail({ skill: "listening", type: "notes", passage: "" })}
+				parts={[notesPart, matchingPart]}
+				answers={{ 0: longAnswer, 2: "F", 3: "" }}
+				onAnswer={vi.fn()}
+				currentQuestion={null}
+				mode="review"
+				review={{
+					0: {
+						verdict: "wrong",
+						key: "city",
+						alts: "",
+						answer: longAnswer,
+						note: "",
+					},
+					1: {
+						verdict: "skipped",
+						key: "hall",
+						alts: "",
+						answer: null,
+						note: "",
+					},
+					2: { verdict: "wrong", key: "C", alts: "", answer: "F", note: "" },
+					3: { verdict: "skipped", key: "A", alts: "", answer: null, note: "" },
+				}}
+			/>,
+		);
+
+		const input1 = getByLabelText("Điền đáp án câu 1") as HTMLInputElement;
+		expect(input1.style.width).toBe("36ch");
+
+		const slot0 = container.querySelector(
+			'[data-testid="quiz-inline-slot"][data-question="0"]',
+		);
+		expect(slot0?.className).toContain("font-normal");
+		expect(slot0?.className).toContain("not-italic");
+		expect(slot0?.className).toContain("no-underline");
+
+		// Stale submitted value "F" outside shortened A-C optionBank remains visible in <select>.
+		const select3 = getByLabelText("Chọn đáp án câu 3") as HTMLSelectElement;
+		expect(select3.className).toContain("select-chevron");
+		expect(select3.value).toBe("F");
+		expect(Array.from(select3.options).some((opt) => opt.value === "F")).toBe(
+			true,
+		);
+
+		// Skipped <select> shows "—" instead of "— Chọn —".
+		const select4 = getByLabelText("Chọn đáp án câu 4") as HTMLSelectElement;
+		expect(select4.options[0]?.textContent).toBe("—");
+	});
+});

@@ -1,0 +1,202 @@
+{
+	"id": "59ba9c7f-29cb-477d-8905-d143461ca78b",
+	"url": "https://stepielts.com/student/listening/59ba9c7f-29cb-477d-8905-d143461ca78b?mode=practice",
+	"title": "Nursing Program Discussion",
+	"source": "Actual Test",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/f6468687-5bb8-4f4a-ae47-35a345daf5f1.mp3",
+	"transcript": "Speaker 1: Lecturer: Helen and Paul, congratulations to you both for doing so well the past semester. You two have exhibited an impeccable performance during your first year in the nursing programme. I'd like to get some feedback from the two of you to better improve the programme and to provide guidance for our prospective students. I'd like to start with you, Helen. So, first of all, which aspect of the programme impressed you?\nSpeaker 2: Helen: Well, to be honest, when I enrolled in the course, I was expecting a group of classmates my age. But when I stepped into the classroom for the first time, I was surprised by the diversity. Most were in their 20s, but there were also people in their 30s or even 40s. As it turns out, the intergenerational communication has sparked intense debate and new thinking, and I think that's something special about the programme that I appreciate very much.\nSpeaker 1: Lecturer: What about you, Paul? What do you think of the programme?\nSpeaker 3: Paul: For me, the group project we carried out last semester is another key feature of the programme. The whole class was divided into eight different groups, working on eight prospective cases. Team-building sessions were conducted in a collaborative way most of the time. Comprised of five members, our group studied acute pancreatitis. During the process, we broke the task into different parts and assigned them to each member. We were then able to tackle the complex problem by pooling our knowledge and skills. More importantly, stronger links were established between the group members. Because of the project, we've all become good friends.\nSpeaker 1: Lecturer: That's true. According to graduates, group projects prepare them for the work world in which teamwork and collaboration are increasingly the norm. So tell me Paul, what else do you like about the programme?\nSpeaker 3: Paul: I want to be a registered nurse working in a public hospital after graduation. So the internship provided is a valuable opportunity for clinical practice in a supportive learning atmosphere. However, I was amazed by the amount of written assignments since I thought the course should have focused more on practice-oriented learning.\nSpeaker 2: Helen: Well, I have to disagree with you, Paul. The essays demonstrate your understanding of the course. For me, writing essays is a process that involves critical thinking, which challenges me to develop my points more thoroughly. I thus manage to gain a diversity of perspectives.\nSpeaker 1: Lecturer: The programme is designed to deliver basic and advanced theoretical knowledge of core concepts, including healthcare system concepts, together with practicum or clinical practice experience to bridge classroom content to the practice setting. So I'm afraid written work is unavoidable. Also this year we've added a module of law. How do you feel about that?\nSpeaker 2: Helen: At first we felt that learning law was kind of redundant and too time-consuming. After a few sessions we realised that it is necessary when dealing with future medical disputes.\nSpeaker 1: Lecturer: Do you have any suggestions for prospective students?\nSpeaker 3: Paul: What bothers me most is handing in essays on time. I almost missed the deadline once because there were three essays due within the same week. So rationalizing your time is critical.\nSpeaker 2: Helen: Well, that's true. The lectures deliver so much useful information. I have poor memory, so I kept making notes and revisiting them on a regular basis. To my surprise, at the end of the semester I had learned the key concepts by heart.\nSpeaker 1: Lecturer: How was the research? I heard that it was quite challenging. How did you manage to overcome the difficulties?\nSpeaker 3: Paul: That's true. The majority of us had no clue how to carry out the research at first. Fortunately, when I was digging up reference materials at the library, I sought help from the librarian. She taught me about finding the appropriate resources and choosing the proper research methods.\nSpeaker 1: Lecturer: Have you checked out the online forum?\nSpeaker 2: Helen: Yes, it has become a habit for me to visit the forum regularly. In a sense, it extends classroom learning. It is where students post academic problems that they come across and get support from the faculty members.\nSpeaker 3: Paul: Some of my classmates didn't do so well during the placement tests. I feel that background reading is necessary.\nSpeaker 1: Lecturer: Lastly, do you have anything to say to the freshmen?\nSpeaker 2: Helen: I was really ambitious at first, trying to get straight As on my transcript. I made tons of notes and worked hard even on the optional assignments to get extra credit. I stressed myself out before having an emotional breakdown. After consulting my adviser, I found it important to set realistic goals. Don't push yourself too hard. It is wise to sort out your priorities.\nSpeaker 1: Lecturer: Thank you for coming here today and providing valuable feedback on the programme. Have a great summer break.",
+	"body": {
+		"text": "Essays [25]\nLectures [26]\nResearch [27]\nOnline forum [28]\nPlacement tests [29]\nFreshmen [30]",
+		"html": "<ul><li>Essays [25]</li><li>Lectures [26]</li><li>Research [27]</li><li>Online forum [28]</li><li>Placement tests [29]</li><li>Freshmen [30]</li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "21-24",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter A, B or C",
+			"questions": [
+				{
+					"number": 21,
+					"text": "How old are the students of the nursing program?",
+					"options": [
+						{
+							"label": "A",
+							"text": "they are teenagers"
+						},
+						{
+							"label": "B",
+							"text": "they are in their twenties"
+						},
+						{
+							"label": "C",
+							"text": "they belong to different age group"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But when I stepped into the classroom for the first time, I was surprised by the diversity. Most were in their 20s, but there were also people in their 30s or even 40s."
+					]
+				},
+				{
+					"number": 22,
+					"text": "What do the speakers say about the group project?",
+					"options": [
+						{
+							"label": "A",
+							"text": "it helps to improve relationship among different classmates"
+						},
+						{
+							"label": "B",
+							"text": "it helps to develop problem solving skills"
+						},
+						{
+							"label": "C",
+							"text": "it provides supportive learning environment"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"More importantly, stronger links were established between the group members.",
+						"Because of the project, we've all become good friends."
+					]
+				},
+				{
+					"number": 23,
+					"text": "Which part of the program surprised Paul?",
+					"options": [
+						{
+							"label": "A",
+							"text": "There's a number of essays to write"
+						},
+						{
+							"label": "B",
+							"text": "there's a lot of practical work"
+						},
+						{
+							"label": "C",
+							"text": "there's internship provided"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"However, I was amazed by the amount of written assignments since I thought the course should have focused more on practice-oriented learning."
+					]
+				},
+				{
+					"number": 24,
+					"text": "What do they feel about learning law?",
+					"options": [
+						{
+							"label": "A",
+							"text": "it is essential training"
+						},
+						{
+							"label": "B",
+							"text": "it is too theoretical"
+						},
+						{
+							"label": "C",
+							"text": "it takes up too much time"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"After a few sessions we realised that it is necessary when dealing with future medical disputes."
+					]
+				}
+			]
+		},
+		{
+			"range": "25-30",
+			"type": "MATCHING",
+			"instructions": "What are the suggestions offered by the speaker? Choose SIX answers from the box and write the correct letter, A-H next to Questions 25-30.",
+			"options": [
+				{
+					"label": "A",
+					"text": "get feedback from teaching staff"
+				},
+				{
+					"label": "B",
+					"text": "do more reading"
+				},
+				{
+					"label": "C",
+					"text": "get help from school supporting staff"
+				},
+				{
+					"label": "D",
+					"text": "get help for nursing problem"
+				},
+				{
+					"label": "E",
+					"text": "manage time properly"
+				},
+				{
+					"label": "F",
+					"text": "be well prepared"
+				},
+				{
+					"label": "G",
+					"text": "review the notes regularly"
+				},
+				{
+					"label": "H",
+					"text": "don't set unrealistic goals"
+				}
+			],
+			"body": "Essays [25]\nLectures [26]\nResearch [27]\nOnline forum [28]\nPlacement tests [29]\nFreshmen [30]",
+			"body_html": "<ul><li>Essays [25]</li><li>Lectures [26]</li><li>Research [27]</li><li>Online forum [28]</li><li>Placement tests [29]</li><li>Freshmen [30]</li></ul>",
+			"questions": [
+				{
+					"number": 25,
+					"text": "Essays",
+					"answer": "E",
+					"quotes": ["So rationalizing your time is critical."]
+				},
+				{
+					"number": 26,
+					"text": "Lectures",
+					"answer": "G",
+					"quotes": [
+						"I have poor memory, so I kept making notes and revisiting them on a regular basis.",
+						"To my surprise, at the end of the semester I had learned the key concepts by heart."
+					]
+				},
+				{
+					"number": 27,
+					"text": "Research",
+					"answer": "C",
+					"quotes": [
+						"Fortunately, when I was digging up reference materials at the library, I sought help from the librarian. She taught me about finding the appropriate resources and choosing the proper research methods."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Online forum",
+					"answer": "A",
+					"quotes": [
+						"It is where students post academic problems that they come across and get support from the faculty members."
+					]
+				},
+				{
+					"number": 29,
+					"text": "placement tests",
+					"answer": "B",
+					"quotes": ["I feel that background reading is necessary."]
+				},
+				{
+					"number": 30,
+					"text": "freshmen",
+					"answer": "H",
+					"quotes": [
+						"After consulting my adviser, I found it important to set realistic goals."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

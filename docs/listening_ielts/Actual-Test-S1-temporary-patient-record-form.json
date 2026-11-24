@@ -1,0 +1,119 @@
+{
+	"id": "c1a0877d-96ac-4f69-8e0f-7b3071497046",
+	"url": "https://stepielts.com/student/listening/c1a0877d-96ac-4f69-8e0f-7b3071497046?mode=practice",
+	"title": "Temporary Patient Record Form",
+	"source": "Actual Test",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/bcd68480-b796-4015-9f98-671d1a5a9807.mp3",
+	"transcript": "Speaker 1: Good morning. How can I help you?\nSpeaker 2: Yes. I'm a visitor to this area. I had a sporting accident a little while ago, and I'm still in some pain. And I wondered if I could see a doctor here.\nSpeaker 1: Certainly, sir. We can take you on as a temporary patient. I'll just take down some personal details. Can I start with your name?\nSpeaker 2: Yes. It's Peter. Peter Smith.\nSpeaker 1: Right, Peter. And where are you staying here?\nSpeaker 2: At 95 Cross Street.\nSpeaker 1: And the suburb?\nSpeaker 2: Walkley. That's W A L K L E Y. Mhmm.\nSpeaker 1: And can I have a contact phone number?\nSpeaker 2: It's 46895324.\nSpeaker 1: Thanks. Okay. If you just wait down there, the doctor will see you in a minute.\nSpeaker 3: Now what can I do for you? It's Peter Smith, isn't it?\nSpeaker 2: Yes. I had a sporting accident and was treated by a doctor at home, but I'm still in pain.\nSpeaker 3: Right. I just need to ask you a few questions, first of all. Fine. Now what sport were you doing?\nSpeaker 2: I was playing tennis.\nSpeaker 3: Mhmm. I see. And what was the nature of your injury? Did you hurt your elbow or wrist?\nSpeaker 2: No. I had a sprained knee. That was the original problem.\nSpeaker 3: Right. And when did this happen?\nSpeaker 2: It was three weeks ago now. So that was June 18.\nSpeaker 3: Mhmm. Fine. And you say you had medical treatment?\nSpeaker 2: Yes. The doctor said I didn't need an X-ray or anything, and he just told me to use an ice pack.\nSpeaker 3: An ice pack.\nSpeaker 2: Fine. Yes. And I've been using a walking stick to help me get around.\nSpeaker 3: Right. Now what problems are you experiencing at the moment? Are you having any problems walking?\nSpeaker 2: Well, I can walk okay, but I still can't go upstairs, so I've been sleeping downstairs.\nSpeaker 3: Now you say your knee still hurts?\nSpeaker 2: Well, no. Actually, it's recovering nicely. It's my back that's hurting me now. It really aches at night and I can hardly sleep.\nSpeaker 3: Well, there's a few different things I can suggest for that. Great. First, you should put your stick away as that's probably the source of the problem. It'll be making you unbalanced.\nSpeaker 2: Oh, really? I wish I'd known.\nSpeaker 3: After that, I can prescribe you something to relax the muscles in your back.\nSpeaker 2: Oh, sorry to be difficult, but I've had something like that in the past and there were lots of side effects and I had to stop taking it. Can you recommend anything else?\nSpeaker 3: Well, yes. We do have a leaflet showing some exercises you can do to help yourself at home. If you do them every day, they'll soon be effective. Great. I'll do that.",
+	"body": {
+		"text": "Temporary Patient Record Form\nName: Example Peter Smith\nStreet address:\nSuburb:\nPhone number: [1]\n[2]\n[3]\nDetails of injury\nSport:\nType of injury:\nDate of injury: Tennis\nSprained [4]\n[5]\nPrevious treatment and current problems\nThe patient's own doctor advised treatment\nwith [6]. The patient is unable\nto [7] and he is experiencing pain\nin his [8] at night, which is affecting his sleep.\nAdvice given\nStop using the [9]\nDo regular [10] at home",
+		"html": "<table><tbody><tr><td colspan=\"2\"><p><strong>Temporary Patient Record Form</strong></p></td></tr><tr><td>Name:</td><td>Example <strong>Peter Smith</strong></td></tr><tr><td>Street address:<br>Suburb:<br>Phone number:</td><td>[1]<br>[2]<br>[3]</td></tr><tr><td colspan=\"2\"><strong>Details of injury</strong></td></tr><tr><td>Sport:<br>Type of injury:<br>Date of injury:</td><td>Tennis<br>Sprained [4]<br>[5]</td></tr><tr><td colspan=\"2\"><strong>Previous treatment and current problems</strong></td></tr><tr><td></td><td>The patient's own doctor advised treatment<br>with [6]. The patient is unable<br>to [7] and he is experiencing pain<br>in his [8] at night, which is affecting his sleep.</td></tr><tr><td colspan=\"2\"><strong>Advice given</strong></td></tr><tr><td></td><td>Stop using the [9]<br>Do regular [10] at home</td></tr></tbody></table><p></p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "FORM_COMPLETION",
+			"instructions": "Complete the form below.\nWrite NO MORE THAN THREE WORDS AND/OR A NUMBER for each answer.",
+			"body": "Temporary Patient Record Form\nName: Example Peter Smith\nStreet address:\nSuburb:\nPhone number: [1]\n[2]\n[3]\nDetails of injury\nSport:\nType of injury:\nDate of injury: Tennis\nSprained [4]\n[5]\nPrevious treatment and current problems\nThe patient's own doctor advised treatment\nwith [6]. The patient is unable\nto [7] and he is experiencing pain\nin his [8] at night, which is affecting his sleep.\nAdvice given\nStop using the [9]\nDo regular [10] at home",
+			"body_table": [
+				["Temporary Patient Record Form"],
+				["Name:", "Example Peter Smith"],
+				["Street address:\nSuburb:\nPhone number:", "[1]\n[2]\n[3]"],
+				["Details of injury"],
+				[
+					"Sport:\nType of injury:\nDate of injury:",
+					"Tennis\nSprained [4]\n[5]"
+				],
+				["Previous treatment and current problems"],
+				[
+					"",
+					"The patient's own doctor advised treatment\nwith [6]. The patient is unable\nto [7] and he is experiencing pain\nin his [8] at night, which is affecting his sleep."
+				],
+				["Advice given"],
+				["", "Stop using the [9]\nDo regular [10] at home"]
+			],
+			"body_html": "<table><tbody><tr><td colspan=\"2\"><p><strong>Temporary Patient Record Form</strong></p></td></tr><tr><td>Name:</td><td>Example <strong>Peter Smith</strong></td></tr><tr><td>Street address:<br>Suburb:<br>Phone number:</td><td>[1]<br>[2]<br>[3]</td></tr><tr><td colspan=\"2\"><strong>Details of injury</strong></td></tr><tr><td>Sport:<br>Type of injury:<br>Date of injury:</td><td>Tennis<br>Sprained [4]<br>[5]</td></tr><tr><td colspan=\"2\"><strong>Previous treatment and current problems</strong></td></tr><tr><td></td><td>The patient's own doctor advised treatment<br>with [6]. The patient is unable<br>to [7] and he is experiencing pain<br>in his [8] at night, which is affecting his sleep.</td></tr><tr><td colspan=\"2\"><strong>Advice given</strong></td></tr><tr><td></td><td>Stop using the [9]<br>Do regular [10] at home</td></tr></tbody></table><p></p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Phone number: [1]",
+					"answer": "95 Cross Street",
+					"quotes": ["At 95 Cross Street.", "And where are you staying here?"]
+				},
+				{
+					"number": 2,
+					"text": "",
+					"answer": "Walkley",
+					"quotes": ["Walkley.", "And the suburb?"]
+				},
+				{
+					"number": 3,
+					"text": "",
+					"answer": "46895324",
+					"quotes": ["It's 46895324.", "And can I have a contact phone number?"]
+				},
+				{
+					"number": 4,
+					"text": "Sprained [4]",
+					"answer": "knee",
+					"quotes": [
+						"I had a sprained knee.",
+						"And what was the nature of your injury?"
+					]
+				},
+				{
+					"number": 5,
+					"text": "",
+					"answer": "June 18 / 18 June / June 18th / 18th June",
+					"quotes": ["So that was June 18.", "And when did this happen?"]
+				},
+				{
+					"number": 6,
+					"text": "with [6]. The patient is unable",
+					"answer": "ice pack",
+					"quotes": [
+						"The doctor said I didn't need an X-ray or anything, and he just told me to use an ice pack.",
+						"And you say you had medical treatment?"
+					]
+				},
+				{
+					"number": 7,
+					"text": "to [7] and he is experiencing pain",
+					"answer": "go upstairs",
+					"quotes": [
+						"Well, I can walk okay, but I still can't go upstairs, so I've been sleeping downstairs."
+					]
+				},
+				{
+					"number": 8,
+					"text": "in his [8] at night, which is affecting his sleep.",
+					"answer": "back",
+					"quotes": [
+						"It's my back that's hurting me now.",
+						"Now you say your knee still hurts?"
+					]
+				},
+				{
+					"number": 9,
+					"text": "Stop using the [9]",
+					"answer": "walking stick / stick",
+					"quotes": [
+						"And I've been using a walking stick to help me get around."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Do regular [10] at home",
+					"answer": "exercises",
+					"quotes": [
+						"We do have a leaflet showing some exercises you can do to help yourself at home."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

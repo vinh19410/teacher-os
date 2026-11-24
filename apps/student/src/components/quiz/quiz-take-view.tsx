@@ -6,7 +6,7 @@ import {
 	WRITING_MIN_WORDS,
 } from "@teacher-os/api/contracts";
 import {
-	buildQuizParts,
+	buildQuizPartsFromGroups,
 	isAnsweredValue,
 } from "@teacher-os/api/lib/quiz-parts";
 import { countWords } from "@teacher-os/api/lib/word-count";
@@ -67,7 +67,7 @@ class QuizSubmitSkippedError extends Error {
 
 /** URL summary của attempt (route Phase 4) — redirect cứng full-document. */
 export const attemptSummaryHref = (attemptId: string): string =>
-	`/learn/quizzes/attempt/${attemptId}`;
+	`/student/learn/quizzes/attempt/${encodeURIComponent(attemptId)}`;
 
 export function QuizTakeError({ error }: { error: unknown }) {
 	if (isTeacherOnStudentPortalError(error)) {
@@ -92,7 +92,7 @@ export function QuizTakeError({ error }: { error: unknown }) {
 				<p className="font-mono text-muted-foreground text-xs">{code}</p>
 			)}
 			<a
-				href="/"
+				href="/student"
 				className="text-primary text-sm underline-offset-4 hover:underline"
 			>
 				Về trang chủ
@@ -230,12 +230,13 @@ export function QuizTakeView({
 	essayStoreRef.current = essayStore;
 	const parts = useMemo(
 		() =>
-			buildQuizParts(
+			buildQuizPartsFromGroups(
 				detail?.questions ?? [],
+				detail?.groups,
 				detail?.type ?? "",
 				detail?.intro ?? "",
 			),
-		[detail?.questions, detail?.type, detail?.intro],
+		[detail?.questions, detail?.groups, detail?.type, detail?.intro],
 	);
 	const allQuestions = useMemo(
 		() => parts.flatMap((part) => part.questions),
@@ -443,18 +444,17 @@ export function QuizTakeView({
 								<>
 									Bài nói
 									{speakingPartLabel && ` · ${speakingPartLabel}`} · nộp 1 file
-									audio/video (tối đa 50 MB) · Band {detail.band}
+									audio/video (tối đa 50 MB)
 								</>
 							) : isWriting ? (
 								<>
 									Bài viết
-									{minWords !== null && ` · tối thiểu ${minWords} từ`} · Band{" "}
-									{detail.band}
+									{minWords !== null && ` · tối thiểu ${minWords} từ`}
 								</>
 							) : (
 								<>
 									{allQuestions.length} câu hỏi
-									{hasHybridWriting ? " + Bài viết" : ""} · Band {detail.band}
+									{hasHybridWriting ? " + Bài viết" : ""}
 								</>
 							)}
 						</p>

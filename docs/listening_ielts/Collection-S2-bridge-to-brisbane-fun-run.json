@@ -1,0 +1,174 @@
+{
+	"id": "332be3c6-df1d-4e2e-bcfa-425170119cb0",
+	"url": "https://stepielts.com/student/listening/332be3c6-df1d-4e2e-bcfa-425170119cb0?mode=practice",
+	"title": "Bridge to Brisbane Fun Run",
+	"source": "Collection",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/3bcdebc5-6dc2-4532-b215-b38ae90cd0f5.mp3",
+	"transcript": "Speaker 0: Section two. You will hear a coordinator talking to volunteer helpers before a race involving a large number of people. First, you have some time to look at questions 11 to 14 on page three. Now listen carefully and answer questions 11 to 14.\nSpeaker 1: Thank you for all volunteering to help us with the Bridge to Brisbane Fun Run. The purpose of this meeting is to give you some information about your duties on race day. Some of you are asking about where you can park on the day. Unfortunately, some of the usual places, down by the river, for example, will be out of bounds because we'll need extra space for emergency vehicles. Probably the best option is the Jack Gray Sports Field in Barker Street. Although the closest parking lot is the Metro Shopping Complex, I would advise you not to park there as they tend to tow away people who aren't customers. At the start line, most of you will be checking that runners have the necessary gear, especially their electronic timing chip, the race number, and the identity wristband. Make sure that the number is attached to the front of the running shirt or singlet, not the back. The timing chip, which records the runner's time, needs to be clipped onto one of their shoes, and check that they are wearing their wristband. Some of you will be responsible for organising the starting groups. It's very important that runners start in a particular order. There is a system of colour codes. The red group are walkers and people with baby strollers. The purple group are runners that expect to finish in at less than one hour, and the yellow group are our elite athletes. We'd like them to start the race, and we'd like the other groups to follow after that, with the red group and the strollers at the very back. This is for their own safety. Now we are still short on volunteers for the race day, so if you have any friends or family members who might be interested, please let us know. We're probably okay for people to help with the start, but we'll still desperately need volunteers along the race course to distribute water bottles to the runners. A few of you have offered to help with first aid, but the good people of St John's Ambulance have donated their services, so that won't be necessary.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 15 to 20 on page four. Now listen and answer questions 15 to 20.\nSpeaker 1: Now I'll show you the layout of the race village, which is where the race ends. Can you all see the map? If you look at the bottom right hand side, you'll see where the runners enter the village next to the corporate catering section. As you continue along the course, you'll see the stage on your right. That's where the winners will receive their medals. Now can you all see the finish line near the centre? After they finish the race, the runners can take one of two paths, it doesn't matter which one, to get their Finishers' T shirts from the T shirt stand at the end of those paths. Many of you will be stationed there at the end of the race. After they finish, the runners will also want their belongings, and all bags are kept in the building on Bowen Road. It's quite close to the exit, in the top left hand corner of your map. Now some of you will have an important role working in the information center. That's the building in the center of the map, not far from the finish line. It's just below it on your map. And one other thing, can you all please remind the runners to enter in the prize draw for the new car? The entry box is between the shade tents and the corporate catering buildings. Okay. Let's see now. What else do I need to point out? Ah, yes. The runners are always thirsty, and the main water station in the village is just beside the third exit through to Gregory Terrace. Can you see it there to the left of the corporate catering area? So everyone please direct the race finishes there to get their free bottled water.\nSpeaker 0: That is the end of Section 2. You now have half a minute to check your answers.",
+	"question_groups": [
+		{
+			"range": "11-14",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "On the day of the race the speaker recommends parking",
+					"options": [
+						{
+							"label": "A",
+							"text": "in the sports ground."
+						},
+						{
+							"label": "B",
+							"text": "by the river."
+						},
+						{
+							"label": "C",
+							"text": "in the shopping centre."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Probably the best option is the Jack Gray Sports Field in Barker Street."
+					]
+				},
+				{
+					"number": 12,
+					"text": "The timing Chip should be attached to",
+					"options": [
+						{
+							"label": "A",
+							"text": "the shirt or singlet."
+						},
+						{
+							"label": "B",
+							"text": "a shoe."
+						},
+						{
+							"label": "C",
+							"text": "the wristband"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"The timing chip, which records the runner's time, needs to be clipped onto one of their shoes, and check that they are wearing their wristband."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Which group will run first?",
+					"options": [
+						{
+							"label": "A",
+							"text": "yellow"
+						},
+						{
+							"label": "B",
+							"text": "red"
+						},
+						{
+							"label": "C",
+							"text": "purple"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"The purple group are runners that expect to finish in at less than one hour, and the yellow group are our elite athletes.",
+						"We'd like them to start the race, and we'd like the other groups to follow after that, with the red group and the strollers at the very back."
+					]
+				},
+				{
+					"number": 14,
+					"text": "The race organisers still need to find volunteers to help with.",
+					"options": [
+						{
+							"label": "A",
+							"text": "giving first aid."
+						},
+						{
+							"label": "B",
+							"text": "handing out water."
+						},
+						{
+							"label": "C",
+							"text": "starting the race."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"We're probably okay for people to help with the start, but we'll still desperately need volunteers along the race course to distribute water bottles to the runners."
+					]
+				}
+			]
+		},
+		{
+			"range": "15-20",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below.\nWrite the correct letter, A-I, next to questions 15-20.",
+			"instructions_html": "<p>Label the map below. <br>Write the correct letter, <strong>A-I</strong>, next to questions <strong>15-20</strong>.</p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/f06c2c4c-4fd8-44eb-968f-e8908e4872ee.png\">",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
+			"questions": [
+				{
+					"number": 15,
+					"text": "Stage",
+					"answer": "F",
+					"quotes": [
+						"As you continue along the course, you'll see the stage on your right.",
+						"If you look at the bottom right hand side, you'll see where the runners enter the village next to the corporate catering section."
+					]
+				},
+				{
+					"number": 16,
+					"text": "T-shirt Stand",
+					"answer": "A",
+					"quotes": [
+						"After they finish the race, the runners can take one of two paths, it doesn't matter which one, to get their Finishers' T shirts from the T shirt stand at the end of those paths."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Bag Collection Area",
+					"answer": "B",
+					"quotes": [
+						"After they finish, the runners will also want their belongings, and all bags are kept in the building on Bowen Road.",
+						"It's quite close to the exit, in the top left hand corner of your map."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Information Centre",
+					"answer": "H",
+					"quotes": [
+						"That's the building in the center of the map, not far from the finish line.",
+						"It's just below it on your map."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Prize Draw Box",
+					"answer": "G",
+					"quotes": [
+						"The entry box is between the shade tents and the corporate catering buildings."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Water Station",
+					"answer": "I",
+					"quotes": [
+						"The runners are always thirsty, and the main water station in the village is just beside the third exit through to Gregory Terrace.",
+						"Can you see it there to the left of the corporate catering area?",
+						"So everyone please direct the race finishes there to get their free bottled water."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/f06c2c4c-4fd8-44eb-968f-e8908e4872ee.png"
+	]
+}

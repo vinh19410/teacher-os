@@ -16,7 +16,7 @@ import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
 /** Tạo liên kết trong ngân hàng (thư mục gốc) và trả lại tiêu đề. */
 async function seedBankLink(page: Page, title: string) {
-	await page.goto("/materials");
+	await page.goto("/teacher/materials");
 	await page.getByRole("button", { name: "Thêm liên kết" }).first().click();
 	const dialog = page.getByRole("dialog", { name: "Thêm liên kết" });
 	await dialog.getByLabel("Tiêu đề").fill(title);
@@ -54,7 +54,7 @@ test("lớp manual: tạo buổi học kèm tài liệu từ ngân hàng", async
 		students: { teacherEmail, names: ["Học viên Buổi Mới"] },
 	});
 
-	await page.goto(`/classes/${classId}`);
+	await page.goto(`/teacher/classes/${classId}`);
 	// Trang manual có 2 nút cùng tên (PageHead + CTA empty state) — cả hai
 	// mở cùng modal, chọn nút đầu (PageHead).
 	await page.getByRole("button", { name: "+ Thêm buổi học" }).first().click();
@@ -111,7 +111,7 @@ test("syllabus: thêm buổi học trong template có tài liệu, lớp tạo t
 	const { id: templateId } = (await tplRes.json()) as { id: string };
 
 	// Thêm buổi học trong template, pick tài liệu ngay tại form.
-	await page.goto("/syllabus");
+	await page.goto("/teacher/syllabus");
 	await page.getByText(TEMPLATE).first().click();
 	await page.getByRole("button", { name: "+ Thêm buổi học" }).click();
 	const dialog = page.getByRole("dialog", { name: "Thêm buổi học" });
@@ -135,7 +135,7 @@ test("syllabus: thêm buổi học trong template có tài liệu, lớp tạo t
 		students: { teacherEmail, names: ["Học viên Kế thừa"] },
 	});
 
-	await page.goto(`/classes/${classId}`);
+	await page.goto(`/teacher/classes/${classId}`);
 	await page
 		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();

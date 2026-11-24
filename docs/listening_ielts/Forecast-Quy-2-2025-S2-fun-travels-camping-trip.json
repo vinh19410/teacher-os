@@ -1,0 +1,115 @@
+{
+	"id": "0264e3c3-4ac1-4629-b493-8bc948cdd744",
+	"url": "https://stepielts.com/student/listening/0264e3c3-4ac1-4629-b493-8bc948cdd744?mode=practice",
+	"title": "Fun Travels Camping Trip",
+	"source": "Forecast Quý 2-2025",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/8b3283c9-5896-4a2f-9865-ee50829e50e3.mp3",
+	"transcript": "Speaker 1: Hello. My name is Cathy Clinton, a guide from Fun Travels Agency. I’m delighted to welcome you to our company, and I’m pleased to have the chance to tell you about the camping trip we will be going on this weekend. Please listen carefully. You don’t want to miss the important information. You can’t make the most of the trip if you do. As we are going camping, a tent is very important. You don’t want to sleep outside in the wild, do you? Our company will not be providing tents. So it’s very important for you to bring your own. We will be camping in the Rock Hill camp site, a very beautiful place where you can see snowcapped mountains, green trees and a breathtaking lake. Every year, many old customers sign up for the camping trip again and again because of the scenery. We will book the camp before we go. We are a long-term partner with the site, so they arrange various activities for our customers. The roads in the forests are amazing. If you are a cycling fan, you can bring your own bikes. It’s a good chance for you to enjoy the fresh air and good view. You can just go for a walk if you don’t want to cycle. Either way, you will be amazed. Another special thing about this place is that there is a railway track just for the visitors. We will book the tickets for you, so all you have to do is enjoy the landscape around you. It’s like traveling in a fairyland. I’ve taken the train many times, but what I see on it never fails to surprise me. You may think that the place is totally disconnected to the outside world. Actually, it’s just a few miles from the nearby town. Located in the mountains, the town itself is a beautiful place to visit. There will be a football match every Saturday, the local team was one of the best in our area. It’s your choice to see it or not. But I promise you it would be worth the price of the ticket. Of course, there will be different activities at different times of the year, we will collect all the useful information and print you a booklet, so you will not miss anything fun. There are usually four destinations we must go to, because each of them has its unique features. In Capefield, you can visit a museum where you can learn different farming practices. You will see different tools for agriculture. I know most of you are from the city. So it’s a wonderful chance to see how the food we eat is produced. In Milton, we will take you to a local market. They sell beautiful silk clothes there. You can’t buy them in an ordinary shopping mall, because they were all handmade in the local workshops. You can feel the quality with your hands when you go there. I always buy one or two outfits for my friends when I go. Speaking of Wellington, what you will find is all kinds of food that are produced locally, like sausages and bacon. They only use organic ingredients. You can try first before you buy, so you won’t have to worry about buying something you regret. All the recipes are local. It’s not likely to see anything quite like these products in other places. In Landywood, there is a transport museum displaying many old vehicles. And there’s a steam train which you can now only see in the movies. It’s a great way for us to learn about our past. So that’s the basic plan for our trip. More details will be provided in our booklets. Now, if you have any questions, please…",
+	"body": {
+		"text": "bringing camp tents [1]\nbooking the camp site [2]\ntaking bikes [3]\nbuying train tickets [4]\nbuying football match tickets [5]\ncollecting traveling information [6]\nCapefield [7]\nMilton [8]\nWellington [9]\nLandywood [10]",
+		"html": "<p>bringing camp tents [1]</p><p>booking the camp site [2]</p><p>taking bikes [3]</p><p>buying train tickets [4]</p><p>buying football match tickets [5]</p><p>collecting traveling information [6]</p><p>Capefield [7]</p><p>Milton [8]</p><p>Wellington [9]</p><p>Landywood [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Who will be responsible for each of the following tasks?",
+			"options": [
+				{
+					"label": "A",
+					"text": "Members must do"
+				},
+				{
+					"label": "B",
+					"text": "Members can choose to do or not"
+				},
+				{
+					"label": "C",
+					"text": "Organizers will do"
+				}
+			],
+			"body": "bringing camp tents [1]\nbooking the camp site [2]\ntaking bikes [3]\nbuying train tickets [4]\nbuying football match tickets [5]\ncollecting traveling information [6]\nCapefield [7]\nMilton [8]\nWellington [9]\nLandywood [10]",
+			"body_html": "<p>bringing camp tents [1]</p><p>booking the camp site [2]</p><p>taking bikes [3]</p><p>buying train tickets [4]</p><p>buying football match tickets [5]</p><p>collecting traveling information [6]</p><p>Capefield [7]</p><p>Milton [8]</p><p>Wellington [9]</p><p>Landywood [10]</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "bringing camp tents",
+					"answer": "A",
+					"quotes": [
+						"Our company will not be providing tents. So it’s very important for you to bring your own."
+					]
+				},
+				{
+					"number": 2,
+					"text": "booking the camp site",
+					"answer": "C",
+					"quotes": ["We will book the camp before we go."]
+				},
+				{
+					"number": 3,
+					"text": "taking bikes",
+					"answer": "B",
+					"quotes": [
+						"If you are a cycling fan, you can bring your own bikes. It’s a good chance for you to enjoy the fresh air and good view. You can just go for a walk if you don’t want to cycle."
+					]
+				},
+				{
+					"number": 4,
+					"text": "buying train tickets",
+					"answer": "C",
+					"quotes": [
+						"We will book the tickets for you, so all you have to do is enjoy the landscape around you."
+					]
+				},
+				{
+					"number": 5,
+					"text": "buying football match tickets",
+					"answer": "B",
+					"quotes": ["It’s your choice to see it or not."]
+				},
+				{
+					"number": 6,
+					"text": "collecting traveling information",
+					"answer": "C",
+					"quotes": [
+						"Of course, there will be different activities at different times of the year, we will collect all the useful information and print you a booklet, so you will not miss anything fun."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Capefield",
+					"answer": "B",
+					"quotes": [
+						"In Capefield, you can visit a museum where you can learn different farming practices."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Milton",
+					"answer": "F",
+					"quotes": ["In Milton, we will take you to a local market."]
+				},
+				{
+					"number": 9,
+					"text": "Wellington",
+					"answer": "C",
+					"quotes": [
+						"Speaking of Wellington, what you will find is all kinds of food that are produced locally, like sausages and bacon."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Landywood",
+					"answer": "D",
+					"quotes": [
+						"In Landywood, there is a transport museum displaying many old vehicles. And there’s a steam train which you can now only see in the movies. It’s a great way for us to learn about our past."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

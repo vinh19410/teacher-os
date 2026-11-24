@@ -146,7 +146,10 @@ export function shouldSettle(attemptSeq: number, latestSeq: number): boolean {
 	return attemptSeq === latestSeq;
 }
 
-export const DEFAULT_RETURN_URL = "/dashboard";
+export const DEFAULT_RETURN_URL = "/teacher/dashboard";
+
+const TEACHER_BASE_PATH = "/teacher";
+const TEACHER_PREFIX_RE = /^\/teacher(?:\/|\?|#|$)/;
 
 /**
  * C0–C1 control characters and DEL. Checked as code units rather than a regex
@@ -161,6 +164,29 @@ function hasControlCharacter(value: string): boolean {
 		}
 	}
 	return false;
+}
+
+/**
+ * Đảm bảo `returnUrl` gửi sang root `/login` mang prefix `/teacher` một lần
+ * duy nhất (vd. `"/grading"` → `"/teacher/grading"`, `"/teacher/grading?a=1"`
+ * → `"/teacher/grading?a=1"`, `"/"` → `"/teacher"`). Chặn open-redirect và ký
+ * tự điều khiển về `"/teacher"`.
+ */
+export function toTeacherReturnUrl(href: string): string {
+	const raw = href.trim();
+	if (!raw || raw === "/" || hasControlCharacter(raw)) {
+		return TEACHER_BASE_PATH;
+	}
+	if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) {
+		return TEACHER_BASE_PATH;
+	}
+	if (TEACHER_PREFIX_RE.test(raw)) {
+		return raw;
+	}
+	if (raw.startsWith("/?") || raw.startsWith("/#")) {
+		return `${TEACHER_BASE_PATH}${raw.slice(1)}`;
+	}
+	return `${TEACHER_BASE_PATH}${raw}`;
 }
 
 /**

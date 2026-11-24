@@ -1,0 +1,271 @@
+{
+	"id": "79fe41b5-c6d4-448a-867f-17086d6ca89a",
+	"url": "https://stepielts.com/student/listening/79fe41b5-c6d4-448a-867f-17086d6ca89a?mode=practice",
+	"title": "Street Play Scheme",
+	"source": "C15T3",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/9d2d596b-b533-4fde-a33f-7459bf48c2a2.mp3",
+	"transcript": "Speaker 0: Part two. You will hear a woman called Alice Riches talking on the radio about a scheme which involves closing streets to traffic to allow children to play. First, you have some time to look at questions 11 to 16. Now listen carefully and answer questions 11 to 16.\nSpeaker 1: My guest on the show today is Alice Riches who started the street play scheme where she lives in Beechwood Road. For those of you that don't already know, street play involves local residents closing off their street for a few hours so that children have a chance to play in the streets safely. She started it in her own street, Beechwood Road, and the idea caught on. And there are now street play schemes all over the city. So when did you actually start the scheme, Alice?\nSpeaker 2: Well, I first had the idea when my oldest child was still a toddler. So that's about, oh, six years ago now, but it took at least two years of campaigning before we were actually able to make it happen. So the scheme's been up and running for three years now. We'd love to be able to close our road for longer, for the whole weekend from Saturday morning until Sunday evening, for example. At the moment, it's just once a week. But when we started, it was only once a month, but we're working on it. So what actually happens when Beechwood Road is closed? We have volunteer wardens, mostly parents, but some elderly residents too who block off our road at either end. The council have provided special signs, but there's always a volunteer there to explain what's happening to any motorists. Generally, they're fine about it. We've only had to get the police involved once or twice. Now I should explain that the road isn't completely closed to cars, but only residents' cars are allowed. If people really need to get in or out of Beechwood Road, it's not a problem as long as they drive at under 20 kilometres per hour. But most people just decide not to use their cars during this time or they park in another street. The wardens are only there to stop through traffic.\nSpeaker 1: So can anyone apply to get involved in street play?\nSpeaker 2: Absolutely. We want to include all kids in the city, especially those who live on busy roads. It's here that demand is greatest. Obviously, there isn't such demand in wealthier areas where the children have access to parks or large gardens, or in the suburbs where there are usually more places for children to play outside. I'd recommend that anyone listening who likes the idea should just give it a go. We've been surprised by the positive reaction of residents all over the city, and that's not just parents. There are always a few who complain, but they're a tiny minority. On the whole, everyone is very supportive and say they're very happy to see children out on the street even if it does get quite noisy.\nSpeaker 0: Before you hear the rest of the conversation, you have some time to look at questions 17 to 20. Now listen and answer questions 17 to 20.\nSpeaker 2: There have been so many benefits of street play for the kids. Parents really like the fact that the kids are getting fresh air instead of sitting staring at a computer screen, even if they're not doing anything particularly energetic. And, of course, it's great that kids can play with their friends outside without being supervised by their parents. But for me, the biggest advantage is that kids develop confidence in themselves to be outside without their parents. The other really fantastic thing is that children get to know the adults in the street. It's like having a big extended family.\nSpeaker 1: It certainly does have a lot of benefits. I want to move on now and ask you about a related project in King Street.\nSpeaker 2: Right. Well, this was an experiment I was involved in where local residents decided to try and reduce the traffic along King Street, which is the busiest main road in our area, by persuading people not to use their cars for one day. We thought about making people pay more for parking, but we decided that would be really unpopular. So instead, we just stopped people from parking on King Street but left the other car parks open. It was surprising how much of a difference all this made. As we'd predicted, air quality was significantly better, but what I hadn't expected was how much quieter it would be even with the buses still running. Of course, everyone said they felt safer, but we were actually amazed that sales in the shops went up considerably that day. We thought there'd be fewer people out shopping,\nSpeaker 1: not more. That's really interesting. So the fact that the street was\nSpeaker 0: That is the end of part two. You now have thirty seconds to check your answers to part two.",
+	"question_groups": [
+		{
+			"range": "11-16",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "When did the Street Play Scheme first take place?",
+					"options": [
+						{
+							"label": "A",
+							"text": "two years ago"
+						},
+						{
+							"label": "B",
+							"text": "three years ago"
+						},
+						{
+							"label": "C",
+							"text": "six years ago"
+						}
+					],
+					"answer": "B",
+					"quotes": ["So the scheme's been up and running for three years now."]
+				},
+				{
+					"number": 12,
+					"text": "How often is Beechwood Road closed to traffic now?",
+					"options": [
+						{
+							"label": "A",
+							"text": "once a week"
+						},
+						{
+							"label": "B",
+							"text": "on Saturdays and Sundays"
+						},
+						{
+							"label": "C",
+							"text": "once a month"
+						}
+					],
+					"answer": "A",
+					"quotes": ["At the moment, it's just once a week."]
+				},
+				{
+					"number": 13,
+					"text": "Who is responsible for closing the road?",
+					"options": [
+						{
+							"label": "A",
+							"text": "a council official"
+						},
+						{
+							"label": "B",
+							"text": "the police"
+						},
+						{
+							"label": "C",
+							"text": "local wardens"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"We have volunteer wardens, mostly parents, but some elderly residents too who block off our road at either end."
+					]
+				},
+				{
+					"number": 14,
+					"text": "Residents who want to use their cars",
+					"options": [
+						{
+							"label": "A",
+							"text": "have to park in another street."
+						},
+						{
+							"label": "B",
+							"text": "must drive very slowly"
+						},
+						{
+							"label": "C",
+							"text": "need permission from a warden."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"If people really need to get in or out of Beechwood Road, it's not a problem as long as they drive at under 20 kilometres per hour."
+					]
+				},
+				{
+					"number": 15,
+					"text": "Alice says that Street Play Schemes are most needed in",
+					"options": [
+						{
+							"label": "A",
+							"text": "wealthy areas"
+						},
+						{
+							"label": "B",
+							"text": "quiet suburban areas."
+						},
+						{
+							"label": "C",
+							"text": "areas with heavy traffic."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"We want to include all kids in the city, especially those who live on busy roads. It's here that demand is greatest."
+					]
+				},
+				{
+					"number": 16,
+					"text": "What has been the reaction of residents who are not parents?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Many of them were unhappy at first."
+						},
+						{
+							"label": "B",
+							"text": "They like seeing children play in the street."
+						},
+						{
+							"label": "C",
+							"text": "They are surprised by the lack of noise."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"On the whole, everyone is very supportive and say they're very happy to see children out on the street even if it does get quite noisy."
+					]
+				}
+			]
+		},
+		{
+			"range": "17-18",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. Which TWO benefits for children does Alice think are the most important?",
+			"questions": [
+				{
+					"number": 17,
+					"text": "Choose TWO letters, A-E. Which TWO benefits for children does Alice think are the most important?",
+					"options": [
+						{
+							"label": "A",
+							"text": "increased physical activity"
+						},
+						{
+							"label": "B",
+							"text": "increased sense of independence"
+						},
+						{
+							"label": "C",
+							"text": "opportunity to learn new games"
+						},
+						{
+							"label": "D",
+							"text": "opportunity to be part of a community"
+						},
+						{
+							"label": "E",
+							"text": "opportunity to make new friends"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 18,
+					"text": "Choose TWO letters, A-E. Which TWO benefits for children does Alice think are the most important?",
+					"options": [
+						{
+							"label": "A",
+							"text": "increased physical activity"
+						},
+						{
+							"label": "B",
+							"text": "increased sense of independence"
+						},
+						{
+							"label": "C",
+							"text": "opportunity to learn new games"
+						},
+						{
+							"label": "D",
+							"text": "opportunity to be part of a community"
+						},
+						{
+							"label": "E",
+							"text": "opportunity to make new friends"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "19-20",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. Which TWO benefits for children does Alice think are the most important?",
+			"questions": [
+				{
+					"number": 19,
+					"text": "Choose TWO letters, A-E. Which TWO results of the King Street experiment surprised Alice?",
+					"options": [
+						{
+							"label": "A",
+							"text": "more shoppers"
+						},
+						{
+							"label": "B",
+							"text": "improved safety"
+						},
+						{
+							"label": "C",
+							"text": "less air pollution"
+						},
+						{
+							"label": "D",
+							"text": "more relaxed atmosphere"
+						},
+						{
+							"label": "E",
+							"text": "less noise pollution"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 20,
+					"text": "Choose TWO letters, A-E. Which TWO results of the King Street experiment surprised Alice?",
+					"options": [
+						{
+							"label": "A",
+							"text": "more shoppers"
+						},
+						{
+							"label": "B",
+							"text": "improved safety"
+						},
+						{
+							"label": "C",
+							"text": "less air pollution"
+						},
+						{
+							"label": "D",
+							"text": "more relaxed atmosphere"
+						},
+						{
+							"label": "E",
+							"text": "less noise pollution"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -10,7 +10,13 @@ import {
 	circledNumber,
 	domPointToOffset,
 	newPlacementErrorId,
+	normalizePlacementErrorsForSkill,
 	overlappingErrorNumber,
+	PLACEMENT_ERROR_STYLES,
+	placementErrorCategoryOptionsForSkill,
+	placementErrorLabel,
+	placementErrorStyle,
+	resolvePlacementErrorCategory,
 	trimTextSpan,
 	validatePlacementErrorDraft,
 } from "./placement-error-utils";
@@ -37,7 +43,7 @@ function err(
 describe("buildHighlightSegments", () => {
 	it("chia văn bản thành đoạn thường + đoạn lỗi theo offset, đánh số theo thứ tự đã định vị", () => {
 		const located = locatePlacementErrors(TEXT, [
-			err("b", "buyed", { category: "spelling" }),
+			err("b", "buyed", { category: "lexical" }),
 			err("a", "goes"),
 			err("x", "không có trong bài"),
 		]);
@@ -140,5 +146,103 @@ describe("trimTextSpan / overlappingErrorNumber / validate", () => {
 		expect(circledNumber(1)).toBe("①");
 		expect(circledNumber(20)).toBe("⑳");
 		expect(circledNumber(21)).toBe("(21)");
+	});
+});
+
+describe("skill-specific IELTS error categories & styles", () => {
+	it("returns exact 4 English IELTS categories per skill", () => {
+		expect(placementErrorCategoryOptionsForSkill("writing")).toEqual([
+			{ key: "task", label: "Task Response" },
+			{ key: "coherence", label: "Coherence & Cohesion" },
+			{ key: "lexical", label: "Lexical Resource" },
+			{ key: "grammar", label: "Grammatical Range & Accuracy" },
+		]);
+		expect(placementErrorCategoryOptionsForSkill("speaking")).toEqual([
+			{ key: "fluency", label: "Fluency & Coherence" },
+			{ key: "lexical", label: "Lexical Resource" },
+			{ key: "grammar", label: "Grammatical Range & Accuracy" },
+			{ key: "pronunciation", label: "Pronunciation" },
+		]);
+	});
+
+	it("maps every IELTS category to synced --class-* highlight, border, dot, and slider accent tokens", () => {
+		expect(PLACEMENT_ERROR_STYLES.task).toMatchObject({
+			label: "Task Response",
+			dotCls: "bg-class-3",
+			borderLeftCls: "border-l-4 border-l-class-3",
+			sliderAccentCls: "accent-class-3",
+		});
+		expect(PLACEMENT_ERROR_STYLES.coherence).toMatchObject({
+			label: "Coherence & Cohesion",
+			dotCls: "bg-class-4",
+			borderLeftCls: "border-l-4 border-l-class-4",
+			sliderAccentCls: "accent-class-4",
+		});
+		expect(PLACEMENT_ERROR_STYLES.fluency).toMatchObject({
+			label: "Fluency & Coherence",
+			dotCls: "bg-class-4",
+			borderLeftCls: "border-l-4 border-l-class-4",
+			sliderAccentCls: "accent-class-4",
+		});
+		expect(PLACEMENT_ERROR_STYLES.lexical).toMatchObject({
+			label: "Lexical Resource",
+			dotCls: "bg-class-1",
+			borderLeftCls: "border-l-4 border-l-class-1",
+			sliderAccentCls: "accent-class-1",
+		});
+		expect(PLACEMENT_ERROR_STYLES.grammar).toMatchObject({
+			label: "Grammatical Range & Accuracy",
+			dotCls: "bg-class-5",
+			borderLeftCls: "border-l-4 border-l-class-5",
+			sliderAccentCls: "accent-class-5",
+		});
+		expect(PLACEMENT_ERROR_STYLES.pronunciation).toMatchObject({
+			label: "Pronunciation",
+			dotCls: "bg-class-2",
+			borderLeftCls: "border-l-4 border-l-class-2",
+			sliderAccentCls: "accent-class-2",
+		});
+	});
+
+	it("normalizes legacy and cross-skill categories defensively with grammar fallback", () => {
+		expect(resolvePlacementErrorCategory("vocabulary", "writing")).toBe(
+			"lexical",
+		);
+		expect(resolvePlacementErrorCategory("spelling", "writing")).toBe(
+			"lexical",
+		);
+		expect(resolvePlacementErrorCategory("pronunciation", "writing")).toBe(
+			"lexical",
+		);
+		expect(resolvePlacementErrorCategory("fluency", "writing")).toBe(
+			"coherence",
+		);
+		expect(resolvePlacementErrorCategory("task", "speaking")).toBe("fluency");
+		expect(resolvePlacementErrorCategory("coherence", "speaking")).toBe(
+			"fluency",
+		);
+		expect(resolvePlacementErrorCategory("unknown-key", "speaking")).toBe(
+			"grammar",
+		);
+
+		expect(placementErrorStyle("spelling", "writing")).toBe(
+			PLACEMENT_ERROR_STYLES.lexical,
+		);
+		expect(placementErrorLabel("task", "speaking")).toBe("Fluency & Coherence");
+		expect(placementErrorLabel("pronunciation")).toBe("Pronunciation");
+
+		const normalized = normalizePlacementErrorsForSkill(
+			[
+				err("1", "goes", {
+					category: "spelling" as unknown as PlacementError["category"],
+				}),
+				err("2", "book", { category: "pronunciation" }),
+			],
+			"writing",
+		);
+		expect(normalized.map((item) => item.category)).toEqual([
+			"lexical",
+			"lexical",
+		]);
 	});
 });

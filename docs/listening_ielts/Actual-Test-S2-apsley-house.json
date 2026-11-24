@@ -1,0 +1,152 @@
+{
+	"id": "0f413c6d-a2a5-4206-841e-c2ae68e346a2",
+	"url": "https://stepielts.com/student/listening/0f413c6d-a2a5-4206-841e-c2ae68e346a2?mode=practice",
+	"title": "Apsley House",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/e2f8368f-a27a-4f58-b87e-0e4b287d5e7c.mp3",
+	"transcript": "Speaker 0: Now turn to section two. Section two. First you have some time to look at questions 11 to 15.\nSpeaker 1: Good afternoon, everyone, and welcome to Apsley House. My name's Henry James, and I'm the proprietor of this, I must say, wonderful old house. My staff and I will do all that we can to ensure that your stay here at Apsley House both informative and relaxing. If you look at the schedule I've prepared, you will see that we have planned a number of different activities for you. But what I'd like to do today is to introduce the house to you. So let's first deal with the history of the house. Apsley House is known as one of the finest houses in England. It was originally designed and constructed by the Scottish born architect Robert Adam between the years 1771 and 1778, and from day one was the office of the Duke of Wellington. Back then it was a private house, but in 1987 it opened to the public for the first time. The Duke of Wellington was an avid collector of art, and if you look to the room to your left can everyone see that all right? Yes? Good. You will see a rather large art gallery. The viewing gallery is 90 feet long and houses a wide range of art from all over Europe. Until recently, the gallery was closed to the public, but I'm pleased to say that it is now open and you are free to visit anytime you wish. If you take a look at the schedule, you will see that I'll be talking to you about the gallery tomorrow after breakfast, so if you're interested in art, please be here by 09:00 for the talk.\nSpeaker 0: You now have some time to look at questions sixteen-twenty. Now listen to the rest of the short introductory talk and answer questions 16 to 20.\nSpeaker 1: This room here to your right is the cafeteria. Breakfast is served from 07:30 to 08:30AM, although you can request breakfast in your room if you prefer. The dining hall serves a traditional English breakfast, although vegetarian food is available on request. Just let the kitchen staff know the previous evening. Outside, you will find a magnificent garden. A section of the garden was converted into a car park in 1990 to make way for the growing number of visitors. Nevertheless, much of it remains and is an ideal place for you to wander and enjoy the peace and quiet, or simply sit and read. There are a lot of animals in the garden, including birds, squirrels, rabbits oh, and not to forget Felix the cat. Now don't be alarmed if the animals come up to you. They are used to people and very friendly. Anyway, dinner will be served at seven, so in the meantime, please feel free to simply wander and enjoy the hospitality Apsley House has to offer.\nSpeaker 0: That is the end of section two. You will now have half a minute to check your answers.",
+	"question_groups": [
+		{
+			"range": "11",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentence. Write NO MORE THAN FOUR WORDS AND/OR A NUMBER.",
+			"body": "The house was built between [11]",
+			"body_html": "<table><tbody><tr><td><ul><li>The house was built between [11]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 11,
+					"text": "The house was built between [11]",
+					"answer": "1771 and 1778",
+					"quotes": [
+						"It was originally designed and constructed by the Scottish born architect Robert Adam between the years 1771 and 1778, and from day one was the office of the Duke of Wellington."
+					]
+				}
+			]
+		},
+		{
+			"range": "12",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 12,
+					"text": "It was originally constructed as a/an:",
+					"options": [
+						{
+							"label": "A",
+							"text": "family home"
+						},
+						{
+							"label": "B",
+							"text": "office"
+						},
+						{
+							"label": "C",
+							"text": "public house"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"It was originally designed and constructed by the Scottish born architect Robert Adam between the years 1771 and 1778, and from day one was the office of the Duke of Wellington."
+					]
+				}
+			]
+		},
+		{
+			"range": "13-15",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Write NO MORE THAN FOUR WORDS for each answer.",
+			"body": "The house contains art from [13]\nUntil recently, the art gallery was [14]\nTomorrow's talk will be on [15]",
+			"body_table": [
+				["The house contains art from [13]"],
+				["Until recently, the art gallery was [14]"],
+				["Tomorrow's talk will be on [15]"]
+			],
+			"body_html": "<table><tbody><tr><td><ul><li>The house contains art from [13]</li></ul></td></tr><tr><td><ul><li>Until recently, the art gallery was [14]</li></ul></td></tr><tr><td><ul><li>Tomorrow's talk will be on [15]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 13,
+					"text": "The house contains art from",
+					"answer": "all over Europe",
+					"quotes": [
+						"The viewing gallery is 90 feet long and houses a wide range of art from all over Europe."
+					]
+				},
+				{
+					"number": 14,
+					"text": "Until recently, the art gallery was",
+					"answer": "closed to the public",
+					"quotes": [
+						"Until recently, the gallery was closed to the public, but I'm pleased to say that it is now open and you are free to visit anytime you wish."
+					]
+				},
+				{
+					"number": 15,
+					"text": "Tomorrow's talk will be on",
+					"answer": "the gallery",
+					"quotes": [
+						"If you take a look at the schedule, you will see that I'll be talking to you about the gallery tomorrow after breakfast, so if you're interested in art, please be here by 09:00 for the talk."
+					]
+				}
+			]
+		},
+		{
+			"range": "16-20",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Write NO MORE THAN FOUR WORDS for each answer.",
+			"body": "Breakfast is served in the cafeteria or [16]\nYou can choose between English breakfast or [17]\nA car park was built because of an increase in [18]\nThe garden contains many [19]\nThe animals at Apsley House are all [20]",
+			"body_table": [
+				["Breakfast is served in the cafeteria or [16]"],
+				["You can choose between English breakfast or [17]"],
+				["A car park was built because of an increase in [18]"],
+				["The garden contains many [19]"],
+				["The animals at Apsley House are all [20]"]
+			],
+			"body_html": "<table><tbody><tr><td><ul><li>Breakfast is served in the cafeteria or [16]</li></ul></td></tr><tr><td><ul><li>You can choose between English breakfast or [17]</li></ul></td></tr><tr><td><ul><li>A car park was built because of an increase in [18]</li></ul></td></tr><tr><td><ul><li>The garden contains many [19]</li></ul></td></tr><tr><td><ul><li>The animals at Apsley House are all [20]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 16,
+					"text": "Breakfast is served in the cafeteria or [16]",
+					"answer": "in your room",
+					"quotes": [
+						"Breakfast is served from 07:30 to 08:30AM, although you can request breakfast in your room if you prefer."
+					]
+				},
+				{
+					"number": 17,
+					"text": "You can choose between English breakfast or [17]",
+					"answer": "vegetarian food",
+					"quotes": [
+						"The dining hall serves a traditional English breakfast, although vegetarian food is available on request."
+					]
+				},
+				{
+					"number": 18,
+					"text": "A car park was built because of an increase in [18]",
+					"answer": "the number of visitors",
+					"quotes": [
+						"A section of the garden was converted into a car park in 1990 to make way for the growing number of visitors."
+					]
+				},
+				{
+					"number": 19,
+					"text": "The garden contains many [19]",
+					"answer": "animals",
+					"quotes": [
+						"There are a lot of animals in the garden, including birds, squirrels, rabbits oh, and not to forget Felix the cat."
+					]
+				},
+				{
+					"number": 20,
+					"text": "The animals at Apsley House are all [20]",
+					"answer": "used to people",
+					"quotes": ["They are used to people and very friendly."]
+				}
+			]
+		}
+	],
+	"images": []
+}

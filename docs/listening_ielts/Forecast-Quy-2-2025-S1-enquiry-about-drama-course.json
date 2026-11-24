@@ -1,0 +1,103 @@
+{
+	"id": "dc2a4502-6e4e-4306-91ab-ed5444f92a15",
+	"url": "https://stepielts.com/student/listening/dc2a4502-6e4e-4306-91ab-ed5444f92a15?mode=practice",
+	"title": "Enquiry About Drama Course",
+	"source": "Forecast Quý 2-2025",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/6ea2e4de-a1a5-4a90-a71e-ef0a255553f9.mp3",
+	"transcript": "Speaker 2: WOMAN：Hi there, I would like to find out more about the drama course you are offering.\nSpeaker 3: MAN：Sure, would you be interested in a beginner’s course, or an advanced course? We only recommend the advanced course for people with recent experience.\nSpeaker 2: WOMAN：I think I would be a beginner then. I haven’t done any acting since high school.\nSpeaker 3: MAN：Yes, it sounds like the beginner course is going to be best for you.\nSpeaker 2: WOMAN：How do I sign up?\nSpeaker 3: MAN：I can sign you up now. May I have your name?\nSpeaker 2: WOMAN：Yes, it’s Jan Johnson. Oh no wait, I am getting married prior to when the class starts, you had better enroll me as Jan Cresiik. That’s C-R-E-S-I-I-K.\nSpeaker 3: MAN：Well congratulations in advance!And your address, will that be changing?\nSpeaker 2: WOMAN：No, my address will be the same. It’s 79 Palace Street.\nSpeaker 3: MAN：Yeah, I know that street, there is a famous bakery. Um, what is it called.\n.\nSpeaker 3: yeah，it’s Mrs. Sweet, right? I love the croissant there.\nSpeaker 2: WOMAN：Yeah, actually I once worked there on weekends. It’s just a stone’s throwaway from where I live.\nSpeaker 3: MAN：I see. So what do you do for work?\nWOMAN：Well, I was a receptionist, but currently I’m working as a waitress.\nSpeaker 2: Maybe I can have a career change after this course!\nSpeaker 3: MAN：It is something to aspire to. It is great to be able to do what you love as a job，don’t you think? Out of interest, where did you hear about our course?\nSpeaker 2: WOMAN：Where did I hear about it.\n. . ?\nSpeaker 2: Maybe from a friend, I think. Oh no, actually I remember now. I picked up a leaflet from my local laundry.\nSpeaker 3: MAN：Good to know. MAN：So here is an information pack outlining the details for the course. We used to start our class on the first day of every month, but this time the class begins on 30th of May and will continue every Tuesday afternoon.\nSpeaker 2: WOMAN：Oh, when you say afternoon, what time exactly? I usually work until 5pm on Tuesdays.\nSpeaker 3: MAN：Hmm, it says here the class begins at 5. 30 pm so that shouldn’t be a problem.\nSpeaker 2: WOMAN：It will be tight, but I should be able to make it here on time.\nSpeaker 3: MAN：Also, I want to give you a heads-up about the requirement of the theoretical section of the course. Before the end of the course, you will need to hand in an essay. Sometimes people are surprised that the course is not all just acting，so I like to let everyone know in advance.\nSpeaker 2: WOMAN：Sure, that sounds interesting. Where is the performance venue? Is it here, in the hall?\nSpeaker 3: MAN：No, it’s currently under refurbishment so the performance is held next door at our local theatre.\nSpeaker 2: WOMAN：Great. And are there exams at the end of the course?\nSpeaker 3: MAN：You will be happy to know there are no exams. Following the students’ performances at the End of Year Event, everyone is considered to have passed and is presented with a graduation certificate.\nSpeaker 2: WOMAN：Okay, great. The course costs $300, right?\nSpeaker 3: MAN：Well, you will be pleased to hear that we have a 30% discount for new students.\nSpeaker 2: WOMAN：Wonderful!What else do I need to do to enrol?\nSpeaker 3: MAN：The only thing left is to pay the course fee before the start of the course, but you’re all signed up for now.\nSpeaker 2: WOMAN：Okay, I’ll head to the ATM and get the cash now. Thanks for your help.",
+	"body": {
+		"text": "Name: Jan [1]\nAddress: 79 [2] Street\nOccupation: [3]\nHear about the course from: a [4]\nDetails of the course:\nDate to start: [5] May\nTime to attend: [6] pm\nThe theoretical part requires: submit an [7]\nPerformance venue: local [8]\nAt the end of the course, students will receive: a [9] certificate\nDiscount: [10] off for new students",
+		"html": "<p><strong>Name: </strong>Jan  [1]</p><p><strong>Address:</strong> 79 [2] Street</p><p><strong>Occupation: </strong> [3]</p><p><strong>Hear about the course from:</strong> a  [4]</p><p><strong>Details of the course: </strong></p><ul><li><p>Date to start: [5]   May</p></li><li><p>Time to attend: [6]   pm</p></li><li><p>The theoretical part requires: submit an  [7]</p></li><li><p>Performance venue: local  [8]</p></li><li><p>At the end of the course, students will receive: a [9]  certificate</p></li><li><p>Discount: [10]  off for new students</p></li></ul><p></p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Name: Jan [1]\nAddress: 79 [2] Street\nOccupation: [3]\nHear about the course from: a [4]\nDetails of the course:\nDate to start: [5] May\nTime to attend: [6] pm\nThe theoretical part requires: submit an [7]\nPerformance venue: local [8]\nAt the end of the course, students will receive: a [9] certificate\nDiscount: [10] off for new students",
+			"body_html": "<p><strong>Name: </strong>Jan  [1]</p><p><strong>Address:</strong> 79 [2] Street</p><p><strong>Occupation: </strong> [3]</p><p><strong>Hear about the course from:</strong> a  [4]</p><p><strong>Details of the course: </strong></p><ul><li><p>Date to start: [5]   May</p></li><li><p>Time to attend: [6]   pm</p></li><li><p>The theoretical part requires: submit an  [7]</p></li><li><p>Performance venue: local  [8]</p></li><li><p>At the end of the course, students will receive: a [9]  certificate</p></li><li><p>Discount: [10]  off for new students</p></li></ul><p></p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Name: Jan [1]",
+					"answer": "Cresiik",
+					"quotes": [
+						"Oh no wait, I am getting married prior to when the class starts, you had better enroll me as Jan Cresiik."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Address: 79 [2] Street",
+					"answer": "Palace",
+					"quotes": ["It’s 79 Palace Street."]
+				},
+				{
+					"number": 3,
+					"text": "Occupation: [3]",
+					"answer": "waitress",
+					"quotes": [
+						"WOMAN：Well, I was a receptionist, but currently I’m working as a waitress."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Hear about the course from: a [4]",
+					"answer": "leaflet",
+					"quotes": ["I picked up a leaflet from my local laundry."]
+				},
+				{
+					"number": 5,
+					"text": "Date to start: [5] May",
+					"answer": "30th / 30",
+					"quotes": [
+						"We used to start our class on the first day of every month, but this time the class begins on 30th of May and will continue every Tuesday afternoon."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Time to attend: [6] pm",
+					"answer": "5.30 / 5:30",
+					"quotes": [
+						"MAN：Hmm, it says here the class begins at 5. 30 pm so that shouldn’t be a problem."
+					]
+				},
+				{
+					"number": 7,
+					"text": "The theoretical part requires: submit an [7]",
+					"answer": "essay",
+					"quotes": [
+						"Before the end of the course, you will need to hand in an essay."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Performance venue: local [8]",
+					"answer": "theater / theatre",
+					"quotes": [
+						"MAN：No, it’s currently under refurbishment so the performance is held next door at our local theatre."
+					]
+				},
+				{
+					"number": 9,
+					"text": "At the end of the course, students will receive: a [9] certificate",
+					"answer": "graduation",
+					"quotes": [
+						"Following the students’ performances at the End of Year Event, everyone is considered to have passed and is presented with a graduation certificate."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Discount: [10] off for new students",
+					"answer": "30% / 30 percent",
+					"quotes": [
+						"MAN：Well, you will be pleased to hear that we have a 30% discount for new students."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

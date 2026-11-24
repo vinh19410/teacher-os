@@ -6,7 +6,7 @@ values** — only secret names, owners, and rotation paths.
 
 ## Topology — single source of truth
 
-The production topology is `APP_DOMAIN=msmy.io.vn`: `msmy.io.vn` (+ `www.`, teacher profile), `app.<domain>` (web), `student.<domain>` (student portal), `admin.<domain>` (admin) + `api.<domain>` (API). Landing gets no custom domain on prod (the apex belongs to the profile). The former prod apex `teacheros.io.vn` now hosts staging only. It is
+The production topology is `APP_DOMAIN=msmy.io.vn`: `msmy.io.vn` (+ `www.`, teacher profile), `lms.<domain>` (unified LMS gateway serving `/login`, `/teacher`, `/student`, `/admin`, `/pay/:token`, with legacy 301 aliases `app.<domain>`, `student.<domain>`, `admin.<domain>`) + `api.<domain>` (API). Landing gets no custom domain on prod (the apex belongs to the profile). The former prod apex `teacheros.io.vn` now hosts staging only. It is
 **encoded in runtime configuration, not in this document**: the deploy-time
 variable `APP_DOMAIN` (bare lowercase domain) derives every URL below via
 `packages/infra/src/topology.ts`, wired in `packages/infra/alchemy.run.ts`.
@@ -17,29 +17,30 @@ environment — never editing this runbook.
 | --- | --- | --- |
 | Landing origin | `https://<domain>` (+ `https://www.<domain>`) on staging; none on prod (workers.dev only) | Website.StaticSite `domain: { name: landingHost, aliases: landingAliases }`, skipped when `landingHost` is undefined |
 | Profile origin | `https://msmy.io.vn` (+ `https://www.msmy.io.vn`) on prod (`APP_DOMAIN=msmy.io.vn`), `https://profile.<domain>` elsewhere | Website.StaticSite (`profile`) `domain: { name: profileHost, aliases: profileAliases }` from `packages/infra/src/topology.ts` (#536) |
-| Web origin | `https://app.<domain>` | Website.Vite `domain: { name: appHost, aliases: appAliases }` (no aliases) |
-| Student portal origin | `https://student.<domain>` | Website.Vite (student) `domain: studentHost` from `packages/infra/src/topology.ts` |
-| Admin console origin | `https://admin.<domain>` | Website.Vite (admin) `domain: adminHost` from `packages/infra/src/topology.ts` (plan #413) |
+| Unified LMS origin | `https://lms.<domain>` (`/login`, `/forgot-password`, `/reset-password`, `/verify-email`, `/pay/:token`, `/teacher/*`, `/student/*`, `/admin/*`) | Single Website.Vite (`lms`) `domain: { name: lmsHost, aliases: lmsAliases }` from `packages/infra/src/topology.ts` |
+| Legacy 301 aliases | `app.<domain>` → `https://lms.<domain>/teacher/*` (`/pay/*` and unified auth routes keep path; `/sw.js` and `/registerSW.js` serve 200 JS self-heal stubs in place); `student.<domain>` → `https://lms.<domain>/student/*`; `admin.<domain>` → `https://lms.<domain>/admin/*` | `lmsAliases` attached to Website.Vite (`lms`) + `apps/lms/src/legacy-redirect.ts` |
+| Portal URLs | Teacher: `https://lms.<domain>/teacher` · Student: `https://lms.<domain>/student` · Admin: `https://lms.<domain>/admin` | `teacherUrl`, `studentPortalUrl`, `adminUrl` in `packages/infra/src/topology.ts` |
 | API origin | `https://api.<domain>` | Worker `domain: api.<APP_DOMAIN>` |
-| `CORS_ORIGIN` (server binding) | `https://app.<domain>` | default derived from `APP_DOMAIN`; a disagreeing explicit value fails the run |
-| `STUDENT_ORIGINS` (server binding) | `https://student.<domain>` | default derived from `APP_DOMAIN`; an explicit value missing the portal origin fails the run (drives portal sign-up role classification) |
-| `ADMIN_ORIGINS` (server binding) | `https://admin.<domain>` | default derived from `APP_DOMAIN` (`alchemy.run.ts`); an explicit value missing the admin origin fails the run (drives admin CSRF + sign-up classification, plan #413) |
-| `ADMIN_EMAILS` (server binding) | comma-separated allowlist, **no default — empty means nobody is admin** | operator-set secret-like binding; matched lowercase by `requireAdmin` on every request and by the admin-origin sign-up hook (`ADMIN_SIGNUP_FORBIDDEN`) |
-| `TEACHER_EMAILS` (server binding) | comma-separated allowlist, **required on production** (deploy fails if empty); empty elsewhere means unrestricted | operator-set binding (`vars.TEACHER_EMAILS` on GitHub Environment `production`); matched lowercase on every request in `bootstrapMiddleware` (`ACCOUNT_TEACHER_NOT_ALLOWED`) and at teacher sign-up (`TEACHER_SIGNUP_FORBIDDEN`, #513) |
+| `CORS_ORIGIN` (server binding) | `https://lms.<domain>` | default derived from `APP_DOMAIN`; an explicit value missing `lmsOrigin` fails the run |
+| `STUDENT_ORIGINS` (server binding) | `https://lms.<domain>` | default derived from `APP_DOMAIN`; an explicit value missing `lmsOrigin` fails the run |
+| `ADMIN_ORIGINS` (server binding) | `https://lms.<domain>` | default derived from `APP_DOMAIN` (`alchemy.run.ts`); an explicit value missing `lmsOrigin` fails the run |
+| `ADMIN_EMAILS` (server binding) | comma-separated allowlist, **no default — empty means nobody is admin** | operator-set binding (`vars.ADMIN_EMAILS` on GitHub Environments `staging` and `production`); matched lowercase by `requireAdmin` on every request and by sign-up role classification |
+| `TEACHER_EMAILS` (server binding) | comma-separated allowlist, **required on production** (deploy fails if empty); set on staging & prod GitHub Environments to grant `teacher` role on unified LMS sign-up and pass `bootstrapMiddleware` (`ACCOUNT_TEACHER_NOT_ALLOWED`) | operator-set binding (`vars.TEACHER_EMAILS` on GitHub Environments `staging` and `production`); matched lowercase on every request (#513) |
 | `BETTER_AUTH_URL` (server binding) | `https://api.<domain>` | derived from `APP_DOMAIN`; worker URL otherwise |
 | Better Auth base URL | `https://api.<domain>/api/auth` | `authBaseURL()` in `packages/auth/src/topology.ts` (mount path `/api/auth`) |
 | Google redirect URI | `https://api.<domain>/api/auth/callback/google` | derived from the Better Auth base URL |
 | Session cookies | cross-subdomain, `Domain=.<domain>`, `SameSite=None; Secure; HttpOnly` | `COOKIE_DOMAIN` binding → `crossSubDomainCookieDomain()` in `packages/auth/src/topology.ts` |
 | Auth cookie namespace | default `better-auth` on prod; `teacheros-staging` on any other member of the prod (`msmy.io.vn`) or former prod (`teacheros.io.vn`) cookie zone (staging) | `BETTER_AUTH_COOKIE_PREFIX` binding → `resolveDomainTopology().authCookiePrefix` in `packages/infra/src/topology.ts`, validated by `authCookiePrefix()` in `packages/auth/src/topology.ts` |
-| `VITE_SERVER_URL` (web, student & admin builds) | `https://api.<domain>` | derived from `APP_DOMAIN`; server worker URL otherwise (also stamps `media-src`/`connect-src` CSP in `apps/student/src/worker.ts`) |
+| `VITE_SERVER_URL` (lms + sub-portal builds) | `https://api.<domain>` | derived from `APP_DOMAIN`; server worker URL otherwise (passed through `LMS_REBUILD_PORTALS=1` to `web`, `student`, `admin` builds) |
+| `STUDENT_PRACTICE_ENABLED` → `VITE_STUDENT_PRACTICE_ENABLED` (lms / student build) | `"true"` on staging (`deploy-staging.yml`); `"false"` default on prod (fail-closed on `PROD_APP_DOMAIN` via `resolveStudentPracticeEnabled`) | deploy-only infra env `STUDENT_PRACTICE_ENABLED` mapped inside `alchemy.run.ts` to `VITE_STUDENT_PRACTICE_ENABLED` on `Website.Vite("lms")` (validated in `assemble-dist.mjs` and `/student/` live smoke). **UI-only boundary:** hides the 2 sidebar nav entries ("Luyện tập", "Lịch sử") in `STUDENT_NAV`; does not block the home `/practice/vocabulary` CTA, direct URLs (`/practice/*`, `/history`), or `/api/student/practice/*` & `/api/student/history/*` APIs (#852) |
 | `LEAD_API_URL` (profile build) | `https://api.<domain>` | derived from `APP_DOMAIN` (`topology.apiOrigin`); server worker URL otherwise (#536) |
-| `STUDENT_PORTAL_URL` (profile build) | `https://student.<domain>` | derived from `APP_DOMAIN` (`topology.studentOrigin`); `studentWorker.url` otherwise, dev default `http://localhost:8003` (#560) |
+| `STUDENT_PORTAL_URL` (profile build) | `https://lms.<domain>/student` | derived from `APP_DOMAIN` (`topology.studentPortalUrl`); `lmsWorker.url` otherwise, dev default `http://localhost:8001/student` |
 
-Domain move to `msmy.io.vn`: the first prod deploy with `APP_DOMAIN=msmy.io.vn` detaches `app/student/admin/api.teacheros.io.vn` and the landing apex `teacheros.io.vn` (+ `www`), and attaches `app/student/admin/api.msmy.io.vn` in the same apply. Before it: register `https://api.msmy.io.vn/api/auth/callback/google` in the Google OAuth console and add `msmy.io.vn` to the consent screen's Authorized domains; confirm the `msmy.io.vn` zone has no existing DNS records for `app`, `student`, `admin` or `api` (they block custom-domain attach). Rollback means reverting the commit, never redeploying with `APP_DOMAIN=teacheros.io.vn`: on current code that domain is no longer prod, so it would switch cookies to the staging prefix and drop the prod-only guards. Sessions do not carry over (cookie domain changes from `.teacheros.io.vn` to `.msmy.io.vn`), so every user signs in again once. The old hosts stop resolving to a Worker; a redirect to the new hosts needs a Cloudflare Redirect Rule set by hand (the CI token lacks Rulesets permission).
+Domain move to `msmy.io.vn` & unified `lms.<domain>`: the unified `lms` Worker replaces the 3 separate `web`/`student`/`admin` Workers, sets `assets.runWorkerFirst: true` (deploy mode) so Worker-level 301s, SW no-cache headers, and CSP/HSTS apply even on static shells like `/`, attaches `lms.<domain>` as primary domain, and keeps `app.<domain>`, `student.<domain>`, `admin.<domain>` as Worker aliases returning 301 redirects to `https://lms.<domain>` (so no Cloudflare Rulesets API permission is required). Because Alchemy creates/reconciles active resources (`lms`) before deleting orphaned resources (`web`, `student`, `admin`), CI runs the idempotent `node packages/infra/scripts/detach-legacy-worker-domains.ts --stage <staging|prod>` right before `pnpm alchemy deploy` (skipped on `dry_run`) to release `app./student./admin.` from any retired `web`/`student`/`admin` Worker before `lms` claims them (for manual CLI cutover, run the same command with `APP_DOMAIN`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` before `pnpm alchemy deploy`; once cut over, it is a no-op). Before the first deploy on a zone: register `https://api.msmy.io.vn/api/auth/callback/google` in the Google OAuth console and add `msmy.io.vn` to the consent screen's Authorized domains; confirm the zone has no pre-existing manual DNS records for `lms`, `app`, `student`, `admin`, or `api` (they block custom-domain attach). Rollback means reverting the commit, never redeploying with `APP_DOMAIN=teacheros.io.vn`: on current code that domain is no longer prod, so it would switch cookies to the staging prefix and drop the prod-only guards. Existing `.msmy.io.vn` sessions carry over seamlessly to `https://lms.msmy.io.vn` because `COOKIE_DOMAIN` stays `.msmy.io.vn`.
 With `APP_DOMAIN` unset (local dev only), the stack keeps its generated
 `workers.dev` URLs and per-host cookies, and `alchemy dev` defaults
-`CORS_ORIGIN` to `http://localhost:8001`. Staging resolves the same table with
-`APP_DOMAIN=staging.teacheros.io.vn`: `app.staging.teacheros.io.vn` (web) +
+`CORS_ORIGIN`, `STUDENT_ORIGINS`, and `ADMIN_ORIGINS` to `http://localhost:8001` (unified LMS dev server). Staging resolves the same table with
+`APP_DOMAIN=staging.teacheros.io.vn`: `lms.staging.teacheros.io.vn` (unified LMS + aliases `app/student/admin.staging.teacheros.io.vn`) +
 `api.staging.teacheros.io.vn` (API), session cookies scoped to
 `.staging.teacheros.io.vn` (see "Provision staging"). Derived-value
 unit tests live in
@@ -59,7 +60,7 @@ different stages never overlap.
 **Never rehearse against the production or pilot D1 database.** The staging
 database is the only rehearsal target (see "Provision staging").
 
-Staging is the QC browser target: `https://staging.teacheros.io.vn` (landing), `https://profile.staging.teacheros.io.vn` (profile), `https://app.staging.teacheros.io.vn` (web), `https://student.staging.teacheros.io.vn` (student portal),
+Staging is the QC browser target: `https://staging.teacheros.io.vn` (landing), `https://profile.staging.teacheros.io.vn` (profile), `https://lms.staging.teacheros.io.vn` (unified LMS: `/login`, `/teacher`, `/student`, `/admin`, with 301 aliases `app/student/admin.staging.teacheros.io.vn`),
 and `https://api.staging.teacheros.io.vn` (API). It lives in the same
 Cloudflare zone but in its own Alchemy stage, with its own D1 database, its
 own `BETTER_AUTH_SECRET` value, and cookies scoped to
@@ -116,12 +117,12 @@ Vận hành:
   export trong `public-leads.ts` — chỉnh qua code, không phải env.
 - **Thứ tự phát hành bộ đề kiểm tra đầu vào (`/placement-test` → `/kiem-tra-dau-vao/`, #515):**
   1. Đảm bảo biến `LEAD_ORG_ID` (UUID `organization.id` của cô Mỹ) được truyền khi deploy `server`, sau đó deploy `server` và `web` (migration `0058` tạo bảng `placement_test` và `placement_test_audio` chạy cùng deploy). **Tuyệt đối không deploy `apps/profile` trước bước 4**, nếu không học viên mở `/kiem-tra-dau-vao/` sẽ thấy trang bảo trì.
-  2. Đăng nhập `https://app.msmy.io.vn/placement-test`, xác nhận `LEAD_ORG_ID` khớp org của cô Mỹ (màn sửa không hiện cảnh báo lệch tổ chức).
+  2. Đăng nhập `https://lms.msmy.io.vn/teacher/placement-test`, xác nhận `LEAD_ORG_ID` khớp org của cô Mỹ (màn sửa không hiện cảnh báo lệch tổ chức).
   3. Cô Mỹ bấm **"Nhập đề gốc (30 câu, 5 audio)"**, nghe thử từng đoạn, chỉnh sửa câu hỏi / ngưỡng CEFR nếu cần, đối chiếu `plans/reports/placement-test-content-review.md`, rồi bấm **Phát hành**.
   4. Kiểm tra API công khai và HTTP `Range` trước khi deploy profile:
      - `curl -i https://api.msmy.io.vn/public/placement-test -H "Origin: https://msmy.io.vn"` trả `200` kèm `Access-Control-Allow-Origin: https://msmy.io.vn` và `Cache-Control: no-cache`.
      - `curl -i -H "Range: bytes=0-99" https://api.msmy.io.vn<src-của-clip-1>` trả `206 Partial Content` kèm `Content-Range: bytes 0-99/<size>`.
-  5. Đưa `apps/profile` lên production qua `deploy.yml` (#536, #560): resource `Cloudflare.Website.StaticSite("profile")` trong `packages/infra/alchemy.run.ts` tự chạy `LEAD_API_URL=<apiOrigin> STUDENT_PORTAL_URL=<studentOrigin> pnpm build` (thay `<meta name="lead-api">` ở cả `dist/index.html` lẫn `dist/kiem-tra-dau-vao/index.html`, và thay `href` của `#studentPortalLink` trên `dist/index.html`) rồi gắn custom domain `msmy.io.vn` + alias `www.msmy.io.vn`, sau đó bước `Smoke check profile` kiểm chứng tự động. **Cảnh báo thứ tự 2 đợt:** nếu cần promote riêng `server` lên `main` ở đợt 1 (trước khi cô Mỹ phát hành bộ đề ở bước 3–4 và trước khi dọn bản ghi DNS A/AAAA/CNAME cũ trên zone `msmy.io.vn`), phải promote từ SHA `7d331c05b305fbe7fd16b98fb0942e5ab93a68cb` (trước commit merge `#536`); chỉ promote `develop` HEAD chứa `profileWorker` ở đợt 2.
+  5. Đưa `apps/profile` lên production qua `deploy.yml` (#536, #560): resource `Cloudflare.Website.StaticSite("profile")` trong `packages/infra/alchemy.run.ts` tự chạy `LEAD_API_URL=<apiOrigin> STUDENT_PORTAL_URL=<studentPortalUrl> pnpm build` (`STUDENT_PORTAL_URL=https://lms.<domain>/student`; thay `<meta name="lead-api">` ở cả `dist/index.html` lẫn `dist/kiem-tra-dau-vao/index.html`, và thay `href` của `#studentPortalLink` trên `dist/index.html`) rồi gắn custom domain `msmy.io.vn` + alias `www.msmy.io.vn`, sau đó bước `Smoke check profile` kiểm chứng tự động. **Cảnh báo thứ tự 2 đợt:** nếu cần promote riêng `server` lên `main` ở đợt 1 (trước khi cô Mỹ phát hành bộ đề ở bước 3–4 và trước khi dọn bản ghi DNS A/AAAA/CNAME cũ trên zone `msmy.io.vn`), phải promote từ SHA `7d331c05b305fbe7fd16b98fb0942e5ab93a68cb` (trước commit merge `#536`); chỉ promote `develop` HEAD chứa `profileWorker` ở đợt 2.
   6. Smoke test trên Safari iOS (`https://msmy.io.vn/kiem-tra-dau-vao/`): bấm bắt đầu, điền form thông tin cá nhân (tạo lead `source = placement-test`), nghe thử audio, hoàn thành bài test và xác nhận dòng lead trên `/leads` đã được cập nhật `placement` kèm điểm CEFR (#534).
 - **Tùy chọn — WAF rate limiting** trên zone msmy.io.vn cho path
   `/public/leads` khi có spam thật (lớp 3 của plan; Turnstile chỉ bật khi cần).
@@ -136,8 +137,8 @@ Vận hành:
 2. **Cloudflare auth** — from `packages/infra`: `pnpm alchemy profile show`
    prints the active provider profile (or use a valid `CLOUDFLARE_API_TOKEN`
    in `.env`). NO-GO if unauthenticated.
-3. **Zone readiness** — the prod DNS zone `msmy.io.vn` (app/student/admin/api + profile) and the staging zone `teacheros.io.vn` exist in the same Cloudflare
-   account (`CLOUDFLARE_ACCOUNT_ID`) and `CLOUDFLARE_API_TOKEN` has zone + Workers custom-domain permissions on both zones (Alchemy infers the zone from `api.<domain>` / `app.<domain>` / `msmy.io.vn` and
+3. **Zone readiness** — the prod DNS zone `msmy.io.vn` (`lms` + legacy 301 aliases `app/student/admin`, `api`, and `profile`) and the staging zone `teacheros.io.vn` exist in the same Cloudflare
+   account (`CLOUDFLARE_ACCOUNT_ID`) and `CLOUDFLARE_API_TOKEN` has zone + Workers custom-domain permissions on both zones (Alchemy infers the zone from `api.<domain>` / `lms.<domain>` / `msmy.io.vn` and
    provisions DNS records and certificates; a zone hosted elsewhere or outside token scope is a
    NO-GO until moved or token-scoped).
 4. **Google OAuth console** — redirect URIs registered for the exact
@@ -160,7 +161,7 @@ Vận hành:
 
 The staging stage owns its own isolated D1 database — required before any
 migration/recovery rehearsal — and serves QC on its own subdomain:
-`https://app.staging.teacheros.io.vn` (web) +
+`https://lms.staging.teacheros.io.vn` (unified LMS + 301 aliases `app/student/admin.staging.teacheros.io.vn`) +
 `https://api.staging.teacheros.io.vn` (API). After first provisioning (or
 destroy/recreate), the automated staging deploy (see "Automated staging
 deploy (CI/CD)" below) keeps the stage current on every push to the
@@ -174,15 +175,15 @@ cp .env.example .env         # fill non-secret values; secrets per inventory
 # Staging holds its own BETTER_AUTH_SECRET value, distinct from prod (cookie
 # isolation defense in depth). APP_DOMAIN is passed inline, never persisted;
 # a stray CORS_ORIGIN fails the run instead of shadowing the derived
-# https://app.staging.teacheros.io.vn origin.
+# https://lms.staging.teacheros.io.vn origin.
 # A workers.dev-era staging stage must be destroyed first (rehearsal-only
 # data; the recreation also completes the pending 0006 empty-upgrade restage
 # below).
 pnpm alchemy destroy --stage staging    # skip if staging does not exist yet
-env APP_DOMAIN=staging.teacheros.io.vn pnpm alchemy deploy --stage staging
+env APP_DOMAIN=staging.teacheros.io.vn STUDENT_PRACTICE_ENABLED=true pnpm alchemy deploy --stage staging
 ```
 
-The deploy registers `app.staging.teacheros.io.vn` and
+The deploy registers `lms.staging.teacheros.io.vn` (plus aliases `app/student/admin.staging.teacheros.io.vn`) and
 `api.staging.teacheros.io.vn` as Workers custom domains on the existing
 `teacheros.io.vn` zone — DNS records and certificates are provisioned by
 Alchemy; never hand-edit them (first cert issuance can take a few minutes).
@@ -225,23 +226,22 @@ operator `.env` and the GitHub repo secret of the same name.
 `.github/workflows/deploy-staging.yml` is the sibling workflow for stage
 `staging`. Staging deploys on every push to `develop` (merging a PR into
 `develop` counts), so QA checks the latest develop at
-`https://app.staging.teacheros.io.vn` with no promote step. The old `staging`
+`https://lms.staging.teacheros.io.vn` (with automatic 301 redirects from `app/student/admin.staging.teacheros.io.vn`) with no promote step. The old `staging`
 branch no longer triggers a deploy. The GitHub environment `staging` must
 allow deployments from the `develop` branch. Manual `workflow_dispatch`
 remains for migration rehearsal.
 Either way the workflow runs the
 same reusable `quality.yml` gates (`turbo-cache: false`) as CI, then
-`APP_DOMAIN=staging.teacheros.io.vn pnpm alchemy deploy --stage staging --yes`
+`APP_DOMAIN=staging.teacheros.io.vn STUDENT_PRACTICE_ENABLED=true pnpm alchemy deploy --stage staging --yes`
 with credentials from the GitHub `staging` environment (same secret names as
 production), serialized like prod (`cancel-in-progress: false`) so
 forward-only migrations never race. Its post-deploy smoke is broader than
 prod's because staging is the QC target: `/readyz` polling, an auth
-round-trip (throwaway student-portal sign-up → `get-session` with a cookie jar
+round-trip (throwaway unified-LMS sign-up via `Origin: https://lms.staging.teacheros.io.vn` → `get-session` with a cookie jar
 poisoned by a prod-shaped parent-domain session cookie — the exact shape that
-broke QC sign-in before issue #125; it uses the portal origin because
-`TEACHER_EMAILS` rejects a random email on the teacher origin), and a check that the removed PWA service
+broke QC sign-in before issue #125; unknown emails auto-classify as `student` even when `TEACHER_EMAILS` is set), a check that the removed PWA service
 worker's stubs (`/sw.js`, `/registerSW.js`) are served as JavaScript with
-network-first cache headers. Throwaway smoke accounts are accepted junk rows
+network-first cache headers on both `lms.` and legacy `app.`, and `Smoke check LMS & legacy 301 redirects` verifying `200 text/html` on `/login` plus `301` redirects from `app.` (`/classes` → `/teacher/classes`, `/pay/smoke-token` → `/pay/smoke-token`), `student.` (`/schedule` → `/student/schedule`), and `admin.` (`/library/tests` → `/admin/library/tests`), as well as verifying the live `/student/` JS bundle embeds `VITE_STUDENT_PRACTICE_ENABLED` = `"true"` (while `deploy.yml` runs the mirror negative check ensuring prod `/student/` never leaks it). Throwaway smoke accounts are accepted junk rows
 in the staging D1; prod deliberately gets no signup smoke. The manual
 "Provision staging" procedure below remains the path for first provisioning
 or destroy/recreate.
@@ -298,7 +298,7 @@ from `alchemy-state-store` to dedicated worker `teacher-os-state`:
 cd packages/infra
 # Secrets per inventory stay in .env. APP_DOMAIN and CORS_ORIGIN are never
 # persisted: APP_DOMAIN is passed inline (read -rs keeps the hostname out of
-# shell history) and the derived https://app.<domain> CORS origin wins.
+# shell history) and the derived https://lms.<domain> CORS origin wins.
 printf "APP_DOMAIN (bare domain, not echoed): " && read -rs APP_DOMAIN && echo
 env "APP_DOMAIN=$APP_DOMAIN" pnpm alchemy deploy --stage prod
 ```
@@ -330,7 +330,7 @@ evidence; whether the real domain appears in that evidence is an operator
 decision under the no-secret rule above.
 
 Then run in a private/incognito window, once in Chrome and once in Safari,
-from the production `https://app.<domain>`:
+from the production `https://lms.<domain>/login`:
 
 1. Sign in with the dedicated Google UAT account → lands back on the app
    (callback consumed at `/api/auth/callback/google`).
@@ -687,13 +687,13 @@ Cột `enrollment.status` là forward-only; không xóa cột hay sửa file mig
    - Staging làm tương tự với `--env staging` (đã đặt `MAIL_FROM` đồng bộ thương hiệu Cô Mỹ Dạy Tiếng Anh).
 3. **Deploy & Kiểm tra**:
    - Deploy server worker.
-   - Đăng ký thử 1 tài khoản học viên thật trên student portal (`https://student.<domain>` — portal origin derive từ `APP_DOMAIN`, xem bảng topology trên).
+   - Đăng ký thử 1 tài khoản học viên thật qua trang đăng nhập hợp nhất (`https://lms.<domain>/login` — redirect sang `https://lms.<domain>/student`, xem bảng topology trên).
    - Kiểm tra email xác thực được gửi đến hộp thư người nhận (inbox, không vào spam) và URL verify hoạt động chính xác.
 
 ### Quota & Monitoring
 
 - **Free tier Resend**: 100 email/ngày, tối đa 3.000 email/tháng.
-- **Lưu ý quan trọng**: Quota này **chia sẻ chung** giữa việc gửi email xác thực học viên và bất kỳ email xác thực nào từ tài khoản giáo viên đăng ký trên web app (do dùng chung cấu hình auth của server).
+- **Lưu ý quan trọng**: Quota này **chia sẻ chung** giữa email xác thực tài khoản (học viên & giáo viên), email thông báo nghiệp vụ (như chốt khai giảng `class_opening_confirmed`), và email nhắc hạn hằng ngày lúc 06:00 VN (`daily_deadline_reminder` qua cron `0 23 * * *`); các lượt gửi nền nhiều người nhận được giãn nhịp `550ms/email` (`apps/server/src/lib/notifications/emit.ts`, `daily-deadline-reminder.ts`) để tránh chạm giới hạn 2 req/s của Resend.
 - **Monitoring log**: Theo dõi log Workers qua Cloudflare Dashboard / log stream:
   - Tìm các thông điệp `Failed to send verification email` hoặc `resend send failed: 429` (vượt quota).
   - Khi gặp lỗi 429 hoặc 5xx từ Resend, `ResendMailer` tự động retry đúng 1 lần (tôn trọng header `Retry-After`).
@@ -936,39 +936,36 @@ a per-stage operation.
 
 ## Admin console go-live (plan #413)
 
-Cổng quản trị Cô Mỹ Dạy Tiếng Anh (`apps/admin`) chạy trên origin riêng
-`https://admin.<domain>` (staging: `admin.staging.teacheros.io.vn`; dev cục
-bộ: 8004, E2E: 8104) và API của nó nằm ở `/api/admin` trên Worker API,
+Cổng quản trị Cô Mỹ Dạy Tiếng Anh (`apps/admin`) được mount tại
+`https://lms.<domain>/admin` (staging: `https://lms.staging.teacheros.io.vn/admin`;
+domain cũ `https://admin.<domain>` trả 301 sang `https://lms.<domain>/admin`;
+dev cục bộ đi qua unified LMS port 8001 hoặc riêng 8004) và API của nó nằm ở `/api/admin` trên Worker API,
 ngoài kernel tree.
 
 ### Binding bắt buộc
 
 | Binding | Giá trị production | Ghi chú |
 | --- | --- | --- |
-| `ADMIN_ORIGINS` | `https://admin.<domain>` | Có default từ `APP_DOMAIN` (`alchemy.run.ts`); giá trị explicit thiếu origin admin fail loud khi deploy |
-| `ADMIN_EMAILS` | danh sách email phân tách dấu phẩy | **KHÔNG có default** — rỗng (không set) = không ai là admin và không ai đăng ký được account admin; so khớp lowercase trong `requireAdmin` ở MỖI request (gỡ email khỏi danh sách là mất quyền ngay) |
-| `TEACHER_EMAILS` | danh sách email phân tách dấu phẩy | **Bắt buộc trên production** (`resolveTeacherEmails` ném lỗi khi deploy nếu rỗng); ở môi trường khác rỗng = không giới hạn. Kiểm lowercase mỗi request ở kernel (`bootstrapMiddleware`) và ở hook sign-up (`TEACHER_SIGNUP_FORBIDDEN`, #513) |
+| `ADMIN_ORIGINS` | `https://lms.<domain>` | Có default từ `APP_DOMAIN` (`alchemy.run.ts`); giá trị explicit thiếu `lmsOrigin` fail loud khi deploy |
+| `ADMIN_EMAILS` | danh sách email phân tách dấu phẩy | **KHÔNG có default** — rỗng (không set) = không ai là admin; truyền từ `vars.ADMIN_EMAILS` trên cả `staging` và `production`; so khớp lowercase trong `requireAdmin` ở MỖI request (gỡ email khỏi danh sách là mất quyền ngay) |
+| `TEACHER_EMAILS` | danh sách email phân tách dấu phẩy | **Bắt buộc trên production** (`resolveTeacherEmails` ném lỗi khi deploy nếu rỗng); ở môi trường khác rỗng = không giới hạn. Kiểm lowercase mỗi request ở kernel (`bootstrapMiddleware`) và khi phân loại role lúc sign-up (#513) |
 | `LIBRARY_AUDIO` | R2 bucket `library-audio` | Private bucket tạo trong `alchemy.run.ts`; thiếu binding → route audio trả 503 `LIBRARY_AUDIO_DISABLED` |
 | `MATERIALS` | R2 bucket `materials` | Private bucket tạo trong `alchemy.run.ts` (kho tài liệu/học liệu theo buổi học); thiếu binding → route file trả 503 `MATERIALS_DISABLED` |
 
 ### Quy trình cấp admin đầu tiên
 
-1. Đặt `ADMIN_EMAILS=<email-vận-hành>` trong môi trường deploy (binding,
+1. Đặt `ADMIN_EMAILS=<email-vận-hành>` trong môi trường deploy (GitHub Environment `vars.ADMIN_EMAILS`,
    không ghi vào file `.env` cho production) rồi deploy.
-2. Người vận hành mở `https://admin.<domain>/register` (route không được
-   link công khai) và đăng ký bằng đúng email trong danh sách; server từ
-   chối mọi email khác bằng 403 `ADMIN_SIGNUP_FORBIDDEN` (không tạo row
-   `user`).
+2. Người vận hành mở `https://lms.<domain>/admin/register` (hoặc đăng ký qua `https://lms.<domain>/login`) bằng đúng email trong `ADMIN_EMAILS`; role `admin` được cấp theo allowlist email (mọi email ngoài danh sách không thể đăng ký làm admin).
 3. Verify email (mail verification của Better Auth) — `requireAdmin` đòi
-   `email_verified` bên cạnh `role='admin'` (role được stamp từ Origin
-   admin lúc sign-up).
-4. Smoke: đăng nhập tại `https://admin.<domain>/login` → shell hiện mục
+   `email_verified` bên cạnh `role='admin'`.
+4. Smoke: đăng nhập tại `https://lms.<domain>/login` → tự điều hướng sang `https://lms.<domain>/admin`, shell hiện mục
    "Thư viện đề" và `GET /api/admin/me` trả 200.
 
 ### Single-org allowlist giáo viên (`TEACHER_EMAILS`, #513)
 
 1. **Hard Gate kiểm tra trước khi deploy production (#513, #524):** chạy truy vấn đọc `SELECT id, email, email_verified, created_at FROM user WHERE role = 'teacher';` trên D1 production để đối chiếu chính xác địa chỉ email và trạng thái xác thực của chủ app. **Bắt buộc tài khoản đưa vào `TEACHER_EMAILS` phải đã tồn tại (`role = 'teacher'`) VÀ có `email_verified = 1`** trước khi deploy (vì `bootstrapMiddleware` đòi `session.emailVerified === true` và trả 403 `ACCOUNT_TEACHER_EMAIL_UNVERIFIED` nếu chưa xác thực nhằm chống đăng ký chiếm chỗ). Nếu tài khoản chủ app trên D1 đang có `email_verified = 0`, chủ app phải xác thực qua email (hoặc nếu cập nhật `UPDATE user SET email_verified = 1` thủ công trên D1 thì bắt buộc chạy kèm `DELETE FROM session WHERE user_id = '<id>';` để thu hồi mọi session cũ trước khi mở gate).
-2. Đặt biến `TEACHER_EMAILS` trên GitHub Environment `production` (`gh variable set TEACHER_EMAILS --env production --body "<email-chủ-app>"`, hoặc truyền trong môi trường deploy) khớp đúng email đã `email_verified = 1` trong kết quả truy vấn. Nếu `TEACHER_EMAILS` rỗng trên `APP_DOMAIN=teacheros.io.vn`, Alchemy fail-closed ngay lúc deploy. Các tài khoản `role = 'teacher'` khác (nếu có) sẽ bị chặn ở mỗi request bằng 403 `ACCOUNT_TEACHER_NOT_ALLOWED`; không xoá dữ liệu trong bước này.
+2. Đặt biến `TEACHER_EMAILS` trên GitHub Environment `production` (`gh variable set TEACHER_EMAILS --env production --body "<email-chủ-app>"`, hoặc truyền trong môi trường deploy) khớp đúng email đã `email_verified = 1` trong kết quả truy vấn. Nếu `TEACHER_EMAILS` rỗng trên `APP_DOMAIN=msmy.io.vn`, Alchemy fail-closed ngay lúc deploy. Các tài khoản `role = 'teacher'` khác (nếu có) sẽ bị chặn ở mỗi request bằng 403 `ACCOUNT_TEACHER_NOT_ALLOWED`; không xoá dữ liệu trong bước này.
 3. **Rollback / đổi danh sách:** đổi hoặc bổ sung email trong binding `TEACHER_EMAILS` rồi deploy lại; có hiệu lực ngay ở request kế tiếp và không cần migration D1.
 
 ### Bucket `library-audio` (kho audio đề Listening)
@@ -982,9 +979,9 @@ ngoài kernel tree.
 
 ### Kiểm domain custom
 
-Sau deploy, xác nhận `https://admin.<domain>` gắn đúng Worker admin,
-certificates issue thành công (giống `app.`/`student.`), và session cookie
-zone (`Domain=.<domain>`) hoạt động: đăng nhập admin rồi gọi
+Sau deploy, xác nhận `https://lms.<domain>` gắn đúng Worker `lms` và các alias cũ (`app.`, `student.`, `admin.`) trả 301 về `https://lms.<domain>` (được kiểm tự động bởi bước `Smoke check LMS & legacy 301 redirects`),
+certificates issue thành công, và session cookie
+zone (`Domain=.<domain>`) hoạt động: đăng nhập admin tại `https://lms.<domain>/login` rồi gọi
 `https://api.<domain>/api/admin/me` phải 200; một session teacher/student
 gọi cùng endpoint phải 403 `ACCOUNT_NOT_ADMIN`.
 
@@ -1025,3 +1022,12 @@ gọi cùng endpoint phải 403 `ACCOUNT_NOT_ADMIN`.
 - **Hình dạng migration:** `0075`–`0077`, `0079`, `0080`, `0082` chỉ thêm cột/bảng/index (`0080` tạo `vocab_group` và cột `vocab_deck.group_id` `ON DELETE set null`). `0078` tạo `class_session_meeting` theo cột Google Meet, rồi `0081` recreate bảng đó (`PRAGMA foreign_keys=OFF → __new_class_session_meeting → INSERT SELECT → DROP → RENAME`) để bỏ các cột Google; `0082` thêm cột Zoom. Prod chưa từng có `0078` nên cả chuỗi chạy trên bảng rỗng; trên staging, dữ liệu link/ghi hình Google Meet cũ bị bỏ — dọn tay theo README "Zoom (Server-to-Server OAuth)". Nguồn sự thật là các file trong `packages/db/src/migrations/`.
 - **Secret:** đặt `ZOOM_*` ở environment `production` trước khi deploy nếu muốn bật Zoom ngay (xem "Secret inventory"); thiếu secret thì Worker vẫn lên, tính năng Zoom tắt êm.
 - **Rollback:** không lùi riêng Worker về bản trước `0075`. Probe `/readyz` (`apps/server/src/routes/readiness.ts`) so khớp **chính xác** tổng số cột của schema trong bundle, nên Worker cũ chạy trên D1 đã có cột mới sẽ trả `503`. Không `DROP` tay bảng/cột trên D1 (sổ cái `d1_migrations` đã ghi nhận); ưu tiên forward-fix.
+
+## Unified LMS cutover, cron 06:00 VN & migrations 0083–0086
+
+- **Cửa sổ cutover Unified LMS (`packages/infra/scripts/detach-legacy-worker-domains.ts`):** Lần deploy cutover đầu tiên gỡ custom domain `app./student./admin.<domain>` khỏi 3 Worker cũ (`web`, `student`, `admin`) *trước* khi `pnpm alchemy deploy` build và gắn lại vào Worker `lms`, tạo **downtime 3–10 phút** trên các domain cũ (các lần deploy sau script này là idempotent no-op). Nếu `alchemy deploy` lỗi giữa chừng sau bước detach, 3 domain cũ rơi vào trạng thái mồ côi cho tới khi re-run deploy thành công hoặc rollback. Trước khi cutover prod: sao lưu D1, xác nhận zone `msmy.io.vn` không có bản ghi DNS thủ công tại `lms`, chạy `Deploy Production` với `dry_run=true` trước (xác nhận 0 delete/replace trên D1/R2), và thực hiện ngoài giờ cao điểm (tránh giờ học buổi tối và sát mốc 06:00 VN).
+- **Claim sớm email trong `ADMIN_EMAILS` / `TEACHER_EMAILS` (`#908`):** Trên unified origin, `POST /api/auth/sign-up/email` hiện phân loại role theo allowlist (`packages/auth/src/index.ts`), nên email trong `ADMIN_EMAILS`/`TEACHER_EMAILS` chưa có bản ghi `user` trong D1 vẫn có thể bị tạo tài khoản credential chưa xác minh (account squatting / verification-link pre-hijacking). Trước khi công bố `https://lms.msmy.io.vn`, đối soát toàn bộ email trong `vars.ADMIN_EMAILS` và `vars.TEACHER_EMAILS` trên prod D1; nếu có email mới chưa tồn tại, chủ tài khoản cần đăng nhập Google OAuth ngay sau deploy để claim và xác minh tài khoản trước (khóa triệt để ở `#908`).
+- **Cron Triggers của Worker `server` (`packages/infra/alchemy.run.ts`, `apps/server/src/lib/scheduled.ts`):**
+  - `*/10 * * * *` — đồng bộ cloud recording Zoom (`runRecordingSyncCron`).
+  - `0 23 * * *` (23:00 UTC = 06:00 `Asia/Ho_Chi_Minh`) — gửi email digest nhắc hạn bài tập & tự học (`daily_deadline_reminder`, email-only, giãn nhịp `550ms/email` cho giới hạn 2 req/s của Resend; an toàn trên staging khi `MAILER_IMPL=log`). Sau deploy, xác nhận cả 2 cron active trên Cloudflare Dashboard của Worker `server` và kiểm tra log lượt chạy 06:00 VN đầu tiên.
+- **Hình dạng & Rollback migrations `0083`–`0086`:** Toàn bộ là **additive-only** (`0083` tạo `course_catalog_seed`, `course_category`, `course` + cột nullable `placement_test_submission.final_course_id`; `0084` thêm 2 cột nullable nhận xét tiêu chí trên `placement_test_submission`; `0085` thêm `assignment_prompt.groups` `DEFAULT '[]' NOT NULL`; `0086` thêm 3 cột `class.opening_*`, 2 cột nullable `notification_record.html_body`/`text_body` và index `notification_record_org_event_ref_idx` — nguồn sự thật trong `packages/db/src/migrations/`). Không lùi riêng Worker về bản trước `0083` trên D1 đã migrate vì `/readyz` (`apps/server/src/routes/readiness.ts`) so khớp chính xác tổng số cột; không `DROP` tay bảng/cột đã ghi trong `d1_migrations`, ưu tiên forward-fix.

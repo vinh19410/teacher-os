@@ -1,0 +1,116 @@
+{
+	"id": "0d576ac0-1980-44f8-a5aa-520a8b73aee6",
+	"url": "https://stepielts.com/student/listening/0d576ac0-1980-44f8-a5aa-520a8b73aee6?mode=practice",
+	"title": "General assistant job",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/e43c7a69-3b71-49d5-8f6a-f9243b59667e.mp3",
+	"transcript": "Speaker 0: Hello. Greenwell Garden Centers.\nSpeaker 1: Oh, hello. I'm calling about the part time job you were advertising last week.\nSpeaker 0: Oh, you mean for the delivery driver?\nSpeaker 1: No. For a general assistant. My son's looking for a part time job, and I said I'd call you about it. I already picked up an application form from one of your staff.\nSpeaker 0: I see. Well, we'll shortly have a position available in our new Market Road branch that's opening next month, or there's one available right now in our branch in Station Road, and that's where the actual job advert was for.\nSpeaker 1: I see. It's definitely the current job I'm calling about.\nSpeaker 0: Right. Now there were a couple of options regarding working hours. We're really looking for someone that could do both Monday and Wednesday afternoons or the same hours on Thursday and Friday.\nSpeaker 1: What about Sunday?\nSpeaker 0: That'd work provided he could do a full day.\nSpeaker 1: That wouldn't be a problem. Great. And, what would the job involve exactly?\nSpeaker 0: Let me just look at the job description for that particular job. Well, looks like there'd be some working on the checkout, you know, taking payment for goods. And I suppose our general assistants also do rather a lot of lifting of some quite heavy items. So good physical strength is quite important for this position. There's some assisting with customer inquiries as well. But, we don't expect new staff to have much knowledge about the plants themselves. That's what the more experienced staff are there for. Then, especially in the summer, the plants need a lot of watering.\nSpeaker 1: I see. Well, I think you could manage all that.\nSpeaker 0: Good. Now there are a few other qualifications and skills that the job calls for. The first one being communication skills are important. As you know, first impressions count for a lot. And the other thing we would be looking for in our applicants for this position is he should have some ability in maths, a basic level at least.\nSpeaker 1: Well, he did well in that subject at school, and he's polite and sociable too. So, hopefully, he'll match your expectations.\nSpeaker 0: Great. Now listen and answer questions seven to 10. So am I right in thinking he's still at high school?\nSpeaker 1: He's about to finish for the summer break, so he could come for an interview this week if that's convenient.\nSpeaker 0: How about Wednesday, say about 10AM?\nSpeaker 1: I'm afraid that's the morning of his last exam. Could we make it later instead, perhaps at 02:30?\nSpeaker 0: Five would be better for us.\nSpeaker 1: Okay. That's fine.\nSpeaker 0: So his name is?\nSpeaker 1: It's Liam Avery.\nSpeaker 0: Okay. Got that. So Liam will be having the interview with me. My name's Maria Rapana, r a, p for Peter, a n a. On Tuesday, Liam needs to ring me on my direct line to confirm that he's coming, and that's 0213038874.\nSpeaker 1: Okay.\nSpeaker 0: Oh, just one more thing. I need to see Liam's passport at the interview just to see that he's eligible to work in this country.\nSpeaker 1: Sure. I'll tell him. Thanks for your time.\nSpeaker 0: Thanks for calling.",
+	"body": {
+		"text": "Job Details\nJob title: general assistant\nJob available now in the [1] Branch\nDays/hours of work: [2] (all day)\nDuties:\nworking on checkout\n[3] heavy items\ndealing with customer enquiries\n[4] the plants\nQualification required:\ngood [5] skills\nbasic ability in [6]\nInterview details:\ninterview arranged for [7] on Wednesday this week\nName of interviewer: Maria [8]\nContact number: [9]\nShould take his [10] to the interview",
+		"html": "<h4><strong>Job Details</strong></h4><table><tbody><tr><td><ul><li>Job title: general assistant</li></ul></td></tr><tr><td><ul><li>Job available now in the [1] Branch</li></ul></td></tr><tr><td><ul><li>Days/hours of work: [2] (all day)</li></ul></td></tr><tr><td><ul><li><strong>Duties</strong>:<ul><li>working on checkout</li><li>[3] heavy items</li><li>dealing with customer enquiries</li><li>[4] the plants</li></ul></li></ul></td></tr><tr><td><ul><li><strong>Qualification required:</strong><ul><li>good [5] skills </li><li>basic ability in [6]</li></ul></li></ul></td></tr><tr><td><ul><li><strong>Interview details:</strong><ul><li>interview arranged for [7] on Wednesday this week</li><li>Name of interviewer: Maria [8]</li><li>Contact number: [9]</li><li>Should take his [10] to the interview</li></ul></li></ul></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Job Details\nJob title: general assistant\nJob available now in the [1] Branch\nDays/hours of work: [2] (all day)\nDuties:\nworking on checkout\n[3] heavy items\ndealing with customer enquiries\n[4] the plants\nQualification required:\ngood [5] skills\nbasic ability in [6]\nInterview details:\ninterview arranged for [7] on Wednesday this week\nName of interviewer: Maria [8]\nContact number: [9]\nShould take his [10] to the interview",
+			"body_table": [
+				["Job title: general assistant"],
+				["Job available now in the [1] Branch"],
+				["Days/hours of work: [2] (all day)"],
+				[
+					"Duties:\nworking on checkout\n[3] heavy items\ndealing with customer enquiries\n[4] the plants"
+				],
+				["Qualification required:\ngood [5] skills\nbasic ability in [6]"],
+				[
+					"Interview details:\ninterview arranged for [7] on Wednesday this week\nName of interviewer: Maria [8]\nContact number: [9]\nShould take his [10] to the interview"
+				]
+			],
+			"body_html": "<h4><strong>Job Details</strong></h4><table><tbody><tr><td><ul><li>Job title: general assistant</li></ul></td></tr><tr><td><ul><li>Job available now in the [1] Branch</li></ul></td></tr><tr><td><ul><li>Days/hours of work: [2] (all day)</li></ul></td></tr><tr><td><ul><li><strong>Duties</strong>:<ul><li>working on checkout</li><li>[3] heavy items</li><li>dealing with customer enquiries</li><li>[4] the plants</li></ul></li></ul></td></tr><tr><td><ul><li><strong>Qualification required:</strong><ul><li>good [5] skills </li><li>basic ability in [6]</li></ul></li></ul></td></tr><tr><td><ul><li><strong>Interview details:</strong><ul><li>interview arranged for [7] on Wednesday this week</li><li>Name of interviewer: Maria [8]</li><li>Contact number: [9]</li><li>Should take his [10] to the interview</li></ul></li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Job available now in the [1] Branch",
+					"answer": "Station Road",
+					"quotes": [
+						"Well, we'll shortly have a position available in our new Market Road branch that's opening next month, or there's one available right now in our branch in Station Road, and that's where the actual job advert was for."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Days/hours of work [2] (all day)",
+					"answer": "Sunday",
+					"quotes": [
+						"What about Sunday?",
+						"That'd work provided he could do a full day.",
+						"That wouldn't be a problem.",
+						"Great."
+					]
+				},
+				{
+					"number": 3,
+					"text": "[3] heavy items",
+					"answer": "lifting",
+					"quotes": [
+						"And I suppose our general assistants also do rather a lot of lifting of some quite heavy items."
+					]
+				},
+				{
+					"number": 4,
+					"text": "[4] the plants",
+					"answer": "watering",
+					"quotes": [
+						"Then, especially in the summer, the plants need a lot of watering."
+					]
+				},
+				{
+					"number": 5,
+					"text": "good [5] skills basic",
+					"answer": "communication",
+					"quotes": ["The first one being communication skills are important."]
+				},
+				{
+					"number": 6,
+					"text": "ability in [6]",
+					"answer": "maths",
+					"quotes": [
+						"And the other thing we would be looking for in our applicants for this position is he should have some ability in maths, a basic level at least."
+					]
+				},
+				{
+					"number": 7,
+					"text": "interview arranged for [7] on Wednesday this week",
+					"answer": "5",
+					"quotes": ["Five would be better for us."]
+				},
+				{
+					"number": 8,
+					"text": "Name of interviewer: Maria [8]",
+					"answer": "Rapana",
+					"quotes": ["My name's Maria Rapana, r a, p for Peter, a n a."]
+				},
+				{
+					"number": 9,
+					"text": "Contact number: [9]",
+					"answer": "0213038874",
+					"quotes": [
+						"On Tuesday, Liam needs to ring me on my direct line to confirm that he's coming, and that's 0213038874."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Should take his [10] to the interview",
+					"answer": "passport",
+					"quotes": [
+						"I need to see Liam's passport at the interview just to see that he's eligible to work in this country."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

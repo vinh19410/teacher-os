@@ -1,0 +1,199 @@
+{
+	"id": "109ba0dd-97fa-4613-bfcb-a3da4ff9b09e",
+	"url": "https://stepielts.com/student/listening/109ba0dd-97fa-4613-bfcb-a3da4ff9b09e?mode=practice",
+	"title": "Bachelor of Science Degree",
+	"source": "Forecast Quý 2-2025",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/54d8b03d-9db8-45df-8abb-252d94e92b81.mp3",
+	"transcript": "Speaker 1: JENNEY: So Henry, it’s been exciting to start our Bachelor of Science degree this year.HENRY: Yes, it really has.\nSpeaker 2: I have been looking forward to studying science at university since high school.JENNEY: That’s good to hear.\nSpeaker 1: Hey, my tutor told me that your first experiment about wind energy was very successful.HENRY: Yes, that’s true.\nSpeaker 2: I spent a lot of time doing research and collecting data to analyse how we can utilize wind energy effectively.JENNEY: Sounds interesting.HENRY: And my professor recommended that I apply for sponsorship from a local institution.JENNEY: Did you get it?HENRY: Yes, I did, and I was very happy about that. I heard that you are also working on a project, aren’t you?JENNEY: Yes, the university helped me arrange sponsorship from a private company initially but then they pulled out, so I thought I wasn’t going to have any support.But a local institution came through and sponsored me in the end.HENRY: Oh, that’s a relief.JENNEY: Yes.\nSpeaker 1: While it is good to have financial support, many students care more about whether the school has great infrastructure.HENRY: Really?JENNEY: Sure, I read an article the other day, which said that there are over 75% of students in the UK regarding facilities as a very essential factor when selecting schools.Some of these students believe that they feel unmotivated when they have no access to some basic facilities, but I personally do not really care about it.HENRY: Well, for me, I chose this school because I can literally study, find accommodation and play sports on campus without going into the city.The library is 24 hours open to students.\nSpeaker 2: This is very important to me because I usually stay up late studying. So what made you choose the school?JENNEY: It was because I’d heard that there were quite a few teachers who know how to help students excel.HENRY: Hmm, I’m not sure about that though, by the way, I knew that you won the first prize in a science quiz contest, didn’t you?JENNEY: Yes, I did not expect that but I was really happy about it.HENRY: Wow, congratulations.JENNEY: Thank you.HENRY: Oh, have you decided on the main area of study for your first year?JENNEY: Well, I was originally going to choose math for my first year, but it was too difficult for me.Then I began to explore other subjects which seemed relatively easy for me and I found wind energy, unfortunately that class was already full.\nSpeaker 1: So I ended up doing chemistry, just like you.HENRY: Ah, I see.\nSpeaker 2: I’m sure you will enjoy chemistry anyway.JENNEY: So why did you choose chemistry as your first-year subject?\nSpeaker 1: Was it because it was of interest to you, or for getting a good job?HENRY: Well, for me, the reason is that it was good for getting credits.JENNEY: Ah, I see.HENRY: Oh, by the way, have you heard about the new Energy Institute scholarship?JENNEY: Oh yes. I did overhear someone talking about it, but I don’t know the details. Did it aim to make full use of some kind of renewable energy? Maybe wave or wind energy?HENRY: No, actually it is geothermal energy.\nSpeaker 2: It’s a great opportunity for students who aim to get an extra Bachelor of Science module.JENNEY: That sounds like a good chance.\nSpeaker 1: Is the main goal of the module to obtain skills in leadership or maybe network with some larger companies in the energy industry?HENRY: Actually the aim is to improve skills for future management roles in relevant projects.JENNEY: Cool, I would like to work in a managerial position one day, so I will have to look more into how I can qualify for the scholarship. I wonder how I can register.HENRY: Well, you should first visit their official website to make yourself familiar with the latest policies and conditions, and then fill out the registration form online.Also, if you want to know more about the additional information on the amount of money and the special offers we provide, there is a flyer on the noticeboard in the cafeteria where you can find whatever you need.JENNEY: OK, I got it.HENRY: Oh, I guess I’d better get to the library and start on my study period.JENNEY: Alright, see you in class tomorrow.HENRY: Bye!",
+	"body": {
+		"text": "conducted a successful experiment about wind energy [1]\ngot the sponsorship from a local institution [2]\nopted for the school because of desirable infrastructure and library [3]\nchose the school because the teachers lead students to success [4]\nperformed well in a science competition [5]",
+		"html": "<p>conducted a successful experiment about wind energy [1]</p><p>got the sponsorship from a local institution [2]</p><p>opted for the school because of desirable infrastructure and library [3]</p><p>chose the school because the teachers lead students to success [4]</p><p>performed well in a science competition [5]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MATCHING_NAMES",
+			"instructions": "Who did each of the following activities?",
+			"options": [
+				{
+					"label": "A",
+					"text": "Henry"
+				},
+				{
+					"label": "B",
+					"text": "Jenney"
+				},
+				{
+					"label": "C",
+					"text": "Both Henry and Jenney"
+				}
+			],
+			"body": "conducted a successful experiment about wind energy [1]\ngot the sponsorship from a local institution [2]\nopted for the school because of desirable infrastructure and library [3]\nchose the school because the teachers lead students to success [4]\nperformed well in a science competition [5]",
+			"body_html": "<p>conducted a successful experiment about wind energy [1]</p><p>got the sponsorship from a local institution [2]</p><p>opted for the school because of desirable infrastructure and library [3]</p><p>chose the school because the teachers lead students to success [4]</p><p>performed well in a science competition [5]</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "conducted a successful experiment about wind energy",
+					"answer": "A",
+					"quotes": [
+						"Hey, my tutor told me that your first experiment about wind energy was very successful.HENRY: Yes, that’s true."
+					]
+				},
+				{
+					"number": 2,
+					"text": "got the sponsorship from a local institution",
+					"answer": "C",
+					"quotes": [
+						"I spent a lot of time doing research and collecting data to analyse how we can utilize wind energy effectively.JENNEY: Sounds interesting.HENRY: And my professor recommended that I apply for sponsorship from a local institution.JENNEY: Did you get it?HENRY: Yes, I did, and I was very happy about that.",
+						"I heard that you are also working on a project, aren’t you?JENNEY: Yes, the university helped me arrange sponsorship from a private company initially but then they pulled out, so I thought I wasn’t going to have any support.But a local institution came through and sponsored me in the end.HENRY: Oh, that’s a relief.JENNEY: Yes."
+					]
+				},
+				{
+					"number": 3,
+					"text": "opted for the school because of desirable infrastructure and library",
+					"answer": "A",
+					"quotes": [
+						"While it is good to have financial support, many students care more about whether the school has great infrastructure.HENRY: Really?JENNEY: Sure, I read an article the other day, which said that there are over 75% of students in the UK regarding facilities as a very essential factor when selecting schools.Some of these students believe that they feel unmotivated when they have no access to some basic facilities, but I personally do not really care about it.HENRY: Well, for me, I chose this school because I can literally study, find accommodation and play sports on campus without going into the city.The library is 24 hours open to students."
+					]
+				},
+				{
+					"number": 4,
+					"text": "chose the school because the teachers lead students to success",
+					"answer": "B",
+					"quotes": [
+						"So what made you choose the school?JENNEY: It was because I’d heard that there were quite a few teachers who know how to help students excel.HENRY: Hmm, I’m not sure about that though, by the way, I knew that you won the first prize in a science quiz contest, didn’t you?JENNEY: Yes, I did not expect that but I was really happy about it.HENRY: Wow, congratulations.JENNEY: Thank you.HENRY: Oh, have you decided on the main area of study for your first year?JENNEY: Well, I was originally going to choose math for my first year, but it was too difficult for me.Then I began to explore other subjects which seemed relatively easy for me and I found wind energy, unfortunately that class was already full."
+					]
+				},
+				{
+					"number": 5,
+					"text": "performed well in a science competition",
+					"answer": "B",
+					"quotes": [
+						"So what made you choose the school?JENNEY: It was because I’d heard that there were quite a few teachers who know how to help students excel.HENRY: Hmm, I’m not sure about that though, by the way, I knew that you won the first prize in a science quiz contest, didn’t you?JENNEY: Yes, I did not expect that but I was really happy about it.HENRY: Wow, congratulations.JENNEY: Thank you.HENRY: Oh, have you decided on the main area of study for your first year?JENNEY: Well, I was originally going to choose math for my first year, but it was too difficult for me.Then I began to explore other subjects which seemed relatively easy for me and I found wind energy, unfortunately that class was already full."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 6,
+					"text": "In the first year, Jenney would be studying",
+					"options": [
+						{
+							"label": "A",
+							"text": "chemistry."
+						},
+						{
+							"label": "B",
+							"text": "wind energy."
+						},
+						{
+							"label": "C",
+							"text": "math."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"So I ended up doing chemistry, just like you.HENRY: Ah, I see."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Henry chose his subject mainly because",
+					"options": [
+						{
+							"label": "A",
+							"text": "he was interested in it."
+						},
+						{
+							"label": "B",
+							"text": "he was able to get enough credits."
+						},
+						{
+							"label": "C",
+							"text": "he found it helpful to finding a good job."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Was it because it was of interest to you, or for getting a good job?HENRY: Well, for me, the reason is that it was good for getting credits.JENNEY: Ah, I see.HENRY: Oh, by the way, have you heard about the new Energy Institute scholarship?JENNEY: Oh yes."
+					]
+				},
+				{
+					"number": 8,
+					"text": "The Energy Institute Scholarship was set up for developing",
+					"options": [
+						{
+							"label": "A",
+							"text": "wave energy."
+						},
+						{
+							"label": "B",
+							"text": "geothermal energy."
+						},
+						{
+							"label": "C",
+							"text": "wind energy."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Maybe wave or wind energy?HENRY: No, actually it is geothermal energy."
+					]
+				},
+				{
+					"number": 9,
+					"text": "What’s the goal of the Bachelor of Science module?",
+					"options": [
+						{
+							"label": "A",
+							"text": "to develop management skills"
+						},
+						{
+							"label": "B",
+							"text": "to build connections with big companies"
+						},
+						{
+							"label": "C",
+							"text": "to develop leadership skills"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Is the main goal of the module to obtain skills in leadership or maybe network with some larger companies in the energy industry?HENRY: Actually the aim is to improve skills for future management roles in relevant projects.JENNEY: Cool, I would like to work in a managerial position one day, so I will have to look more into how I can qualify for the scholarship."
+					]
+				},
+				{
+					"number": 10,
+					"text": "What did Jenney want to find out about the new Energy Institute Scholarship?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the registration arrangement"
+						},
+						{
+							"label": "B",
+							"text": "the amount of money"
+						},
+						{
+							"label": "C",
+							"text": "the special offers"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I wonder how I can register.HENRY: Well, you should first visit their official website to make yourself familiar with the latest policies and conditions, and then fill out the registration form online.Also, if you want to know more about the additional information on the amount of money and the special offers we provide, there is a flyer on the noticeboard in the cafeteria where you can find whatever you need.JENNEY: OK, I got it.HENRY: Oh, I guess I’d better get to the library and start on my study period.JENNEY: Alright, see you in class tomorrow.HENRY: Bye!"
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

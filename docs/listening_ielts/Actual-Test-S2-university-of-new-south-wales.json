@@ -1,0 +1,115 @@
+{
+	"id": "70c3f0bd-c41e-4aa0-901c-f6584141030d",
+	"url": "https://stepielts.com/student/listening/70c3f0bd-c41e-4aa0-901c-f6584141030d?mode=practice",
+	"title": "University of New South Wales",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/712c45c9-74b7-4111-a2b3-2d11878f4428.mp3",
+	"transcript": "Speaker 1: Counsellor: Hello, everyone, and welcome to the University of New South Wales. The first thing I’d like to do at today’s orientation session is get you all oriented. That means tell you the location of some useful facilities and services. So first of all, take out the maps we gave you all as you came in the door. The map is the big yellow sheet of paper. As you can see on the map, north is at the top, south at the bottom, etc. Which way is north? Well, look through that window on my left, your right. See the rising sun? That would have to be east. So north must be directly behind me. Now we are at the campus main gate. The recreational facilities are on my right hand, and its opposite is the student center. No questions? Good. Pretty easy. Right? Okay. Did everyone eat breakfast at the student food service this morning? Was the food good? Yes. Yes. I am joking. I’ve eaten there too. So after a meal like that, you must be eager to go to a doctor. Right? Well, I have good news for you. The student health center is located about half a kilometer straight north of here. Look on your maps. You see the street on the east side of this building, Ned Kelly Avenue? Just follow that about 500 meters, and the health center will be on your left at the 3rd Cross Street. Now I know you all just got here. So you must be wondering how to tell your folks you’ve arrived safely, how much you miss the dog, and how you already need more money. If you don’t have an iPhone, you probably are wondering where to find a computer. Well, I have good news.If you go straight out of this door and walk down the Garden Street, you’ll see the Internet unit on your left side just next to the gym. The hours are posted on the door and the computers are free, but you must bring your student ID card with you. Like I tell everyone, if you need help with anything, you can probably find right here in the student center. Do you see the four buildings there between the student center and the library? Those are the dormitories. The men’s dorms are the two on the South, the women’s, the two on the North. Okay. I’m sorry to have to tell you, but the university has been doing a lot of repairs and remodeling, and it’s not all done yet. So there may be some small problems with your dorm rooms. Maybe the window doesn’t open. Maybe an air conditioner is missing or does not work. If there are any problems, you can go to the complaint office, which is right beside the teaching building between the Parker Street and the Crammer Street. Just tell them your problem and they should have it fixed by the time you graduate in four years. I’m joking, but please be patient. There are a lot of little things they need to take care of. Tired of the school food? No? Give it a week. Or maybe you just need a place to get coffee in the wee hours of the night during one of those marathon study sessions. Either way, you definitely have to check out the little cafe just past the women’s dormitories. They’ve got free Wi Fi, so a lot of students saddle up with coffee and a bagel for hours on end to get work done. As for the dorm rooms, I have some bad news and some good news. The bad news is the rooms are small and you’ll probably be sharing space with at least three other students. The good news is that each room has its own bathroom. What’s good about sharing a bathroom with three strangers? Good question. Okay. Call it bad news and worse news.\nHey.\nSpeaker 1: Maybe try this for good news. Each dorm has a kitchen. If you want to make snacks or meals, you can do it there. You can buy food containers at any campus convenience store so you can store your food in the kitchen. But a word of warning, you should definitely write your name on your food containers. Sad to say, there are food thieves among your fellow students. Speaking of thieves, a word about security. I mean, this is Australia, and we do get drunken bushrangers wandering on to campus. Each of you will be given a key for your dorm room. Don’t lose it. You have to pay for any replacement and fill out a bunch of papers too.\nRed tape, huh?\nSpeaker 1: Your key does not work for the front door of your dorm, however. To the right of each door, there’s a keypad with numbers. When you move in, they will tell you the code you used to enter the door. Please do not tell the code to people who do not live in the dorm. Let’s see. Have I forgotten anything? Oh, yes. Most of you are not rich. Correct? So when your clothes get dirty, you can’t just throw them away and buy new ones. That means you have to learn to do laundry. Or men, that means you have to hurry up and get married. If you decide to wash those clothes and not get married, there are laundries in each dorm. Where? Oh, I almost forgot to tell you. The laundry for each dorm is in the basement. Some real good news this time if you’re a student, it is free. You do have to buy your own soap, however. The laundry closes by the by at 11:30. And now that I’ve mentioned 11:30, please remember, the dorm doors are locked at 11:30 PM. Your code will not work. If you want to get in, you’ll have to call the night watchman. Don’t worry. You can get that number at the dorm office.\nYes.\nSpeaker 1: The dorm office and the complaint office are the same office. Alright then. Before we continue, are there any questions?",
+	"body": {
+		"text": "Students in a room don't need to share a [6] with ones in other rooms.\nEveryone has to write down their name on the [7]\nAll the students use a [8] to enter the door.\nIf you want to wash your clothes, go to the laundry room which is located in the [9]\nThe dormitory closes at [10] PM every night.",
+		"html": "<table><tbody><tr><td><ul><li>Students in a room don't need to share a [6] with ones in other rooms.</li><li>Everyone has to write down their name on the [7]</li><li>All the students use a [8] to enter the door.</li><li>If you want to wash your clothes, go to the laundry room which is located in the [9]</li><li>The dormitory closes at [10] PM every night.</li></ul></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MAP_LABELLING",
+			"instructions": "Listen to the directions and match the places in questions 1–5 to the appropriate place on the map.",
+			"instructions_html": "<p>Listen to the directions and match the places in questions <strong>1–5</strong> to the appropriate place on the map.<img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/cc8c7f03-1d40-45b8-8a4c-531173f1d8d8.png\" alt=\"Youpass Ielts Listening Ned Kelly Avenue\"></p>",
+			"options": ["A", "B", "C", "D", "E"],
+			"questions": [
+				{
+					"number": 1,
+					"text": "Student Centre",
+					"answer": "E",
+					"quotes": [
+						"The recreational facilities are on my right hand, and its opposite is the student center.",
+						"Do you see the four buildings there between the student center and the library?"
+					]
+				},
+				{
+					"number": 2,
+					"text": "Health Centre",
+					"answer": "A",
+					"quotes": [
+						"The student health center is located about half a kilometer straight north of here."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Internet Unit",
+					"answer": "B",
+					"quotes": [
+						"Well, I have good news.If you go straight out of this door and walk down the Garden Street, you’ll see the Internet unit on your left side just next to the gym."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Complaint Office",
+					"answer": "D",
+					"quotes": [
+						"If there are any problems, you can go to the complaint office, which is right beside the teaching building between the Parker Street and the Crammer Street."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Café",
+					"answer": "C",
+					"quotes": [
+						"Either way, you definitely have to check out the little cafe just past the women’s dormitories."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "Students in a room don't need to share a [6] with ones in other rooms.\nEveryone has to write down their name on the [7]\nAll the students use a [8] to enter the door.\nIf you want to wash your clothes, go to the laundry room which is located in the [9]\nThe dormitory closes at [10] PM every night.",
+			"body_html": "<table><tbody><tr><td><ul><li>Students in a room don't need to share a [6] with ones in other rooms.</li><li>Everyone has to write down their name on the [7]</li><li>All the students use a [8] to enter the door.</li><li>If you want to wash your clothes, go to the laundry room which is located in the [9]</li><li>The dormitory closes at [10] PM every night.</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Students in a room don't need to share a [6] with ones in other rooms.",
+					"answer": "bathroom",
+					"quotes": ["The good news is that each room has its own bathroom."]
+				},
+				{
+					"number": 7,
+					"text": "Everyone has to write down their name on the [7]",
+					"answer": "food containers",
+					"quotes": [
+						"But a word of warning, you should definitely write your name on your food containers."
+					]
+				},
+				{
+					"number": 8,
+					"text": "All the students use a [8] to enter the door.",
+					"answer": "code",
+					"quotes": [
+						"When you move in, they will tell you the code you used to enter the door."
+					]
+				},
+				{
+					"number": 9,
+					"text": "If you want to wash your clothes, go to the laundry room which is located in the [9]",
+					"answer": "basement",
+					"quotes": ["The laundry for each dorm is in the basement."]
+				},
+				{
+					"number": 10,
+					"text": "The dormitory closes at [10] PM every night.",
+					"answer": "11:30 / 11.30 / eleven thirty",
+					"quotes": [
+						"And now that I’ve mentioned 11:30, please remember, the dorm doors are locked at 11:30 PM."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/cc8c7f03-1d40-45b8-8a4c-531173f1d8d8.png"
+	]
+}

@@ -20,7 +20,7 @@ describe("NotFoundPage component", () => {
 
 	it("renders navigation buttons to dashboard and login", () => {
 		const html = renderToStaticMarkup(<NotFoundPage />);
-		expect(html).toContain('href="/dashboard"');
+		expect(html).toContain('href="/teacher/dashboard"');
 		expect(html).toContain("Về bảng điều khiển");
 		expect(html).toContain('href="/login"');
 		expect(html).toContain("Đăng nhập");

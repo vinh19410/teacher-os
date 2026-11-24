@@ -1,0 +1,273 @@
+{
+	"id": "fea8e40b-6a8a-4b5d-82dd-e9b361691e23",
+	"url": "https://stepielts.com/student/listening/fea8e40b-6a8a-4b5d-82dd-e9b361691e23?mode=practice",
+	"title": "Research Project",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/fc500a8a-43ca-4d76-9bed-e94ff2e3f486.mp3",
+	"transcript": "Speaker 1: Tutor: Hello, John. Come in and sit down. You’re here to discuss your research project, are you?\nSpeaker 2: John: Yes. I’ve more or less decided what to do, but I’d like your opinion.\nSpeaker 1: Tutor: Fine. You’ve chosen a topic?\nSpeaker 2: John: Yes. I want to look at how people use public services in their local area. Things like parks and swimming pools.\nSpeaker 1: Tutor: Right. Well, the kind of information you’ll get is very useful for town planning, of course. Do you have a special interest in public services?\nSpeaker 2: John: Not really. It’s just that I found a report in the college library about an investigation that was done ten years ago, and I thought it’d be interesting to do a parallel one.\nSpeaker 1: Tutor: Ten years is a relatively short space of time. What do you expect to find? Do you think things will be more or less the same as before?\nSpeaker 2: John: I think there’ll be some differences. For example, I think the number of people going to the library will have decreased. Tutor: Mhmm. John: And I’d guess that older people are using the sports center more often than they used to.\nSpeaker 1: Tutor: Fine. So those are your hypotheses. Now what sort of data are you going to use?\nSpeaker 2: John: I was thinking of using official records...\nTutor: Mhmm.\nSpeaker 2: From the management or the local council... John: ...and analysing them. They should be easy to obtain. I don’t think that sort of information would be confidential.\nSpeaker 1: Tutor: Yes, you’re probably right. There might not be as much information as you’d like, but it’d certainly be the easiest kind of data to work with. But have you considered using a questionnaire as well?\nSpeaker 2: It’s okay to get data from more than one source.\nSpeaker 1: John: Absolutely. It’s a bonus. Tutor: You’ve already done the module on questionnaire design, haven’t you? And it’ll be good to get experience, because next year you’ll have to do something similar for your final dissertation, on a bigger scale.\nSpeaker 2: Okay.\nSpeaker 1: And what are the variables you’ll be looking at? Are you going to look at people’s level of education, whether they have a degree, for example?\nSpeaker 2: John: I hadn’t planned to. Do you think I should?\nSpeaker 1: Tutor: Well, you might see some interesting patterns.\nSpeaker 2: John: Okay. And that’ll tie in nicely with my plans to analyse the kind of work people do.\nSpeaker 1: Tutor: What about the size of your sample? Have you got any thoughts on the number of questionnaires you might send out?\nSpeaker 2: John: The previous study surveyed 120 people. I don’t think I can really analyse more than 50 working by myself, so I should probably distribute about 80 questionnaires altogether to allow for wastage. Do you think that’s enough?\nSpeaker 1: Tutor: Definitely. I know that your project guidelines recommend a minimum of a 100, but that’s an ideal number, and you’re working by yourself. And anyway, this assignment is mainly about giving you practice in research methods. Tutor: And think of ways you can encourage people to actually complete the questionnaire. For example, to make sure that your questions make sense, you should try them out beforehand.\nSpeaker 2: John: Okay. That’s no problem. My friends will help.\n(Note: Answers for 27 and 28 can be in any order).\nSpeaker 1: Tutor: Good. Sometimes you get unpredicted responses, and you have to rephrase a question.\nSpeaker 2: And I know that you usually get a better return if you deliver questionnaires in person, but there’ll be too many. John: But I could enclose a stamped envelope for the return post. It’s a bit expensive, but I think it’ll be worth it.\nSpeaker 1: Tutor: Yes, good. John: Some people say that another way of increasing returns is to make the questionnaires anonymous, but usually people put their names on anyway, so I don’t think that would make much difference.\nSpeaker 2: Okay. And can you give me a bit more advice about the questionnaire? Would it be a good idea to have a short paragraph at the top explaining what I’m doing and why?\n(Note: Answers for 29 and 30 can be in any order).\nSpeaker 1: Tutor: Definitely. And don’t forget you’ll need to get a bit of information about your subjects, what age group they’re in, and perhaps how long they’ve lived in the area, so you’ll need questions for that.\nSpeaker 2: John: Yes. I suppose that’ll mean it takes a bit longer to complete, but should I give them my phone number in case there’s anything they’re not sure about?\nSpeaker 1: Tutor: I wouldn’t if I were you. No.\nSpeaker 2: John: Okay. And do I have to use open ended questions as well as closed questions? I know the books say it’s better to have a mixture.\nSpeaker 1: Tutor: Well, it depends. In this case, I’d stick to closed questions. The results will be much more manageable like that.\nSpeaker 2: If I draft some questions tomorrow, would it be okay to bring them to...",
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "How did John choose the topic of his research project?",
+					"options": [
+						{
+							"label": "A",
+							"text": "He thought the information would be useful for town planning."
+						},
+						{
+							"label": "B",
+							"text": "He has a special interest in the use of public services."
+						},
+						{
+							"label": "C",
+							"text": "He read about a similar study which had been done earlier."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"It’s just that I found a report in the college library about an investigation that was done ten years ago, and I thought it’d be interesting to do a parallel one."
+					]
+				},
+				{
+					"number": 2,
+					"text": "During his research, John is expecting to find that",
+					"options": [
+						{
+							"label": "A",
+							"text": "The use of public services has altered very little."
+						},
+						{
+							"label": "B",
+							"text": "A group of people has changed its habits."
+						},
+						{
+							"label": "C",
+							"text": "The most frequently used facility is the library."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"John: And I’d guess that older people are using the sports center more often than they used to."
+					]
+				},
+				{
+					"number": 3,
+					"text": "What is the problem with using official records?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They may be lacking in detail."
+						},
+						{
+							"label": "B",
+							"text": "They may not be readily available."
+						},
+						{
+							"label": "C",
+							"text": "They may be difficult to analyse."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"There might not be as much information as you’d like, but it’d certainly be the easiest kind of data to work with."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What does the tutor think about John using a questionnaire to get information?",
+					"options": [
+						{
+							"label": "A",
+							"text": "He needs to do a course in questionnaire design first."
+						},
+						{
+							"label": "B",
+							"text": "He should use this method instead of looking at public records."
+						},
+						{
+							"label": "C",
+							"text": "He will find the practice he gets useful the following year."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"And it’ll be good to get experience, because next year you’ll have to do something similar for your final dissertation, on a bigger scale."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Which new variable does John agree to add to his investigation?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Occupation"
+						},
+						{
+							"label": "B",
+							"text": "Income group"
+						},
+						{
+							"label": "C",
+							"text": "Qualifications"
+						}
+					],
+					"answer": "C",
+					"quotes": ["John: Okay."]
+				},
+				{
+					"number": 6,
+					"text": "How many questionnaires will John distribute?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The same number as in the previous study"
+						},
+						{
+							"label": "B",
+							"text": "A greater number than he needs for analysis"
+						},
+						{
+							"label": "C",
+							"text": "The number recommended in the project guidelines"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I don’t think I can really analyse more than 50 working by myself, so I should probably distribute about 80 questionnaires altogether to allow for wastage."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-8",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 7,
+					"text": "Which TWO strategies will John use to encourage people to fill out his questionnaire?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Using simple language"
+						},
+						{
+							"label": "B",
+							"text": "Delivering the questionnaires in person"
+						},
+						{
+							"label": "C",
+							"text": "Making the questionnaires anonymous"
+						},
+						{
+							"label": "D",
+							"text": "Providing return envelopes"
+						},
+						{
+							"label": "E",
+							"text": "Trialing the questionnaire on friends"
+						}
+					],
+					"answer": "D"
+				},
+				{
+					"number": 8,
+					"text": "Which TWO strategies will John use to encourage people to fill out his questionnaire?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Using simple language"
+						},
+						{
+							"label": "B",
+							"text": "Delivering the questionnaires in person"
+						},
+						{
+							"label": "C",
+							"text": "Making the questionnaires anonymous"
+						},
+						{
+							"label": "D",
+							"text": "Providing return envelopes"
+						},
+						{
+							"label": "E",
+							"text": "Trialing the questionnaire on friends"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "9-10",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 9,
+					"text": "Which TWO pieces of advice does the tutor give John about his questionnaire?",
+					"options": [
+						{
+							"label": "A",
+							"text": "There should be a mixture of question types."
+						},
+						{
+							"label": "B",
+							"text": "Some questions should elicit personal information."
+						},
+						{
+							"label": "C",
+							"text": "There should be an introduction to explain the survey’s purpose."
+						},
+						{
+							"label": "D",
+							"text": "A telephone number should be provided for queries."
+						},
+						{
+							"label": "E",
+							"text": "The questions should only take a few minutes to answer."
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 10,
+					"text": "Which TWO pieces of advice does the tutor give John about his questionnaire?",
+					"options": [
+						{
+							"label": "A",
+							"text": "There should be a mixture of question types."
+						},
+						{
+							"label": "B",
+							"text": "Some questions should elicit personal information."
+						},
+						{
+							"label": "C",
+							"text": "There should be an introduction to explain the survey’s purpose."
+						},
+						{
+							"label": "D",
+							"text": "A telephone number should be provided for queries."
+						},
+						{
+							"label": "E",
+							"text": "The questions should only take a few minutes to answer."
+						}
+					],
+					"answer": "C"
+				}
+			]
+		}
+	],
+	"images": []
+}

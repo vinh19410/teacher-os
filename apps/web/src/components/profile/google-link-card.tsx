@@ -25,8 +25,8 @@ export function GoogleLinkCard() {
 	async function connectGoogle() {
 		setIsRedirecting(true);
 		// Absolute URL is mandatory: the callback lands on the API origin, so a
-		// relative path would resolve to api.<domain>/profile (split-origin deploy).
-		const base = `${window.location.origin}/profile`;
+		// relative path would resolve to api.<domain>/teacher/profile (split-origin deploy).
+		const base = `${window.location.origin}/teacher/profile`;
 		const { error: linkError } = await authClient.linkSocial({
 			provider: "google",
 			callbackURL: base,

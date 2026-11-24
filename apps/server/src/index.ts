@@ -16,7 +16,7 @@ import {
 import type { PlacementAiGrader } from "./lib/placement-ai/grader";
 import { createPlacementAiGrader } from "./lib/placement-ai/openai-grader";
 import { createR2MediaStore } from "./lib/r2-media-store";
-import { runRecordingSyncCron } from "./lib/zoom/session-zoom-service";
+import { dispatchScheduledCron } from "./lib/scheduled";
 import { getSessionUser } from "./session";
 
 export function parseCORSOrigins(raw: string): string[] {
@@ -24,6 +24,16 @@ export function parseCORSOrigins(raw: string): string[] {
 		.split(",")
 		.map((s) => s.trim())
 		.filter((s) => s.length > 0);
+}
+
+export function appendPathPrefix(
+	origin: string | undefined,
+	prefix: string,
+): string | undefined {
+	const trimmed = (origin ?? "").trim().replace(/\/+$/, "");
+	if (!trimmed) return undefined;
+	if (trimmed.endsWith(prefix)) return trimmed;
+	return `${trimmed}${prefix}`;
 }
 
 // Lazy so importing this module never touches bindings at eval time.
@@ -74,13 +84,14 @@ const getAuth = (): Auth => {
 	}
 	if (!auth) {
 		const mailer = getMailer();
+		const corsOrigins = parseCORSOrigins(env.CORS_ORIGIN);
+		const adminOrigins = parseCORSOrigins(env.ADMIN_ORIGINS || env.CORS_ORIGIN);
 		auth = createAuth({
 			db: db as unknown as CreateAuthInput["db"],
-			corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
-			studentOrigins: parseCORSOrigins(env.STUDENT_ORIGINS),
-			// Plan #413: cổng admin + allowlist email admin (rỗng = không ai là
-			// admin; so khớp lowercase diễn ra trong createAuth ở mỗi request).
-			adminOrigins: parseCORSOrigins(env.ADMIN_ORIGINS),
+			corsOrigin: corsOrigins,
+			unifiedOrigins: corsOrigins,
+			studentOrigins: parseCORSOrigins(env.STUDENT_ORIGINS ?? ""),
+			adminOrigins,
 			adminEmails: parseCORSOrigins(env.ADMIN_EMAILS),
 			teacherEmails: parseCORSOrigins(env.TEACHER_EMAILS ?? ""),
 			secret: env.BETTER_AUTH_SECRET,
@@ -107,6 +118,13 @@ const zoomConfig = {
 	clientSecret: env.ZOOM_CLIENT_SECRET,
 	hostUser: env.ZOOM_HOST_USER || "me",
 };
+
+// Base URL học viên trên domain LMS hợp nhất cho link tuyệt đối trong email.
+const studentOrigin = appendPathPrefix(
+	parseCORSOrigins(env.STUDENT_ORIGINS ?? "")[0] ??
+		parseCORSOrigins(env.CORS_ORIGIN)[0],
+	"/student",
+);
 
 const app = buildApp({
 	getDb: () => (db ??= createDb() as unknown as Db),
@@ -155,10 +173,10 @@ const app = buildApp({
 		placementAiGrader ??= createPlacementAiGrader(env) ?? null;
 		return placementAiGrader ?? undefined;
 	},
-	// Plan #413: cổng admin — allowlist email + origin console cho CSRF.
+	// Cổng admin — allowlist email + origin console cho CSRF (fail-closed theo exact origin).
 	adminEmails: parseCORSOrigins(env.ADMIN_EMAILS),
 	teacherEmails: parseCORSOrigins(env.TEACHER_EMAILS ?? ""),
-	adminOrigins: parseCORSOrigins(env.ADMIN_ORIGINS),
+	adminOrigins: parseCORSOrigins(env.ADMIN_ORIGINS || env.CORS_ORIGIN),
 	// Thiếu bất kỳ secret Bank Hub nào (#320) → undefined → route ngân hàng
 	// trả 503 BANKHUB_DISABLED; local/dev không cần cấu hình gì.
 	getBankHub: () => {
@@ -179,16 +197,15 @@ const app = buildApp({
 	get mailer() {
 		return getMailer();
 	},
-	// Plan TOS-21 (#454): origin cổng học viên đầu tiên cho link tuyệt đối
-	// trong email — env STUDENT_ORIGINS là chuỗi thô nên parse ở đây.
-	studentOrigin: parseCORSOrigins(env.STUDENT_ORIGINS)[0],
+	// Base URL học viên trên domain LMS hợp nhất cho link tuyệt đối trong email.
+	studentOrigin,
 	// Lead intake (#506): org đích từ env (fail-closed khi rỗng), origin
 	// profile tách khỏi CORS_ORIGIN (D5), secret HMAC tái dùng
 	// BETTER_AUTH_SECRET, appOrigin cho link trong email báo lead (D13).
 	leadOrgId: env.LEAD_ORG_ID,
 	leadOrigins: parseCORSOrigins(env.LEAD_ORIGINS),
 	leadIpSecret: env.BETTER_AUTH_SECRET,
-	appOrigin: parseCORSOrigins(env.CORS_ORIGIN)[0],
+	appOrigin: appendPathPrefix(parseCORSOrigins(env.CORS_ORIGIN)[0], "/teacher"),
 	zoom: zoomConfig,
 	runInBackground: (promise) => waitUntil(promise),
 });
@@ -196,7 +213,7 @@ const app = buildApp({
 export default {
 	fetch: app.fetch,
 	scheduled(
-		_controller: { cron: string; scheduledTime: number },
+		controller: { cron: string; scheduledTime: number },
 		_env: unknown,
 		ctx: { waitUntil: (promise: Promise<unknown>) => void },
 	) {
@@ -204,11 +221,13 @@ export default {
 			db = createDb() as unknown as Db;
 		}
 		ctx.waitUntil(
-			runRecordingSyncCron({
+			dispatchScheduledCron(controller, {
 				db,
 				zoom: zoomConfig,
+				getMailer,
+				studentOrigin,
 			}).catch((err) => {
-				console.error("[zoom] recording sync cron failed", err);
+				console.error("[cron] scheduled dispatch failed", controller.cron, err);
 			}),
 		);
 	},

@@ -1,15 +1,15 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Regression spec for issue #113 (QC P1):
- * 1. Non-existent pages (/this-page-does-not-exist-qc-test, /help, /about, /signup, /register, /payments)
- *    must render the branded TeacherOS 404 UI (never plain 12px "Not Found").
+ * Regression spec for branded 404 UI and HTTP 404 status:
+ * 1. Non-existent pages at root (/this-page-does-not-exist-qc-test, /help, /about, /signup, /register, /payments)
+ *    and under /teacher (/teacher/this-page-does-not-exist-qc-test) must render the branded 404 UI.
  * 2. HTTP status code must be 404 (never 200).
  * 3. Dotfiles (/.env, /.git) must return 404 plain text (never SPA HTML).
- * 4. Valid routes (/login, /dashboard) must return HTTP 200.
+ * 4. Valid routes (/login) must return HTTP 200.
  */
 test.describe("Issue #113: Branded 404 UI and HTTP 404 status", () => {
-	test("browser navigation to unknown route receives HTTP 404 and renders branded 404 UI", async ({
+	test("browser navigation to unknown root route receives HTTP 404 and renders branded 404 UI", async ({
 		page,
 	}) => {
 		const response = await page.goto("/this-page-does-not-exist-qc-test");
@@ -31,12 +31,12 @@ test.describe("Issue #113: Branded 404 UI and HTTP 404 status", () => {
 			page.getByText("Đường dẫn bạn truy cập không tồn tại"),
 		).toBeVisible();
 
-		// Action buttons
-		const dashboardLink = page.getByRole("link", {
-			name: "Về bảng điều khiển",
+		// Action buttons (unified LMS root shell links home to "/")
+		const homeLink = page.getByRole("link", {
+			name: "Về trang chủ",
 		});
-		await expect(dashboardLink).toBeVisible();
-		await expect(dashboardLink).toHaveAttribute("href", "/dashboard");
+		await expect(homeLink).toBeVisible();
+		await expect(homeLink).toHaveAttribute("href", "/");
 
 		const loginLink = page.getByRole("link", { name: "Đăng nhập" });
 		await expect(loginLink).toBeVisible();
@@ -45,6 +45,31 @@ test.describe("Issue #113: Branded 404 UI and HTTP 404 status", () => {
 		// Clicking login link navigates to /login
 		await loginLink.click();
 		await expect(page).toHaveURL(/\/login$/);
+	});
+
+	test("browser navigation to unknown /teacher route receives HTTP 404 and renders teacher 404 UI", async ({
+		page,
+	}) => {
+		const response = await page.goto(
+			"/teacher/this-page-does-not-exist-qc-test",
+		);
+		expect(response?.status()).toBe(404);
+
+		await expect(page.locator("header")).toBeVisible();
+		await expect(page.getByText("Cô Mỹ Dạy Tiếng Anh").first()).toBeVisible();
+		await expect(
+			page.getByRole("heading", { name: "Trang không tồn tại" }),
+		).toBeVisible();
+
+		const dashboardLink = page.getByRole("link", {
+			name: "Về bảng điều khiển",
+		});
+		await expect(dashboardLink).toBeVisible();
+		await expect(dashboardLink).toHaveAttribute("href", "/teacher/dashboard");
+
+		const loginLink = page.getByRole("link", { name: "Đăng nhập" });
+		await expect(loginLink).toBeVisible();
+		await expect(loginLink).toHaveAttribute("href", "/login");
 	});
 
 	// /payments gỡ theo #338 (panel dời về /profile) — xử lý như path lạ.
@@ -59,7 +84,7 @@ test.describe("Issue #113: Branded 404 UI and HTTP 404 status", () => {
 				page.getByRole("heading", { name: "Trang không tồn tại" }),
 			).toBeVisible();
 			await expect(
-				page.getByRole("link", { name: "Về bảng điều khiển" }),
+				page.getByRole("link", { name: "Về trang chủ" }),
 			).toBeVisible();
 		});
 	}
@@ -69,6 +94,11 @@ test.describe("Issue #113: Branded 404 UI and HTTP 404 status", () => {
 	}) => {
 		const res = await request.get("/this-page-does-not-exist-qc-test");
 		expect(res.status()).toBe(404);
+
+		const teacherRes = await request.get(
+			"/teacher/this-page-does-not-exist-qc-test",
+		);
+		expect(teacherRes.status()).toBe(404);
 	});
 
 	test("HTTP request to /.env and /.git returns 404 and never SPA HTML", async ({
@@ -88,6 +118,6 @@ test.describe("Issue #113: Branded 404 UI and HTTP 404 status", () => {
 	}) => {
 		const response = await page.goto("/login");
 		expect(response?.status()).toBe(200);
-		await expect(page.getByRole("tab", { name: "Sign in" })).toBeVisible();
+		await expect(page.getByRole("tab", { name: "Đăng nhập" })).toBeVisible();
 	});
 });

@@ -1,0 +1,231 @@
+{
+	"id": "16e73de3-dbda-47c5-bb6f-3b823b983819",
+	"url": "https://stepielts.com/student/listening/16e73de3-dbda-47c5-bb6f-3b823b983819?mode=practice",
+	"title": "Thriving Careers in Agriculture & Horticulture",
+	"source": "C16T3",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/dce94df5-e955-471f-83ef-bb329f6dcdfd.mp3",
+	"transcript": "Speaker 0: Part two. You will hear a recruitment officer called Megan Baker giving a talk at a jobs fair about opportunities for those interested in the food and agriculture sectors. First, you have some time to look at questions 11 to 14. Now listen carefully and answer questions 11 to 14.\nSpeaker 1: Hello, everyone. My name's Megan Baker, and I'm a recruitment consultant at AVT Recruitment Specialists. Now our company specialises in positions that involve working in the agriculture and horticulture sectors, so that's fresh food production, garden and park maintenance, and so on, And these sectors do provide some very special career opportunities. For a start, they often offer opportunities for those who don't want to be stuck with a forty hour week, but need to juggle work with other responsibilities, such as child care, and this is very important for many of our recruits. Some people like working in a rural setting, surrounded by plants and trees instead of buildings, although we can't guarantee that. But there are certainly health benefits, especially in jobs where you're not sitting all day looking at a screen, a big plus for many people. Salaries can sometimes be good too, although there's a lot of variety here. And you may have the opportunity in some types of jobs for travel overseas, although that obviously depends on the job, and not everyone is keen to do it. Of course, working outdoors does have its challenges. It's fine in summer, but can be extremely unpleasant when it's cold and windy. You may need to be pretty fit for some jobs, though with modern technology that's not as important as it once was. And standards of health and safety are much higher now than they used to be, so there are fewer work related accidents. But if you like a lively city environment surrounded by lots of people, these jobs are probably not for you they're often in pretty remote areas. And some people worry about finding a suitable place to live, but in our experience, this usually turns out fine.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 15 to 20. Now listen and answer questions 15 to 20.\nSpeaker 1: Now let me tell you about some of the exciting jobs that we have on our books right now. One is for a fresh food commercial manager. Our client here is a very large fresh food producer, supplying a range of top supermarkets. They operate in a very fast paced environment with low profit margins. The staff there work hard, but they play hard as well, so if you've a sociable personality, this may be for you. We have an exciting post as an agronomist, advising farmers on issues such as crop nutrition, protection against pests, and the latest legislation on farming and agricultural practices. There are good opportunities for the right person to quickly make their way up the career ladder, but a deep knowledge of the agricultural sector is expected of applicants. A leading supermarket is looking for a fresh produce buyer who is available for a twelve month maternity cover contract. You need to have experience in administration, planning and buying in the fresh produce industry, and in return will receive a very competitive salary. We have also received a request for a sales manager for a chain of garden centres. You will be visiting centres in the region to ensure their high levels of customer service are maintained. This post is only suitable for someone who is prepared to live in the region. There is also a vacancy for a tree technician to carry out tree cutting, forestry and conservation work. Candidates must have a clean driving licence and have training in safety procedures. A year's experience would be preferred, but the company might be prepared to consider someone who has just completed an appropriate training course. Finally, we have a position for a farm worker. This will involve a wide range of farm duties, including crop sowing and harvesting, machine maintenance and animal care. Perks of the job include the possibility of renting a small cottage on the estate, and the chance to earn a competitive salary. A driving license and tractor driving experience are essential.\nSpeaker 0: That is the end of part two. You now have half a minute to check your answers to part two.",
+	"body": {
+		"text": "Fresh food commercial manager [15]\nAgronomist [16]\nFresh produce buyer [17]\nGarden centre sales manager [18]\nTree technician [19]\nFarm worker [20]",
+		"html": "<p>Fresh food commercial manager [15]</p><p>Agronomist [16]</p><p>Fresh produce buyer [17]</p><p>Garden centre sales manager  [18]</p><p>Tree technician [19]</p><p>Farm worker  [20]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "11-12",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. According to Megan, what are the TWO main advantages of working in the agriculture and horticulture sectors?",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Choose TWO letters, A-E. According to Megan, what are the TWO main advantages of working in the agriculture and horticulture sectors?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the active lifestyle"
+						},
+						{
+							"label": "B",
+							"text": "the above-average salaries"
+						},
+						{
+							"label": "C",
+							"text": "the flexible working opportunities"
+						},
+						{
+							"label": "D",
+							"text": "the opportunities for overseas travel"
+						},
+						{
+							"label": "E",
+							"text": "the chance to be in a natural environment"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 12,
+					"text": "Choose TWO letters, A-E. According to Megan, what are the TWO main advantages of working in the agriculture and horticulture sectors?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the active lifestyle"
+						},
+						{
+							"label": "B",
+							"text": "the above-average salaries"
+						},
+						{
+							"label": "C",
+							"text": "the flexible working opportunities"
+						},
+						{
+							"label": "D",
+							"text": "the opportunities for overseas travel"
+						},
+						{
+							"label": "E",
+							"text": "the chance to be in a natural environment"
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "13-14",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. According to Megan, what are the TWO main advantages of working in the agriculture and horticulture sectors?",
+			"questions": [
+				{
+					"number": 13,
+					"text": "Choose TWO letters, A-E. Which TWO of the following are likely to be disadvantages for people working outdoors?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the increasing risk of accidents"
+						},
+						{
+							"label": "B",
+							"text": "being in a very quiet location"
+						},
+						{
+							"label": "C",
+							"text": "difficult weather conditions at times"
+						},
+						{
+							"label": "D",
+							"text": "the cost of housing"
+						},
+						{
+							"label": "E",
+							"text": "the level of physical fitness required"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 14,
+					"text": "Choose TWO letters, A-E. Which TWO of the following are likely to be disadvantages for people working outdoors?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the increasing risk of accidents"
+						},
+						{
+							"label": "B",
+							"text": "being in a very quiet location"
+						},
+						{
+							"label": "C",
+							"text": "difficult weather conditions at times"
+						},
+						{
+							"label": "D",
+							"text": "the cost of housing"
+						},
+						{
+							"label": "E",
+							"text": "the level of physical fitness required"
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "15-20",
+			"type": "MATCHING",
+			"instructions": "What information does Megan give about each of the following job opportunities?\nChoose the correct answer and move it into the gap\n\nJob opportunities",
+			"options": [
+				{
+					"label": "A",
+					"text": "not a permanent job"
+				},
+				{
+					"label": "B",
+					"text": "involves leading a team"
+				},
+				{
+					"label": "C",
+					"text": "experience not essential"
+				},
+				{
+					"label": "D",
+					"text": "intensive work but also fun"
+				},
+				{
+					"label": "E",
+					"text": "chance to earn more through overtime"
+				},
+				{
+					"label": "F",
+					"text": "chance for rapid promotion"
+				},
+				{
+					"label": "G",
+					"text": "accommodation available"
+				},
+				{
+					"label": "H",
+					"text": "local travel involved"
+				}
+			],
+			"body": "Fresh food commercial manager [15]\nAgronomist [16]\nFresh produce buyer [17]\nGarden centre sales manager [18]\nTree technician [19]\nFarm worker [20]",
+			"body_html": "<p>Fresh food commercial manager [15]</p><p>Agronomist [16]</p><p>Fresh produce buyer [17]</p><p>Garden centre sales manager  [18]</p><p>Tree technician [19]</p><p>Farm worker  [20]</p>",
+			"questions": [
+				{
+					"number": 15,
+					"text": "Fresh food commercial manager",
+					"answer": "D",
+					"quotes": [
+						"The staff there work hard, but they play hard as well, so if you've a sociable personality, this may be for you."
+					]
+				},
+				{
+					"number": 16,
+					"text": "Agronomist",
+					"answer": "F",
+					"quotes": [
+						"There are good opportunities for the right person to quickly make their way up the career ladder, but a deep knowledge of the agricultural sector is expected of applicants."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Fresh produce buyer",
+					"answer": "A",
+					"quotes": [
+						"A leading supermarket is looking for a fresh produce buyer who is available for a twelve month maternity cover contract."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Garden centre sales manager",
+					"answer": "H",
+					"quotes": [
+						"You will be visiting centres in the region to ensure their high levels of customer service are maintained."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Tree technician",
+					"answer": "C",
+					"quotes": [
+						"A year's experience would be preferred, but the company might be prepared to consider someone who has just completed an appropriate training course."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Farm worker",
+					"answer": "G",
+					"quotes": [
+						"Perks of the job include the possibility of renting a small cottage on the estate, and the chance to earn a competitive salary."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

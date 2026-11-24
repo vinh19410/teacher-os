@@ -1,0 +1,185 @@
+{
+	"id": "0136ffaf-5d6c-4c6c-a14b-d66b3332d871",
+	"url": "https://stepielts.com/student/listening/0136ffaf-5d6c-4c6c-a14b-d66b3332d871?mode=practice",
+	"title": "Albany Fishing Competition",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/8b7fd9d0-407e-4969-b3d3-f93f46a9c382.mp3",
+	"transcript": "Speaker 0: Section two. You'll hear the organizer of a fishing competition giving a talk to people participating in the event. First, you have some time to look at questions 11 to 14 on page three. Now listen carefully and answer questions 11 to 14.\nSpeaker 1: Hello, everyone, and welcome to the Albany fishing competition. I'm going to give you some information you'll need for the next two days. Right. Let's talk about registration. You'll need to head to the registration desk before the event starts. If you're here to compete rather than just watch, you'll have already paid your entrance fee online, and you will have been given a competitor number. But to fully complete your registration in the competition, we'll need to see some form of identification today. So make sure you show that at the desk, otherwise, you won't be properly entered. Right. So what do you get for your entrance fee? This is a fully catered competition. So whenever you're hungry, either today or tomorrow, just go down to the dining tent. As for things necessary for fishing, you know, your hooks, rods, or your gear, I'm sure you've brought all that with you. And if you fancy fishing from a boat, you'll need to cover the cost of petrol. Okay. Now if you want to fish in this country, you must have a fishing license and have it with you. If you don't have one, don't worry. You can always go online, and they'll issue you one immediately. We wanted to be able to sell them here at the competition, but the council wouldn't allow it, sadly. I think it's also possible to call the Department of Fisheries, but they send them by post, so, obviously, you won't get that in time now. Okay. So the competition starts today and ends on Sunday evening. At 05:30PM, you will all have to stop fishing, and at 6PM exactly, the judges will start weighing the fish to see how heavy they are in order to choose the winners. So you'll need to be in the judging area before then. The prize giving will happen later in the evening.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 15 to 20 on page four. Now listen and answer questions 15 to 20.\nSpeaker 1: Right. Have a look at your maps, and I'll point out the important places. First, the registration area. To get to it, go to the roundabout in the middle of your map. From there, take the road that heads to the east. You'll find the registration desk on that road. It's a nice shady area surrounded by trees. Okay. If you're planning to fish from the shore tomorrow, then there's a specially designated area for you. The shore fishing area is in one particular spot. You can't just go anywhere on the coastline. You'll find the area directly to the north of the skate park. If you're planning to fish from a boat, you'll need to go to the boat launching area. To reach it, you should go to the roundabout and take the road that's on the right. Follow that road to the beach, and that's where you launch your boat. When the competition is over, you need to take your catch to the judging area so we can determine who the winner is. To get there, head out from the car park and take the first road on your left. Go past the first aid tent, and the judging area will be sit up down there. Meals will be served in the dining area. To get there, you'll need to go to the roundabout and take the road that leads west. Follow that road, and just where there's a sharp bend, you'll find where you can eat. If you keep going, you'll come to a lighthouse. If you're lucky enough to win or you just want to see the winners get their prizes, you'll need to head to the prize giving area. It's north of the roundabout past the playground. The prize giving area's at the end of that road right on the beach. Okay. It's going to be a real\nSpeaker 0: That is the end of section two. You now have half a minute to check your answers. Now turn to section three on page five.",
+	"question_groups": [
+		{
+			"range": "11-14",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "What do participants need to take to the registration desk?",
+					"options": [
+						{
+							"label": "A",
+							"text": "a form of identification"
+						},
+						{
+							"label": "B",
+							"text": "a competitor number"
+						},
+						{
+							"label": "C",
+							"text": "cash for the entrance fee"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But to fully complete your registration in the competition, we'll need to see some form of identification today."
+					]
+				},
+				{
+					"number": 12,
+					"text": "What does the entrance fee to the competition include?",
+					"options": [
+						{
+							"label": "A",
+							"text": "equipment for fishing"
+						},
+						{
+							"label": "B",
+							"text": "all food for both days"
+						},
+						{
+							"label": "C",
+							"text": "fuel for the fishing"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"So what do you get for your entrance fee?",
+						"This is a fully catered competition.",
+						"So whenever you're hungry, either today or tomorrow, just go down to the dining tent."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Participants without a fishing licence are recommended to apply for one",
+					"options": [
+						{
+							"label": "A",
+							"text": "at the registration desk"
+						},
+						{
+							"label": "B",
+							"text": "over the phone"
+						},
+						{
+							"label": "C",
+							"text": "on the internet"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"You can always go online, and they'll issue you one immediately."
+					]
+				},
+				{
+					"number": 14,
+					"text": "What will happen at 6pm on Sunday?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The time allocated for fishing will end"
+						},
+						{
+							"label": "B",
+							"text": "The fish caught will be judged"
+						},
+						{
+							"label": "C",
+							"text": "The prizes will be awarded to the winners"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"At 05:30PM, you will all have to stop fishing, and at 6PM exactly, the judges will start weighing the fish to see how heavy they are in order to choose the winners.",
+						"So the competition starts today and ends on Sunday evening."
+					]
+				}
+			]
+		},
+		{
+			"range": "15-20",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below. Write the correct letter, A–I, next to questions 15–20.",
+			"instructions_html": "<p>Label the map below. Write the correct letter, <strong>A–I</strong>, next to questions <strong>15–20</strong>.</p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/57d4c232-3fe7-4bce-a099-a6081dbb8beb.png\">",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
+			"questions": [
+				{
+					"number": 15,
+					"text": "Registration area",
+					"answer": "G",
+					"quotes": [
+						"First, the registration area.",
+						"To get to it, go to the roundabout in the middle of your map.",
+						"From there, take the road that heads to the east.",
+						"You'll find the registration desk on that road.",
+						"It's a nice shady area surrounded by trees."
+					]
+				},
+				{
+					"number": 16,
+					"text": "Shore fishing area",
+					"answer": "A",
+					"quotes": [
+						"The shore fishing area is in one particular spot.",
+						"You can't just go anywhere on the coastline.",
+						"You'll find the area directly to the north of the skate park."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Boat launching area",
+					"answer": "C",
+					"quotes": [
+						"To reach it, you should go to the roundabout and take the road that's on the right.",
+						"Follow that road to the beach, and that's where you launch your boat.",
+						"If you're planning to fish from a boat, you'll need to go to the boat launching area."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Judging area",
+					"answer": "H",
+					"quotes": [
+						"When the competition is over, you need to take your catch to the judging area so we can determine who the winner is.",
+						"To get there, head out from the car park and take the first road on your left.",
+						"Go past the first aid tent, and the judging area will be sit up down there."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Dining area",
+					"answer": "D",
+					"quotes": [
+						"Meals will be served in the dining area.",
+						"To get there, you'll need to go to the roundabout and take the road that leads west.",
+						"Follow that road, and just where there's a sharp bend, you'll find where you can eat."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Prize-giving area",
+					"answer": "B",
+					"quotes": [
+						"If you're lucky enough to win or you just want to see the winners get their prizes, you'll need to head to the prize giving area.",
+						"It's north of the roundabout past the playground.",
+						"The prize giving area's at the end of that road right on the beach."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/57d4c232-3fe7-4bce-a099-a6081dbb8beb.png"
+	]
+}

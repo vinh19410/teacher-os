@@ -4,7 +4,11 @@ import {
 	quizTypeDisplay,
 } from "@teacher-os/api/contracts";
 import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
-import { LIBRARY_READING_TYPES } from "@teacher-os/api/library-contracts";
+import {
+	isLibrarySkill,
+	LIBRARY_READING_TYPES,
+	librarySkillTypes,
+} from "@teacher-os/api/library-contracts";
 import {
 	collapseWhitespace,
 	htmlToPlainText,
@@ -194,6 +198,7 @@ export function AnswerKeyGrid({
 	onOpenRowChange,
 	rowIdPrefix,
 	libraryReadingMode = false,
+	libraryMode = false,
 }: {
 	typeId: string;
 	skill: string;
@@ -228,19 +233,27 @@ export function AnswerKeyGrid({
 	onOpenRowChange?: (index: number | null) => void;
 	rowIdPrefix?: string;
 	libraryReadingMode?: boolean;
+	libraryMode?: boolean;
 }) {
+	const isLibraryMode = libraryMode || libraryReadingMode;
 	// Per-question type: widget của TỪNG hàng key theo `item.type ?? typeId`
 	// (đề trộn dạng) — câu không khai type đi theo dạng đề như cũ.
-	const typeCatalog = libraryReadingMode
-		? LIBRARY_READING_TYPES.filter((id) => id !== "mcq_many").map((id) => ({
-				id,
-				label: quizTypeDisplay(id).label,
-			}))
+	const typeCatalog = isLibraryMode
+		? (isLibrarySkill(skill) ? librarySkillTypes(skill) : LIBRARY_READING_TYPES)
+				.filter((id) => id !== "mcq_many")
+				.map((id) => ({
+					id,
+					label: quizTypeDisplay(id).label,
+				}))
 		: partOf(skill, partId).types;
 	const rowTypeOf = (item: QuestionItem) => item.type ?? typeId;
 	const effectiveKind = (item: QuestionItem): AnswerKind => {
 		const rowType = rowTypeOf(item);
-		if (rowType === "summary" && optionBank && optionBank.length > 0) {
+		if (
+			(rowType === "summary" || rowType === "flow") &&
+			optionBank &&
+			optionBank.length > 0
+		) {
 			return "letter";
 		}
 		return kindOf(rowType);
@@ -255,7 +268,10 @@ export function AnswerKeyGrid({
 		const bankChips =
 			optionBank &&
 			optionBank.length > 0 &&
-			(kind === "letter" || kind === "roman" || rowType === "summary")
+			(kind === "letter" ||
+				kind === "roman" ||
+				rowType === "summary" ||
+				rowType === "flow")
 				? extendedAnswerChoices(kind === "roman" ? "roman" : "letter").slice(
 						0,
 						Math.min(optionBank.length, effectiveCap),

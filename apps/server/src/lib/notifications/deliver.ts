@@ -11,6 +11,8 @@ import { BRAND_NAME, formatSenderName } from "../brand";
 /** last_error cắt 500 ký tự; message lỗi Resend không chứa API key (chỉ header Bearer). */
 const LAST_ERROR_MAX = 500;
 const DEFAULT_RETRY_DELAYS_MS = [2000, 5000] as const;
+/** Giới hạn tham số bind của Cloudflare D1 cho SELECT `IN (...)` (50 + 2 điều kiện = 52 ≤ 100). */
+const SELECT_CHUNK = 50;
 
 function retryIncrement() {
 	// SQL increment để chạy song song không ghi đè retry_count của nhau.
@@ -56,6 +58,8 @@ interface QueuedRow {
 	id: string;
 	title: string;
 	body: string;
+	htmlBody: string | null;
+	textBody: string | null;
 	linkPath: string;
 	recipientEmail: string | null;
 	senderName: string;
@@ -81,7 +85,7 @@ export function escapeHtml(value: string): string {
 		.replaceAll("'", "&#39;");
 }
 
-function isSafeLinkUrl(linkUrl: string): boolean {
+export function isSafeLinkUrl(linkUrl: string): boolean {
 	return (
 		linkUrl.startsWith("https://") ||
 		linkUrl.startsWith("http://") ||
@@ -109,21 +113,20 @@ export function renderHtml(
 }
 
 /**
- * Gửi email cho các bản ghi `queued` có kênh email với tối đa 3 lượt thử
- * (TOS-21 D4, TOS-22 D1–D4).
+ * Gửi email cho các bản ghi `queued` có kênh email với tối đa 3 lượt thử.
  * - OK → sent (hoặc read nếu read_at đã có — read_at là nguồn chân lý), xóa last_error = null.
  * - Lỗi mailer lượt 1–2 → giữ queued, retry_count+1, last_error.
  * - Lỗi mailer chạm lượt 3 (retry_count + 1 >= 3) → status = 'failed',
  *   last_error = "E-selfomy-alignment-010: <nguyên nhân>" (nguyên tử trong SQL).
  * - Update có điều kiện status='queued' và mỗi lượt đều re-select từ DB để chạy
- *   song song không gửi trùng hoặc ghi đè. Vắng mailer → giữ queued + log cảnh báo (D6).
+ *   song song không gửi trùng hoặc ghi đè. Vắng mailer → giữ queued + log cảnh báo.
  */
 export async function deliverNotifications(
 	db: Db,
 	mailer: Mailer | undefined,
 	ids: string[],
 	studentOrigin = "",
-	options?: { retryDelaysMs?: number[] },
+	options?: { retryDelaysMs?: number[]; sendIntervalMs?: number },
 ): Promise<void> {
 	if (ids.length === 0) return;
 	if (!mailer) {
@@ -135,7 +138,9 @@ export async function deliverNotifications(
 	}
 
 	const delays = options?.retryDelaysMs ?? DEFAULT_RETRY_DELAYS_MS;
-	let pendingIds = [...ids];
+	const sendIntervalMs = Math.max(0, options?.sendIntervalMs ?? 0);
+	const normalizedOrigin = studentOrigin.trim().replace(/\/+$/, "");
+	let pendingIds = [...new Set(ids)];
 
 	for (
 		let pass = 0;
@@ -147,43 +152,56 @@ export async function deliverNotifications(
 			await sleep(delayMs);
 		}
 
-		const rows = (await db
-			.select({
-				id: notificationRecord.id,
-				title: notificationRecord.title,
-				body: notificationRecord.body,
-				linkPath: notificationRecord.linkPath,
-				recipientEmail: notificationRecord.recipientEmail,
-				senderName: notificationRecord.senderName,
-				replyToEmail: notificationRecord.replyToEmail,
-				channels: notificationRecord.channels,
-				readAt: notificationRecord.readAt,
-				retryCount: notificationRecord.retryCount,
-			})
-			.from(notificationRecord)
-			.where(
-				and(
-					inArray(notificationRecord.id, pendingIds),
-					eq(notificationRecord.status, "queued"),
-					lt(notificationRecord.retryCount, MAX_EMAIL_ATTEMPTS),
-				),
-			)) as QueuedRow[];
+		const rows: QueuedRow[] = [];
+		for (let i = 0; i < pendingIds.length; i += SELECT_CHUNK) {
+			const chunk = pendingIds.slice(i, i + SELECT_CHUNK);
+			const batch = (await db
+				.select({
+					id: notificationRecord.id,
+					title: notificationRecord.title,
+					body: notificationRecord.body,
+					htmlBody: notificationRecord.htmlBody,
+					textBody: notificationRecord.textBody,
+					linkPath: notificationRecord.linkPath,
+					recipientEmail: notificationRecord.recipientEmail,
+					senderName: notificationRecord.senderName,
+					replyToEmail: notificationRecord.replyToEmail,
+					channels: notificationRecord.channels,
+					readAt: notificationRecord.readAt,
+					retryCount: notificationRecord.retryCount,
+				})
+				.from(notificationRecord)
+				.where(
+					and(
+						inArray(notificationRecord.id, chunk),
+						eq(notificationRecord.status, "queued"),
+						lt(notificationRecord.retryCount, MAX_EMAIL_ATTEMPTS),
+					),
+				)) as QueuedRow[];
+			rows.push(...batch);
+		}
 
 		const nextPendingIds: string[] = [];
+		let attemptedInPass = 0;
 
 		for (const row of rows) {
 			if (!row.channels.includes("email")) continue;
 			if (!row.recipientEmail) continue;
 
+			if (attemptedInPass > 0 && sendIntervalMs > 0) {
+				await sleep(sendIntervalMs);
+			}
+			attemptedInPass += 1;
+
 			const linkUrl = row.linkPath
-				? `${studentOrigin}${row.linkPath}`
-				: studentOrigin;
+				? `${normalizedOrigin}${row.linkPath}`
+				: normalizedOrigin;
 			try {
 				await mailer.send({
 					to: row.recipientEmail,
 					subject: row.title,
-					html: renderHtml(row.body, linkUrl),
-					text: renderText(row.body, linkUrl),
+					html: row.htmlBody || renderHtml(row.body, linkUrl),
+					text: row.textBody || renderText(row.body, linkUrl),
 					idempotencyKey: row.id,
 					...(row.replyToEmail ? { replyTo: row.replyToEmail } : {}),
 					...(row.senderName
@@ -193,7 +211,7 @@ export async function deliverNotifications(
 				await db
 					.update(notificationRecord)
 					.set({
-						// read_at là nguồn chân lý (D7): nếu học viên đọc trong lúc
+						// read_at là nguồn chân lý: nếu học viên đọc trong lúc
 						// thư còn gửi dở, status phải là read chứ không sent.
 						status: sql`CASE WHEN ${notificationRecord.readAt} IS NULL THEN 'sent' ELSE 'read' END`,
 						sentAt: new Date(),

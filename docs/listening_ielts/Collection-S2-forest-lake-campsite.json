@@ -1,0 +1,195 @@
+{
+	"id": "7d85c35d-e103-466f-afaa-a47e7bb23b94",
+	"url": "https://stepielts.com/student/listening/7d85c35d-e103-466f-afaa-a47e7bb23b94?mode=practice",
+	"title": "Forest Lake Campsite",
+	"source": "Collection",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/8845ecf7-c799-4c0b-a3fd-f8881c19c0be.mp3",
+	"transcript": "Speaker 1: Speaker: Hello, everyone, and welcome to this orientation session prior to our camp next week. Thank you for coming along to find out what you and your children will be doing on this year’s camp. To start off with, let’s tell you a bit about the campsite itself so that you’ll be able to find your way around once you get there. Firstly, we’ll be arriving by bus into the car park, which, if you look at the plan you have in front of you, you’ll see at the top of the picture on the left hand side. Now if you cross the road from the car park, the first building you’ll come to is the toilet block. It’s been recently upgraded, so it’s very nice and clean in there now, with plenty of facilities. And built onto that, so this is across the road from the community hall, is the new shower block. The hot water does run out occasionally, but usually there’s enough to cope with a group your size. If you now move to the bottom left of your map, among the pine trees, there is a special flat site set up for pitching tents with power points and outdoor taps for water. Now let’s go back and move along the top of your map. There’s another area of Pine Forest, and then over on the far right hand side there’s a block of small cabins. Note that this is different from the main accommodation block, which doesn’t appear on this map but is further over again to the right. Now let’s look down from there, over the road, so we’re moving clockwise round your map. Okay? In this next block beside the flower beds, we have a lovely place for barbecues where you can cook in the open air. What else to tell you about? Below the flower bed and across Lakeside Drive, you’ll see a trail for mountain biking, which is always a popular activity. Moving on now, in the middle of the campsite, you’ll see the lake where you can canoe, and above that again, the community hall. So that completes your introduction to the campsite. I hope you found that useful. Now let’s think about what you need to bring with you. I’m sure you’re all wondering what you need to pack. The lake is a bit cold for swimming at this time of year, so you can leave your togs out of the suitcase. While we’re on the subject of weather too, usually I recommend that campers bring sunblock with them. But I guess now that we’re into April, that too can be left behind. Let me think. Some campers like a torch, but actually the days are still so long that it’s light outside till quite late, and the blocks all have outside lighting now. So I’d say that a pair of earplugs are more useful, as in my experience a lot of talking goes on after lights out. But in April, if it’s wet, it can get muddy around the campsite, so to bring boots isn’t a bad idea. Finally, can you all please prepare something for the final night concert? Bring your musical instruments or whatever else you need. You can’t have a camp without a good sing along. That’s our favorite activity. Maybe you could recite a poem, act out a skit or charades for us, if you’re brave enough to try that.\nOr failing that, perhaps you can tell a joke or a funny story.\nSpeaker 1: But actually, people much prefer to see some good dancing. I’ll look forward to seeing you all perform next week.",
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below.",
+			"instructions_html": "<p>Label the map below.</p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/83833997-962a-4725-89c4-4f540aaae130.png\">",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H"],
+			"questions": [
+				{
+					"number": 1,
+					"text": "Toilet block",
+					"answer": "A",
+					"quotes": [
+						"Now if you cross the road from the car park, the first building you’ll come to is the toilet block."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Shower block",
+					"answer": "C",
+					"quotes": [
+						"And built onto that, so this is across the road from the community hall, is the new shower block."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Tent site",
+					"answer": "G",
+					"quotes": [
+						"If you now move to the bottom left of your map, among the pine trees, there is a special flat site set up for pitching tents with power points and outdoor taps for water."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Cabins",
+					"answer": "D",
+					"quotes": [
+						"There’s another area of Pine Forest, and then over on the far right hand side there’s a block of small cabins."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Barbecue area",
+					"answer": "F",
+					"quotes": [
+						"In this next block beside the flower beds, we have a lovely place for barbecues where you can cook in the open air."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Bike trail",
+					"answer": "H",
+					"quotes": [
+						"Below the flower bed and across Lakeside Drive, you’ll see a trail for mountain biking, which is always a popular activity."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-8",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E",
+			"questions": [
+				{
+					"number": 7,
+					"text": "Which TWO items is it recommended that campers bring?",
+					"options": [
+						{
+							"label": "A",
+							"text": "earplugs"
+						},
+						{
+							"label": "B",
+							"text": "sunscreen"
+						},
+						{
+							"label": "C",
+							"text": "swimming toy"
+						},
+						{
+							"label": "D",
+							"text": "torch"
+						},
+						{
+							"label": "E",
+							"text": "boots"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 8,
+					"text": "Which TWO items is it recommended that campers bring?",
+					"options": [
+						{
+							"label": "A",
+							"text": "earplugs"
+						},
+						{
+							"label": "B",
+							"text": "sunscreen"
+						},
+						{
+							"label": "C",
+							"text": "swimming toy"
+						},
+						{
+							"label": "D",
+							"text": "torch"
+						},
+						{
+							"label": "E",
+							"text": "boots"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "9-10",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E",
+			"questions": [
+				{
+					"number": 9,
+					"text": "Which does the organizer suggest are the TWO most popular concert items?",
+					"options": [
+						{
+							"label": "A",
+							"text": "acting"
+						},
+						{
+							"label": "B",
+							"text": "dancing"
+						},
+						{
+							"label": "C",
+							"text": "poetry recital"
+						},
+						{
+							"label": "D",
+							"text": "singing"
+						},
+						{
+							"label": "E",
+							"text": "storytelling"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 10,
+					"text": "Which does the organizer suggest are the TWO most popular concert items?",
+					"options": [
+						{
+							"label": "A",
+							"text": "acting"
+						},
+						{
+							"label": "B",
+							"text": "dancing"
+						},
+						{
+							"label": "C",
+							"text": "poetry recital"
+						},
+						{
+							"label": "D",
+							"text": "singing"
+						},
+						{
+							"label": "E",
+							"text": "storytelling"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/83833997-962a-4725-89c4-4f540aaae130.png"
+	]
+}

@@ -1,0 +1,358 @@
+{
+	"id": "de40d096-4471-4969-aa31-27172cedca59",
+	"url": "https://stepielts.com/student/listening/de40d096-4471-4969-aa31-27172cedca59?mode=practice",
+	"title": "Visiting the City Zoo",
+	"source": "Other sources",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-13",
+	"audio_url": "https://audio.stepielts.com/listening-audio/f2673396-aa57-4b06-a503-9c651da77c99.mp3",
+	"transcript": "Speaker 1: Zoo Employee: Hello, and welcome to the City Zoo. I’d like to give you some information before you start your visit. We’re open seven days a week from 10a.m until 5p.m on weekdays and until 7p.m on weekends. Our indoor exhibits close half an hour before the zoo closes, but you may still walk along the trails and see any outdoor exhibits. You can visit any day aside from national holidays. Maps of the zoo are available here at the Visitor Center. I’m excited to say we’ve just opened our migratory birdhouse. This features birds that migrate across North America. Some of them nest in the Arctic environment, and some come from a South American habitat. Now we can’t, of course, keep any of the birds at the zoo since they’re migratory, but we do have lots of touch screen activities to increase your appreciation of these birds. A popular exhibit is our Asia Trail. Along the trail, you’ll see species like sloth bears and tapers. Our giant pandas were kept inside away from the public last year since they’d just had a baby and needed privacy, but that baby is now a growing cub. The whole family’s outside and on exhibit these days, though sometimes trying to hide in the bamboo stalks. Our Great Cats exhibit features African lions. All the baby cubs you’ll see were born right here at our zoo. You might find it interesting that we give all our cubs swim tests. Some don’t learn to swim until they’re six months old, and since our cubs like to play in the grass, they can sometimes knock each other into the nearby pond. So before they’re allowed outside, they have to prove they can swim and climb out of the pond by themselves. Next, the primate zone. That includes an exhibit on how monkeys and apes make tools and their social behavior, like how they communicate and play with one another. And you can even pull on a rope with an orangutan to see how strong he is. But don’t worry, he’s behind glass and can’t touch you. Parents of younger children might be interested in our kids’ farm. City kids don’t get many chances to see farm animals these days, but this is where your kids can see our goats and chickens. And we just got two new cows. The kids’ farm includes a petting corner, where kids get the chance to pet sheep and llamas. Do remember that after touching any animal, kids will need to wash their hands. Kids aged four to 10 can celebrate their birthday at the zoo. Our package includes a tour of the zoo, including watching the seal and otter feeding. That’s always a lot of fun. The kids will get to wear safari hats for the tour, the kind they’ve probably only seen in movies. Then they have two hours in our party room with cake and ice cream, and they get to meet doctor Gray, an expert in zoology. He’ll give a talk and answer questions. Zoo Employee: Now if you’d like to become a member, we call it friends of the zoo, let me tell you about how you can do so. You can join online or you can call us. You can also sign up in person right here at the visitor center. We accept either cash or credit card in person, but please note we’re no longer able to accept personal checks. If you’re joining over the phone, be sure to have your credit card ready. Each membership becomes active the moment you join. You can use your receipt until you receive your membership card. That’ll come in the mail in about a week. Your membership gives you a variety of benefits, like early registration for some of our activities, and you’ll always get invitations for members only events. We have our Bobcats Club for members ages 5 through 12. If you’re a parent, you can drop your kids off at this club, then take a break and do your own thing. Being a member doesn’t mean that everything is free at the zoo, but you can get discounted tickets for our children’s train, the Zoo Choo Choo, and you can also take 10% off at our gift store. Now a lot of people ask me if membership will allow free entry to any other zoo in the country. We’re working on some reciprocal agreements, but as of now, you won’t be able to use your card at any other zoo. Your family membership is subject to certain policies. For example, you can bring along to the zoo one person who’s over 18, but no more than that. You can always bring any number of children with you. Your membership is valid for one year, and it’ll renew automatically unless you cancel, which you can do online. And if you’re not a city resident, no problem. Anyone can join. If you move, please let us know your new address so you won’t miss out on the added benefits we send by mail, like our monthly magazine. Well, I hope you enjoy your day at the zoo.",
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "What does the speaker say about the zoo's visiting hours?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Some parts of the zoo stay open later than others."
+						},
+						{
+							"label": "B",
+							"text": "The zoo closes at the same time every day."
+						},
+						{
+							"label": "C",
+							"text": "The zoo remains open during national holidays."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Our indoor exhibits close half an hour before the zoo closes, but you may still walk along the trails and see any outdoor exhibits."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What can visitors see at the Migratory Bird House?",
+					"options": [
+						{
+							"label": "A",
+							"text": "nests of live birds"
+						},
+						{
+							"label": "B",
+							"text": "a display of a South American habitat"
+						},
+						{
+							"label": "C",
+							"text": "an interactive exhibit about birds"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Now we can’t, of course, keep any of the birds at the zoo since they’re migratory, but we do have lots of touch screen activities to increase your appreciation of these birds."
+					]
+				},
+				{
+					"number": 3,
+					"text": "What is different about the Asia Trail this year?",
+					"options": [
+						{
+							"label": "A",
+							"text": "New species have been added."
+						},
+						{
+							"label": "B",
+							"text": "It is possible to see the pandas."
+						},
+						{
+							"label": "C",
+							"text": "A bamboo habitat has been created."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Our giant pandas were kept inside away from the public last year since they’d just had a baby and needed privacy, but that baby is now a growing cub. The whole family’s outside and on exhibit these days, though sometimes trying to hide in the bamboo stalks."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What does the speaker say about the zoo's baby lions?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They may never learn to swim."
+						},
+						{
+							"label": "B",
+							"text": "They must be able to swim to play outside."
+						},
+						{
+							"label": "C",
+							"text": "They dislike playing in the water at the zoo."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"So before they’re allowed outside, they have to prove they can swim and climb out of the pond by themselves."
+					]
+				},
+				{
+					"number": 5,
+					"text": "In the Primate Zone, visitors may",
+					"options": [
+						{
+							"label": "A",
+							"text": "test their strength against an orangutan."
+						},
+						{
+							"label": "B",
+							"text": "try to communicate with a monkey."
+						},
+						{
+							"label": "C",
+							"text": "handle tools that apes have made."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"And you can even pull on a rope with an orangutan to see how strong he is."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Which animal may children touch in the Kids' Farm?",
+					"options": [
+						{
+							"label": "A",
+							"text": "cows"
+						},
+						{
+							"label": "B",
+							"text": "sheep"
+						},
+						{
+							"label": "C",
+							"text": "goats"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"The kids’ farm includes a petting corner, where kids get the chance to pet sheep and llamas."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Children who celebrate their birthday at the zoo can",
+					"options": [
+						{
+							"label": "A",
+							"text": "see a film about safaris."
+						},
+						{
+							"label": "B",
+							"text": "feed zoo animals."
+						},
+						{
+							"label": "C",
+							"text": "learn from a scientist."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Then they have two hours in our party room with cake and ice cream, and they get to meet doctor Gray, an expert in zoology. He’ll give a talk and answer questions."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-9",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Which TWO of the following are true about becoming a zoo member?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Only credit cards are accepted in person."
+						},
+						{
+							"label": "B",
+							"text": "Membership is effective immediately."
+						},
+						{
+							"label": "C",
+							"text": "Memberships can be purchased with personal cheques."
+						},
+						{
+							"label": "D",
+							"text": "It is no longer possible to join by phone."
+						},
+						{
+							"label": "E",
+							"text": "It takes several days to receive a membership card."
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 9,
+					"text": "Which TWO of the following are true about becoming a zoo member?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Only credit cards are accepted in person."
+						},
+						{
+							"label": "B",
+							"text": "Membership is effective immediately."
+						},
+						{
+							"label": "C",
+							"text": "Memberships can be purchased with personal cheques."
+						},
+						{
+							"label": "D",
+							"text": "It is no longer possible to join by phone."
+						},
+						{
+							"label": "E",
+							"text": "It takes several days to receive a membership card."
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "10-11",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 10,
+					"text": "Which TWO of the following are benefits of being a zoo member?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Parents can do joint activities with their children."
+						},
+						{
+							"label": "B",
+							"text": "Children can ride the zoo's train for free."
+						},
+						{
+							"label": "C",
+							"text": "There is a special facility for children."
+						},
+						{
+							"label": "D",
+							"text": "Members can get discounts at the gift shop."
+						},
+						{
+							"label": "E",
+							"text": "Members can get free entry at other zoos."
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 11,
+					"text": "Which TWO of the following are benefits of being a zoo member?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Parents can do joint activities with their children."
+						},
+						{
+							"label": "B",
+							"text": "Children can ride the zoo's train for free."
+						},
+						{
+							"label": "C",
+							"text": "There is a special facility for children."
+						},
+						{
+							"label": "D",
+							"text": "Members can get discounts at the gift shop."
+						},
+						{
+							"label": "E",
+							"text": "Members can get free entry at other zoos."
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "12-13",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 12,
+					"text": "Which TWO facts are given about family membership policies?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Members may invite only one adult to come with them."
+						},
+						{
+							"label": "B",
+							"text": "Members need to go online to renew their membership."
+						},
+						{
+							"label": "C",
+							"text": "Members may come with an unlimited number of children."
+						},
+						{
+							"label": "D",
+							"text": "Members must live within the city."
+						},
+						{
+							"label": "E",
+							"text": "Members must pay extra for the magazine."
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 13,
+					"text": "Which TWO facts are given about family membership policies?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Members may invite only one adult to come with them."
+						},
+						{
+							"label": "B",
+							"text": "Members need to go online to renew their membership."
+						},
+						{
+							"label": "C",
+							"text": "Members may come with an unlimited number of children."
+						},
+						{
+							"label": "D",
+							"text": "Members must live within the city."
+						},
+						{
+							"label": "E",
+							"text": "Members must pay extra for the magazine."
+						}
+					],
+					"answer": "C"
+				}
+			]
+		}
+	],
+	"images": []
+}

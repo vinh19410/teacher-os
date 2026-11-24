@@ -1,0 +1,151 @@
+{
+	"id": "10c4e88f-7680-4743-b372-c3095386911c",
+	"url": "https://stepielts.com/student/listening/10c4e88f-7680-4743-b372-c3095386911c?mode=practice",
+	"title": "City Health Services",
+	"source": "Actual Test",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/9237889b-4af8-425d-a0dd-98e991d4fe98.mp3",
+	"transcript": "Speaker 1: Agent: Good morning. City Health Services. How may I help you?\nSpeaker 2: Customer: Good morning. I’d like to arrange to have my house cleaned.\nSpeaker 1: Agent: Certainly. I just need to ask a few questions. First, could I take your name?\nSpeaker 2: Customer: Yes. It’s Barbara Hill.\nSpeaker 1: Agent: Thank you. Next, is your house in London?\nSpeaker 2: Customer: Yes. It’s in Kingston in Southwest London.\nSpeaker 1: Agent: Okay. Southwest London. And what’s the postcode?\nSpeaker 2: Customer: SW105.\nSpeaker 1: Agent: And what is the square footage and what rooms we’ll be cleaning?\nSpeaker 2: Customer: The whole house is 268 square feet, and there is no need to clean all the rooms. I only want to have my bedrooms cleaned.\nSpeaker 1: Agent: Okay. How many bedrooms does the house have?\nSpeaker 2: Customer: Three bedrooms. Oh, no. Sorry. We we used to have three bedrooms, but we only have two bedrooms now.\nSpeaker 1: Agent: Are those single bedrooms or doubles?\nSpeaker 2: Customer: Doubles.\nSpeaker 1: Agent: Fine. Two doubles.\nSpeaker 2: There’s one more room which needs cleaning. Customer: It was used as a bedroom before, and now we have converted it into an office.\nSpeaker 1: Agent: I understand. Three rooms have got to be cleaned. And are all of those rooms upstairs?\nSpeaker 2: Customer: Yes. Then downstairs, we have a kitchen diner, conservatory, and lounge. Agent: The kitchen diner is quite large and has the usual equipment, cooker with oven, refrigerator, cupboards and worktops. Customer: The conservatory has a lot of plants, but there’s no need to take care of them. The lounge has a leather three piece suite and a large coffee table.\nSpeaker 1: Agent: Thank you. And do you keep any pets?\nSpeaker 2: Customer: Yeah, I really love keeping them. I’ve got two dogs and three cats.\nSpeaker 1: Agent: Okay. Then if our staff come over to offer the service, please take your pets away. Have you looked at our service packages?\nSpeaker 2: Customer: Yes, I have one in front of me.\nSpeaker 1: Agent: Excellent. Agent: Any extra services you need? Switching bed linen, working the garden, clean the glass in the conservatory, that kind of thing.\nSpeaker 2: Customer: No. Actually, replacing the bed linen. Yeah. That would be good.\nSpeaker 1: Agent: No problem. I’ll just make a note of that. How about curtains, mats and carpets? What would you like us to do with those items?\nSpeaker 2: Customer: The curtains. I’ll have to think about that. I think we should have the carpets cleaned really well every quarter. Mats can just be done with the laundry.\nSpeaker 1: Agent: Of course. How about clothes? We can have our staff wash and iron them, or we can have them taken to a dry cleaner.\nSpeaker 2: Customer: Washing and ironing. No. Just ironing. That’ll be okay.\nSpeaker 1: Agent: Okay. Fine. I know quite a bit about what you want now. I should let you know that we’re located on 12 Amy’s Road. That’s A M Y E S. And we work on from Monday to Sunday except Tuesday and Wednesday. Could you let me know when is convenient for you?\nSpeaker 2: Customer: Next Friday. No. Oh, that’s no good. My son invites his friends over in the afternoon that day. Perhaps next Thursday or next Saturday? Agent: Let me check. Okay. Next Thursday.\nSpeaker 1: When is it convenient for us to come over and provide the service? Is it okay if we come in the morning? Or we may come in the afternoon. It depends on your schedule.\nSpeaker 2: Customer: I’m okay with any time. Just give me a call to let me know you’re coming before you arrive.\nSpeaker 1: Agent: Sure. We will.\nSpeaker 2: By the way, how long will it take for the service?\nSpeaker 1: We usually work one to three hours for house cleaning and the work will take three hours at most. And, of course, if it takes more than three hours, you should pay extra for it.\nSpeaker 2: Customer: Fine.\nSpeaker 1: So let me just do some calculations.",
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "FORM_COMPLETION",
+			"instructions": "Complete the form below. Write NO MORE THAN TWO WORDS for each answer.",
+			"body": "HOUSE SERVICE INFORMATION\nName: Barbara Hill\nLocation: [1] London\nPostcode: SW105\nRooms: two [2] bedrooms\nThe other room used as: an [3]\nDownstairs: kitchen-diner, conservatory, and [4]\nPets: 2 dogs and 3 cats",
+			"body_html": "<h3><strong>HOUSE SERVICE INFORMATION</strong></h3><table><tbody><tr><td colspan=\"1\" rowspan=\"1\"><ul><li>\nName: Barbara Hill\n</li><li>\nLocation: [1] London\n</li><li>\nPostcode: SW105\n</li><li>\nRooms: two [2] bedrooms\n</li><li>\nThe other room used as: an [3]\n</li><li>\nDownstairs: kitchen-diner, conservatory, and [4]\n</li><li>\nPets: 2 dogs and 3 cats\n</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Location: [1] London",
+					"answer": "Southwest / South-west / South West",
+					"quotes": ["It’s in Kingston in Southwest London."]
+				},
+				{
+					"number": 2,
+					"text": "Rooms: two [2] bedrooms",
+					"answer": "double",
+					"quotes": ["Two doubles."]
+				},
+				{
+					"number": 3,
+					"text": "The other room used as: an [3]",
+					"answer": "office",
+					"quotes": [
+						"Customer: It was used as a bedroom before, and now we have converted it into an office."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Downstairs: kitchen-diner, conservatory, and [4]",
+					"answer": "lounge",
+					"quotes": [
+						"Then downstairs, we have a kitchen diner, conservatory, and lounge."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-7",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Which of these extra services does the customer agree to do?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Change the bed linen"
+						},
+						{
+							"label": "B",
+							"text": "Do some gardening work"
+						},
+						{
+							"label": "C",
+							"text": "Clean the glass"
+						}
+					],
+					"answer": "A",
+					"quotes": ["Actually, replacing the bed linen."]
+				},
+				{
+					"number": 6,
+					"text": "What does the customer want cleaned every three months?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Curtains"
+						},
+						{
+							"label": "B",
+							"text": "Carpets"
+						},
+						{
+							"label": "C",
+							"text": "Mats"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I think we should have the carpets cleaned really well every quarter."
+					]
+				},
+				{
+					"number": 7,
+					"text": "What does the customer want done with clothes?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Wash and iron the clothes"
+						},
+						{
+							"label": "B",
+							"text": "Iron the clothes"
+						},
+						{
+							"label": "C",
+							"text": "lean and dry the clothes"
+						}
+					],
+					"answer": "B",
+					"quotes": ["Just ironing."]
+				}
+			]
+		},
+		{
+			"range": "8-10",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "The agent's address is 12 [8] Road.\nHer house will get cleaned next [9]\nThe maximum time of cleaning service is [10] hours",
+			"body_html": "<table><tbody><tr><td colspan=\"1\" rowspan=\"1\"><ul><li>\nThe agent's address is 12 [8] Road.\n</li><li>\nHer house will get cleaned next [9]\n</li><li>\nThe maximum time of cleaning service is [10] hours\n</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 8,
+					"text": "The agent's address is 12 [8] Road.",
+					"answer": "Amyes",
+					"quotes": [
+						"I should let you know that we’re located on 12 Amy’s Road."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Her house will get cleaned next [9]",
+					"answer": "Thursday",
+					"quotes": ["Next Thursday."]
+				},
+				{
+					"number": 10,
+					"text": "The maximum time of cleaning service is [10] hours",
+					"answer": "3 / three",
+					"quotes": [
+						"We usually work one to three hours for house cleaning and the work will take three hours at most."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

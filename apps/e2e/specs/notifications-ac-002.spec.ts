@@ -7,7 +7,12 @@ import {
 	type VerificationEmailEntry,
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
-import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import {
+	API_ORIGIN,
+	LMS_ORIGIN,
+	STUDENT_BASE_URL,
+	WEB_ORIGIN,
+} from "./origins";
 
 /**
  * AC-002 — plan TOS-22 (#463) phase 3: thông báo đang `queued` gửi tới địa chỉ
@@ -134,7 +139,7 @@ test("AC-002 gửi email thất bại đủ 3 lần → Lỗi gửi (failed) kè
 		.toBe(1);
 
 	// --- Bước 3: kiểm tra màn [5] (/notifications) ở 3 viewport + keyboard focus ---
-	await teacher.goto("/notifications");
+	await teacher.goto("/teacher/notifications");
 	await expect(
 		teacher.getByRole("heading", { name: /Nhật ký gửi thông báo/ }),
 	).toBeVisible();
@@ -197,7 +202,7 @@ test("AC-002 gửi email thất bại đủ 3 lần → Lỗi gửi (failed) kè
 	// --- Bước 4: cổng học viên vẫn có thông báo In-app; mở xem không đổi status khỏi failed ---
 	const studentContext = await browser.newContext();
 	const student = await studentContext.newPage();
-	await student.goto(`${STUDENT_ORIGIN}/login`);
+	await student.goto(`${LMS_ORIGIN}/login`);
 	await student.locator("#tab-signup").click();
 	await student.locator("#signup-name").fill(STUDENT_BOUNCE);
 	await student.locator("#signup-email").fill(bounceEmail);
@@ -205,7 +210,7 @@ test("AC-002 gửi email thất bại đủ 3 lần → Lỗi gửi (failed) kè
 	await student.locator("#panel-signup button[type='submit']").click();
 	await expect(student.getByText("Email chưa được xác thực")).toBeVisible();
 	await verifyStudentEmailFromMailLog(student, bounceEmail);
-	await expect(student).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`));
+	await expect(student).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`));
 
 	await expect(student.getByTestId("notification-badge")).toBeVisible();
 	await student

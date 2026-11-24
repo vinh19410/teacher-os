@@ -1,0 +1,114 @@
+{
+	"id": "b99ce162-3f61-4a79-8e55-24d56a77d4f1",
+	"url": "https://stepielts.com/student/listening/b99ce162-3f61-4a79-8e55-24d56a77d4f1?mode=practice",
+	"title": "Solar Water Purifier",
+	"source": "Actual Test",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "31-40",
+	"audio_url": "https://audio.stepielts.com/listening-audio/5e2053b4-a977-415b-9fcb-9f89ec66ee97.mp3",
+	"transcript": "Presenter: For many parts of the world today, a lack of clean drinking water is a major problem. In some developing areas, bore water, which is water that comes out of the ground, is the only water available. Unfortunately, bore water may be dangerous to drink because it contains excessive amounts of salts. In recent months, I've been working with a research team to develop a device that will help solve this problem. What we came up with is a solar water purifier, which we have called the SW 40. And this device not only makes bore water drinkable, it can even process seawater. In fact, it even passed the rigorous testing standards applied by hospitals to determine whether water is sterile enough for use there. The only problem we do face at the moment is with its manufacturing. The present method involves a process called vacuum forming which tends to be rather slow. We'd like to change to an injection mode of process which is much faster but would cost quite a lot to switch to, around 1,000,000 Australian dollars. There are a number of private companies that are very keen to go into partnership with us over this, but my preferred option would be a global aid agency known as Health International that sponsors projects like ours. It has a long history of working in these areas, and although it may take a little longer to get an agreement, it should mean a better deal all around. So just how useful is this device of ours? Well, the amount of pure water it is capable of producing each day varies as the amount of sunlight available varies. However, on a hot day when the temperature is around about 25 to 30 degrees Celsius with the sun shining clearly through a blue sky, it produces anywhere from seven liters per day to as much as nine liters. Now, most people can survive on one to two liters per day. So even under difficult conditions, one family could live off one of these devices. So a normal sized village would require several of these to supply all its needs. Okay. So let's look at the device in more detail. It weighs eight kilograms and is the size of a medium sized suitcase. The SW 40 has no filters, no electronics, no moving parts, and uses no chemicals. So how does it work? Well, there's a rectangular box with a glass lid on it, and on the edge of the box is a steel frame to hold everything together. And inside the box is a piece of black plastic which is divided up into pockets. You need an incline so the water flows through the device. The optimum is 12.5 degrees to the horizontal, although it can be one or two degrees above or below that. Impure water is piped in at the top of the box and flows down through the little pockets until they're all full. You then let mother nature in the form of the sun do its work as it shines through the glass window. It produces infrared light which heats the water. At the same time, ultraviolet light from the sun or UV as we more commonly call it is also radiated. If there are germs present in the water, prolonged exposure to this type of light will kill them. Then as the temperature of the water rises due to the sun's heat, the water vaporizes and condenses on the underside of the glass panel. The droplets of water slowly run down the glass to a collection tank ready to be taken away for drinking or whatever. So that's basically how it works. Now what this means...",
+	"question_groups": [
+		{
+			"range": "31-36",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "High levels of [31] make bore water unsafe to drink.\nThe SW40 produces water that is so pure it can be used in [32]\nOne problem with the present method of production of the SW is that it is quite [33]\nThe speaker hopes to acquire financial support from an agency called [34]\nThe SW40 has a maximum output of [35] liters on a sunny day.\nEach SW40 produces enough water for a [36]",
+			"body_html": "<table><tbody><tr><td><ul><li>High levels of [31] make bore water unsafe to drink.</li><li>The SW40 produces water that is so pure it can be used in [32]</li><li>One problem with the present method of production of the SW is that it is quite [33]</li><li>The speaker hopes to acquire financial support from an agency called [34]</li><li>The SW40 has a maximum output of [35]  liters on a sunny day.</li><li>Each SW40 produces enough water for a [36]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 31,
+					"text": "High levels of [31] make bore water unsafe to drink.",
+					"answer": "salts",
+					"quotes": [
+						"Unfortunately, bore water may be dangerous to drink because it contains excessive amounts of salts."
+					]
+				},
+				{
+					"number": 32,
+					"text": "The SW40 produces water that is so pure it can be used in [32]",
+					"answer": "hospitals",
+					"quotes": [
+						"In fact, it even passed the rigorous testing standards applied by hospitals to determine whether water is sterile enough for use there."
+					]
+				},
+				{
+					"number": 33,
+					"text": "One problem with the present method of production of the SW is that it is quite [33]",
+					"answer": "slow",
+					"quotes": [
+						"The present method involves a process called vacuum forming which tends to be rather slow."
+					]
+				},
+				{
+					"number": 34,
+					"text": "The speaker hopes to acquire financial support from an agency called [34]",
+					"answer": "Health International",
+					"quotes": [
+						"There are a number of private companies that are very keen to go into partnership with us over this, but my preferred option would be a global aid agency known as Health International that sponsors projects like ours."
+					]
+				},
+				{
+					"number": 35,
+					"text": "The SW40 has a maximum output of [35] on a sunny day.",
+					"answer": "nine liters",
+					"quotes": [
+						"However, on a hot day when the temperature is around about 25 to 30 degrees Celsius with the sun shining clearly through a blue sky, it produces anywhere from seven liters per day to as much as nine liters."
+					]
+				},
+				{
+					"number": 36,
+					"text": "Each SW40 produces enough water for a [36]",
+					"answer": "family",
+					"quotes": [
+						"So even under difficult conditions, one family could live off one of these devices."
+					]
+				}
+			]
+		},
+		{
+			"range": "37-40",
+			"type": "DIAGRAM_LABEL",
+			"instructions": "Label the diagram below. Write NO MORE THAN TWO WORDS AND/ OR A NUMBER for each answer.",
+			"body": "infra-red light heats water\nlid made of [37]\nimpure water\nbest inclined at angle [38]°\npockets\nUV light destroys [39]\nwater [40] containing pure water",
+			"body_html": "<p></p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/16275494-3203-4620-99ce-8f58657cb42f.png\"><table><tbody><tr><td><ul><li>infra-red light heats water</li><li>lid made of [37]</li><li>impure water</li><li>best inclined at angle [38]<strong>°</strong></li><li>pockets</li><li>UV light destroys [39]</li><li>water [40] containing pure water</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 37,
+					"text": "lid made of [37]",
+					"answer": "glass",
+					"quotes": [
+						"Well, there's a rectangular box with a glass lid on it, and on the edge of the box is a steel frame to hold everything together."
+					]
+				},
+				{
+					"number": 38,
+					"text": "best inclined at angle [38]",
+					"answer": "12.5 degrees",
+					"quotes": [
+						"The optimum is 12.5 degrees to the horizontal, although it can be one or two degrees above or below that."
+					]
+				},
+				{
+					"number": 39,
+					"text": "UV light destroys [39]",
+					"answer": "germs",
+					"quotes": [
+						"If there are germs present in the water, prolonged exposure to this type of light will kill them."
+					]
+				},
+				{
+					"number": 40,
+					"text": "water [40] containing pure water",
+					"answer": "droplets",
+					"quotes": [
+						"The droplets of water slowly run down the glass to a collection tank ready to be taken away for drinking or whatever."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/16275494-3203-4620-99ce-8f58657cb42f.png"
+	]
+}

@@ -1,0 +1,130 @@
+{
+	"id": "8eacf840-1005-44e2-8b0f-e204b4977043",
+	"url": "https://stepielts.com/student/listening/8eacf840-1005-44e2-8b0f-e204b4977043?mode=practice",
+	"title": "History of time-measurement",
+	"source": "Collection",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "31-40",
+	"audio_url": "https://audio.stepielts.com/listening-audio/c6b65e88-171d-4c03-b569-e79f7eb54224.mp3",
+	"transcript": "Speaker 0: Good morning, everyone. Today I'm going to talk about the research project I've been involved in on time measurement. Do you know how time is measured? Consider how we measure length and how, with time, we encounter a difficulty. Before we could grasp it, it would slip through our fingers. In fact, as we can see, we are forced to have the resource to measure something else. The movement of something in space or a set of movements in space. All the methods that have been employed so far really measure time by a motion in space. The measurement of time is no easy matter, a scientific unit only arrived at after much thought and reflection. As the most primitive form of measurement, the sun seems to be natural. Ever since man first noticed the regular movements of the sun and stars, we have wondered about the passage of time. Prehistoric people first recorded time according to the sun's position. To start off, let us take noon, which is when the sun is on the meridian at the highest point of its course across the heavens, and when it casts the shortest shadow. But this measurement, which was regarded as a major one in ancient times, was less important than the natural events that occurred. The earliest natural events that had been recognized were in the heavens, but during the course of the year, there were many other events that indicated significant changes in the environment. Seasonal winds and rains, the flooding of rivers, the flowering of trees and plants, and the breeding cycles or migration of animals all led to natural divisions of the year, and the further observation and local customs led to the recognition of the season. Years later, precise measurements were invented because the passage of time was extremely important for astronomers and priests who were responsible for determining the exact hour for daily rituals and for important religious festivals. Apart from the connection with religion, accurate time measurement was also related to the government, since they divided the day or the night into different periods in order to regulate work and various events. For thousands of years, devices had been used to measure and keep track of time. The current sexagesimal system of time measurement dates back to approximately 2,000 BCE, from the Sumerians. It was found that the earliest ancient timekeepers were mainly invented and used in Mesopotamia where the water clock was introduced from, as well as in North Africa, especially in the area of ancient Egypt. So now I'd like to introduce you to some of the most well known ancient timekeepers as well as the disadvantages of them for which they were replaced by various new forms of clocks that were used afterwards. A sundial is a device that tells the time of day by the apparent positioning of the sun in the sky. In the narrowest sense of the word, it consists of a flat plate and a nomen, which casts a shadow onto the dial. As the sun appears to move across the sky, the shadow aligns with different hour lines, which are marked on the dial to indicate the time of day. However, it was quickly noted that the length of the day varied at different times of the year. Therefore, there could have been a difference between clock time and sundial time. In addition, the sundial was of no use at night, so a water clock was invented. The water clock, or klebsidra, appeared to have been invented around 1,500 BCE and was a device which relied on the steady flow of water from or into a container. Measurements could be marked on the container or on a receptacle for the water. It was reliable, but the water flow still depended on the variation of pressure and temperature from the top of water in the container. As the technology of glassblowing developed, from sometime in the fourteenth century, it became possible to make sand glasses. Originally, they were used as a measurement for periods of time like lamps or candles. But as clocks became more accurate, they were calibrated to measure specific periods of time. The drawback, however, as you can imagine, was the limited length of time they could measure. The last timekeeper to be introduced is the fire candle clock. Candle clocks took advantage of a simple concept: the slow and consistent nature of a burning wax candle. By utilizing this process, our ancestors were able to keep steady track of the time. The clocks were created by engraving the length of the candle with evenly spaced markings. Each marking represented a single unit of time, and as the wax burned down, each hour would disappear. However, the drafts and the variable quality of the wax mainly influenced the time of burning. Like oil lamps, candles were used to mark the passage of time from one event to another rather than tell the time of day.",
+	"question_groups": [
+		{
+			"range": "31-35",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THAN TWO WORDS for each answer.",
+			"body": "Primitive measurements by observing\nTwo time keepers:\nThe [31]\nNatural events, such as winds and rains, rivers flooding, plants flowering, and the cycles of breeding or [32] behaviour.\nPrecise measurements\nThey became important for organising activities for:\n[33]\n[34]\nThe oldest time keepers were discovered in Mesopotamia and [35]",
+			"body_html": "<table><tbody><tr><td><p><strong>Primitive measurements by observing</strong></p><p><strong>Two time keepers:</strong></p><ul><li>The [31]</li><li>Natural events, such as winds and rains, rivers flooding, plants flowering, and the cycles of breeding or [32] behaviour.</li></ul><p><strong>Precise measurements</strong></p><ul><li>They became important for organising activities for:<ul><li>[33]</li><li>[34]</li></ul></li><li>The oldest time keepers were discovered in Mesopotamia and [35]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 31,
+					"text": "The 31[31]",
+					"answer": "sun",
+					"quotes": [
+						"Prehistoric people first recorded time according to the sun's position."
+					]
+				},
+				{
+					"number": 32,
+					"text": "Natural events, such as winds and rains, rivers flooding, plants flowering, and the cycles of breeding or 32[32] behaviour.",
+					"answer": "migration",
+					"quotes": [
+						"Seasonal winds and rains, the flooding of rivers, the flowering of trees and plants, and the breeding cycles or migration of animals all led to natural divisions of the year, and the further observation and local customs led to the recognition of the season."
+					]
+				},
+				{
+					"number": 33,
+					"text": "They became important for organising activities for: 33[33]",
+					"answer": "religious festivals",
+					"quotes": [
+						"Years later, precise measurements were invented because the passage of time was extremely important for astronomers and priests who were responsible for determining the exact hour for daily rituals and for important religious festivals.",
+						"Apart from the connection with religion, accurate time measurement was also related to the government, since they divided the day or the night into different periods in order to regulate work and various events."
+					]
+				},
+				{
+					"number": 34,
+					"text": "They became important for organising activities for: 34[34]",
+					"answer": "government",
+					"quotes": [
+						"Apart from the connection with religion, accurate time measurement was also related to the government, since they divided the day or the night into different periods in order to regulate work and various events."
+					]
+				},
+				{
+					"number": 35,
+					"text": "The oldest time keepers were discovered in Mesopotamia and 35[35]",
+					"answer": "ancient Egypt",
+					"quotes": [
+						"It was found that the earliest ancient timekeepers were mainly invented and used in Mesopotamia where the water clock was introduced from, as well as in North Africa, especially in the area of ancient Egypt."
+					]
+				}
+			]
+		},
+		{
+			"range": "36-40",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD ONLY for each answer.",
+			"body": "Time Keeper Disadvantages\nThe sundial In different parts of the year, the time for day [36]\nThe clepsydra (Water clock) The changing pressure and [37] were what the flow of water still relied on.\n[38] The time duration was [39]\nFire candle clock The burning [40] or the rate of burning, was subject to the candles wax.",
+			"body_table": [
+				["Time Keeper", "Disadvantages"],
+				[
+					"The sundial",
+					"In different parts of the year, the time for day [36]"
+				],
+				[
+					"The clepsydra (Water clock)",
+					"The changing pressure and [37] were what the flow of water still relied on."
+				],
+				["[38]", "The time duration was [39]"],
+				[
+					"Fire candle clock",
+					"The burning [40] or the rate of burning, was subject to the candles wax."
+				]
+			],
+			"body_html": "<table><thead><tr><th>Time Keeper</th><th>Disadvantages</th></tr></thead><tbody><tr><td>The sundial</td><td>In different parts of the year, the time for day [36]</td></tr><tr><td>The clepsydra (Water clock)</td><td>The changing pressure and [37] were what the flow of water still relied on.</td></tr><tr><td>[38]</td><td>The time duration was [39]</td></tr><tr><td>Fire candle clock</td><td>The burning [40] or the rate of burning, was subject to the candles wax.</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 36,
+					"text": "In different parts of the year, the time for day [36]",
+					"answer": "varied",
+					"quotes": [
+						"However, it was quickly noted that the length of the day varied at different times of the year."
+					]
+				},
+				{
+					"number": 37,
+					"text": "The changing pressure and [37] were what the flow of water still relied on.",
+					"answer": "temperature",
+					"quotes": [
+						"It was reliable, but the water flow still depended on the variation of pressure and temperature from the top of water in the container."
+					]
+				},
+				{
+					"number": 38,
+					"text": "The [38]",
+					"answer": "sand glass",
+					"quotes": [
+						"As the technology of glassblowing developed, from sometime in the fourteenth century, it became possible to make sand glasses."
+					]
+				},
+				{
+					"number": 39,
+					"text": "The time duration was [39]",
+					"answer": "limited",
+					"quotes": [
+						"The drawback, however, as you can imagine, was the limited length of time they could measure."
+					]
+				},
+				{
+					"number": 40,
+					"text": "The burning [40] or the rate of burning, was subject to the candles wax.",
+					"answer": "wax",
+					"quotes": [
+						"Candle clocks took advantage of a simple concept: the slow and consistent nature of a burning wax candle.",
+						"By utilizing this process, our ancestors were able to keep steady track of the time."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

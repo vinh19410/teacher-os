@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { type Client, createClient } from "@libsql/client";
 import { expect, test } from "@playwright/test";
 import { signUpViaApi } from "./helpers";
-import { WEB_ORIGIN } from "./origins";
+import { TEACHER_BASE_URL } from "./origins";
 
 const PASSWORD = "password-8chars";
 const runToken = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -101,9 +101,9 @@ test.describe
 				db.close();
 			}
 
-			// 1) Visit /vocab -> open Quản lý nhóm -> create, duplicate check, rename
+			// 1) Visit /teacher/vocab -> open Quản lý nhóm -> create, duplicate check, rename
 			await page.setViewportSize({ width: 1440, height: 900 });
-			await page.goto(`${WEB_ORIGIN}/vocab`);
+			await page.goto(`${TEACHER_BASE_URL}/vocab`);
 			await expect(
 				page.getByTestId(`vocab-deck-row-${starterDeckId}`),
 			).toBeVisible();
@@ -279,7 +279,7 @@ test.describe
 			}
 
 			// 4) Go to IELTS Target class -> Từ vựng tab -> Thêm từ thư viện -> Bộ từ đã tạo
-			await page.goto(`${WEB_ORIGIN}/classes/${targetClassId}`);
+			await page.goto(`${TEACHER_BASE_URL}/classes/${targetClassId}`);
 			await page.getByRole("tab", { name: "Từ vựng" }).click();
 			await page.getByTestId("vocab-add-from-library").click();
 			await page.getByRole("tab", { name: "Bộ từ đã tạo" }).click();

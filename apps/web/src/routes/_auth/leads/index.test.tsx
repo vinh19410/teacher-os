@@ -379,10 +379,13 @@ describe("màn /leads (#506 phase 4)", () => {
 			speakingDurationSec: 42,
 			writingRubric: null,
 			writingScore: null,
+			writingCriterionComments: null,
 			speakingRubric: null,
 			speakingScore: null,
+			speakingCriterionComments: null,
 			teacherFeedback: "",
 			finalBandLevel: null,
+			finalCourseId: null,
 			finalCourse: null,
 			finalDisplayCourse: null,
 			finalScorePct: null,
@@ -435,6 +438,39 @@ describe("màn /leads (#506 phase 4)", () => {
 		fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
 			const url = String(input);
 			const method = init?.method ?? "GET";
+			if (url.includes("/api/courses?activeOnly=true") && method === "GET") {
+				return Promise.resolve(
+					new Response(
+						JSON.stringify({
+							categories: [
+								{
+									id: "cat-comm",
+									name: "Giao Tiếp",
+									sortOrder: 0,
+									isActive: true,
+									createdAt: "2026-11-01T00:00:00.000Z",
+									updatedAt: "2026-11-01T00:00:00.000Z",
+									courses: [
+										{
+											id: "course-comm-1",
+											categoryId: "cat-comm",
+											name: "Communication English Level 1",
+											sortOrder: 0,
+											isActive: true,
+											createdAt: "2026-11-01T00:00:00.000Z",
+											updatedAt: "2026-11-01T00:00:00.000Z",
+										},
+									],
+								},
+							],
+						}),
+						{
+							status: 200,
+							headers: { "content-type": "application/json" },
+						},
+					),
+				);
+			}
 			if (url.endsWith("/placement-submission/media")) {
 				return Promise.resolve(
 					new Response(new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]), {
@@ -534,6 +570,12 @@ describe("màn /leads (#506 phase 4)", () => {
 			target: { value: "Cần luyện nói thêm" },
 		});
 
+		const courseSelect = (await screen.findByTestId(
+			"placement-course-select",
+		)) as HTMLSelectElement;
+		await waitFor(() => expect(courseSelect.disabled).toBe(false));
+		fireEvent.change(courseSelect, { target: { value: "course-comm-1" } });
+
 		fireEvent.click(screen.getByTestId("copy-zalo-result-btn"));
 		await waitFor(() => expect(clipboardWriteMock).toHaveBeenCalled());
 
@@ -542,6 +584,12 @@ describe("màn /leads (#506 phase 4)", () => {
 		expect(gradePatchBody).toEqual({
 			writingRubric: { task: 9, coherence: 9, lexical: 9, grammar: 9 },
 			writingScore: 9,
+			writingCriterionComments: {
+				task: "",
+				coherence: "",
+				lexical: "",
+				grammar: "",
+			},
 			speakingRubric: {
 				fluency: 0,
 				lexical: 0,
@@ -549,6 +597,13 @@ describe("màn /leads (#506 phase 4)", () => {
 				pronunciation: 0,
 			},
 			speakingScore: 0,
+			speakingCriterionComments: {
+				fluency: "",
+				lexical: "",
+				grammar: "",
+				pronunciation: "",
+			},
+			courseId: "course-comm-1",
 			teacherFeedback: "Cần luyện nói thêm",
 			writingErrors: [],
 			speakingErrors: [],

@@ -1,0 +1,117 @@
+{
+	"id": "388e3433-e698-4189-8495-0f0548597789",
+	"url": "https://stepielts.com/student/listening/388e3433-e698-4189-8495-0f0548597789?mode=practice",
+	"title": "Study of Fossil Park",
+	"source": "Collection",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "31-40",
+	"audio_url": "https://audio.stepielts.com/listening-audio/749cac44-55a8-4b16-939e-1a8416bc01cc.mp3",
+	"transcript": "Speaker 0: Part four. You will hear part of a lecture about a fossil park. First, you have some time to look at questions 31 to 40. Now listen carefully and answer questions 31 to 40.\nSpeaker 1: Welcome, students, to the daily talk on the fossils found here at Green Mountain Fossil Park. First, I will tell you a little about the history of our park. The park is designed to educate you on what the environment was like in this area around five million years ago, when most of the area was at sea level and near water bodies, such as lakes and seas. These bodies of water provided moisture and significant plant and animal variety, which has resulted in the fantastic collection of fossils, which you will see today. The fossils here were discovered by mine workers during the nineteen sixties, and the park itself was open to tourists and students back in 1985. We have three types of fossils here in the park. The first are transitional fossils. These are rare fossils that appear to exhibit traits of the animal's evolutionary ancestors and its descendants, such as an animal showing both dinosaur and bird like features. Next, we have preserved fossils, which are more common fossilized remains. These are fossils in which the structure of an animal or plant remains intact, and you can clearly see something like a plant or a fish. Thirdly, we have fossils which indirectly show the activities of animals, such as their tracks and burrows, and we refer to these as trace fossils. You may wonder how fossils are formed. Well, many people think it happens when organisms are caught in a volcanic eruption and are trapped in ash, but in reality these formations are rare. The most common way a fossil is formed is through petrifaction. An animal dies and becomes buried under mud or silt. Over time, the mud hardens around the bones of the animal. Eventually, the bones also decay and are replaced by minerals, which form the shape of the fossil in stone. You will see many of this kind of fossil today. After you finish today's tour, you may wish to take home a souvenir. We encourage you to do so. There is a shop outside the park, but you can also make purchases from our exhibitions. The money helps to fund our work of preserving this wonderful site. Of course, you can also buy fossils and take them home. Please don't think that all fossils are expensive to buy. The majority are small and affordable samples that are as wonderful as the larger ones, don't forget to check them out. As you can see, you all have some worksheets to go through here today, These will help you to learn as much as you can from your visit. There are also some tools you will find as you go around the site. For example, there are tape measures available beside each fossil, so that you can note the dimensions of each fossil. This can help us to identify different species. We also encourage you to use your specially designed notebook to record as many different types of rocks as you can. Geology forms an important part of the study of fossils and so we want you to focus on the types. If you brought a camera along with you today, don't hesitate to use it as the images of the fossils will be worth reviewing later. You may wish to experiment with the settings to see what they are like. Here in the information centre you can pick up an information sheet which contains some useful tips on how to do that. Last of all you can practice using a compass, even though you cannot locate the fossils themselves using the compass, it will help you find the sediments which are the key to the location of the fossils. These are very soft, so to protect the delicate fossils, trowels and plastic covers are needed. You will find these throughout the site, please use them. Please feel free to ask any of our staff as you tour around, and enjoy your day. We hope you leave us today with a greater passion to study fossils further.\nSpeaker 0: That is the end of the listening test. In the IELTS test, you would now have ten minutes to transfer your answers to the answer sheet.",
+	"question_groups": [
+		{
+			"range": "31-36",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below.\nWrite ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Study of Fossil Park\nTypes of fossils:\ntransitional fossils: rare, show evidence of evolutionary change\n[31] fossils: more common, actual fossilised remains\n[32] fossils: indirect evidence of animals, such as footprints or tunnels\nFossilisation processes:\nOrganism trapped in volcanic ash\nPetrifaction\nAn animal is [33] in the mud after death.\nMud dries and hardens.\n[34] replace the bones leaving a stone shape.\nPurchasing fossils:\nSite: Shop outside the park or from the park's [35]\nPrices: generally [36]",
+			"body_html": "<table><tbody><tr><td><h4>Study of Fossil Park</h4><p><strong>Types of fossils:</strong></p><ul><li>transitional fossils: rare, show evidence of evolutionary change</li><li>[31] fossils: more common, actual fossilised remains</li><li>[32] fossils: indirect evidence of animals, such as footprints or tunnels</li></ul><p><strong>Fossilisation processes:</strong></p><p>Organism trapped in volcanic ash</p><p><strong>Petrifaction</strong></p><ul><li>An animal is [33] in the mud after death.</li><li>Mud dries and hardens.</li><li>[34] replace the bones leaving a stone shape.</li></ul><p><strong>Purchasing fossils:</strong></p><ul><li>Site: Shop outside the park or from the park's [35]</li><li>Prices: generally [36]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 31,
+					"text": "Complete the notes: [31] fossils: more common, actual fossilised remains",
+					"answer": "preserved",
+					"quotes": [
+						"Next, we have preserved fossils, which are more common fossilized remains."
+					]
+				},
+				{
+					"number": 32,
+					"text": "Complete the notes: [32] fossils: indirect evidence of animals, such as footprints or tunnels",
+					"answer": "trace",
+					"quotes": [
+						"Thirdly, we have fossils which indirectly show the activities of animals, such as their tracks and burrows, and we refer to these as trace fossils."
+					]
+				},
+				{
+					"number": 33,
+					"text": "Complete the notes: An animal is [33] in the mud after death.",
+					"answer": "buried",
+					"quotes": ["An animal dies and becomes buried under mud or silt."]
+				},
+				{
+					"number": 34,
+					"text": "Complete the notes: [34] replace the bones leaving a stone shape.",
+					"answer": "Minerals",
+					"quotes": [
+						"Eventually, the bones also decay and are replaced by minerals, which form the shape of the fossil in stone."
+					]
+				},
+				{
+					"number": 35,
+					"text": "Complete the notes: Shop outside the park or from the park's [35]",
+					"answer": "exhibitions",
+					"quotes": [
+						"There is a shop outside the park, but you can also make purchases from our exhibitions."
+					]
+				},
+				{
+					"number": 36,
+					"text": "Complete the notes: Prices: generally [36]",
+					"answer": "affordable",
+					"quotes": [
+						"The majority are small and affordable samples that are as wonderful as the larger ones, don't forget to check them out."
+					]
+				}
+			]
+		},
+		{
+			"range": "37-40",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below.\nWrite ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Tools Function or purpose\nA tape measure Record the [37] of each fossil\nA notebook Record the types of [38]\nA camera Record the [39] of each fossil\nA compass Detect [40] the fossils to locate",
+			"body_table": [
+				["Tools", "Function or purpose"],
+				["A tape measure", "Record the [37] of each fossil"],
+				["A notebook", "Record the types of [38]"],
+				["A camera", "Record the [39] of each fossil"],
+				["A compass", "Detect [40] the fossils to locate"]
+			],
+			"body_html": "<table><tbody><tr><th>Tools</th><th>Function or purpose</th></tr><tr><td>A tape measure</td><td>Record the [37] of each fossil</td></tr><tr><td>A notebook</td><td>Record the types of [38]</td></tr><tr><td>A camera</td><td>Record the [39] of each fossil</td></tr><tr><td>A compass</td><td>Detect [40] the fossils to locate</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 37,
+					"text": "A tape measure: Record the [37] of each fossil",
+					"answer": "dimensions",
+					"quotes": [
+						"For example, there are tape measures available beside each fossil, so that you can note the dimensions of each fossil."
+					]
+				},
+				{
+					"number": 38,
+					"text": "A notebook: Record the types of [38]",
+					"answer": "rocks",
+					"quotes": [
+						"We also encourage you to use your specially designed notebook to record as many different types of rocks as you can."
+					]
+				},
+				{
+					"number": 39,
+					"text": "A camera: Record the [39] of each fossil",
+					"answer": "images",
+					"quotes": [
+						"If you brought a camera along with you today, don't hesitate to use it as the images of the fossils will be worth reviewing later."
+					]
+				},
+				{
+					"number": 40,
+					"text": "A compass: Detect [40] the fossils to locate",
+					"answer": "sediments",
+					"quotes": [
+						"Last of all you can practice using a compass, even though you cannot locate the fossils themselves using the compass, it will help you find the sediments which are the key to the location of the fossils."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

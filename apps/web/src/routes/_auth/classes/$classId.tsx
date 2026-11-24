@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { CLASS_ERROR_CODES } from "@teacher-os/api/contracts";
 import { canManageClassStatus } from "@teacher-os/auth/role";
@@ -21,6 +22,10 @@ import {
 import { ClassStudyPackSection } from "@/components/classes/class-study-pack-section";
 import { AddClassSessionModal } from "@/components/modals/add-class-session-modal";
 import { ClassStatusModal } from "@/components/modals/class-status-modal";
+import {
+	ConfirmOpeningModal,
+	type OpeningRosterEntry,
+} from "@/components/modals/confirm-opening-modal";
 import { EditClassFeeModal } from "@/components/modals/edit-class-fee-modal";
 import { EditClassModal } from "@/components/modals/edit-class-modal";
 import { EnrollStudentModal } from "@/components/modals/enroll-student-modal";
@@ -40,6 +45,7 @@ import { formatSchedule } from "@/lib/format-schedule";
 import { isHttpError } from "@/lib/kernel-load-state";
 import { occurrenceSummary } from "@/lib/kernel-outcome";
 import { CLASS_TYPE_LABELS, fmtVND } from "@/lib/mock-data";
+import { notificationLogsAllQueryKey } from "@/lib/repos/notifications";
 import { useClasses } from "@/lib/repos/use-classes";
 import { useClassCurriculum } from "@/lib/repos/use-syllabus";
 import { rosterDebtByStudent } from "@/lib/tuition-from-kernel";
@@ -101,6 +107,7 @@ export const Route = createFileRoute("/_auth/classes/$classId")({
 
 function ClassDetailRoute() {
 	const { classId } = Route.useParams();
+	const queryClient = useQueryClient();
 	const { dispatch, refresh } = useData();
 
 	/**
@@ -198,11 +205,13 @@ function ClassDetailRoute() {
 	const [feeModalOpen, setFeeModalOpen] = useState(false);
 	const [editModalOpen, setEditModalOpen] = useState(false);
 	const [statusModalOpen, setStatusModalOpen] = useState(false);
+	const [confirmOpeningOpen, setConfirmOpeningOpen] = useState(false);
 	const [notes, setNotes] = useState<string | null>(null);
 	const resetLastAssigned = () => setLastAssigned({ classId, nonce: 0 });
 	useEffect(() => {
 		if (lastAssigned.classId !== classId) {
 			setAssignModalOpen(false);
+			setConfirmOpeningOpen(false);
 			setLastAssigned({ classId, nonce: 0 });
 		}
 	}, [classId, lastAssigned.classId]);
@@ -237,10 +246,12 @@ function ClassDetailRoute() {
 
 	useEffect(() => {
 		if (!sy && manageOpen) setManageOpen(false);
-		const closedByPause = isPaused && (addSessionOpen || addStudentOpen);
+		const closedByPause =
+			isPaused && (addSessionOpen || addStudentOpen || confirmOpeningOpen);
 		if (!canAddManualSession && addSessionOpen) setAddSessionOpen(false);
 		if (!canImportSyllabus && importSyllabusOpen) setImportSyllabusOpen(false);
 		if (isPaused && addStudentOpen) setAddStudentOpen(false);
+		if (isPaused && confirmOpeningOpen) setConfirmOpeningOpen(false);
 		if (closedByPause) {
 			toast.error("Lớp đang tạm dừng — thao tác này tạm khóa.");
 		}
@@ -251,6 +262,7 @@ function ClassDetailRoute() {
 		canAddManualSession,
 		addSessionOpen,
 		addStudentOpen,
+		confirmOpeningOpen,
 		canImportSyllabus,
 		importSyllabusOpen,
 	]);
@@ -258,6 +270,9 @@ function ClassDetailRoute() {
 	if (!cls) {
 		throw notFound();
 	}
+	const isOpeningConfirmed =
+		(cls.openingAnnouncementVersion ?? 0) > 0 ||
+		Boolean(cls.openingConfirmedAt);
 	const classLessons = data.lessons.filter((l) =>
 		cls.studentIds.includes(l.sid),
 	);
@@ -290,6 +305,27 @@ function ClassDetailRoute() {
 			0,
 		);
 	}, [classAssignments]);
+	const openingRoster = useMemo<OpeningRosterEntry[]>(() => {
+		const seen = new Set<string>();
+		const entries: OpeningRosterEntry[] = [];
+		for (const sid of cls.studentIds) {
+			if (seen.has(sid)) continue;
+			const student = studentById(sid);
+			if (student) {
+				seen.add(sid);
+				entries.push({ student, isInvited: false });
+			}
+		}
+		for (const sid of cls.invitedStudentIds ?? []) {
+			if (seen.has(sid)) continue;
+			const student = studentById(sid);
+			if (student) {
+				seen.add(sid);
+				entries.push({ student, isInvited: true });
+			}
+		}
+		return entries;
+	}, [cls.studentIds, cls.invitedStudentIds, studentById]);
 
 	return (
 		<div>
@@ -314,11 +350,33 @@ function ClassDetailRoute() {
 						>
 							{isPaused ? "Tạm dừng" : "Đang hoạt động"}
 						</Badge>
+						{isOpeningConfirmed && (
+							<Badge variant="success" data-testid="opening-confirmed-badge">
+								Đã chốt khai giảng
+							</Badge>
+						)}
 					</span>
 				}
 				title={cls.name}
 				action={
 					<>
+						{canToggleStatus && (
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={isPaused}
+								title={
+									isPaused
+										? "Lớp đang tạm dừng — tạm khóa chốt khai giảng"
+										: undefined
+								}
+								onClick={() => setConfirmOpeningOpen(true)}
+							>
+								{isOpeningConfirmed
+									? "Thông báo khai giảng"
+									: "Chốt khai giảng"}
+							</Button>
+						)}
 						{canToggleStatus && (
 							<Button
 								variant="outline"
@@ -614,6 +672,20 @@ function ClassDetailRoute() {
 				open={statusModalOpen}
 				onClose={() => setStatusModalOpen(false)}
 				cls={cls}
+			/>
+			<ConfirmOpeningModal
+				key={`confirm-opening-${cls.id}`}
+				open={confirmOpeningOpen && !isPaused}
+				onClose={() => setConfirmOpeningOpen(false)}
+				cls={cls}
+				hasRealSessions={hasRealSessions}
+				roster={openingRoster}
+				onConfirmed={async () => {
+					await refresh();
+					await queryClient.invalidateQueries({
+						queryKey: notificationLogsAllQueryKey,
+					});
+				}}
 			/>
 			<AssignClassPromptModal
 				key={`assign-prompt-${cls.id}`}

@@ -1,0 +1,204 @@
+{
+	"id": "c10edfe8-a210-49a3-8f97-2d4c70f9eb9f",
+	"url": "https://stepielts.com/student/listening/c10edfe8-a210-49a3-8f97-2d4c70f9eb9f?mode=practice",
+	"title": "Canadian Festival Theater",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/8da9a70e-e40e-4f8d-babf-49d6899bbfbf.mp3",
+	"transcript": "Speaker 1: Radio Host: Michael McKay, the executive director of the Canadiana Festival Theatre, is here with us to talk about the season starting in June. Welcome.\nSpeaker 2: Executive Director: Thank you. We have an amazing season this year with some great deals for our clients. You know, we have a lot of regular theatergoers who will be happy to know that we have some great specials for the upcoming season. For example, if you order two tickets to any play performed at the theater, you can get 50% off the price of the next play we put on. This replaces the special offer we had last season, which was for 50 percent off all performances on Mondays. It is good to get youth interested in theater, so many schools arrange class trips to our theater. This year, we will send a special study guide to each class so the students can familiarize themselves with the play beforehand. Having some background information always makes the experience of watching the actors perform the play more enjoyable. Each guide has suggestions for classroom discussion after seeing the show, which teachers find useful for a follow-up activity. Also, we mustn’t forget the bring a friend special for our senior citizens. On Tuesday and Wednesday afternoons, everyone over 60 can buy one ticket and get one free. The offer includes all the musicals plus the plays, so there is lots of choice. We also include $5 off any gift shop purchase for those clients who spend more than $30 there.\nSpeaker 1: Radio Host: So what would you say is the best play you have this year?\nSpeaker 2: Executive Director: All the plays are great, but the must see play is called something to say. It stars the amazing actor Christopher Plunkett. This likely will be the last year we see him perform as he has been on stage for over sixty years. Actually, for the first time, he helped write this play, and it really is a commentary on his amazing career as an actor. You may have seen him in supporting roles in movies, but acting on stage is his first love. He has been in so many fantastic dramas. I can’t think of him ever not being on stage. Executive Director: Now let’s talk about the season’s musicals. The first one is called the climb. Of course, the best part is that we have that really amazing singer, Justin MacDonald, playing the part of the hero. It is an inspiring story of a man called Stephen who starts working for a newspaper and a very junior job in the mailroom. After many years and many promotions, he finally gets to the top position. He becomes editor in chief of the newspaper. Then we have that wonderful classic that we show every two years because it is so popular, the Voyagers. It is a wonderful story of a Canadian farming family in the late eighteen hundreds and how they settled their land near Kingston, Ontario. The musical gives a good description of the times, the struggles, and the way of life in that period. The next musical, Joey Brown, is a comical story of a piano player who writes songs for kids’ TV shows. However, he ends up having a terrible time when he gets a new boss who always criticizes him and makes his life difficult. Poor Joey has to learn how to win over the boss. The show has a couple of funny twists and a surprise ending. In Main Street, Karen Hines stars in the true story of a young woman whose dream is to compete in the Olympics. She is such a powerful actress in this role. It is about a gymnast who is crushed when, during a practice session, she breaks her ankle just one week before the games. Now for Millie and Mike. What a story this is. Stephanie James and Peter Dumas are only 10 years old, but they star in the musical as the twins Millie and Mike. They have a wonderful upbringing with their grandmother who teaches them life’s lessons through song. The final must see is so whimsical. In Windswept, a land of imaginary creatures, the flowers and trees dance, and the enchanted animals talk. It is delightful. And we even have a very talented actor who is amazing as he travels with us through the world of make believe. Kids love this one. The music is fun, and their imagination goes wild.\nSpeaker 1: Radio Host: Michael, that all sounds wonderful. Now tell me about the restaurants in the Theater District.",
+	"body": {
+		"text": "The Climb [5]\nThe Voyagers [6]\nJoey Brown [7]\nMain Street [8]\nMillie and Mike [9]\nWindswept [10]",
+		"html": "<p>The Climb [5]</p><p>The Voyagers [6]</p><p>Joey Brown [7]</p><p>Main Street [8]</p><p>Millie and Mike [9]</p><p>Windswept [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "What special offer is there for regular theatre-goers in this season?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They can see a second play at a reduced price."
+						},
+						{
+							"label": "B",
+							"text": "They can buy two tickets and get two free."
+						},
+						{
+							"label": "C",
+							"text": "They can get a discount on Mondays."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"For example, if you order two tickets to any play performed at the theater, you can get 50% off the price of the next play we put on."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What information is given about the study guides?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They are handed out at the theatre."
+						},
+						{
+							"label": "B",
+							"text": "They provide information on the actors."
+						},
+						{
+							"label": "C",
+							"text": "They give ideas for discussion."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Each guide has suggestions for classroom discussion after seeing the show, which teachers find useful for a follow-up activity."
+					]
+				},
+				{
+					"number": 3,
+					"text": "What information is given about the 'Bring a friend' special?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It is only for those over 65."
+						},
+						{
+							"label": "B",
+							"text": "It applies to a number of productions."
+						},
+						{
+							"label": "C",
+							"text": "It includes a 5% reduction on gifts."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"The offer includes all the musicals plus the plays, so there is lots of choice."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What does Michael say about the actor Christopher Plunket?",
+					"options": [
+						{
+							"label": "A",
+							"text": "He may retire from acting soon."
+						},
+						{
+							"label": "B",
+							"text": "He writes his own plays."
+						},
+						{
+							"label": "C",
+							"text": "He prefers acting in films to performing live."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"This likely will be the last year we see him perform as he has been on stage for over sixty years."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "What is the main theme of each of the following musicals?",
+			"options": [
+				{
+					"label": "A",
+					"text": "living in a different century"
+				},
+				{
+					"label": "B",
+					"text": "managing to achieve success"
+				},
+				{
+					"label": "C",
+					"text": "ageing slowly"
+				},
+				{
+					"label": "D",
+					"text": "growing up"
+				},
+				{
+					"label": "E",
+					"text": "experiencing disappointment"
+				},
+				{
+					"label": "F",
+					"text": "living in a magical place"
+				},
+				{
+					"label": "G",
+					"text": "overcoming poverty"
+				},
+				{
+					"label": "H",
+					"text": "handling conflict"
+				}
+			],
+			"body": "The Climb [5]\nThe Voyagers [6]\nJoey Brown [7]\nMain Street [8]\nMillie and Mike [9]\nWindswept [10]",
+			"body_html": "<p>The Climb [5]</p><p>The Voyagers [6]</p><p>Joey Brown [7]</p><p>Main Street [8]</p><p>Millie and Mike [9]</p><p>Windswept [10]</p>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "The Climb",
+					"answer": "B",
+					"quotes": [
+						"It is an inspiring story of a man called Stephen who starts working for a newspaper and a very junior job in the mailroom. After many years and many promotions, he finally gets to the top position. He becomes editor in chief of the newspaper."
+					]
+				},
+				{
+					"number": 6,
+					"text": "The Voyagers",
+					"answer": "A",
+					"quotes": [
+						"It is a wonderful story of a Canadian farming family in the late eighteen hundreds and how they settled their land near Kingston, Ontario. The musical gives a good description of the times, the struggles, and the way of life in that period."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Joey Brown",
+					"answer": "H",
+					"quotes": [
+						"However, he ends up having a terrible time when he gets a new boss who always criticizes him and makes his life difficult. Poor Joey has to learn how to win over the boss."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Main Street",
+					"answer": "E",
+					"quotes": [
+						"It is about a gymnast who is crushed when, during a practice session, she breaks her ankle just one week before the games."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Millie and Mike",
+					"answer": "D",
+					"quotes": [
+						"They have a wonderful upbringing with their grandmother who teaches them life’s lessons through song."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Windswept",
+					"answer": "F",
+					"quotes": [
+						"In Windswept, a land of imaginary creatures, the flowers and trees dance, and the enchanted animals talk."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,225 @@
+{
+	"id": "16e11170-092a-4df9-8779-4421dd34f105",
+	"url": "https://stepielts.com/student/listening/16e11170-092a-4df9-8779-4421dd34f105?mode=practice",
+	"title": "Eyewitness Liability",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/1ff3fdd0-6fb8-4aef-90b6-fd03e779f80b.mp3",
+	"transcript": "Speaker 1: Eleanor: Hi, Jamie. I've just been reading this book about eyewitness testimonies. It really goes into how much we can actually rely on what the people who witness crimes actually say, and what things influence eyewitness reliability.\nSpeaker 2: Jamie: Oh, I've read a couple of case studies on that too. Can we compare notes?\nSpeaker 1: Eleanor: Good idea. It's fascinating to learn that eyewitness identification is such compelling evidence in both civil and criminal trials.\nSpeaker 2: Jamie: You mean if a witness says something, generally they're believed?\nSpeaker 1: Eleanor: And reading between the lines, I'd say that when a witness gives evidence in a very self-assured way, everyone takes them at their word. Whether they're a doctor who speaks with an assumed authority, or the average person in the street, it doesn't seem to matter as much as their manner.\nSpeaker 2: Jamie: Right. So is that textbook worth reading?\nSpeaker 1: Eleanor: Yes, it's a good book, divided into user-friendly sections. It refers to case studies, and the conclusions are clearly underlined. But actually, some of the cases are more than ten years old now.\nSpeaker 2: Jamie: Well, it's the same problem with the survey reports our tutor gave us. But at least they draw on a representative sample.\nSpeaker 1: Eleanor: That's good.\nSpeaker 2: Jamie: All the books point out that eyewitness statements are very often unreliable.\nSpeaker 1: Eleanor: But there can be good reasons for that. Like, an incident may happen at night in the dark.\nSpeaker 2: Jamie: Or it happened some way away. But it's the fact that it can happen in just a split second that makes the witness's account so unreliable.\nSpeaker 1: Eleanor: That point's made very strongly in what I've read too.\nSpeaker 2: Jamie: Yeah.\nSpeaker 1: Eleanor: Have you read anything about photo identifications?\nSpeaker 2: Jamie: Yes. About the procedure and the reliability of witnesses looking at photos of different people and picking out the suspect. The case studies all clearly show how easy it is to sway a witness's choice of photo, even just by the flicker of an eye. But steps have been taken now to avoid this happening.\nSpeaker 1: Eleanor: And are the witnesses told exactly what they have to do?\nSpeaker 2: Jamie: Mostly. But the trouble is, most people focus on the photos and choose the most likely suspect from the bunch and forget about the actual incident and who they saw at the time.\nSpeaker 1: Eleanor: And I read something about a naive observer. Do you know what that is? Is it a witness who's never been in a court before?\nSpeaker 2: Jamie: Oh, I understood it to mean someone who's had nothing to do with the event, and they're asked to look at the photos and pick out the potential suspect.\nSpeaker 1: Eleanor: That figures. Then they can see if the photos are a good set and make sure one person doesn't stand out.\nSpeaker 2: Jamie: Another thing I read was that witnesses don't like to change their minds once they've made a particular statement. I thought people might worry about the fact that they told a lie in court and think they might be punished in some way. But it's simply that they're afraid of seeming unintelligent or lightweight.\nSpeaker 1: Eleanor: Yeah. People are reluctant to lose face. Imagine if a case had been going on for weeks and you suddenly realized you'd got something wrong right at the beginning. Changing the topic slightly, can I just check with you what you've understood about the problems of interviewing child witnesses when they've witnessed, for example, robbery?\nSpeaker 2: Jamie: Yes. Did you get the handout about the stages that should be followed when children are interviewed?\nSpeaker 1: Eleanor: Yes. The rapport stage, when a relationship between the child and the interviewer is built up, seems to be crucial.\nSpeaker 2: Jamie: But many children fail to say anything that provides any real information. It must be hard for them not to feel a bit scared about being in a formal setting like a court building. Still, it's a good lead-in to open-ended questions, where the interviewer carefully sticks to their prepared questions in order to remain neutral.\nSpeaker 1: Eleanor: I can see the point of that, but the handout discusses the issue of children simply not understanding the specialist language used, so the whole interview just gets more puzzling for them. I think the stage called closed questions is easier for children to handle. They just have to answer yes or no.\nSpeaker 2: Jamie: But everything's not so clear-cut in a child's world, and abstract concepts such as honesty haven't been fully grasped by young children.\nSpeaker 1: Eleanor: You mean they make things up?\nSpeaker 2: Jamie: Apparently. And in the final stage, closure, where the interviewer has to check anything that hasn't been made clear to them by repeating previous questions, children often become suspicious of the questioner.\nSpeaker 1: Eleanor: It must require lots of training to be able to interview children successfully.\nSpeaker 2: Jamie: Yes. I think...",
+	"body": {
+		"text": "Interview Stages\nRapport: [27]\nOpen-ended questions: [28]\nClosed questions: [29]\nClosure: [30]",
+		"html": "<p><strong>Interview Stages</strong></p><p>Rapport: [27]</p><p>Open-ended questions: [28]</p><p>Closed questions: [29]</p><p>Closure: [30]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-26",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, or C.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Eleanor thinks eyewitnesses are believed when",
+					"options": [
+						{
+							"label": "A",
+							"text": "they are respected members of the community."
+						},
+						{
+							"label": "B",
+							"text": "they make their statements with confidence."
+						},
+						{
+							"label": "C",
+							"text": "they use sophisticated language in their accounts."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Eleanor: And reading between the lines, I'd say that when a witness gives evidence in a very self-assured way, everyone takes them at their word."
+					]
+				},
+				{
+					"number": 22,
+					"text": "What concerns Duckie, Eleanor, and Jamie about the texts they have read so far?",
+					"options": [
+						{
+							"label": "A",
+							"text": "No clear conclusions are reached."
+						},
+						{
+							"label": "B",
+							"text": "The studies involved comparatively few people."
+						},
+						{
+							"label": "C",
+							"text": "Some of the data were gathered some time ago."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But actually, some of the cases are more than ten years old now."
+					]
+				},
+				{
+					"number": 23,
+					"text": "They agree that the most significant factor affecting eyewitness reliability is",
+					"options": [
+						{
+							"label": "A",
+							"text": "how good the lighting is."
+						},
+						{
+							"label": "B",
+							"text": "how long the event lasts."
+						},
+						{
+							"label": "C",
+							"text": "how far away the witness is."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But it's the fact that it can happen in just a split second that makes the witness's account so unreliable."
+					]
+				},
+				{
+					"number": 24,
+					"text": "Jamie criticizes photo-identifications, saying witnesses",
+					"options": [
+						{
+							"label": "A",
+							"text": "fail to compare the photos with their memory of the event."
+						},
+						{
+							"label": "B",
+							"text": "are not properly briefed about the procedure."
+						},
+						{
+							"label": "C",
+							"text": "become easily influenced by a figure of authority."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But the trouble is, most people focus on the photos and choose the most likely suspect from the bunch and forget about the actual incident and who they saw at the time."
+					]
+				},
+				{
+					"number": 25,
+					"text": "They agree that the term 'naive observer' means a person who",
+					"options": [
+						{
+							"label": "A",
+							"text": "has no experience of a police investigation."
+						},
+						{
+							"label": "B",
+							"text": "did not realize they were witnessing a crime."
+						},
+						{
+							"label": "C",
+							"text": "was not present at the incident."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Jamie: Oh, I understood it to mean someone who's had nothing to do with the event, and they're asked to look at the photos and pick out the potential suspect.",
+						"Eleanor: That figures. Then they can see if the photos are a good set and make sure one person doesn't stand out."
+					]
+				},
+				{
+					"number": 26,
+					"text": "They have learned that witnesses are reluctant to change their opinions because",
+					"options": [
+						{
+							"label": "A",
+							"text": "they do not want to appear foolish."
+						},
+						{
+							"label": "B",
+							"text": "they fear the legal consequences."
+						},
+						{
+							"label": "C",
+							"text": "they are keen for the case to be concluded."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But it's simply that they're afraid of seeming unintelligent or lightweight."
+					]
+				}
+			]
+		},
+		{
+			"range": "27-30",
+			"type": "MATCHING",
+			"instructions": "What problem may there be with child witnesses at each of the following stages of an interview? Choose FOUR answers from the box and write the correct letter, A–F, next to Questions 27–30.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Frightened by the unfamiliar environment"
+				},
+				{
+					"label": "B",
+					"text": "Influenced by the interviewer"
+				},
+				{
+					"label": "C",
+					"text": "Not understanding the difference between truth and lies"
+				},
+				{
+					"label": "D",
+					"text": "Unwillingness to say they don't know"
+				},
+				{
+					"label": "E",
+					"text": "Confused by the terminology"
+				},
+				{
+					"label": "F",
+					"text": "Distrust of the interviewer"
+				}
+			],
+			"body": "Interview Stages\nRapport: [27]\nOpen-ended questions: [28]\nClosed questions: [29]\nClosure: [30]",
+			"body_html": "<p><strong>Interview Stages</strong></p><p>Rapport: [27]</p><p>Open-ended questions: [28]</p><p>Closed questions: [29]</p><p>Closure: [30]</p>",
+			"questions": [
+				{
+					"number": 27,
+					"text": "Rapport",
+					"answer": "A",
+					"quotes": [
+						"It must be hard for them not to feel a bit scared about being in a formal setting like a court building."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Open-ended questions",
+					"answer": "E",
+					"quotes": [
+						"Eleanor: I can see the point of that, but the handout discusses the issue of children simply not understanding the specialist language used, so the whole interview just gets more puzzling for them."
+					]
+				},
+				{
+					"number": 29,
+					"text": "Closed questions",
+					"answer": "C",
+					"quotes": [
+						"Jamie: But everything's not so clear-cut in a child's world, and abstract concepts such as honesty haven't been fully grasped by young children."
+					]
+				},
+				{
+					"number": 30,
+					"text": "Closure",
+					"answer": "F",
+					"quotes": [
+						"And in the final stage, closure, where the interviewer has to check anything that hasn't been made clear to them by repeating previous questions, children often become suspicious of the questioner."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,277 @@
+{
+	"id": "ca8601e3-92b4-43ff-969e-df53487f6ee9",
+	"url": "https://stepielts.com/student/listening/ca8601e3-92b4-43ff-969e-df53487f6ee9?mode=practice",
+	"title": "Foot Injuries Sports Players",
+	"source": "Actual Test",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/777fd219-46cb-4594-9001-91a83b96d981.mp3",
+	"transcript": "Speaker 0: Section three. You will hear two sports physiotherapy students called John and Kath preparing a joint presentation on foot injuries in sports players. First, you have some time to look at questions 21 to 26 on page four. Now listen carefully and answer questions 21 to 26.\nSpeaker 1: I've had a look at your draft presentation plan and compared it with mine, Kath, and we seem to have the same basic structure. We've both included the same three main sections, that's the anatomy of the foot, the injuries, and the treatment, and we've organized our presentations in the same way. But the types of sports we've chosen to illustrate the possible injuries aren't the same.\nSpeaker 2: I'll deal with the anatomy bit. I've got notes and a handout on that from professor Gilligan's lecture.\nSpeaker 1: Oh, I was hoping to do that. I've downloaded some useful stuff. I do think we should limit this section though. We don't want to spend much time on anatomy when the main focus is on the treatment.\nSpeaker 2: That's true. But in the last section, maybe the two of us could show how some of these therapies actually work. I could be the patient and you could do the treatment.\nSpeaker 1: Good idea, because it's hard to find pictures as injuries are mostly internal. It would be good to hear some first hand accounts from injured athletes too.\nSpeaker 2: Yeah, but we don't have time. No.\nSpeaker 1: Should we then discuss different types of heel injury? It's worth pointing out that these vary enormously in how bad they are. It might be just a pulled muscle or a bone injury which needs surgery. Sometimes only an expert can tell the difference.\nSpeaker 2: Excellent. I'll do the slides on that. Leave that one to me.\nSpeaker 1: Now what about causes of heel injuries?\nSpeaker 2: Well, it's easy enough to list them. Overuse, improper footwear\nSpeaker 1: Yes. Incorrect running style.\nSpeaker 2: They're all relevant. But for simplicity, let's just pick one cause. Say, stuff about changing your training habit suddenly.\nSpeaker 1: You mean, like, suddenly doing a lot of mountain training? Yes. That's a good idea. And there was research on that in the latest edition of Physio Journal, wasn't there? Professor Gilligan recommended it to us.\nSpeaker 2: Great. You can leave the bit on stretching techniques to me. I really like all that stuff.\nSpeaker 1: So what's going to be your approach there?\nSpeaker 2: Well, I'll summarize all the various techniques with visual support, and then I'll make the point that the stretching should be carefully managed. Obviously, you have to be careful not to overstretch and to stretch only when your muscles are warmed up. Otherwise, you could do yourself more harm than good. It's also important that on a supervised programme, stretching is later on combined with balance exercises, which stretch and also strengthen the muscles. Okay then.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 27 to 30 on page five. Now listen and answer questions 27 to 30.\nSpeaker 1: It's always useful to have some information on case studies at the end, in case we're short of material. Mhmm. Did you manage to find anything?\nSpeaker 2: Yes. A female runner in her thirties talking about her treatment for a swollen heel. Initially, she rested the injury. This did help to reduce the swelling, although it was still a little bit uncomfortable. Then she applied an ice pack to the injury twice a day.\nSpeaker 1: Did that work?\nSpeaker 2: Well, she persisted with this treatment for the first month, but decided it wasn't helping. After this period, she was shown how to use deep tissue massage techniques, and was surprised at how much freedom of movement this created in her foot.\nSpeaker 1: Wasn't she having ultrasound treatment?\nSpeaker 2: Yes. She was having sessions at the hospital, but she remained unconvinced about its value. She felt the same about the balancing exercises she was prescribed.\nSpeaker 1: Okay. That's interesting. I looked at the aftercare programme of a male sprinter who was allowed to do some sports activity as part of his rehabilitation. After four months of treatment, he did some light running on grass wearing shoes that gave plenty of support to his injured heel.\nSpeaker 2: So it didn't hurt?\nSpeaker 1: Well, he found the heel was sore afterwards, and the same happened with some jumping exercises he was asked to try.\nSpeaker 2: Did he go to the gym and use weights?\nSpeaker 1: Yes. After a few weeks. And if he used light weights, he could train without pain. He also tried cycling and found this beneficial as his foot was not making contact with the ground. He expected a similar result with swimming, but found the repetitive kicking motion was actually aggravating the injury.\nSpeaker 2: Well, both these case studies have value.\nSpeaker 0: That is the end of section three. You now have half a minute to check your answers. Now turn to section four on page six.",
+	"question_groups": [
+		{
+			"range": "21-26",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "John and Cath's presentation plans are different in",
+					"options": [
+						{
+							"label": "A",
+							"text": "the examples used."
+						},
+						{
+							"label": "B",
+							"text": "the order of information."
+						},
+						{
+							"label": "C",
+							"text": "the main points made."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But the types of sports we've chosen to illustrate the possible injuries aren't the same."
+					]
+				},
+				{
+					"number": 22,
+					"text": "What do the students agree about the anatomy section of their presentation?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It would be better if Cath spoke about it."
+						},
+						{
+							"label": "B",
+							"text": "It should be kept quite short."
+						},
+						{
+							"label": "C",
+							"text": "It should be based on information from the internet."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I do think we should limit this section though.",
+						"We don't want to spend much time on anatomy when the main focus is on the treatment."
+					]
+				},
+				{
+					"number": 23,
+					"text": "What do the students agree to include in the last section?",
+					"options": [
+						{
+							"label": "A",
+							"text": "visuals of injuries"
+						},
+						{
+							"label": "B",
+							"text": "demonstrations of treatment"
+						},
+						{
+							"label": "C",
+							"text": "interviews with patients"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But in the last section, maybe the two of us could show how some of these therapies actually work.",
+						"I could be the patient and you could do the treatment."
+					]
+				},
+				{
+					"number": 24,
+					"text": "What is said about the different types of heel injury?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Diagnosis is straightforward."
+						},
+						{
+							"label": "B",
+							"text": "They are expensive to treat."
+						},
+						{
+							"label": "C",
+							"text": "Some are more serious than others."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"It's worth pointing out that these vary enormously in how bad they are.",
+						"Should we then discuss different types of heel injury?"
+					]
+				},
+				{
+					"number": 25,
+					"text": "On the subject of causes of heel injuries, the students agree to",
+					"options": [
+						{
+							"label": "A",
+							"text": "focus on a single reason."
+						},
+						{
+							"label": "B",
+							"text": "reject certain approaches."
+						},
+						{
+							"label": "C",
+							"text": "use a source written by their professor."
+						}
+					],
+					"answer": "A",
+					"quotes": ["But for simplicity, let's just pick one cause."]
+				},
+				{
+					"number": 26,
+					"text": "What does Cath say about stretching as a treatment?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It is potentially risky."
+						},
+						{
+							"label": "B",
+							"text": "It is commonly confused with strengthening."
+						},
+						{
+							"label": "C",
+							"text": "It is the least effective part of treatment."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Well, I'll summarize all the various techniques with visual support, and then I'll make the point that the stretching should be carefully managed.",
+						"Obviously, you have to be careful not to overstretch and to stretch only when your muscles are warmed up."
+					]
+				}
+			]
+		},
+		{
+			"range": "27-28",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A–E",
+			"questions": [
+				{
+					"number": 27,
+					"text": "Which TWO treatment techniques did the female runner find useful for her swollen heel?",
+					"options": [
+						{
+							"label": "A",
+							"text": "massage"
+						},
+						{
+							"label": "B",
+							"text": "ultrasound"
+						},
+						{
+							"label": "C",
+							"text": "rest"
+						},
+						{
+							"label": "D",
+							"text": "balancing exercises"
+						},
+						{
+							"label": "E",
+							"text": "ice"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 28,
+					"text": "Which TWO treatment techniques did the female runner find useful for her swollen heel?",
+					"options": [
+						{
+							"label": "A",
+							"text": "massage"
+						},
+						{
+							"label": "B",
+							"text": "ultrasound"
+						},
+						{
+							"label": "C",
+							"text": "rest"
+						},
+						{
+							"label": "D",
+							"text": "balancing exercises"
+						},
+						{
+							"label": "E",
+							"text": "ice"
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "29-30",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A–E",
+			"questions": [
+				{
+					"number": 29,
+					"text": "Which TWO sports did the male sprinter find most effective during his rehabilitation programme?",
+					"options": [
+						{
+							"label": "A",
+							"text": "swimming"
+						},
+						{
+							"label": "B",
+							"text": "weight-training"
+						},
+						{
+							"label": "C",
+							"text": "running on grass"
+						},
+						{
+							"label": "D",
+							"text": "cycling"
+						},
+						{
+							"label": "E",
+							"text": "jumping"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 30,
+					"text": "Which TWO sports did the male sprinter find most effective during his rehabilitation programme?",
+					"options": [
+						{
+							"label": "A",
+							"text": "swimming"
+						},
+						{
+							"label": "B",
+							"text": "weight-training"
+						},
+						{
+							"label": "C",
+							"text": "running on grass"
+						},
+						{
+							"label": "D",
+							"text": "cycling"
+						},
+						{
+							"label": "E",
+							"text": "jumping"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		}
+	],
+	"images": []
+}

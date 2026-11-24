@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
 import { signUpViaApi, verifyStudentEmailFromMailLog } from "./helpers";
-import { STUDENT_ORIGIN } from "./origins";
+import { LMS_ORIGIN, STUDENT_BASE_URL } from "./origins";
 
 const LOCAL_DB_PATH = fileURLToPath(
 	new URL("../local.db", import.meta.url).href,
@@ -110,7 +110,7 @@ test.describe("Single-Org Student Auto-Join & UI Cleanup (#716)", () => {
 			const teacherEmail = await signUpViaApi(teacherPage, {
 				name: "Cô Giáo Active",
 			});
-			await teacherPage.goto("/students");
+			await teacherPage.goto("/teacher/students");
 			await expect(
 				teacherPage.getByRole("heading", { name: "Học viên", exact: true }),
 			).toBeVisible();
@@ -132,7 +132,7 @@ test.describe("Single-Org Student Auto-Join & UI Cleanup (#716)", () => {
 			).toHaveCount(0);
 
 			// 1. Student registers via Email + Password on portal (unverified)
-			await studentPage.goto(`${STUDENT_ORIGIN}/login`);
+			await studentPage.goto(`${LMS_ORIGIN}/login`);
 			await studentPage.locator("#tab-signup").click();
 			await studentPage.locator("#signup-name").fill(studentName);
 			await studentPage.locator("#signup-email").fill(studentEmail);
@@ -190,7 +190,10 @@ test.describe("Single-Org Student Auto-Join & UI Cleanup (#716)", () => {
 			await studentPage.getByRole("button", { name: "Tiếp tục" }).click();
 			await studentPage.getByRole("button", { name: "Hoàn thành" }).click();
 
-			await expect(studentPage).toHaveURL(/\/$/, { timeout: 20_000 });
+			await expect(studentPage).toHaveURL(
+				new RegExp(`^${STUDENT_BASE_URL}/?$`),
+				{ timeout: 20_000 },
+			);
 			await expect(
 				studentPage
 					.locator(
@@ -234,7 +237,7 @@ test.describe("Single-Org Student Auto-Join & UI Cleanup (#716)", () => {
 			const teacherEmail = await signUpViaApi(teacherPage, {
 				name: "Cô Giáo Precreate",
 			});
-			await teacherPage.goto("/students");
+			await teacherPage.goto("/teacher/students");
 			const { orgId, userId } = await alignTeacherWithActiveManagedOrg(
 				teacherPage,
 				teacherEmail,
@@ -281,7 +284,7 @@ test.describe("Single-Org Student Auto-Join & UI Cleanup (#716)", () => {
 			}
 
 			// 2. Student registers & verifies email -> enters portal straightaway (no 403 STUDENT_NOT_LINKED)
-			await studentPage.goto(`${STUDENT_ORIGIN}/login`);
+			await studentPage.goto(`${LMS_ORIGIN}/login`);
 			await studentPage.locator("#tab-signup").click();
 			await studentPage.locator("#signup-name").fill("Tên Tự Đăng Ký Khác");
 			await studentPage.locator("#signup-email").fill(studentEmail);

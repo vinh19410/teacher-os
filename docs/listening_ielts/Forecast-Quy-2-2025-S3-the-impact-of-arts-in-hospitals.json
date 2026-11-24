@@ -1,0 +1,198 @@
+{
+	"id": "78fe4f52-0f16-412e-9f38-6a841711f3d3",
+	"url": "https://stepielts.com/student/listening/78fe4f52-0f16-412e-9f38-6a841711f3d3?mode=practice",
+	"title": "The impact of arts in hospitals",
+	"source": "Forecast Quý 2-2025",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/a153b577-c027-44e1-bd8b-3d86025d057b.mp3",
+	"transcript": "Speaker 1: Susan: Hey George, how are you?\nSpeaker 0: George: Hi, Susan. I’m good. How about you?\nSpeaker 1: Susan: Not bad. We need to exchange the information we have collected for our research about the impact of arts in hospitals.\nSpeaker 0: George: Right. When we were given the task, I knew it would be an interesting topic. And what I found is quite surprising.\nSpeaker 1: Susan: Yeah, I didn’t know hospitals back in the 1940s had used art and music, which I think is amazing.\nSpeaker 0: George: They didn’t do it just for the medical staff, did they?\nSpeaker 1: Susan: No, actually medical staffs were responsible for choosing the art and music works. But they mainly did it for patients with psychological problems, both children and adults.\nSpeaker 0: George: So, this is not a new area. I went to a hospital named West Mountain Hospital last weekend because I’ve heard that they have quite a few art works there.\nSpeaker 1: Susan: Oh, what have you found out?\nSpeaker 0: George: The management team told me that they put art in the hospital because the patients like to concern too much on small issues , and music and art can let them forget about these issues.\nSpeaker 1: Susan: Yeah, good art can really calm us down. Maybe it’s also helpful for the doctors and nurses to release their stress.\nSpeaker 0: George: That might be true. But when the artworks were first displayed in the hospitals, not everyone was happy about it.\nSpeaker 1: Susan: Really? Who didn’t like art and music? Was it the children?\nSpeaker 0: George: Actually, it was the staff. They thought they needed a clean and simple environment without any distractions for their work.\nSpeaker 1: Susan: Did they remove those things in the end?\nSpeaker 0: George: No, they got used to it in a few days. Now everyone is enjoying a more relaxing environment in the hospital.\nSpeaker 1: Susan: That’s nice. I wonder if the patients can benefit from the art and music. I mean whether those things would be helpful in their recovery.\nSpeaker 0: George: When I interviewed a nurse named Zoe, she told me even though she was usually too busy to notice those artworks, she was sure that music and art had a positive influence on the patients.\nSpeaker 1: Susan: I think her attitude and opinion can mean a lot since she probably spends a lot of time in the hospital.\nSpeaker 0: George: Yes, I agree. Nurses accompany the patients most of the time, so they could tell the differences.\nSpeaker 1: Susan: Right. It’s interesting we now have so much information for our research, many of them don’t seem very related to our purpose, though.\nSpeaker 0: George: I think they’re related. Our aim is to see if music and art can solve management issues, and all our results show that they surely can benefit both the patients and the staff. George: Susan, you went to the State hospital, right?\nSpeaker 1: Susan: Yes, I did. Actually, I did a survey with different departments and clinics to see how art influences different patients.\nSpeaker 0: George: Oh, that’s very creative and efficient. Do you have the results of the survey?\nSpeaker 1: Susan: I do. In Postnatal clinic, you know, where mothers rest after giving birth to their babies, displaying artworks can make the fragile mothers more willing to cooperate with the doctors.\nSpeaker 0: George: That’s very helpful, for both the doctors and patients.\nSpeaker 1: Susan: That’s right. However, in Trauma and Dissociation clinic, patients don’t show enough evidence of any change. So, doctors may need to further observe them.\nSpeaker 0: George: I think it may take time for some patients to change their attitude towards art. And some impacts may not be very noticeable.\nSpeaker 1: Susan: I think so. In Day Surgery clinic, after receiving the surgeries, the patients’ blood pressure and heart rate returned to average level more quickly when light music was playing in the background.\nSpeaker 0: George: That’s why some people say music can heal.\nSpeaker 1: Susan: It’s really magical. In Children’s clinic, if there’s a lot of artworks, the young patients will often be released from the clinic sooner.\nSpeaker 0: George: You mean they can recover more quickly?\nSpeaker 1: Susan: That’s what the doctors said in the survey.\nSpeaker 0: George: That’s nice. How about emergency? Did you visit that department?\nSpeaker 1: Susan: Yes, nurses there told me, after adding art and music, the patients have become less dependent on medication.\nSpeaker 0: George: Maybe because the artworks can reduce pain.\nSpeaker 1: Susan: Yeah, patients in gynecology, especially some pregnant women, prefer painting more than music. They even draw some pictures themselves.\nSpeaker 0: George: Oh, visual arts probably work better on these patients.\nSpeaker 1: Susan: Right. We need to put down what we have discussed and write a complete report tonight.",
+	"body": {
+		"text": "Postnatal Clinic [5]\nTrauma and Dissociation [6]\nDay Surgery Clinic [7]\nChildren’s Clinic [8]\nEmergency [9]\nGynecology Clinic [10]",
+		"html": "<p>Postnatal Clinic [5]</p><p>Trauma and Dissociation [6]</p><p>Day Surgery Clinic [7]</p><p>Children’s Clinic [8]</p><p>Emergency [9]</p><p>Gynecology Clinic [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Who was the focus of the art and music used by hospitals previously?",
+					"options": [
+						{
+							"label": "A",
+							"text": "children"
+						},
+						{
+							"label": "B",
+							"text": "patients who have psychological problems"
+						},
+						{
+							"label": "C",
+							"text": "medical staff in the hospital"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But they mainly did it for patients with psychological problems, both children and adults."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Why do they put art and music in the West Mountain Hospital?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It can make the hospital more classy"
+						},
+						{
+							"label": "B",
+							"text": "It can reduce the stress of medical staff"
+						},
+						{
+							"label": "C",
+							"text": "Patients always focus on minor issues"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"George: The management team told me that they put art in the hospital because the patients like to concern too much on small issues , and music and art can let them forget about these issues."
+					]
+				},
+				{
+					"number": 3,
+					"text": "What were people’s response after artworks were put in the hospital?",
+					"options": [
+						{
+							"label": "A",
+							"text": "children disliked it"
+						},
+						{
+							"label": "B",
+							"text": "little agreement achieved"
+						},
+						{
+							"label": "C",
+							"text": "staff disliked it"
+						}
+					],
+					"answer": "C",
+					"quotes": ["George: Actually, it was the staff."]
+				},
+				{
+					"number": 4,
+					"text": "What is staff member Zoe’s attitude toward art and music in the hospital?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Staff is too busy to notice that"
+						},
+						{
+							"label": "B",
+							"text": "they have impact on patients"
+						},
+						{
+							"label": "C",
+							"text": "She doesn't care about it"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"George: When I interviewed a nurse named Zoe, she told me even though she was usually too busy to notice those artworks, she was sure that music and art had a positive influence on the patients."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What impact do art and music have on patients in each of the following clinics?",
+			"options": [
+				{
+					"label": "A",
+					"text": "patients spend less time in the hospital"
+				},
+				{
+					"label": "B",
+					"text": "patients who are more cooperative"
+				},
+				{
+					"label": "C",
+					"text": "art and music have little impact on the patients"
+				},
+				{
+					"label": "D",
+					"text": "patients who concern more on details"
+				},
+				{
+					"label": "E",
+					"text": "patients' blood pressure and heart rate are average"
+				},
+				{
+					"label": "F",
+					"text": "patients ask for less medication"
+				},
+				{
+					"label": "G",
+					"text": "visual arts have more impact on the patients"
+				}
+			],
+			"body": "Postnatal Clinic [5]\nTrauma and Dissociation [6]\nDay Surgery Clinic [7]\nChildren’s Clinic [8]\nEmergency [9]\nGynecology Clinic [10]",
+			"body_html": "<p>Postnatal Clinic [5]</p><p>Trauma and Dissociation [6]</p><p>Day Surgery Clinic [7]</p><p>Children’s Clinic [8]</p><p>Emergency [9]</p><p>Gynecology Clinic [10]</p>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Postnatal Clinic",
+					"answer": "B",
+					"quotes": [
+						"In Postnatal clinic, you know, where mothers rest after giving birth to their babies, displaying artworks can make the fragile mothers more willing to cooperate with the doctors."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Trauma and Dissociation",
+					"answer": "C",
+					"quotes": [
+						"However, in Trauma and Dissociation clinic, patients don’t show enough evidence of any change."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Day Surgery Clinic",
+					"answer": "E",
+					"quotes": [
+						"In Day Surgery clinic, after receiving the surgeries, the patients’ blood pressure and heart rate returned to average level more quickly when light music was playing in the background."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Children’s Clinic",
+					"answer": "A",
+					"quotes": [
+						"In Children’s clinic, if there’s a lot of artworks, the young patients will often be released from the clinic sooner."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Emergency",
+					"answer": "F",
+					"quotes": [
+						"Susan: Yes, nurses there told me, after adding art and music, the patients have become less dependent on medication."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Gynecology Clinic",
+					"answer": "G",
+					"quotes": [
+						"George: Oh, visual arts probably work better on these patients."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

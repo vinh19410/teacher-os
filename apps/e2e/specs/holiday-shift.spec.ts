@@ -174,9 +174,9 @@ test("AC-001 (1440×900): tạo lịch nghỉ chung, xem trước, dời buổi 
 	).toBeVisible();
 
 	// 7. /attendance?date=<ngày nghỉ> không còn ca của 2 lớp đó.
-	await page.goto(`/attendance?date=${f2}`);
+	await page.goto(`/teacher/attendance?date=${f2}`);
 	await expect(page.getByText("IELTS T6 19h")).toHaveCount(0);
-	await page.goto(`/attendance?date=${s2}`);
+	await page.goto(`/teacher/attendance?date=${s2}`);
 	await expect(page.getByText("IELTS T3-T7 18h")).toHaveCount(0);
 
 	// 8. Qua API kernel: BR-003 (số buổi completed và không-holiday giữ nguyên) + 1 notif mới.

@@ -5,7 +5,7 @@ import {
 	vietnamTodayISO,
 } from "./helpers";
 import { type QuizFixture, seedQuizFixture } from "./helpers-quiz";
-import { STUDENT_ORIGIN } from "./origins";
+import { LMS_ORIGIN, STUDENT_BASE_URL } from "./origins";
 
 /**
  * #307 — Student class card shows the teacher and opens the class detail
@@ -25,12 +25,12 @@ const assignmentTitle = "Reading: Một ngày của An";
 let fixture: QuizFixture;
 
 async function signIn(page: Page): Promise<void> {
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signin").click();
 	await page.locator("#signin-email").fill(studentEmail);
 	await page.locator("#signin-password").fill(PASSWORD);
 	await page.locator("#panel-signin button[type='submit']").click();
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 	await expect(
@@ -100,7 +100,7 @@ test.beforeAll(async ({ browser }) => {
 
 	const context = await browser.newContext();
 	const page = await context.newPage();
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signup").click();
 	await page.locator("#signup-name").fill("Class Detail Student");
 	await page.locator("#signup-email").fill(studentEmail);
@@ -110,7 +110,7 @@ test.beforeAll(async ({ browser }) => {
 		timeout: 15_000,
 	});
 	await verifyStudentEmailFromMailLog(page, studentEmail);
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 	await context.close();
@@ -143,7 +143,7 @@ test.describe("Student class card & class detail page", () => {
 		await card.getByRole("link", { name: className }).focus();
 		await page.keyboard.press("Enter");
 		await expect(page).toHaveURL(
-			`${STUDENT_ORIGIN}/classes/${fixture.classId}`,
+			`${STUDENT_BASE_URL}/classes/${fixture.classId}`,
 		);
 		await expect(
 			page.getByRole("heading", { level: 1, name: className }),
@@ -171,7 +171,7 @@ test.describe("Student class card & class detail page", () => {
 			.getByRole("link", { name: `Làm bài: ${assignmentTitle}` })
 			.click();
 		await expect(page).toHaveURL(
-			`${STUDENT_ORIGIN}/learn/quizzes/${fixture.assignmentIds[0]}`,
+			`${STUDENT_BASE_URL}/learn/quizzes/${fixture.assignmentIds[0]}`,
 		);
 		await page.goBack();
 		await expect(
@@ -179,7 +179,7 @@ test.describe("Student class card & class detail page", () => {
 		).toBeVisible();
 
 		await page.getByRole("link", { name: "Trang chủ", exact: true }).click();
-		await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`));
+		await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`));
 		await expect(
 			page.getByRole("heading", { name: "Lớp học của tôi" }),
 		).toBeVisible();
@@ -202,18 +202,18 @@ test.describe("Student class card & class detail page", () => {
 		if (!box) throw new Error("teacher email row is not rendered");
 		await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
 		await expect(page).toHaveURL(
-			`${STUDENT_ORIGIN}/classes/${fixture.classId}`,
+			`${STUDENT_BASE_URL}/classes/${fixture.classId}`,
 		);
 	});
 
 	test("class detail of an invited class shows not found", async ({ page }) => {
 		await signIn(page);
-		await page.goto(`${STUDENT_ORIGIN}/classes/${fixture.invitedClassId}`);
+		await page.goto(`${STUDENT_BASE_URL}/classes/${fixture.invitedClassId}`);
 		await expect(
 			page.getByRole("heading", { name: "Không tìm thấy lớp" }),
 		).toBeVisible();
 		await page.getByRole("link", { name: "Về trang chủ" }).click();
-		await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`));
+		await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`));
 	});
 
 	test("student header navigation switches across 5 pages and syncs assignment status filter in URL", async ({
@@ -230,7 +230,7 @@ test.describe("Student class card & class detail page", () => {
 
 		// 1. Lớp học (/classes)
 		await nav.getByRole("link", { name: "Lớp học" }).click();
-		await expect(page).toHaveURL(`${STUDENT_ORIGIN}/classes`);
+		await expect(page).toHaveURL(`${STUDENT_BASE_URL}/classes`);
 		await expect(nav.getByRole("link", { name: "Lớp học" })).toHaveAttribute(
 			"aria-current",
 			"page",
@@ -249,7 +249,7 @@ test.describe("Student class card & class detail page", () => {
 			.getByRole("link", { name: className })
 			.click();
 		await expect(page).toHaveURL(
-			`${STUDENT_ORIGIN}/classes/${fixture.classId}`,
+			`${STUDENT_BASE_URL}/classes/${fixture.classId}`,
 		);
 		await expect(nav.getByRole("link", { name: "Lớp học" })).toHaveAttribute(
 			"aria-current",
@@ -258,7 +258,7 @@ test.describe("Student class card & class detail page", () => {
 
 		// 2. Bài tập (/assignments) + filter ?status=
 		await nav.getByRole("link", { name: "Bài tập" }).click();
-		await expect(page).toHaveURL(`${STUDENT_ORIGIN}/assignments`);
+		await expect(page).toHaveURL(`${STUDENT_BASE_URL}/assignments`);
 		await expect(nav.getByRole("link", { name: "Bài tập" })).toHaveAttribute(
 			"aria-current",
 			"page",
@@ -272,7 +272,7 @@ test.describe("Student class card & class detail page", () => {
 
 		await page.getByRole("tab", { name: "Đã nộp" }).click();
 		await expect(page).toHaveURL(
-			`${STUDENT_ORIGIN}/assignments?status=submitted`,
+			`${STUDENT_BASE_URL}/assignments?status=submitted`,
 		);
 		await expect(page.getByRole("tab", { name: "Đã nộp" })).toHaveAttribute(
 			"aria-selected",
@@ -283,7 +283,7 @@ test.describe("Student class card & class detail page", () => {
 		await expect(nav.getByRole("link", { name: "Từ vựng" })).toHaveCount(0);
 		await nav.getByRole("button", { name: "Luyện tập" }).click();
 		await nav.getByRole("link", { name: "Vocabulary" }).click();
-		await expect(page).toHaveURL(`${STUDENT_ORIGIN}/practice/vocabulary`);
+		await expect(page).toHaveURL(`${STUDENT_BASE_URL}/practice/vocabulary`);
 		await expect(
 			nav.getByRole("button", { name: "Luyện tập" }),
 		).toHaveAttribute("aria-expanded", "true");
@@ -296,7 +296,7 @@ test.describe("Student class card & class detail page", () => {
 
 		// 4. Học phí (/tuition) — empty state when no invoice
 		await nav.getByRole("link", { name: "Học phí" }).click();
-		await expect(page).toHaveURL(`${STUDENT_ORIGIN}/tuition`);
+		await expect(page).toHaveURL(`${STUDENT_BASE_URL}/tuition`);
 		await expect(nav.getByRole("link", { name: "Học phí" })).toHaveAttribute(
 			"aria-current",
 			"page",
@@ -306,9 +306,9 @@ test.describe("Student class card & class detail page", () => {
 		).toBeVisible();
 		await expect(page.getByText("Chưa có hóa đơn học phí")).toBeVisible();
 
-		// 5. Tổng quan (/)
+		// 5. Tổng quan (/student)
 		await nav.getByRole("link", { name: "Tổng quan" }).click();
-		await expect(page).toHaveURL(`${STUDENT_ORIGIN}/`);
+		await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`));
 		await expect(
 			page.getByRole("heading", { name: "Lớp học của tôi" }),
 		).toBeVisible();

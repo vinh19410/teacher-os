@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import type { QuizAttemptDetail, QuizVerdict } from "@teacher-os/api/contracts";
-import { buildQuizParts } from "@teacher-os/api/lib/quiz-parts";
+import { buildQuizPartsFromGroups } from "@teacher-os/api/lib/quiz-parts";
 import { countWords } from "@teacher-os/api/lib/word-count";
 import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
@@ -75,7 +75,7 @@ function AttemptDetailPage() {
 	// Phòng hờ 409 sau refetch — không render partial (RT#6).
 	useEffect(() => {
 		if (isHttpError(attemptQuery.error) && attemptQuery.error.status === 409) {
-			window.location.assign("/");
+			window.location.assign("/student");
 		}
 	}, [attemptQuery.error]);
 
@@ -105,12 +105,18 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 	// prompt.type); promptType ở đây là fallback kép khi payload cũ thiếu.
 	const parts = useMemo(
 		() =>
-			buildQuizParts(
+			buildQuizPartsFromGroups(
 				attempt.questions,
+				quizQuery.data?.groups,
 				quizQuery.data?.type ?? "",
 				quizQuery.data?.intro ?? "",
 			),
-		[attempt.questions, quizQuery.data?.type, quizQuery.data?.intro],
+		[
+			attempt.questions,
+			quizQuery.data?.groups,
+			quizQuery.data?.type,
+			quizQuery.data?.intro,
+		],
 	);
 	const answers = useMemo(
 		() =>

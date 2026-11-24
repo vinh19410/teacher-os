@@ -1,0 +1,198 @@
+{
+	"id": "b018cd42-5a4e-4ebc-9607-7e0a1406cb0f",
+	"url": "https://stepielts.com/student/listening/b018cd42-5a4e-4ebc-9607-7e0a1406cb0f?mode=practice",
+	"title": "Voluntary Programs",
+	"source": "Forecast Quý 2-2025",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/a32730d4-023b-49bc-83f8-93759534cf64.mp3",
+	"transcript": "Speaker 0: Good evening. You are listening to the local radio. Tonight, we will be looking at some international voluntary programs, opportunities for you to help others in different countries. Volunteering is intended to promote goodness or to improve quality of living for those in need. Volunteering not only has positive benefits for the volunteers but also for the person or community served. Let’s see what programs there are. If you are interested in Africa, Explorer International is just for you. It is a program setting up in small villages in Ghana. Your task is to help local people by doing some labor work. Currently, the villagers have difficulty in transporting the goods from trucks to some local residents’ houses, because trucks cannot go into some areas where there are no roads. The great thing about this program is that there are a group of old residents in these villages, who are willing to teach you how to make use of herbal medicine. Wild Exchange is a program that aims to help tourists get to know the locals and culture in rural areas in South America. So you will have a chance to experience life from locals’ perspective. As an exchange, you reshare local culture to tourists. You can even teach them how to do farm work, like feeding the cows. It will be a very rewarding experience. Track Abroad is a program based in Nepal. It involves doing chores in local community centers. You can go to the Himalayas with ecological protection teams and help protect the habitat of antelopes that live in the mountains. This is a very exciting program, I’m sure many of you will like it. In a program called Go Adventure, you will have a chance to stay in Tanzania for 2 months. You will be very close to nature. The highlighted part of the program is you will help the scientists to do research about the endangered species in the rainforest. At other times, you will stay on the farms and take care of the animals. A very meaningful job. And lastly, a program in Thailand called Going Shot will require you to have related qualifications, because you will be demonstrating to the local kids how to do handicrafts such as woodcraft. So, you need to be patient with children and know basic teaching skills. Now, let’s listen to the story of Lyra, a university student who did her voluntary work in Sri Lanka last year. She worked in a local zoo last summer holiday. Originally, she thought her job would be repairing the carpets that some animals slept on, because during her interview she said she was good at sewing and knitting. But the zoo management team arranged the job of washing elephants for her. At first, she was quite afraid of doing it. But as she got more experienced, she loved it. She also found that local people respect elephants very much, and they don’t ride the elephants. Life was not always easy for volunteers, of course. When Lyra first got to Sri Lanka, she was not very used to the food there. Nothing was close to the food made at home. She had stomach problems and had to stay in bed for a couple of days. Luckily, she recovered with the help of local medical workers. Soon, she got into the simple routine of her work and life. Sometimes, the workload was quite heavy, so it couldn’t be done by just one person. In order to improve members’ enthusiasm and efficiency, the groups were formed based on what the volunteers were interested. People of different ages will work on the same team, regardless of their educational or social background. Lyra’s group members were very supportive of her, so there was always someone that could back her up. On the weekends, life can be different. Normally, she would work as a guide or go swimming on her own. She would also go to the coastal area with her friends. The area is very beautiful. There were a few means of transportation, and the cheapest way to go was by coach. Every once in a while, she visited the National Park with her neighbors in Sri Lanka. Now whenever Lyra thought of her time in Sri Lanka, she felt that the experience was absolutely memorable. She learned how to take care of elephants and communicate with local people. And she was proud when she talked about her volunteering experience with others, like how she saved a young elephant’s life with other medical workers.",
+	"body": {
+		"text": "Explorer International [1]\nWild Exchange [2]\nTrack Abroad [3]\nGo Adventure [4]\nGoing Shot [5]",
+		"html": "<p>Explorer International [1]</p><p>Wild Exchange [2]</p><p>Track Abroad [3]</p><p>Go Adventure [4]</p><p>Going Shot [5]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "What can you do in each of the following voluntary programs?",
+			"options": [
+				{
+					"label": "A",
+					"text": "teach others something"
+				},
+				{
+					"label": "B",
+					"text": "learn new skills"
+				},
+				{
+					"label": "C",
+					"text": "do animal conservation work"
+				}
+			],
+			"body": "Explorer International [1]\nWild Exchange [2]\nTrack Abroad [3]\nGo Adventure [4]\nGoing Shot [5]",
+			"body_html": "<p>Explorer International [1]</p><p>Wild Exchange [2]</p><p>Track Abroad [3]</p><p>Go Adventure [4]</p><p>Going Shot [5]</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Explorer International",
+					"answer": "B",
+					"quotes": [
+						"The great thing about this program is that there are a group of old residents in these villages, who are willing to teach you how to make use of herbal medicine."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Wild Exchange",
+					"answer": "A",
+					"quotes": [
+						"You can even teach them how to do farm work, like feeding the cows."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Track Abroad",
+					"answer": "C",
+					"quotes": [
+						"You can go to the Himalayas with ecological protection teams and help protect the habitat of antelopes that live in the mountains."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Go Adventure",
+					"answer": "C",
+					"quotes": [
+						"The highlighted part of the program is you will help the scientists to do research about the endangered species in the rainforest."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Going Shot",
+					"answer": "A",
+					"quotes": [
+						"And lastly, a program in Thailand called Going Shot will require you to have related qualifications, because you will be demonstrating to the local kids how to do handicrafts such as woodcraft."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 6,
+					"text": "What kind of job did Lyra actually do in the zoo?",
+					"options": [
+						{
+							"label": "A",
+							"text": "repairing carpets"
+						},
+						{
+							"label": "B",
+							"text": "washing elephants"
+						},
+						{
+							"label": "C",
+							"text": "riding elephants"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But the zoo management team arranged the job of washing elephants for her."
+					]
+				},
+				{
+					"number": 7,
+					"text": "What problem did she have when she first arrived?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She felt homesick."
+						},
+						{
+							"label": "B",
+							"text": "She felt bored."
+						},
+						{
+							"label": "C",
+							"text": "She was ill."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"She had stomach problems and had to stay in bed for a couple of days."
+					]
+				},
+				{
+					"number": 8,
+					"text": "What method was used for dividing volunteers into different groups?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the same interest"
+						},
+						{
+							"label": "B",
+							"text": "the same age"
+						},
+						{
+							"label": "C",
+							"text": "the same background"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"In order to improve members’ enthusiasm and efficiency, the groups were formed based on what the volunteers were interested."
+					]
+				},
+				{
+					"number": 9,
+					"text": "What activity did she participate in with friends on weekends?",
+					"options": [
+						{
+							"label": "A",
+							"text": "served as a travel guide"
+						},
+						{
+							"label": "B",
+							"text": "took a coach tour to coastal area"
+						},
+						{
+							"label": "C",
+							"text": "went hiking in the National Park"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"She would also go to the coastal area with her friends. The area is very beautiful. There were a few means of transportation, and the cheapest way to go was by coach."
+					]
+				},
+				{
+					"number": 10,
+					"text": "What did Lyra comment about being a volunteer?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She learned many new skills."
+						},
+						{
+							"label": "B",
+							"text": "She was proud of the achievement"
+						},
+						{
+							"label": "C",
+							"text": "She felt confident after coming back"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"And she was proud when she talked about her volunteering experience with others, like how she saved a young elephant’s life with other medical workers."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

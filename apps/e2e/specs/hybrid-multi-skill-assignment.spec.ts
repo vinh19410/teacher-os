@@ -8,7 +8,7 @@ import {
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
 import { seedQuizFixture } from "./helpers-quiz";
-import { STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import { LMS_ORIGIN, STUDENT_BASE_URL, TEACHER_BASE_URL } from "./origins";
 
 const PASSWORD = "password-8chars";
 const REPORT_DIR = resolve(
@@ -56,7 +56,7 @@ test("hybrid Grammar + Writing assignment: author, preview, assign, student take
 	const CLASS_NAME = `Lớp Gộp ${runToken}`;
 
 	// 1. Teacher signs up via real UI and seeds a class + enrolled student
-	const teacherContext = await browser.newContext({ baseURL: WEB_ORIGIN });
+	const teacherContext = await browser.newContext({ baseURL: LMS_ORIGIN });
 	const teacherPage = await teacherContext.newPage();
 	const teacherEmail = await signUpViaApi(teacherPage, { name: "Cô Mỹ" });
 	const orgId = await orgIdForTeacherEmail(teacherEmail);
@@ -70,8 +70,8 @@ test("hybrid Grammar + Writing assignment: author, preview, assign, student take
 		prompts: [],
 	});
 
-	// 2. Teacher authors Grammar + Writing Task 2 prompt on /assignments/new
-	await teacherPage.goto(`${WEB_ORIGIN}/assignments/new`);
+	// 2. Teacher authors Grammar + Writing Task 2 prompt on /teacher/assignments/new
+	await teacherPage.goto(`${TEACHER_BASE_URL}/assignments/new`);
 	await teacherPage
 		.getByRole("button", { name: "Grammar", exact: true })
 		.click();
@@ -164,7 +164,7 @@ test("hybrid Grammar + Writing assignment: author, preview, assign, student take
 	).toBeVisible();
 
 	// 3. Teacher assigns the hybrid prompt to the class
-	await teacherPage.goto(`${WEB_ORIGIN}/classes/${fixture.classId}`);
+	await teacherPage.goto(`${TEACHER_BASE_URL}/classes/${fixture.classId}`);
 	await teacherPage
 		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
@@ -194,7 +194,7 @@ test("hybrid Grammar + Writing assignment: author, preview, assign, student take
 	// 4. Student signs up on student portal, opens hybrid assignment, answers 1 right + 1 wrong + writes essay, submits
 	const studentContext = await browser.newContext();
 	const studentPage = await studentContext.newPage();
-	await studentPage.goto(`${STUDENT_ORIGIN}/login`);
+	await studentPage.goto(`${LMS_ORIGIN}/login`);
 	await studentPage.locator("#tab-signup").click();
 	await studentPage.locator("#signup-name").fill("Minh Học Viên");
 	await studentPage.locator("#signup-email").fill(studentEmail);
@@ -204,7 +204,7 @@ test("hybrid Grammar + Writing assignment: author, preview, assign, student take
 		timeout: 15_000,
 	});
 	await verifyStudentEmailFromMailLog(studentPage, studentEmail);
-	await expect(studentPage).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(studentPage).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 
@@ -216,11 +216,13 @@ test("hybrid Grammar + Writing assignment: author, preview, assign, student take
 	});
 	await expect(startDialog).toBeVisible();
 	await expect(
-		studentPage.getByText("2 câu hỏi + Bài viết · Band 7.0"),
+		studentPage.getByText("2 câu hỏi + Bài viết", { exact: true }),
 	).toBeVisible();
+	await expect(studentPage.getByText(/Band 7\.0/i)).toHaveCount(0);
 	await startDialog.getByRole("button", { name: "Bắt đầu" }).click();
 
 	await expect(studentPage.getByTestId("hybrid-writing-section")).toBeVisible();
+	await expect(studentPage.getByText(/Band 7\.0/i)).toHaveCount(0);
 
 	// Q1 -> B (correct), Q2 -> A (wrong)
 	const q1Group = studentPage.getByRole("radiogroup", { name: "Câu 1" });
@@ -269,7 +271,7 @@ test("hybrid Grammar + Writing assignment: author, preview, assign, student take
 
 	// 6. Teacher opens class assignments tab -> sees Chấm bài -> grades Writing seeing objective 1/2 score
 	await teacherPage.goto(
-		`${WEB_ORIGIN}/classes/${fixture.classId}?tab=assignments`,
+		`${TEACHER_BASE_URL}/classes/${fixture.classId}?tab=assignments`,
 	);
 	const assignRow = teacherPage.locator("article.assign-item", {
 		hasText: PROMPT_TITLE,
@@ -327,8 +329,8 @@ test("hybrid Grammar + Writing assignment: author, preview, assign, student take
 	).toBeVisible();
 	await expect(studentPage.getByTestId("grade-band")).toHaveText("6.5");
 
-	// 8. Student opens /history -> Grammar + Writing entry appears with combined score + "Xem nhận xét" (both All & Writing tabs)
-	await studentPage.goto(`${STUDENT_ORIGIN}/history`);
+	// 8. Student opens /student/history -> Grammar + Writing entry appears with combined score + "Xem nhận xét" (both All & Writing tabs)
+	await studentPage.goto(`${STUDENT_BASE_URL}/history`);
 	await expect(studentPage.getByText("1/2 · Band 6.5")).toBeVisible();
 	await expect(
 		studentPage.getByRole("button", { name: "Xem nhận xét" }),

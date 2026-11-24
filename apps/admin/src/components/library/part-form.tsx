@@ -1,6 +1,5 @@
 import {
 	ASSIGNMENT_BANDS,
-	ASSIGNMENT_PART_TYPES,
 	ASSIGNMENT_TEST_PRESETS,
 	assignmentQuestionSchema,
 	LIBRARY_OPTION_BANK_MAX,
@@ -83,13 +82,12 @@ export interface PartFormValue {
 
 export const BAND_OPTIONS = ASSIGNMENT_BANDS;
 
-/** Dạng bài hợp lệ của slot theo catalog skill. */
+/** Dạng bài hợp lệ của slot theo catalog skill (cả reading và listening đều bỏ khóa theo slot). */
 export function slotTypes(
 	skill: LibrarySkill,
-	slot: string,
+	_slot: string,
 ): readonly string[] {
-	if (skill === "reading") return librarySkillTypes("reading");
-	return ASSIGNMENT_PART_TYPES[skill]?.types[slot] ?? [];
+	return librarySkillTypes(skill);
 }
 
 /** Part mới chưa có dữ liệu — 1 câu rỗng để giáo viên gõ ngay. */
@@ -926,6 +924,7 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 								showExplanation
 								maxBank={LIBRARY_OPTION_BANK_MAX}
 								libraryReadingMode={skill === "reading"}
+								libraryMode
 							/>
 							<div>
 								<Button

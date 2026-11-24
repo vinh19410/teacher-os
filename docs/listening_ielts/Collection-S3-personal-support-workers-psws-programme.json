@@ -1,0 +1,227 @@
+{
+	"id": "066c3ae3-1700-4deb-8d0a-7bc0cfd2cf7e",
+	"url": "https://stepielts.com/student/listening/066c3ae3-1700-4deb-8d0a-7bc0cfd2cf7e?mode=practice",
+	"title": "Personal Support Workers (PSWs) Programme",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/68b96fd4-de43-409f-8f97-18a4b69b5b5e.mp3",
+	"transcript": "Speaker 1: Jason: Becky. Hi. What are you doing here at the college?\nSpeaker 2: Becky: Hi, Jason. Just using the library. What about you?\nSpeaker 1: Jason: I’m taking the PSW program. You know, personal support worker.\nSpeaker 2: Becky: You’re kidding. I’ve just qualified as a PSW.\nSpeaker 1: Jason: Really? I’d love to talk to you about the program.\nSpeaker 2: Becky: Okay. Well, first off, the main duties they taught me here were exactly what I needed on the job.\nSpeaker 1: Jason: You mean like bathing and dressing people?\nSpeaker 2: Becky: Yes. Young and old need this. You’ll work with people of all ages, from young people with disabilities to seniors. But, you know, nothing really prepares you for how alone many people are. They crave conversation. And I don’t mind chatting with them while I work, though that’s not officially in my job description.\nSpeaker 1: Jason: I think I’d like to focus on seniors’ care. And with the country’s older population growing, maybe I’ll get a job fast. Do we have to be responsible for any medications?\nSpeaker 2: Becky: No, that’s not for us to do. And while you will prepare meals, you won’t feed people. But working to keep clients healthy and able to live on their own without risk as long as possible is always the goal. And we’re recognizing that with life spans increasing, long term care facilities won’t be able to keep up with the number of people who will need care.\nSpeaker 1: Jason: I almost didn’t meet the requirements for entry into the PSW program. I was one course short getting my high school diploma, so I had to go back to summer school. I took science because I’m no good at math. Oh, and speaking of not getting in, having my first aid certificate was a real piece of luck. I would have been turned down without that too.\nSpeaker 2: Becky: And I would have had a problem with immunizations, except that I traveled the year before. And when the doctor checked my records, they were up to date. I also had to hand in a written essay on why I wanted to be a PSW.\nSpeaker 1: Jason: So, Becky, what did you think about the courses you had to take in the personal support worker program?\nSpeaker 2: Becky: Well, I used to think I got my points across pretty well with people until I took the understanding is essential course. For starters, it taught me how to express myself much more effectively. I also learned a lot about preparing clear reports for my supervisors and dealing in a better way with people in general, you know, like giving facts without personal views. You’ll find that you need those skills every single day.\nSpeaker 1: Jason: I’m enjoying the foundations course. I’m taking it now, and I’m getting a lot out of it. Because support workers are a newer level of care in the province, I think we absolutely have to understand how we fit into the overall system. It’s a great place to voice your opinions freely. Some are quite personal. Did you have to take a course called the way we work? I didn’t know psychology was part of the program.\nSpeaker 2: Becky: That course was a favorite of mine, but it’s probably not what you’re thinking, Jason. It’s about what happens on the inside of the body and covers the functions that keep our bodies operating well. Even if you’re not a PSW, the course is really interesting. I learned so much.\nSpeaker 1: Jason: What do you think about residents care? I know the thinking now is that long term care facilities aren’t the answer for our aging population.\nSpeaker 2: Becky: Right. And so this course zeros in on the changes people can make to their homes so they can stay there, like installing higher toilets, for example. You’ll also learn about specialized equipment people can get to help themselves, safety bars for the shower and so on.\nSpeaker 1: Jason: Do any of the courses focus on the families of our clients? After all, any kind of illness or disability affects everybody.\nSpeaker 2: Becky: So true. And, yes, there is one. It’s called dynamics. You usually get that in your last term. You’ll learn different strategies to help relieve some of the anxiety and strain that happens within the family. I got a lot out of that course. It’s the only one that focuses on emotions rather than facts. I think giving people this kind of help is just as valuable as any kind of expensive equipment they buy to help themselves.\nSpeaker 1: Jason: The course I’m really looking forward to is The Power Within.\nSpeaker 2: Becky: Oh, it’s terrific. Getting old has quite an impact on the mind, as you know, but you’ll be taught ways to help clients keep the mind active so they’re not so forgetful. You’d be surprised how much improvement you can see in clients when you apply these methods.",
+	"body": {
+		"text": "Understanding is Essential: [5]\nFoundations: [6]\nThe Way We Work: [7]\nResidence Care: [8]\nDynamics: [9]\nThe Power Within: [10]",
+		"html": "<p>Understanding is Essential: [5]</p><p>Foundations: [6]</p><p>The Way We Work: [7]</p><p>Residence Care: [8]</p><p>Dynamics: [9]</p><p>The Power Within: [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-2",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Which are the TWO main duties for Personal Support Workers (PSWs)?",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Which are the TWO main duties for Personal Support Workers (PSWs)?",
+					"options": [
+						{
+							"label": "A",
+							"text": "talking with clients"
+						},
+						{
+							"label": "B",
+							"text": "helping clients to eat and drink"
+						},
+						{
+							"label": "C",
+							"text": "helping with physical needs"
+						},
+						{
+							"label": "D",
+							"text": "ensuring clients are well and safe"
+						},
+						{
+							"label": "E",
+							"text": "managing clients' pills"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 2,
+					"text": "Which are the TWO main duties for Personal Support Workers (PSWs)?",
+					"options": [
+						{
+							"label": "A",
+							"text": "talking with clients"
+						},
+						{
+							"label": "B",
+							"text": "helping clients to eat and drink"
+						},
+						{
+							"label": "C",
+							"text": "helping with physical needs"
+						},
+						{
+							"label": "D",
+							"text": "ensuring clients are well and safe"
+						},
+						{
+							"label": "E",
+							"text": "managing clients' pills"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "3-4",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Which are the TWO main duties for Personal Support Workers (PSWs)?",
+			"questions": [
+				{
+					"number": 3,
+					"text": "Which are the TWO requirements to do the PSW programme?",
+					"options": [
+						{
+							"label": "A",
+							"text": "high school completion"
+						},
+						{
+							"label": "B",
+							"text": "a maths course"
+						},
+						{
+							"label": "C",
+							"text": "a language qualification"
+						},
+						{
+							"label": "D",
+							"text": "a clear driving record"
+						},
+						{
+							"label": "E",
+							"text": "First Aid training"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 4,
+					"text": "Which are the TWO requirements to do the PSW programme?",
+					"options": [
+						{
+							"label": "A",
+							"text": "high school completion"
+						},
+						{
+							"label": "B",
+							"text": "a maths course"
+						},
+						{
+							"label": "C",
+							"text": "a language qualification"
+						},
+						{
+							"label": "D",
+							"text": "a clear driving record"
+						},
+						{
+							"label": "E",
+							"text": "First Aid training"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What topic do students learn about in each of the following courses?\nCourses",
+			"options": [
+				{
+					"label": "A",
+					"text": "independent living"
+				},
+				{
+					"label": "B",
+					"text": "the ageing process stages"
+				},
+				{
+					"label": "C",
+					"text": "PSWs' role in health care"
+				},
+				{
+					"label": "D",
+					"text": "workplace communication"
+				},
+				{
+					"label": "E",
+					"text": "memory stimulation activities"
+				},
+				{
+					"label": "F",
+					"text": "handling stress"
+				},
+				{
+					"label": "G",
+					"text": "biological systems"
+				}
+			],
+			"body": "Understanding is Essential: [5]\nFoundations: [6]\nThe Way We Work: [7]\nResidence Care: [8]\nDynamics: [9]\nThe Power Within: [10]",
+			"body_html": "<p>Understanding is Essential: [5]</p><p>Foundations: [6]</p><p>The Way We Work: [7]</p><p>Residence Care: [8]</p><p>Dynamics: [9]</p><p>The Power Within: [10]</p>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Understanding is Essential:",
+					"answer": "D",
+					"quotes": [
+						"Becky: Well, I used to think I got my points across pretty well with people until I took the understanding is essential course. For starters, it taught me how to express myself much more effectively. I also learned a lot about preparing clear reports for my supervisors and dealing in a better way with people in general, you know, like giving facts without personal views. You’ll find that you need those skills every single day."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Foundations:",
+					"answer": "C",
+					"quotes": [
+						"Because support workers are a newer level of care in the province, I think we absolutely have to understand how we fit into the overall system."
+					]
+				},
+				{
+					"number": 7,
+					"text": "The Way We Work:",
+					"answer": "G",
+					"quotes": [
+						"It’s about what happens on the inside of the body and covers the functions that keep our bodies operating well."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Residence Care:",
+					"answer": "A",
+					"quotes": [
+						"And so this course zeros in on the changes people can make to their homes so they can stay there, like installing higher toilets, for example. You’ll also learn about specialized equipment people can get to help themselves, safety bars for the shower and so on."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Dynamics:",
+					"answer": "F",
+					"quotes": [
+						"You’ll learn different strategies to help relieve some of the anxiety and strain that happens within the family."
+					]
+				},
+				{
+					"number": 10,
+					"text": "The Power Within:",
+					"answer": "E",
+					"quotes": [
+						"Getting old has quite an impact on the mind, as you know, but you’ll be taught ways to help clients keep the mind active so they’re not so forgetful."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -21,6 +21,7 @@ import {
 	sanitizeMediaFileName,
 } from "@teacher-os/api/lib/quiz-media";
 import {
+	DEFAULT_LIBRARY_TEST_PAGE_SIZE,
 	isLibrarySkill,
 	LIBRARY_AUDIO_MAX_BYTES,
 	LIBRARY_AUDIO_MIME,
@@ -31,11 +32,15 @@ import {
 	type LibraryQuestionGroup,
 	type LibrarySkill,
 	type LibraryTestDetail,
+	type LibraryTestListCounts,
 	type LibraryTestListItem,
+	type LibraryTestListPageResponse,
 	libraryPartUpsertSchema,
 	libraryQuestionGroupSchema,
 	libraryTestCreateSchema,
 	libraryTestUpdateSchema,
+	parseLibraryTestPageParam,
+	parseLibraryTestPageSizeParam,
 	validatePartForReady,
 	validateTestReady,
 } from "@teacher-os/api/library-contracts";
@@ -49,7 +54,18 @@ import {
 	studyPack,
 	studyPackItem,
 } from "@teacher-os/db/schema/study-pack";
-import { and, asc, desc, eq, isNull, or, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	inArray,
+	isNull,
+	or,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
@@ -342,6 +358,82 @@ function presetParts(skill: LibrarySkill): string[] {
 	return ASSIGNMENT_TEST_PRESETS[skill].slots.map((slot) => slot.part);
 }
 
+type LibraryHeaderRow = Omit<LibraryRow, "createdBy">;
+
+interface PartSummaryRow {
+	testId: string;
+	part: string;
+	hasAudio: number;
+	questionCount: number;
+}
+
+const LIBRARY_TEST_HEADER_COLUMNS = {
+	id: libraryTest.id,
+	title: libraryTest.title,
+	description: libraryTest.description,
+	skill: libraryTest.skill,
+	timeLimitSeconds: libraryTest.timeLimitSeconds,
+	collection: libraryTest.collection,
+	testGroup: libraryTest.testGroup,
+	status: libraryTest.status,
+	createdAt: libraryTest.createdAt,
+	updatedAt: libraryTest.updatedAt,
+};
+
+function partSummarySelection() {
+	return {
+		testId: libraryTestPart.testId,
+		part: libraryTestPart.part,
+		hasAudio:
+			sql<number>`CASE WHEN ${libraryTestPart.audioKey} IS NOT NULL THEN 1 ELSE 0 END`
+				.mapWith(Number)
+				.as("has_audio"),
+		questionCount:
+			sql<number>`CASE WHEN json_valid(${libraryTestPart.questions}) = 1 THEN COALESCE(json_array_length(${libraryTestPart.questions}), 0) ELSE 0 END`
+				.mapWith(Number)
+				.as("question_count"),
+	};
+}
+
+function combineConditions(...parts: Array<SQL | undefined>): SQL | undefined {
+	const active = parts.filter((part): part is SQL => part !== undefined);
+	return active.length > 0 ? and(...active) : undefined;
+}
+
+function mapLibraryTestListItems(
+	rows: readonly LibraryHeaderRow[],
+	partRows: readonly PartSummaryRow[],
+): LibraryTestListItem[] {
+	const partsByTest = new Map<string, PartSummaryRow[]>();
+	for (const part of partRows) {
+		const bucket = partsByTest.get(part.testId) ?? [];
+		bucket.push(part);
+		partsByTest.set(part.testId, bucket);
+	}
+	return rows.map((row) => {
+		const parts = partsByTest.get(row.id) ?? [];
+		const skill = isLibrarySkill(row.skill) ? row.skill : null;
+		const hasAllAudio =
+			skill === "reading"
+				? true // reading không cần audio
+				: skill !== null &&
+					presetParts(skill).every(
+						(slot) =>
+							Number(parts.find((part) => part.part === slot)?.hasAudio) === 1,
+					);
+		return {
+			...headerFields(row),
+			partCount: parts.length,
+			questionCount: parts.reduce(
+				(sum, part) =>
+					sum + Math.max(0, Math.trunc(Number(part.questionCount) || 0)),
+				0,
+			),
+			hasAllAudio,
+		};
+	});
+}
+
 function toLibraryExerciseView(
 	row: typeof libraryExercise.$inferSelect,
 ): LibraryExerciseView {
@@ -474,23 +566,25 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 		return next();
 	});
 
-	// ---- GET /tests — list + thống kê parts, sort updatedAt desc ----
+	// ---- GET /tests — list + thống kê parts, sort updatedAt desc, id desc ----
 	router.get("/tests", async (c) => {
-		const conditions = [];
 		const skill = c.req.query("skill");
+		let skillCondition: SQL | undefined;
 		if (skill !== undefined) {
 			if (!isLibrarySkill(skill))
 				return c.json({ error: "invalid skill" }, 400);
-			conditions.push(eq(libraryTest.skill, skill));
+			skillCondition = eq(libraryTest.skill, skill);
 		}
 		const status = c.req.query("status");
+		let statusCondition: SQL | undefined;
 		if (status !== undefined) {
 			if (status !== "draft" && status !== "ready") {
 				return c.json({ error: "invalid status" }, 400);
 			}
-			conditions.push(eq(libraryTest.status, status));
+			statusCondition = eq(libraryTest.status, status);
 		}
 		const q = c.req.query("q")?.trim();
+		let qCondition: SQL | undefined;
 		if (q) {
 			if (q.length > MAX_LIST_QUERY_LENGTH) {
 				return c.json({ error: "invalid query" }, 400);
@@ -498,86 +592,111 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 			// Dùng instr(lower(...)) thay vì LIKE: Cloudflare D1 siết trần
 			// SQLITE_MAX_LIKE_PATTERN_LENGTH = 50 bytes (tiếng Việt/tiêu đề dài
 			// dễ nổ 500 LIKE pattern too complex), đồng thời khớp literal %/_.
-			conditions.push(
-				or(
-					sql`instr(lower(${libraryTest.title}), lower(${q})) > 0`,
-					sql`instr(lower(${libraryTest.description}), lower(${q})) > 0`,
-					sql`instr(lower(${libraryTest.collection}), lower(${q})) > 0`,
-					sql`instr(lower(${libraryTest.testGroup}), lower(${q})) > 0`,
-				),
+			qCondition = or(
+				sql`instr(lower(${libraryTest.title}), lower(${q})) > 0`,
+				sql`instr(lower(${libraryTest.description}), lower(${q})) > 0`,
+				sql`instr(lower(${libraryTest.collection}), lower(${q})) > 0`,
+				sql`instr(lower(${libraryTest.testGroup}), lower(${q})) > 0`,
 			);
 		}
-		const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-		// Gom header + tóm tắt parts vào 1 batch D1 (1 snapshot, 1 round-trip,
-		// <= 6 bound params) để tránh vượt trần 100 SQL variables của D1 khi
-		// bảng vượt 100 đề và tránh kéo passage/transcript/questions nguyên khối.
-		const [rows, partRows] = await withDb().batch([
-			withDb()
-				.select({
-					id: libraryTest.id,
-					title: libraryTest.title,
-					description: libraryTest.description,
-					skill: libraryTest.skill,
-					timeLimitSeconds: libraryTest.timeLimitSeconds,
-					collection: libraryTest.collection,
-					testGroup: libraryTest.testGroup,
-					status: libraryTest.status,
-					createdAt: libraryTest.createdAt,
-					updatedAt: libraryTest.updatedAt,
-				})
-				.from(libraryTest)
-				.where(whereClause)
-				.orderBy(desc(libraryTest.updatedAt)),
-			withDb()
-				.select({
-					testId: libraryTestPart.testId,
-					part: libraryTestPart.part,
-					hasAudio:
-						sql<number>`CASE WHEN ${libraryTestPart.audioKey} IS NOT NULL THEN 1 ELSE 0 END`
-							.mapWith(Number)
-							.as("has_audio"),
-					questionCount:
-						sql<number>`CASE WHEN json_valid(${libraryTestPart.questions}) = 1 THEN COALESCE(json_array_length(${libraryTestPart.questions}), 0) ELSE 0 END`
-							.mapWith(Number)
-							.as("question_count"),
-				})
-				.from(libraryTestPart)
-				.innerJoin(libraryTest, eq(libraryTestPart.testId, libraryTest.id))
-				.where(whereClause),
-		]);
-		const partsByTest = new Map<
-			string,
-			Array<{ part: string; hasAudio: number; questionCount: number }>
-		>();
-		for (const part of partRows) {
-			const bucket = partsByTest.get(part.testId) ?? [];
-			bucket.push(part);
-			partsByTest.set(part.testId, bucket);
+
+		const rawPage = c.req.query("page");
+		const rawPageSize = c.req.query("pageSize");
+		const parsedPage = parseLibraryTestPageParam(rawPage);
+		if (rawPage !== undefined && parsedPage === null) {
+			return c.json({ error: "invalid page" }, 400);
 		}
-		const tests: LibraryTestListItem[] = rows.map((row) => {
-			const parts = partsByTest.get(row.id) ?? [];
-			const skill = isLibrarySkill(row.skill) ? row.skill : null;
-			const hasAllAudio =
-				skill === "reading"
-					? true // reading không cần audio
-					: skill !== null &&
-						presetParts(skill).every(
-							(slot) =>
-								Number(parts.find((part) => part.part === slot)?.hasAudio) ===
-								1,
-						);
-			return {
-				...headerFields(row),
-				partCount: parts.length,
-				questionCount: parts.reduce(
-					(sum, part) =>
-						sum + Math.max(0, Math.trunc(Number(part.questionCount) || 0)),
-					0,
-				),
-				hasAllAudio,
-			};
-		});
-		return c.json({ tests });
+		const parsedPageSize = parseLibraryTestPageSizeParam(rawPageSize);
+		if (rawPageSize !== undefined && parsedPageSize === null) {
+			return c.json({ error: "invalid pageSize" }, 400);
+		}
+
+		const rowWhere = combineConditions(
+			skillCondition,
+			statusCondition,
+			qCondition,
+		);
+
+		// Unpaginated mode: giữ nguyên contract `{ tests }` và 1 batch 2 statement
+		// để tương thích ngược với caller cũ và tránh vượt trần 100 SQL variables của D1.
+		if (rawPage === undefined && rawPageSize === undefined) {
+			const [rows, partRows] = await withDb().batch([
+				withDb()
+					.select(LIBRARY_TEST_HEADER_COLUMNS)
+					.from(libraryTest)
+					.where(rowWhere)
+					.orderBy(desc(libraryTest.updatedAt), desc(libraryTest.id)),
+				withDb()
+					.select(partSummarySelection())
+					.from(libraryTestPart)
+					.innerJoin(libraryTest, eq(libraryTestPart.testId, libraryTest.id))
+					.where(rowWhere),
+			]);
+			return c.json({ tests: mapLibraryTestListItems(rows, partRows) });
+		}
+
+		const page = parsedPage ?? 1;
+		const pageSize = parsedPageSize ?? DEFAULT_LIBRARY_TEST_PAGE_SIZE;
+		const skillCountWhere = combineConditions(statusCondition, qCondition);
+		const statusCountWhere = combineConditions(skillCondition, qCondition);
+
+		const [rows, totalRows, skillGroups, statusGroups] = await withDb().batch([
+			withDb()
+				.select(LIBRARY_TEST_HEADER_COLUMNS)
+				.from(libraryTest)
+				.where(rowWhere)
+				.orderBy(desc(libraryTest.updatedAt), desc(libraryTest.id))
+				.limit(pageSize)
+				.offset((page - 1) * pageSize),
+			withDb().select({ total: count() }).from(libraryTest).where(rowWhere),
+			withDb()
+				.select({ skill: libraryTest.skill, n: count() })
+				.from(libraryTest)
+				.where(skillCountWhere)
+				.groupBy(libraryTest.skill),
+			withDb()
+				.select({ status: libraryTest.status, n: count() })
+				.from(libraryTest)
+				.where(statusCountWhere)
+				.groupBy(libraryTest.status),
+		]);
+
+		const pageIds = rows.map((row) => row.id);
+		const partRows =
+			pageIds.length > 0
+				? await withDb()
+						.select(partSummarySelection())
+						.from(libraryTestPart)
+						.where(inArray(libraryTestPart.testId, pageIds))
+				: [];
+
+		const total = Number(totalRows[0]?.total) || 0;
+		const totalPages = Math.max(1, Math.ceil(total / pageSize));
+		const counts: LibraryTestListCounts = {
+			skill: { reading: 0, listening: 0 },
+			status: { draft: 0, ready: 0 },
+		};
+		for (const row of skillGroups) {
+			const value = Number(row.n) || 0;
+			if (row.skill === "reading") counts.skill.reading = value;
+			else if (row.skill === "listening") counts.skill.listening = value;
+		}
+		for (const row of statusGroups) {
+			const value = Number(row.n) || 0;
+			if (row.status === "draft") counts.status.draft = value;
+			else if (row.status === "ready") counts.status.ready = value;
+		}
+
+		const tests = mapLibraryTestListItems(rows, partRows);
+		c.header("Cache-Control", "no-store");
+		return c.json({
+			tests,
+			total,
+			page,
+			pageSize,
+			totalPages,
+			counts,
+		} satisfies LibraryTestListPageResponse);
 	});
 
 	// ---- POST /tests — tạo header, luôn draft ----

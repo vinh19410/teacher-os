@@ -50,6 +50,7 @@ vi.mock("sonner", () => ({
 vi.mock("@/lib/query-client", () => ({
 	isHttpError: () => false,
 	isStudentOrgMismatchError: () => false,
+	isTeacherOnStudentPortalError: () => false,
 	reauth: vi.fn(),
 }));
 
@@ -74,7 +75,12 @@ vi.mock("@/lib/repos/quiz", () => ({
 	submitQuizAttempt: (...args: unknown[]) => submitMock(...args),
 }));
 
-import { QuizTakeView } from "@/components/quiz/quiz-take-view";
+import { AttemptReviewError } from "@/components/quiz/attempt-review-error";
+import {
+	attemptSummaryHref,
+	QuizTakeError,
+	QuizTakeView,
+} from "@/components/quiz/quiz-take-view";
 
 describe("QuizTakeView — hybrid MCQ + Writing dual-store runtime (#574)", () => {
 	beforeEach(() => {
@@ -313,5 +319,143 @@ describe("QuizTakeView — hybrid MCQ + Writing dual-store runtime (#574)", () =
 			kind: "practice",
 			testId: "test-listen-1",
 		});
+	});
+
+	it("hides band on start gate for practice auto-graded quiz without hybrid writing", () => {
+		mockDetail = {
+			...mockDetail,
+			assignmentId: "",
+			skill: "listening",
+			part: "s4",
+			type: "notes",
+			band: "7.0",
+			writing: undefined,
+			attempt: null,
+		};
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const { container } = render(
+			<QueryClientProvider client={qc}>
+				<QuizTakeView
+					source={{ kind: "practice", testId: "test-listen-1" }}
+					serverAnswers={{}}
+					serverEssay=""
+				/>
+			</QueryClientProvider>,
+		);
+		expect(screen.getByText("2 câu hỏi", { exact: true })).toBeTruthy();
+		expect(container.textContent).not.toContain("Band");
+	});
+
+	it("hides band on start gate for hybrid assignment", () => {
+		mockDetail = {
+			...mockDetail,
+			band: "6.5",
+			attempt: null,
+		};
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const { container } = render(
+			<QueryClientProvider client={qc}>
+				<QuizTakeView
+					source={{ kind: "assignment", id: "ca-hyb-1" }}
+					serverAnswers={{}}
+					serverEssay=""
+				/>
+			</QueryClientProvider>,
+		);
+		expect(
+			screen.getByText("2 câu hỏi + Bài viết", { exact: true }),
+		).toBeTruthy();
+		expect(container.textContent).not.toContain("Band");
+	});
+
+	it("hides band on start gate for writing assignment", () => {
+		mockDetail = {
+			...mockDetail,
+			skill: "writing",
+			part: "task2",
+			type: "discuss",
+			band: "7.0",
+			questions: [],
+			writing: undefined,
+			attempt: null,
+		};
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const { container } = render(
+			<QueryClientProvider client={qc}>
+				<QuizTakeView
+					source={{ kind: "assignment", id: "ca-w-1" }}
+					serverAnswers={{}}
+					serverEssay=""
+				/>
+			</QueryClientProvider>,
+		);
+		expect(
+			screen.getByText("Bài viết · tối thiểu 250 từ", { exact: true }),
+		).toBeTruthy();
+		expect(container.textContent).not.toContain("Band");
+	});
+
+	it("hides band on start gate for speaking assignment", () => {
+		mockDetail = {
+			...mockDetail,
+			skill: "speaking",
+			part: "part2",
+			type: "cue",
+			band: "7.5",
+			questions: [],
+			writing: undefined,
+			attempt: null,
+		};
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const { container } = render(
+			<QueryClientProvider client={qc}>
+				<QuizTakeView
+					source={{ kind: "assignment", id: "ca-s-1" }}
+					serverAnswers={{}}
+					serverEssay=""
+				/>
+			</QueryClientProvider>,
+		);
+		expect(
+			screen.getByText(
+				"Bài nói · Part 2 · nộp 1 file audio/video (tối đa 50 MB)",
+				{ exact: true },
+			),
+		).toBeTruthy();
+		expect(container.textContent).not.toContain("Band");
+	});
+
+	it("keeps quiz summary redirect and error home links under /student subpath", () => {
+		expect(attemptSummaryHref("att-1")).toBe(
+			"/student/learn/quizzes/attempt/att-1",
+		);
+		expect(attemptSummaryHref("att/with space")).toBe(
+			"/student/learn/quizzes/attempt/att%2Fwith%20space",
+		);
+
+		const takeError = render(<QuizTakeError error={new Error("boom")} />);
+		expect(
+			takeError.container
+				.querySelector('a[href="/student"]')
+				?.textContent?.trim(),
+		).toBe("Về trang chủ");
+		cleanup();
+
+		const reviewError = render(
+			<AttemptReviewError error={new Error("boom")} />,
+		);
+		expect(
+			reviewError.container
+				.querySelector('a[href="/student"]')
+				?.textContent?.trim(),
+		).toBe("Về trang chủ");
 	});
 });

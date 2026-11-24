@@ -1,0 +1,152 @@
+{
+	"id": "de559ac3-efa5-4202-8a9f-3829537a61cc",
+	"url": "https://stepielts.com/student/listening/de559ac3-efa5-4202-8a9f-3829537a61cc?mode=practice",
+	"title": "Enquiry about Airmail",
+	"source": "Forecast Quý 2-2025",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/6a883703-5263-4066-baaa-49c85cca9a3a.mp3",
+	"transcript": "SCRIPT:\nSpeaker 2: Hello? Jennifer speaking.\nSpeaker 0: Hello Jennifer. My name’s Ben Smith. I’m from the New Zealand Post Office Service. I understand you left a couple of questions on our website forum. Seeing as though you left your phone number as a contact, I thought you might prefer us to call.\nSpeaker 2: Oh Ben! Its nice to speak to you again. I really appreciate your help last month. Yes, as I will be moving to Australia soon and need to send some of my things via airmail, I just wasn’t sure how to get my mail redirected.\nSpeaker 0: I can help you with that. It’s interesting that I recently got more inquiries about international mailing due to migration to other countries. May I ask why you are moving? Umm.\n. .\nSpeaker 2: There are a few reasons such as I have family in Australia and the weather there is warmer, but mainly because it hard to find a job here . I have just got the news that I was successful in applying for a job in Australia! I’ll be starting in November.\nSpeaker 0: How exciting, congratulations! I have never been to Australia, but I’ve heard it’s a nice place. Is it a permanent job?\nSpeaker 2: No, I will only be working for that company as a temporary assistant over this summer . You never know I might get homesick and want to come back after a few months anyway!\nSpeaker 0: I hope the job goes well for you. What postal address will you be using in Australia?\nSpeaker 2: I had organized some accommodation at a hostel in Sydney for the first week,but that fell through, so I will stay at my friend’s house until I find somewhere else. My things will have to be sent to her place for now and the address is 9 Queen Street, Sydney .\nSpeaker 0: Can I know how long you will be staying there? We want to make sure you get your mail while you are there.\nSpeaker 2: I will be staying there for the first two months . You know, it’s free staying with her.\nSpeaker 0: That’s nice! Now, I’ve got a couple more questions for you. What is your full name and current address?\nSpeaker 2: My name is Jennifer Simmons.\nSpeaker 0: How do you spell your surname, please?\nSpeaker 2: It’s S-I-M-M-O-N-S . Got that.\nSpeaker 0: And your address, please?\nSpeaker 2: Oh, right. I’m currently living at 16 Ocean Road, Auckland .\nSpeaker 0: And your postcode?\nSpeaker 2: It’s 0245.\nSpeaker 0: That doesn’t come up in our system as a valid postcode. Can you check that again, please?\nSpeaker 2: Yes, sorry! I’m not good at remembering numbers. It’s 0425.\nSpeaker 0: When would you like your things to be air mailed?\nSpeaker 2: I will leave New Zealand on the 23rd of September, but I will try to send them on the 22nd . so that’s the day before. How long will it take for my things to get to Australia?\nSpeaker 0: It will take about a week.\nSpeaker 2: Perfect. That should give me time to get organized in Australia before everything arrives.\nSpeaker 0: May I ask about the content of your delivery? There are some things you have to sign a goods declaration for, such as expensive items or if you are importing medications in bulk.\nSpeaker 2: I won’t be sending anything like that. It’ll mainly be personal items. I was thinking of posting some books. But I guess that’s quite expensive because they are heavy. And my guitar is kind of big.\nSpeaker 0: Yes, it can be quite expensive.\nSpeaker 2: Ummm.\n. .\nSpeaker 2: I might not send them then. I definitely need to send some of my files . I have one standard-size file box full of them.\nSpeaker 0: Sure. Anything else?\nSpeaker 2: I’ve heard the beaches and the ocean are beautiful in Australia. I enjoy diving so I’m going to send my diving gear as well . I have packed it into a box to send it more easily. Would you mind if I weighed everything and sent you information to get a quote on the price?\nSpeaker 0: Just send it to info@postalservice.nz. Can I help you with anything else?\nSpeaker 2: No, that’s everything. Thank you for your help!",
+	"body": {
+		"text": "Enquiry about Airmail\nReasons for moving:\nFamily reunion\nPleasant [1]\nJob opportunity\nType of work: [2] job\nPost address: [3] Street, Sydney\nAccommodation: free for the first [4]\nName: Jennifer [5]\nCurrent address: [6] Road, Auckland\nPostcode: [7]\nMailing date: [8]",
+		"html": "<h3>Enquiry about Airmail<br><br>Reasons for moving:</h3><ul><li>Family reunion</li><li>Pleasant  [1]</li><li>Job opportunity</li></ul><p>Type of work:  [2]   job</p><p>Post address:  [3]  Street, Sydney</p><p>Accommodation: free for the first  [4]</p><p>Name: Jennifer [5]</p><p>Current address: [6]  Road, Auckland</p><p>Postcode:  [7]</p><p>Mailing date:  [8]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-8",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Enquiry about Airmail\nReasons for moving:\nFamily reunion\nPleasant [1]\nJob opportunity\nType of work: [2] job\nPost address: [3] Street, Sydney\nAccommodation: free for the first [4]\nName: Jennifer [5]\nCurrent address: [6] Road, Auckland\nPostcode: [7]\nMailing date: [8]",
+			"body_html": "<h3>Enquiry about Airmail<br><br>Reasons for moving:</h3><ul><li>Family reunion</li><li>Pleasant  [1]</li><li>Job opportunity</li></ul><p>Type of work:  [2]   job</p><p>Post address:  [3]  Street, Sydney</p><p>Accommodation: free for the first  [4]</p><p>Name: Jennifer [5]</p><p>Current address: [6]  Road, Auckland</p><p>Postcode:  [7]</p><p>Mailing date:  [8]</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Pleasant [1]",
+					"answer": "weather",
+					"explanation": "Hello? Jennifer speaking.\nHello Jennifer. My name's Ben Smith. I'm from the New Zealand Post Office Service.\nI understand you left a couple of questions on our website forum.\nSeeing as though you left your phone number as a contact, I thought you might prefer us to call.\nOh Ben! Its nice to speak to you again. I really appreciate your help last month.\nYes, as I will be moving to Australia soon and need to send some of my things via airmail, I just wasn't sure how to get my mail redirected.\nI can help you with that.\nIt’s interesting that I recently got more inquiries about international mailing due to migration to other countries. May I ask why you are moving?\n{Umm. . . There are a few reasons such as I have family in Australia and the weather there is warmer, but mainly because it hard to find a job here ][1]}.\nI have just got the news that I was successful in applying for a job in Australia! I'll be starting in November.\nHow exciting, congratulations! I have never been to Australia, but I've heard it's a nice place. Is it a permanent job?\n{No, I will only be working for that company as a temporary assistant over this summer ][2]}.\nYou never know I might get homesick and want to come back after a few months anyway!\nI hope the job goes well for you. What postal address will you be using in Australia?\nI had organized some accommodation at a hostel in Sydney for the first week,{but that fell through, so I will stay at my friend's house until I find somewhere else. My things will have to be sent to her place for now and the address is 9 Queen Street, Sydney ][3]}.\nCan I know how long you will be staying there? We want to make sure you get your mail while you are there.\n{I will be staying there for the first two months ][4]}. You know, it's free staying with her.\nThat’s nice! Now, I've got a couple more questions for you. What is your full name and current address?\nMy name is Jennifer Simmons.\n\nHow do you spell your surname, please?\n{It's S-I-M-M-O-N-S ][5]}.\nGot that. And your address, please?\n{Oh, right. I'm currently living at 16 Ocean Road, Auckland ][6]}.\nAnd your postcode?\n{It's 0245.\nThat doesn't come up in our system as a valid postcode. Can you check that again, please?\nYes, sorry! I'm not good at remembering numbers. It's 0425 [7]}.\nWhen would you like your things to be air mailed?\n{I will leave New Zealand on the 23rd of September, but I will try to send them on the 22nd ][8]}.\nso that's the day before. How long will it take for my things to get to Australia?\nIt will take about a week.",
+					"quotes": [
+						"There are a few reasons such as I have family in Australia and the weather there is warmer, but mainly because it hard to find a job here ."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Type of work: [2] job",
+					"answer": "temporary",
+					"explanation": "Hello? Jennifer speaking.\nHello Jennifer. My name's Ben Smith. I'm from the New Zealand Post Office Service.\nI understand you left a couple of questions on our website forum.\nSeeing as though you left your phone number as a contact, I thought you might prefer us to call.\nOh Ben! Its nice to speak to you again. I really appreciate your help last month.\nYes, as I will be moving to Australia soon and need to send some of my things via airmail, I just wasn't sure how to get my mail redirected.\nI can help you with that.\nIt’s interesting that I recently got more inquiries about international mailing due to migration to other countries. May I ask why you are moving?\n{Umm. . . There are a few reasons such as I have family in Australia and the weather there is warmer, but mainly because it hard to find a job here ][1]}.\nI have just got the news that I was successful in applying for a job in Australia! I'll be starting in November.\nHow exciting, congratulations! I have never been to Australia, but I've heard it's a nice place. Is it a permanent job?\n{No, I will only be working for that company as a temporary assistant over this summer ][2]}.\nYou never know I might get homesick and want to come back after a few months anyway!\nI hope the job goes well for you. What postal address will you be using in Australia?\nI had organized some accommodation at a hostel in Sydney for the first week,{but that fell through, so I will stay at my friend's house until I find somewhere else. My things will have to be sent to her place for now and the address is 9 Queen Street, Sydney ][3]}.\nCan I know how long you will be staying there? We want to make sure you get your mail while you are there.\n{I will be staying there for the first two months ][4]}. You know, it's free staying with her.\nThat’s nice! Now, I've got a couple more questions for you. What is your full name and current address?\nMy name is Jennifer Simmons.\n\nHow do you spell your surname, please?\n{It's S-I-M-M-O-N-S ][5]}.\nGot that. And your address, please?\n{Oh, right. I'm currently living at 16 Ocean Road, Auckland ][6]}.\nAnd your postcode?\n{It's 0245.\nThat doesn't come up in our system as a valid postcode. Can you check that again, please?\nYes, sorry! I'm not good at remembering numbers. It's 0425 [7]}.\nWhen would you like your things to be air mailed?\n{I will leave New Zealand on the 23rd of September, but I will try to send them on the 22nd ][8]}.\nso that's the day before. How long will it take for my things to get to Australia?\nIt will take about a week.",
+					"quotes": [
+						"No, I will only be working for that company as a temporary assistant over this summer ."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Post address: [3] Street, Sydney",
+					"answer": "9 Queen",
+					"explanation": "Hello? Jennifer speaking.\nHello Jennifer. My name's Ben Smith. I'm from the New Zealand Post Office Service.\nI understand you left a couple of questions on our website forum.\nSeeing as though you left your phone number as a contact, I thought you might prefer us to call.\nOh Ben! Its nice to speak to you again. I really appreciate your help last month.\nYes, as I will be moving to Australia soon and need to send some of my things via airmail, I just wasn't sure how to get my mail redirected.\nI can help you with that.\nIt’s interesting that I recently got more inquiries about international mailing due to migration to other countries. May I ask why you are moving?\n{Umm. . . There are a few reasons such as I have family in Australia and the weather there is warmer, but mainly because it hard to find a job here ][1]}.\nI have just got the news that I was successful in applying for a job in Australia! I'll be starting in November.\nHow exciting, congratulations! I have never been to Australia, but I've heard it's a nice place. Is it a permanent job?\n{No, I will only be working for that company as a temporary assistant over this summer ][2]}.\nYou never know I might get homesick and want to come back after a few months anyway!\nI hope the job goes well for you. What postal address will you be using in Australia?\nI had organized some accommodation at a hostel in Sydney for the first week,{but that fell through, so I will stay at my friend's house until I find somewhere else. My things will have to be sent to her place for now and the address is 9 Queen Street, Sydney ][3]}.\nCan I know how long you will be staying there? We want to make sure you get your mail while you are there.\n{I will be staying there for the first two months ][4]}. You know, it's free staying with her.\nThat’s nice! Now, I've got a couple more questions for you. What is your full name and current address?\nMy name is Jennifer Simmons.\n\nHow do you spell your surname, please?\n{It's S-I-M-M-O-N-S ][5]}.\nGot that. And your address, please?\n{Oh, right. I'm currently living at 16 Ocean Road, Auckland ][6]}.\nAnd your postcode?\n{It's 0245.\nThat doesn't come up in our system as a valid postcode. Can you check that again, please?\nYes, sorry! I'm not good at remembering numbers. It's 0425 [7]}.\nWhen would you like your things to be air mailed?\n{I will leave New Zealand on the 23rd of September, but I will try to send them on the 22nd ][8]}.\nso that's the day before. How long will it take for my things to get to Australia?\nIt will take about a week.",
+					"quotes": [
+						"My things will have to be sent to her place for now and the address is 9 Queen Street, Sydney ."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Accommodation: free for the first [4]",
+					"answer": "2 months",
+					"explanation": "Hello? Jennifer speaking.\nHello Jennifer. My name's Ben Smith. I'm from the New Zealand Post Office Service.\nI understand you left a couple of questions on our website forum.\nSeeing as though you left your phone number as a contact, I thought you might prefer us to call.\nOh Ben! Its nice to speak to you again. I really appreciate your help last month.\nYes, as I will be moving to Australia soon and need to send some of my things via airmail, I just wasn't sure how to get my mail redirected.\nI can help you with that.\nIt’s interesting that I recently got more inquiries about international mailing due to migration to other countries. May I ask why you are moving?\n{Umm. . . There are a few reasons such as I have family in Australia and the weather there is warmer, but mainly because it hard to find a job here ][1]}.\nI have just got the news that I was successful in applying for a job in Australia! I'll be starting in November.\nHow exciting, congratulations! I have never been to Australia, but I've heard it's a nice place. Is it a permanent job?\n{No, I will only be working for that company as a temporary assistant over this summer ][2]}.\nYou never know I might get homesick and want to come back after a few months anyway!\nI hope the job goes well for you. What postal address will you be using in Australia?\nI had organized some accommodation at a hostel in Sydney for the first week,{but that fell through, so I will stay at my friend's house until I find somewhere else. My things will have to be sent to her place for now and the address is 9 Queen Street, Sydney ][3]}.\nCan I know how long you will be staying there? We want to make sure you get your mail while you are there.\n{I will be staying there for the first two months ][4]}. You know, it's free staying with her.\nThat’s nice! Now, I've got a couple more questions for you. What is your full name and current address?\nMy name is Jennifer Simmons.\n\nHow do you spell your surname, please?\n{It's S-I-M-M-O-N-S ][5]}.\nGot that. And your address, please?\n{Oh, right. I'm currently living at 16 Ocean Road, Auckland ][6]}.\nAnd your postcode?\n{It's 0245.\nThat doesn't come up in our system as a valid postcode. Can you check that again, please?\nYes, sorry! I'm not good at remembering numbers. It's 0425 [7]}.\nWhen would you like your things to be air mailed?\n{I will leave New Zealand on the 23rd of September, but I will try to send them on the 22nd ][8]}.\nso that's the day before. How long will it take for my things to get to Australia?\nIt will take about a week.",
+					"quotes": ["I will be staying there for the first two months ."]
+				},
+				{
+					"number": 5,
+					"text": "Name: Jennifer [5]",
+					"answer": "Simmons",
+					"explanation": "Hello? Jennifer speaking.\nHello Jennifer. My name's Ben Smith. I'm from the New Zealand Post Office Service.\nI understand you left a couple of questions on our website forum.\nSeeing as though you left your phone number as a contact, I thought you might prefer us to call.\nOh Ben! Its nice to speak to you again. I really appreciate your help last month.\nYes, as I will be moving to Australia soon and need to send some of my things via airmail, I just wasn't sure how to get my mail redirected.\nI can help you with that.\nIt’s interesting that I recently got more inquiries about international mailing due to migration to other countries. May I ask why you are moving?\n{Umm. . . There are a few reasons such as I have family in Australia and the weather there is warmer, but mainly because it hard to find a job here ][1]}.\nI have just got the news that I was successful in applying for a job in Australia! I'll be starting in November.\nHow exciting, congratulations! I have never been to Australia, but I've heard it's a nice place. Is it a permanent job?\n{No, I will only be working for that company as a temporary assistant over this summer ][2]}.\nYou never know I might get homesick and want to come back after a few months anyway!\nI hope the job goes well for you. What postal address will you be using in Australia?\nI had organized some accommodation at a hostel in Sydney for the first week,{but that fell through, so I will stay at my friend's house until I find somewhere else. My things will have to be sent to her place for now and the address is 9 Queen Street, Sydney ][3]}.\nCan I know how long you will be staying there? We want to make sure you get your mail while you are there.\n{I will be staying there for the first two months ][4]}. You know, it's free staying with her.\nThat’s nice! Now, I've got a couple more questions for you. What is your full name and current address?\nMy name is Jennifer Simmons.\n\nHow do you spell your surname, please?\n{It's S-I-M-M-O-N-S ][5]}.\nGot that. And your address, please?\n{Oh, right. I'm currently living at 16 Ocean Road, Auckland ][6]}.\nAnd your postcode?\n{It's 0245.\nThat doesn't come up in our system as a valid postcode. Can you check that again, please?\nYes, sorry! I'm not good at remembering numbers. It's 0425 [7]}.\nWhen would you like your things to be air mailed?\n{I will leave New Zealand on the 23rd of September, but I will try to send them on the 22nd ][8]}.\nso that's the day before. How long will it take for my things to get to Australia?\nIt will take about a week.",
+					"quotes": ["My name is Jennifer Simmons."]
+				},
+				{
+					"number": 6,
+					"text": "Current address: [6] Road, Auckland",
+					"answer": "16 Ocean",
+					"explanation": "Hello? Jennifer speaking.\nHello Jennifer. My name's Ben Smith. I'm from the New Zealand Post Office Service.\nI understand you left a couple of questions on our website forum.\nSeeing as though you left your phone number as a contact, I thought you might prefer us to call.\nOh Ben! Its nice to speak to you again. I really appreciate your help last month.\nYes, as I will be moving to Australia soon and need to send some of my things via airmail, I just wasn't sure how to get my mail redirected.\nI can help you with that.\nIt’s interesting that I recently got more inquiries about international mailing due to migration to other countries. May I ask why you are moving?\n{Umm. . . There are a few reasons such as I have family in Australia and the weather there is warmer, but mainly because it hard to find a job here ][1]}.\nI have just got the news that I was successful in applying for a job in Australia! I'll be starting in November.\nHow exciting, congratulations! I have never been to Australia, but I've heard it's a nice place. Is it a permanent job?\n{No, I will only be working for that company as a temporary assistant over this summer ][2]}.\nYou never know I might get homesick and want to come back after a few months anyway!\nI hope the job goes well for you. What postal address will you be using in Australia?\nI had organized some accommodation at a hostel in Sydney for the first week,{but that fell through, so I will stay at my friend's house until I find somewhere else. My things will have to be sent to her place for now and the address is 9 Queen Street, Sydney ][3]}.\nCan I know how long you will be staying there? We want to make sure you get your mail while you are there.\n{I will be staying there for the first two months ][4]}. You know, it's free staying with her.\nThat’s nice! Now, I've got a couple more questions for you. What is your full name and current address?\nMy name is Jennifer Simmons.\n\nHow do you spell your surname, please?\n{It's S-I-M-M-O-N-S ][5]}.\nGot that. And your address, please?\n{Oh, right. I'm currently living at 16 Ocean Road, Auckland ][6]}.\nAnd your postcode?\n{It's 0245.\nThat doesn't come up in our system as a valid postcode. Can you check that again, please?\nYes, sorry! I'm not good at remembering numbers. It's 0425 [7]}.\nWhen would you like your things to be air mailed?\n{I will leave New Zealand on the 23rd of September, but I will try to send them on the 22nd ][8]}.\nso that's the day before. How long will it take for my things to get to Australia?\nIt will take about a week.",
+					"quotes": ["I’m currently living at 16 Ocean Road, Auckland ."]
+				},
+				{
+					"number": 7,
+					"text": "Postcode: [7]",
+					"answer": "0425",
+					"explanation": "Hello? Jennifer speaking.\nHello Jennifer. My name's Ben Smith. I'm from the New Zealand Post Office Service.\nI understand you left a couple of questions on our website forum.\nSeeing as though you left your phone number as a contact, I thought you might prefer us to call.\nOh Ben! Its nice to speak to you again. I really appreciate your help last month.\nYes, as I will be moving to Australia soon and need to send some of my things via airmail, I just wasn't sure how to get my mail redirected.\nI can help you with that.\nIt’s interesting that I recently got more inquiries about international mailing due to migration to other countries. May I ask why you are moving?\n{Umm. . . There are a few reasons such as I have family in Australia and the weather there is warmer, but mainly because it hard to find a job here ][1]}.\nI have just got the news that I was successful in applying for a job in Australia! I'll be starting in November.\nHow exciting, congratulations! I have never been to Australia, but I've heard it's a nice place. Is it a permanent job?\n{No, I will only be working for that company as a temporary assistant over this summer ][2]}.\nYou never know I might get homesick and want to come back after a few months anyway!\nI hope the job goes well for you. What postal address will you be using in Australia?\nI had organized some accommodation at a hostel in Sydney for the first week,{but that fell through, so I will stay at my friend's house until I find somewhere else. My things will have to be sent to her place for now and the address is 9 Queen Street, Sydney ][3]}.\nCan I know how long you will be staying there? We want to make sure you get your mail while you are there.\n{I will be staying there for the first two months ][4]}. You know, it's free staying with her.\nThat’s nice! Now, I've got a couple more questions for you. What is your full name and current address?\nMy name is Jennifer Simmons.\n\nHow do you spell your surname, please?\n{It's S-I-M-M-O-N-S ][5]}.\nGot that. And your address, please?\n{Oh, right. I'm currently living at 16 Ocean Road, Auckland ][6]}.\nAnd your postcode?\n{It's 0245.\nThat doesn't come up in our system as a valid postcode. Can you check that again, please?\nYes, sorry! I'm not good at remembering numbers. It's 0425 [7]}.\nWhen would you like your things to be air mailed?\n{I will leave New Zealand on the 23rd of September, but I will try to send them on the 22nd ][8]}.\nso that's the day before. How long will it take for my things to get to Australia?\nIt will take about a week.",
+					"quotes": ["It’s 0425."]
+				},
+				{
+					"number": 8,
+					"text": "Mailing date: [8]",
+					"answer": "22nd September / 22 September / September 22 / September 22nd",
+					"explanation": "Hello? Jennifer speaking.\nHello Jennifer. My name's Ben Smith. I'm from the New Zealand Post Office Service.\nI understand you left a couple of questions on our website forum.\nSeeing as though you left your phone number as a contact, I thought you might prefer us to call.\nOh Ben! Its nice to speak to you again. I really appreciate your help last month.\nYes, as I will be moving to Australia soon and need to send some of my things via airmail, I just wasn't sure how to get my mail redirected.\nI can help you with that.\nIt’s interesting that I recently got more inquiries about international mailing due to migration to other countries. May I ask why you are moving?\n{Umm. . . There are a few reasons such as I have family in Australia and the weather there is warmer, but mainly because it hard to find a job here ][1]}.\nI have just got the news that I was successful in applying for a job in Australia! I'll be starting in November.\nHow exciting, congratulations! I have never been to Australia, but I've heard it's a nice place. Is it a permanent job?\n{No, I will only be working for that company as a temporary assistant over this summer ][2]}.\nYou never know I might get homesick and want to come back after a few months anyway!\nI hope the job goes well for you. What postal address will you be using in Australia?\nI had organized some accommodation at a hostel in Sydney for the first week,{but that fell through, so I will stay at my friend's house until I find somewhere else. My things will have to be sent to her place for now and the address is 9 Queen Street, Sydney ][3]}.\nCan I know how long you will be staying there? We want to make sure you get your mail while you are there.\n{I will be staying there for the first two months ][4]}. You know, it's free staying with her.\nThat’s nice! Now, I've got a couple more questions for you. What is your full name and current address?\nMy name is Jennifer Simmons.\n\nHow do you spell your surname, please?\n{It's S-I-M-M-O-N-S ][5]}.\nGot that. And your address, please?\n{Oh, right. I'm currently living at 16 Ocean Road, Auckland ][6]}.\nAnd your postcode?\n{It's 0245.\nThat doesn't come up in our system as a valid postcode. Can you check that again, please?\nYes, sorry! I'm not good at remembering numbers. It's 0425 [7]}.\nWhen would you like your things to be air mailed?\n{I will leave New Zealand on the 23rd of September, but I will try to send them on the 22nd ][8]}.\nso that's the day before. How long will it take for my things to get to Australia?\nIt will take about a week.",
+					"quotes": [
+						"I will leave New Zealand on the 23rd of September, but I will try to send them on the 22nd ."
+					]
+				}
+			]
+		},
+		{
+			"range": "9-10",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E. Which TWO items will be sent to Australia?",
+			"questions": [
+				{
+					"number": 9,
+					"text": "Choose TWO letters, A-E. Which TWO items will be sent to Australia?",
+					"options": [
+						{
+							"label": "A",
+							"text": "files"
+						},
+						{
+							"label": "B",
+							"text": "medicine"
+						},
+						{
+							"label": "C",
+							"text": "music instrument"
+						},
+						{
+							"label": "D",
+							"text": "diving equipment"
+						},
+						{
+							"label": "E",
+							"text": "books"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 10,
+					"text": "Choose TWO letters, A-E. Which TWO items will be sent to Australia?",
+					"options": [
+						{
+							"label": "A",
+							"text": "files"
+						},
+						{
+							"label": "B",
+							"text": "medicine"
+						},
+						{
+							"label": "C",
+							"text": "music instrument"
+						},
+						{
+							"label": "D",
+							"text": "diving equipment"
+						},
+						{
+							"label": "E",
+							"text": "books"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,143 @@
+{
+	"id": "3fe788e9-eb25-4051-9fb4-c99b9739e1b0",
+	"url": "https://stepielts.com/student/listening/3fe788e9-eb25-4051-9fb4-c99b9739e1b0?mode=practice",
+	"title": "Tea Tree Oil",
+	"source": "Forecast Quý 2-2025",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/4362b6ff-c3f4-44aa-9bc5-c053fe472f6a.mp3",
+	"transcript": "Speaker 1: Good morning. Today, we will explore the gradual global recognition and production process of tea tree oil. Tea tree essential oil is renowned for its powerful, purifying properties, and it’s used as a type of traditional medicine in Australia. For thousands of years, Aborigines have traditionally utilized tea tree leaves for various medicinal purposes. This includes chewing young leaves to alleviate headaches and treat other ailments. The early Dutch explorers observed these practices and reported them back to their homeland, with written records documenting these indigenous uses. The name \"tea tree\" was given by the British navigator Captain James Cook during his voyage of discovery along the eastern coast of Australia in 1770. After landing at Botany Bay, near present-day Sydney, Cook journeyed north through the coastal regions of New South Wales. There, he encountered extensive groves of trees with sticky, aromatic leaves. Observing the local Aboriginal people drinking the oil made with the leaves, inspired Cook to name these trees \"tea trees\". Despite the local uses, when tea tree oil was first brought to Europe, skepticism about its medicinal benefits was common. One notable skeptic was Sir Hugh Palliser, a Royal Navy officer, who doubted the claims made by the Aborigines and dismissed the plant as useless. Nonetheless, over time, more Europeans began to experiment with tea tree oil, and its therapeutic properties gained recognition and acceptance. In 1923, Dr. A.R. Penfold, curator and chemist at the Government Museum of Technology and Applied Sciences in Sydney, Australia, conducted a study of the leaves of the tea tree. He discovered that the oil from the crushed leaves yields an oil of pale lemon tint, with a pleasant odor. He was credited for beginning the human clinical research and documentation of the many benefits associated with tea tree oil. So, how is tea tree oil produced? Well, tea tree oil is derived from the tea tree plant, which is native to Australia. During winter, a tea tree accumulates a variety of useful substances, which contribute to the formation of oil that is stored within the plant itself. This oil cannot be reproduced; it is solely a product of nature. This oil is derived from the tea tree through a process of steam distillation. So, some equipment is needed, for example, a pot and vegetable steamers. In the first step, tea tree leaves are put in the pot along with the stems. Then enough water should be poured into the pot to cover them. Then a vegetable steamer should be put on the pot over the leaves and water, so that there is now a flat surface covering the watered leaves. After that a measuring cup will be put in the center of the steamer and the lid of the pot should be put upside down to collect the steam. When the water is boiled, the water will begin to evaporate, so the vapor and oil will rise up to the lid of the pot. Because the lid is upside down, so the handle is centered over the top of the measuring cup. This allows the vapor and oil to drip into the glass measuring cup because of the principle of gravity. The burner is turned off once the liquid is all collected in the measuring cup. Then the cup should be removed from the pot and the contents of the cup should be poured into a separating funnel. When the content is shaken vigorously, the oil will float to the top of the water, resulting in its separation. Then a tube is connected to the funnel to release the water to the ground through the tube. In this way, the separated oil can be collected and stored. This traditional method of steam distillation is used to produce tea tree oil, ensuring its 100% natural composition.",
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MATCHING_NAMES",
+			"instructions": "What did each of the following people do?",
+			"options": [
+				{
+					"label": "A",
+					"text": "brought tea tree oil into Australia in 1770"
+				},
+				{
+					"label": "B",
+					"text": "challenged the benefit of tea tree oil"
+				},
+				{
+					"label": "C",
+					"text": "reported the special remedy developed by the Aborigines"
+				},
+				{
+					"label": "D",
+					"text": "listed plant species"
+				},
+				{
+					"label": "E",
+					"text": "studied the tea tree oil"
+				},
+				{
+					"label": "F",
+					"text": "saw Australia aborigines drink tree oil"
+				},
+				{
+					"label": "G",
+					"text": "used tea trees for medical treatment"
+				}
+			],
+			"body": "Aborigines [1]\nDutch explorers [2]\nCaptain James Cook [3]\nSir Hugh Palliser [4]\nDr. A. R. Penfold [5]",
+			"body_html": "<p>Aborigines [1]</p><p>Dutch explorers [2]</p><p>Captain James Cook [3]</p><p>Sir Hugh Palliser [4]</p><p>Dr. A. R. Penfold [5]</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Aborigines",
+					"answer": "G",
+					"quotes": [
+						"For thousands of years, Aborigines have traditionally utilized tea tree leaves for various medicinal purposes."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Dutch explorers",
+					"answer": "C",
+					"quotes": [
+						"The early Dutch explorers observed these practices and reported them back to their homeland, with written records documenting these indigenous uses."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Captain James Cook",
+					"answer": "F",
+					"quotes": [
+						"Observing the local Aboriginal people drinking the oil made with the leaves, inspired Cook to name these trees \"tea trees\"."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Sir Hugh Palliser",
+					"answer": "B",
+					"quotes": [
+						"One notable skeptic was Sir Hugh Palliser, a Royal Navy officer, who doubted the claims made by the Aborigines and dismissed the plant as useless."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Dr. A. R. Penfold",
+					"answer": "E",
+					"quotes": [
+						"Penfold, curator and chemist at the Government Museum of Technology and Applied Sciences in Sydney, Australia, conducted a study of the leaves of the tea tree.",
+						"He was credited for beginning the human clinical research and documentation of the many benefits associated with tea tree oil."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "Process of tea tree oil production\nTea trees will store oil during [6]\nLeaves and [7] should be put in the pot.\nThe water and the oil vapor rise up to the [8] of the container.\nThe vapor and oil will drip in the collecting container due to the principle of [9]\nThe water is drained off through a tube onto the [10]",
+			"body_html": "<h2>Process of tea tree oil production</h2><p>Tea trees will store oil during [6] </p><p>Leaves and [7] should be put in the pot.</p><p>The water and the oil vapor rise up to the [8] of the container.</p><p>The vapor and oil will drip in the collecting container due to the principle of [9]</p><p>The water is drained off through a tube onto the [10]</p>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Tea trees will store oil during [6]",
+					"answer": "winter",
+					"quotes": [
+						"During winter, a tea tree accumulates a variety of useful substances, which contribute to the formation of oil that is stored within the plant itself."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Leaves and [7] should be put in the pot.",
+					"answer": "stems",
+					"quotes": [
+						"In the first step, tea tree leaves are put in the pot along with the stems."
+					]
+				},
+				{
+					"number": 8,
+					"text": "The water and the oil vapor rise up to the [8] of the container.",
+					"answer": "lid",
+					"quotes": [
+						"When the water is boiled, the water will begin to evaporate, so the vapor and oil will rise up to the lid of the pot."
+					]
+				},
+				{
+					"number": 9,
+					"text": "The vapor and oil will drip in the collecting container due to the principle of [9]",
+					"answer": "gravity",
+					"quotes": [
+						"This allows the vapor and oil to drip into the glass measuring cup because of the principle of gravity."
+					]
+				},
+				{
+					"number": 10,
+					"text": "The water is drained off through a tube onto the [10]",
+					"answer": "ground",
+					"quotes": [
+						"Then a tube is connected to the funnel to release the water to the ground through the tube."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

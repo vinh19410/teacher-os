@@ -1,0 +1,241 @@
+{
+	"id": "d1403718-2d34-47ba-abc6-7889d942c4f9",
+	"url": "https://stepielts.com/student/listening/d1403718-2d34-47ba-abc6-7889d942c4f9?mode=practice",
+	"title": "Course Feedback",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/d45992d4-3a87-4824-be4a-a9007a6f0b1d.mp3",
+	"transcript": "Speaker 1: Teacher: Before we start, Spiros and Hiroko, thanks for coming in today to talk about your recent study experiences, and congratulations to you both in doing so well in your first semester exams.\nSpeaker 2: Spiros: Thank you.\nSpeaker 1: Teacher: I’d like to discuss with you the value of the English for academic purposes course you did here last year before starting your university course. Spiros, if I could start with you, what parts of the program have now proved to be particularly valuable to you?Spiros: I think that having to do a seminar presentation really helped me.\nSpeaker 2: For example, a couple of weeks ago in our marketing subject, when it was my turn to give a presentation, I felt quite confident. Of course, I was still nervous, but because I had done one before, I knew what to expect. Also, I know I was well prepared and I had practiced my timing. In fact, I think that in relation to some of the other people in my group, I did quite a job because my overall style was quite professional. What about you, Hiroko?\nSpeaker 3: Hiroko: That’s interesting. In my group, I was really surprised by the way the students did their presentations. They just read their notes aloud. Can you believe that? They didn’t worry about their presentation style or keeping eye contact with their audience, and I remember that these things were really stressed to us in the course here.\nSpeaker 1: Teacher: So how did you approach your presentation, Hiroko?\nSpeaker 3: Hiroko: Well, to speak frankly, I read my notes too. At the time, it was a relief to do it this way, but actually when I had finished, I didn’t feel any real sense of satisfaction. I didn’t feel positive about the experience at all. Spiros: That’s a pity.\nSpeaker 2: You know, although I was pleased with my presentation, I am not so pleased with my actual performance right now in the tutorials. During the whole semester, I’ve not said anything in our tutorial discussions. Not a word.\nSpeaker 3: Hiroko: Really, Spiros? Why is that? Do the other students talk too much?\nSpeaker 2: Spiros: It’s partly that, but it’s mostly because I have had no confidence to speak out. Their style of speaking is so different. It’s not the style we were used to during the course. They use so many colloquialisms. They’re not very polite and sometimes there seems to be no order in their discussion. Also, they are very familiar with each other. So because they know each other’s habits, they can let each other into the discussion.\nSpeaker 3: Hiroko: You’re right, Spiros. I’ve experienced that too. Hiroko: For most of this semester, I’ve said absolutely nothing in tutorials. But recently, I’ve been trying to speak up more, and I just jump in, and I’ve noticed an interesting thing. I’ve noticed that if they thought my point was interesting or new, then the next time they actually asked for my opinion, and then it was much easier for me to be part of the discussion.\nSpeaker 2: Spiros: That’s great, Hiroko. I hope that happens for me next semester. I’ll have to work hard to find some interesting points. What helped you to find these ideas?\nSpeaker 3: Hiroko: I think that one thing that helped me with this was the reading. I’ve had to do so much reading this semester just to help me make sense of the lectures. At first I couldn’t understand what the lectures were talking about, so I had to turn to the books and journals. Every night I read for hours using the lists of references that were given, and I made pages of notes. At breakfast I read and read my notes again. This habit has helped me to follow the ideas in the lectures, and it’s also given me some ideas to use in the tutorials.\nSpeaker 2: Spiros: But I did so much reading anyway. I don’t think there’s any time left over for anything extra. My reading speed is still quite slow, though I’m much better at dealing with vocabulary than I used to be.Teacher: What else do you think we could add to the course program to help with this reading problem? Spiros: There’s not really anything because it’s my problem. I remember we were given long articles to read. We didn’t like that, but now I realize that reading those long articles was good preparation for the things I need to read now. Also, in class, we regularly had speed reading tasks to do and we kept a record of our reading speed. So the teachers were encouraging us to work on that.\nSpeaker 3: Hiroko: That’s true, Spiros, but what we read could have been different. Sometimes in the English class, I felt frustrated when I had to read articles about the environment or health or education because I wanted to concentrate on my own field, but we didn’t read anything about engineering. So I think I wasted some time learning vocabulary I didn’t need.\nSpeaker 1: Teacher: But surely the strategies you were taught for dealing with that vocabulary were helpful?\nSpeaker 3: Hiroko: Yes. But psychologically speaking, I would have felt much better working on reading from my own field. What do you think, Spiros?\nSpeaker 2: Spiros: Oh, I agree. That would have helped my confidence too, and I would have been more motivated. It was good, though, that we could work on our own topics when we wrote the research assignments.Teacher: Okay.\nSpeaker 1: Let’s move on to writing now…",
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "One reason why Spiros felt happy about his marketing presentation was that",
+					"options": [
+						{
+							"label": "A",
+							"text": "he was not nervous."
+						},
+						{
+							"label": "B",
+							"text": "his style was good."
+						},
+						{
+							"label": "C",
+							"text": "the presentation was the best in his group."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"In fact, I think that in relation to some of the other people in my group, I did quite a job because my overall style was quite professional."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What surprised Hiroko about the other students' presentations?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Their presentations were not interesting."
+						},
+						{
+							"label": "B",
+							"text": "They found their presentations stressful."
+						},
+						{
+							"label": "C",
+							"text": "They didn't look at the audience enough."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"They didn’t worry about their presentation style or keeping eye contact with their audience, and I remember that these things were really stressed to us in the course here."
+					]
+				},
+				{
+					"number": 3,
+					"text": "After she gave her presentation, Hiroko felt",
+					"options": [
+						{
+							"label": "A",
+							"text": "delighted"
+						},
+						{
+							"label": "B",
+							"text": "dissatisfied"
+						},
+						{
+							"label": "C",
+							"text": "embarrassed"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"At the time, it was a relief to do it this way, but actually when I had finished, I didn’t feel any real sense of satisfaction. I didn’t feel positive about the experience at all. Spiros: That’s a pity."
+					]
+				},
+				{
+					"number": 4,
+					"text": "How does Spiros feel about his performance in tutorials?",
+					"options": [
+						{
+							"label": "A",
+							"text": "not very happy"
+						},
+						{
+							"label": "B",
+							"text": "really pleased"
+						},
+						{
+							"label": "C",
+							"text": "fairly confident"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"You know, although I was pleased with my presentation, I am not so pleased with my actual performance right now in the tutorials."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Why can the other students participate so easily in discussions?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They are polite to each other."
+						},
+						{
+							"label": "B",
+							"text": "They agree to take turns in speaking."
+						},
+						{
+							"label": "C",
+							"text": "They know each other well."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Also, they are very familiar with each other. So because they know each other’s habits, they can let each other into the discussion."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Why is Hiroko feeling more positive about tutorials now?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She finds the other students’ opinions more interesting."
+						},
+						{
+							"label": "B",
+							"text": "She is making more of a contribution."
+						},
+						{
+							"label": "C",
+							"text": "The tutor includes her in the discussion."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But recently, I’ve been trying to speak up more, and I just jump in, and I’ve noticed an interesting thing. I’ve noticed that if they thought my point was interesting or new, then the next time they actually asked for my opinion, and then it was much easier for me to be part of the discussion."
+					]
+				},
+				{
+					"number": 7,
+					"text": "To help her understand lectures, Hiroko",
+					"options": [
+						{
+							"label": "A",
+							"text": "consulted reference materials."
+						},
+						{
+							"label": "B",
+							"text": "had extra tutorials with her lecturers."
+						},
+						{
+							"label": "C",
+							"text": "borrowed lecture notes from other students."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"At first I couldn’t understand what the lectures were talking about, so I had to turn to the books and journals."
+					]
+				},
+				{
+					"number": 8,
+					"text": "What does Spiros think of his reading skills?",
+					"options": [
+						{
+							"label": "A",
+							"text": "He reads faster than he used to."
+						},
+						{
+							"label": "B",
+							"text": "It still takes him a long time to read."
+						},
+						{
+							"label": "C",
+							"text": "He tends to struggle with new vocabulary."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"My reading speed is still quite slow, though I’m much better at dealing with vocabulary than I used to be.Teacher: What else do you think we could add to the course program to help with this reading problem?"
+					]
+				},
+				{
+					"number": 9,
+					"text": "What is Hiroko’s subject area?",
+					"options": [
+						{
+							"label": "A",
+							"text": "environmental studies"
+						},
+						{
+							"label": "B",
+							"text": "health education"
+						},
+						{
+							"label": "C",
+							"text": "engineering"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Sometimes in the English class, I felt frustrated when I had to read articles about the environment or health or education because I wanted to concentrate on my own field, but we didn’t read anything about engineering."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Hiroko thinks that in the reading classes the students should",
+					"options": [
+						{
+							"label": "A",
+							"text": "learn more vocabulary."
+						},
+						{
+							"label": "B",
+							"text": "read more in their own subject areas."
+						},
+						{
+							"label": "C",
+							"text": "develop better reading strategies."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Sometimes in the English class, I felt frustrated when I had to read articles about the environment or health or education because I wanted to concentrate on my own field, but we didn’t read anything about engineering."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

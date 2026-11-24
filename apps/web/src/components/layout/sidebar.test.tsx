@@ -71,6 +71,7 @@ describe("teacherNavForViewer (TOS-17 #451)", () => {
 		);
 		expect(teaching?.items.map((item) => item.key)).toContain("leads");
 		expect(teaching?.items.map((item) => item.key)).toContain("placement-test");
+		expect(teaching?.items.map((item) => item.key)).toContain("courses");
 	});
 
 	it("ẩn Doanh thu và Công nợ khỏi nhóm Kinh doanh khi canAccessFinance = false", () => {
@@ -88,6 +89,7 @@ describe("teacherNavForViewer (TOS-17 #451)", () => {
 		expect(teaching?.items.map((item) => item.key)).not.toContain(
 			"placement-test",
 		);
+		expect(teaching?.items.map((item) => item.key)).not.toContain("courses");
 	});
 });
 
@@ -155,6 +157,7 @@ describe("TEACHER_NAV v2", () => {
 		expect(ITEM_BY_HREF["/dashboard"]?.label).toBe("Tổng quan");
 		expect(ITEM_BY_HREF["/classes"]?.label).toBe("Lớp học");
 		expect(ITEM_BY_HREF["/students"]?.label).toBe("Học viên");
+		expect(ITEM_BY_HREF["/courses"]?.label).toBe("Khóa học");
 		expect(ITEM_BY_HREF["/schedule"]?.label).toBe("Lịch dạy");
 		expect(ITEM_BY_HREF["/assignments"]?.label).toBe("Bài tập");
 		expect(ITEM_BY_HREF["/grading"]?.label).toBe("Chấm bài");
@@ -173,6 +176,21 @@ describe("TEACHER_NAV v2", () => {
 		expect(groupByKey.classes).toBe("Giảng dạy");
 		expect(groupByKey.assignments).toBe("IELTS");
 		expect(groupByKey.grading).toBe("IELTS");
+	});
+
+	it("places 'Khóa học' immediately after 'Bài test đầu vào' in Giảng dạy", () => {
+		const teaching = TEACHER_NAV.find((group) => group.group === "Giảng dạy");
+		const items = teaching?.items ?? [];
+		const placementIdx = items.findIndex(
+			(item) => item.key === "placement-test",
+		);
+		const coursesIdx = items.findIndex((item) => item.key === "courses");
+		expect(coursesIdx).toBe(placementIdx + 1);
+		expect(items[coursesIdx]).toMatchObject({
+			key: "courses",
+			label: "Khóa học",
+			href: "/courses",
+		});
 	});
 
 	it("gates the reports item behind PARENT_REPORTS_ENABLED", () => {
@@ -203,7 +221,19 @@ describe("teacherActiveKey", () => {
 		expect(teacherActiveKey("/grading/a-1")).toBe("grading");
 		expect(teacherActiveKey("/debts")).toBe("debts");
 		expect(teacherActiveKey("/placement-test")).toBe("placement-test");
+		expect(teacherActiveKey("/courses")).toBe("courses");
 		expect(teacherActiveKey("/login")).toBe("");
+	});
+
+	it("strips optional /teacher basepath prefix before matching active nav key", () => {
+		expect(teacherActiveKey("/teacher")).toBe("dashboard");
+		expect(teacherActiveKey("/teacher/")).toBe("dashboard");
+		expect(teacherActiveKey("/teacher/dashboard")).toBe("dashboard");
+		expect(teacherActiveKey("/teacher/classes/abc")).toBe("classes");
+		expect(teacherActiveKey("/teacher/grading/a-1")).toBe("grading");
+		expect(teacherActiveKey("/teacher/profile")).toBe("profile");
+		expect(teacherActiveKey("/teacher/login")).toBe("");
+		expect(teacherActiveKey("/teachers")).toBe("");
 	});
 });
 

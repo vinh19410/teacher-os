@@ -1,0 +1,188 @@
+{
+	"id": "25d0d85d-e50f-474e-b69e-42a9f4d920fa",
+	"url": "https://stepielts.com/student/listening/25d0d85d-e50f-474e-b69e-42a9f4d920fa?mode=practice",
+	"title": "Pacific tapa cloth",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/8de1862f-8649-4641-a2ce-76afe9758cd8.mp3",
+	"transcript": "Speaker 1: Tutor: Come in, Helen. How can I help you?\nSpeaker 2: Helen: Well, I’m doing research for the anthropology assignment and I was hoping to check a few details.\nSpeaker 1: Tutor: Sure. You chose the topic of Pacific Island tapa cloth, didn’t you? What have you found out so far?\nSpeaker 2: Helen: Well, I was going to introduce my assignment by saying that the tapa cloth is a fabric made from bark, just the outer layer of the trees. It’s particularly common in the Pacific Islands, but not exclusive to them. In fact, many other peoples around the world have made high-quality cloth from bark. But what sets Pacific tapa apart is the incredible variety of roles it’s played in this region.\nSpeaker 1: Tutor: Yes, nice introduction. Though I think you could be more specific regarding dates. Okay. So, what about the raw materials used?\nSpeaker 2: Helen: Well, tapa cloth is made from several species of tree. In the Pacific, the paper mulberry tree is most common, but it doesn’t thrive in all conditions. In fact, it wasn’t originally found in the islands, but was carried in the canoes by the first migrants. Tapa is also made from the breadfruit tree, which is convenient because its fruit is a staple food. The paper mulberry tree is only grown for tapa-making, though.\nSpeaker 1: Tutor: Yes, that’s good. Now, what about the Maori people here in New Zealand?\nSpeaker 2: Helen: But the Maori don’t make tapa now.\nSpeaker 1: Tutor: That’s right, and you need to account for it. We know that when Maori migrated here from the other Pacific Islands, they were prepared to make tapa because they brought the paper mulberry tree with them. The thing was, after they’d been in New Zealand a bit, they found the flax plant, which is superior to tapa because it makes a stronger fabric. By the time Europeans arrived in the 18th century, Maori were making all their fabric from flax and had been for some time.\nSpeaker 2: Helen: Okay. So, with the production process itself, first the inner bark is beaten with wooden hammers to soften the fibres. Then the different pieces are glued together using an adhesive paste made from the arrowroot tuber. This is the only way to fabricate large pieces of cloth because bark strands are too fine to be woven together, and stitching isn’t strong enough.\nSpeaker 1: Tutor: So, now you need details about different countries.\nSpeaker 2: Where would you start?\nSpeaker 1: Helen: I think Samoa is the obvious place. It’s famous for its very fine cloth, called siapo, which is hand-painted with representations of the ancestors. Still today, at the most profound events in life such as births, funerals, weddings, and the investiture of chiefs, Samoans wear siapo robes to add significance and meaning to the ceremony.\nSpeaker 2: Tutor: Okay. Then I could talk about Tonga. It seems to me that the great innovation in Tonga has been developing a simple, coarse cloth which is quick and easy to make. This is suitable for all sorts of everyday functions around the house, like bed covers, mosquito nets, and curtains.\nSpeaker 1: Tutor: Good point. Now, what about Cook Islands tapa?\nSpeaker 2: Helen: Well, the soil there is poor quality, so the breadfruit tree is often used. One type of thick cloth called Tikuru was wrapped around the poles and used to mark the entrances to places of worship. So it was highly regarded in local culture.\nSpeaker 1: Tutor: You might mention Fiji as well, which is interesting because tapa was actually used as a currency there. Fijians used to sail between the islands and exchange tapa for other commodities like canoes or pigs.\nSpeaker 2: Helen: I know that in Tahiti, the tapa cloth is different because the patterns are in colour, which is considered more valuable than the usual brown patterns.\nSpeaker 1: Tutor: You’re right about the Tahitians using coloured pigments, but they aren’t more valuable. The colours are only a decoration. People enjoy wearing bright robes, especially for dancing and competitive games, and do it just for fun.\nSpeaker 2: Helen: Oh, I’ll make a note of it. Well, the last place I was going to mention was Tikopia. Even today, it’s commonplace to see people wearing clothes made of tapa cloth. In many of the other islands, the tapa only comes out on special occasions, but here, you see people working in the gardens wearing tapa.\nSpeaker 1: Tutor: Sounds promising, Helen. I’ll look forward to reading your assignment.",
+	"body": {
+		"text": "[5] Samoa\n[6] Tonga\n[7] Cook Islands\n[8] Fiji\n[9] Tahiti\n[10] Tikopia",
+		"html": "<p>[5] Samoa </p><p>[6] Tonga </p><p>[7] Cook Islands</p><p>[8] Fiji </p><p>[9] Tahiti </p><p>[10] Tikopia </p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Pacific tapa cloth is different from other types of tapa cloth because it is",
+					"options": [
+						{
+							"label": "A",
+							"text": "the only tapa made today."
+						},
+						{
+							"label": "B",
+							"text": "better quality than others."
+						},
+						{
+							"label": "C",
+							"text": "put to a wider range of uses."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But what sets Pacific tapa apart is the incredible variety of roles it’s played in this region."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What does Helen say about the paper mulberry tree?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It is also a source of food."
+						},
+						{
+							"label": "B",
+							"text": "It is not native to the Pacific."
+						},
+						{
+							"label": "C",
+							"text": "It can grow in any environment."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"In fact, it wasn’t originally found in the islands, but was carried in the canoes by the first migrants."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Why did Maori people of New Zealand stop making tapa?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They could not find the right trees in New Zealand."
+						},
+						{
+							"label": "B",
+							"text": "They were introduced to other fabrics by the Europeans."
+						},
+						{
+							"label": "C",
+							"text": "They found a better material for making fabric."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The thing was, after they’d been in New Zealand a bit, they found the flax plant, which is superior to tapa because it makes a stronger fabric."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Large pieces of tapa are made from smaller pieces which are",
+					"options": [
+						{
+							"label": "A",
+							"text": "stuck together."
+						},
+						{
+							"label": "B",
+							"text": "woven together."
+						},
+						{
+							"label": "C",
+							"text": "sewn together."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Then the different pieces are glued together using an adhesive paste made from the arrowroot tuber."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "According to the speakers, what function has tapa cloth played in the following countries?\nCountries:",
+			"options": [
+				{
+					"label": "A",
+					"text": "recreational"
+				},
+				{
+					"label": "B",
+					"text": "practical"
+				},
+				{
+					"label": "C",
+					"text": "spiritual"
+				},
+				{
+					"label": "D",
+					"text": "commercial"
+				}
+			],
+			"body": "[5] Samoa\n[6] Tonga\n[7] Cook Islands\n[8] Fiji\n[9] Tahiti\n[10] Tikopia",
+			"body_html": "<p>[5] Samoa </p><p>[6] Tonga </p><p>[7] Cook Islands</p><p>[8] Fiji </p><p>[9] Tahiti </p><p>[10] Tikopia </p>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Samoa",
+					"answer": "C",
+					"quotes": [
+						"It’s famous for its very fine cloth, called siapo, which is hand-painted with representations of the ancestors. Still today, at the most profound events in life such as births, funerals, weddings, and the investiture of chiefs, Samoans wear siapo robes to add significance and meaning to the ceremony."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Tonga",
+					"answer": "B",
+					"quotes": [
+						"It seems to me that the great innovation in Tonga has been developing a simple, coarse cloth which is quick and easy to make. This is suitable for all sorts of everyday functions around the house, like bed covers, mosquito nets, and curtains."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Cook Islands",
+					"answer": "C",
+					"quotes": [
+						"One type of thick cloth called Tikuru was wrapped around the poles and used to mark the entrances to places of worship."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Fiji",
+					"answer": "D",
+					"quotes": [
+						"Tutor: You might mention Fiji as well, which is interesting because tapa was actually used as a currency there. Fijians used to sail between the islands and exchange tapa for other commodities like canoes or pigs."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Tahiti",
+					"answer": "A",
+					"quotes": [
+						"People enjoy wearing bright robes, especially for dancing and competitive games, and do it just for fun."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Tikopia",
+					"answer": "B",
+					"quotes": [
+						"In many of the other islands, the tapa only comes out on special occasions, but here, you see people working in the gardens wearing tapa."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

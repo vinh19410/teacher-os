@@ -1,0 +1,241 @@
+{
+	"id": "dde7b687-ace6-4688-b526-eb9124bfe137",
+	"url": "https://stepielts.com/student/listening/dde7b687-ace6-4688-b526-eb9124bfe137?mode=practice",
+	"title": "A Research on Music",
+	"source": "Forecast Quý 2-2025",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/d8a706ce-feba-4c89-aead-7862ef233be0.mp3",
+	"transcript": "Speaker 1: Hi, Rob. How's your assignment going?\nSpeaker 2: I think it's been going on pretty well, although there are still some problems that I need to figure out.\nSpeaker 1: Let's see if I can help. What are you writing about?\nSpeaker 2: I have a strong passion for music, so I decided to delve into that area. However, I am approaching it from a unique perspective – examining its impact on individuals.\nSpeaker 1: Ah, are you researching how music affects people's health?\nSpeaker 2: No, I am interested in uncovering how music influences people's behavior in restaurants, particularly their choices and spending habits.\nSpeaker 1: That's quite interesting. What have you found out so far?\nSpeaker 2: I've visited a dozen different restaurants. Most of them play some music, but they all have their own strategies. In one restaurant named Shark's Delicacy, they play music in the main hall, the kitchen, even in the restrooms at certain times of the day. In another place called Sam's Café, they play different music but always at the same volume, so you might find the rock too quiet and the country too loud.\nSpeaker 1: Looks like you've been eating out a lot these days! So how are you going to get the information for your own topic?\nSpeaker 2: I'm thinking of using questionnaires. I can distribute them to the guests.\nSpeaker 1: Umm, I'm not sure if the restaurant would be happy with it.\nSpeaker 2: I will talk to the restaurant manager in advance. I've seen other people do that before, it shouldn't be a big problem. What bothers me is whether I can get what I'm looking for from the customers via the questionnaires.\nSpeaker 1: If they already know your intention, then it's hard to get accurate answers. But you can try setting up a few misleading questions in the beginning of the questionnaire. This approach can help obscure the true focus of your survey.\nSpeaker 2: That's a great idea. But I won't be making up all the questions myself, I don't think I will have enough time. I plan to use questionnaires that last year's students made in their studies.\nSpeaker 1: Make some changes and modifications before you use those questions to suit your own research.\nSpeaker 2: I will. Next, I'll have to decide which restaurant to do the research in. Generally, when people choose a restaurant, location and the type of food served are important factors.\nSpeaker 1: Actually neither of those matters in this context. You should choose one that has more competitors around it, making it more typical. If it's the only restaurant of its type in that area, people have no choice but to eat there, you know. And you should probably go for larger ones, say, capable of seating around 100 diners or so, to collect more data.\nSpeaker 2: OK. Do I need to factor in the popularity of restaurants?\nSpeaker 1: Not necessary in this case.\nSpeaker 2: OK. I came across an interesting paper the other day. It gave a general overview of how different types of music affect the people in a specific restaurant. I'm thinking doing a test to see how it works.\nSpeaker 1: Oh, tell me more about it.\nSpeaker 2: For example, the paper mentioned that Jazz apparently makes people relaxed, so they tend to order more food and drinks and stay longer in the restaurant. And if people go to a restaurant where no music is played, the guests often think it's not worth the money, especially the high-end ones.\nSpeaker 1: I agree with this. What about classical music? Does the paper comment about its effect?\nSpeaker 2: Yeah, it says people tend to leave as soon as they finish eating. I guess this type of music may be annoying to some young customers.\nSpeaker 1: I wasn't aware of that. I thought it works better than pop music.\nSpeaker 2: On the contrary, if a restaurant plays pop music, it tends to attract repeat customers, which is good for business.\nSpeaker 1: That's an interesting phenomenon.\nSpeaker 2: We'll see if the test results will be the same with what's described in that paper.",
+	"body": {
+		"text": "jazz music [7]\nno music [8]\nclassical music [9]\npop music [10]",
+		"html": "<p>jazz music [7]</p><p>no music [8]</p><p>classical music [9]</p><p>pop music [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Rob’s research subject is music’s effect",
+					"options": [
+						{
+							"label": "A",
+							"text": "on consumers."
+						},
+						{
+							"label": "B",
+							"text": "on food-making."
+						},
+						{
+							"label": "C",
+							"text": "on people’s health."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"No, I am interested in uncovering how music influences people's behavior in restaurants, particularly their choices and spending habits."
+					]
+				},
+				{
+					"number": 2,
+					"text": "In Sam's cafe, music is played",
+					"options": [
+						{
+							"label": "A",
+							"text": "in different areas."
+						},
+						{
+							"label": "B",
+							"text": "at a uniform level of volume."
+						},
+						{
+							"label": "C",
+							"text": "at certain times."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"In another place called Sam's Café, they play different music but always at the same volume, so you might find the rock too quiet and the country too loud."
+					]
+				},
+				{
+					"number": 3,
+					"text": "What is the purpose of the first several questions in the questionnaire?",
+					"options": [
+						{
+							"label": "A",
+							"text": "collect essential information"
+						},
+						{
+							"label": "B",
+							"text": "get to know the interviewees better"
+						},
+						{
+							"label": "C",
+							"text": "disguise the purpose of the survey"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"This approach can help obscure the true focus of your survey."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Where are the original questions collected from?",
+					"options": [
+						{
+							"label": "A",
+							"text": "a previous study"
+						},
+						{
+							"label": "B",
+							"text": "self-made"
+						},
+						{
+							"label": "C",
+							"text": "a dictionary"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"I plan to use questionnaires that last year's students made in their studies."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-6",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A–E.",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Which TWO kinds of criteria should Rob consider when choosing a restaurant to research?",
+					"options": [
+						{
+							"label": "A",
+							"text": "competitors nearby"
+						},
+						{
+							"label": "B",
+							"text": "location"
+						},
+						{
+							"label": "C",
+							"text": "reputation"
+						},
+						{
+							"label": "D",
+							"text": "the range of dishes"
+						},
+						{
+							"label": "E",
+							"text": "seat capacity"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 6,
+					"text": "Which TWO kinds of criteria should Rob consider when choosing a restaurant to research?",
+					"options": [
+						{
+							"label": "A",
+							"text": "competitors nearby"
+						},
+						{
+							"label": "B",
+							"text": "location"
+						},
+						{
+							"label": "C",
+							"text": "reputation"
+						},
+						{
+							"label": "D",
+							"text": "the range of dishes"
+						},
+						{
+							"label": "E",
+							"text": "seat capacity"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "What is the effect of each of the following kinds of music?",
+			"options": [
+				{
+					"label": "A",
+					"text": "people may think the restaurant is overpriced"
+				},
+				{
+					"label": "B",
+					"text": "people would come back again"
+				},
+				{
+					"label": "C",
+					"text": "people would spend more money"
+				},
+				{
+					"label": "D",
+					"text": "people would eat fast"
+				},
+				{
+					"label": "E",
+					"text": "people would leave right after eating"
+				},
+				{
+					"label": "F",
+					"text": "people would likely make complaints"
+				}
+			],
+			"body": "jazz music [7]\nno music [8]\nclassical music [9]\npop music [10]",
+			"body_html": "<p>jazz music [7]</p><p>no music [8]</p><p>classical music [9]</p><p>pop music [10]</p>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "jazz music",
+					"answer": "C",
+					"quotes": [
+						"For example, the paper mentioned that Jazz apparently makes people relaxed, so they tend to order more food and drinks and stay longer in the restaurant."
+					]
+				},
+				{
+					"number": 8,
+					"text": "no music",
+					"answer": "A",
+					"quotes": [
+						"And if people go to a restaurant where no music is played, the guests often think it's not worth the money, especially the high-end ones."
+					]
+				},
+				{
+					"number": 9,
+					"text": "classical music",
+					"answer": "E",
+					"quotes": [
+						"Yeah, it says people tend to leave as soon as they finish eating."
+					]
+				},
+				{
+					"number": 10,
+					"text": "pop music",
+					"answer": "B",
+					"quotes": [
+						"On the contrary, if a restaurant plays pop music, it tends to attract repeat customers, which is good for business."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

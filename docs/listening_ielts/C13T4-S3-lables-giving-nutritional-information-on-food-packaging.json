@@ -1,0 +1,275 @@
+{
+	"id": "46023e88-4da8-4664-ba40-acde13eadc4f",
+	"url": "https://stepielts.com/student/listening/46023e88-4da8-4664-ba40-acde13eadc4f?mode=practice",
+	"title": "Lables giving nutritional information on food packaging",
+	"source": "C13T4",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/56a10e9e-cb96-4cf0-9e40-6f54d307a4b0.mp3",
+	"transcript": "Speaker 0: Now turn to section three. Section three. You will hear two students called Jack and Alice discussing food labels that give information on the nutritional value of foods. First, you have some time to look at questions 20 one-twenty six. Now listen carefully and answer questions 21 to 26.\nSpeaker 1: I still got loads to do for our report on nutritional food labels.\nSpeaker 2: Me too. What did you learn from doing the project about your own shopping habits?\nSpeaker 1: Well, I've always had to check labels for traces of peanuts in everything I eat because of my allergy. But beyond that, I've never really been concerned enough to check how healthy a product is.\nSpeaker 2: This project has actually taught me to read the labels much more carefully. I tended to believe claims on packaging like low in fat. But I now realize that the healthy yogurt I've bought for years is full of sugar, and that it's actually quite high in calories.\nSpeaker 1: Ready meals are the worst. Comparing the labels on supermarket pizzas was a real eye opener. Did you have any idea how many calories they contain? I was amazed.\nSpeaker 2: Yes. Because unless you read the label really carefully, you wouldn't know that the nutritional values given are for half a pizza.\nSpeaker 1: When most people eat the whole pizza. Not exactly transparent, is it?\nSpeaker 2: Not at all. But I expect it won't stop you from buying pizza.\nSpeaker 1: Probably not. No. I thought comparing the different labeling systems used by food manufacturers was interesting. I think the kind of labeling system used makes a big difference.\nSpeaker 2: Which one did you prefer?\nSpeaker 1: I like the traditional daily value system best, the one which tells you what proportion of your required daily intake of each ingredient the product contains. I'm not sure it's the easiest for people to use, but at least you get the full story. I like to know all the ingredients in a product, not just how much fat, salt and sugar they contain.\nSpeaker 2: But it's good supermarkets have been making an effort to provide reliable information for customers.\nSpeaker 1: Yes. There just needs to be more consistency between labeling systems used by different supermarkets, in terms of portion sizes, etcetera.\nSpeaker 2: The labels on the different brands of chicken flavored crisps were quite revealing too, weren't they?\nSpeaker 1: Yeah. I don't understand how they can get away with calling them chicken flavor when they only contain artificial additives.\nSpeaker 2: I know. I'd at least have expected them to contain a small percentage of real chicken.\nSpeaker 1: Absolutely.\nSpeaker 2: I think having nutritional food labeling has been a good idea, don't you? I think it will change people's behavior and stop mothers, in particular, buying the wrong things.\nSpeaker 1: But didn't that study kind of prove the opposite? People didn't necessarily stop buying unhealthy products.\nSpeaker 2: They only said that might be the case. Those findings weren't that conclusive, and it was quite a small scale study. I think more research has to be done.\nSpeaker 1: Yes. I think you're probably right.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 27 to 30. Now listen and answer questions 27 to 30.\nSpeaker 1: What do you think of the traffic light system?\nSpeaker 2: I think supermarkets like the idea of having a color coded system, red, orange, or green, for levels of fat, sugar, and salt in a product.\nSpeaker 1: But it's not been adopted universally, and not on all products. Why do suppose that is?\nSpeaker 2: Pressure from the food manufacturers. Hardly surprising that some of them are opposed to flagging up how unhealthy their products are.\nSpeaker 1: I'd have thought it would have been compulsory. It seems ridiculous it isn't.\nSpeaker 2: I know. And what I couldn't get over is the fact that it was brought in without enough consultation. A lot of experts had deep reservations about it.\nSpeaker 1: That is a bit weird. I suppose there's an argument for doing the research now when consumers are familiar with this system.\nSpeaker 2: Yeah. Maybe.\nSpeaker 1: The participants in the survey were quite positive about the traffic light system.\nSpeaker 2: But I don't think they targeted the right people. They should have focused on people with low literacy levels, because these labels are designed to be accessible to them.\nSpeaker 1: Yeah. But it's good to get feedback from all socioeconomic groups, and there wasn't much variation in their responses.\nSpeaker 2: No. But if they hadn't interviewed participants face to face, they could have used a much bigger sample size. I wonder why they chose that method.\nSpeaker 1: Don't know. How were they selected? Did they volunteer, or were they approached?\nSpeaker 2: I think they volunteered. The thing that wasn't stated was how often they bought packaged food. All we know is how frequently they use the supermarket.\nSpeaker 0: That is the end of section three. You now have half a minute to check your answers.",
+	"question_groups": [
+		{
+			"range": "21-26",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "What was Jack’s attitude to nutritional food labels before this project?",
+					"options": [
+						{
+							"label": "A",
+							"text": "He didn’t read everything on them."
+						},
+						{
+							"label": "B",
+							"text": "He didn’t think they were important."
+						},
+						{
+							"label": "C",
+							"text": "He thought they were too complicated."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But beyond that, I've never really been concerned enough to check how healthy a product is."
+					]
+				},
+				{
+					"number": 22,
+					"text": "Alice says that before doing this project,",
+					"options": [
+						{
+							"label": "A",
+							"text": "she was unaware of what certain foods contained."
+						},
+						{
+							"label": "B",
+							"text": "she was too lazy to read food labels."
+						},
+						{
+							"label": "C",
+							"text": "she was only interested in the number of calories."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But I now realize that the healthy yogurt I've bought for years is full of sugar, and that it's actually quite high in calories."
+					]
+				},
+				{
+					"number": 23,
+					"text": "When discussing supermarket brands of pizza, Jack agrees with Alice that",
+					"options": [
+						{
+							"label": "A",
+							"text": "the list of ingredients is shocking."
+						},
+						{
+							"label": "B",
+							"text": "he will hesitate before buying pizza again."
+						},
+						{
+							"label": "C",
+							"text": "the nutritional label is misleading."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Because unless you read the label really carefully, you wouldn't know that the nutritional values given are for half a pizza. When most people eat the whole pizza. Not exactly transparent, is it?"
+					]
+				},
+				{
+					"number": 24,
+					"text": "Jack prefers the daily value system to other labelling systems because it is",
+					"options": [
+						{
+							"label": "A",
+							"text": "more accessible."
+						},
+						{
+							"label": "B",
+							"text": "more logical."
+						},
+						{
+							"label": "C",
+							"text": "more comprehensive."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"I'm not sure it's the easiest for people to use, but at least you get the full story. I like to know all the ingredients in a product, not just how much fat, salt and sugar they contain."
+					]
+				},
+				{
+					"number": 25,
+					"text": "What surprised both students about one flavour of crisps?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The percentage of artificial additives given was incorrect."
+						},
+						{
+							"label": "B",
+							"text": "The products did not contain any meat."
+						},
+						{
+							"label": "C",
+							"text": "The labels did not list all the ingredients."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I don't understand how they can get away with calling them chicken flavor when they only contain artificial additives. I know. I'd at least have expected them to contain a small percentage of real chicken."
+					]
+				},
+				{
+					"number": 26,
+					"text": "What do the students think about research into the impact of nutritional food labelling?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It did not produce clear results."
+						},
+						{
+							"label": "B",
+							"text": "It focused on the wrong people."
+						},
+						{
+							"label": "C",
+							"text": "It made unrealistic recommendations."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Those findings weren't that conclusive, and it was quite a small scale study."
+					]
+				}
+			]
+		},
+		{
+			"range": "27-28",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 27,
+					"text": "Which TWO things surprised the students about the traffic-light system for nutritional labels?",
+					"options": [
+						{
+							"label": "A",
+							"text": "its widespread use"
+						},
+						{
+							"label": "B",
+							"text": "the fact that it is voluntary for supermarkets"
+						},
+						{
+							"label": "C",
+							"text": "how little research was done before its introduction"
+						},
+						{
+							"label": "D",
+							"text": "its unpopularity with food manufacturers"
+						},
+						{
+							"label": "E",
+							"text": "the way that certain colours are used"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 28,
+					"text": "Which TWO things surprised the students about the traffic-light system for nutritional labels?",
+					"options": [
+						{
+							"label": "A",
+							"text": "its widespread use"
+						},
+						{
+							"label": "B",
+							"text": "the fact that it is voluntary for supermarkets"
+						},
+						{
+							"label": "C",
+							"text": "how little research was done before its introduction"
+						},
+						{
+							"label": "D",
+							"text": "its unpopularity with food manufacturers"
+						},
+						{
+							"label": "E",
+							"text": "the way that certain colours are used"
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "29-30",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 29,
+					"text": "Which TWO things are true about the participants in the study on the traffic-light system?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They had low literacy levels."
+						},
+						{
+							"label": "B",
+							"text": "They were regular consumers of packaged food."
+						},
+						{
+							"label": "C",
+							"text": "They were selected randomly."
+						},
+						{
+							"label": "D",
+							"text": "They were from all socio-economic groups."
+						},
+						{
+							"label": "E",
+							"text": "They were interviewed face-to-face."
+						}
+					],
+					"answer": "D"
+				},
+				{
+					"number": 30,
+					"text": "Which TWO things are true about the participants in the study on the traffic-light system?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They had low literacy levels."
+						},
+						{
+							"label": "B",
+							"text": "They were regular consumers of packaged food."
+						},
+						{
+							"label": "C",
+							"text": "They were selected randomly."
+						},
+						{
+							"label": "D",
+							"text": "They were from all socio-economic groups."
+						},
+						{
+							"label": "E",
+							"text": "They were interviewed face-to-face."
+						}
+					],
+					"answer": "E"
+				}
+			]
+		}
+	],
+	"images": []
+}

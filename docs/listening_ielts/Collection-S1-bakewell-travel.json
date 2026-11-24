@@ -1,0 +1,93 @@
+{
+	"id": "ba80a4bb-0e6e-4d1d-8ecf-80ffeb191b4f",
+	"url": "https://stepielts.com/student/listening/ba80a4bb-0e6e-4d1d-8ecf-80ffeb191b4f?mode=practice",
+	"title": "Bakewell Travel",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/a013f734-96ec-4613-8ec6-a8c2fae78138.mp3",
+	"transcript": "Speaker 1: Travel Agent: Hello, Bakewell Travel. How can I help?\nSpeaker 2: Sarah Carter: Oh, hello. My name’s Sarah Carter. I wonder if you could tell me about the price of plane tickets to Dubai.\nSpeaker 1: Travel Agent: Our computers are down, so what I can do is take some details about you and your travel plans. Then, when everything’s OK again, I can call you back. All right?\nSpeaker 2: Sarah Carter: OK, then.\nSpeaker 1: Travel Agent: So, some details first. Your name was Sarah Carter, wasn’t it?\nSpeaker 2: Sarah Carter: That’s right.\nSpeaker 1: Travel Agent: And can I take a contact phone number?\nSpeaker 2: Sarah Carter: 07 958 847 222.\nSpeaker 1: Travel Agent: Now, I’ll probably need to get back to you on this. Shall I call you back tomorrow morning?\nSpeaker 2: Sarah Carter: Oh, I work on Wednesdays. Can you call me back on Thursday before 12?\nSpeaker 1: Travel Agent: Fine. OK, so, Mrs Carter, how many tickets will you need?\nSpeaker 2: Sarah Carter: Three adults and four children.\nSpeaker 1: Travel Agent: So, seven altogether. Are all the children under the age of 14?\nSpeaker 2: Sarah Carter: They are, yes.\nSpeaker 1: Travel Agent: Which date do you wish to travel on?\nSpeaker 2: Sarah Carter: Well, we definitely need to be there for the 24th. So, if we leave the UK on the 22nd, we’ll have time to recover on the 23rd.\nSpeaker 1: Travel Agent: So, the 22nd of October?\nSpeaker 2: Sarah Carter: Not this month. Next month, November.\nSpeaker 1: Travel Agent: Right. And I assume these are return tickets?\nSpeaker 2: Sarah Carter: Yes, we want to fly back on the Tuesday. Is that the 25th or the 26th?\nSpeaker 1: Travel Agent: It’s the 25th. So, it’s going to be a short holiday.\nSpeaker 2: Sarah Carter: We’re going to a wedding. We’re not going for a holiday.\nSpeaker 1: Travel Agent: Oh, that’s nice. Now, do any travellers have any special requirements? You know, special assistance with mobility and that sort of thing?\nSpeaker 2: Sarah Carter: Oh, well, actually, yes. My son’s allergic to cheese. It makes him really, really ill.\nSpeaker 1: Travel Agent: Fine. So, as soon as I can, I’ll look into finding some tickets for you. Travel Agent: Now, I wonder if I could just ask you a couple of questions as part of our market research. Would you be happy to do that?\nSpeaker 2: Sarah Carter: Will this take long?\nSpeaker 1: Travel Agent: Just a couple of minutes. That’s all.\nSpeaker 2: Sarah Carter: OK.\nSpeaker 1: Travel Agent: So, how many foreign visits have you made in the last 12 months?\nSpeaker 2: Sarah Carter: About six, I suppose.\nSpeaker 1: Travel Agent: And where was your last foreign trip?\nSpeaker 2: Sarah Carter: Well, I was in Egypt in May.\nAnd most recently, India.\nSpeaker 1: Travel Agent: Oh, nice. Yes, I’m off for some IT training in Bangalore next month, actually. And was that a vacation?\nSpeaker 2: Sarah Carter: I’d love to go back there for a holiday, but it was for business this time.\nSpeaker 1: Travel Agent: And I presume you use the Internet?\nSpeaker 2: Sarah Carter: I do, yes.\nSpeaker 1: Travel Agent: And so you’ve seen our website?\nSpeaker 2: Sarah Carter: Yes, I had a look this morning, actually.\nSpeaker 1: Travel Agent: Well, we had it redesigned a month ago and we’re keen to get feedback on how our customers find it. So...\nSpeaker 2: Sarah Carter: Oh, right. OK. Well, I have to say I found it terribly slow, so I just gave up and thought I’d give you a call.\nSpeaker 1: Travel Agent: Well, I’m sorry to hear that. But yes, it does happen sometimes. Would it be OK for us to email you with any promotional offers?\nSpeaker 2: Sarah Carter: I suppose so. Well, OK. My address is carter.s at speedtech.com.\nSpeaker 1: Travel Agent: Is that S-P-E-E-D-T-E-C-H?\nSpeaker 2: Sarah Carter: Yes.\nSpeaker 1: Travel Agent: That’s great. And can I ask how you found out about Bakewell Travel?",
+	"body": {
+		"text": "Bakewell Travel: Customer Booking Request Form\nExample Travelling to: Dubai\nName: Sarah Carter\nContact phone number: [1]\nBest day to call: [2] morning\nNumber of people travelling: [3]\nDate of outward journey: [4]\nDay of return journey: 25 November\nPurpose of trip: a [5]\nSpecial requirements: one passenger can't eat [6]\nMarket Research\nNumber of trips in last 12 months: six\nLast country visited: [7]\nPurpose of last foreign trip: [8]\nCustomer feedback on website: too [9]\nEmail address: carter.s@[10].com",
+		"html": "<h3><strong>Bakewell Travel: Customer Booking Request Form</strong></h3><strong>Example </strong>Travelling to: Dubai\n<ul><li>\nName: Sarah Carter\n</li><li>\nContact phone number: [1]\n</li><li>\nBest day to call: [2] morning\n</li><li>\nNumber of people travelling: [3]\n</li><li>\nDate of outward journey: [4]\n</li><li>\nDay of return journey: 25 November\n</li><li>\nPurpose of trip: a [5]\n</li><li>\nSpecial requirements: one passenger can't eat [6]\n</li><li>\nMarket Research\n</li><li>\nNumber of trips in last 12 months: six\n</li><li>\nLast country visited: [7]\n</li><li>\nPurpose of last foreign trip: [8]\n</li><li>\nCustomer feedback on website: too [9]\n</li><li>\nEmail address: carter.s@[10].com\n</li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "FORM_COMPLETION",
+			"instructions": "Complete the form below. WRITE NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "Bakewell Travel: Customer Booking Request Form\nExample Travelling to: Dubai\nName: Sarah Carter\nContact phone number: [1]\nBest day to call: [2] morning\nNumber of people travelling: [3]\nDate of outward journey: [4]\nDay of return journey: 25 November\nPurpose of trip: a [5]\nSpecial requirements: one passenger can't eat [6]\nMarket Research\nNumber of trips in last 12 months: six\nLast country visited: [7]\nPurpose of last foreign trip: [8]\nCustomer feedback on website: too [9]\nEmail address: carter.s@[10].com",
+			"body_html": "<h3><strong>Bakewell Travel: Customer Booking Request Form</strong></h3><strong>Example </strong>Travelling to: Dubai\n<ul><li>\nName: Sarah Carter\n</li><li>\nContact phone number: [1]\n</li><li>\nBest day to call: [2] morning\n</li><li>\nNumber of people travelling: [3]\n</li><li>\nDate of outward journey: [4]\n</li><li>\nDay of return journey: 25 November\n</li><li>\nPurpose of trip: a [5]\n</li><li>\nSpecial requirements: one passenger can't eat [6]\n</li><li>\nMarket Research\n</li><li>\nNumber of trips in last 12 months: six\n</li><li>\nLast country visited: [7]\n</li><li>\nPurpose of last foreign trip: [8]\n</li><li>\nCustomer feedback on website: too [9]\n</li><li>\nEmail address: carter.s@[10].com\n</li></ul>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Contact phone number: [1]",
+					"answer": "07958847222",
+					"quotes": ["Sarah Carter: 07 958 847 222."]
+				},
+				{
+					"number": 2,
+					"text": "Best day to call: [2] morning",
+					"answer": "Thursday",
+					"quotes": ["Can you call me back on Thursday before 12?"]
+				},
+				{
+					"number": 3,
+					"text": "Number of people travelling: [3]",
+					"answer": "7 / seven",
+					"quotes": ["Travel Agent: So, seven altogether."]
+				},
+				{
+					"number": 4,
+					"text": "Date of outward journey: [4]",
+					"answer": "22 November / November 22 / 22nd November / November 22nd",
+					"quotes": [
+						"So, if we leave the UK on the 22nd, we’ll have time to recover on the 23rd. Travel Agent: So, the 22nd of October? Sarah Carter: Not this month. Next month, November."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Purpose of trip: a [5]",
+					"answer": "wedding",
+					"quotes": ["Sarah Carter: We’re going to a wedding."]
+				},
+				{
+					"number": 6,
+					"text": "Special requirements: one passenger can't eat [6]",
+					"answer": "cheese",
+					"quotes": ["My son’s allergic to cheese."]
+				},
+				{
+					"number": 7,
+					"text": "Last country visited: [7]",
+					"answer": "India",
+					"quotes": ["And most recently, India."]
+				},
+				{
+					"number": 8,
+					"text": "Purpose of last foreign trip: [8]",
+					"answer": "business",
+					"quotes": [
+						"Sarah Carter: I’d love to go back there for a holiday, but it was for business this time."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Customer feedback on website: too [9]",
+					"answer": "slow",
+					"quotes": [
+						"OK. Well, I have to say I found it terribly slow, so I just gave up and thought I’d give you a call."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Email address: carter.s@[10].com",
+					"answer": "speedtech",
+					"quotes": ["Well, OK. My address is carter.s at speedtech.com."]
+				}
+			]
+		}
+	],
+	"images": []
+}

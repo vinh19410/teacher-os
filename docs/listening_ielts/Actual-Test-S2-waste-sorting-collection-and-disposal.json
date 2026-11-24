@@ -1,0 +1,121 @@
+{
+	"id": "d8ada590-31b5-419b-bca1-39328b477e72",
+	"url": "https://stepielts.com/student/listening/d8ada590-31b5-419b-bca1-39328b477e72?mode=practice",
+	"title": "Waste sorting, collection, and disposal",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/54b62303-1d3b-4d30-bba5-fbb1efad9e72.mp3",
+	"transcript": "Speaker 1: Hi folks, my name is Loretta Johnston, and I’m here from the Baltimore Department of Public Waste. Thank you for coming out to our community meeting tonight. I’ve got a few words to say about the waste collection here in Baltimore. First, there’s the sorted collection bins themselves. They’re made of sturdy, solid material, so none of your trash can seep out or puncture the bin. Also, since these things sit out on the curb overnight rain or shine, they have to be waterproof (Q1). We can’t have water getting up in it and filling up the bin. Remember to pay attention to which bin is which, and sort your waste accordingly. You should have a blue or green bin for recyclable garbage, a yellow bin for unrecyclable garbage, and a red bin for toxic waste. Our citywide waste management is divided into two services. The first is commercial waste collection, or trash collection from buildings. The majority of building (Q2) waste is paper, which goes in the blue or green bins. You’ll notice in your office buildings there are signs that warn you not to overfill (Q3) these bins. All that paper adds up, and an overflowing bin is infinitely harder for collectors to carry to the truck and empty. Aside from paper, another large source of building waste is metals. Metals such as tin and aluminium can be put in the yellow recycle bins, but metals like lead and copper should be disposed of in the red bins. These heavy (Q4) metals are harmful to the environment and exacerbate our city’s existing pollution problem. That’s about all the information you need for building waste. Moving on to the second service, household waste collection is probably what you primarily think of when you think of what we do here… Many of the same guidelines apply – the sorting is the same, et cetera. Please remember to keep garbage like kitchen waste in a plastic (Q5) bag. It makes collection easier and lessens the abominable rotten-trash smell. So after we take your trash away, what happens to it? We take all the garbage to one of a number of garbage disposal plants, each of which is located in the middle of an open (Q6) space of some sort. No one wants to have their home or office right next door to a waste disposal plant, right? Waste is collected and then disposed of once every four weeks.\n(Q7)\nSpeaker 1: A lot of trash can build up in that time, so we’re in the process of developing a plan to fund collection more frequently. Ideally it would be collected weekly, but we will likely have to settle for biweekly. The garbage trucks make their rounds to clear the bins at night in order to avoid traffic.\n(Q8)\nSpeaker 1: I’m sure you’ve seen how much waste your own household produces in a given week. Now imagine all the trash produced by all the households in Baltimore. It’s a lot, right? It may surprise you that this amount is only marginal compared to commercial waste. Yep, the main waste producers are actually businesses (Q9), industrial facilities, retail, and offices. Hard to believe humans produce that much waste, right? No wonder we have pollution problems! Anyway, after all incoming waste is sorted, recyclables are sent to a recycling plant, while garbage and toxic waste are transported to their respective areas of the plant for treatment. Items such as stones (Q10), which should not be disposed of in our bins, are separated out and discarded. Once the trash has undergone the treatment process, it is compacted and disposed of with all the other trash and finally, when the landfill space is full, it is buried deep underground and in time something new is built on the land. That’s everything about waste collection. Thank you for listening. Are there any questions?",
+	"body": {
+		"text": "Necessary characteristics of dustbins: Solid and [1]\nThree kinds:\nWaste sorting\nRecyclable garbage (blue or green bin)\nUnrecyclable garbage (yellow bin)\nToxic waste (red bin)\nWaste collection\nCommercial waste collection:\nIt mainly refers to [2] waste.\nWarning signs state not to [3] blue/green bins.\nThose [4] metals will cause environmental pollution.\nHousehold waste collection:\nAll kitchen garbage should be put into a [5] bag.\nWaste disposal\nThe garbage disposal plant is situated in an [6] space or field.\nThe waste is disposed of at least once every [7]\nThe dustbin should be cleared at night because of [8]\nThe waste is mainly produced by [9], industry, retail, and offices.\nPlease do not dispose of [10] in any of the bins.",
+		"html": "<p><strong>Necessary characteristics of dustbins</strong>: Solid and [1]</p><h3>Three kinds:</h3><table><tbody><tr><td><p><strong>Waste sorting</strong></p></td><td><p>Recyclable garbage (blue or green bin)</p><p>Unrecyclable garbage (yellow bin)</p><p>Toxic waste (red bin)</p></td></tr><tr><td><p><strong>Waste collection</strong></p></td><td><h4><strong>Commercial waste collection:</strong></h4><p>It mainly refers to [2] waste.</p><p>Warning signs state not to [3] blue/green bins.</p><p>Those [4] metals will cause environmental pollution.</p><h4><strong>Household waste collection:</strong></h4><p>All kitchen garbage should be put into a [5] bag.</p></td></tr><tr><td><p><strong>Waste disposal</strong></p></td><td><p>The garbage disposal plant is situated in an [6] space or field.</p><p>The waste is disposed of at least once every [7]</p><p>The dustbin should be cleared at night because of [8]</p><p>The waste is mainly produced by [9], industry, retail, and offices.</p><p>Please do not dispose of [10] in any of the bins.</p></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "FORM_COMPLETION",
+			"instructions": "Complete the form below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Necessary characteristics of dustbins: Solid and [1]\nThree kinds:\nWaste sorting\nRecyclable garbage (blue or green bin)\nUnrecyclable garbage (yellow bin)\nToxic waste (red bin)\nWaste collection\nCommercial waste collection:\nIt mainly refers to [2] waste.\nWarning signs state not to [3] blue/green bins.\nThose [4] metals will cause environmental pollution.\nHousehold waste collection:\nAll kitchen garbage should be put into a [5] bag.\nWaste disposal\nThe garbage disposal plant is situated in an [6] space or field.\nThe waste is disposed of at least once every [7]\nThe dustbin should be cleared at night because of [8]\nThe waste is mainly produced by [9], industry, retail, and offices.\nPlease do not dispose of [10] in any of the bins.",
+			"body_table": [
+				[
+					"Waste sorting",
+					"Recyclable garbage (blue or green bin)\nUnrecyclable garbage (yellow bin)\nToxic waste (red bin)"
+				],
+				[
+					"Waste collection",
+					"Commercial waste collection:\nIt mainly refers to [2] waste.\nWarning signs state not to [3] blue/green bins.\nThose [4] metals will cause environmental pollution.\nHousehold waste collection:\nAll kitchen garbage should be put into a [5] bag."
+				],
+				[
+					"Waste disposal",
+					"The garbage disposal plant is situated in an [6] space or field.\nThe waste is disposed of at least once every [7]\nThe dustbin should be cleared at night because of [8]\nThe waste is mainly produced by [9], industry, retail, and offices.\nPlease do not dispose of [10] in any of the bins."
+				]
+			],
+			"body_html": "<p><strong>Necessary characteristics of dustbins</strong>: Solid and [1]</p><h3>Three kinds:</h3><table><tbody><tr><td><p><strong>Waste sorting</strong></p></td><td><p>Recyclable garbage (blue or green bin)</p><p>Unrecyclable garbage (yellow bin)</p><p>Toxic waste (red bin)</p></td></tr><tr><td><p><strong>Waste collection</strong></p></td><td><h4><strong>Commercial waste collection:</strong></h4><p>It mainly refers to [2] waste.</p><p>Warning signs state not to [3] blue/green bins.</p><p>Those [4] metals will cause environmental pollution.</p><h4><strong>Household waste collection:</strong></h4><p>All kitchen garbage should be put into a [5] bag.</p></td></tr><tr><td><p><strong>Waste disposal</strong></p></td><td><p>The garbage disposal plant is situated in an [6] space or field.</p><p>The waste is disposed of at least once every [7]</p><p>The dustbin should be cleared at night because of [8]</p><p>The waste is mainly produced by [9], industry, retail, and offices.</p><p>Please do not dispose of [10] in any of the bins.</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Necessary characteristics of dustbins: Solid and [1]",
+					"answer": "waterproof",
+					"quotes": [
+						"Also, since these things sit out on the curb overnight rain or shine, they have to be waterproof (Q1)."
+					]
+				},
+				{
+					"number": 2,
+					"text": "It mainly refers to [2] waste.",
+					"answer": "building",
+					"quotes": [
+						"The majority of building (Q2) waste is paper, which goes in the blue or green bins."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Warning signs state not to [3] blue/green bins.",
+					"answer": "overfill",
+					"quotes": [
+						"You’ll notice in your office buildings there are signs that warn you not to overfill (Q3) these bins."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Those [4] metals will cause environmental pollution.",
+					"answer": "heavy",
+					"quotes": [
+						"These heavy (Q4) metals are harmful to the environment and exacerbate our city’s existing pollution problem."
+					]
+				},
+				{
+					"number": 5,
+					"text": "All kitchen garbage should be put into a [5] bag.",
+					"answer": "plastic",
+					"quotes": [
+						"Please remember to keep garbage like kitchen waste in a plastic (Q5) bag."
+					]
+				},
+				{
+					"number": 6,
+					"text": "The garbage disposal plant is situated in an [6] space or field.",
+					"answer": "open",
+					"quotes": [
+						"We take all the garbage to one of a number of garbage disposal plants, each of which is located in the middle of an open (Q6) space of some sort."
+					]
+				},
+				{
+					"number": 7,
+					"text": "The waste is disposed of at least once every [7]",
+					"answer": "4 weeks",
+					"quotes": [
+						"Waste is collected and then disposed of once every four weeks."
+					]
+				},
+				{
+					"number": 8,
+					"text": "The dustbin should be cleared at night because of [8]",
+					"answer": "traffic",
+					"quotes": [
+						"The garbage trucks make their rounds to clear the bins at night in order to avoid traffic."
+					]
+				},
+				{
+					"number": 9,
+					"text": "The waste is mainly produced by [9], industry, retail, and offices.",
+					"answer": "businesses",
+					"quotes": [
+						"Yep, the main waste producers are actually businesses (Q9), industrial facilities, retail, and offices."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Please do not dispose of [10] in any of the bins.",
+					"answer": "stones",
+					"quotes": [
+						"Items such as stones (Q10), which should not be disposed of in our bins, are separated out and discarded."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -5,13 +5,80 @@
  * packages/api/src/placement-test-contracts.ts (profile là JS thuần, không import được TS).
  */
 
-export const PLACEMENT_ERROR_CATEGORIES = [
-	{ key: "grammar", label: "Ngữ pháp" },
-	{ key: "vocabulary", label: "Từ vựng" },
-	{ key: "spelling", label: "Chính tả" },
-	{ key: "coherence", label: "Mạch lạc" },
-	{ key: "pronunciation", label: "Phát âm" },
+/** 4 loại lỗi Writing tương ứng 1-1 với 4 tiêu chí chấm IELTS Writing. */
+export const PLACEMENT_WRITING_ERROR_CATEGORIES = [
+	{ key: "task", label: "Task Response" },
+	{ key: "coherence", label: "Coherence & Cohesion" },
+	{ key: "lexical", label: "Lexical Resource" },
+	{ key: "grammar", label: "Grammatical Range & Accuracy" },
 ];
+
+/** 4 loại lỗi Speaking tương ứng 1-1 với 4 tiêu chí chấm IELTS Speaking. */
+export const PLACEMENT_SPEAKING_ERROR_CATEGORIES = [
+	{ key: "fluency", label: "Fluency & Coherence" },
+	{ key: "lexical", label: "Lexical Resource" },
+	{ key: "grammar", label: "Grammatical Range & Accuracy" },
+	{ key: "pronunciation", label: "Pronunciation" },
+];
+
+/** Tập hợp 6 loại lỗi IELTS chuẩn của cả Writing và Speaking (nhãn tiếng Anh). */
+export const PLACEMENT_ERROR_CATEGORIES = [
+	{ key: "task", label: "Task Response" },
+	{ key: "coherence", label: "Coherence & Cohesion" },
+	{ key: "fluency", label: "Fluency & Coherence" },
+	{ key: "lexical", label: "Lexical Resource" },
+	{ key: "grammar", label: "Grammatical Range & Accuracy" },
+	{ key: "pronunciation", label: "Pronunciation" },
+];
+
+export function placementErrorCategoriesForSkill(skill) {
+	return skill === "writing"
+		? PLACEMENT_WRITING_ERROR_CATEGORIES
+		: PLACEMENT_SPEAKING_ERROR_CATEGORIES;
+}
+
+/**
+ * Chuẩn hóa key loại lỗi (kể cả key cũ trong DB như `vocabulary`, `spelling`,
+ * hay key lệch kỹ năng) về 4 tiêu chí IELTS hợp lệ của từng kỹ năng. Key lạ → null.
+ */
+export function normalizePlacementErrorCategory(raw, skill) {
+	if (typeof raw !== "string") return null;
+	const key = raw.trim().toLowerCase();
+	if (skill === "writing") {
+		switch (key) {
+			case "task":
+				return "task";
+			case "coherence":
+			case "fluency":
+				return "coherence";
+			case "lexical":
+			case "vocabulary":
+			case "spelling":
+			case "pronunciation":
+				return "lexical";
+			case "grammar":
+				return "grammar";
+			default:
+				return null;
+		}
+	}
+	switch (key) {
+		case "fluency":
+		case "coherence":
+		case "task":
+			return "fluency";
+		case "lexical":
+		case "vocabulary":
+		case "spelling":
+			return "lexical";
+		case "grammar":
+			return "grammar";
+		case "pronunciation":
+			return "pronunciation";
+		default:
+			return null;
+	}
+}
 
 /** 4 tiêu chí Writing theo chuẩn IELTS (thang 0–9, bước 0.5). */
 export const PLACEMENT_WRITING_RUBRIC = [
@@ -154,7 +221,12 @@ export function isIeltsSpeakingRubric(rubric) {
  * Chuẩn hóa thông tin hiển thị điểm tổng + từng tiêu chí cho Writing/Speaking,
  * tự động nhận diện thang IELTS mới hay thang legacy (/15, /20).
  */
-export function buildSkillRubricDisplay(skill, score, rubric) {
+export function buildSkillRubricDisplay(
+	skill,
+	score,
+	rubric,
+	criterionComments = null,
+) {
 	const isWriting = skill === "writing";
 	const isIelts = isWriting
 		? isIeltsWritingRubric(rubric)
@@ -184,6 +256,13 @@ export function buildSkillRubricDisplay(skill, score, rubric) {
 					: isIelts
 						? "—/9"
 						: "—/5",
+				comment:
+					isIelts &&
+					criterionComments &&
+					typeof criterionComments === "object" &&
+					typeof criterionComments[key] === "string"
+						? criterionComments[key].trim()
+						: "",
 			}))
 		: null;
 	return { isIelts, totalText, criteria };
@@ -196,8 +275,19 @@ export function errorNumberLabel(n) {
 	return n >= 1 && n <= CIRCLED.length ? CIRCLED[n - 1] : `(${n})`;
 }
 
-export function categoryLabel(key) {
-	return PLACEMENT_ERROR_CATEGORIES.find((c) => c.key === key)?.label ?? key;
+export function categoryLabel(key, skill) {
+	const hasSkill = skill === "writing" || skill === "speaking";
+	const lookupKey = hasSkill
+		? (normalizePlacementErrorCategory(key, skill) ?? key)
+		: key;
+	const list = hasSkill
+		? placementErrorCategoriesForSkill(skill)
+		: PLACEMENT_ERROR_CATEGORIES;
+	return (
+		list.find((c) => c.key === lookupKey)?.label ??
+		PLACEMENT_ERROR_CATEGORIES.find((c) => c.key === lookupKey)?.label ??
+		key
+	);
 }
 
 function isLocated(err) {

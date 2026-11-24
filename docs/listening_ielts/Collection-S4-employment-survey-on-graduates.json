@@ -1,0 +1,105 @@
+{
+	"id": "f60567a5-2e4e-482a-972b-910bccbec1cf",
+	"url": "https://stepielts.com/student/listening/f60567a5-2e4e-482a-972b-910bccbec1cf?mode=practice",
+	"title": "Employment Survey on Graduates",
+	"source": "Collection",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/fa8f96db-3e04-4996-9105-e8eb7fd1f776.mp3",
+	"transcript": "Speaker 1: Lecturer: I’d like to give you a brief overview of a research project I’ve been working on as part of a team of four, we wanted to get some data on what happens to students after they graduate and also find out how useful they felt their degree course wants to them. We focused on graduates from the course in business management. Since this is one of the most popular and long-established courses, we decided to use two different data Gathering methods. We started off by emailing a brief questionnaire to all last year’s.\nIt’s from that course.\nSpeaker 1: And then we selected a number of those who had replied and with them. We carried out phone interviews, we’d originally intended to use face to face interviews, but didn’t feel that would be practical. And in fact, we found this method provide you the combination of wide coverage and depth, which is what we wanted. So what do we find? Well, I suppose our most surprising finding was just how many graduates had gone on to work towards an additional qualification rather than getting a job. Immediately that was 32% almost a third of the rest, a very small proportion were unemployed. Just 4% and all the rest were in employment more than half of them were in the public sector with a sizable minority in the private sector and a small number in the not-for-profit sector. We were also interested in the attitudes of those who were employed towards their work, the majority said that their expectations had been fulfilled. They were generally satisfied in terms of their salary. Free and also happy with their prospects for career development. With very few of them feeling that they were in a dead-end job with no prospects of promotion. For the second main part of our research, we wanted to get some feedback from the graduates on how useful they felt their degree course, had been to them. There were really three main skills which the graduates felt they’d gained from doing the course and identified as having been the most valuable to them. They highlighted the fact that they developed the ability to work as members of the team, another skill which they cited as valuable was that of personal organization, things like meeting deadlines, time management and so on and finally a lot of Said that what they learned about approaches to problem-solving had been very useful. We also asked them about, which elements of the course had been least valuable to them to our surprise. The thing that was mentioned, most often here was presentations. They hadn’t enjoyed having to give these as part of their course, nor had they found it useful, having to listen, to those given by their fellow students. The reason given for this was that they felt, they weren’t trained, how to do it properly. And the second thing that got very negative, Feedback was work on essay writing. Most people thought this was unnecessary and that it would have been better to work on report writing. And finally, some respondents said that they would have liked more guidance on the best way to go about looking for a job. But the course could have done more to help them. Finally, we asked if there were any that is the end of section for you.\nNow, have half a minute to check your answers.",
+	"body": {
+		"text": "Overview\ninterviews from which subject: [1]\ntwo research methods: email questionnaires and [2]\nFindings\n32% of students tended to acquire another [3]\nonly 4% were unemployed\nmost of the students work in the [4]\nmajority are happy with: [5]\nFeedback\nUseful skills learned in college:\nworking as a [6]\npersonal organization\n[7] ability\nUseless skills:\n[8] (lack of training)\nadvice on [9] (unnecessary)\nadvice on finding a [10] (not enough)",
+		"html": "<h4>Overview</h4><ul><li><p>interviews from which subject: [1]</p></li><li><p>two research methods: email questionnaires and [2]</p></li></ul><h4>Findings</h4><ul><li><p>32% of students tended to acquire another [3]</p></li><li><p>only 4% were unemployed</p></li><li><p>most of the students work in the [4]</p></li><li><p>majority are happy with: [5]</p></li></ul><h4>Feedback<br>Useful skills learned in college:</h4><ul><li><p>working as a [6]</p></li><li><p>personal organization</p></li><li><p>[7] ability</p></li></ul><h4>Useless skills:</h4><ul><li><p>[8] (lack of training)</p></li><li><p>advice on [9] (unnecessary)</p></li><li><p>advice on finding a [10] (not enough)</p></li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THAN TWO WORDS for each answer.",
+			"body": "Overview\ninterviews from which subject: [1]\ntwo research methods: email questionnaires and [2]\nFindings\n32% of students tended to acquire another [3]\nonly 4% were unemployed\nmost of the students work in the [4]\nmajority are happy with: [5]\nFeedback\nUseful skills learned in college:\nworking as a [6]\npersonal organization\n[7] ability\nUseless skills:\n[8] (lack of training)\nadvice on [9] (unnecessary)\nadvice on finding a [10] (not enough)",
+			"body_html": "<h4>Overview</h4><ul><li><p>interviews from which subject: [1]</p></li><li><p>two research methods: email questionnaires and [2]</p></li></ul><h4>Findings</h4><ul><li><p>32% of students tended to acquire another [3]</p></li><li><p>only 4% were unemployed</p></li><li><p>most of the students work in the [4]</p></li><li><p>majority are happy with: [5]</p></li></ul><h4>Feedback<br>Useful skills learned in college:</h4><ul><li><p>working as a [6]</p></li><li><p>personal organization</p></li><li><p>[7] ability</p></li></ul><h4>Useless skills:</h4><ul><li><p>[8] (lack of training)</p></li><li><p>advice on [9] (unnecessary)</p></li><li><p>advice on finding a [10] (not enough)</p></li></ul>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "interviews from which subject: [1]",
+					"answer": "business management",
+					"quotes": [
+						"We focused on graduates from the course in business management."
+					]
+				},
+				{
+					"number": 2,
+					"text": "two research methods: email questionnaires and [2]",
+					"answer": "phone interviews",
+					"quotes": [
+						"We carried out phone interviews, we’d originally intended to use face to face interviews, but didn’t feel that would be practical."
+					]
+				},
+				{
+					"number": 3,
+					"text": "32% of students tended to acquire another [3]",
+					"answer": "qualification",
+					"quotes": [
+						"Well, I suppose our most surprising finding was just how many graduates had gone on to work towards an additional qualification rather than getting a job."
+					]
+				},
+				{
+					"number": 4,
+					"text": "most of the students work in the [4]",
+					"answer": "public sector",
+					"quotes": [
+						"Just 4% and all the rest were in employment more than half of them were in the public sector with a sizable minority in the private sector and a small number in the not-for-profit sector."
+					]
+				},
+				{
+					"number": 5,
+					"text": "majority are happy with: [5]",
+					"answer": "their salary / salary",
+					"quotes": ["They were generally satisfied in terms of their salary."]
+				},
+				{
+					"number": 6,
+					"text": "working as a [6]",
+					"answer": "team member / team",
+					"quotes": [
+						"They highlighted the fact that they developed the ability to work as members of the team, another skill which they cited as valuable was that of personal organization, things like meeting deadlines, time management and so on and finally a lot of Said that what they learned about approaches to problem-solving had been very useful."
+					]
+				},
+				{
+					"number": 7,
+					"text": "[7] ability",
+					"answer": "problem-solving / problem solving",
+					"quotes": [
+						"They highlighted the fact that they developed the ability to work as members of the team, another skill which they cited as valuable was that of personal organization, things like meeting deadlines, time management and so on and finally a lot of Said that what they learned about approaches to problem-solving had been very useful."
+					]
+				},
+				{
+					"number": 8,
+					"text": "[8] (lack of training)",
+					"answer": "presentations",
+					"quotes": [
+						"The thing that was mentioned, most often here was presentations."
+					]
+				},
+				{
+					"number": 9,
+					"text": "advice on [9] (unnecessary)",
+					"answer": "essay writing",
+					"quotes": [
+						"And the second thing that got very negative, Feedback was work on essay writing."
+					]
+				},
+				{
+					"number": 10,
+					"text": "advice on finding a [10] (not enough)",
+					"answer": "job",
+					"quotes": [
+						"And finally, some respondents said that they would have liked more guidance on the best way to go about looking for a job."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

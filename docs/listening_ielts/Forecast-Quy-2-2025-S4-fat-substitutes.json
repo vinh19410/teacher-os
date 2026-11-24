@@ -1,0 +1,175 @@
+{
+	"id": "b42725bc-e796-43a6-820f-fc23d893d79f",
+	"url": "https://stepielts.com/student/listening/b42725bc-e796-43a6-820f-fc23d893d79f?mode=practice",
+	"title": "Fat substitutes",
+	"source": "Forecast Quý 2-2025",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/35220f86-5e10-4a4f-a469-da193d9c2ea8.mp3",
+	"transcript": "Speaker 1: We all love a warm cup of cocoa, or maybe a crunchy packet of chips. But what do these have in common? They both contain a substance we commonly know of as “fat\". Some fats are good for you, such as those in nuts, but others have detrimental effects. Often, fats are added to foods to enhance their flavour, which I think is the most important characteristic of fatty foods, and they are popular because they taste so good! But most people may agree that they don’t smell so good. And sometimes the texture is lacking. So to overcome the health problems associated with bad fats, scientists have come up with \"fat substitutes\". Although scientists may claim these fat substitutes, such as extracts from egg white and whey protein, are better for our health, they do have some downsides. Many consume these products, snacking regularly on them, believing they will improve their health. As you may know, though, students often like a tasty snack between meals or during study period for energy, but they often find that these so-called healthy snacks don’t provide this. It has also been noted that some of these fat substitutes actually cause you to gain weight. Fat substitutes are often designed to be treated in the same way as regular fat products. They can be used in the same applications and be heated just as their full-fat counterparts would be. They are also becoming increasingly available on supermarket shelves, not just health-food stores. But these products have yet another downside―they cause stomach problems in many people as these products are often made up of synthetic ingredients. Here we have three commonly used fat substitutes, Caprenin, Olestra and Carrageenan respectively. These are all derivatives from various sources. A fat substitute similar to Caprenin has in the past been synthetically manufactured, but this particular product is actually an extract of some types of marine plants, and looks like jelly. Thankfully, the flavour doesn’t reflect this! Other fat substitutes are derived from different seafood, such as shellfish, or fish oil, and this is the case with Olestra. Fish oil is generally considered as a kind of healthy fat and some forms are often prescribed by natural healthcare professionals. The last kind, Carrageenan, has been derived from a certain seaweed, that is harvested in shallower waters off the coast. It requires a long process to extract the compounds needed and is therefore generally included in more costly products. Scientists have attempted to replicate this natural derivative synthetically but have found it too complex. It should be noted that although these fat substitutes are all derived from natural sources, they have been so heavily processed that they are considered to be artificial substances. They are extracted by scientists in labs and are so heavily altered and synthesized using high-end technology, that they are no longer recognized as natural fats or proteins. These extracts and fat substitutes do have their advantages, however. The first mentioned substitute, Caprenin, has been found in some tests involving rats to lower the level of bad cholesterol which can cause heart disease. Many with heart problems due to cholesterol are returning to the use of this product to ease symptoms. Another substitute, Carrageenan, is an excellent means of speeding up blood circulation and is being considered by some researchers for use in certain anti-coagulant medications. It will be some time before this is put into practice and we see medicines on pharmacy shelves that reflect this. Lastly, the extract from seafoods. There have been some preliminary studies into the health benefits of this fat substitute. A surprising benefit documented so far is that it does have an influence on heart rate, thus making it more regular, and the pulse stronger. How this will further affect treatment in cases of heart arrhythmia is yet to be seen, but the results should be considerable. These are just some of the many products on offer as substitutes for fat. We don’t have time to look into them all today, but it is worth considering the health benefits and drawbacks of each one, as we strive to live healthier lifestyles.",
+	"question_groups": [
+		{
+			"range": "1-3",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "According to the speaker, the most significant feature of fat is",
+			"questions": [
+				{
+					"number": 1,
+					"text": "According to the speaker, the most significant feature of fat is",
+					"options": [
+						{
+							"label": "A",
+							"text": "texture"
+						},
+						{
+							"label": "B",
+							"text": "flavour"
+						},
+						{
+							"label": "C",
+							"text": "smell"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Often, fats are added to foods to enhance their flavour, which I think is the most important characteristic of fatty foods, and they are popular because they taste so good!"
+					]
+				},
+				{
+					"number": 2,
+					"text": "According to the speaker, fat substitutes",
+					"options": [
+						{
+							"label": "A",
+							"text": "are lack of energy."
+						},
+						{
+							"label": "B",
+							"text": "are like snacks."
+						},
+						{
+							"label": "C",
+							"text": "do not make people fat."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"As you may know, though, students often like a tasty snack between meals or during study period for energy, but they often find that these so-called healthy snacks don’t provide this."
+					]
+				},
+				{
+					"number": 3,
+					"text": "One of the disadvantages of fat substitutes is that",
+					"options": [
+						{
+							"label": "A",
+							"text": "they cannot be heated."
+						},
+						{
+							"label": "B",
+							"text": "they can cause digestive problems."
+						},
+						{
+							"label": "C",
+							"text": "they are not available in most shops."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But these products have yet another downside―they cause stomach problems in many people as these products are often made up of synthetic ingredients."
+					]
+				}
+			]
+		},
+		{
+			"range": "4-7",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "Sources\nCaprenin\nmainly come from [4] plants\nOlestra\nextracted from [5].\nCarrageenan\nmade from [6].\nAll three kinds of fat substitutes are regarded as [7] substance.",
+			"body_html": "<p><strong>Sources   </strong></p><p>Caprenin</p><ul><li> mainly come from [4] plants</li></ul><p>Olestra  </p><ul><li>extracted from [5].</li></ul><p>Carrageenan</p><ul><li>made from [6].   </li></ul><p>All three kinds of fat substitutes are regarded as [7]  substance. </p>",
+			"questions": [
+				{
+					"number": 4,
+					"text": "mainly come from [4] plants",
+					"answer": "marine",
+					"quotes": [
+						"A fat substitute similar to Caprenin has in the past been synthetically manufactured, but this particular product is actually an extract of some types of marine plants, and looks like jelly."
+					]
+				},
+				{
+					"number": 5,
+					"text": "extracted from [5].",
+					"answer": "seafood",
+					"quotes": [
+						"Other fat substitutes are derived from different seafood, such as shellfish, or fish oil, and this is the case with Olestra."
+					]
+				},
+				{
+					"number": 6,
+					"text": "made from [6].",
+					"answer": "seaweed",
+					"quotes": [
+						"The last kind, Carrageenan, has been derived from a certain seaweed, that is harvested in shallower waters off the coast."
+					]
+				},
+				{
+					"number": 7,
+					"text": "All three kinds of fat substitutes are regarded as [7] substance.",
+					"answer": "artificial",
+					"quotes": [
+						"It should be noted that although these fat substitutes are all derived from natural sources, they have been so heavily processed that they are considered to be artificial substances."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What advantage does each of the following fat substitutes have?",
+			"options": [
+				{
+					"label": "A",
+					"text": "improves blood circulation"
+				},
+				{
+					"label": "B",
+					"text": "prevents heart disease"
+				},
+				{
+					"label": "C",
+					"text": "maintains healthy heart rate"
+				}
+			],
+			"body": "Caprenin [8]\nCarrageenan [9]\nOlestra [10]",
+			"body_html": "<p>Caprenin [8]</p><p>Carrageenan [9]</p><p>Olestra [10]</p>",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Caprenin",
+					"answer": "B",
+					"quotes": [
+						"The first mentioned substitute, Caprenin, has been found in some tests involving rats to lower the level of bad cholesterol which can cause heart disease."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Carrageenan",
+					"answer": "A",
+					"quotes": [
+						"Another substitute, Carrageenan, is an excellent means of speeding up blood circulation and is being considered by some researchers for use in certain anti-coagulant medications."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Olestra",
+					"answer": "C",
+					"quotes": [
+						"A surprising benefit documented so far is that it does have an influence on heart rate, thus making it more regular, and the pulse stronger."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,276 @@
+{
+	"id": "2a2b7a7f-d4ac-4be8-88df-b305bb8fc3e3",
+	"url": "https://stepielts.com/student/listening/2a2b7a7f-d4ac-4be8-88df-b305bb8fc3e3?mode=practice",
+	"title": "Bicycle for the World",
+	"source": "Collection",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/13a0e915-b9b1-4ef7-85e6-f4e5367e6c9e.mp3",
+	"transcript": "Speaker 1: Lecturer: My name’s Dan Pearman, and I’d like to talk about the work of Pedal Power, a small charity based mainly in The UK. I’ll be giving our contact details at the end if anyone would like to find out more about how to support us. But first, how the charity began. I got the idea of exporting bicycles to developing countries while I was in Ecuador. I went there in 1993, just after graduating from university. After three years of studying, I wanted adventure. I loved traveling, so I decided to join a voluntary organization and was sent to Ecuador to carry out land surveys. The project came to an end after five years, and when I returned to The UK in 1998, I started planning pedal power. Where I lived in Ecuador was a very rural area. My neighbor had the only bicycle in the village, whereas everyone else walked everywhere. My neighbor’s business was unusually successful, and for years, I couldn’t understand why. Then I realized having a bike meant he could get where he wanted to go without much trouble. Other local carpenters could only accept jobs nathrious, so no matter how skilled they were, they could never do as many jobs as my neighbor. At Pedal Power, we collect secondhand bikes in The UK and send them to some of the poorest regions in the world. When we distribute bikes overseas, we don’t give them away for free. We’d like to, but long term, that doesn’t really help the local economy. The demand for bikes is enormous, which makes them very expensive locally. So we sell them for 5% of the normal price. But in order to continue operating, we need to have a constant supply of bikes which we send out every six months. One example of a town that’s received bicycles from Pedal Power is Rivas. It was the first place I sent a full container of bicycles to. Most people there now own a bicycle. The local economy has developed so much, you wouldn’t recognize it as the same place. In fact, there are more bikes than on the streets of Amsterdam, if you’ve ever been there. But Pedal Power still needs your help. You may have read about some of our recent problems in the British media. In August 2000, we simply ran out of money. We had containers of bikes ready to send, but no money to pay the bills. It was a terrible situation. We managed to ensure the bikes went out on time, but the other problems carried on for several months. Fortunately, in October 2001, we won an enterprise award, which helped us enormously. We invested 15 of the £75,000 prize money to help secure our future. Winning the award helped raise our profile, and the money enabled us to pay all our shipping costs, which represent our greatest expense. Pedal power changes lives. When someone gets a bicycle from us, they see a 14% increase in their income. We’re currently looking to invest in computers so that our office staff can do an even better job. Because of our work, people in a number of countries now have a better standard of living. So far, we’ve provided 46,000 people with bikes, but we’d like to send more, at least 50,000 by the end of the year. Now there are many ways in which you can support the work of Pedal Power, not just by taking a bike to a collection in your area. I should also like to say, if you do have a bike to donate, it doesn’t matter what condition it’s in. If we can’t repair it, we’ll strip it down for spare parts. Of course, to do that, we always need tools which are expensive to buy, so we welcome any that you can give. Also, you could help by contacting the voluntary staff at our offices. They’ll be able to suggest activities you could organize to bring in funds for us. People do all kinds of things, including, of course, sponsored bike rides. Also, we’re always interested to hear of other places that would benefit from receiving a consignment of bikes and welcome suggestions from people who’ve been to developing regions on their travels. We hope that by talking on radio programs like this, we will be able to raise public awareness, which will lead to government organizations also giving us regular financial support, something that we really need. If you’d like some more information about where to donate an old bicycle or offer help in other ways, please contact us on 019 ...",
+	"body": {
+		"text": "How much money did the charity receive when it won an award? [6]\nWhat is the charity currently hoping to buy? [7]",
+		"html": "<table><tbody><tr><td colspan=\"1\" rowspan=\"1\"><ul><li>How much money did the charity receive when it won an award? [6]</li></ul></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><ul><li>What is the charity currently hoping to buy? [7]</li></ul></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "In 1993 Dan Pearman went to Ecuador",
+					"options": [
+						{
+							"label": "A",
+							"text": "as a tourist guide."
+						},
+						{
+							"label": "B",
+							"text": "as part of his studies."
+						},
+						{
+							"label": "C",
+							"text": "as a voluntary worker."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"I went there in 1993, just after graduating from university. After three years of studying, I wanted adventure. I loved traveling, so I decided to join a voluntary organization and was sent to Ecuador to carry out land surveys."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Dan's neighbour was successful in business because he",
+					"options": [
+						{
+							"label": "A",
+							"text": "employed carpenters from the area."
+						},
+						{
+							"label": "B",
+							"text": "was the most skilled craftsman in the town."
+						},
+						{
+							"label": "C",
+							"text": "found it easy to reach customers."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Then I realized having a bike meant he could get where he wanted to go without much trouble."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Dan says the charity relies on",
+					"options": [
+						{
+							"label": "A",
+							"text": "getting enough bicycles to send regularly."
+						},
+						{
+							"label": "B",
+							"text": "finding new areas which need the bicycles."
+						},
+						{
+							"label": "C",
+							"text": "charging for the bicycles it sends abroad."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But in order to continue operating, we need to have a constant supply of bikes which we send out every six months."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What does Dan say about the town of Rivas?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It has received the greatest number of bikes."
+						},
+						{
+							"label": "B",
+							"text": "It has almost as many bikes as Amsterdam."
+						},
+						{
+							"label": "C",
+							"text": "Its economy has been totally transformed."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The local economy has developed so much, you wouldn’t recognize it as the same place."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What problem did the charity face in August 2000?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It couldn’t meet its overheads."
+						},
+						{
+							"label": "B",
+							"text": "It had to delay sending the bikes."
+						},
+						{
+							"label": "C",
+							"text": "It was criticised in the British media."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"In August 2000, we simply ran out of money. We had containers of bikes ready to send, but no money to pay the bills."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-7",
+			"type": "SHORT_ANSWER",
+			"instructions": "Answer the questions below. Write NO MORE THAN ONE WORD OR A NUMBER for each answer.",
+			"body": "How much money did the charity receive when it won an award? [6]\nWhat is the charity currently hoping to buy? [7]",
+			"body_table": [
+				["How much money did the charity receive when it won an award? [6]"],
+				["What is the charity currently hoping to buy? [7]"]
+			],
+			"body_html": "<table><tbody><tr><td colspan=\"1\" rowspan=\"1\"><ul><li>How much money did the charity receive when it won an award? [6]</li></ul></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><ul><li>What is the charity currently hoping to buy? [7]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "How much money did the charity receive when it won an award? [6]",
+					"answer": "75,000 / £75,000 / 75000 / £75000",
+					"quotes": [
+						"We invested 15 of the £75,000 prize money to help secure our future."
+					]
+				},
+				{
+					"number": 7,
+					"text": "What is the charity currently hoping to buy? [7]",
+					"answer": "computers",
+					"quotes": [
+						"We’re currently looking to invest in computers so that our office staff can do an even better job."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-10",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose THREE letters A-G.",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Which THREE things can the general public do to help the charity Pedal Power?",
+					"options": [
+						{
+							"label": "A",
+							"text": "organise a bicycle collection"
+						},
+						{
+							"label": "B",
+							"text": "repair the donated bikes"
+						},
+						{
+							"label": "C",
+							"text": "donate their unwanted tools"
+						},
+						{
+							"label": "D",
+							"text": "do voluntary work in its office"
+						},
+						{
+							"label": "E",
+							"text": "hold an event to raise money"
+						},
+						{
+							"label": "F",
+							"text": "identify areas that need bikes"
+						},
+						{
+							"label": "G",
+							"text": "write to the government"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 9,
+					"text": "Which THREE things can the general public do to help the charity Pedal Power?",
+					"options": [
+						{
+							"label": "A",
+							"text": "organise a bicycle collection"
+						},
+						{
+							"label": "B",
+							"text": "repair the donated bikes"
+						},
+						{
+							"label": "C",
+							"text": "donate their unwanted tools"
+						},
+						{
+							"label": "D",
+							"text": "do voluntary work in its office"
+						},
+						{
+							"label": "E",
+							"text": "hold an event to raise money"
+						},
+						{
+							"label": "F",
+							"text": "identify areas that need bikes"
+						},
+						{
+							"label": "G",
+							"text": "write to the government"
+						}
+					],
+					"answer": "E"
+				},
+				{
+					"number": 10,
+					"text": "Which THREE things can the general public do to help the charity Pedal Power?",
+					"options": [
+						{
+							"label": "A",
+							"text": "organise a bicycle collection"
+						},
+						{
+							"label": "B",
+							"text": "repair the donated bikes"
+						},
+						{
+							"label": "C",
+							"text": "donate their unwanted tools"
+						},
+						{
+							"label": "D",
+							"text": "do voluntary work in its office"
+						},
+						{
+							"label": "E",
+							"text": "hold an event to raise money"
+						},
+						{
+							"label": "F",
+							"text": "identify areas that need bikes"
+						},
+						{
+							"label": "G",
+							"text": "write to the government"
+						}
+					],
+					"answer": "F"
+				}
+			]
+		}
+	],
+	"images": []
+}

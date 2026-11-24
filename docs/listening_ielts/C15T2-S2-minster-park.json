@@ -1,0 +1,168 @@
+{
+	"id": "aecb366b-e521-4b1b-892e-bce3b01dffd9",
+	"url": "https://stepielts.com/student/listening/aecb366b-e521-4b1b-892e-bce3b01dffd9?mode=practice",
+	"title": "Minster Park",
+	"source": "C15T2",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/bd9563f7-6aa7-4063-99af-898b690b8a3e.mp3",
+	"transcript": "Speaker 0: Part two. You will hear part of a talk to a gardening club about a local park. First, you have some time to look at questions 11 to 14. Now listen carefully and answer questions 11 to 14.\nSpeaker 1: I'm very pleased to welcome this evening's guest speaker, Mark Logan, who's going to tell us about the recent transformation of Minster Park. Over to you, Mark. Thank you. I'm sure you're all familiar with Minster Park. It's been a feature of the city for well over a century and has been the responsibility of the city council for most of that time. What perhaps isn't so well known is the origin of the park. Unlike many public parks that started in private ownership, as the garden of a large house, for instance, Minster was some wasteland, which people living nearby started planting with flowers in 1892. It was unclear who actually owned the land, and this wasn't settled until twenty years later when the council took possession of it. You may have noticed the statue near one of the entrances. It's of Diane Gosforth, who played a key role in the history of the park. Once the council had become the legal owner, it planned to sell the land for housing. Many local people wanted it to remain a place that everyone could go to, to enjoy the fresh air and natural environment. Remember, the park is in a densely populated residential area. Diane Gosforth was one of those people, and she organized petitions and demonstrations, which eventually made the council change its mind about the future of the land. Soon after this, the First World War broke out in 1914, and most of the park was dug up and planted with vegetables, which were sold locally. At one stage, the army considered taking it over for troop exercises and got as far as contacting the city council, then decided the park was too small to be of use. There were occasional public meetings during the war in an area that had been retained as grass. After the war, the park was turned back more or less to how it had been before 1914 and continued almost unchanged until recently. Plans for transforming it were drawn up at various times, most recently in 2013, though they were revised in 2015 before any work had started. The changes finally got going in 2016 and were finished on schedule last year.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 15 to 20. Now listen and answer questions 15 to 20.\nSpeaker 1: Okay. Let me tell you about some of the changes that have been made and some things that have been retained. If you look at this map, you'll see the familiar outline of the park with the river forming the northern boundary and a gate in each of the other three walls. The statue of Diane Gosforth has been moved. It used to be close to the South Gate, but it's now immediately to the north of the Lily Pond, almost in the center of the park, which makes it much more visible. There's a new area of wooden sculptures, which are on the riverbank where the path from the East Gate makes a sharp bend. There are two areas that are particularly intended for children. The playground has been enlarged and improved, and that's between the river and the path that leads from the pond to the river. Then there's a new maze, a circular series of paths separated by low hedges. That's near the West Gate. You go north from there towards the river and then turn left to reach it. There have been tennis courts in the park for many years, and they've been doubled from four to eight. They're still in the Southwest corner of the park where there's a right angle bend in the path. Something else I'd like to mention is the new fitness area. This is right next to the Lily Pond on the same side as the West Gate. Now as you're all gardeners, I'm sure you'll like to hear about the plants that have been chosen for the park.\nSpeaker 0: That is the end of part two. You now have thirty seconds to check your answers to part two.",
+	"question_groups": [
+		{
+			"range": "11-14",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "The park was originally established",
+					"options": [
+						{
+							"label": "A",
+							"text": "as an amenity provided by the city council."
+						},
+						{
+							"label": "B",
+							"text": "as land belonging to a private house."
+						},
+						{
+							"label": "C",
+							"text": "as a shared area set up by the local community."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Unlike many public parks that started in private ownership, as the garden of a large house, for instance, Minster was some wasteland, which people living nearby started planting with flowers in 1892."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Why is there a statue of Diane Gosforth in the park?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She was a resident who helped to lead a campaign."
+						},
+						{
+							"label": "B",
+							"text": "She was a council member responsible for giving the public access."
+						},
+						{
+							"label": "C",
+							"text": "She was a senior worker at the park for many years."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Diane Gosforth was one of those people, and she organized petitions and demonstrations, which eventually made the council change its mind about the future of the land."
+					]
+				},
+				{
+					"number": 13,
+					"text": "During the First World War, the park was mainly used for",
+					"options": [
+						{
+							"label": "A",
+							"text": "exercises by troops."
+						},
+						{
+							"label": "B",
+							"text": "growing vegetables."
+						},
+						{
+							"label": "C",
+							"text": "public meetings."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Soon after this, the First World War broke out in 1914, and most of the park was dug up and planted with vegetables, which were sold locally."
+					]
+				},
+				{
+					"number": 14,
+					"text": "When did the physical transformation of the park begin?",
+					"options": [
+						{
+							"label": "A",
+							"text": "2013"
+						},
+						{
+							"label": "B",
+							"text": "2015"
+						},
+						{
+							"label": "C",
+							"text": "2016"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The changes finally got going in 2016 and were finished on schedule last year."
+					]
+				}
+			]
+		},
+		{
+			"range": "15-20",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below. Write the correct letter, A-I, next to Questions 15-20.",
+			"instructions_html": "<p>Label the map below. Write the correct letter, A-I, next to Questions 15-20.</p><p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/25f3f401-07c2-4f4a-96af-7ef8084d78b2.jpg\" alt=\"Cam 15 Test 2\"></p><p></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
+			"questions": [
+				{
+					"number": 15,
+					"text": "Statue of Diane Gosforth",
+					"answer": "E",
+					"quotes": [
+						"It used to be close to the South Gate, but it's now immediately to the north of the Lily Pond, almost in the center of the park, which makes it much more visible."
+					]
+				},
+				{
+					"number": 16,
+					"text": "Wooden sculptures",
+					"answer": "C",
+					"quotes": [
+						"There's a new area of wooden sculptures, which are on the riverbank where the path from the East Gate makes a sharp bend."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Playground",
+					"answer": "B",
+					"quotes": [
+						"The playground has been enlarged and improved, and that's between the river and the path that leads from the pond to the river."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Baze",
+					"answer": "A",
+					"quotes": [
+						"Then there's a new maze, a circular series of paths separated by low hedges. That's near the West Gate."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Tennis courts",
+					"answer": "G",
+					"quotes": [
+						"There have been tennis courts in the park for many years, and they've been doubled from four to eight. They're still in the Southwest corner of the park where there's a right angle bend in the path."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Fitness area",
+					"answer": "D",
+					"quotes": [
+						"Something else I'd like to mention is the new fitness area. This is right next to the Lily Pond on the same side as the West Gate."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/25f3f401-07c2-4f4a-96af-7ef8084d78b2.jpg"
+	]
+}

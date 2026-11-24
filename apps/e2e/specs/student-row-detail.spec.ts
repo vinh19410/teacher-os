@@ -15,7 +15,7 @@ test("student row click opens the detail page", async ({ page }) => {
 	const teacherEmail = await signUpViaApi(page);
 	await seedStudent({ teacherEmail, name: STUDENT_NAME });
 
-	await page.goto("/students");
+	await page.goto("/teacher/students");
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
 	// Click the row → SPA navigation to /students/:id. The detail route is
@@ -36,7 +36,7 @@ test("unknown student id renders the friendly not-found card", async ({
 }) => {
 	await signUpViaApi(page);
 
-	await page.goto("/students/e2e-fake-id");
+	await page.goto("/teacher/students/e2e-fake-id");
 	await expect(page.getByText("Không tìm thấy học viên")).toBeVisible();
 	const back = page.getByRole("link", {
 		name: "← Về danh sách học viên",

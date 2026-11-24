@@ -1,7 +1,8 @@
 import {
 	ASSIGNMENT_ANSWER_CHOICES,
 	ASSIGNMENT_IMAGE_SRC_PATTERN,
-	isImageBasedType,
+	answerKindByType,
+	extendedAnswerChoices,
 	QUIZ_ESSAY_MAX,
 	type QuizVerdict,
 	quizTypeDisplay,
@@ -13,12 +14,16 @@ import type {
 	QuizPart,
 	QuizPartQuestion,
 } from "@teacher-os/api/lib/quiz-parts";
-import { libraryOptionBankKindFor } from "@teacher-os/api/library-contracts";
+import {
+	isLibraryImageBasedType,
+	libraryOptionBankKindFor,
+} from "@teacher-os/api/library-contracts";
 import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import { OptionBankList } from "@teacher-os/ui/components/assignments/option-bank-list";
 import { PinOverlay } from "@teacher-os/ui/components/assignments/pin-overlay";
 import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
 import { QuizEssayInput } from "@teacher-os/ui/components/quiz/quiz-essay-input";
+import { QuizInlineInstruction } from "@teacher-os/ui/components/quiz/quiz-inline-instruction";
 import {
 	type QuizChoiceRow,
 	QuizQuestionItem,
@@ -34,7 +39,12 @@ import {
 	VERDICT_BLOCK_CLASSES,
 	VerdictIcon,
 } from "@teacher-os/ui/components/quiz/quiz-verdict";
+import {
+	type ParsedInlineInstruction,
+	parseInlineInstruction,
+} from "@teacher-os/ui/lib/inline-instruction";
 import { cn } from "@teacher-os/ui/lib/utils";
+import { useMemo } from "react";
 
 /** Các field đề cần để render paper (subset của StudentQuizDetail). */
 export type QuizPaperDetail = Pick<
@@ -77,6 +87,20 @@ function resolvePartInstruction(
 	return "Choose the correct letter.";
 }
 
+function isPositionalOnlyBank(
+	bank: readonly string[],
+	kind: keyof typeof ASSIGNMENT_ANSWER_CHOICES,
+): boolean {
+	if (bank.length === 0 || (kind !== "letter" && kind !== "roman")) {
+		return false;
+	}
+	const alphabet = extendedAnswerChoices(kind);
+	return bank.every(
+		(entry, index) =>
+			entry.trim().toUpperCase() === (alphabet[index] ?? "").toUpperCase(),
+	);
+}
+
 const SKILL_LABELS: Record<string, string> = {
 	reading: "Reading",
 	listening: "Listening",
@@ -85,6 +109,17 @@ const SKILL_LABELS: Record<string, string> = {
 	grammar: "Grammar",
 	vocabulary: "Vocabulary",
 };
+
+/** Standalone choice question types whose stems carry their own prompts/options
+ * and must never be collapsed into inline instruction slots. */
+const NON_INLINE_QUESTION_TYPES = new Set([
+	"mcq",
+	"mcq1",
+	"mcq3",
+	"mcq_many",
+	"tfng",
+	"ynng",
+]);
 
 type PartRenderUnit =
 	| { kind: "single"; question: QuizPartQuestion; effectiveType: string }
@@ -514,7 +549,9 @@ export function QuizPaper({
 		detail.optionBank,
 	);
 	const showDetailBank =
-		bankKind !== undefined && (!hasGroupSource || detail.optionBank.length > 0);
+		bankKind !== undefined &&
+		(!hasGroupSource || detail.optionBank.length > 0) &&
+		!isPositionalOnlyBank(detail.optionBank, bankKind);
 	const hasPins = questions.some((question) => question.pin != null);
 	// PinOverlay chỉ khả dụng khi ảnh đề hợp lệ — thiếu ảnh thì câu pin fallback
 	// về hàng cloze/choice thường để VẪN trả lời được (code-review F4).
@@ -523,16 +560,71 @@ export function QuizPaper({
 	// theo type đề — đề học viên có cluster ảnh nhưng type đề không ảnh vẫn
 	// như cũ (không đổi hành vi take screen).
 	const imageTypeMatch = hasGroupSource
-		? parts.some((part) => isImageBasedType(skill, part.typeId))
-		: isImageBasedType(skill, typeId);
+		? parts.some((part) => isLibraryImageBasedType(skill, part.typeId))
+		: isLibraryImageBasedType(skill, typeId);
 	const diagramImageUrl =
 		imageTypeMatch && ASSIGNMENT_IMAGE_SRC_PATTERN.test(rawImageUrl)
 			? rawImageUrl
 			: "";
 	const usePinOverlay = hasPins && diagramImageUrl !== "";
+	const { parsedInlineByPartId, introConsumedByInline } = useMemo(() => {
+		const byPartId = new Map<string, ParsedInlineInstruction>();
+		let introConsumed = false;
+		if (!isAuto) {
+			return {
+				parsedInlineByPartId: byPartId,
+				introConsumedByInline: introConsumed,
+			};
+		}
+
+		const hasIntroCandidate =
+			parts.length === 1 && !isEmptyRichText(introPreamble);
+
+		for (const part of parts) {
+			const hasOwnInstruction =
+				part.instructionHtml !== undefined &&
+				!isEmptyRichText(part.instructionHtml ?? "");
+			let candidateHtml = "";
+			let usesIntro = false;
+			if (hasOwnInstruction) {
+				candidateHtml = part.instructionHtml ?? "";
+			} else if (hasIntroCandidate) {
+				candidateHtml = introPreamble;
+				usesIntro = true;
+			}
+			if (!candidateHtml) continue;
+
+			const eligibleQuestions = part.questions
+				.filter((question) => {
+					if (usePinOverlay && question.pin != null) return false;
+					const effectiveType =
+						question.type ?? (part.source === "group" ? part.typeId : typeId);
+					if (NON_INLINE_QUESTION_TYPES.has(effectiveType)) return false;
+					if (question.opts && question.opts.length > 0) return false;
+					return true;
+				})
+				.map((question) => ({ q: question.q, number: question.number }));
+
+			if (eligibleQuestions.length === 0) continue;
+
+			const parsed = parseInlineInstruction(candidateHtml, eligibleQuestions);
+			if (parsed) {
+				byPartId.set(part.id, parsed);
+				if (usesIntro) {
+					introConsumed = true;
+				}
+			}
+		}
+
+		return {
+			parsedInlineByPartId: byPartId,
+			introConsumedByInline: introConsumed,
+		};
+	}, [isAuto, parts, introPreamble, typeId, usePinOverlay]);
 	// Bank riêng của part (nhóm) ưu tiên bank cấp đề — câu trong part nhóm
 	// chọn từ bank của nhóm mình (red-team R5).
 	const choiceRowsByQ = new Map<number, QuizChoiceRow[]>();
+	const optionBankByQ = new Map<number, readonly string[]>();
 	for (const part of parts) {
 		const partBank = part.optionBank ?? detail.optionBank;
 		for (const question of part.questions) {
@@ -547,6 +639,17 @@ export function QuizPaper({
 					? []
 					: questionChoiceRows(question, effectiveType, partBank),
 			);
+			const bankKindForQ =
+				(effectiveType === "summary" || effectiveType === "flow") &&
+				partBank.length > 0
+					? "letter"
+					: answerKindByType[effectiveType];
+			if (
+				partBank.length > 0 &&
+				(bankKindForQ === "letter" || bankKindForQ === "roman")
+			) {
+				optionBankByQ.set(question.q, partBank);
+			}
 		}
 	}
 	// PinOverlay chỉ ĐỌC `pin` + key answers theo `item.q ?? offset` — truyền
@@ -576,8 +679,7 @@ export function QuizPaper({
 		<article className="flex flex-col gap-4 rounded-xl bg-card text-foreground">
 			<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
 				{SKILL_LABELS[skill] ?? skill}
-				{detail.level?.trim() ? ` · ${detail.level.trim()}` : ""} · Band{" "}
-				{detail.band}
+				{detail.level?.trim() ? ` · ${detail.level.trim()}` : ""}
 			</p>
 
 			{skill === "listening" && (
@@ -642,13 +744,13 @@ export function QuizPaper({
 				<img
 					src={diagramImageUrl}
 					alt="Ảnh đề bài"
-					className="block max-h-72 w-auto max-w-full rounded-md border border-border"
+					className="block max-h-[28rem] w-auto max-w-full rounded-md border border-border"
 					referrerPolicy="no-referrer"
 					loading="lazy"
 				/>
 			) : null}
 
-			{isAuto && !isEmptyRichText(introPreamble) && (
+			{isAuto && !introConsumedByInline && !isEmptyRichText(introPreamble) && (
 				<RichTextBody
 					text={introPreamble}
 					className="text-muted-foreground text-sm"
@@ -738,6 +840,17 @@ export function QuizPaper({
 							)
 						: undefined;
 					const renderUnits = buildPartRenderUnits(part, typeId);
+					const parsedInline = parsedInlineByPartId.get(part.id) ?? null;
+					const remainingUnits = parsedInline
+						? renderUnits.filter(
+								(unit) =>
+									unit.kind !== "single" ||
+									!parsedInline.boundQuestionQs.has(unit.question.q),
+							)
+						: renderUnits;
+					const showPartBank =
+						partBankKind !== undefined &&
+						!isPositionalOnlyBank(part.optionBank ?? [], partBankKind);
 					return (
 						<section
 							key={part.id}
@@ -748,7 +861,7 @@ export function QuizPaper({
 							{isAuto && (
 								<header className="mb-2 flex flex-col gap-0.5">
 									<h2 className="font-semibold">{part.label}</h2>
-									{hasOwnInstruction ? (
+									{parsedInline ? null : hasOwnInstruction ? (
 										<RichTextBody
 											text={part.instructionHtml ?? ""}
 											className="text-muted-foreground text-sm"
@@ -765,39 +878,67 @@ export function QuizPaper({
 									)}
 								</header>
 							)}
-							{partBankKind && (
-								<OptionBankList
-									bank={part.optionBank ?? []}
-									kind={partBankKind}
+							{showPartBank &&
+								(parsedInline ? (
+									<div className="mb-3">
+										<OptionBankList
+											bank={part.optionBank ?? []}
+											kind={partBankKind}
+										/>
+									</div>
+								) : (
+									<OptionBankList
+										bank={part.optionBank ?? []}
+										kind={partBankKind}
+									/>
+								))}
+							{parsedInline && (
+								<QuizInlineInstruction
+									parsed={parsedInline}
+									questions={part.questions}
+									choiceRowsByQ={choiceRowsByQ}
+									optionBankByQ={optionBankByQ}
+									answers={answers}
+									onAnswer={onAnswer}
+									currentQuestion={currentQuestion}
+									mode={mode}
+									review={review}
 								/>
 							)}
-							<div className="flex flex-col gap-2.5">
-								{renderUnits.map((unit) =>
-									unit.kind === "mcq_many" ? (
-										<QuizMcqManyCard
-											key={`mcq-many-${unit.questions[0]?.q ?? 0}`}
-											questions={unit.questions}
-											answers={answers}
-											onAnswer={onAnswer}
-											currentQuestion={currentQuestion}
-											mode={mode}
-											review={review}
-										/>
-									) : (
-										<QuizQuestionItem
-											key={unit.question.q}
-											question={unit.question}
-											choiceRows={choiceRowsByQ.get(unit.question.q) ?? []}
-											type={unit.effectiveType}
-											answers={answers}
-											onAnswer={onAnswer}
-											current={currentQuestion === unit.question.q}
-											mode={mode}
-											review={review?.[unit.question.q]}
-										/>
-									),
-								)}
-							</div>
+							{remainingUnits.length > 0 && (
+								<div
+									className={cn(
+										"flex flex-col gap-2.5",
+										parsedInline && "mt-2.5",
+									)}
+								>
+									{remainingUnits.map((unit) =>
+										unit.kind === "mcq_many" ? (
+											<QuizMcqManyCard
+												key={`mcq-many-${unit.questions[0]?.q ?? 0}`}
+												questions={unit.questions}
+												answers={answers}
+												onAnswer={onAnswer}
+												currentQuestion={currentQuestion}
+												mode={mode}
+												review={review}
+											/>
+										) : (
+											<QuizQuestionItem
+												key={unit.question.q}
+												question={unit.question}
+												choiceRows={choiceRowsByQ.get(unit.question.q) ?? []}
+												type={unit.effectiveType}
+												answers={answers}
+												onAnswer={onAnswer}
+												current={currentQuestion === unit.question.q}
+												mode={mode}
+												review={review?.[unit.question.q]}
+											/>
+										),
+									)}
+								</div>
+							)}
 						</section>
 					);
 				})}

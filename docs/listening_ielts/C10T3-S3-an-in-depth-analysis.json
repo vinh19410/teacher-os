@@ -1,0 +1,215 @@
+{
+	"id": "7eae046a-2c01-4e80-aaef-097a5ea42d8b",
+	"url": "https://stepielts.com/student/listening/7eae046a-2c01-4e80-aaef-097a5ea42d8b?mode=practice",
+	"title": "An in-depth analysis",
+	"source": "C10T3",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/3fc8273a-443a-423c-ae87-35f8d03d701f.mp3",
+	"transcript": "Speaker 0: Now turn to section three. Section three. You will hear a student called Rob, who is in the first year of a theater studies course, talking to another student called Mere, who's in the fourth year of the same course. First, you have some time to look at questions 21 to 25. Now listen carefully and answer questions 21 to 25.\nSpeaker 1: Hi, Rob. How's the course going?\nSpeaker 2: Oh, hi, Mia. Yeah. Great. I can't believe the first term's nearly over.\nSpeaker 1: I saw your group's performance last night at the Student Theater. It was good.\nSpeaker 2: Really? Yeah. But now we have to write a report on the whole thing, an in-depth analysis. I don't know where to start. Like, I have to write about the role I played, the doctor, how I developed the character.\nSpeaker 1: Well, what was your starting point?\nSpeaker 2: My grandfather was a doctor before he retired, and I just based it on him.\nSpeaker 1: Okay. But how? Did you talk to him about it?\nSpeaker 2: He must have all sorts of stories, but he never says much about his work even now. He has a sort of authority, though.\nSpeaker 1: So how did you manage to capture that?\nSpeaker 2: I'd I'd visualize what he must have been like in the past when he was sitting in his consulting room listening to his patients.\nSpeaker 1: Okay. So that's what you explain in your report.\nSpeaker 2: Right.\nSpeaker 1: Then there's the issue of atmosphere. So in the first scene, we needed to know how boring life was in the doctor's village in the nineteen fifties. So when the curtain went up on the first scene in the waiting room, there was that long silence before anyone spoke. And then people kept saying the same thing over and over, like cold, isn't it?\nSpeaker 2: Yes. And everyone wore gray and brown and just sat in a row.\nSpeaker 1: Yes. All those details of the production.\nSpeaker 2: And I have to analyze how I functioned in the group, what I found out about myself. I know I was so frustrated at times when we couldn't agree.\nSpeaker 1: Yes. So did one person emerge as the leader?\nSpeaker 2: Sofia did. But that was okay. She helped us work out exactly what to do for the production, and that made me feel better, I suppose.\nSpeaker 1: When you understood what needed doing?\nSpeaker 2: Yes. And Sofia did some research too. That was useful in developing our approach.\nSpeaker 1: Like what?\nSpeaker 2: Well, she found these articles from the nineteen fifties about how relationships between children and their parents or between the public and people like bank managers or the police were shifting.\nSpeaker 1: Interesting. And did you have any practical problems to overcome?\nSpeaker 2: Well, in the final rehearsal, everything was going fine until the last scene. That's where the doctor's first patient appears on stage on his own.\nSpeaker 1: The one in the wheelchair?\nSpeaker 2: Yes. And he had this really long speech with the stage all dark except for one spotlight. And then that stuck somehow, so it was shining on the wrong side of the stage. But, anyway, we got that fixed. Thank goodness.\nSpeaker 1: Yes. It was fine on the night.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 26 to 30. Now listen and answer questions 26 to 30.\nSpeaker 2: But while you're here, Mia, I wanted to ask you about the year abroad option. Would you recommend doing that?\nSpeaker 1: Yes. Definitely. It's a fantastic chance to study in another country for a year.\nSpeaker 2: I think I'd like to do it, but it looks very competitive. There's only a limited number of places.\nSpeaker 1: Yes. So next year, when you're in the second year of the course, you need to work really hard in all your theater studies modules. Only students with good marks get places. You have to prove that you know your subject really well.\nSpeaker 2: Right. So how did you choose where to go?\nSpeaker 1: Well, I decided I wanted a program that would fit in with what I wanted to do after I graduate. So I looked for a university with emphasis on acting rather than directing, for example. It depends on you. Then about six months before you go, you have to email the scheme coordinator with your top three choices. I had a friend who missed the deadline and didn't get her first choice, So you do need to get a move on at that stage. You'll find that certain places are very popular with everyone.\nSpeaker 2: And don't you have to write a personal statement at that stage?\nSpeaker 0: Yes.\nSpeaker 2: Right. I'll get some of the final year students to give me some tips, maybe see if I can read what they wrote.\nSpeaker 1: I think that's a very good idea. I don't mind showing you what I did. And while you're abroad, don't make the mistake I made. Involved. I forgot all about making arrangements for when I came back here for the final year. Make sure you stay in touch so they know your choices for the optional modules. You don't want to miss out doing your preferred specialisms.\nSpeaker 2: Right.\nSpeaker 0: That is the end of section three. You now have half a minute to check your answers.",
+	"body": {
+		"text": "in the second year of the course [26]\nwhen first choosing where to go [27]\nwhen sending in your choices [28]\nwhen writing your personal statement [29]\nwhen doing the year abroad [30]",
+		"html": "<p>in the second year of the course [26]</p><p>when first choosing where to go [27]</p><p>when sending in your choices [28]</p><p>when writing your personal statement [29]</p><p>when doing the year abroad [30]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-25",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "What helped Rob to prepare to play the character of a doctor?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the stories his grandfather told him"
+						},
+						{
+							"label": "B",
+							"text": "the times when he watched his grandfather working"
+						},
+						{
+							"label": "C",
+							"text": "the way he imagined his grandfather at work"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"I'd I'd visualize what he must have been like in the past when he was sitting in his consulting room listening to his patients."
+					]
+				},
+				{
+					"number": 22,
+					"text": "In the play’s first scene, the boredom of village life was suggested by",
+					"options": [
+						{
+							"label": "A",
+							"text": "repetition of words and phrases."
+						},
+						{
+							"label": "B",
+							"text": "scenery painted in dull colours."
+						},
+						{
+							"label": "C",
+							"text": "long pauses within conversations."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"And then people kept saying the same thing over and over, like cold, isn't it?"
+					]
+				},
+				{
+					"number": 23,
+					"text": "What has Rob learned about himself through working in a group?",
+					"options": [
+						{
+							"label": "A",
+							"text": "He likes to have clear guidelines."
+						},
+						{
+							"label": "B",
+							"text": "He copes well with stress."
+						},
+						{
+							"label": "C",
+							"text": "He thinks he is a good leader."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"She helped us work out exactly what to do for the production, and that made me feel better, I suppose. When you understood what needed doing? Yes."
+					]
+				},
+				{
+					"number": 24,
+					"text": "To support the production, research material was used which described",
+					"options": [
+						{
+							"label": "A",
+							"text": "political developments."
+						},
+						{
+							"label": "B",
+							"text": "changing social attitudes."
+						},
+						{
+							"label": "C",
+							"text": "economic transformations."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Well, she found these articles from the nineteen fifties about how relationships between children and their parents or between the public and people like bank managers or the police were shifting."
+					]
+				},
+				{
+					"number": 25,
+					"text": "What problem did the students overcome in the final rehearsal?",
+					"options": [
+						{
+							"label": "A",
+							"text": "one person forgetting their words"
+						},
+						{
+							"label": "B",
+							"text": "an equipment failure"
+						},
+						{
+							"label": "C",
+							"text": "the injury of one character"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"And he had this really long speech with the stage all dark except for one spotlight. And then that stuck somehow, so it was shining on the wrong side of the stage. But, anyway, we got that fixed."
+					]
+				}
+			]
+		},
+		{
+			"range": "26-30",
+			"type": "MATCHING",
+			"instructions": "What action is needed for the following stages in doing the ‘year abroad’ option?\nChoose FIVE answers from the box and write the correct letter, A-G, next to questions 26-30.",
+			"options": [
+				{
+					"label": "A",
+					"text": "be on time"
+				},
+				{
+					"label": "B",
+					"text": "get a letter of recommendation"
+				},
+				{
+					"label": "C",
+					"text": "plan for the final year"
+				},
+				{
+					"label": "D",
+					"text": "make sure the institution’s focus is relevant"
+				},
+				{
+					"label": "E",
+					"text": "show ability in Theatre Studies"
+				},
+				{
+					"label": "F",
+					"text": "make travel arrangements and bookings"
+				},
+				{
+					"label": "G",
+					"text": "ask for help"
+				}
+			],
+			"body": "in the second year of the course [26]\nwhen first choosing where to go [27]\nwhen sending in your choices [28]\nwhen writing your personal statement [29]\nwhen doing the year abroad [30]",
+			"body_html": "<p>in the second year of the course [26]</p><p>when first choosing where to go [27]</p><p>when sending in your choices [28]</p><p>when writing your personal statement [29]</p><p>when doing the year abroad [30]</p>",
+			"questions": [
+				{
+					"number": 26,
+					"text": "in the second year of the course",
+					"answer": "E",
+					"quotes": [
+						"So next year, when you're in the second year of the course, you need to work really hard in all your theater studies modules. Only students with good marks get places. You have to prove that you know your subject really well."
+					]
+				},
+				{
+					"number": 27,
+					"text": "when first choosing where to go",
+					"answer": "D",
+					"quotes": [
+						"Well, I decided I wanted a program that would fit in with what I wanted to do after I graduate. So I looked for a university with emphasis on acting rather than directing, for example."
+					]
+				},
+				{
+					"number": 28,
+					"text": "when sending in your choices",
+					"answer": "A",
+					"quotes": [
+						"I had a friend who missed the deadline and didn't get her first choice, So you do need to get a move on at that stage."
+					]
+				},
+				{
+					"number": 29,
+					"text": "when writing your personal statement",
+					"answer": "G",
+					"quotes": [
+						"I'll get some of the final year students to give me some tips, maybe see if I can read what they wrote.",
+						"I don't mind showing you what I did."
+					]
+				},
+				{
+					"number": 30,
+					"text": "when doing the year abroad",
+					"answer": "C",
+					"quotes": [
+						"And while you're abroad, don't make the mistake I made. Involved. I forgot all about making arrangements for when I came back here for the final year."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

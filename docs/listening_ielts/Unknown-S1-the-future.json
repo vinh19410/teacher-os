@@ -1,0 +1,155 @@
+{
+	"id": "bf104c60-0799-4a0d-b0cc-6dd5b3bc8588",
+	"url": "https://stepielts.com/student/listening/bf104c60-0799-4a0d-b0cc-6dd5b3bc8588?mode=practice",
+	"title": "The future",
+	"source": "Unknown",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-6",
+	"audio_url": "https://audio.stepielts.com/listening-audio/fb6863f4-f4fe-4ea0-8460-c4c9b6704004.mp3",
+	"transcript": "Speaker 0: The future. I sometimes wonder what life will be like in the future. Life has changed so much in just the past few years. I'm sure that there are still big changes that are coming. Do you think we'll still drive cars? Maybe we'll get into computerized vehicles that we won't have to drive. We'll just push a few buttons, and the vehicles will take us to wherever we have to go. Maybe there won't be roads. We might just fly through space to get where we want to go. Instead of telephones, we'll just use our computers. We'll be able to see each other when we talk. That type of thing is already happening. Maybe we won't have to cook our meals. We might be able to push buttons to order whatever we want. A nice roast beef dinner or an ice cream sundae might just pop out of a machine. It would be nice to have a robot to clean the house for you. In the past few years, computers have been extremely important. People used to write to each other through the mail. Now people communicate so much more frequently through email. Most of my friends own computers. If we had all of these things to do the work for us, what would we do? We would still need people to program the computers. We could spend more time being creative rather than doing everyday chores. The future holds many surprises. I'm sure that technology will become even more and more amazing. When my parents were young, they had never even seen a color television. Nobody owned a computer. It doesn't take long for things to change a lot. Who knows what amazing things are in store for us?",
+	"body": {
+		"text": "Part A\n1. [1]\n2. [2]",
+		"html": "<p>Part A</p><p>1. [1]</p><p>2. [2]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-2",
+			"type": "FILL_BLANK",
+			"instructions": "Name two ways the speaker says technology might change our daily lives in the future",
+			"body_html": "<p>Part A</p><p>1. [1]</p><p>2. [2]</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "",
+					"answer": "computerized vehicles",
+					"quotes": [
+						"Maybe we'll get into computerized vehicles that we won't have to drive."
+					]
+				},
+				{
+					"number": 2,
+					"text": "",
+					"answer": "fly through space",
+					"quotes": [
+						"We might just fly through space to get where we want to go."
+					]
+				}
+			]
+		},
+		{
+			"range": "3-6",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C or D.",
+			"questions": [
+				{
+					"number": 3,
+					"text": "What does the speaker say might replace normal cars in the future?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Faster cars that still need a human driver."
+						},
+						{
+							"label": "B",
+							"text": "Computerized vehicles that drive themselves."
+						},
+						{
+							"label": "C",
+							"text": "Electric bikes on special roads."
+						},
+						{
+							"label": "D",
+							"text": "Trains that connect every city."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Maybe we'll get into computerized vehicles that we won't have to drive."
+					]
+				},
+				{
+					"number": 4,
+					"text": "The speaker wonders whether in the future there will be no roads. How might people travel instead?",
+					"options": [
+						{
+							"label": "A",
+							"text": "By walking very long distances."
+						},
+						{
+							"label": "B",
+							"text": "By swimming through underground tunnels."
+						},
+						{
+							"label": "C",
+							"text": "By flying through space."
+						},
+						{
+							"label": "D",
+							"text": "By using high-speed trains underwater."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"We might just fly through space to get where we want to go."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What does the speaker say about telephones and computers?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Computers will replace telephones, letting people see each other while talking."
+						},
+						{
+							"label": "B",
+							"text": "Telephones will become smaller and cheaper."
+						},
+						{
+							"label": "C",
+							"text": "Computers will only be used for work, not communication."
+						},
+						{
+							"label": "D",
+							"text": "Telephones and computers will be combined into one device."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Instead of telephones, we'll just use our computers.",
+						"We'll be able to see each other when we talk."
+					]
+				},
+				{
+					"number": 6,
+					"text": "How has communication already changed, according to the speaker?",
+					"options": [
+						{
+							"label": "A",
+							"text": "People stopped communicating with each other."
+						},
+						{
+							"label": "B",
+							"text": "Letters became more popular than before."
+						},
+						{
+							"label": "C",
+							"text": "Computers replaced schools and libraries."
+						},
+						{
+							"label": "D",
+							"text": "People now communicate much more often through email instead of mail."
+						}
+					],
+					"answer": "D",
+					"quotes": [
+						"People used to write to each other through the mail.",
+						"Now people communicate so much more frequently through email."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

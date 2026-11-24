@@ -318,7 +318,7 @@ test("AC-004: dòng thời gian hóa đơn & giao dịch (QR Bank-Hub + thu th�
 	).toBeVisible();
 
 	// Mở màn Nhật ký thông báo [5] (/notifications), lọc sự kiện Học phí và kiểm tra 2 bản ghi "Nhắc học phí"
-	await page.goto("/notifications?event=tuition");
+	await page.goto("/teacher/notifications?event=tuition");
 	await expect(
 		page.getByRole("heading", { name: /Nhật ký gửi thông báo/ }),
 	).toBeVisible();
@@ -330,7 +330,7 @@ test("AC-004: dòng thời gian hóa đơn & giao dịch (QR Bank-Hub + thu th�
 	await expect(reminderRows.filter({ hasText: STUDENT_B })).toHaveCount(1);
 
 	// Quay lại /debts, tích chọn lại 2 học viên và bấm gửi lần 2 cùng ngày -> báo đã nhắc hôm nay, không thêm dòng
-	await page.goto("/debts");
+	await page.goto("/teacher/debts");
 	await page
 		.getByRole("checkbox", { name: `Chọn học viên ${STUDENT_A}` })
 		.check();
@@ -346,14 +346,14 @@ test("AC-004: dòng thời gian hóa đơn & giao dịch (QR Bank-Hub + thu th�
 		page.getByText(/đã được gửi nhắc học phí trong hôm nay/),
 	).toBeVisible();
 
-	await page.goto("/notifications?event=tuition");
+	await page.goto("/teacher/notifications?event=tuition");
 	await expect(
 		page.locator("table tbody tr").filter({ hasText: "Nhắc học phí" }),
 	).toHaveCount(2);
 
 	// 3. Kịch bản 1 lặp ở 375×812
 	await page.setViewportSize({ width: 375, height: 812 });
-	await page.goto("/debts");
+	await page.goto("/teacher/debts");
 	const eyeBtnMobile = page.getByRole("button", {
 		name: `Xem dòng thời gian lịch sử hóa đơn & giao dịch của ${STUDENT_A}`,
 	});

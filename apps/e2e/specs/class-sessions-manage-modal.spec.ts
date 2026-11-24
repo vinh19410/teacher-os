@@ -24,7 +24,7 @@ async function createTemplateWithModules(page: Page, name: string) {
 			has: page.getByRole("heading", { name: title, exact: true }),
 		});
 
-	await page.goto("/syllabus");
+	await page.goto("/teacher/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
 	const dialog = page.getByRole("dialog");
 	await dialog.getByPlaceholder("VD: IELTS Writing 7.0").fill(name);
@@ -82,7 +82,7 @@ async function createClassFromTemplate(
 	templateName: string,
 ) {
 	// Full load so the ['kernel'] snapshot carries the freshly built template.
-	await page.goto("/classes");
+	await page.goto("/teacher/classes");
 	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
 	const classDialog = page.getByRole("dialog");
 	await classDialog.getByLabel("Tên lớp *").fill(className);

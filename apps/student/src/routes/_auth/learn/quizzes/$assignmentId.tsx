@@ -28,7 +28,10 @@ export const Route = createFileRoute("/_auth/learn/quizzes/$assignmentId")({
 			} catch {
 				// Storage hỏng/blocked — redirect vẫn ưu tiên.
 			}
-			throw redirect({ href: attemptSummaryHref(detail.attempt.id) });
+			throw redirect({
+				href: attemptSummaryHref(detail.attempt.id),
+				reloadDocument: true,
+			});
 		}
 		// Snapshot answers lúc LOAD — baseline cho resume reconciliation;
 		// refetch sau đó không dùng lại (đè answers cục bộ mới hơn của học viên).

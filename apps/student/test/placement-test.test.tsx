@@ -13,6 +13,7 @@ import {
 	render,
 	screen,
 	waitFor,
+	within,
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -510,11 +511,13 @@ describe("Student Portal Placement Test (#748)", () => {
 						writingWordCount: 11,
 						writingRubric: null,
 						writingScore: null,
+						writingCriterionComments: null,
 						writingErrors: [],
 						speakingStatus: "pending_upload",
 						speakingTranscript: "",
 						speakingRubric: null,
 						speakingScore: null,
+						speakingCriterionComments: null,
 						speakingErrors: [],
 						finalBandLevel: null,
 						finalDisplayCourse: null,
@@ -777,10 +780,16 @@ describe("Student Portal Placement Test (#748)", () => {
 					vocabGrammar: { correct: 15, total: 20, pct: 75 },
 					reading: { correct: 7, total: 10, pct: 70 },
 				},
-				writingText: "I go to school yesterday.",
-				writingWordCount: 5,
+				writingText: "I go to school yesterday and bought a big book.",
+				writingWordCount: 9,
 				writingRubric: { task: 6.5, coherence: 6, lexical: 6.5, grammar: 6 },
 				writingScore: 6.5,
+				writingCriterionComments: {
+					task: "Trả lời đủ ý chính nhưng cần mở rộng ví dụ.",
+					coherence: "   ",
+					lexical: "Từ vựng tự nhiên ở mức cơ bản.",
+					grammar: "",
+				},
 				writingErrors: [
 					{
 						id: "w-err-1",
@@ -791,9 +800,18 @@ describe("Student Portal Placement Test (#748)", () => {
 						correction: "went",
 						explanation: "Dùng thì quá khứ đơn với yesterday.",
 					},
+					{
+						id: "w-err-2",
+						category: "lexical",
+						quote: "big book",
+						start: 38,
+						end: 46,
+						correction: "thick reference book",
+						explanation: "Chọn tính từ cụ thể hơn thay vì 'big'.",
+					},
 				],
 				speakingStatus: "uploaded",
-				speakingTranscript: "I am liking English very much.",
+				speakingTranscript: "I am liking English very much and speak clearly.",
 				speakingRubric: {
 					fluency: 7,
 					lexical: 6.5,
@@ -801,6 +819,12 @@ describe("Student Portal Placement Test (#748)", () => {
 					pronunciation: 7,
 				},
 				speakingScore: 6.5,
+				speakingCriterionComments: {
+					fluency: "Nói trôi chảy, ít ngập ngừng.",
+					lexical: "",
+					grammar: "",
+					pronunciation: "Phát âm rõ các âm cuối.",
+				},
 				speakingErrors: [
 					{
 						id: "s-err-1",
@@ -810,6 +834,15 @@ describe("Student Portal Placement Test (#748)", () => {
 						end: 11,
 						correction: "like",
 						explanation: "Stative verb 'like' không chia tiếp diễn.",
+					},
+					{
+						id: "s-err-2",
+						category: "pronunciation",
+						quote: "clearly",
+						start: 40,
+						end: 47,
+						correction: "/ˈklɪəli/",
+						explanation: "Nhấn trọng âm rõ ở âm tiết đầu.",
 					},
 				],
 				finalBandLevel: "B1+",
@@ -847,20 +880,111 @@ describe("Student Portal Placement Test (#748)", () => {
 		expect(writingSection.textContent).toContain("6.5/9");
 		expect(writingSection.textContent).toContain("6.0/9");
 
+		// Writing criterion colors synced with error legend tokens
+		expect(
+			screen.getByTestId("student-writing-criterion-task").className,
+		).toContain("border-l-class-3");
+		expect(
+			screen.getByTestId("student-writing-criterion-coherence").className,
+		).toContain("border-l-class-4");
+		expect(
+			screen.getByTestId("student-writing-criterion-lexical").className,
+		).toContain("border-l-class-1");
+		expect(
+			screen.getByTestId("student-writing-criterion-grammar").className,
+		).toContain("border-l-class-5");
+
+		// Writing per-criterion comments render when non-empty and hide when empty/whitespace
+		expect(screen.getByTestId("student-writing-task-comment").textContent).toBe(
+			"Trả lời đủ ý chính nhưng cần mở rộng ví dụ.",
+		);
+		expect(
+			screen.getByTestId("student-writing-lexical-comment").textContent,
+		).toBe("Từ vựng tự nhiên ở mức cơ bản.");
+		expect(
+			screen.queryByTestId("student-writing-coherence-comment"),
+		).toBeNull();
+		expect(screen.queryByTestId("student-writing-grammar-comment")).toBeNull();
+
+		// Writing error legend displays ONLY 4 Writing English IELTS criteria
+		const writingLegend = within(writingSection).getByRole("list", {
+			name: "Chú giải loại lỗi",
+		});
+		const writingLegendItems = within(writingLegend).getAllByRole("listitem");
+		expect(writingLegendItems).toHaveLength(4);
+		expect(writingLegend.textContent).toContain("Task Response");
+		expect(writingLegend.textContent).toContain("Coherence & Cohesion");
+		expect(writingLegend.textContent).toContain("Lexical Resource");
+		expect(writingLegend.textContent).toContain("Grammatical Range & Accuracy");
+		expect(writingLegend.textContent).not.toContain("Pronunciation");
+		expect(writingLegend.textContent).not.toContain("Fluency & Coherence");
+		expect(writingLegend.textContent).not.toContain("Chính tả");
+		expect(writingLegend.textContent).not.toContain("Ngữ pháp");
+
 		const speakingSection = screen.getByTestId("graded-speaking-section");
 		expect(speakingSection.textContent).toContain("Band 6.5/9");
 		expect(speakingSection.textContent).toContain("Fluency & Coherence");
 		expect(speakingSection.textContent).toContain("7.0/9");
 		expect(speakingSection.textContent).toContain("6.5/9");
 
+		// Speaking criterion colors synced with error legend tokens
+		expect(
+			screen.getByTestId("student-speaking-criterion-fluency").className,
+		).toContain("border-l-class-4");
+		expect(
+			screen.getByTestId("student-speaking-criterion-lexical").className,
+		).toContain("border-l-class-1");
+		expect(
+			screen.getByTestId("student-speaking-criterion-grammar").className,
+		).toContain("border-l-class-5");
+		expect(
+			screen.getByTestId("student-speaking-criterion-pronunciation").className,
+		).toContain("border-l-class-2");
+
+		// Speaking per-criterion comments render when non-empty and hide when empty
+		expect(
+			screen.getByTestId("student-speaking-fluency-comment").textContent,
+		).toBe("Nói trôi chảy, ít ngập ngừng.");
+		expect(
+			screen.getByTestId("student-speaking-pronunciation-comment").textContent,
+		).toBe("Phát âm rõ các âm cuối.");
+		expect(screen.queryByTestId("student-speaking-lexical-comment")).toBeNull();
+		expect(screen.queryByTestId("student-speaking-grammar-comment")).toBeNull();
+
+		// Speaking error legend displays ONLY 4 Speaking English IELTS criteria
+		const speakingLegend = within(speakingSection).getByRole("list", {
+			name: "Chú giải loại lỗi",
+		});
+		const speakingLegendItems = within(speakingLegend).getAllByRole("listitem");
+		expect(speakingLegendItems).toHaveLength(4);
+		expect(speakingLegend.textContent).toContain("Fluency & Coherence");
+		expect(speakingLegend.textContent).toContain("Lexical Resource");
+		expect(speakingLegend.textContent).toContain(
+			"Grammatical Range & Accuracy",
+		);
+		expect(speakingLegend.textContent).toContain("Pronunciation");
+		expect(speakingLegend.textContent).not.toContain("Task Response");
+		expect(speakingLegend.textContent).not.toContain("Coherence & Cohesion");
+		expect(speakingLegend.textContent).not.toContain("Chính tả");
+		expect(speakingLegend.textContent).not.toContain("Phát âm");
+
 		expect(screen.getByTestId("writing-annotated-text").textContent).toContain(
 			"I go",
+		);
+		expect(screen.getByTestId("writing-error-cards").textContent).toContain(
+			"Grammatical Range & Accuracy",
+		);
+		expect(screen.getByTestId("writing-error-cards").textContent).toContain(
+			"Lexical Resource",
 		);
 		expect(screen.getByTestId("writing-error-cards").textContent).toContain(
 			"went",
 		);
 		expect(screen.getByTestId("writing-error-cards").textContent).toContain(
 			"Dùng thì quá khứ đơn với yesterday.",
+		);
+		expect(screen.getByTestId("speaking-error-cards").textContent).toContain(
+			"Pronunciation",
 		);
 		expect(screen.getByTestId("speaking-error-cards").textContent).toContain(
 			"Stative verb 'like' không chia tiếp diễn.",
@@ -873,7 +997,7 @@ describe("Student Portal Placement Test (#748)", () => {
 		);
 	});
 
-	it("renders legacy graded result view with /15 and /20 fallback", async () => {
+	it("renders legacy graded result view with /15 and /20 fallback without IELTS accent colors or criterion comments", async () => {
 		const { PlacementGradedResultView } = await import(
 			"@/components/placement/placement-result-views"
 		);
@@ -892,11 +1016,13 @@ describe("Student Portal Placement Test (#748)", () => {
 			writingWordCount: 1,
 			writingRubric: { ct: 4, or: 4, lg: 3 },
 			writingScore: 11,
+			writingCriterionComments: null,
 			writingErrors: [],
 			speakingStatus: "uploaded",
 			speakingTranscript: "Hi",
 			speakingRubric: { gv: 4, dm: 4, pr: 4, ic: 5 },
 			speakingScore: 17,
+			speakingCriterionComments: null,
 			speakingErrors: [],
 			finalBandLevel: "B1",
 			finalDisplayCourse: "Giao tiếp 2",
@@ -911,11 +1037,112 @@ describe("Student Portal Placement Test (#748)", () => {
 		expect(writingSection.textContent).toContain("11/15 điểm");
 		expect(writingSection.textContent).toContain("Content");
 		expect(writingSection.textContent).toContain("4/5");
+		expect(writingSection.querySelector(".border-l-4")).toBeNull();
+		expect(
+			writingSection.querySelector('[data-testid$="-comment"]'),
+		).toBeNull();
 
 		const speakingSection = screen.getByTestId("graded-speaking-section");
 		expect(speakingSection.textContent).toContain("17/20 điểm");
 		expect(speakingSection.textContent).toContain("Grammar & Vocabulary");
 		expect(speakingSection.textContent).toContain("5/5");
+		expect(speakingSection.querySelector(".border-l-4")).toBeNull();
+		expect(
+			speakingSection.querySelector('[data-testid$="-comment"]'),
+		).toBeNull();
+	});
+
+	it("handles null criterion comments and normalizes legacy or cross-skill error categories safely", async () => {
+		const { PlacementGradedResultView } = await import(
+			"@/components/placement/placement-result-views"
+		);
+		const { resolvePlacementErrorStyle } = await import(
+			"@/lib/placement-test-helpers"
+		);
+
+		expect(resolvePlacementErrorStyle("vocabulary", "writing").label).toBe(
+			"Lexical Resource",
+		);
+		expect(resolvePlacementErrorStyle("spelling", "writing").label).toBe(
+			"Lexical Resource",
+		);
+		expect(resolvePlacementErrorStyle("pronunciation", "writing").label).toBe(
+			"Lexical Resource",
+		);
+		expect(resolvePlacementErrorStyle("fluency", "writing").label).toBe(
+			"Coherence & Cohesion",
+		);
+		expect(resolvePlacementErrorStyle("task", "speaking").label).toBe(
+			"Fluency & Coherence",
+		);
+		expect(resolvePlacementErrorStyle("coherence", "speaking").label).toBe(
+			"Fluency & Coherence",
+		);
+		expect(resolvePlacementErrorStyle("unknown-cat", "speaking").label).toBe(
+			"Grammatical Range & Accuracy",
+		);
+
+		const submissionWithNullComments: StudentPlacementSubmissionView = {
+			id: "sub-ielts-null-comments",
+			testVersion: 3,
+			status: "graded",
+			submittedAt: "2026-11-15T00:00:00Z",
+			gradedAt: "2026-11-16T00:00:00Z",
+			objective: {
+				listening: { correct: 8, total: 10, pct: 80 },
+				vocabGrammar: { correct: 15, total: 20, pct: 75 },
+				reading: { correct: 7, total: 10, pct: 70 },
+			},
+			writingText: "Recieve this note.",
+			writingWordCount: 3,
+			writingRubric: { task: 6, coherence: 6, lexical: 5.5, grammar: 6 },
+			writingScore: 6,
+			writingCriterionComments: null,
+			writingErrors: [
+				{
+					id: "legacy-w-err",
+					category: "spelling" as unknown as "lexical",
+					quote: "Recieve",
+					start: 0,
+					end: 7,
+					correction: "Receive",
+					explanation: "Sai chính tả.",
+				},
+			],
+			speakingStatus: "uploaded",
+			speakingTranscript: "Hello everyone.",
+			speakingRubric: {
+				fluency: 6,
+				lexical: 6,
+				grammar: 6,
+				pronunciation: 6,
+			},
+			speakingScore: 6,
+			speakingCriterionComments: null,
+			speakingErrors: [],
+			finalBandLevel: "B1",
+			finalDisplayCourse: "IELTS Foundation",
+			finalScorePct: 70,
+			finalNote: "",
+			bandAdvice: "",
+			teacherFeedback: "",
+		};
+
+		render(
+			<PlacementGradedResultView submission={submissionWithNullComments} />,
+		);
+
+		const writingSection = screen.getByTestId("graded-writing-section");
+		expect(
+			writingSection.querySelector('[data-testid$="-comment"]'),
+		).toBeNull();
+		expect(screen.getByTestId("writing-error-cards").textContent).toContain(
+			"Lexical Resource",
+		);
+		const speakingSection = screen.getByTestId("graded-speaking-section");
+		expect(
+			speakingSection.querySelector('[data-testid$="-comment"]'),
+		).toBeNull();
 	});
 
 	it("renders exempt card with entryScore and optional start button, and unavailable card cleanly", async () => {
@@ -1286,11 +1513,13 @@ describe("Student Portal Placement Test (#748)", () => {
 			writingWordCount: 2,
 			writingRubric: null,
 			writingScore: null,
+			writingCriterionComments: null,
 			writingErrors: [],
 			speakingStatus: "uploaded",
 			speakingTranscript: "",
 			speakingRubric: null,
 			speakingScore: null,
+			speakingCriterionComments: null,
 			speakingErrors: [],
 			finalBandLevel: null,
 			finalDisplayCourse: null,

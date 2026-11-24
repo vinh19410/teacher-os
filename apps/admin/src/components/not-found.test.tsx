@@ -8,6 +8,7 @@ describe("admin NotFoundPage (#489)", () => {
 		expect(html).toContain("Trang không tồn tại");
 		expect(html).toContain("404");
 		expect(html).toContain("Về trang quản trị");
+		expect(html).toContain('href="/admin"');
 		expect(html).toContain('href="/login"');
 	});
 });

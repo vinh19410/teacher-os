@@ -118,10 +118,12 @@ const EVENT_TYPE_LABELS: Record<NotificationEventType, string> = {
 	assignment_published: "Giao bài",
 	grade_returned: "Trả điểm",
 	placement_submitted: "Nộp bài đầu vào",
+	daily_deadline_reminder: "Nhắc bài hằng ngày",
 	invoice_issued: "Hóa đơn học phí",
 	tuition_reminder: "Nhắc học phí",
 	schedule_changed: "Đổi lịch",
 	holiday_created: "Nghỉ lễ",
+	class_opening_confirmed: "Thông báo khai giảng",
 };
 
 const CHANNEL_LABELS: Record<string, string> = {

@@ -13,6 +13,7 @@ const rootPkg = JSON.parse(
 ) as { version?: string };
 
 export default defineConfig({
+	base: "/admin/",
 	define: {
 		__APP_VERSION__: JSON.stringify(rootPkg.version ?? "0.0.0"),
 	},
@@ -28,6 +29,7 @@ export default defineConfig({
 		tanstackRouter({
 			target: "react",
 			autoCodeSplitting: true,
+			routeFileIgnorePattern: "\\.test\\.tsx?$",
 		}),
 		react(),
 	],

@@ -1,0 +1,110 @@
+{
+	"id": "97910522-3223-40fd-ab2b-9506e8448460",
+	"url": "https://stepielts.com/student/listening/97910522-3223-40fd-ab2b-9506e8448460?mode=practice",
+	"title": "Charles Wilson Peale",
+	"source": "Other sources",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/84aee980-3c8f-4d55-808e-0a8757294792.mp3",
+	"transcript": "Speaker 2: Lecturer: In this lecture today, I’m going to introduce you to an American painter, Charles Wilson Peale. You may be familiar with his portraits, but did you know that he never even saw a painting till he was a grown man? He was born in Maryland in 1741. His father died when he was nine, and the family struggled financially for the next few years, and Charles became a saddle maker’s apprentice. One day he went to Norfolk for supplies, and there he saw paintings for the first time. He thought they were so bad that he felt sure he could do better, so he decided to make painting his career. In 1766, he went to London to study painting with Benjamin West. Whilst there he painted this portrait in 1768, see Slide one, Pitt as a Roman Senator. Notice how elaborately symbolical this portrait is. The symbolism arises, of course, from Pitt’s famous speech to the British Parliament where he draws an analogy between the ancient Roman senate’s view of a barbaric Britain and the prevailing European view of the time of a barbaric African continent fueling the slavery trade. Perhaps you didn’t know that the Romans used Britons as slaves, but I digress. Back to Peale. He returned to America and in 1772 painted the first ever portrait of George Washington. See slide two. In 1773, he painted a group portrait of himself, his wife, mother, brothers, sister, his old nurse, and an unidentified baby. Just look at the slide, this painting is simply called The Peale Family, and you can almost feel the exuberance of the family and their warmth towards one another. He enjoyed great success as a portraitist prior to the Revolution and served with distinction in the Revolution. During this time, he became friends with George Washington, Benjamin Franklin, and Thomas Jefferson. After the war he continued to paint, and when his wife died in the seventeen nineties, as a result of her eleventh pregnancy, he remarried. He had 17 children in all, naming the sons after famous painters or scientists. Although perhaps best known for his portraits of famous people, Peale liked novelty. Look at this slide of his two sons, Raphael and Titian, life size, climbing a narrow stairway. This painting, The Staircase Group (seventeen ninety five) was exhibited in a doorway as a trompe l’oeil, and it is said that it did, in fact, fool the eye of George Washington. Even as far back as 1772, we can see his desire for difference in Rachel weeping. It’s a rather macabre portrait of his first wife crying over the death of one of their children, their daughter Margaret. I’d like to show you one more slide to demonstrate his innovative approach. This is a portrait of his brother, James, sitting at his desk at night with only his face illuminated by a lamp. This was painted much later than the others, in 1822. You know, Peale believed anyone could learn to paint, and he taught painting to his brothers, sisters, sons, daughters, nephews, nieces, and other relatives. Four of his sons, Titian, Rubens, Rembrandt, and Raphael, became painters as did his brother James. Before I finish, I’d like to tell you a bit more about Peale. He was active in politics for several years, and throughout his life he maintained a lively interest in many branches of science. He was also an inventor who gained patents for a fireplace, porcelain false teeth, and a new kind of wooden bridge. He collaborated with Thomas Jefferson on what was known as the polygraph, a kind of portable writing desk. But it wasn’t any ordinary desk this one could make several copies of a manuscript at once. He also wrote papers on a wide variety of subjects, from hygiene to engineering. Oh, and he also tried his hand at inventing a fairly primitive but innovative motion picture technique, new types of eyeglasses, and a velocipede, which is a precursor to the bicycle. Now some of the original velocipeds had pedals and some didn’t. You sort of scooted along on them using your feet. Unfortunately, I can’t remember which type it was that Peale worked on. He’s also remembered for his work as a naturalist. He established the first scientific museum in America, and he even invented his own system of taxidermy. For those of you who aren’t sure what taxidermy is, it’s the art of preparing, stuffing, and presenting dead animals so that they appear lifelike. He was also well ahead of his time in that he placed his animals in a simulated natural environment. His most magnificent exhibit, however, was the complete skeleton of an extinct mammal known as a mastodon, which he helped excavate. The event was memorialized in his extraordinary painting The Exhuming of the Mastodon.",
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the lecture notes below. Write ONE WORD ONLY for each answer",
+			"body": "Biography of C.W. Peale\nborn in Maryland in 1741 and then became a saddler\nList of his paintings:\n'Pitt as a Roman Senator' - elaborate, [1] portrait of British parliamentarian\n'George Washington' - [2] portrait of many Washington paintings\n'The Peale Family' - family portrait shows exuberance and [3]\n'The Staircase Group' - displayed in a/an [4] double portrait of sons (Raphaelle & macabre Titian)\n'Rache Weeping' - wife and dead [5]\n'James Portrait' - brother James in darkness but face illuminated by a [6] Other fields of expertise",
+			"body_html": "<table><tbody><tr><td><h3>Biography of C.W. Peale</h3><ul><li>born in Maryland in 1741 and then became a saddler</li></ul><h4>List of his paintings:</h4><ul><li><strong>'Pitt as a Roman Senator' </strong>- elaborate, [1] portrait of British parliamentarian\n</li><li><strong>'George Washington'</strong> - [2] portrait of many Washington paintings\n</li><li><strong>'The Peale Family'</strong> - family portrait shows exuberance and [3]\n</li><li><strong>'The Staircase Group' </strong>- displayed in a/an [4] double portrait of sons (Raphaelle &amp; macabre Titian)\n</li><li><strong>'Rache Weeping'</strong> - wife and dead [5]\n</li><li><strong>'James Portrait'</strong> - brother James in darkness but face illuminated by a [6] Other fields of expertise\n</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "'Pitt as a Roman Senator' - elaborate, [1] portrait of British parliamentarian",
+					"answer": "symbolical",
+					"quotes": ["Notice how elaborately symbolical this portrait is."]
+				},
+				{
+					"number": 2,
+					"text": "'George Washington' - [2] portrait of many Washington paintings",
+					"answer": "first",
+					"quotes": [
+						"He returned to America and in 1772 painted the first ever portrait of George Washington."
+					]
+				},
+				{
+					"number": 3,
+					"text": "'The Peale Family' - family portrait shows exuberance and [3]",
+					"answer": "warmth",
+					"quotes": [
+						"Just look at the slide, this painting is simply called The Peale Family, and you can almost feel the exuberance of the family and their warmth towards one another."
+					]
+				},
+				{
+					"number": 4,
+					"text": "'The Staircase Group' - displayed in a/an [4] double portrait of sons (Raphaelle & macabre Titian)",
+					"answer": "doorway",
+					"quotes": [
+						"This painting, The Staircase Group (seventeen ninety five) was exhibited in a doorway as a trompe l’oeil, and it is said that it did, in fact, fool the eye of George Washington."
+					]
+				},
+				{
+					"number": 5,
+					"text": "'Rache Weeping' - wife and dead [5]",
+					"answer": "daughter",
+					"quotes": [
+						"It’s a rather macabre portrait of his first wife crying over the death of one of their children, their daughter Margaret."
+					]
+				},
+				{
+					"number": 6,
+					"text": "'James Portrait' - brother James in darkness but face illuminated by a [6] Other fields of expertise",
+					"answer": "lamp",
+					"quotes": [
+						"This is a portrait of his brother, James, sitting at his desk at night with only his face illuminated by a lamp."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the lecture below. Write NO MORE THAN ONE WORD for each answer",
+			"body": "Primarily, Peale was a painter but he was also a politician, scientist and [7] with many successful patents. He worked with Thomas Jefferson on the polygraph which was a desk that could be used for copying a [8] He wrote academic papers on different subjects and tried to make movies, spectacles and a velocipede (a kind of [9] Peale was also a naturalist and taxidermist and he helped unearth the skeleton of mastodon which was the best [10] in his museum.",
+			"body_html": "Primarily, Peale was a painter but he was also a politician, scientist and [7] with many successful patents. He worked with Thomas Jefferson on the polygraph which was a desk that could be used for copying a [8] He wrote academic papers on different subjects and tried to make movies, spectacles and a velocipede (a kind of [9] Peale was also a naturalist and taxidermist and he helped unearth the skeleton of mastodon which was the best [10] in his museum.",
+			"questions": [
+				{
+					"number": 7,
+					"text": "",
+					"answer": "inventor",
+					"quotes": [
+						"He was also an inventor who gained patents for a fireplace, porcelain false teeth, and a new kind of wooden bridge."
+					]
+				},
+				{
+					"number": 8,
+					"text": "",
+					"answer": "manuscript",
+					"quotes": [
+						"But it wasn’t any ordinary desk this one could make several copies of a manuscript at once."
+					]
+				},
+				{
+					"number": 9,
+					"text": "",
+					"answer": "bicycle",
+					"quotes": [
+						"Oh, and he also tried his hand at inventing a fairly primitive but innovative motion picture technique, new types of eyeglasses, and a velocipede, which is a precursor to the bicycle."
+					]
+				},
+				{
+					"number": 10,
+					"text": "",
+					"answer": "exhibit",
+					"quotes": [
+						"His most magnificent exhibit, however, was the complete skeleton of an extinct mammal known as a mastodon, which he helped excavate."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

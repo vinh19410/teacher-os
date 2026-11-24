@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { ShellLinkProvider } from "./nav-group";
 import { UserFooter } from "./user-footer";
 
 afterEach(() => {
@@ -121,5 +122,49 @@ describe("UserFooter", () => {
 		expect(wrapper.classList.contains("lg:flex-col")).toBe(true);
 		expect(link.className).toContain("lg:w-full");
 		expect(logout.closest("a")).toBeNull();
+	});
+
+	it("uses ShellLinkProvider when rendering user.href so basepath router links resolve cleanly", () => {
+		const onClick = vi.fn();
+		render(
+			<ShellLinkProvider
+				linkComponent={({
+					href,
+					className,
+					"aria-label": ariaLabel,
+					title,
+					onClick: handleClick,
+					children,
+				}) => (
+					<a
+						href={`/teacher${href}`}
+						className={className}
+						aria-label={ariaLabel}
+						title={title}
+						onClick={(event) => {
+							event.preventDefault();
+							handleClick?.(event);
+						}}
+					>
+						{children}
+					</a>
+				)}
+			>
+				<UserFooter
+					user={{
+						...baseUser,
+						href: "/profile",
+						title: "Nguyễn Văn A (a@example.com)",
+						onClick,
+					}}
+				/>
+			</ShellLinkProvider>,
+		);
+
+		const link = screen.getByRole("link", { name: baseUser.label });
+		expect(link.getAttribute("href")).toBe("/teacher/profile");
+		expect(link.getAttribute("title")).toBe("Nguyễn Văn A (a@example.com)");
+		fireEvent.click(link);
+		expect(onClick).toHaveBeenCalledTimes(1);
 	});
 });

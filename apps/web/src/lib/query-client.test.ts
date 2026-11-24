@@ -32,7 +32,7 @@ describe("createKernelQueryClient", () => {
 	test("QueryCache.onError re-authenticates exactly once for concurrent 401 reads", async () => {
 		const assign = vi.fn();
 		vi.stubGlobal("window", {
-			location: { assign, pathname: "/dash", search: "", hash: "" },
+			location: { assign, pathname: "/teacher/dash", search: "", hash: "" },
 		});
 		const client = createKernelQueryClient();
 		// Two distinct query keys → QueryCache.onError fires twice; the
@@ -53,6 +53,6 @@ describe("createKernelQueryClient", () => {
 
 		expect(signOutMock).toHaveBeenCalledTimes(1);
 		expect(assign).toHaveBeenCalledTimes(1);
-		expect(assign).toHaveBeenCalledWith("/login?returnUrl=%2Fdash");
+		expect(assign).toHaveBeenCalledWith("/login?returnUrl=%2Fteacher%2Fdash");
 	});
 });

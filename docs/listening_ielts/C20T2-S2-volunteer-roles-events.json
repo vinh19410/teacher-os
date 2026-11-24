@@ -1,0 +1,208 @@
+{
+	"id": "1925bca7-16e3-4e6d-a239-8b019994a104",
+	"url": "https://stepielts.com/student/listening/1925bca7-16e3-4e6d-a239-8b019994a104?mode=practice",
+	"title": "Volunteer Roles & Events",
+	"source": "C20T2",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/3dc35709-7e1e-42cf-8454-6d3d67b00846.mp3",
+	"transcript": "Speaker 1: Good morning, everyone. I’m Steve Wainwright from Elmly Town Council, and I organize the town’s volunteer scheme. I’m delighted you’re all interested in joining the scheme.Our volunteers help to create a sense of community among the many people who live in our historic town of Elmly and make residents and visitors feel welcome at local events. Uh, first, I’ll mention just a few of the activities that volunteers carry out. One is to walk around the town centre streets wearing our volunteer T-shirt. Tourists often ask how to get to a particular shop, and they might also be grateful for recommendations about what to visit. The town hall holds a large number of concerts each year, and part of the volunteers’ role is to get everyone in the audience to the right place as smoothly as possible. You’d be surprised how many people buy tickets then don’t check them and head for the wrong section of the hall. Volunteers may get involved with community groups, such as sports clubs or gardeners’ associations. Here, the volunteers talk about how groups can help each other. For instance, a writing group might want to travel to another town to hear a talk by a well-known author, but may not know that another club has a coach they could travel in. The town produces a monthly magazine, and anyone who lives in the town can send in articles. It’s free to residents and is paid for by local businesses. That’s the responsibility of the council’s advertising department. We depend on volunteers though, to find out what people think of events they’ve attended, and any suggestions they have for the future. The volunteers then send a summary to the editors. There are a number of clubs for retired people, and every year, the council arranges lunch for all the members. The volunteers welcome the guests, and when everyone’s sitting down and relaxing after the meal, some volunteers put on a show, usually around half an hour of songs and short plays. The club members really welcome the chance to chat to the volunteers at these events. The town council has a website, of course, and volunteers are asked to help by making sure residents know about it. It’s updated every day with information about future activities, and we want as many people as possible to use it. Okay, now you know some of the things our volunteers do, I’ll go on to some practical matters. As you probably know, the town arranges three major festivals every year, and they all depend on a large number of volunteers. The book festival lasts three days and uses several venues which all need volunteers. More are needed for the music festival because that lasts a whole week, and even more help is required for the science festival, even though it’s only two days long. It involves quite a lot of venues though. It’s a good idea to help at the festival you’re most interested in because you can attend most of the events for free. We try to use volunteers who are flexible though, because some festival events are held outdoors and the weather may affect the size of the audience and even whether the event can take place, so there can be changes at short notice. What’s essential though is being able to get on well with other people and also to deal with someone who’s behaving badly, as occasionally happens. Our plan is to get you all working in September, after a week’s training starting on the second.So we’ll be timetabling you for duties the following week from the ninth onward. Later, in the week beginning September 23rd, we have a chat with each of you to find out how you feel about being a volunteer and what extra support you need. As a thank you to the volunteers, we arrange an annual event. In recent years, we’ve had a party in the town hall, and last year, a barbecue in Chamber Park. Our forthcoming event is a trip along the canal from here to Jewhurst and back. It’s on Saturday, September the 28th, and if you’d like to attend, you can sign up once you start work. Now, this is the volunteers’ T-shirt.",
+	"body": {
+		"text": "walking around the town centre [11]\nhelping at concerts [12]\ngetting involved with community groups [13]\nhelping with a magazine [14]\nparticipating at lunches for retired people [15]\nhelping with the website [16]",
+		"html": "<p>walking around the town centre [11]</p><p>helping at concerts [12]</p><p>getting involved with community groups [13]</p><p>helping with a magazine [14]</p><p>participating at lunches for retired people [15]</p><p>helping with the website [16]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "11-16",
+			"type": "MATCHING",
+			"instructions": "What is the role of the volunteers in each of the following activities?\nChoose SIX answers from the box and write the correct letter, A-I, next to Questions 11-16.",
+			"options": [
+				{
+					"label": "A",
+					"text": "providing entertainment"
+				},
+				{
+					"label": "B",
+					"text": "providing publicity about a council service"
+				},
+				{
+					"label": "C",
+					"text": "contacting local businesses"
+				},
+				{
+					"label": "D",
+					"text": "giving advice to visitors"
+				},
+				{
+					"label": "E",
+					"text": "collecting feedback on events"
+				},
+				{
+					"label": "F",
+					"text": "selling tickets"
+				},
+				{
+					"label": "G",
+					"text": "introducing guest speakers at an event"
+				},
+				{
+					"label": "H",
+					"text": "encouraging cooperation between local organisations"
+				},
+				{
+					"label": "I",
+					"text": "helping people find their seats"
+				}
+			],
+			"body": "walking around the town centre [11]\nhelping at concerts [12]\ngetting involved with community groups [13]\nhelping with a magazine [14]\nparticipating at lunches for retired people [15]\nhelping with the website [16]",
+			"body_html": "<p>walking around the town centre [11]</p><p>helping at concerts [12]</p><p>getting involved with community groups [13]</p><p>helping with a magazine [14]</p><p>participating at lunches for retired people [15]</p><p>helping with the website [16]</p>",
+			"questions": [
+				{
+					"number": 11,
+					"text": "walking around the town centre",
+					"answer": "D",
+					"quotes": [
+						"Tourists often ask how to get to a particular shop, and they might also be grateful for recommendations about what to visit."
+					]
+				},
+				{
+					"number": 12,
+					"text": "helping at concerts",
+					"answer": "I",
+					"quotes": [
+						"The town hall holds a large number of concerts each year, and part of the volunteers’ role is to get everyone in the audience to the right place as smoothly as possible."
+					]
+				},
+				{
+					"number": 13,
+					"text": "getting involved with community groups",
+					"answer": "H",
+					"quotes": [
+						"Here, the volunteers talk about how groups can help each other."
+					]
+				},
+				{
+					"number": 14,
+					"text": "helping with a magazine",
+					"answer": "E",
+					"quotes": [
+						"We depend on volunteers though, to find out what people think of events they’ve attended, and any suggestions they have for the future."
+					]
+				},
+				{
+					"number": 15,
+					"text": "participating at lunches for retired people",
+					"answer": "A",
+					"quotes": [
+						"The volunteers welcome the guests, and when everyone’s sitting down and relaxing after the meal, some volunteers put on a show, usually around half an hour of songs and short plays."
+					]
+				},
+				{
+					"number": 16,
+					"text": "helping with the website",
+					"answer": "B",
+					"quotes": [
+						"The town council has a website, of course, and volunteers are asked to help by making sure residents know about it."
+					]
+				}
+			]
+		},
+		{
+			"range": "17-20",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 17,
+					"text": "Which event requires the largest number of volunteers?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the music festival"
+						},
+						{
+							"label": "B",
+							"text": "the science festival"
+						},
+						{
+							"label": "C",
+							"text": "the book festival"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"More are needed for the music festival because that lasts a whole week, and even more help is required for the science festival, even though it’s only two days long."
+					]
+				},
+				{
+					"number": 18,
+					"text": "What is the most important requirement for volunteers at the festivals?",
+					"options": [
+						{
+							"label": "A",
+							"text": "interpersonal skills"
+						},
+						{
+							"label": "B",
+							"text": "personal interest in the event"
+						},
+						{
+							"label": "C",
+							"text": "flexibility"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"What’s essential though is being able to get on well with other people and also to deal with someone who’s behaving badly, as occasionally happens."
+					]
+				},
+				{
+					"number": 19,
+					"text": "New volunteers will start working in the week beginning",
+					"options": [
+						{
+							"label": "A",
+							"text": "2 September."
+						},
+						{
+							"label": "B",
+							"text": "9 September."
+						},
+						{
+							"label": "C",
+							"text": "23 September."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Our plan is to get you all working in September, after a week’s training starting on the second.So we’ll be timetabling you for duties the following week from the ninth onward."
+					]
+				},
+				{
+					"number": 20,
+					"text": "What is the next annual event for volunteers?",
+					"options": [
+						{
+							"label": "A",
+							"text": "a boat trip"
+						},
+						{
+							"label": "B",
+							"text": "a barbecue"
+						},
+						{
+							"label": "C",
+							"text": "a party"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Our forthcoming event is a trip along the canal from here to Jewhurst and back."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

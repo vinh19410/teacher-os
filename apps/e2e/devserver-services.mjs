@@ -4,7 +4,7 @@
 // `devserver-watchdog.mjs` (restart) để command/env không drift. Module pure,
 // không I/O — unit test tại `scripts/devserver-watchdog.test.mjs`.
 
-/** Parse + validate 4 port từ env. Sai/thiếu → throw (watchdog exit 2). */
+/** Parse + validate 2 core ports (api + unified lms) từ env. Sai/thiếu → throw (watchdog exit 2). */
 export function parsePorts(env) {
 	const read = (key) => {
 		const raw = env[key];
@@ -15,11 +15,11 @@ export function parsePorts(env) {
 			);
 		return port;
 	};
+	const webKey =
+		env.E2E_LMS_PORT !== undefined ? "E2E_LMS_PORT" : "E2E_WEB_PORT";
 	return {
 		api: read("E2E_API_PORT"),
-		web: read("E2E_WEB_PORT"),
-		student: read("E2E_STUDENT_PORT"),
-		admin: read("E2E_ADMIN_PORT"),
+		web: read(webKey),
 	};
 }
 
@@ -29,14 +29,14 @@ export function parsePorts(env) {
  * @property {"api" | "vite"} kind
  * @property {string} pollUrl
  * @property {number} deadStatus
- * @property {string[]} [restartArgs] — chỉ có trên service vite (api không restart)
+ * @property {string[]} [restartArgs] — chỉ có trên service lms/vite (api không restart)
  */
 
 /**
- * Chế độ phục vụ web/student/admin trong e2e. `preview` (mặc định) chạy bản
- * build production bằng `vite preview`: bỏ chi phí transform theo yêu cầu của
- * vite dev (phần lớn thời gian mỗi lần tải trang trên máy chậm). Đặt
- * `E2E_VITE_MODE=dev` để quay về dev server khi cần HMR hoặc debug source.
+ * Chế độ phục vụ cổng LMS hợp nhất trong e2e. `preview` (mặc định) chạy bản
+ * build production bằng `apps/lms/scripts/serve-lms.mjs` (đóng gói đồng thời
+ * root + `/teacher`, `/student`, `/admin`). Đặt `E2E_VITE_MODE=dev` để chạy
+ * `vite` dev server khi cần HMR hoặc debug source.
  * @param {Record<string, string | undefined>} env
  * @returns {"dev" | "preview"}
  */
@@ -44,14 +44,16 @@ export function resolveViteMode(env) {
 	return env.E2E_VITE_MODE === "dev" ? "dev" : "preview";
 }
 
-/** Argv `pnpm` chạy một app vite ở port cố định (không shell, xem SecM4). */
-function viteArgs(app, port, mode) {
+/** Argv `pnpm` chạy cổng LMS hợp nhất (không shell, xem SecM4). */
+function lmsArgs(port, mode) {
+	if (mode === "preview") {
+		return ["--filter", "lms", "run", "serve"];
+	}
 	return [
 		"--filter",
-		app,
+		"lms",
 		"exec",
 		"vite",
-		...(mode === "preview" ? ["preview"] : []),
 		"--port",
 		String(port),
 		"--strictPort",
@@ -59,13 +61,10 @@ function viteArgs(app, port, mode) {
 }
 
 /**
- * Định nghĩa 4 service được giám sát. pollUrl khớp CHÍNH XÁC url readiness
- * của entry webServer trong playwright.config.ts; deadStatus khớp semantics
- * playwright (available chỉ khi status < 404, `coreBundle.js:8514-8524`) —
+ * Định nghĩa 2 service cốt lõi được giám sát (`api` + `lms`). pollUrl khớp
+ * CHÍNH XÁC url readiness của entry webServer trong playwright.config.ts;
+ * deadStatus khớp semantics playwright (available chỉ khi status < 404) —
  * api dùng 500 vì readyz trả 503 khi DB probe hỏng (`routes/readiness.ts:73`).
- * Admin (plan #413 phase 5): buildServices KHÔNG hỗ trợ lazy startup theo
- * spec, nên admin luôn chạy đủ 4 vite — theo dõi memory (rolldown abort,
- * AGENTS.md).
  * @returns {DevServerService[]}
  */
 export function buildServices(ports, { mode = "dev" } = {}) {
@@ -77,25 +76,11 @@ export function buildServices(ports, { mode = "dev" } = {}) {
 			deadStatus: 500,
 		},
 		{
-			name: "web",
+			name: "lms",
 			kind: "vite",
-			pollUrl: `http://localhost:${ports.web}/`,
+			pollUrl: `http://localhost:${ports.web}/login`,
 			deadStatus: 404,
-			restartArgs: viteArgs("web", ports.web, mode),
-		},
-		{
-			name: "student",
-			kind: "vite",
-			pollUrl: `http://localhost:${ports.student}/login`,
-			deadStatus: 404,
-			restartArgs: viteArgs("student", ports.student, mode),
-		},
-		{
-			name: "admin",
-			kind: "vite",
-			pollUrl: `http://localhost:${ports.admin}/login`,
-			deadStatus: 404,
-			restartArgs: viteArgs("admin", ports.admin, mode),
+			restartArgs: lmsArgs(ports.web, mode),
 		},
 	];
 }

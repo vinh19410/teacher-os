@@ -1,0 +1,194 @@
+{
+	"id": "d6bda33c-39a5-44a2-9066-6b8d2fe3c77f",
+	"url": "https://stepielts.com/student/listening/d6bda33c-39a5-44a2-9066-6b8d2fe3c77f?mode=practice",
+	"title": "Free activities in the Burnham area",
+	"source": "C11T3",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/7e029e09-0e47-4376-8aa4-5838bf6dd3a6.mp3",
+	"transcript": "Speaker 1: MARTIN: Good morning. This is Burnham tourist, Martin speaking.\nSpeaker 2: SUE: Oh, hello. I saw a poster about free things to do in the area, and it said people should phone you for information. I’m coming to Burnham with my husband and two children for a few days on June the 27th, or possibly the 28th, and I’d like some ideas for things to do on the 29th.\n(Example)\nSpeaker 1: MARTIN: Yes, of course. OK. Then let’s start with a couple of events especially for children. The art gallery is holding an event called ‘Family Welcome’ that day, when there are activities and trails to use throughout the gallery.\nSpeaker 2: SUE: That sounds interesting. What time does it start?\nSpeaker 1: MARTIN: The gallery opens at 10, and the ‘Family Welcome’ event runs from 10.30 until 2 o’clock. The gallery stays open until 5. And several times during the day, they’re going to show a short film that the gallery has produced. It demonstrates how ceramics are made, and there’ll be equipment and materials for children to have a go themselves. Last time they ran the event, there was a film about painting, which went down very well with the children, and they’re now working on one about sculpture.\nSpeaker 2: SUE: I like the sound of that. And what other events happen in Burnham?\nSpeaker 1: MARTIN: Well, do you all enjoy listening to music?\nSpeaker 2: SUE: Oh, yes.\nSpeaker 1: MARTIN: Well there are several free concerts taking place at different times – one or two in the morning, the majority at lunchtime, and a couple in the evening. And they range from pop music to Latin American.\nSpeaker 2: SUE: The Latin American could be fun. What time is that?\nSpeaker 1: MARTIN: It’s being repeated several times, in different places. They’re performing in the central library at 1 o’clock, then at 4 it’s in the City Museum, and in the evening, at 7.30, there’s a longer concert, in the theatre.\nSpeaker 2: SUE: Right. I’ll suggest that to the rest of the family.\nSpeaker 1: MARTIN: Something else you might be interested in is the boat race along the river.\nSpeaker 2: SUE: Oh, yes, do tell me about that.\nSpeaker 1: MARTIN: The race starts at Offord Marina, to the north of Burnham, and goes as far as Summer Pool. The best place to watch it from is Charlesworth Bridge, though that does get rather crowded.\nSpeaker 2: SUE: And who’s taking part?\nSpeaker 1: MARTIN: Well, local boat clubs, but the standard is very high. One of them came first in the West of England regional championship in May this year – it was the first time a team from Burnham has won. It means that next year they’ll be representing the region in the national championship.\n———————————————————————————————————————————————\nSpeaker 2: SUE: Now I’ve heard something about Paxton Nature Reserve. It’s a good place for spotting unusual birds, isn’t it?\nSpeaker 1: MARTIN: That’s right – throughout the year. There is a lake there, as well as a river, and they provide a very attractive habitat. So it’s a good idea to bring binoculars if you have them. And just at the moment you can see various flowers that are pretty unusual – the soil at Paxton isn’t very common. They’re looking good right now.\nSpeaker 2: SUE: Right. My husband will be particularly interested in that.\nSpeaker 1: MARTIN: And there’s going to be a talk and slide show about mushrooms – and you’ll be able to go out and pick some afterwards and study the different varieties.\nSpeaker 2: SUE: Uhuh. And is it possible for children to swim in the river?\nSpeaker 1: MARTIN: Yes. Part of it has been fenced off to make it safe for children to swim in. It’s very shallow, and there’s a lifeguard on duty whenever it’s open. The lake is too deep, so swimming isn’t allowed there.\nSpeaker 2: SUE: OK, we must remember to bring their swimming things, in case we go to Paxton. How long does it take to get there by car from Burnham?\nSpeaker 1: MARTIN: About 20 minutes, but parking is very limited, so it’s usually much easier to go by bus – and it takes about the same time.\nSpeaker 2: SUE: Right. Well. I’ll discuss the options with the rest of the family. Thanks very much for all your help.\nSpeaker 1: MARTIN: You’re welcome.\nSpeaker 2: SUE: Goodbye.\nSpeaker 1: MARTIN: Bye.",
+	"body": {
+		"text": "Paxton Nature Reserve\nPaxton is a good place for seeing rare [7] all year round.\nThis is a particularly good time for seeing certain unusual [8]\nVisitors will be able to learn about [9] and then collect some.\nPart of the [10] has been made suitable for swimming.",
+		"html": "<h4><strong>Paxton Nature Reserve</strong></h4><ul><li>Paxton is a good place for seeing rare [7] all year round.</li><li>This is a particularly good time for seeing certain unusual [8]</li><li>Visitors will be able to learn about [9] and then collect some.</li><li>Part of the [10] has been made suitable for swimming.</li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The ‘Family Welcome’ event in the art gallery begins at",
+					"options": [
+						{
+							"label": "A",
+							"text": "10 am."
+						},
+						{
+							"label": "B",
+							"text": "10.30 am."
+						},
+						{
+							"label": "C",
+							"text": "2 pm."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"MARTIN: The gallery opens at 10, and the ‘Family Welcome’ event runs from 10.30 until 2 o’clock."
+					]
+				},
+				{
+					"number": 2,
+					"text": "The film that is now shown in the ‘Family Welcome’ event is about",
+					"options": [
+						{
+							"label": "A",
+							"text": "sculpture."
+						},
+						{
+							"label": "B",
+							"text": "painting."
+						},
+						{
+							"label": "C",
+							"text": "ceramics."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"It demonstrates how ceramics are made, and there’ll be equipment and materials for children to have a go themselves."
+					]
+				},
+				{
+					"number": 3,
+					"text": "When do most of the free concerts take place?",
+					"options": [
+						{
+							"label": "A",
+							"text": "in the morning"
+						},
+						{
+							"label": "B",
+							"text": "at lunchtime"
+						},
+						{
+							"label": "C",
+							"text": "in the evening"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"MARTIN: Well there are several free concerts taking place at different times – one or two in the morning, the majority at lunchtime, and a couple in the evening."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Where will the 4 pm concert of Latin American music take place?",
+					"options": [
+						{
+							"label": "A",
+							"text": "in a museum"
+						},
+						{
+							"label": "B",
+							"text": "in a theatre"
+						},
+						{
+							"label": "C",
+							"text": "in a library"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"They’re performing in the central library at 1 o’clock, then at 4 it’s in the City Museum, and in the evening, at 7.30, there’s a longer concert, in the theatre."
+					]
+				},
+				{
+					"number": 5,
+					"text": "The boat race begins at",
+					"options": [
+						{
+							"label": "A",
+							"text": "Summer Pool."
+						},
+						{
+							"label": "B",
+							"text": "Charlesworth Bridge."
+						},
+						{
+							"label": "C",
+							"text": "Offord Marina."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"MARTIN: The race starts at Offord Marina, to the north of Burnham, and goes as far as Summer Pool."
+					]
+				},
+				{
+					"number": 6,
+					"text": "One of the boat race teams",
+					"options": [
+						{
+							"label": "A",
+							"text": "won a regional competition earlier this year."
+						},
+						{
+							"label": "B",
+							"text": "has represented the region in a national competition."
+						},
+						{
+							"label": "C",
+							"text": "has won several regional competitions."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"One of them came first in the West of England regional championship in May this year – it was the first time a team from Burnham has won."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Write ONE WORD ONLY for each answer.",
+			"body": "Paxton Nature Reserve\nPaxton is a good place for seeing rare [7] all year round.\nThis is a particularly good time for seeing certain unusual [8]\nVisitors will be able to learn about [9] and then collect some.\nPart of the [10] has been made suitable for swimming.",
+			"body_html": "<h4><strong>Paxton Nature Reserve</strong></h4><ul><li>Paxton is a good place for seeing rare [7] all year round.</li><li>This is a particularly good time for seeing certain unusual [8]</li><li>Visitors will be able to learn about [9] and then collect some.</li><li>Part of the [10] has been made suitable for swimming.</li></ul>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "Paxton is a good place for seeing rare [7] all year round.",
+					"answer": "birds",
+					"quotes": ["It’s a good place for spotting unusual birds, isn’t it?"]
+				},
+				{
+					"number": 8,
+					"text": "This is a particularly good time for seeing certain unusual [8]",
+					"answer": "flowers",
+					"quotes": [
+						"And just at the moment you can see various flowers that are pretty unusual – the soil at Paxton isn’t very common."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Visitors will be able to learn about [9] and then collect some.",
+					"answer": "mushrooms",
+					"quotes": [
+						"MARTIN: And there’s going to be a talk and slide show about mushrooms – and you’ll be able to go out and pick some afterwards and study the different varieties."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Part of the [10] has been made suitable for swimming.",
+					"answer": "river",
+					"quotes": ["And is it possible for children to swim in the river?"]
+				}
+			]
+		}
+	],
+	"images": []
+}

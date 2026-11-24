@@ -76,7 +76,7 @@ export function VerifyEmailView({ verified, error }: VerifyEmailViewProps) {
 				<div className="mt-6 flex justify-center">
 					<button
 						type="button"
-						onClick={() => window.location.assign("/")}
+						onClick={() => window.location.assign("/student")}
 						className="inline-flex h-9 w-full items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary font-medium text-primary-foreground text-sm shadow-xs outline-none transition-all hover:bg-primary/90 focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
 					>
 						Vào cổng học viên

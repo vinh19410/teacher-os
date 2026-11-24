@@ -1,6 +1,7 @@
 import type {
 	BillingTimelineEvent,
 	BillingTimelineResponse,
+	ClassConfirmOpeningResponse,
 	ClassStatusResponse,
 	CreatedResponse,
 	DebtReminderResponse,
@@ -14,6 +15,7 @@ import {
 	addManualSessionSchema,
 	CLASS_ERROR_CODES,
 	classAssignmentCreateSchema,
+	classConfirmOpeningSchema,
 	classCreateSchema,
 	classNotesSchema,
 	classStatusUpdateSchema,
@@ -107,7 +109,9 @@ import { resolveOrgMailSender } from "../lib/notifications/org-mail-sender";
 import {
 	assignmentPublishedEvents,
 	classEnrolledEvent,
+	classOpeningConfirmedEvents,
 	invoiceIssuedEvent,
+	isOpeningStudentNotified,
 	scheduleChangedEvents,
 	tuitionReminderEvent,
 } from "../lib/notifications/templates";
@@ -142,6 +146,7 @@ import {
 import type { ZoomClient, ZoomConfig } from "../lib/zoom/zoom-client";
 import { assignmentRoutes } from "./assignments";
 import { bankLinkRoutes } from "./bank-link";
+import { courseRoutes } from "./courses";
 import { dailyAttendanceRoutes } from "./daily-attendance";
 import {
 	dashboardReminderRoutes,
@@ -475,6 +480,7 @@ export function kernelRoutes(deps: {
 			.select({
 				id: classTable.id,
 				name: classTable.name,
+				level: classTable.level,
 				schedule: classTable.schedule,
 				sessionsTotal: classTable.sessionsTotal,
 				startDate: classTable.startDate,
@@ -483,6 +489,9 @@ export function kernelRoutes(deps: {
 				tuitionFee: classTable.tuitionFee,
 				schedulingMode: classTable.schedulingMode,
 				status: classTable.status,
+				openingConfirmedAt: classTable.openingConfirmedAt,
+				openingNote: classTable.openingNote,
+				openingAnnouncementVersion: classTable.openingAnnouncementVersion,
 			})
 			.from(classTable)
 			.where(and(eq(classTable.id, classId), eq(classTable.orgId, orgId)));
@@ -2462,6 +2471,352 @@ export function kernelRoutes(deps: {
 		}
 
 		return c.json({ ok: true });
+	});
+
+	async function loadOpeningNotifState(
+		db: Db,
+		orgId: string,
+		classId: string,
+	): Promise<{
+		channelsByStudent: Map<string, Set<string>>;
+		emailByStudent: Map<string, string>;
+	}> {
+		const rows = await db
+			.selectDistinct({
+				studentId: notificationRecord.studentId,
+				channels: notificationRecord.channels,
+				email: student.email,
+			})
+			.from(notificationRecord)
+			.innerJoin(
+				student,
+				and(
+					eq(student.id, notificationRecord.studentId),
+					eq(student.orgId, orgId),
+				),
+			)
+			.where(
+				and(
+					eq(notificationRecord.orgId, orgId),
+					eq(notificationRecord.eventType, "class_opening_confirmed"),
+					eq(notificationRecord.refType, "class"),
+					eq(notificationRecord.refId, classId),
+				),
+			);
+		const channelsByStudent = new Map<string, Set<string>>();
+		const emailByStudent = new Map<string, string>();
+		for (const row of rows) {
+			let channels = channelsByStudent.get(row.studentId);
+			if (!channels) {
+				channels = new Set();
+				channelsByStudent.set(row.studentId, channels);
+			}
+			channels.add(row.channels);
+			emailByStudent.set(row.studentId, row.email);
+		}
+		return { channelsByStudent, emailByStudent };
+	}
+
+	function computeOpeningNotifiedStudentIds(
+		channelsByStudent: ReadonlyMap<string, ReadonlySet<string>>,
+		emailByStudent: ReadonlyMap<string, string>,
+	): string[] {
+		const ids: string[] = [];
+		for (const [studentId, channels] of channelsByStudent) {
+			if (
+				isOpeningStudentNotified(emailByStudent.get(studentId) ?? "", channels)
+			) {
+				ids.push(studentId);
+			}
+		}
+		return ids;
+	}
+
+	/**
+	 * Chốt hoặc gửi lại thông báo lịch khai giảng lớp học kèm email HTML thương hiệu.
+	 * Chế độ `initial` / `all` bảo vệ bằng CAS trên `openingAnnouncementVersion`
+	 * (và khóa đổi `startDate` nguyên tử bằng `NOT EXISTS` khi lớp đã có buổi học
+	 * thực tế); chế độ `new_only` không ghi đè bản ghi lớp mà chỉ gửi bổ sung cho
+	 * học viên chưa nhận đủ thông báo.
+	 */
+	kernel.post("/classes/:id/confirm-opening", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		if (!canManageClassStatusInKernel(ctx.role)) {
+			return c.json({ error: "forbidden", code: "FORBIDDEN" }, 403);
+		}
+		const body = await readBody(c, classConfirmOpeningSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+		const classId = c.req.param("id");
+
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found" }, 404);
+		}
+		if (cls.status !== "active") {
+			return classPausedResponse(c);
+		}
+
+		const currentVersion = cls.openingAnnouncementVersion ?? 0;
+		if (input.expectedVersion !== currentVersion) {
+			return c.json(
+				{
+					error:
+						"Trạng thái chốt khai giảng của lớp vừa thay đổi, vui lòng tải lại.",
+					code: CLASS_ERROR_CODES.OPENING_VERSION_CONFLICT,
+				},
+				409,
+			);
+		}
+		if (currentVersion === 0 && input.mode !== "initial") {
+			return c.json({ error: "Lớp chưa chốt khai giảng lần đầu." }, 400);
+		}
+		if (currentVersion > 0 && input.mode === "initial") {
+			return c.json(
+				{
+					error: "Lớp đã được chốt khai giảng trước đó.",
+					code: CLASS_ERROR_CODES.OPENING_VERSION_CONFLICT,
+				},
+				409,
+			);
+		}
+
+		const now = deps.now ? deps.now() : new Date();
+		const existingStartDate = cls.startDate.trim();
+		const effectiveStartDate =
+			input.startDate !== undefined ? input.startDate : existingStartDate;
+		const startDateChanged =
+			input.startDate !== undefined && input.startDate !== existingStartDate;
+
+		if (input.mode === "new_only" && startDateChanged) {
+			return c.json(
+				{
+					error:
+						"Không thể đổi ngày khai giảng khi chỉ gửi bổ sung. Hãy chọn gửi thông báo cập nhật cho cả lớp.",
+				},
+				400,
+			);
+		}
+		if (!effectiveStartDate) {
+			return c.json(
+				{
+					error:
+						"Lớp chưa có ngày khai giảng. Vui lòng chọn ngày khai giảng trước khi chốt.",
+				},
+				400,
+			);
+		}
+		if (startDateChanged && effectiveStartDate < vietnamTodayISO(now)) {
+			return c.json(
+				{ error: "Ngày khai giảng mới phải từ hôm nay trở đi." },
+				400,
+			);
+		}
+
+		let confirmedAt: Date;
+		let announcementVersion: number;
+		let persistedStartDate: string;
+		let persistedNote: string;
+
+		if (input.mode === "new_only") {
+			confirmedAt = cls.openingConfirmedAt ?? now;
+			announcementVersion = currentVersion;
+			persistedStartDate = existingStartDate;
+			persistedNote = cls.openingNote;
+		} else {
+			const nextVersion = currentVersion + 1;
+			const whereConditions = [
+				eq(classTable.id, classId),
+				eq(classTable.orgId, ctx.orgId),
+				eq(classTable.status, "active"),
+				eq(classTable.openingAnnouncementVersion, currentVersion),
+			];
+			if (startDateChanged) {
+				whereConditions.push(
+					sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.classId} = ${classId} AND ${lesson.orgId} = ${ctx.orgId})`,
+					sql`NOT EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId})`,
+				);
+			}
+
+			const updated = await db
+				.update(classTable)
+				.set({
+					openingConfirmedAt: now,
+					openingNote: input.note,
+					openingAnnouncementVersion: nextVersion,
+					...(startDateChanged ? { startDate: effectiveStartDate } : {}),
+				})
+				.where(and(...whereConditions))
+				.returning({
+					id: classTable.id,
+					openingConfirmedAt: classTable.openingConfirmedAt,
+					openingAnnouncementVersion: classTable.openingAnnouncementVersion,
+					startDate: classTable.startDate,
+					openingNote: classTable.openingNote,
+				});
+
+			const updatedRow = updated[0];
+			if (!updatedRow) {
+				if (
+					startDateChanged &&
+					(await hasRealClassSessions(db, ctx.orgId, classId))
+				) {
+					return scheduleLockedResponse(c);
+				}
+				const stillExists = await findClass(db, classId, ctx.orgId);
+				if (!stillExists) {
+					return c.json({ error: "class not found" }, 404);
+				}
+				if (stillExists.status !== "active") {
+					return classPausedResponse(c);
+				}
+				return c.json(
+					{
+						error:
+							"Trạng thái chốt khai giảng của lớp vừa thay đổi, vui lòng tải lại.",
+						code: CLASS_ERROR_CODES.OPENING_VERSION_CONFLICT,
+					},
+					409,
+				);
+			}
+
+			confirmedAt = updatedRow.openingConfirmedAt ?? now;
+			announcementVersion = updatedRow.openingAnnouncementVersion;
+			persistedStartDate = updatedRow.startDate;
+			persistedNote = updatedRow.openingNote;
+		}
+
+		const [rosterRows, priorNotifState, { senderName }] = await Promise.all([
+			db
+				.select({
+					studentId: student.id,
+					studentName: student.name,
+					email: student.email,
+				})
+				.from(enrollment)
+				.innerJoin(
+					student,
+					and(
+						eq(student.id, enrollment.studentId),
+						eq(student.orgId, ctx.orgId),
+					),
+				)
+				.where(
+					and(
+						eq(enrollment.orgId, ctx.orgId),
+						eq(enrollment.classId, classId),
+						inArray(enrollment.status, ["active", "invited"]),
+					),
+				),
+			input.mode === "new_only"
+				? loadOpeningNotifState(db, ctx.orgId, classId)
+				: Promise.resolve(null),
+			resolveOrgMailSender(db, ctx.orgId),
+		]);
+
+		const seenStudentIds = new Set<string>();
+		const roster: typeof rosterRows = [];
+		for (const row of rosterRows) {
+			if (seenStudentIds.has(row.studentId)) continue;
+			seenStudentIds.add(row.studentId);
+			roster.push(row);
+		}
+
+		const targets =
+			input.mode === "new_only"
+				? roster.filter(
+						(r) =>
+							!isOpeningStudentNotified(
+								r.email,
+								priorNotifState?.channelsByStudent.get(r.studentId),
+							),
+					)
+				: roster;
+		const skippedAlreadySentCount =
+			input.mode === "new_only" ? roster.length - targets.length : 0;
+
+		if (input.mode === "new_only" && targets.length === 0) {
+			const notifiedStudentIds = priorNotifState
+				? computeOpeningNotifiedStudentIds(
+						priorNotifState.channelsByStudent,
+						priorNotifState.emailByStudent,
+					)
+				: [];
+			const payload = {
+				ok: true as const,
+				openingConfirmedAt: confirmedAt.toISOString(),
+				openingAnnouncementVersion: announcementVersion,
+				startDate: persistedStartDate,
+				openingNote: persistedNote,
+				queuedEmailCount: 0,
+				inAppOnlyCount: 0,
+				skippedNoEmail: [],
+				skippedAlreadySentCount: roster.length,
+				notifiedStudentIds,
+			} satisfies ClassConfirmOpeningResponse;
+			return c.json(payload, 200);
+		}
+
+		const skippedNoEmail = targets
+			.filter((r) => r.email.trim() === "")
+			.map((r) => ({
+				studentId: r.studentId,
+				studentName: r.studentName,
+			}));
+
+		const events = classOpeningConfirmedEvents({
+			classId,
+			className: cls.name,
+			startDate: persistedStartDate,
+			scheduleRaw: cls.schedule,
+			mode: cls.mode,
+			sessionsTotal: cls.sessionsTotal,
+			level: cls.level,
+			version: announcementVersion,
+			isUpdate: input.mode === "all",
+			teacherNote: input.note,
+			orgName: senderName,
+			studentOrigin: deps.studentOrigin,
+			students: targets.map((t) => ({
+				id: t.studentId,
+				name: t.studentName,
+				hasEmail: t.email.trim().length > 0,
+			})),
+		});
+
+		const { createdIds, queuedEmailIds } = await emitNotifications(
+			notificationDepsFrom(deps),
+			ctx.orgId,
+			events,
+		);
+		const queuedEmailCount = queuedEmailIds.length;
+		const inAppOnlyCount = Math.max(
+			0,
+			createdIds.length - queuedEmailIds.length,
+		);
+
+		const afterNotifState = await loadOpeningNotifState(db, ctx.orgId, classId);
+		const notifiedStudentIds = computeOpeningNotifiedStudentIds(
+			afterNotifState.channelsByStudent,
+			afterNotifState.emailByStudent,
+		);
+
+		const payload = {
+			ok: true as const,
+			openingConfirmedAt: confirmedAt.toISOString(),
+			openingAnnouncementVersion: announcementVersion,
+			startDate: persistedStartDate,
+			openingNote: persistedNote,
+			queuedEmailCount,
+			inAppOnlyCount,
+			skippedNoEmail,
+			skippedAlreadySentCount,
+			notifiedStudentIds,
+		} satisfies ClassConfirmOpeningResponse;
+
+		return c.json(payload, 200);
 	});
 
 	// isoToLessonWeekday sống ở @teacher-os/api/skeleton (TOS-11 M5) — route
@@ -4510,6 +4865,8 @@ export function kernelRoutes(deps: {
 	kernel.route("/notification-logs", notificationLogRoutes(deps));
 	// #506 phase 3: quản lý lead đăng ký — GET/PATCH /api/leads.
 	kernel.route("/leads", leadRoutes(deps));
+	// Danh mục khóa học master data 2 cấp — /api/courses.
+	kernel.route("/courses", courseRoutes(deps));
 	// #515 phase 2: soạn và phát hành bộ đề kiểm tra đầu vào — /api/placement-test.
 	kernel.route("/placement-test", placementTestRoutes(deps));
 	// TOS-6 (#439): bộ đếm 3 thẻ "Việc cần làm hôm nay" — GET /api/dashboard/reminders.

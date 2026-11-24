@@ -5,8 +5,10 @@ import type { Db } from "../../app";
 import { resolveOrgMailSender } from "./org-mail-sender";
 import { eventGroupOf, type NotificationEvent } from "./templates";
 
-/** Giới hạn biến D1: mỗi INSERT tối đa số dòng này. */
-const INSERT_CHUNK = 50;
+/** Giới hạn tham số bind của Cloudflare D1 (≤ 100): SELECT `IN (...)` tối đa 50 id (≤ 51 params). */
+const SELECT_CHUNK = 50;
+/** Mỗi dòng `notification_record` bind ~20 tham số (kể cả `html_body` + `text_body`): 4 × 20 = 80 ≤ 100. */
+const INSERT_ROW_CHUNK = 4;
 
 export interface EnqueueResult {
 	/** id của các bản ghi MỚI được tạo (trùng khóa bị onConflictDoNothing bỏ). */
@@ -16,7 +18,7 @@ export interface EnqueueResult {
 }
 
 /**
- * Điền thông tin người nhận + snapshot sender/reply-to (D5) rồi chèn bản ghi
+ * Điền thông tin người nhận + snapshot sender/reply-to rồi chèn bản ghi
  * notification_record. Trùng (org_id, idempotency_key) → bỏ qua. Trả id dòng mới.
  */
 export async function enqueueNotifications(
@@ -28,8 +30,8 @@ export async function enqueueNotifications(
 
 	const studentIds = [...new Set(events.map((e) => e.studentId))];
 	const emailByStudent = new Map<string, string>();
-	for (let i = 0; i < studentIds.length; i += INSERT_CHUNK) {
-		const chunk = studentIds.slice(i, i + INSERT_CHUNK);
+	for (let i = 0; i < studentIds.length; i += SELECT_CHUNK) {
+		const chunk = studentIds.slice(i, i + SELECT_CHUNK);
 		const students = await db
 			.select({ id: student.id, email: student.email })
 			.from(student)
@@ -40,14 +42,42 @@ export async function enqueueNotifications(
 	}
 	const { senderName, replyToEmail } = await resolveOrgMailSender(db, orgId);
 	const now = new Date();
-	// Học viên không thuộc org → bỏ qua hoàn toàn (không tạo bản ghi).
-	const rows = events
-		.filter((event) => emailByStudent.has(event.studentId))
-		.map((event) => {
-			const recipientEmail = (emailByStudent.get(event.studentId) ?? "").trim();
-			const hasEmail = recipientEmail.length > 0;
-			const shouldSendEmail = event.channels !== "in_app" && hasEmail;
-			return {
+	// Học viên không thuộc org → bỏ qua hoàn toàn; sự kiện chỉ gửi email (`channels: "email"`) khi trống email cũng bỏ qua.
+	const rows = events.flatMap((event) => {
+		if (!emailByStudent.has(event.studentId)) return [];
+		const recipientEmail = (emailByStudent.get(event.studentId) ?? "").trim();
+		const hasEmail = recipientEmail.length > 0;
+
+		if (event.channels === "email") {
+			if (!hasEmail) return [];
+			return [
+				{
+					id: crypto.randomUUID(),
+					orgId,
+					studentId: event.studentId,
+					eventType: event.eventType,
+					eventGroup: eventGroupOf(event.eventType),
+					idempotencyKey: event.idempotencyKey,
+					title: event.title,
+					body: event.body,
+					htmlBody: event.htmlBody ?? null,
+					textBody: event.textBody ?? null,
+					linkPath: event.linkPath,
+					refType: event.refType,
+					refId: event.refId,
+					channels: "email",
+					recipientEmail,
+					senderName,
+					replyToEmail,
+					status: "queued" as const,
+					sentAt: null,
+				},
+			];
+		}
+
+		const shouldSendEmail = event.channels !== "in_app" && hasEmail;
+		return [
+			{
 				id: crypto.randomUUID(),
 				orgId,
 				studentId: event.studentId,
@@ -56,6 +86,8 @@ export async function enqueueNotifications(
 				idempotencyKey: event.idempotencyKey,
 				title: event.title,
 				body: event.body,
+				htmlBody: event.htmlBody ?? null,
+				textBody: event.textBody ?? null,
 				linkPath: event.linkPath,
 				refType: event.refType,
 				refId: event.refId,
@@ -63,16 +95,17 @@ export async function enqueueNotifications(
 				recipientEmail: shouldSendEmail ? recipientEmail : null,
 				senderName,
 				replyToEmail,
-				// Chỉ in-app → đã "gửi" ngay khi tạo, không có gì để deliver (D4).
+				// Chỉ in-app → đã "gửi" ngay khi tạo, không có gì để deliver.
 				status: shouldSendEmail ? ("queued" as const) : ("sent" as const),
 				sentAt: shouldSendEmail ? null : now,
-			};
-		});
+			},
+		];
+	});
 
 	const createdIds: string[] = [];
 	const queuedEmailIds: string[] = [];
-	for (let i = 0; i < rows.length; i += INSERT_CHUNK) {
-		const chunk = rows.slice(i, i + INSERT_CHUNK);
+	for (let i = 0; i < rows.length; i += INSERT_ROW_CHUNK) {
+		const chunk = rows.slice(i, i + INSERT_ROW_CHUNK);
 		const inserted = await db
 			.insert(notificationRecord)
 			.values(chunk)

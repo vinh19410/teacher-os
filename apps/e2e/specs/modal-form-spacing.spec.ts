@@ -25,7 +25,7 @@ test("Modal 'Tạo syllabus mới' spacing và DOM measurements trên 3 viewport
 }) => {
 	await signUpViaApi(page);
 
-	await page.goto("/syllabus");
+	await page.goto("/teacher/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
 
 	const dialog = page.getByRole("dialog");
@@ -166,7 +166,7 @@ test("Modal 'Tạo lớp mới' TemplatePicker 'Lớp trống' không bị kho�
 }) => {
 	await signUpViaApi(page);
 
-	await page.goto("/classes");
+	await page.goto("/teacher/classes");
 	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
 
 	const dialog = page.getByRole("dialog");
@@ -216,7 +216,7 @@ test("Modal 'Thêm học viên mới' trên /students nhận đúng gap-4 = 16px
 }, testInfo) => {
 	await signUpViaApi(page);
 
-	await page.goto("/students");
+	await page.goto("/teacher/students");
 	await page.getByRole("button", { name: "Thêm học viên" }).first().click();
 
 	const dialog = page.getByRole("dialog", { name: "Thêm học viên mới" });

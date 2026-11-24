@@ -1,0 +1,195 @@
+{
+	"id": "bcd01053-c185-4bae-860b-a10fe8b42d84",
+	"url": "https://stepielts.com/student/listening/bcd01053-c185-4bae-860b-a10fe8b42d84?mode=practice",
+	"title": "Coft Valley Park",
+	"source": "C15T4",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/66eb6e8e-2281-40d4-9aee-d9c4bbaa9673.mp3",
+	"transcript": "Speaker 0: You will hear the chair of a committee on park facilities addressing her local town council about changes that have been made to the park. First, you have some time to look at questions 11 to 16. Now listen carefully and answer questions 11 to 16.\nSpeaker 1: As chair of the town council subcommittee on park facilities, I'd like to bring you up to date on some of the changes that have been made recently to the Croft Valley Park. So if you could just take a look at the map I handed out, let's begin with a general overview. So the basic arrangement of the park hasn't changed. It still has two gates, north and south, and a lake in the middle. The cafe continues to serve an assortment of drinks and snacks and is still in the same place, looking out over the lake and next to the old museum. We're hoping to change the location of the toilets and bring them nearer to the center of the park as they're a bit out of the way at present near the adventure playground in the corner of your map. The formal gardens have been replanted and should be at their best in a month or two. They used to be behind the old museum, but we've now used the space near the South gate between the park boundary and the path that goes past the lake towards the old museum. We have a new outdoor gym for adults and children, which is already proving very popular. It's by the glass houses just to the right of the path from the South gate. You have to look for it as it's a bit hidden in the trees. One very successful introduction has been our skateboard ramp. It's in constant use during the evenings and holidays. It's near the old museum at the end of a little path that leads off from the main path between the lake and the museum. We've also introduced a new area for wildflowers to attract bees and butterflies. It's on a bend in the path that goes round the east side of the lake just south of the adventure playground.\nSpeaker 0: Before you hear the rest of the presentation, you have some time to look at questions 17 to 20. Now listen and answer questions 17 to 20.\nSpeaker 1: Now let me tell you a bit more about some of the changes to Croft Valley Park. One of our most exciting developments has been the adventure playground. We were aware that we had nowhere for children to let off steam and decided to use our available funds to set up a completely new facility in a large space to the north of the park. It's open year round, though it closes early in the winter months, and entrance is completely free. Children can choose whatever activities they want to do irrespective of their age, But we do ask adults not to leave them on their own there. There are plenty of seats where parents can relax and keep an eye on their children at the same time. Lastly, the glass houses. A huge amount of work has been done on them to repair the damage following the disastrous fire that recently destroyed their western side. Over 80,000 was spent on replacing the glass walls and the metal supports, as well as the plants that had been destroyed, although, unfortunately, the collection of tropical palm trees has proved too expensive to replace up to now. At present, the glass houses are open from 10AM to 3PM Mondays to Thursdays, and it's hoped to extend this to the weekends soon. We're grateful to all those who helped us by contributing their time and money to this achievement. The gardens have really been\nSpeaker 0: That is the end of part two. You now have thirty seconds to check your answers to part two.",
+	"question_groups": [
+		{
+			"range": "11-16",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below. Write the correct letter, A-H, next to Questions 11-16",
+			"instructions_html": "<p>Label the map below. Write the correct letter, A-H, next to Questions 11-16</p><p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/a93dfd26-c150-4101-ad6a-cae6ce3c43b7.jpg\" alt=\"Cam 15 Test 4\"></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H"],
+			"questions": [
+				{
+					"number": 11,
+					"text": "Café",
+					"answer": "D",
+					"quotes": [
+						"The cafe continues to serve an assortment of drinks and snacks and is still in the same place, looking out over the lake and next to the old museum."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Toilets",
+					"answer": "C",
+					"quotes": [
+						"We're hoping to change the location of the toilets and bring them nearer to the center of the park as they're a bit out of the way at present near the adventure playground in the corner of your map."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Formal gardens",
+					"answer": "G",
+					"quotes": [
+						"The formal gardens have been replanted and should be at their best in a month or two. They used to be behind the old museum, but we've now used the space near the South gate between the park boundary and the path that goes past the lake towards the old museum."
+					]
+				},
+				{
+					"number": 14,
+					"text": "Outdoor gym",
+					"answer": "H",
+					"quotes": [
+						"We have a new outdoor gym for adults and children, which is already proving very popular. It's by the glass houses just to the right of the path from the South gate."
+					]
+				},
+				{
+					"number": 15,
+					"text": "Skateboard ramp",
+					"answer": "A",
+					"quotes": [
+						"One very successful introduction has been our skateboard ramp. It's in constant use during the evenings and holidays. It's near the old museum at the end of a little path that leads off from the main path between the lake and the museum."
+					]
+				},
+				{
+					"number": 16,
+					"text": "Wild flowers",
+					"answer": "E",
+					"quotes": [
+						"We've also introduced a new area for wildflowers to attract bees and butterflies. It's on a bend in the path that goes round the east side of the lake just south of the adventure playground."
+					]
+				}
+			]
+		},
+		{
+			"range": "17-18",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. What does the speakers say about the adventure playground?",
+			"questions": [
+				{
+					"number": 17,
+					"text": "Choose TWO letters, A-E. What does the speakers say about the adventure playground?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Children must be supervised."
+						},
+						{
+							"label": "B",
+							"text": "It costs more in winter."
+						},
+						{
+							"label": "C",
+							"text": "Some activities are only for younger children."
+						},
+						{
+							"label": "D",
+							"text": "No payment is required."
+						},
+						{
+							"label": "E",
+							"text": "It was recently expanded."
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 18,
+					"text": "Choose TWO letters, A-E. What does the speakers say about the adventure playground?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Children must be supervised."
+						},
+						{
+							"label": "B",
+							"text": "It costs more in winter."
+						},
+						{
+							"label": "C",
+							"text": "Some activities are only for younger children."
+						},
+						{
+							"label": "D",
+							"text": "No payment is required."
+						},
+						{
+							"label": "E",
+							"text": "It was recently expanded."
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "19-20",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. What does the speakers say about the adventure playground?",
+			"questions": [
+				{
+					"number": 19,
+					"text": "Choose TWO letters A-E. What does the speaker say about the glass houses?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They are closed at weekends."
+						},
+						{
+							"label": "B",
+							"text": "Volunteers are needed to work there."
+						},
+						{
+							"label": "C",
+							"text": "They were badly damaged by fire."
+						},
+						{
+							"label": "D",
+							"text": "More money is needed to repair some of the glass."
+						},
+						{
+							"label": "E",
+							"text": "Visitors can see palm trees from tropical regions."
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 20,
+					"text": "Choose TWO letters A-E. What does the speaker say about the glass houses?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They are closed at weekends."
+						},
+						{
+							"label": "B",
+							"text": "Volunteers are needed to work there."
+						},
+						{
+							"label": "C",
+							"text": "They were badly damaged by fire."
+						},
+						{
+							"label": "D",
+							"text": "More money is needed to repair some of the glass."
+						},
+						{
+							"label": "E",
+							"text": "Visitors can see palm trees from tropical regions."
+						}
+					],
+					"answer": "C"
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/a93dfd26-c150-4101-ad6a-cae6ce3c43b7.jpg"
+	]
+}

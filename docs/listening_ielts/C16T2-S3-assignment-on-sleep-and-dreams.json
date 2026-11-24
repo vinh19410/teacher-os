@@ -1,0 +1,166 @@
+{
+	"id": "51326e93-6684-4901-88b8-465d5c288df2",
+	"url": "https://stepielts.com/student/listening/51326e93-6684-4901-88b8-465d5c288df2?mode=practice",
+	"title": "Assignment on sleep and dreams",
+	"source": "C16T2",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/aa0948b0-62ab-481e-84eb-82181b744f39.mp3",
+	"transcript": "Speaker 0: Part three. You will hear two psychology students called Luke and Susie discussing their assignment on sleep and dreams. First, you have some time to look at questions 21 to 24. Now listen carefully and answer questions 21 to 24.\nSpeaker 1: So, Luke, for our next psychology assignment, we have to do something on sleep and dreams.\nSpeaker 2: Right. I've just read an article suggesting why we tend to forget most of our dreams soon after we wake up. I mean, most of my dreams aren't that interesting anyway. But what it said was that if we remembered everything, we might get mixed up about what actually happened and what we dreamed. So it's a sort of protection. I hadn't heard that idea before. I'd always assumed that it was just that we didn't have room in our memories for all that stuff.\nSpeaker 1: Me too. What do you think about the idea that our dreams may predict the future?\nSpeaker 2: It's a belief that you get all over the world.\nSpeaker 1: Yeah. Lots of people have a story of it happening to them, but the explanation I've read is that for each dream that comes true, we have thousands that don't, but we don't notice those. We don't even remember them. We just remember the ones where something in the real world, like a view or an action, happens to trigger a dream memory.\nSpeaker 2: Right. So it's just a coincidence, really. Something else I read about is what they call segmented sleeping. That's a theory that hundreds of years ago, people used to get up in the middle of the night and have a chat or something to eat, then go back to bed. So I tried it myself.\nSpeaker 1: Why?\nSpeaker 2: Well, it's meant to make you more creative. I don't know why. But I gave it up after a week. It just didn't fit in with my lifestyle.\nSpeaker 1: But most preschool children have a short sleep in the day, don't they? There was an experiment some students did here last term to see at what age kids should stop having naps, but they didn't really find an answer. They spent a lot of time working out the most appropriate methodology, but the results didn't seem to show any obvious patterns.\nSpeaker 2: Right. Anyway, let's think about our assignment. Last time, I had problems with the final stage, where we had to describe and justify how successful we thought we'd been. I struggled a bit with the action plan too.\nSpeaker 1: I was okay with the planning, but I got marked down for the self assessment as well. And I had big problems with the statistical stuff. That's where I really lost marks.\nSpeaker 2: Right.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 25 to 30. Now listen and answer questions 25 to 30.\nSpeaker 1: So shall we plan what we have to do for this assignment?\nSpeaker 2: Okay.\nSpeaker 1: First, we have to decide on our research question. So how about, is there a relationship between hours of sleep and number of dreams?\nSpeaker 2: Okay. Then we need to think about who we'll do the study on. About 12 people?\nSpeaker 1: Right. And shall we use other psychology students?\nSpeaker 2: Let's use people from a different department. What about history?\nSpeaker 1: Yes. They might have interesting dreams. Or literature students?\nSpeaker 2: I don't really know any.\nSpeaker 1: Okay. Forget that idea. Then we have to think about our methodology. So we could use observation, but that doesn't seem appropriate.\nSpeaker 2: No. It needs to be self reporting, I think. And we could ask them to answer questions online.\nSpeaker 1: But in this case, paper might be better as they'll be doing it straight after they wake up. In fact, while they're still half asleep.\nSpeaker 2: Right. And we'll have to check the ethical guidelines for this sort of research.\nSpeaker 1: Because our experiment involves humans, so there are special regulations.\nSpeaker 2: Yes. I had a look at those for another assignment I did. There's a whole section on risk assessment, and another section on making sure they aren't put under any unnecessary stress.\nSpeaker 1: Let's hope they don't have any bad dreams.\nSpeaker 2: Yeah.\nSpeaker 1: Then, when we've collected all our data, we have to analyse it and calculate the correlation between our two variables that's time sleeping and number of dreams and then present our results visually in a graph.\nSpeaker 2: Right. And the final thing is to think about our research and evaluate it. So that seems quite straightforward.\nSpeaker 1: Yeah. So now let's get\nSpeaker 0: That is the end of part three. You now have half a minute to check your answers to part three.",
+	"body": {
+		"text": "Assignment plan\nDecide on research question:\nIs there a relationship between hours of sleep and number of dreams?\n↓\nDecide on sample:\nTwelve students from the [25] department\n↓\nDecide on methodology:\nSelf-reporting\n↓\nDecide on procedure:\nAnswers on [26]\n↓\nCheck ethical guidelines for working with [27]\nEnsure that risk is assessed and [28] is kept to a minimum\n↓\nAnalyse the results\nCalculate the correlation and make a [29]\n↓\n[30] the research",
+		"html": "<h3><strong>Assignment plan</strong></h3><table><tbody><tr><td><p>Decide on research question:</p><p>Is there a relationship between hours of sleep and number of dreams?</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>Decide on sample:</p><p>Twelve students from the [25] department</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>Decide on methodology:</p><p>Self-reporting</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>Decide on procedure:</p><p>Answers on [26]</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>Check ethical guidelines for working with [27]</p><p>Ensure that risk is assessed and [28] is kept to a minimum</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>Analyse the results</p><p>Calculate the correlation and make a [29]</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>[30] the research</p></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "21-24",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Luke read that one reason why we often forget dreams is that",
+					"options": [
+						{
+							"label": "A",
+							"text": "our memories cannot cope with too much information."
+						},
+						{
+							"label": "B",
+							"text": "we might otherwise be confused about what is real."
+						},
+						{
+							"label": "C",
+							"text": "we do not think they are important."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But what it said was that if we remembered everything, we might get mixed up about what actually happened and what we dreamed."
+					]
+				},
+				{
+					"number": 22,
+					"text": "What do Luke and Susie agree about dreams predicting the future?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It may just be due to chance."
+						},
+						{
+							"label": "B",
+							"text": "It only happens with certain types of event."
+						},
+						{
+							"label": "C",
+							"text": "It happens more often than some people think."
+						}
+					],
+					"answer": "A",
+					"quotes": ["So it's just a coincidence, really."]
+				},
+				{
+					"number": 23,
+					"text": "Susie says that a study on pre-school children having a short nap in the day",
+					"options": [
+						{
+							"label": "A",
+							"text": "had controversial results."
+						},
+						{
+							"label": "B",
+							"text": "used faulty research methodology."
+						},
+						{
+							"label": "C",
+							"text": "failed to reach any clear conclusions."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"There was an experiment some students did here last term to see at what age kids should stop having naps, but they didn't really find an answer. They spent a lot of time working out the most appropriate methodology, but the results didn't seem to show any obvious patterns."
+					]
+				},
+				{
+					"number": 24,
+					"text": "In their last assignment, both students had problems with",
+					"options": [
+						{
+							"label": "A",
+							"text": "statistical analysis."
+						},
+						{
+							"label": "B",
+							"text": "making an action plan."
+						},
+						{
+							"label": "C",
+							"text": "self-assessment"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"I was okay with the planning, but I got marked down for the self assessment as well."
+					]
+				}
+			]
+		},
+		{
+			"range": "25-30",
+			"type": "FLOWCHART_COMPLETION",
+			"instructions": "Complete the flow chart below. Write ONE WORD ONLY for each answer.",
+			"body": "Assignment plan\nDecide on research question:\nIs there a relationship between hours of sleep and number of dreams?\n↓\nDecide on sample:\nTwelve students from the [25] department\n↓\nDecide on methodology:\nSelf-reporting\n↓\nDecide on procedure:\nAnswers on [26]\n↓\nCheck ethical guidelines for working with [27]\nEnsure that risk is assessed and [28] is kept to a minimum\n↓\nAnalyse the results\nCalculate the correlation and make a [29]\n↓\n[30] the research",
+			"body_html": "<h3><strong>Assignment plan</strong></h3><table><tbody><tr><td><p>Decide on research question:</p><p>Is there a relationship between hours of sleep and number of dreams?</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>Decide on sample:</p><p>Twelve students from the [25] department</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>Decide on methodology:</p><p>Self-reporting</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>Decide on procedure:</p><p>Answers on [26]</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>Check ethical guidelines for working with [27]</p><p>Ensure that risk is assessed and [28] is kept to a minimum</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>Analyse the results</p><p>Calculate the correlation and make a [29]</p></td></tr></tbody></table><p>↓</p><table><tbody><tr><td><p>[30] the research</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 25,
+					"text": "Twelve students from the [25] department",
+					"answer": "history",
+					"quotes": ["What about history?"]
+				},
+				{
+					"number": 26,
+					"text": "Answers on [26]",
+					"answer": "paper",
+					"quotes": [
+						"But in this case, paper might be better as they'll be doing it straight after they wake up."
+					]
+				},
+				{
+					"number": 27,
+					"text": "Check ethical guidelines for working with [27]",
+					"answer": "humans / people",
+					"quotes": [
+						"Because our experiment involves humans, so there are special regulations."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Ensure that risk is assessed and [28] is kept to a minimum",
+					"answer": "stress",
+					"quotes": [
+						"There's a whole section on risk assessment, and another section on making sure they aren't put under any unnecessary stress."
+					]
+				},
+				{
+					"number": 29,
+					"text": "Calculate the correlation and make a [29]",
+					"answer": "graph",
+					"quotes": [
+						"Then, when we've collected all our data, we have to analyse it and calculate the correlation between our two variables that's time sleeping and number of dreams and then present our results visually in a graph."
+					]
+				},
+				{
+					"number": 30,
+					"text": "[30] the research",
+					"answer": "evaluate",
+					"quotes": [
+						"And the final thing is to think about our research and evaluate it."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

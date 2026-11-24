@@ -1,0 +1,231 @@
+{
+	"id": "077c0ba2-e7ad-4642-819f-8c1ea21826b0",
+	"url": "https://stepielts.com/student/listening/077c0ba2-e7ad-4642-819f-8c1ea21826b0?mode=practice",
+	"title": "Becoming a volunteer for ACE",
+	"source": "C18T1",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/bc39d2e8-8feb-4097-9f7e-679c0a2cea3a.mp3",
+	"transcript": "Speaker 0: Now listen carefully and answer questions 11 to 15.\nSpeaker 1: Good evening, everyone. Let me start by welcoming you all to this talk and thanking you for taking the time to consider joining ACE voluntary organisation. ACE offers support to people and services in the local area, and we're now looking for more volunteers to help us do this. By the way, I hope you're all comfortable. We have brought in extra seats so that no one has to stand, but it does mean that the people at the back of the room may be a bit squashed. We'll only be here for about half an hour, so hopefully that's okay. One of the first questions we're often asked is how old you need to be to volunteer. Well, you can be as young as 16, or you can be 60 or over. It all depends on what type of voluntary work you want to do. Other considerations, such as reliability, are crucial in voluntary work, and age isn't related to these in our experience. Another question we get asked relates to training. Well, there's plenty of that, and it's all face to face. What's more, training doesn't end when you start working for us. It takes place before, during, and after periods of work. Often, it's run by other experienced volunteers as managers tend to prefer to get on with other things. Now I would ask you to consider a couple of important issues before you decide to apply for voluntary work. We don't worry about why you want to be a volunteer. People have many different reasons that range from getting work experience to just doing something they've always wanted to do. But it is critical that you have enough hours in the day for whatever role we agree is suitable for you. If being a volunteer becomes stressful, then it's best not to do it at all. You may think that your income is important, but we don't ask about that. It's up to you to decide if you can work without earning money. What we value is dedication. Some of our most loyal volunteers earn very little themselves, but still give their full energy to the work they do with us.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 16 to 20. Now listen and answer questions 16 to 20.\nSpeaker 1: Okay. So let's take a look at some of the work areas that we need volunteers for and the sort of things that would help you in those. You may wish simply to help us raise money. If you have the creativity to come up with an imaginative or novel way of fundraising, we'd be delighted, as standing in the local streets or shops with a collection box can be rather boring. One outdoor activity that we need volunteers for is litter collection, and for this, it's useful if you can walk for long periods, sometimes uphill. Some of our regular collectors are quite elderly, but very active and keen to protect the environment. If you enjoy working with children, we have three vacancies for what are called playmates. These volunteers help children learn about staying healthy through a range of out of school activities. You don't need to have children yourself, but it's good if you know something about nutrition and can give clear instructions. If that doesn't appeal to you, maybe you would be interested in helping out at our story club for disabled children, especially if you have done some acting. We put on three performances a year based on books they have read, and we're always looking for support with the theatrical side of this. The last area I'll mention today is first aid. Volunteers who join this group can end up teaching others in vulnerable groups who may be at risk of injury. Initially, though, your priority will be to take in a lot of information and not forget any important steps or details. Right. So does anyone have any questions for me about\nSpeaker 0: That is the end of part two. You now have thirty seconds to check your answers to part two. Part three. You will hear two students called Hugo and Chantal discussing a talk they have just attended at the start of their course in fashion design. First, you have some time to look at questions 21 to 26.",
+	"body": {
+		"text": "Fundraising [16]\nLitter collection [17]\n‘Playmates’ [18]\nStory club [19]\nFirst aid [20]",
+		"html": "<p>Fundraising  [16]</p><p>Litter collection [17]</p><p>‘Playmates’ [18]</p><p>Story club [19]</p><p>First aid [20]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "11-13",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.\nBecoming a volunteer for ACE",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Why does the speaker apologise about the seats?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They are too small."
+						},
+						{
+							"label": "B",
+							"text": "There are not enough of them."
+						},
+						{
+							"label": "C",
+							"text": "Some of them are very close together."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"We have brought in extra seats so that no one has to stand, but it does mean that the people at the back of the room may be a bit squashed."
+					]
+				},
+				{
+					"number": 12,
+					"text": "What does the speaker say about the age of volunteers?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The age of volunteers is less important than other factors."
+						},
+						{
+							"label": "B",
+							"text": "Young volunteers are less reliable than older ones."
+						},
+						{
+							"label": "C",
+							"text": "Most volunteers are about 60 years old."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Other considerations, such as reliability, are crucial in voluntary work, and age isn't related to these in our experience."
+					]
+				},
+				{
+					"number": 13,
+					"text": "What does the speaker say about training?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It is continuous."
+						},
+						{
+							"label": "B",
+							"text": "It is conducted by a manager."
+						},
+						{
+							"label": "C",
+							"text": "It takes place online."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"What's more, training doesn't end when you start working for us. It takes place before, during, and after periods of work."
+					]
+				}
+			]
+		},
+		{
+			"range": "14-15",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. Which TWO issues does the speaker ask the audience to consider before they apply to be volunteers?",
+			"questions": [
+				{
+					"number": 14,
+					"text": "Choose TWO letters, A-E. Which TWO issues does the speaker ask the audience to consider before they apply to be volunteers?",
+					"options": [
+						{
+							"label": "A",
+							"text": "their financial situation"
+						},
+						{
+							"label": "B",
+							"text": "their level of commitment"
+						},
+						{
+							"label": "C",
+							"text": "their work experience"
+						},
+						{
+							"label": "D",
+							"text": "their ambition"
+						},
+						{
+							"label": "E",
+							"text": "their availability"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 15,
+					"text": "Choose TWO letters, A-E. Which TWO issues does the speaker ask the audience to consider before they apply to be volunteers?",
+					"options": [
+						{
+							"label": "A",
+							"text": "their financial situation"
+						},
+						{
+							"label": "B",
+							"text": "their level of commitment"
+						},
+						{
+							"label": "C",
+							"text": "their work experience"
+						},
+						{
+							"label": "D",
+							"text": "their ambition"
+						},
+						{
+							"label": "E",
+							"text": "their availability"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "16-20",
+			"type": "MATCHING",
+			"instructions": "What does the speaker suggest would be helpful for each of the following areas of voluntary work?\nChoose FIVE answers from the box and write the correct letter, A-G, next to Questions 16-20.\nArea of voluntary work",
+			"options": [
+				{
+					"label": "A",
+					"text": "experience on stage"
+				},
+				{
+					"label": "B",
+					"text": "original, new ideas"
+				},
+				{
+					"label": "C",
+					"text": "parenting skills"
+				},
+				{
+					"label": "D",
+					"text": "an understanding of food and diet"
+				},
+				{
+					"label": "E",
+					"text": "retail experience"
+				},
+				{
+					"label": "F",
+					"text": "a good memory"
+				},
+				{
+					"label": "G",
+					"text": "a good level of fitness"
+				}
+			],
+			"body": "Fundraising [16]\nLitter collection [17]\n‘Playmates’ [18]\nStory club [19]\nFirst aid [20]",
+			"body_html": "<p>Fundraising  [16]</p><p>Litter collection [17]</p><p>‘Playmates’ [18]</p><p>Story club [19]</p><p>First aid [20]</p>",
+			"questions": [
+				{
+					"number": 16,
+					"text": "Fundraising",
+					"answer": "B",
+					"quotes": [
+						"If you have the creativity to come up with an imaginative or novel way of fundraising, we'd be delighted, as standing in the local streets or shops with a collection box can be rather boring."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Litter collection",
+					"answer": "G",
+					"quotes": [
+						"One outdoor activity that we need volunteers for is litter collection, and for this, it's useful if you can walk for long periods, sometimes uphill."
+					]
+				},
+				{
+					"number": 18,
+					"text": "‘Playmates’",
+					"answer": "D",
+					"quotes": [
+						"You don't need to have children yourself, but it's good if you know something about nutrition and can give clear instructions."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Story club",
+					"answer": "A",
+					"quotes": [
+						"If that doesn't appeal to you, maybe you would be interested in helping out at our story club for disabled children, especially if you have done some acting."
+					]
+				},
+				{
+					"number": 20,
+					"text": "First aid",
+					"answer": "F",
+					"quotes": [
+						"Initially, though, your priority will be to take in a lot of information and not forget any important steps or details."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

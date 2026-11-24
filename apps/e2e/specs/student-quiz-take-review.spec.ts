@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
 import { verifyStudentEmailFromMailLog } from "./helpers";
 import { type QuizFixture, seedQuizFixture } from "./helpers-quiz";
-import { STUDENT_ORIGIN } from "./origins";
+import { LMS_ORIGIN, STUDENT_BASE_URL } from "./origins";
 
 /**
  * #283 — Student quiz take & review, end to end on the real portal.
@@ -103,12 +103,12 @@ function captureJsonGets(page: Page, urlPart: string): CapturedJson[] {
 
 /** Sign in through the portal login form (fresh context → sign-in tab). */
 async function signIn(page: Page): Promise<void> {
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signin").click();
 	await page.locator("#signin-email").fill(studentEmail);
 	await page.locator("#signin-password").fill(PASSWORD);
 	await page.locator("#panel-signin button[type='submit']").click();
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 	await expect(page.getByRole("heading", { name: "Bài tập" })).toBeVisible();
@@ -456,7 +456,7 @@ test.beforeAll(async ({ browser }) => {
 	// auto sign-in → overview (onboarding pre-set by the seed).
 	const context = await browser.newContext();
 	const page = await context.newPage();
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signup").click();
 	await page.locator("#signup-name").fill("Quiz Taker");
 	await page.locator("#signup-email").fill(studentEmail);
@@ -470,7 +470,7 @@ test.beforeAll(async ({ browser }) => {
 	await verifyStudentEmailFromMailLog(page, studentEmail);
 
 	// Seeded student has onboarding_completed_at → overview, no wizard.
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 	await expect(page.getByRole("heading", { name: "Bài tập" })).toBeVisible();
@@ -601,7 +601,7 @@ test.describe("Student quiz take & review", () => {
 		await expect(q1.getByText(NOTE_A)).toBeVisible();
 
 		// Overview row flips to the review state after submit.
-		await page.goto(`${STUDENT_ORIGIN}/`);
+		await page.goto(`${STUDENT_BASE_URL}/`);
 		const reviewedRow = page.getByRole("link", {
 			name: `Xem lại kết quả: ${titleMcq}`,
 		});
@@ -676,9 +676,9 @@ test.describe("Student quiz take & review", () => {
 		// Layer (c): summary GET while in_progress → 409 gate, no key, and the
 		// route redirects to the overview instead of rendering a partial.
 		await page.goto(
-			`${STUDENT_ORIGIN}/learn/quizzes/attempt/${startedAttemptId}`,
+			`${STUDENT_BASE_URL}/learn/quizzes/attempt/${startedAttemptId}`,
 		);
-		await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`));
+		await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`));
 		// captureJsonGets push body async (res.json().then) — poll thay vì
 		// assert tức thời để không đua với microtask capture (flake khi máy load).
 		await expect

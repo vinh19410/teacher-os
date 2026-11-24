@@ -1,0 +1,170 @@
+{
+	"id": "b2af505f-e418-487f-823a-7a14200abc99",
+	"url": "https://stepielts.com/student/listening/b2af505f-e418-487f-823a-7a14200abc99?mode=practice",
+	"title": "Sheep Shearing",
+	"source": "Forecast Quý 2-2025",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/adab7d99-646b-4f68-bb1b-cf85382a9d52.mp3",
+	"transcript": "Speaker 1: Hello, everyone. I am Professor Brown, your lecturer in agriculture class. Today we will focus on the role of the sheep shearer. As you know, there are far more sheep on the islands that make up New Zealand, where these sheep need to be shorn twice a year, both for the gathering and sale of their fleeces, and for the health and well-being of the animal. It may surprise you that sheep shearing has been compared to football training - not in terms of the amount of time it takes, neither in that you need a license for this work, but in fact that much energy is required to carry out this task. Shearers are often highly fit individuals. Actually, shearing is considered a sport in many countries around the world, with competitions being held every year. Unfortunately, such necessary and somewhat satisfying work has its ups and downs. In the past, the wage for sheep shearing was incredibly high. But today, as the cost of living has risen, the pay is not that satisfactory and it’s at a relatively low rate, causing many shearers to travel to Australia for better job opportunities. The methods and tools for shearing vary in different shearing sheds. Historically, shearing was done by a set of hand-shears, which proved very labour-intensive, while now, the shearers have a selection of tools to choose from. The tools range from powerful-motored shearers to shearers with long blades, resulting in a longer cut, which speeds up shearing. But most shearers select the regular electric hand clippers, as some find them more pleasant and comfortable to use over a long period of time. With so many sheep in New Zealand, you would think that expert shearers would be easy to be found in this country. Unfortunately, this isn’t so. As mentioned previously, some shearers have moved overseas. While it is possible for shearers from other countries to get a visa for work in New Zealand, it is difficult, and so there is always a need for more local shearers to be trained in this work. For an average-size flock of sheep, with several shearers working at the same time, now it takes about 3 weeks to complete the shearing process, rather than 5 weeks in the past. This includes wool skirting, The process of ensuring the wool is up to standard before being sold. The workers doing this job are required to remove any stained, dirty wool from the fleece and any grass or weeds that have become caught up in the wool. Although shearing is necessary for the well-being of the sheep, especially as the weather warms up, it can also lead to some potential problems. Any cuts the sheep may sustain from the shearing process can become infected and cause diseases such as tetanus to the animal. Good shearers of course try to limit the damage they do, but accidents may happen sometimes. Usually a shearer earns perhaps 1,000 Australian dollars for his or her work, this may go up to 1,500 during high season. Many who begin this work soon drop out, seeking more financially viable employment. In some areas, the rate of those who leave is as much as 25%, up from 15% in years past. There is always a need for experienced shearers, though they are hard to come by. Many shearing sheds require the shearer to be able to shear on average 5 sheep in an hour. This can be difficult, as shearing is often done in summer, when temperatures are higher. Many shearers experience fatigue and dehydration from working long hours at this labour-intensive work. The true experts of this work can shear a sheep in as little as two minutes. Inexperienced workers may need up to 20 minutes to finish. This fast process can be dangerous for the sheep, as shearers are focusing more on getting the job done than on the welfare of the animal. However, many sheds will pay a high price for these experts, as the quicker the shearing season is finished, the greater the profit. That’s all for today’s lecture. If you have any questions, please do not hesitate to contact me ...",
+	"body": {
+		"text": "Sheep Shearing\nSheep shearing process\n- The whole process for a flock usually takes[5] on average.\n- Certain [6] can be caused by wound infection.\nFacts about Sheep shearers\n- Normally, the income for a shearer in normal seasons is $ [7]\n- In some places, drop-out rate of sheep shearers is [8]\n- The required average shearing speed is [9] sheep per hour.\n- It only takes [10] for an expert to finish shearing a sheep on average.",
+		"html": "<p><strong>Sheep Shearing</strong></p><p><strong>Sheep shearing process</strong><br>- The whole process for a flock usually takes[5] on average.<br>- Certain [6] can be caused by wound infection.<br><strong>Facts about Sheep shearers</strong><br>- Normally, the income for a shearer in normal seasons is $ [7]<br>- In some places, drop-out rate of sheep shearers is [8]<br>- The required average shearing speed is  [9] sheep per hour.<br>- It only takes [10] for an expert to finish shearing a sheep on average.</p><p></p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "How is sheep shearing similar to football training?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It needs lots of energy."
+						},
+						{
+							"label": "B",
+							"text": "It is very time-consuming."
+						},
+						{
+							"label": "C",
+							"text": "It needs a license."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"It may surprise you that sheep shearing has been compared to football training - not in terms of the amount of time it takes, neither in that you need a license for this work, but in fact that much energy is required to carry out this task."
+					]
+				},
+				{
+					"number": 2,
+					"text": "The pay of sheep shearing at present is",
+					"options": [
+						{
+							"label": "A",
+							"text": "satisfying."
+						},
+						{
+							"label": "B",
+							"text": "unattractive."
+						},
+						{
+							"label": "C",
+							"text": "unstable."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But today, as the cost of living has risen, the pay is not that satisfactory and it’s at a relatively low rate, causing many shearers to travel to Australia for better job opportunities."
+					]
+				},
+				{
+					"number": 3,
+					"text": "What kind of tools is more popular with shearers?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the regular ones with clippers"
+						},
+						{
+							"label": "B",
+							"text": "the long ones with blades"
+						},
+						{
+							"label": "C",
+							"text": "the ones with strong motors"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But most shearers select the regular electric hand clippers, as some find them more pleasant and comfortable to use over a long period of time."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What is true about sheep shearers in New Zealand?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Experts are hard to be found."
+						},
+						{
+							"label": "B",
+							"text": "Foreign shearers can easily get a visa for shearing jobs."
+						},
+						{
+							"label": "C",
+							"text": "Their earnings are normally above average."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"There is always a need for experienced shearers, though they are hard to come by."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Sheep Shearing\nSheep shearing process\n- The whole process for a flock usually takes[5] on average.\n- Certain [6] can be caused by wound infection.\nFacts about Sheep shearers\n- Normally, the income for a shearer in normal seasons is $ [7]\n- In some places, drop-out rate of sheep shearers is [8]\n- The required average shearing speed is [9] sheep per hour.\n- It only takes [10] for an expert to finish shearing a sheep on average.",
+			"body_html": "<p><strong>Sheep Shearing</strong></p><p><strong>Sheep shearing process</strong><br>- The whole process for a flock usually takes[5] on average.<br>- Certain [6] can be caused by wound infection.<br><strong>Facts about Sheep shearers</strong><br>- Normally, the income for a shearer in normal seasons is $ [7]<br>- In some places, drop-out rate of sheep shearers is [8]<br>- The required average shearing speed is  [9] sheep per hour.<br>- It only takes [10] for an expert to finish shearing a sheep on average.</p><p></p>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "- The whole process for a flock usually takes[5] on average.",
+					"answer": "3 weeks / three weeks",
+					"quotes": [
+						"For an average-size flock of sheep, with several shearers working at the same time, now it takes about 3 weeks to complete the shearing process, rather than 5 weeks in the past."
+					]
+				},
+				{
+					"number": 6,
+					"text": "- Certain [6] can be caused by wound infection.",
+					"answer": "diseases",
+					"quotes": [
+						"Any cuts the sheep may sustain from the shearing process can become infected and cause diseases such as tetanus to the animal."
+					]
+				},
+				{
+					"number": 7,
+					"text": "- Normally, the income for a shearer in normal seasons is $ [7]",
+					"answer": "1000 / 1,000 / 1 thousand",
+					"quotes": [
+						"Usually a shearer earns perhaps 1,000 Australian dollars for his or her work, this may go up to 1,500 during high season."
+					]
+				},
+				{
+					"number": 8,
+					"text": "- In some places, drop-out rate of sheep shearers is [8]",
+					"answer": "25% / 25 percent",
+					"quotes": [
+						"In some areas, the rate of those who leave is as much as 25%, up from 15% in years past."
+					]
+				},
+				{
+					"number": 9,
+					"text": "- The required average shearing speed is [9] sheep per hour.",
+					"answer": "5 / five",
+					"quotes": [
+						"Many shearing sheds require the shearer to be able to shear on average 5 sheep in an hour."
+					]
+				},
+				{
+					"number": 10,
+					"text": "- It only takes [10] for an expert to finish shearing a sheep on average.",
+					"answer": "2 minutes",
+					"quotes": [
+						"The true experts of this work can shear a sheep in as little as two minutes."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

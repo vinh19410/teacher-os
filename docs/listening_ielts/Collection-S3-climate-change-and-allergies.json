@@ -1,0 +1,222 @@
+{
+	"id": "43026c1d-acc8-4a58-bf98-36687b393b90",
+	"url": "https://stepielts.com/student/listening/43026c1d-acc8-4a58-bf98-36687b393b90?mode=practice",
+	"title": "Climate change and allergies",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/59de27e0-69dc-4b28-b386-12106b3560d6.mp3",
+	"transcript": "Speaker 1: Have you had a chance to look at the information for our project yet, Beth?\nSpeaker 2: I've had a look at most of the stuff on the relationship between climate change and allergies and the role played by pollen from flowering plants and trees.\nSpeaker 1: Yeah. Me too. The main message is that seasonal allergies seem to be getting worse. In just the last twenty years, the amount of pollen that's produced by the flowers on birch trees has tripled, and one in four people suffers from either hay fever or asthma, which is triggered by pollen.\nSpeaker 2: I read something about allergy sufferers being more likely to have a vitamin D deficiency because we no longer take cod liver oil as a vitamin supplement like many people used to do in the nineteen fifties in Britain. And since then, allergies have quadrupled in most European countries. But it was only in Britain that cod liver oil was so popular, so that argument doesn't really make sense.\nSpeaker 1: No. It doesn't seem that relevant.\nSpeaker 2: What seems to be happening now is that an increasing number of people are getting their first attack in their forties and fifties.\nSpeaker 1: That must be because of the link with climate change causing rising temperatures. But CO2 levels are seriously affecting pollen counts too.\nSpeaker 2: As much as milder winters.\nSpeaker 1: Definitely. CO2 helps stimulate plant growth, and several recent studies have shown that when plants are exposed to more CO2, they produce more pollen.\nSpeaker 2: Really? So people might experience more severe allergic symptoms in future?\nSpeaker 1: That's right.\nSpeaker 2: And another factor is that the pollen season is changing.\nSpeaker 1: Yes. Scientists are predicting spring will come five weeks earlier by 2130.\nSpeaker 2: That's in the long term. But that doesn't mean that spring will come earlier every year. Look at last winter. That was really cold until March, and the pollen season was delayed. Whereas this year, spring came earlier and lasted longer.\nSpeaker 1: Right. And another thing we should mention is ragweed.\nSpeaker 2: As an example of a plant species moving into new areas as a result of climate change.\nSpeaker 1: Yes. In the US, it's already the major allergen affecting millions of people in August and September, But we're starting to see it grow in Europe for the first time, which is really worrying because it's so allergenic.\nSpeaker 2: The problem with tree pollen is also worse in cities because there are so many hard surfaces around, and the pollen doesn't get absorbed so much, just stays in the air.\nSpeaker 1: Yeah. Wasn't the pollen shown to be three times higher in one city?\nSpeaker 2: I think so. So because of this, many cities have started to ban the planting of certain types of trees. So shall we look at the different data tables for seasonal changes for pollen in Europe?\nSpeaker 1: Okay. But I think we should just focus on the trees and plants which we have the most data for. So that's oak trees and birch trees and grass.\nSpeaker 2: Yes. That makes it more manageable. Shall we go through the data for each country in detail and pick out anything interesting?\nSpeaker 1: Alright. So, starting with Austria. Well, here we've only got data for birch pollen. I wonder why there's no data for oak or grass.\nSpeaker 2: It would be interesting to compare with neighboring countries. True. The picture in France is unusual.\nSpeaker 1: Yes. The pollen season starts earlier for both oak and birch, but it doesn't start any earlier for grass. I wonder why that is. In The Netherlands, we've got complete data for all three plants.\nSpeaker 2: So what does it show? Grass and birch pollen are only starting a few days earlier, but oak pollen is starting much earlier, eighteen days in fact. That's unusual. There's not such a big difference in other countries. No.\nSpeaker 1: Switzerland's an interesting case. The pollen season starts here earlier than in the past for oak, birch, and grass.\nSpeaker 2: Yeah. From twenty one days to fourteen days earlier.\nSpeaker 1: Yeah. The UK shows a different picture again.\nSpeaker 2: Yeah. Here, the problem is that wet summers have extended the grass pollen season from five weeks to eight weeks, which is bad news for allergy sufferers.\nSpeaker 1: Right. Well, I think we should have another.",
+	"body": {
+		"text": "Austria [26]\nFrance [27]\nThe Netherlands [28]\nSwitzerland [29]\nUK [30]",
+		"html": "<ul><li>Austria [26]</li><li>France [27]</li><li>The Netherlands [28]</li><li>Switzerland [29]</li><li>UK [30]</li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "21-25",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Why is Beth unconvinced that allergies are linked to vitamin D deficiency?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Because people's diets have improved since the 1950s."
+						},
+						{
+							"label": "B",
+							"text": "Because most people get enough vitamin D."
+						},
+						{
+							"label": "C",
+							"text": "Because the evidence only applies in Britain."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But it was only in Britain that cod liver oil was so popular, so that argument doesn't really make sense.",
+						"I read something about allergy sufferers being more likely to have a vitamin D deficiency because we no longer take cod liver oil as a vitamin supplement like many people used to do in the nineteen fifties in Britain."
+					]
+				},
+				{
+					"number": 22,
+					"text": "Eliot explains that rising CO2 levels",
+					"options": [
+						{
+							"label": "A",
+							"text": "will mean distribution of pollen over a wider area."
+						},
+						{
+							"label": "B",
+							"text": "are having less impact on pollen than milder winters."
+						},
+						{
+							"label": "C",
+							"text": "are responsible for higher quantities of pollen."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"CO2 helps stimulate plant growth, and several recent studies have shown that when plants are exposed to more CO2, they produce more pollen.",
+						"But CO2 levels are seriously affecting pollen counts too."
+					]
+				},
+				{
+					"number": 23,
+					"text": "What does Beth say about seasonal changes?",
+					"options": [
+						{
+							"label": "A",
+							"text": "There is no clear short-term trend for the arrival of spring."
+						},
+						{
+							"label": "B",
+							"text": "In general, spring is likely to continue arriving early."
+						},
+						{
+							"label": "C",
+							"text": "Springs are becoming milder and longer."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But that doesn't mean that spring will come earlier every year.",
+						"Scientists are predicting spring will come five weeks earlier by 2130."
+					]
+				},
+				{
+					"number": 24,
+					"text": "What point is made about the plant ragweed?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It is spreading to more countries."
+						},
+						{
+							"label": "B",
+							"text": "It is the most widespread cause of allergies globally."
+						},
+						{
+							"label": "C",
+							"text": "It causes the most severe type of allergy."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"In the US, it's already the major allergen affecting millions of people in August and September, But we're starting to see it grow in Europe for the first time, which is really worrying because it's so allergenic."
+					]
+				},
+				{
+					"number": 25,
+					"text": "Why is tree pollen a more serious problem in cities?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Trees produce more pollen there."
+						},
+						{
+							"label": "B",
+							"text": "There is less to absorb the tree pollen."
+						},
+						{
+							"label": "C",
+							"text": "There is not enough control over tree-planting."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"The problem with tree pollen is also worse in cities because there are so many hard surfaces around, and the pollen doesn't get absorbed so much, just stays in the air."
+					]
+				}
+			]
+		},
+		{
+			"range": "26-30",
+			"type": "MATCHING_FEATURES",
+			"instructions": "What comment is made about the seasonal changes in pollen in each of the following European countries?\nChoose from the list A-G.\nNB You may use any letter more than once.",
+			"options": [
+				{
+					"label": "A",
+					"text": "greatest change recorded for oak pollen"
+				},
+				{
+					"label": "B",
+					"text": "changes identified for two pollen types only"
+				},
+				{
+					"label": "C",
+					"text": "a longer season for grass pollen"
+				},
+				{
+					"label": "D",
+					"text": "earlier start dates for all pollen types"
+				},
+				{
+					"label": "E",
+					"text": "significant change in start date of birch pollen"
+				},
+				{
+					"label": "F",
+					"text": "little difference in start dates"
+				},
+				{
+					"label": "G",
+					"text": "information only available for birch pollen"
+				}
+			],
+			"body": "Austria [26]\nFrance [27]\nThe Netherlands [28]\nSwitzerland [29]\nUK [30]",
+			"body_html": "<ul><li>Austria [26]</li><li>France [27]</li><li>The Netherlands [28]</li><li>Switzerland [29]</li><li>UK [30]</li></ul>",
+			"questions": [
+				{
+					"number": 26,
+					"text": "Austria - What comment is made about the seasonal changes in pollen?",
+					"answer": "G",
+					"quotes": [
+						"Well, here we've only got data for birch pollen.",
+						"So, starting with Austria."
+					]
+				},
+				{
+					"number": 27,
+					"text": "France - What comment is made about the seasonal changes in pollen?",
+					"answer": "B",
+					"quotes": [
+						"The pollen season starts earlier for both oak and birch, but it doesn't start any earlier for grass.",
+						"The picture in France is unusual."
+					]
+				},
+				{
+					"number": 28,
+					"text": "The Netherlands - What comment is made about the seasonal changes in pollen?",
+					"answer": "A",
+					"quotes": [
+						"Grass and birch pollen are only starting a few days earlier, but oak pollen is starting much earlier, eighteen days in fact.",
+						"In The Netherlands, we've got complete data for all three plants."
+					]
+				},
+				{
+					"number": 29,
+					"text": "Switzerland - What comment is made about the seasonal changes in pollen?",
+					"answer": "D",
+					"quotes": [
+						"The pollen season starts here earlier than in the past for oak, birch, and grass.",
+						"Switzerland's an interesting case."
+					]
+				},
+				{
+					"number": 30,
+					"text": "UK - What comment is made about the seasonal changes in pollen?",
+					"answer": "C",
+					"quotes": [
+						"Here, the problem is that wet summers have extended the grass pollen season from five weeks to eight weeks, which is bad news for allergy sufferers.",
+						"The UK shows a different picture again."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

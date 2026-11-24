@@ -1,0 +1,113 @@
+{
+	"id": "3e324e74-577f-456f-b2e3-435ff8d7df08",
+	"url": "https://stepielts.com/student/listening/3e324e74-577f-456f-b2e3-435ff8d7df08?mode=practice",
+	"title": "Damaged Fridge Report",
+	"source": "Actual Test",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/5ad53adf-ac48-47ef-92b6-954f09ec6440.mp3",
+	"transcript": "Speaker 1: Good morning. Ken's Appliance. Can I help you?\nSpeaker 0: Yes. I'm ringing about my fridge. It's not working at the moment.\nSpeaker 1: I'd like to find out a few more details, if I may.\nSpeaker 0: Yes. Sure.\nSpeaker 1: First, I need to make sure if your fridge is still covered by warranty.\nSpeaker 0: Oh, right. I bought it just last week, and it originally came with two years of warranty coverage. But I've extended the period to three years, so it's definitely under warranty.\nSpeaker 1: Right. Now what model is it?\nSpeaker 0: Let me take a look. It should be somewhere on this warranty card. Oh, here on the top right hand corner. It's a top mount.\nSpeaker 1: And the color of the fridge?\nSpeaker 0: It's a silver one. It is really modern and perfectly matches the whole decor of my kitchen.\nSpeaker 1: I've made a note of that. So can you tell me the exact date you purchased the fridge?\nSpeaker 0: I remember it was delivered on January 15. I must have bought it a couple of days earlier. Right.\nIt was on the twelfth.\nSpeaker 1: Okay. Then what is the problem with the fridge?\nSpeaker 0: Oh, it's a complete disaster. First, there's something wrong with the alarm. I mean, it's beeping continuously even when the door is shut. It's really annoying. And there's also a problem with its temperature control. It's now 10 degrees, but I set it to be minus eight. It seemed to be working fine for the first couple of days.\nSpeaker 1: Sorry about that. But rest assured, madam, we'll fix it all.\nSpeaker 0: Where is your maintenance center?\nSpeaker 1: Ken's appliance is located on Elm Street, just a few steps up from the station. And did the broken fridge cause any loss to you?\nSpeaker 0: Yes, actually. It was used to store food for my sandwich shop.\nSpeaker 1: Any idea of the total value of the loss?\nSpeaker 0: Let me make an estimate here. The vegetables in the fridge cost me around $50, and the meat cost more than a $100. So the overall loss is about a $180. I didn't notice the abnormal temperature until something inside went bad, and the whole fridge smelled terrible. I had to toss everything away. Luckily, no one ate the food inside and got sick.\nSpeaker 1: That's a relief.\nSpeaker 0: But the damage has really caused me great inconvenience. I've nowhere to put the raw materials and thus could not open for business these days. The longer it takes to fix the fridge, the more it will cost me. You know, I have a whole bunch of bills to pay like water, electricity, rent.\nSpeaker 1: Don't worry. We'll attend to your problems as soon as possible.\nSpeaker 0: I need to know precisely when you can send a guy to fix all the problems. It is very urgent. Is there anyone who can keep me posted on the latest information?\nSpeaker 1: How about this? I'll have the manager ring you later. Does that work for you?\nSpeaker 0: Okay. I'll be expecting his call then. Do you know what exactly is wrong with the fridge?\nSpeaker 1: For your case, we'll assume it's the door that has to be fixed. The abnormal temperature and the noisy alarm both indicate that.\nSpeaker 0: Yes, indeed. I've just noticed that the door is dented.\nSpeaker 1: It may have to be replaced then, but we'll have to check the availability of our repair guy first. We'll phone you back later.\nSpeaker 0: Okay. Thank\nSpeaker 1: you. You're welcome. Bye.",
+	"body": {
+		"text": "Warranty: 3 years\nModel: [1] Mount\nColour: [2]\nDate of purchase: [3]\nProblems:\nthe non-stop [4]\n[5] degrees\nThe repair shop: Ken's appliance (near to the [6])\nThe customer needs to store food for her [7] shop.\nTotal value of loss: $[8]\nThings to do:\nAsk the [9] to call back\nReplace the damaged [10]",
+		"html": "<table><tbody><tr><td><ul><li><strong>Warranty:</strong> 3 years</li><li><strong>Model:</strong> [1] Mount</li><li><strong>Colour:</strong> [2]</li><li><strong>Date of purchase:</strong> [3]</li><li><strong>Problems:</strong><ul><li>the non-stop [4]</li><li>[5] degrees</li></ul></li><li><strong>The repair shop:</strong> Ken's appliance (near to the [6])</li><li>The customer needs to store food for her [7] shop.</li><li><strong>Total value of loss:</strong> $[8]</li><li><strong>Things to do:</strong><ul><li>Ask the [9] to call back</li><li>Replace the damaged [10]</li></ul></li></ul></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Warranty: 3 years\nModel: [1] Mount\nColour: [2]\nDate of purchase: [3]\nProblems:\nthe non-stop [4]\n[5] degrees\nThe repair shop: Ken's appliance (near to the [6])\nThe customer needs to store food for her [7] shop.\nTotal value of loss: $[8]\nThings to do:\nAsk the [9] to call back\nReplace the damaged [10]",
+			"body_html": "<table><tbody><tr><td><ul><li><strong>Warranty:</strong> 3 years</li><li><strong>Model:</strong> [1] Mount</li><li><strong>Colour:</strong> [2]</li><li><strong>Date of purchase:</strong> [3]</li><li><strong>Problems:</strong><ul><li>the non-stop [4]</li><li>[5] degrees</li></ul></li><li><strong>The repair shop:</strong> Ken's appliance (near to the [6])</li><li>The customer needs to store food for her [7] shop.</li><li><strong>Total value of loss:</strong> $[8]</li><li><strong>Things to do:</strong><ul><li>Ask the [9] to call back</li><li>Replace the damaged [10]</li></ul></li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Model: 1[1] Mount",
+					"answer": "Top",
+					"quotes": [
+						"It's a top mount.",
+						"It should be somewhere on this warranty card."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Colour: 2[2]",
+					"answer": "Silver",
+					"quotes": ["It's a silver one.", "And the color of the fridge?"]
+				},
+				{
+					"number": 3,
+					"text": "Date of purchase: 3[3]",
+					"answer": "12 January",
+					"quotes": [
+						"I remember it was delivered on January 15.",
+						"It was on the twelfth.",
+						"I must have bought it a couple of days earlier."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Problems: the non-stop 4[4]",
+					"answer": "alarm",
+					"quotes": [
+						"First, there's something wrong with the alarm.",
+						"I mean, it's beeping continuously even when the door is shut.",
+						"Then what is the problem with the fridge?"
+					]
+				},
+				{
+					"number": 5,
+					"text": "5[5] degrees",
+					"answer": "10",
+					"quotes": [
+						"It's now 10 degrees, but I set it to be minus eight.",
+						"And there's also a problem with its temperature control."
+					]
+				},
+				{
+					"number": 6,
+					"text": "The repair shop Ken's appliance (near to the 6[6])",
+					"answer": "station",
+					"quotes": [
+						"Ken's appliance is located on Elm Street, just a few steps up from the station.",
+						"Where is your maintenance center?"
+					]
+				},
+				{
+					"number": 7,
+					"text": "The customer needs to store food for her 7[7] shop.",
+					"answer": "sandwich",
+					"quotes": ["It was used to store food for my sandwich shop."]
+				},
+				{
+					"number": 8,
+					"text": "Total value of loss: $8[8]",
+					"answer": "180",
+					"quotes": [
+						"So the overall loss is about a $180.",
+						"Any idea of the total value of the loss?"
+					]
+				},
+				{
+					"number": 9,
+					"text": "Ask the 9[9] to call back",
+					"answer": "manager",
+					"quotes": [
+						"I'll have the manager ring you later.",
+						"Is there anyone who can keep me posted on the latest information?"
+					]
+				},
+				{
+					"number": 10,
+					"text": "Replace the damaged 10[10]",
+					"answer": "door",
+					"quotes": [
+						"I've just noticed that the door is dented.",
+						"It may have to be replaced then, but we'll have to check the availability of our repair guy first."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

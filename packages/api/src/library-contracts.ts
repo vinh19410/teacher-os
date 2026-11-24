@@ -136,12 +136,29 @@ export const LIBRARY_READING_TYPES = [
 	"matching",
 ] as const;
 
-/** Dạng bài dùng được inline cloze trong thư viện (`CLOZE_EDITOR_TYPES` + `fill_blank`, `diagram`). */
+/** Dạng bài dùng được inline cloze trong thư viện (`CLOZE_EDITOR_TYPES` + `fill_blank`, `diagram`, `tablecomp`). */
 export const LIBRARY_CLOZE_TYPES: ReadonlySet<string> = new Set([
 	...CLOZE_EDITOR_TYPES,
 	"fill_blank",
 	"diagram",
+	"tablecomp",
 ]);
+
+/** Dạng bài dùng ảnh trong thư viện (reading `diagram` + listening `map`/`diagram`). */
+export const LIBRARY_IMAGE_BASED_TYPES: Record<
+	LibrarySkill,
+	readonly string[]
+> = {
+	reading: ["diagram"],
+	listening: ["map", "diagram"],
+};
+
+export function isLibraryImageBasedType(skill: string, type: string): boolean {
+	return (
+		(LIBRARY_IMAGE_BASED_TYPES[skill as LibrarySkill] ?? []).includes(type) ||
+		isImageBasedType(skill, type)
+	);
+}
 
 const READING_REQUIRED_BANK_KIND: Readonly<Record<string, "roman" | "letter">> =
 	{
@@ -153,6 +170,15 @@ const READING_REQUIRED_BANK_KIND: Readonly<Record<string, "roman" | "letter">> =
 		sentend: "letter",
 	};
 
+const LISTENING_REQUIRED_BANK_KIND: Readonly<Record<string, "letter">> = {
+	match2: "letter",
+	matching: "letter",
+	info: "letter",
+	match_names: "letter",
+	features: "letter",
+	map: "letter",
+};
+
 const REUSABLE_READING_BANK_TYPES: ReadonlySet<string> = new Set([
 	"info",
 	"features",
@@ -161,7 +187,18 @@ const REUSABLE_READING_BANK_TYPES: ReadonlySet<string> = new Set([
 	"summary",
 ]);
 
-/** Dạng bài hỗ trợ optionBank trong thư viện (reading gồm `summary` tuỳ chọn). */
+const REUSABLE_LISTENING_BANK_TYPES: ReadonlySet<string> = new Set([
+	"match2",
+	"matching",
+	"info",
+	"match_names",
+	"features",
+	"map",
+	"summary",
+	"flow",
+]);
+
+/** Dạng bài hỗ trợ optionBank trong thư viện (reading gồm `summary` tuỳ chọn; listening gồm matching, map và `summary`/`flow` tuỳ chọn). */
 export const LIBRARY_OPTION_BANK_TYPES: Record<
 	LibrarySkill,
 	readonly string[]
@@ -175,7 +212,15 @@ export const LIBRARY_OPTION_BANK_TYPES: Record<
 		"sentend",
 		"summary",
 	],
-	listening: ASSIGNMENT_OPTION_BANK_TYPES.listening,
+	listening: [
+		...ASSIGNMENT_OPTION_BANK_TYPES.listening,
+		"matching",
+		"info",
+		"match_names",
+		"features",
+		"summary",
+		"flow",
+	],
 };
 
 export function isLibraryBankableType(skill: string, type: string): boolean {
@@ -185,9 +230,10 @@ export function isLibraryBankableType(skill: string, type: string): boolean {
 }
 
 /**
- * Kind option bank cho thư viện: `reading` `summary` chỉ trả `"letter"` khi
- * `optionBank.length > 0` (word bank tuỳ chọn); các dạng reading bắt buộc trả
- * `"roman"`/`"letter"`; `listening` giữ nguyên `optionBankKindFor`.
+ * Kind option bank cho thư viện:
+ * - `reading`: `summary` chỉ trả `"letter"` khi `optionBank.length > 0`; các dạng matching bắt buộc trả `"roman"`/`"letter"`.
+ * - `listening`: `summary` và `flow` hỗ trợ word bank tuỳ chọn (chỉ trả `"letter"` khi `optionBank.length > 0`); các dạng matching/map bắt buộc trả `"letter"`.
+ * - Các skill khác giữ nguyên `optionBankKindFor`.
  */
 export function libraryOptionBankKindFor(
 	skill: string,
@@ -195,30 +241,59 @@ export function libraryOptionBankKindFor(
 	questionTypes: readonly (string | null | undefined)[],
 	optionBank: readonly string[] = [],
 ): keyof typeof ASSIGNMENT_ANSWER_CHOICES | undefined {
-	if (skill !== "reading") {
-		return optionBankKindFor(skill, groupType, questionTypes);
-	}
-	const groupKind = READING_REQUIRED_BANK_KIND[groupType];
-	if (groupKind) return groupKind;
+	if (skill === "reading") {
+		const groupKind = READING_REQUIRED_BANK_KIND[groupType];
+		if (groupKind) return groupKind;
 
-	let hasSummary = groupType === "summary";
-	for (const type of questionTypes) {
-		const effective = type ?? groupType;
-		const kind = READING_REQUIRED_BANK_KIND[effective];
-		if (kind) return kind;
-		if (effective === "summary") hasSummary = true;
+		let hasSummary = groupType === "summary";
+		for (const type of questionTypes) {
+			const effective = type ?? groupType;
+			const kind = READING_REQUIRED_BANK_KIND[effective];
+			if (kind) return kind;
+			if (effective === "summary") hasSummary = true;
+		}
+		if (hasSummary && optionBank.length > 0) {
+			return "letter";
+		}
+		return undefined;
 	}
-	if (hasSummary && optionBank.length > 0) {
-		return "letter";
+	if (skill === "listening") {
+		const groupKind = LISTENING_REQUIRED_BANK_KIND[groupType];
+		if (groupKind) return groupKind;
+
+		let hasOptionalBankType = groupType === "summary" || groupType === "flow";
+		for (const type of questionTypes) {
+			const effective = type ?? groupType;
+			const kind = LISTENING_REQUIRED_BANK_KIND[effective];
+			if (kind) return kind;
+			if (effective === "summary" || effective === "flow") {
+				hasOptionalBankType = true;
+			}
+		}
+		if (hasOptionalBankType && optionBank.length > 0) {
+			return "letter";
+		}
+		return undefined;
 	}
-	return undefined;
+	return optionBankKindFor(skill, groupType, questionTypes);
 }
 
-/** Dạng bài IELTS Listening cho thư viện đề Admin (8 dạng theo section + mcq_many). */
+/** Dạng bài IELTS Listening cho thư viện đề Admin (đầy đủ 20 dạng, bao gồm 8 dạng section gốc + mcq_many + các dạng bổ sung từ bộ đề IELTS Listening). */
 export const LIBRARY_LISTENING_TYPES = [
 	...new Set([
 		...Object.values(ASSIGNMENT_PART_TYPES.listening.types).flat(),
+		"mcq",
 		"mcq_many",
+		"tablecomp",
+		"summary",
+		"fill_blank",
+		"shortans",
+		"diagram",
+		"matching",
+		"info",
+		"match_names",
+		"features",
+		"tfng",
 	]),
 ] as const;
 
@@ -469,23 +544,17 @@ function partIssues(
 		);
 		const abs = (offset: number) => group.startIndex + offset;
 
-		// Image-based (reading `diagram` + listening `map`): ảnh cấp part;
-		// listening `map` bắt buộc pin trên mỗi câu, reading `diagram` cho phép pin tuỳ chọn.
-		if (isImageBasedType(skill, group.type)) {
+		// Image-based (reading `diagram` + listening `map`/`diagram`): ảnh cấp part;
+		// trong thư viện đề, pin là tuỳ chọn (ảnh bản đồ/biểu đồ có sẵn nhãn chữ hoặc điền từ trực tiếp).
+		if (isLibraryImageBasedType(skill, group.type)) {
 			if (!part.imageUrl.trim() || !isAssignmentImageUrl(part.imageUrl)) {
 				add("imageUrl", "https image required for image-based part");
-			}
-			if (skill !== "reading") {
-				for (const [offset, question] of questions.entries()) {
-					if (!question.pin)
-						add(`questions.${abs(offset)}.pin`, "pin required");
-				}
 			}
 		}
 
 		// OptionBank khớp dạng bankable thư viện (`libraryOptionBankKindFor`):
-		// reading matching tái dùng chữ (`info`, `features`, `match_names`, `matching`, `summary`)
-		// chỉ cần ≥ 2 mục; `headings`/`sentend`/`listening` cần đủ phủ số câu.
+		// các dạng matching tái dùng chữ (`info`, `features`, `match_names`, `matching`, `match2`, `map`,
+		// cùng `summary`/`flow` có word bank) chỉ cần ≥ 2 mục; `headings`/`sentend` cần đủ phủ số câu.
 		const bankKind = libraryOptionBankKindFor(
 			skill,
 			group.type,
@@ -497,24 +566,28 @@ function partIssues(
 				add(bankPath, "optionBank only applies to bankable matching types");
 			}
 		} else {
-			const isSummaryWithBank =
-				skill === "reading" &&
-				group.optionBank.length > 0 &&
-				bankKind === "letter";
+			const isOptionalWordBank =
+				group.optionBank.length > 0 && bankKind === "letter";
 			const bankQuestions = questions
 				.map((question, offset) => ({ question, offset }))
 				.filter(({ question }) => {
 					const effective = question.type ?? group.type;
 					return (
 						answerKindByType[effective] === bankKind ||
-						(isSummaryWithBank && effective === "summary")
+						(isOptionalWordBank &&
+							(effective === "summary" ||
+								(skill === "listening" && effective === "flow")))
 					);
 				});
 			const allowsBankReuse =
-				skill === "reading" &&
-				bankQuestions.every(({ question }) =>
-					REUSABLE_READING_BANK_TYPES.has(question.type ?? group.type),
-				);
+				(skill === "reading" &&
+					bankQuestions.every(({ question }) =>
+						REUSABLE_READING_BANK_TYPES.has(question.type ?? group.type),
+					)) ||
+				(skill === "listening" &&
+					bankQuestions.every(({ question }) =>
+						REUSABLE_LISTENING_BANK_TYPES.has(question.type ?? group.type),
+					));
 			if (
 				group.optionBank.length < 2 ||
 				(!allowsBankReuse && group.optionBank.length < bankQuestions.length)
@@ -766,3 +839,83 @@ export const libraryTestDetailSchema = libraryTestListItemSchema
 	.extend({ parts: z.array(libraryPartDtoSchema) })
 	.strict();
 export type LibraryTestDetail = z.infer<typeof libraryTestDetailSchema>;
+
+/** Allowed page sizes for the admin library test list. */
+export const LIBRARY_TEST_PAGE_SIZES = [10, 20, 50] as const;
+export type LibraryTestPageSize = (typeof LIBRARY_TEST_PAGE_SIZES)[number];
+
+export const DEFAULT_LIBRARY_TEST_PAGE_SIZE: LibraryTestPageSize = 20;
+
+/** Upper bound for page query parameter validation. */
+export const LIBRARY_TEST_MAX_PAGE = 100_000;
+
+export function isLibraryTestPageSize(
+	value: number,
+): value is LibraryTestPageSize {
+	return (LIBRARY_TEST_PAGE_SIZES as readonly number[]).includes(value);
+}
+
+/**
+ * Parse a `page` query parameter into a positive integer within
+ * `1..LIBRARY_TEST_MAX_PAGE`. Returns `null` when absent or malformed.
+ */
+export function parseLibraryTestPageParam(
+	raw: string | undefined,
+): number | null {
+	if (raw === undefined || !/^[1-9]\d*$/.test(raw)) {
+		return null;
+	}
+	const parsed = Number(raw);
+	if (!Number.isSafeInteger(parsed) || parsed > LIBRARY_TEST_MAX_PAGE) {
+		return null;
+	}
+	return parsed;
+}
+
+/**
+ * Parse a `pageSize` query parameter into an allowed `LibraryTestPageSize`.
+ * Rejects leading zeros and values outside `LIBRARY_TEST_PAGE_SIZES`.
+ */
+export function parseLibraryTestPageSizeParam(
+	raw: string | undefined,
+): LibraryTestPageSize | null {
+	if (raw === undefined || !/^[1-9]\d*$/.test(raw)) {
+		return null;
+	}
+	const parsed = Number(raw);
+	return isLibraryTestPageSize(parsed) ? parsed : null;
+}
+
+/** Facet counts for the admin library test list filters. */
+export const libraryTestListCountsSchema = z
+	.object({
+		skill: z
+			.object({
+				reading: z.number().int().min(0),
+				listening: z.number().int().min(0),
+			})
+			.strict(),
+		status: z
+			.object({
+				draft: z.number().int().min(0),
+				ready: z.number().int().min(0),
+			})
+			.strict(),
+	})
+	.strict();
+export type LibraryTestListCounts = z.infer<typeof libraryTestListCountsSchema>;
+
+/** Paginated response payload for the admin library test list endpoint. */
+export const libraryTestListPageResponseSchema = z
+	.object({
+		tests: z.array(libraryTestListItemSchema),
+		total: z.number().int().min(0),
+		page: z.number().int().min(1),
+		pageSize: z.union([z.literal(10), z.literal(20), z.literal(50)]),
+		totalPages: z.number().int().min(1),
+		counts: libraryTestListCountsSchema,
+	})
+	.strict();
+export type LibraryTestListPageResponse = z.infer<
+	typeof libraryTestListPageResponseSchema
+>;

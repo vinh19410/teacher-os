@@ -1,0 +1,194 @@
+{
+	"id": "a9a49589-fa69-4b9f-9b4d-b0ae34f61e9a",
+	"url": "https://stepielts.com/student/listening/a9a49589-fa69-4b9f-9b4d-b0ae34f61e9a?mode=practice",
+	"title": "Summertime",
+	"source": "Unknown",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/f503e4f1-9123-4a96-ad59-dd4e2715f680.mp3",
+	"transcript": "Speaker 0: Summertime. In North America, July and August are holiday months. Most schools and colleges are not in session then. Families look for activities to keep the children amused. Although not all workers get a full two months of holidays, most people take a holiday in the summer. The summer begins with a national holiday. In Canada, July 1 is Canada Day. In The USA, July 4 is Independence Day. A lot of families are soon on the road. Some travel to cottages by the lake. Some go sightseeing or camping. In Canada, especially, the summers are short, so people try to make the most of them. In much of Canada and parts of the Northern USA are woodlands dotted with lakes. These regions of rocks, rivers, pine trees, and wild animals are not usually suitable for farming. However, they are ideal places to spend a summer holiday. They are far from the cities. The woods are quiet and peaceful. People fish, go boating or swimming, have barbecues outside, or play outdoor sports. Some people spend their whole summer at the cottage. Others go for a week or two. City people who don't have a cottage like to go to parks and swimming pools in the city. If they are near a lake or ocean, they may go there for the day. Many museums, libraries, and art galleries have programs for children in the summer. Swimming is probably the favorite summer sport. It feels wonderful on a very hot day to jump into the cool water. Swimming is also excellent exercise. Besides swimming, baseball and football are also popular in the summer. Spending an afternoon or evening at a baseball game is a favorite summer pastime. Summer is also a favorite time to catch up on reading. Stories of adventures and love novels are favorite light reading. But summer is especially a time for traveling across the country. Some people have a camper or trailer that they can live in. Some stay in campgrounds and sleep in tents. Others stay at hotels or motels, while others rent cottages or cabins for a week or two. Most trips are by car. Many people visit national parks and other wildlife areas. Of course, trips along the ocean and the lakes are favorites. Along the Atlantic Ocean, the coasts of New England and Canada's Maritime Provinces are especially popular. On the Pacific Coast, tourists travel from California all the way up to Alaska. Boat cruises along the shores of British Columbia and Alaska are especially popular. Of course, some people find it most relaxing just to stay at home. Others cannot afford to travel. If you have an air conditioned house with a television, video player, CD player, and computer, then it can be very pleasant to stay at home. A lot of new movies are released at the theaters in the summer. Air conditioned theaters with new movies and lots of pop and popcorn are favorite summer places. After two months of summer activities, most people are ready to go back to school and work, but they usually have lots of happy memories to take back with them.",
+	"body": {
+		"text": "1. In Canada, July 1st is called [1] Day.\n2. The woods are described as quiet and [2].\n3. Swimming is probably the most [3] summer sport.\n4. Some people sleep in [4] at campgrounds during their summer trips.\n5. A lot of new [5] are released at theatres in the summer.",
+		"html": "<p>1. In Canada, July 1st is called [1] Day.</p><p>2. The woods are described as quiet and [2].</p><p>3. Swimming is probably the most [3] summer sport.</p><p>4. Some people sleep in [4] at campgrounds during their summer trips.</p><p>5. A lot of new [5] are released at theatres in the summer.</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Listen and complete the sentences. Use ONE OR TWO WORDS only.",
+			"body": "1. In Canada, July 1st is called [1] Day.\n2. The woods are described as quiet and [2].\n3. Swimming is probably the most [3] summer sport.\n4. Some people sleep in [4] at campgrounds during their summer trips.\n5. A lot of new [5] are released at theatres in the summer.",
+			"body_html": "<p>1. In Canada, July 1st is called [1] Day.</p><p>2. The woods are described as quiet and [2].</p><p>3. Swimming is probably the most [3] summer sport.</p><p>4. Some people sleep in [4] at campgrounds during their summer trips.</p><p>5. A lot of new [5] are released at theatres in the summer.</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "In Canada, July 1st is called [1] Day.",
+					"answer": "Canada",
+					"quotes": ["In Canada, July 1 is Canada Day."]
+				},
+				{
+					"number": 2,
+					"text": "The woods are described as quiet and [2].",
+					"answer": "peaceful",
+					"quotes": ["The woods are quiet and peaceful."]
+				},
+				{
+					"number": 3,
+					"text": "Swimming is probably the most [3] summer sport.",
+					"answer": "favorite",
+					"quotes": ["Swimming is probably the favorite summer sport."]
+				},
+				{
+					"number": 4,
+					"text": "Some people sleep in [4] at campgrounds during their summer trips.",
+					"answer": "tents",
+					"quotes": ["Some stay in campgrounds and sleep in tents."]
+				},
+				{
+					"number": 5,
+					"text": "A lot of new [5] are released at theatres in the summer.",
+					"answer": "movies",
+					"quotes": [
+						"A lot of new movies are released at the theaters in the summer."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Circle the correct answer A, B, C or D.",
+			"questions": [
+				{
+					"number": 6,
+					"text": "When do most schools and colleges close for the summer in North America?",
+					"options": [
+						{
+							"label": "A",
+							"text": "June and July."
+						},
+						{
+							"label": "B",
+							"text": "July and August."
+						},
+						{
+							"label": "C",
+							"text": "August and September."
+						},
+						{
+							"label": "D",
+							"text": "May and June."
+						}
+					],
+					"answer": "B",
+					"quotes": ["In North America, July and August are holiday months."]
+				},
+				{
+					"number": 7,
+					"text": "Why do people in Canada try especially hard to enjoy the summer?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Because summers are very hot and uncomfortable."
+						},
+						{
+							"label": "B",
+							"text": "Because there are more holidays in summer than in other seasons."
+						},
+						{
+							"label": "C",
+							"text": "Because summers in Canada are short."
+						},
+						{
+							"label": "D",
+							"text": "Because schools close for three months."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"In Canada, especially, the summers are short, so people try to make the most of them."
+					]
+				},
+				{
+					"number": 8,
+					"text": "What do people do at cottages by the lake?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They go shopping and visit museums."
+						},
+						{
+							"label": "B",
+							"text": "They fish, go boating, swim, and have barbeques."
+						},
+						{
+							"label": "C",
+							"text": "They watch movies and play video games."
+						},
+						{
+							"label": "D",
+							"text": "They attend outdoor concerts and festivals."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"People fish, go boating or swimming, have barbecues outside, or play outdoor sports."
+					]
+				},
+				{
+					"number": 9,
+					"text": "What do city people do in summer if they do not have a cottage?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They travel to other countries."
+						},
+						{
+							"label": "B",
+							"text": "They stay at hotels near the mountains."
+						},
+						{
+							"label": "C",
+							"text": "They go to parks and swimming pools in the city."
+						},
+						{
+							"label": "D",
+							"text": "They visit national museums and libraries only."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"City people who don't have a cottage like to go to parks and swimming pools in the city."
+					]
+				},
+				{
+					"number": 10,
+					"text": "According to the passage, how do most people feel after two months of summer activities?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Tired and unhappy."
+						},
+						{
+							"label": "B",
+							"text": "Bored and ready for a change."
+						},
+						{
+							"label": "C",
+							"text": "Ready to go back to school and work, with happy memories."
+						},
+						{
+							"label": "D",
+							"text": "Disappointed that summer was too short."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"After two months of summer activities, most people are ready to go back to school and work, but they usually have lots of happy memories to take back with them."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

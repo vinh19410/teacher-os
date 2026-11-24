@@ -1,0 +1,197 @@
+{
+	"id": "a4b20640-9629-4269-a5df-0a40e8f082c1",
+	"url": "https://stepielts.com/student/listening/a4b20640-9629-4269-a5df-0a40e8f082c1?mode=practice",
+	"title": "Karrara Sports and Leisure Centre",
+	"source": "Collection",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/21c65e09-2a57-459c-bf41-30b735c464a8.mp3",
+	"transcript": "Speaker 0: Now turn to section two on page four. Section two. You will hear the manager of a new sports center talking to potential customers about the facilities there. First, you have some time to look at questions 11 to 16 on page four. Now listen carefully and answer questions 11 to 16.\nSpeaker 1: Good evening, and welcome to Carrara's brand new Sports and Leisure Centre. First, I'll tell you about our facilities, then feel free to wander around the centre. Now as you can see from the map I've given you, we're sitting in our cafe, which we hope will be a favorite place to visit after exercising. To one side of us and right in front of you as you enter the complex is the shop. Be sure to have a look in there later as we've got some great opening specials on footwear. On the other side of the cafe, and ideally situated between the cafe and the child minding facilities, we have the playground. You can sit and relax there while your kids have a great time on the equipment. And our child care facilities are available to anyone using the centre. Let's talk a little bit about our heated swimming pool, which is also near the entrance, on the other side from the cafe. It has a five meter water slide, which will be very popular with kids of all ages. And in the corner, nearest the changing rooms, we have a high-tech hot spa. The water is heated to 38 degrees centigrade, which is the ideal temperature to relax tired muscles after a workout. So where can you do these workouts? Well, we have a large weights room located at the cafe end of the administration block. In the weights room, you'll find all the latest equipment. We also have trainers there who can put a program together for you. Another place to get a good workout is in the gym, which is shown on the map to the right of the changing rooms. There will be all sorts of classes offered there. Our aim is to provide all your exercise and recovery needs. So as well as the spa to help aching bodies, we also have a special area for massage. It's in the funny shaped room close to the administration area. Its distinctive shape has already led to the nickname of the Bullet Room. We'll be offering Swedish and Chinese massage there, and we'll offer physiotherapy in the future.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 17 to 20 on page five. Now listen and answer questions 17 to 20.\nSpeaker 1: Now let me tell you something about our different memberships. Firstly, we offer different types of membership to cater for different needs. If you are a fitness freak, then choose our all in membership. This gives you access to everything in the center, all the classes and sports. It's usually our most expensive option. But for a short time, we're offering twelve months for the price of 9, which is a huge saving. If you prefer just the gym classes, you may want to consider the gym and weights package. It works out at $10 a week, which is good value. If you just want to swim, then we recommend getting a swim plus membership. With this, you have unlimited use of the pool and spa. The other package we've reduced for this month only is the off peak. This is aimed at people who are happy to come at less busy times. And finally, we have the family pack. We believe in keeping the whole family fit and healthy, so this package works out cheaper than buying it separately. Your flyer has details of all the prices. So anyone who signs up for a new membership tonight will receive two fantastic presents from us. We wanted to make these rewards something different from the norm. We could have just chosen a towel for you to use in the gym or some clothing from the shop, but we wanted to show our appreciation by giving you something special. So not only are we going to give you a voucher for a session in our massage center, a great way to unwind after your workout, but you'll also get this great device that measures your heart rate. And finally, just for turning up tonight, we'd like to give everyone here a drink bottle to take away with them. That's all I wanted to say.\nSpeaker 0: That is the end of section two. You now have half a minute to check your answers.",
+	"question_groups": [
+		{
+			"range": "11-16",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the plan below.\nWrite the correct letter, A-I, next to questions 11-16",
+			"instructions_html": "<p>Label the plan below.</p><p>Write the correct letter, <strong>A-I</strong>, next to questions <strong>11-16</strong></p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/4952c362-9581-403c-b8b9-a642e1ba470c.png\" alt=\"Map/Diagram\">",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
+			"questions": [
+				{
+					"number": 11,
+					"text": "Shop",
+					"answer": "H",
+					"quotes": [
+						"To one side of us and right in front of you as you enter the complex is the shop."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Playground",
+					"answer": "D",
+					"quotes": [
+						"On the other side of the cafe, and ideally situated between the cafe and the child minding facilities, we have the playground."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Spa",
+					"answer": "B",
+					"quotes": [
+						"And in the corner, nearest the changing rooms, we have a high-tech hot spa."
+					]
+				},
+				{
+					"number": 14,
+					"text": "Weights room",
+					"answer": "F",
+					"quotes": [
+						"Well, we have a large weights room located at the cafe end of the administration block."
+					]
+				},
+				{
+					"number": 15,
+					"text": "Gym",
+					"answer": "C",
+					"quotes": [
+						"Another place to get a good workout is in the gym, which is shown on the map to the right of the changing rooms."
+					]
+				},
+				{
+					"number": 16,
+					"text": "Massage room",
+					"answer": "E",
+					"quotes": [
+						"We'll be offering Swedish and Chinese massage there, and we'll offer physiotherapy in the future.",
+						"So as well as the spa to help aching bodies, we also have a special area for massage.",
+						"It's in the funny shaped room close to the administration area."
+					]
+				}
+			]
+		},
+		{
+			"range": "17-18",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E",
+			"questions": [
+				{
+					"number": 17,
+					"text": "Which TWO memberships have a special introductory price?",
+					"options": [
+						{
+							"label": "A",
+							"text": "off-peak"
+						},
+						{
+							"label": "B",
+							"text": "Gym and Weights"
+						},
+						{
+							"label": "C",
+							"text": "Swim Plus"
+						},
+						{
+							"label": "D",
+							"text": "All-in"
+						},
+						{
+							"label": "E",
+							"text": "Family Pack"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 18,
+					"text": "Which TWO memberships have a special introductory price?",
+					"options": [
+						{
+							"label": "A",
+							"text": "off-peak"
+						},
+						{
+							"label": "B",
+							"text": "Gym and Weights"
+						},
+						{
+							"label": "C",
+							"text": "Swim Plus"
+						},
+						{
+							"label": "D",
+							"text": "All-in"
+						},
+						{
+							"label": "E",
+							"text": "Family Pack"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "19-20",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E",
+			"questions": [
+				{
+					"number": 19,
+					"text": "Which TWO free gifts will new members get?",
+					"options": [
+						{
+							"label": "A",
+							"text": "sports towel"
+						},
+						{
+							"label": "B",
+							"text": "heart monitor"
+						},
+						{
+							"label": "C",
+							"text": "water bottle"
+						},
+						{
+							"label": "D",
+							"text": "sports socks"
+						},
+						{
+							"label": "E",
+							"text": "free massage"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 20,
+					"text": "Which TWO free gifts will new members get?",
+					"options": [
+						{
+							"label": "A",
+							"text": "sports towel"
+						},
+						{
+							"label": "B",
+							"text": "heart monitor"
+						},
+						{
+							"label": "C",
+							"text": "water bottle"
+						},
+						{
+							"label": "D",
+							"text": "sports socks"
+						},
+						{
+							"label": "E",
+							"text": "free massage"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/4952c362-9581-403c-b8b9-a642e1ba470c.png"
+	]
+}

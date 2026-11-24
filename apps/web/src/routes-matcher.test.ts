@@ -36,6 +36,7 @@ describe("routes-matcher", () => {
 			"/students",
 			"/leads",
 			"/placement-test",
+			"/courses",
 			"/syllabus",
 			"/vocab",
 		];

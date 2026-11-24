@@ -1,0 +1,211 @@
+{
+	"id": "a55f9949-b035-47b7-989b-261aa0dc7c19",
+	"url": "https://stepielts.com/student/listening/a55f9949-b035-47b7-989b-261aa0dc7c19?mode=practice",
+	"title": "A marketing project on food packaging",
+	"source": "Collection",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/3e81e0c9-4898-402c-a042-ac41438149ba.mp3",
+	"transcript": "Speaker 1: Professor: Hello, Pam, Jason. Thanks for coming to discuss your marketing project. I’ve read your proposal and outline, so let’s go over it.\nSpeaker 2: Pam: Okay. Right.\nSpeaker 1: Professor: You’ve chosen the topic of food packaging. So what did you wanna get out of doing this project?\nSpeaker 3: Jason: We decided if we did our project on packaging, we might find some practical tips on how a business could make more money.\nSpeaker 2: Pam: After all, we’re business admin students, and that’s the ultimate reason we’re on the course, isn’t it? So although we know the impact of packaging on the environment is important,\nSpeaker 3: Jason: We feel the government regulations are pretty strict already in that area.\nSpeaker 1: Professor: Okay. Now you’ve decided to look specifically at the packaging of food. What do you think the main issue is for shoppers these days?\nSpeaker 2: Pam: Some people get upset about the waste with all the plastic and stuff used to package food, but I guess most don’t pay much attention to that. A few years ago, people seemed concerned about packaging food so that buyers knew more about what it contains from labels, like calories, additives, and stuff.\nSpeaker 3: Jason: But in the current economic climate, Pam and I think people are most interested in packaging that helps keep food fresh for longer.\nSpeaker 1: Professor: And you’ve chosen to concentrate on big supermarket chains. Why not look at local stores or even convenience stores?\nSpeaker 3: Jason: Well, there are some interesting published studies based on small retail outlets, and we looked at those. But after a little investigation, we found that the managers of the large supermarkets in this area wanted to be helpful and are willing to let us talk to them and their employees.\nSpeaker 2: Pam: Of course, the supermarkets do account for most food sales around here, but that wasn’t our reason for choosing them.\nSpeaker 1: Professor: Speaking of this area, you know the food buying choices here are quite unusual. Since we’re in a university town, the population is quite young. But actually, my research shows that age isn’t the factor in making the area unique. And although the education level is pretty high, that doesn’t seem very important either.\nSpeaker 3: Jason: I guess it’s because we got people from all over the world living here with all the foreign students at university.\nSpeaker 1: Professor: That’s it. Our supermarkets cater for a huge diversity of cultures.\nSpeaker 2: Pam: In our survey of the literature, I was struck by what shoppers say is most important to them when they buy. I would have thought how much the buyer had to pay would be the key, but that doesn’t appear to be the case.\nSpeaker 3: Jason: That’s right. How delicious the buyer considers the product seems to be the main thing. Whether or not the food is good for you is pretty low down on the customer’s priorities.\nSpeaker 1: Professor: That’s interesting. Let’s discuss the practical experiment you’re planning. You’re going to design the box for a new breakfast cereal which you’ll try to market. Not in reality, of course, but by showing different designs to some of your fellow students on a computer, a kind of virtual reality supermarket, and the students will choose the design that appeals most. Let’s talk through the experiment. Okay?\nSpeaker 3: Jason: That’d be helpful.\nSpeaker 1: Professor: Now the number of different designs you’re proposing to show each student is two. If I were you, I’d make it at least four. That way you can examine their reaction to more variety in the kinds of packaging.\nSpeaker 2: Pam: Okay. Good idea. We do have several more designs. Now we’ve got a sample from our class of about 20. Is that enough?\nSpeaker 1: Professor: Probably not. Try talking to the assistant in the business studies department. He can sort out how to recruit some more from other classes for you.\nSpeaker 3: Right.\nSpeaker 1: Now as to how you’re going to display your packages to the students, I did talk about those technical issues in one of your first classes. Go back and look over what I said about the practical realities of conducting experiments.\nSpeaker 3: Jason: Okay. We can do that.\nSpeaker 2: Pam: We’re going to ask each student to choose the one design they think is best. But how will we know why they chose that one?\nSpeaker 1: Professor: Well, don’t just rely on oral prompts. Give them a series of written questions. That way, you’ll have hard data.\nSpeaker 3: Jason: Okay.\nSpeaker 1: Professor: But what about analyzing the data?\nSpeaker 3: Jason: Well, we’ve got an excellent computer program to gather it all together, but we still need to interpret it ourselves.\nSpeaker 2: Pam: So we’ll need to give ourselves a few more days for that.\nSpeaker 3: Jason: Yes. We will.\nSpeaker 1: Professor: Anyway, it’s all looking good.",
+	"body": {
+		"text": "the number of different designs offered [26]\nthe sample size of students [27]\nhow to display the packages [28]\nfinding the reasons for students 'choices [29]\nanalysis of data collected [30]",
+		"html": "<p>the number of different designs offered [26]</p><p>the sample size of students [27]</p><p>how to display the packages [28]</p><p>finding the reasons for students 'choices [29]</p><p>analysis of data collected [30]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "What do Pam and Jason primarily hope to learn more about from their project?",
+					"options": [
+						{
+							"label": "A",
+							"text": "maximizing profits"
+						},
+						{
+							"label": "B",
+							"text": "minimizing environmental damage"
+						},
+						{
+							"label": "C",
+							"text": "meeting legal requirements"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Jason: We decided if we did our project on packaging, we might find some practical tips on how a business could make more money."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Which issue about packaging do Pam and Jason feel is most important to food shoppers today?",
+					"options": [
+						{
+							"label": "A",
+							"text": "providing information about contents"
+						},
+						{
+							"label": "B",
+							"text": "extending the useful life of products"
+						},
+						{
+							"label": "C",
+							"text": "reducing excess waste from packaging"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Jason: But in the current economic climate, Pam and I think people are most interested in packaging that helps keep food fresh for longer."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Why have Pam and Jason decided to concentrate specifically on large supermarkets?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They are the subjects of previously published studies."
+						},
+						{
+							"label": "B",
+							"text": "They are the most profitable food retail businesses."
+						},
+						{
+							"label": "C",
+							"text": "They will offer good opportunities for interviews."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But after a little investigation, we found that the managers of the large supermarkets in this area wanted to be helpful and are willing to let us talk to them and their employees."
+					]
+				},
+				{
+					"number": 4,
+					"text": "The professor says that the local population has unusual food-shopping habits because of",
+					"options": [
+						{
+							"label": "A",
+							"text": "its range of nationalities"
+						},
+						{
+							"label": "B",
+							"text": "its high education level"
+						},
+						{
+							"label": "C",
+							"text": "its young age"
+						}
+					],
+					"answer": "A",
+					"quotes": ["Our supermarkets cater for a huge diversity of cultures."]
+				},
+				{
+					"number": 5,
+					"text": "According to the literature, what influences food shoppers most?",
+					"options": [
+						{
+							"label": "A",
+							"text": "taste"
+						},
+						{
+							"label": "B",
+							"text": "price"
+						},
+						{
+							"label": "C",
+							"text": "health benefits"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"How delicious the buyer considers the product seems to be the main thing."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "MATCHING_FEATURES",
+			"instructions": "What action do Pam and Jason agree to take for each of the following aspects of their experiment?",
+			"options": [
+				{
+					"label": "A",
+					"text": "refer to course notes"
+				},
+				{
+					"label": "B",
+					"text": "widen the choice"
+				},
+				{
+					"label": "C",
+					"text": "use more colours"
+				},
+				{
+					"label": "D",
+					"text": "allow for more time"
+				},
+				{
+					"label": "E",
+					"text": "ask for help"
+				},
+				{
+					"label": "F",
+					"text": "design a questionnaire"
+				},
+				{
+					"label": "G",
+					"text": "plan for oral interviews"
+				}
+			],
+			"body": "the number of different designs offered [26]\nthe sample size of students [27]\nhow to display the packages [28]\nfinding the reasons for students 'choices [29]\nanalysis of data collected [30]",
+			"body_html": "<p>the number of different designs offered [26]</p><p>the sample size of students [27]</p><p>how to display the packages [28]</p><p>finding the reasons for students 'choices [29]</p><p>analysis of data collected [30]</p>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "the number of different designs offered",
+					"answer": "B",
+					"quotes": [
+						"Professor: Now the number of different designs you’re proposing to show each student is two. If I were you, I’d make it at least four. That way you can examine their reaction to more variety in the kinds of packaging.",
+						"Pam: Okay. Good idea."
+					]
+				},
+				{
+					"number": 7,
+					"text": "the sample size of students",
+					"answer": "E",
+					"quotes": [
+						"Try talking to the assistant in the business studies department. He can sort out how to recruit some more from other classes for you."
+					]
+				},
+				{
+					"number": 8,
+					"text": "how to display the packages",
+					"answer": "A",
+					"quotes": [
+						"Go back and look over what I said about the practical realities of conducting experiments."
+					]
+				},
+				{
+					"number": 9,
+					"text": "finding the reasons for students 'choices",
+					"answer": "F",
+					"quotes": ["Give them a series of written questions."]
+				},
+				{
+					"number": 10,
+					"text": "analysis of data collected",
+					"answer": "D",
+					"quotes": [
+						"Pam: So we’ll need to give ourselves a few more days for that."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

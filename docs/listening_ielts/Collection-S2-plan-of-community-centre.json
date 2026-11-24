@@ -1,0 +1,201 @@
+{
+	"id": "ccea2957-29b2-471b-97dd-4bc16da3fbb0",
+	"url": "https://stepielts.com/student/listening/ccea2957-29b2-471b-97dd-4bc16da3fbb0?mode=practice",
+	"title": "Plan of community centre",
+	"source": "Collection",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/f170edd6-bbd3-4d88-b38c-fd77a7a786a1.mp3",
+	"transcript": "Speaker 0: On behalf of our community center, I'd like to welcome you all here today. My name is Mary Linden. As you can see here, this multipurpose hall is a great venue for various events, including banquets, seminars, or dances. The center provides services for all ages. As the majority of you have already signed up for our dance workshops, I'll introduce relevant information first before we start the tour and get ourselves oriented. Okay. Now when participants check-in for their first dancing session, they will be given a class list printed with available seasonal classes ranging from Zumba to ballet as well as detailed descriptions and schedules. The dance studio will also give you a complimentary shoe bag to store your dance shoes. Every week will be a surprise in cardio movement. Our fitness professional will guide you through an upbeat, heart pumping, lively dance class. Therefore, it is highly advised to bring a face towel and a water bottle with you. As things get mixed up easily, you might also want to attach a name tag to your belongings. It will be sent to you by mail in advance. Now let us get a closer look at our dance workshops and its curriculum. There is a list of activities to participate during and after each session. You'll have the chance to make your own costume, but it won't be held until tomorrow. You can also practice dance with music whenever the studio is available. In the first afternoon and evening of your dance class, there will be an introduction to the development of dance for the past few decades. Then we'll warm up with an informal dance. I know you don't have much experience in dancing, but we'll get there soon. Rest assured, there won't be a dance test until the end of the course. Okay. Now a word about the layout of the center. Our beautiful facility has 25 rooms altogether, which are both very functional and aesthetically pleasing. We are standing here right at the entrance. To your left, you can see two rooms in a row. After each dance session, you're probably soaking in sweat and in desperate need of a shower. Just go straight ahead, turn left, and the shower room is on your left hand side. If you just want to take a nap, there is a six bed bunk room. It's immediately to the left of where you are standing right before the shower room. We also have a games room with dart boards, table tennis, pool, and card games. It is a good place to have fun with friends. Just take the first right. It is the second area to your right. You can explore it well later during our tour. Further ahead in the corner, there are the bike racks. You can either park your bike here or hire one if you want a ride. The first hour is free. Part of our dance sessions will take place in the music room. It has a large mirror with various musical instruments and state of the art stereos. If you want to get there, just go straight, take the second right, and it's the second area to your left. Our friendly reception team is an invaluable resource for any visitor to the center. If your mobile phone needs charging, we have several adapters and can easily get your phone back up and running again. We also offer a range of chargeable services, including photocopy, scanning, and faxing. The reception is located in the center to the south of the music room. There is a medical center providing a full spectrum of care and treatment, especially for sports injuries like sprained knee. It's right opposite the reception to the left of the music room. Now I have to tell you about our gym where some of our dance sessions take place. It is also equipped with the latest equipment, including exercise bikes, treadmills, rowing machines, etcetera. If you walk straight ahead before you come to the end and turn right, it's the second room to your left. And speaking of food, if you ever feel hungry, you can either cook in the kitchen or grab a snack at the store. To reach it, keep straight on until you get to the third passageway, turn right, and it's the one after the gym. And the kitchen sits right next to the gym on the same side of the passageway. It has all the utensils you'll need, spatulas, frying pans, ladles, and plates. You name it. Just feel free to use it. By the way, if you have coats, umbrellas, or any large bags with you, the cloakroom is available. It's the room in the top right corner on the far side. Right. Well, if you're ready, we'll start the tour of our lovely community center.",
+	"question_groups": [
+		{
+			"range": "11-12",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A–E.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Which TWO items will participants receive when they check in?",
+					"options": [
+						{
+							"label": "A",
+							"text": "a class list"
+						},
+						{
+							"label": "B",
+							"text": "a face towel"
+						},
+						{
+							"label": "C",
+							"text": "a name tag"
+						},
+						{
+							"label": "D",
+							"text": "a shoe bag"
+						},
+						{
+							"label": "E",
+							"text": "a water bottle"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 12,
+					"text": "Which TWO items will participants receive when they check in?",
+					"options": [
+						{
+							"label": "A",
+							"text": "a class list"
+						},
+						{
+							"label": "B",
+							"text": "a face towel"
+						},
+						{
+							"label": "C",
+							"text": "a name tag"
+						},
+						{
+							"label": "D",
+							"text": "a shoe bag"
+						},
+						{
+							"label": "E",
+							"text": "a water bottle"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "13-14",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A–E",
+			"questions": [
+				{
+					"number": 13,
+					"text": "Which TWO activities will be hosted in the first afternoon and evening?",
+					"options": [
+						{
+							"label": "A",
+							"text": "costume making"
+						},
+						{
+							"label": "B",
+							"text": "a musical show"
+						},
+						{
+							"label": "C",
+							"text": "an informal dance"
+						},
+						{
+							"label": "D",
+							"text": "a talk on dance history"
+						},
+						{
+							"label": "E",
+							"text": "a dance test"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 14,
+					"text": "Which TWO activities will be hosted in the first afternoon and evening?",
+					"options": [
+						{
+							"label": "A",
+							"text": "costume making"
+						},
+						{
+							"label": "B",
+							"text": "a musical show"
+						},
+						{
+							"label": "C",
+							"text": "an informal dance"
+						},
+						{
+							"label": "D",
+							"text": "a talk on dance history"
+						},
+						{
+							"label": "E",
+							"text": "a dance test"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "15-20",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below.\nWrite the correct letter, A–J, next to Questions 15–20.",
+			"instructions_html": "<p>Label the map below. </p><p>Write the correct letter,<strong> A–J</strong>, next to Questions <strong>15–20.</strong></p><p></p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/94168646-3359-4710-81ec-05668a6e62a9.jpg\" alt=\"Map/Diagram\">",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
+			"questions": [
+				{
+					"number": 15,
+					"text": "Shower room",
+					"answer": "C",
+					"quotes": [
+						"Just go straight ahead, turn left, and the shower room is on your left hand side."
+					]
+				},
+				{
+					"number": 16,
+					"text": "Bunkroom",
+					"answer": "E",
+					"quotes": [
+						"If you just want to take a nap, there is a six bed bunk room.",
+						"It's immediately to the left of where you are standing right before the shower room."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Games room",
+					"answer": "I",
+					"quotes": [
+						"We also have a games room with dart boards, table tennis, pool, and card games.",
+						"Just take the first right.",
+						"It is the second area to your right."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Reception",
+					"answer": "F",
+					"quotes": [
+						"The reception is located in the center to the south of the music room."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Medical centre",
+					"answer": "D",
+					"quotes": [
+						"There is a medical center providing a full spectrum of care and treatment, especially for sports injuries like sprained knee.",
+						"It's right opposite the reception to the left of the music room."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Store",
+					"answer": "B",
+					"quotes": [
+						"And speaking of food, if you ever feel hungry, you can either cook in the kitchen or grab a snack at the store.",
+						"To reach it, keep straight on until you get to the third passageway, turn right, and it's the one after the gym.",
+						"And the kitchen sits right next to the gym on the same side of the passageway."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/94168646-3359-4710-81ec-05668a6e62a9.jpg"
+	]
+}

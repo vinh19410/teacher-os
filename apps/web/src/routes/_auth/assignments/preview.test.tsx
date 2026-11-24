@@ -81,7 +81,8 @@ describe("PreviewAssignmentRoute (#213)", () => {
 		const html = renderToStaticMarkup(<PreviewAssignmentRoute />);
 		expect(html).toContain("Xem trước bài tập");
 		expect(html).toContain("QC Preview Essay");
-		expect(html).toContain("Academic · 250 từ · 40 phút · Band 7.0");
+		expect(html).toContain("Academic · 250 từ · 40 phút");
+		expect(html).not.toContain("Band 7.0");
 		expect(html).toContain("Bài làm của học viên (mô phỏng)");
 		expect(html).toContain("Học viên sẽ viết bài ở đây…");
 		expect(html).toContain("Bản xem trước — bài làm không được lưu.");

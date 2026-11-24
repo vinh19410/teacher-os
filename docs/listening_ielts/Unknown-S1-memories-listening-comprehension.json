@@ -1,0 +1,271 @@
+{
+	"id": "c09e15d9-6342-434b-895d-c421b35fc982",
+	"url": "https://stepielts.com/student/listening/c09e15d9-6342-434b-895d-c421b35fc982?mode=practice",
+	"title": "Memories – Listening Comprehension",
+	"source": "Unknown",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-15",
+	"audio_url": "https://audio.stepielts.com/listening-audio/ec0dba66-7428-406c-acf8-35ea1fef392c.mp3",
+	"transcript": "Speaker 0: Memories. Somebody once asked me what the most valuable things that I owned were. I thought about that for a long time. Then I realized that most of the things that I had could be replaced. What I would not be able to replace were the photographs that I had of my friends and family. Photographs are memories that are captured on film. Some of the photographs are of people who are no longer with us. I would hate to lose them. Memories are precious. They are all we have sometimes to link us to days gone by. I remember the good times. I try to relive them in my mind sometimes. I remember the sad times. Some of the sad memories are painful, but they are all a part of my life, and I don't want to lose any of my memories. People come into our lives and people leave our lives, but most people leave a memory for us. I have lots of memories. And when I look at my photographs, the memories come flooding back into my brain. I remember what people were like when they were younger. I remember vacations that I took. I remember days that seemed ordinary at the time, but you never get to relive even the ordinary days. Memories are so precious. Cherish your memories and keep them in a place close to your heart.",
+	"body": {
+		"text": "Part 1 — Fill in the Blank\nThe writer realized that most of his things could be [1].\nPhotographs are memories that are [2] on films.\nI would hate to lose them. Memories are [3].\nMemories are all we have sometimes to [4] us to days gone by.\nThe writer tries to [5] the good times in his mind.\nSome of the sad memories are [6], but they are all a part of my life.\nWhen the writer looks at photographs, the memories come [7] back.\n[8] your memories and keep them a place close to your heart.",
+		"html": "<p><strong>Part 1 — Fill in the Blank</strong></p><ol><li>The writer realized that most of his things could be [1].</li><li>Photographs are memories that are [2] on films.</li><li>I would hate to lose them. Memories are [3].</li><li>Memories are all we have sometimes to [4] us to days gone by.</li><li>The writer tries to [5] the good times in his mind.</li><li>Some of the sad memories are [6], but they are all a part of my life.</li><li>When the writer looks at photographs, the memories come [7] back.</li><li>[8] your memories and keep them a place close to your heart.</li></ol>"
+	},
+	"question_groups": [
+		{
+			"range": "1-8",
+			"type": "FILL_BLANK",
+			"instructions": "Fill in the Blank. Use words from the story to complete each sentence.",
+			"body": "Part 1 — Fill in the Blank\nThe writer realized that most of his things could be [1].\nPhotographs are memories that are [2] on films.\nI would hate to lose them. Memories are [3].\nMemories are all we have sometimes to [4] us to days gone by.\nThe writer tries to [5] the good times in his mind.\nSome of the sad memories are [6], but they are all a part of my life.\nWhen the writer looks at photographs, the memories come [7] back.\n[8] your memories and keep them a place close to your heart.",
+			"body_html": "<p><strong>Part 1 — Fill in the Blank</strong></p><ol><li>The writer realized that most of his things could be [1].</li><li>Photographs are memories that are [2] on films.</li><li>I would hate to lose them. Memories are [3].</li><li>Memories are all we have sometimes to [4] us to days gone by.</li><li>The writer tries to [5] the good times in his mind.</li><li>Some of the sad memories are [6], but they are all a part of my life.</li><li>When the writer looks at photographs, the memories come [7] back.</li><li>[8] your memories and keep them a place close to your heart.</li></ol>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The writer realized that most of his things could be [1].",
+					"answer": "replaced",
+					"quotes": [
+						"Then I realized that most of the things that I had could be replaced."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Photographs are memories that are [2] on films.",
+					"answer": "captured",
+					"quotes": ["Photographs are memories that are captured on film."]
+				},
+				{
+					"number": 3,
+					"text": "I would hate to lose them. Memories are [3].",
+					"answer": "precious",
+					"quotes": ["Memories are precious."]
+				},
+				{
+					"number": 4,
+					"text": "Memories are all we have sometimes to [4] us to days gone by.",
+					"answer": "link",
+					"quotes": [
+						"They are all we have sometimes to link us to days gone by."
+					]
+				},
+				{
+					"number": 5,
+					"text": "The writer tries to [5] the good times in his mind.",
+					"answer": "relive"
+				},
+				{
+					"number": 6,
+					"text": "Some of the sad memories are [6], but they are all a part of my life.",
+					"answer": "painful",
+					"quotes": [
+						"Some of the sad memories are painful, but they are all a part of my life, and I don't want to lose any of my memories."
+					]
+				},
+				{
+					"number": 7,
+					"text": "When the writer looks at photographs, the memories come [7] back.",
+					"answer": "flooding",
+					"quotes": [
+						"And when I look at my photographs, the memories come flooding back into my brain."
+					]
+				},
+				{
+					"number": 8,
+					"text": "[8] your memories and keep them a place close to your heart.",
+					"answer": "Cherish",
+					"quotes": [
+						"Cherish your memories and keep them in a place close to your heart."
+					]
+				}
+			]
+		},
+		{
+			"range": "9-15",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Part 2 — Multiple choice. Choose the correct letter A, B, C or D.",
+			"questions": [
+				{
+					"number": 9,
+					"text": "Why are photographs important to the speaker?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They help her remember friends and family"
+						},
+						{
+							"label": "B",
+							"text": "They show beautiful places"
+						},
+						{
+							"label": "C",
+							"text": "They are easy to keep"
+						},
+						{
+							"label": "D",
+							"text": "They are very old"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"What I would not be able to replace were the photographs that I had of my friends and family."
+					]
+				},
+				{
+					"number": 10,
+					"text": "According to the speaker, why are memories precious?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They make people happy all the time"
+						},
+						{
+							"label": "B",
+							"text": "They connect us to the past"
+						},
+						{
+							"label": "C",
+							"text": "They help people become successful"
+						},
+						{
+							"label": "D",
+							"text": "They are easy to create"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"They are all we have sometimes to link us to days gone by."
+					]
+				},
+				{
+					"number": 11,
+					"text": "What does the speaker sometimes do with his good memories?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She tries to remember them in his mind"
+						},
+						{
+							"label": "B",
+							"text": "She writes them in a diary"
+						},
+						{
+							"label": "C",
+							"text": "She shares them on social media"
+						},
+						{
+							"label": "D",
+							"text": "She tells them to strangers"
+						}
+					],
+					"answer": "A",
+					"quotes": ["I try to relive them in my mind sometimes."]
+				},
+				{
+					"number": 12,
+					"text": "What does the speaker say about sad memories?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They should be forgotten quickly"
+						},
+						{
+							"label": "B",
+							"text": "They are painful but part of life"
+						},
+						{
+							"label": "C",
+							"text": "They are more important than happy memories"
+						},
+						{
+							"label": "D",
+							"text": "They are easy to remove"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Some of the sad memories are painful, but they are all a part of my life, and I don't want to lose any of my memories."
+					]
+				},
+				{
+					"number": 13,
+					"text": "What usually happens when people leave our lives?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They take our memories away"
+						},
+						{
+							"label": "B",
+							"text": "They leave us with memories"
+						},
+						{
+							"label": "C",
+							"text": "They forget about us"
+						},
+						{
+							"label": "D",
+							"text": "They send photographs"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"People come into our lives and people leave our lives, but most people leave a memory for us."
+					]
+				},
+				{
+					"number": 14,
+					"text": "What happens when the speaker looks at his photographs?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She feels bored"
+						},
+						{
+							"label": "B",
+							"text": "Many memories return to his mind"
+						},
+						{
+							"label": "C",
+							"text": "She wants to travel again"
+						},
+						{
+							"label": "D",
+							"text": "She forgets the past"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"And when I look at my photographs, the memories come flooding back into my brain."
+					]
+				},
+				{
+					"number": 15,
+					"text": "What advice does the speaker give at the end?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Photographs are the most valuable objects people can own."
+						},
+						{
+							"label": "B",
+							"text": "Memories are priceless and should be treasured."
+						},
+						{
+							"label": "C",
+							"text": "People should take more photographs during vacations."
+						},
+						{
+							"label": "D",
+							"text": "The past is more important than the present."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Cherish your memories and keep them in a place close to your heart."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

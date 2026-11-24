@@ -1,0 +1,152 @@
+{
+	"id": "da8789c2-7544-4e62-b4e3-d1a65ff5cc1a",
+	"url": "https://stepielts.com/student/listening/da8789c2-7544-4e62-b4e3-d1a65ff5cc1a?mode=practice",
+	"title": "Suburbs",
+	"source": "Actual Test",
+	"section": 4,
+	"time_minutes": 10,
+	"question_range": "31-40",
+	"audio_url": "https://audio.stepielts.com/listening-audio/848045e8-5892-45bb-9f01-93c7b2d1b6e3.mp3",
+	"transcript": "Speaker 0: You will hear part of a lecture for students about suburbs. First, you have some time to look at questions 31 to 40. Now listen carefully and answer questions 31 to 40.\nSpeaker 1: In the beginning of human civilization, there were no cities. There were just small settlements. They grew with time and became villages and towns. Then at a certain stage when the size became big enough, we call it a city. So what about suburbs? Generally speaking, a suburb is a mixed use or residential area existing as either part of a city or as a separate residential community within commuting distance of a city. Some small towns near a big city were absorbed by the city and became its suburbs. Many labor workers, such as carpenters, construction, and factory workers, live in the suburbs of the city. They usually have a lower income than the middle class and can't afford the expensive houses or apartments in downtown area. They live in the suburbs where the infrastructure is poor and the rent is low. Interestingly, you may also see wealthy residents, most of whom are highly paid engineers, lawyers, and doctors, enjoy their life in the suburbs. They live in the expensive neighborhoods, which are located in the nicer areas. They usually have a very big house and a garden and a garage. Traditionally, many people think that living in the suburbs is less convenient than living downtown, where there were supermarkets, shopping malls, and other facilities. These facilities are not concentrated or even available in the suburbs. Sometimes people there have to travel for half an hour to get to the nearest market or grocery store. Actually, there are many good things about living in the suburbs. For instance, people pay relatively low taxes than people in the city so they can have a more disposable income, and food is cheaper than those in the cities. Many people have noticed that vegetables and some kinds of fruits are usually produced in the suburbs or transported to the suburbs first before they reach the city. Because of lower taxes and other beneficial policies, it's much easier to start one's own business in the suburbs. For instance, open a cafe or set up a shop. That's why we can see a lot of startups in the suburban region. It could also save a lot of money and effort. Because of the ever increasing population, now you can see many large scale housing areas constructed in almost all city suburbs as there is no room for new apartment buildings or houses in the cities. Outside of many big cities such as London, there are big residential areas. Also, the roads are designed and built much later, so they are usually much wider than the roads downtown. This will provide greater mobility for suburban residents. They can travel faster from one place to another since there are fewer traffic jams despite the growing number of automobiles on the roads. This is one of the reasons why more people are moving out of the city these years. Yet the suburbs are also facing some troubles in its development. Many suburbs are usually occupied by houses and residential areas. As a result, there were not enough room for trade activities. Even some supermarkets and small restaurants are suffering from this. People usually have to drive a car to the nearest grocery store. This warns the urban planning department to improve their work and have the vision to think ahead of time. I think you might be interested in an interview that we did with some residents in the suburban area of London. Their opinions can give us a picture of what suburban life is like compared to life downtown. Jack Simmons is an office worker who lives in the Western Suburbs of London. Through his observation, he thinks that although there are few public gyms or clubs and it's not convenient to travel to the town for fitness classes, people in the suburbs actually do more exercise, such as jogging and swimming. So he concluded that the suburban folks enjoy a much healthier lifestyle compared with their city counterparts. When we interviewed Ellen Simpson, a housewife who lives in the Northern Suburbs, she told us that living in the city center is a nightmare. She said the city center is always congested with both cars and people, and she could not stand it anymore. Though many of her friends live in the city and people are generally friendly there, she still prefers to live in suburban areas and has adjusted to living here now. We talked to an engineer named Robert Gregory who works downtown and lives in the suburbs. In his opinion, the architectural style in the suburbs is quite the same as that in the city nowadays. Besides, people in the suburban area also pursue goals that are similar to the ones pursued by the people in the city. Also, people in the suburbs don't seem to be more satisfied with their life. Sarah Godfrey is an English teacher at a school in the city. According to her, people in cities are not necessarily less friendly than their counterparts in the suburbs, but the latter always smile. They go to the parks and have gatherings more often. These activities are important in improving life quality and the level of happiness.\nSpeaker 0: That is the end of section four. You now have half a minute to check your answers. That is the end of the listening test. In the IELTS test, you would now have ten minutes to transfer your answers to your answer sheet.",
+	"question_groups": [
+		{
+			"range": "31-36",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THAN TWO WORDS for each answer.",
+			"body": "SUBURBS\nPeople living in the suburbs:\nlabor workers and [31]\nAdvantages of living in the suburbs:\nTax and the prices of [32] are low.\nIt is easy to start a [33]\nBuilding [34] housing area to meet the demand of growing population\nPeople have more [35] because of wider roads.\nProblem:\nlack space for [36] in the suburbs",
+			"body_table": [
+				["SUBURBS"],
+				["People living in the suburbs:\nlabor workers and [31]"],
+				[
+					"Advantages of living in the suburbs:\nTax and the prices of [32] are low.\nIt is easy to start a [33]\nBuilding [34] housing area to meet the demand of growing population\nPeople have more [35] because of wider roads."
+				],
+				["Problem:\nlack space for [36] in the suburbs"]
+			],
+			"body_html": "<table><tbody><tr><td><h3><strong>SUBURBS</strong></h3></td></tr><tr><td><p><strong>People living in the suburbs:</strong></p><ul><li>labor workers and [31]</li></ul></td></tr><tr><td><p><strong>Advantages of living in the suburbs:</strong></p><ul><li>Tax and the prices of [32] are low.</li><li>It is easy to start a [33]</li><li>Building [34] housing area to meet the demand of growing population</li><li>People have more [35] because of wider roads.</li></ul></td></tr><tr><td><p><strong>Problem:</strong></p><ul><li>lack space for [36] in the suburbs</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 31,
+					"text": "labor workers [31]",
+					"answer": "have lower income",
+					"quotes": [
+						"Interestingly, you may also see wealthy residents, most of whom are highly paid engineers, lawyers, and doctors, enjoy their life in the suburbs."
+					]
+				},
+				{
+					"number": 32,
+					"text": "Tax and the prices of [32] are low.",
+					"answer": "food",
+					"quotes": [
+						"For instance, people pay relatively low taxes than people in the city so they can have a more disposable income, and food is cheaper than those in the cities."
+					]
+				},
+				{
+					"number": 33,
+					"text": "It is easy to start a [33]",
+					"answer": "business",
+					"quotes": [
+						"Because of lower taxes and other beneficial policies, it's much easier to start one's own business in the suburbs."
+					]
+				},
+				{
+					"number": 34,
+					"text": "Building [34] housing area to meet the demand of growing population",
+					"answer": "large scale",
+					"quotes": [
+						"Because of the ever increasing population, now you can see many large scale housing areas constructed in almost all city suburbs as there is no room for new apartment buildings or houses in the cities."
+					]
+				},
+				{
+					"number": 35,
+					"text": "People have more [35] because of wider roads.",
+					"answer": "mobility",
+					"quotes": [
+						"This will provide greater mobility for suburban residents."
+					]
+				},
+				{
+					"number": 36,
+					"text": "lack space for [36] in the suburbs",
+					"answer": "trade activities",
+					"quotes": [
+						"As a result, there were not enough room for trade activities."
+					]
+				}
+			]
+		},
+		{
+			"range": "37-40",
+			"type": "MATCHING_NAMES",
+			"instructions": "What does each of the interviewees think of the life in the suburbs compared with that in the cities?\nChoose FOUR answers from the box.",
+			"options": [
+				{
+					"label": "A",
+					"text": "People there are friendlier"
+				},
+				{
+					"label": "B",
+					"text": "People there are healthier"
+				},
+				{
+					"label": "C",
+					"text": "It is less crowded"
+				},
+				{
+					"label": "D",
+					"text": "It is more convenient"
+				},
+				{
+					"label": "E",
+					"text": "People there are happier"
+				},
+				{
+					"label": "F",
+					"text": "There are some similarities"
+				}
+			],
+			"body": "Comments\nJack Simons [37]\nEllen Simpson [38]\nRobert Gregory [39]\nSarah Godfrey [40]",
+			"body_html": "<h4><strong>Comments</strong></h4><p><strong>Jack Simons</strong> [37]</p><p><strong>Ellen Simpson</strong> [38]</p><p><strong>Robert Gregory</strong> [39]</p><p><strong>Sarah Godfrey</strong> [40]</p>",
+			"questions": [
+				{
+					"number": 37,
+					"text": "Jack Simons",
+					"answer": "B",
+					"quotes": [
+						"Jack Simmons is an office worker who lives in the Western Suburbs of London.",
+						"Through his observation, he thinks that although there are few public gyms or clubs and it's not convenient to travel to the town for fitness classes, people in the suburbs actually do more exercise, such as jogging and swimming."
+					]
+				},
+				{
+					"number": 38,
+					"text": "Ellen Simpson",
+					"answer": "C",
+					"quotes": [
+						"When we interviewed Ellen Simpson, a housewife who lives in the Northern Suburbs, she told us that living in the city center is a nightmare.",
+						"She said the city center is always congested with both cars and people, and she could not stand it anymore."
+					]
+				},
+				{
+					"number": 39,
+					"text": "Robert Gregory",
+					"answer": "F",
+					"quotes": [
+						"We talked to an engineer named Robert Gregory who works downtown and lives in the suburbs.",
+						"In his opinion, the architectural style in the suburbs is quite the same as that in the city nowadays.",
+						"Besides, people in the suburban area also pursue goals that are similar to the ones pursued by the people in the city."
+					]
+				},
+				{
+					"number": 40,
+					"text": "Sarah Godfrey",
+					"answer": "E",
+					"quotes": [
+						"Sarah Godfrey is an English teacher at a school in the city.",
+						"According to her, people in cities are not necessarily less friendly than their counterparts in the suburbs, but the latter always smile.",
+						"These activities are important in improving life quality and the level of happiness."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

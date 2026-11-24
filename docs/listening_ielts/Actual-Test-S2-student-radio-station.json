@@ -1,0 +1,181 @@
+{
+	"id": "c30d48da-95c7-4b36-8085-f2256473501d",
+	"url": "https://stepielts.com/student/listening/c30d48da-95c7-4b36-8085-f2256473501d?mode=practice",
+	"title": "Student Radio Station",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/159455ad-3ccf-4319-9a1c-cf66c10fbffa.mp3",
+	"transcript": "Speaker 0: Section two. You will hear a program on a student radio station. It describes the findings of a survey on vacation jobs taken by students the previous year. First, you have some time to look at questions 11 to 16 on page four. Now listen carefully and answer questions 11 to 16.\nSpeaker 1: Welcome to student life. It's spring, and many of you may be thinking about arranging work for the long vacation. So on today's program, Roger Anwell reports on a survey we conducted into the pleasures and problems of vacation jobs. Roger.\nSpeaker 2: Thank you, Sarah. Well, the first thing to say is that by far the majority of students we surveyed did just three types of jobs. All of these obviously had their advantages and disadvantages. Starting with stock taking in supermarkets. The thing that students said they enjoyed most about this job was the traveling. They were often required to go to branches to do their stock takes, and this was regarded as an interesting plus. The main negative, however, was that they tended to find the job tiring with long hours spent on their feet and climbing high shelves. Now one thing we did ask the students in our survey was whether they had any recommendations for other people taking on their job, and they said, perhaps not surprisingly, get good shoes. That's the only way you can keep going. Another job which lots of students did was office work, and the positive feature of this actually rather surprised me until I remembered what a hot summer it was last year. Lots of students named air conditioning as the best thing about office work. The downside, which many talked about, was wearing formal clothes. Obviously, this didn't go down too well with students. The advice most people gave was to select a large office. That way, you have more variety of social contacts. Otherwise, the work can get very boring. The third job which had attracted large numbers of students was as a theme park attendant. And, again, I got a surprise here because the big plus people talked about was good pay. It must have improved since my day, I must say. Anyway, the downside I did recognize, having to deal with difficult customers, especially in the heat when tempers get frayed. Not easy. And people said that it was a good idea to live nearby because there's a lot of shift work, and you don't have to worry about transport at difficult times of the day.\nSpeaker 0: Before you hear the rest of the program, you have some time to look at questions 17 to 20 on page five. Now listen and answer questions 17 to 20.\nSpeaker 2: So those were the findings from the survey on the most common student jobs. But not all student jobs have to be mundane and boring. One of the students who responded in our survey spoke at length about his amazing job as a zoo attendant. Peter Marshall had read about work opportunities on the zoo website and just went along with a friend to talk to someone in personnel. He was offered a job there and then, as easy as that. In previous years, he'd done singularly unexciting shop work, so he was very pleased to be doing such original work. He ended up working for just under three months, which was actually slightly more than he'd anticipated and meant that he had to miss part of university term time. But he said it was well worth it because he thinks he's found his future career path as a result of this experience. He loved working on the educational side, in particular helping young kids understand about the animals in their natural environment. He said it was the most intriguing thing he'd ever done. He tells us though that with final exams coming up, he won't be able to do any paid work this coming vacation. So why don't you apply? If you're interested in getting further information about the findings of the survey\nSpeaker 0: That is the end of section two. You now have half a minute to check your answers. Now turn to section three on page six.",
+	"body": {
+		"text": "Vacation Job Main advantage Main disadvantage Recommendation\nStocktaking [11] Tiring [12]\nOffice work Air-conditioning [13] Choose a [14]\nTheme park attendant [15] Rude customers [16]",
+		"html": "<table><tbody><tr><td><strong>Vacation Job</strong></td><td><strong>Main advantage</strong></td><td><strong>Main disadvantage</strong></td><td><strong>Recommendation</strong></td></tr><tr><td>Stocktaking</td><td>[11]</td><td>Tiring</td><td>[12]</td></tr><tr><td>Office work</td><td>Air-conditioning</td><td>[13]</td><td>Choose a [14]</td></tr><tr><td>Theme park attendant</td><td>[15]</td><td>Rude customers</td><td>[16]</td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "11-16",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below.\nWrite NO MORE THAN THREE WORDS AND/ OR A NUMBER for each answer.",
+			"body": "Vacation Job Main advantage Main disadvantage Recommendation\nStocktaking [11] Tiring [12]\nOffice work Air-conditioning [13] Choose a [14]\nTheme park attendant [15] Rude customers [16]",
+			"body_table": [
+				[
+					"Vacation Job",
+					"Main advantage",
+					"Main disadvantage",
+					"Recommendation"
+				],
+				["Stocktaking", "[11]", "Tiring", "[12]"],
+				["Office work", "Air-conditioning", "[13]", "Choose a [14]"],
+				["Theme park attendant", "[15]", "Rude customers", "[16]"]
+			],
+			"body_html": "<table><tbody><tr><td><strong>Vacation Job</strong></td><td><strong>Main advantage</strong></td><td><strong>Main disadvantage</strong></td><td><strong>Recommendation</strong></td></tr><tr><td>Stocktaking</td><td>[11]</td><td>Tiring</td><td>[12]</td></tr><tr><td>Office work</td><td>Air-conditioning</td><td>[13]</td><td>Choose a [14]</td></tr><tr><td>Theme park attendant</td><td>[15]</td><td>Rude customers</td><td>[16]</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Complete the table below. Stocktaking - Main advantage",
+					"answer": "the traveling",
+					"quotes": [
+						"The thing that students said they enjoyed most about this job was the traveling."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Complete the table below. Stocktaking - Recommendation",
+					"answer": "get good shoes",
+					"quotes": [
+						"Now one thing we did ask the students in our survey was whether they had any recommendations for other people taking on their job, and they said, perhaps not surprisingly, get good shoes."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Complete the table below. Office work - Main disadvantage",
+					"answer": "wearing formal clothes",
+					"quotes": [
+						"The downside, which many talked about, was wearing formal clothes."
+					]
+				},
+				{
+					"number": 14,
+					"text": "Complete the table below. Office work - Choose a...",
+					"answer": "large office",
+					"quotes": [
+						"The advice most people gave was to select a large office."
+					]
+				},
+				{
+					"number": 15,
+					"text": "Complete the table below. Theme park attendant - Main advantage",
+					"answer": "good pay",
+					"quotes": [
+						"And, again, I got a surprise here because the big plus people talked about was good pay."
+					]
+				},
+				{
+					"number": 16,
+					"text": "Complete the table below. Theme park attendant - Recommendation",
+					"answer": "live nearby",
+					"quotes": [
+						"And people said that it was a good idea to live nearby because there's a lot of shift work, and you don't have to worry about transport at difficult times of the day."
+					]
+				}
+			]
+		},
+		{
+			"range": "17-20",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C",
+			"questions": [
+				{
+					"number": 17,
+					"text": "Peter learned about the job",
+					"options": [
+						{
+							"label": "A",
+							"text": "from a college friend"
+						},
+						{
+							"label": "B",
+							"text": "on the computer"
+						},
+						{
+							"label": "C",
+							"text": "from a student job centre"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Peter Marshall had read about work opportunities on the zoo website and just went along with a friend to talk to someone in personnel."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Peter mainly enjoyed the job because it was",
+					"options": [
+						{
+							"label": "A",
+							"text": "easy"
+						},
+						{
+							"label": "B",
+							"text": "challenging"
+						},
+						{
+							"label": "C",
+							"text": "unusual"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"In previous years, he'd done singularly unexciting shop work, so he was very pleased to be doing such original work."
+					]
+				},
+				{
+					"number": 19,
+					"text": "The job's most interesting aspect was",
+					"options": [
+						{
+							"label": "A",
+							"text": "learning about the environment"
+						},
+						{
+							"label": "B",
+							"text": "working with children"
+						},
+						{
+							"label": "C",
+							"text": "caring for the animals"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"He loved working on the educational side, in particular helping young kids understand about the animals in their natural environment."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Peter has decided that next vacation he",
+					"options": [
+						{
+							"label": "A",
+							"text": "won't take a job"
+						},
+						{
+							"label": "B",
+							"text": "will work at the zoo"
+						},
+						{
+							"label": "C",
+							"text": "will work elsewhere"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"He tells us though that with final exams coming up, he won't be able to do any paid work this coming vacation."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

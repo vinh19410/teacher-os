@@ -39,7 +39,7 @@ export function questionChoiceRows(
 	optionBank: readonly string[],
 ): QuizChoiceRow[] {
 	const kind =
-		type === "summary" && optionBank.length > 0
+		(type === "summary" || type === "flow") && optionBank.length > 0
 			? "letter"
 			: answerKindByType[type];
 	if (!kind) return [];

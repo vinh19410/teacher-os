@@ -15,11 +15,12 @@ import { buildServices } from "../devserver-services.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 const API_PORT = Number(process.env.E2E_API_PORT ?? 8100);
-const WEB_PORT = Number(process.env.E2E_WEB_PORT ?? 8101);
-const STUDENT_PORT = Number(process.env.E2E_STUDENT_PORT ?? 8103);
-const ADMIN_PORT = Number(process.env.E2E_ADMIN_PORT ?? 8104);
+const LMS_PORT = Number(
+	process.env.E2E_LMS_PORT ?? process.env.E2E_WEB_PORT ?? 8101,
+);
 const API_ORIGIN = `http://localhost:${API_PORT}`;
-const ADMIN_ORIGIN = `http://localhost:${ADMIN_PORT}`;
+const LMS_ORIGIN = `http://localhost:${LMS_PORT}`;
+const ADMIN_BASE_URL = `${LMS_ORIGIN}/admin`;
 const ADMIN_EMAIL =
 	(process.env.E2E_ADMIN_EMAILS ?? "admin@e2e.local").split(",")[0]?.trim() ??
 	"admin@e2e.local";
@@ -64,36 +65,30 @@ async function main() {
 	mkdirSync(OUT_DIR, { recursive: true });
 	const ports = {
 		api: API_PORT,
-		web: WEB_PORT,
-		student: STUDENT_PORT,
-		admin: ADMIN_PORT,
+		web: LMS_PORT,
 	};
 	const services = Object.fromEntries(
-		buildServices(ports).map((svc) => [svc.name, svc]),
+		buildServices(ports, { mode: "preview" }).map((svc) => [svc.name, svc]),
 	);
 
 	spawnSvc("pnpm", ["run", "boot:api"], join(ROOT, "apps/e2e"), {
 		E2E_API_PORT: String(API_PORT),
-		E2E_WEB_PORT: String(WEB_PORT),
-		E2E_STUDENT_PORT: String(STUDENT_PORT),
-		E2E_ADMIN_PORT: String(ADMIN_PORT),
+		E2E_LMS_PORT: String(LMS_PORT),
+		E2E_WEB_PORT: String(LMS_PORT),
 	});
-	for (const name of ["web", "student", "admin"]) {
-		spawnSvc("pnpm", services[name].restartArgs, ROOT, {
-			VITE_SERVER_URL: API_ORIGIN,
-			E2E_API_PORT: String(API_PORT),
-			E2E_ADMIN_PORT: String(ADMIN_PORT),
-		});
-	}
+	spawnSvc("pnpm", services.lms.restartArgs, ROOT, {
+		VITE_SERVER_URL: API_ORIGIN,
+		PORT: String(LMS_PORT),
+		E2E_LMS_PORT: String(LMS_PORT),
+		E2E_WEB_PORT: String(LMS_PORT),
+	});
 	await waitReady(`${API_ORIGIN}/readyz`, 120_000);
-	for (const name of ["web", "student", "admin"]) {
-		await waitReady(services[name].pollUrl, 120_000);
-	}
+	await waitReady(services.lms.pollUrl, 120_000);
 
-	// Seed admin: sign-up qua API với Origin admin rồi khóa DB như helper e2e.
+	// Seed admin: sign-up qua API với Origin LMS rồi khóa DB như helper e2e.
 	const signup = await fetch(`${API_ORIGIN}/api/auth/sign-up/email`, {
 		method: "POST",
-		headers: { "content-type": "application/json", origin: ADMIN_ORIGIN },
+		headers: { "content-type": "application/json", origin: LMS_ORIGIN },
 		body: JSON.stringify({
 			name: "E2E Admin",
 			email: ADMIN_EMAIL,
@@ -122,11 +117,11 @@ async function main() {
 	const page = await context.newPage();
 
 	// Đăng nhập admin qua form thật để có session cookie.
-	await page.goto(`${ADMIN_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#signin-email").fill(ADMIN_EMAIL);
 	await page.locator("#signin-password").fill(ADMIN_PASSWORD);
 	await page.locator("#panel-signin button[type='submit']").click();
-	await page.waitForURL(/\/library\/tests/, { timeout: 60_000 });
+	await page.waitForURL(/\/admin\/library\/tests/, { timeout: 60_000 });
 
 	// Tạo 1 đề Reading + 1 đề Listening qua API thật cho trang editor.
 	async function createTest(title, skill) {
@@ -135,7 +130,7 @@ async function main() {
 			{
 				data: { title, description: "", skill, timeLimitSeconds: 3600 },
 				// CSRF write của router admin đòi Origin thuộc ADMIN_ORIGINS.
-				headers: { Origin: ADMIN_ORIGIN },
+				headers: { Origin: LMS_ORIGIN },
 			},
 		);
 		if (res.status() !== 201 && res.status() !== 200)
@@ -149,15 +144,15 @@ async function main() {
 	);
 
 	const targets = [
-		["admin-library-list", `${ADMIN_ORIGIN}/library/tests`],
-		["admin-library-create", `${ADMIN_ORIGIN}/library/tests/new`],
+		["admin-library-list", `${ADMIN_BASE_URL}/library/tests`],
+		["admin-library-create", `${ADMIN_BASE_URL}/library/tests/new`],
 		[
 			"admin-library-editor-reading",
-			`${ADMIN_ORIGIN}/library/tests/${readingId}`,
+			`${ADMIN_BASE_URL}/library/tests/${readingId}`,
 		],
 		[
 			"admin-library-editor-listening",
-			`${ADMIN_ORIGIN}/library/tests/${listeningId}`,
+			`${ADMIN_BASE_URL}/library/tests/${listeningId}`,
 		],
 	];
 	for (const [width, height] of VIEWPORTS) {

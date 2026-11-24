@@ -1,0 +1,231 @@
+{
+	"id": "4a417f43-8738-48c6-8fd8-187fb4a47c50",
+	"url": "https://stepielts.com/student/listening/4a417f43-8738-48c6-8fd8-187fb4a47c50?mode=practice",
+	"title": "Adventures & Nighttime Delights",
+	"source": "C14T4",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/be3f2db9-3008-490c-9f5a-948716a0fcd3.mp3",
+	"transcript": "Speaker 0: Section two. You will hear a holiday company representative talking to a group of tourists in a large hotel about things they can do during their holiday. First, you have some time to look at questions 11 to 16. Now listen carefully and answer questions 11 to 16.\nSpeaker 1: Hello, everyone. I'm Jake Stevens, and I'm your rep here at the hotel. I'm sure you'll all have a great time here. So let me tell you a bit about what's on offer. I'll start by telling you about some of the excursions that are available for guests. One thing you have to do while you're here is go dolphin watching. On our boat trips, we pretty well guarantee you'll see dolphins. If you don't, you can repeat the trip free of charge. We organize daily trips for just €35. Unfortunately, there aren't any places left for this afternoon's trip, but come and see me to book for later in the week. If you're energetic, I'd recommend our forest walk. It's a guided walk of about seven kilometers. There'll be a stop halfway, and you'll be provided with a drink and sandwiches. There's some fairly steep climbs up the hills, so you need to be reasonably fit for this one, with good shoes, though, and bring a waterproof in case it rains. It's just €25, all inclusive, and it's every Wednesday. Then on Thursdays, we organize a cycle trip, which will give you all the fun of biking without the effort. We'll take you and your bike up to the top of Mount Lanna and leave you to bike back. It's a 700 meter drop in just 20 kilometers, so this isn't really for inexperienced cyclists as you'll be going pretty fast. And if it's a clear day, you'll have fantastic views. On our local craft tour, you can find out about the traditional activities in the island. And the best thing about this trip is that it's completely free. You'll be taken to a factory where jewelry is made and also a ceramics center. If you want, you can buy some of the products, but that's entirely up to you. The trip starts after lunch on Thursday, and you'll return by 6PM. If you're interested in astronomy, you may already know that the island's one of the best places in the world to observe the night sky. We can offer trips to the observatory on Friday for those who are interested. They cost €90 per person, and you'll be shown the huge telescopes and have a talk from an expert who will explain all about how they work. Afterwards, we'll head down to Sunset Beach where you can have a dip in the ocean if you want before we head off back to the hotel. Finally, there's horse riding. This is organized by the Equestrian Centre over near Playa Cortino, and it's a great experience if you're a keen horseback rider or even if you've never been on a horse before. They take you down to the beach, and you can canter along the sand and through the waves. It costs €35, and it's available every day.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 17 to 20. Now listen and answer questions 17 to 20.\nSpeaker 1: So there's plenty to do in the daytime, but what about nightlife? Well, the number one attraction's called musical favorites. Guests enjoy a three course meal and unlimited free drinks and watch a fantastic show, starting with musical set in Paris and then crossing the Atlantic to Las Vegas and finally Copacabana. At the end, the cast members come down from the stage still in their stunning costumes, and you'll have a chance to chat with them. It's hugely popular, so let me know now if you're interested because it's no good leaving it until the last minute. It's on Friday night. Tickets suggest €50 each, but for an extra €10, you can have a table right by the stage. If you'd like to go back in time, there's the Castle Feast on Saturday evening. It's held in a twelfth century castle, and you eat in the great courtyard, with ladies in long gowns serving your food. You're given a whole chicken each, which you eat in the medieval way using your hands instead of cutlery. And you're entertained by competitions where the horseback riders attempt to knock one another off their horses. Then you can watch the dancers in the ballroom and join in as well if you want. Okay. So now if anyone\nSpeaker 0: That is the end of section two. You now have half a minute to check your answers.",
+	"body": {
+		"text": "Excursions\ndolphin watching [11]\nforest walk [12]\ncycle trip [13]\nlocal craft tour [14]\nobservatory trip [15]\nhorse riding [16]\nInformation",
+		"html": "<p><strong>Excursions</strong></p><p>dolphin watching [11]</p><p>forest walk            [12]</p><p>cycle trip               [13]</p><p>local craft tour      [14]</p><p>observatory trip   [15]</p><p>horse riding          [16]</p><strong>Information</strong>"
+	},
+	"question_groups": [
+		{
+			"range": "11-16",
+			"type": "MATCHING",
+			"instructions": "What information does the speaker give about each of the following excursions? Choose SIX answers from the box and write the correct letter, A-H, next to Questions 11-16.",
+			"options": [
+				{
+					"label": "A",
+					"text": "all downhill"
+				},
+				{
+					"label": "B",
+					"text": "suitable for beginners"
+				},
+				{
+					"label": "C",
+					"text": "only in good weather"
+				},
+				{
+					"label": "D",
+					"text": "food included"
+				},
+				{
+					"label": "E",
+					"text": "no charge"
+				},
+				{
+					"label": "F",
+					"text": "swimming possible"
+				},
+				{
+					"label": "G",
+					"text": "fully booked today"
+				},
+				{
+					"label": "H",
+					"text": "transport not included"
+				}
+			],
+			"body": "Excursions\ndolphin watching [11]\nforest walk [12]\ncycle trip [13]\nlocal craft tour [14]\nobservatory trip [15]\nhorse riding [16]\nInformation",
+			"body_html": "<p><strong>Excursions</strong></p><p>dolphin watching [11]</p><p>forest walk            [12]</p><p>cycle trip               [13]</p><p>local craft tour      [14]</p><p>observatory trip   [15]</p><p>horse riding          [16]</p><strong>Information</strong>",
+			"questions": [
+				{
+					"number": 11,
+					"text": "dolphin watching",
+					"answer": "G",
+					"quotes": [
+						"Unfortunately, there aren't any places left for this afternoon's trip, but come and see me to book for later in the week."
+					]
+				},
+				{
+					"number": 12,
+					"text": "forest walk",
+					"answer": "D",
+					"quotes": [
+						"There'll be a stop halfway, and you'll be provided with a drink and sandwiches."
+					]
+				},
+				{
+					"number": 13,
+					"text": "cycle trip",
+					"answer": "A",
+					"quotes": [
+						"It's a 700 meter drop in just 20 kilometers, so this isn't really for inexperienced cyclists as you'll be going pretty fast."
+					]
+				},
+				{
+					"number": 14,
+					"text": "local craft tour",
+					"answer": "E",
+					"quotes": [
+						"And the best thing about this trip is that it's completely free."
+					]
+				},
+				{
+					"number": 15,
+					"text": "observatory trip",
+					"answer": "F",
+					"quotes": [
+						"Afterwards, we'll head down to Sunset Beach where you can have a dip in the ocean if you want before we head off back to the hotel."
+					]
+				},
+				{
+					"number": 16,
+					"text": "horse riding",
+					"answer": "B",
+					"quotes": [
+						"This is organized by the Equestrian Centre over near Playa Cortino, and it's a great experience if you're a keen horseback rider or even if you've never been on a horse before."
+					]
+				}
+			]
+		},
+		{
+			"range": "17-18",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. Which TWO things does the speaker say about the attraction called Musical Favourites?",
+			"questions": [
+				{
+					"number": 17,
+					"text": "Choose TWO letters, A-E. Which TWO things does the speaker say about the attraction called Musical Favourites?",
+					"options": [
+						{
+							"label": "A",
+							"text": "You pay extra for drinks."
+						},
+						{
+							"label": "B",
+							"text": "You must book it in advance."
+						},
+						{
+							"label": "C",
+							"text": "You get a reduction if you buy two tickets."
+						},
+						{
+							"label": "D",
+							"text": "You can meet the performers."
+						},
+						{
+							"label": "E",
+							"text": "You can take part in the show."
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 18,
+					"text": "Choose TWO letters, A-E. Which TWO things does the speaker say about the attraction called Musical Favourites?",
+					"options": [
+						{
+							"label": "A",
+							"text": "You pay extra for drinks."
+						},
+						{
+							"label": "B",
+							"text": "You must book it in advance."
+						},
+						{
+							"label": "C",
+							"text": "You get a reduction if you buy two tickets."
+						},
+						{
+							"label": "D",
+							"text": "You can meet the performers."
+						},
+						{
+							"label": "E",
+							"text": "You can take part in the show."
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "19-20",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers. Which TWO things does the speaker say about the attraction called Musical Favourites?",
+			"questions": [
+				{
+					"number": 19,
+					"text": "Choose TWO letters, A-E. Which TWO things does the speaker say about the Castle Feast?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Visitors can dance after the meal."
+						},
+						{
+							"label": "B",
+							"text": "There is a choice of food."
+						},
+						{
+							"label": "C",
+							"text": "Visitors wear historical costume."
+						},
+						{
+							"label": "D",
+							"text": "Knives and forks are not used."
+						},
+						{
+							"label": "E",
+							"text": "The entertainment includes horse races."
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 20,
+					"text": "Choose TWO letters, A-E. Which TWO things does the speaker say about the Castle Feast?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Visitors can dance after the meal."
+						},
+						{
+							"label": "B",
+							"text": "There is a choice of food."
+						},
+						{
+							"label": "C",
+							"text": "Visitors wear historical costume."
+						},
+						{
+							"label": "D",
+							"text": "Knives and forks are not used."
+						},
+						{
+							"label": "E",
+							"text": "The entertainment includes horse races."
+						}
+					],
+					"answer": "D"
+				}
+			]
+		}
+	],
+	"images": []
+}

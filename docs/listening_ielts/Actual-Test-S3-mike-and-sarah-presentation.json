@@ -1,0 +1,198 @@
+{
+	"id": "8c0ce4a7-176a-4add-ba03-d8eb4dba880c",
+	"url": "https://stepielts.com/student/listening/8c0ce4a7-176a-4add-ba03-d8eb4dba880c?mode=practice",
+	"title": "Mike and Sarah Presentation",
+	"source": "Actual Test",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/d694b770-b5f5-4a41-b666-769d9a7599f0.mp3",
+	"transcript": "Speaker 0: Now turn to Section three. Section three. You will hear two psychology students, called Sarah and Mike, discussing their research on music and psychology with a lecturer. First, you have some time to look at questions 21 to 24. Now listen carefully and answer questions 21 to 24.\nSpeaker 1: Hi, Sarah. Hi, Mike. Now I don't have long to discuss this today. This is your research into the relationship between psychology and music, isn't it?\nSpeaker 0: Yes. That's right.\nSpeaker 1: We found a recent study by a professor North in The UK. Experts have always suspected there were similarities between fans of certain music types, but this study was able to prove that musical tastes are directly related to our personality. I like this topic. It's certainly going to generate a lot of discussion among your classmates when you present it. I'm pleased to see you bringing in a topic we haven't seen before. Just make sure there's enough detail and it's readily available for your presentation.\nSpeaker 0: We think there is, yes.\nSpeaker 1: So what does the study involve? Well, 36,000 people from all around the world completed an online survey. One part of this was to provide information about the first album or CD that they considered important as a teenager.\nSpeaker 0: Yes. They also had to say who they associate that music with now. For example, a parent or a romantic partner. Professor North was trying to see if there were any links between musical tastes and emotions.\nSpeaker 1: Interesting. And, what makes this study so significant? Have there been any other studies in this area?\nSpeaker 0: Well, we think this research is quite groundbreaking. It isn't the first study of its kind, as experts have found links previously between things like musical tastes and social class, for example. But people from all over the world were involved in this one, so it's the scale of the study that makes it significant.\nSpeaker 1: And what were their findings? For each music shopper, they listed the most common characteristics that each typical fan had. The findings suggest classical music fans are shy, have high self esteem, are creative, and at ease. Although heavy metal music fans come from a different generation, it was found that they also share these characteristics which is a remarkable discovery.\nSpeaker 0: Actually, I have to say that I'm a bit skeptical of the findings. I'm not so sure we can trust them.\nSpeaker 1: Why? He can't be accused of using a small sample or rushing the findings. This study's taken some time to come out. Is it because you think some people won't match their descriptions?\nSpeaker 0: Well, I do know a few who don't fit neatly, but that's not the issue. The participants were asked to describe themselves during the study, so it's only their opinion of their personality rather than objective fact.\nSpeaker 1: Well, that's certainly something to explore further. I have to go to deliver my lecture now. So if I were you, I'd look at the material you've got and decide what you're going to do with it.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 25 to 30. Now listen and answer questions 25 to 30.\nSpeaker 1: Alright. So, let's decide what to do with each of the sections of our presentation on Professor North's research.\nSpeaker 0: The first part was the background section. We want to include that, of course.\nSpeaker 1: Yes. But when we put all our notes together, we really ended up with too much.\nSpeaker 0: I agree. It's not really the link that's the problem though. There are just too many facts here at the moment.\nSpeaker 1: True. Let's make it more general. What about the next section?\nSpeaker 0: It's about the earlier research that has been done in this area. We've printed out pages and pages here.\nSpeaker 1: Yes. I was expecting to find some fascinating information here, but it's a bit dull, especially all those statistics.\nSpeaker 0: I agree. We have to mention it first, so we'll just have to try and make it sound noteworthy.\nSpeaker 1: Yes. Well, what about the findings of the study?\nSpeaker 0: Well, you wanted to focus on the similarities you found between various music lovers, and I wanted to show the opposite view and see how they differ.\nSpeaker 1: Well, they're both important. So maybe we could include the two different points of view.\nSpeaker 0: Yes. That could work. Let's do it independently then before we put our information together. We probably have enough for that section then.\nSpeaker 1: Great. Now market research. There are so many implications of how this could be used in a marketing situation.\nSpeaker 0: Yes, but we just don't have all the data yet and we don't know when it's going to be available.\nSpeaker 1: Okay. Well, let's point that out, but present it briefly anyway.\nSpeaker 0: Good idea. The next one was limitations of the study. Did you look into that?\nSpeaker 1: I did. I think because Professor North wrote this himself, there's not much here and it might not be very objective.\nSpeaker 0: Yes. We need to find out how other researchers view the study to see if there's been any criticism of it.\nSpeaker 1: Alright.\nSpeaker 0: And finally, future research. That seems like a good way to end our presentation.\nSpeaker 1: It would be, but his suggestions are too far removed from our original topic. They concentrate too much on music.\nSpeaker 0: Yes. Let's find a way to include more psychology so it relates better to our course.\nSpeaker 1: Good idea. So what do you think about saying?\nSpeaker 0: That is the end of section three. You now have half a minute to check your answers.",
+	"body": {
+		"text": "25. Background to the study [25]\n26. Other similar research [26]\n27. Findings [27]\n28. Market research [28]\n29. Limitations of the research [29]\n30. Future research [30]",
+		"html": "<p>25. Background to the study [25]</p><p>26. Other similar research [26]</p><p>27. Findings [27]</p><p>28. Market research [28]</p><p>29. Limitations of the research [29]</p><p>30. Future research [30]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-24",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, or C.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "The lecturer likes the topic because",
+					"options": [
+						{
+							"label": "A",
+							"text": "it links to a previous research topic."
+						},
+						{
+							"label": "B",
+							"text": "the whole class will be interested in it."
+						},
+						{
+							"label": "C",
+							"text": "there is plenty of information to write about."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"It's certainly going to generate a lot of discussion among your classmates when you present it."
+					]
+				},
+				{
+					"number": 22,
+					"text": "When talking about their teenage years, participants in a study were asked to say",
+					"options": [
+						{
+							"label": "A",
+							"text": "how often they listened to music"
+						},
+						{
+							"label": "B",
+							"text": "who some music reminded them of"
+						},
+						{
+							"label": "C",
+							"text": "whether their musical tastes had changed"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"They also had to say who they associate that music with now."
+					]
+				},
+				{
+					"number": 23,
+					"text": "The study is important because it is the first to",
+					"options": [
+						{
+							"label": "A",
+							"text": "involve so many participants."
+						},
+						{
+							"label": "B",
+							"text": "do research into this topic area."
+						},
+						{
+							"label": "C",
+							"text": "show a link between music and social class"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But people from all over the world were involved in this one, so it's the scale of the study that makes it significant."
+					]
+				},
+				{
+					"number": 24,
+					"text": "Sarah doubts the findings of the study because she thinks",
+					"options": [
+						{
+							"label": "A",
+							"text": "the research was rushed."
+						},
+						{
+							"label": "B",
+							"text": "some people wouldn't fit the findings."
+						},
+						{
+							"label": "C",
+							"text": "the information given may not be reliable"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The participants were asked to describe themselves during the study, so it's only their opinion of their personality rather than objective fact."
+					]
+				}
+			]
+		},
+		{
+			"range": "25-30",
+			"type": "MATCHING",
+			"instructions": "What comments do Mike and Sarah make about each of the following sections of the presentation?\nChoose SIX answers from the box and write the correct letter, A–G, next to questions 25–30.",
+			"options": [
+				{
+					"label": "A",
+					"text": "the information is inaccurate"
+				},
+				{
+					"label": "B",
+					"text": "not interesting enough"
+				},
+				{
+					"label": "C",
+					"text": "too detailed"
+				},
+				{
+					"label": "D",
+					"text": "the statistics are incomplete"
+				},
+				{
+					"label": "E",
+					"text": "need more expert opinions"
+				},
+				{
+					"label": "F",
+					"text": "need to make it more relevant"
+				},
+				{
+					"label": "G",
+					"text": "present both sides"
+				}
+			],
+			"body": "25. Background to the study [25]\n26. Other similar research [26]\n27. Findings [27]\n28. Market research [28]\n29. Limitations of the research [29]\n30. Future research [30]",
+			"body_html": "<p>25. Background to the study [25]</p><p>26. Other similar research [26]</p><p>27. Findings [27]</p><p>28. Market research [28]</p><p>29. Limitations of the research [29]</p><p>30. Future research [30]</p>",
+			"questions": [
+				{
+					"number": 25,
+					"text": "Background to the study",
+					"answer": "C",
+					"quotes": ["There are just too many facts here at the moment."]
+				},
+				{
+					"number": 26,
+					"text": "Other similar research",
+					"answer": "B",
+					"quotes": [
+						"I was expecting to find some fascinating information here, but it's a bit dull, especially all those statistics."
+					]
+				},
+				{
+					"number": 27,
+					"text": "Findings",
+					"answer": "G",
+					"quotes": [
+						"So maybe we could include the two different points of view."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Market research",
+					"answer": "D",
+					"quotes": [
+						"Yes, but we just don't have all the data yet and we don't know when it's going to be available."
+					]
+				},
+				{
+					"number": 29,
+					"text": "Limitations of the research",
+					"answer": "E",
+					"quotes": [
+						"We need to find out how other researchers view the study to see if there's been any criticism of it."
+					]
+				},
+				{
+					"number": 30,
+					"text": "Future research",
+					"answer": "F",
+					"quotes": [
+						"Let's find a way to include more psychology so it relates better to our course."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

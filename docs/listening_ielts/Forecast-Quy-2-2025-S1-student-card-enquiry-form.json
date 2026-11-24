@@ -1,0 +1,97 @@
+{
+	"id": "56597381-1636-42d7-a508-bcb6a94db2f3",
+	"url": "https://stepielts.com/student/listening/56597381-1636-42d7-a508-bcb6a94db2f3?mode=practice",
+	"title": "Student Card Enquiry Form",
+	"source": "Forecast Quý 2-2025",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/67993da6-8f4c-4d41-a964-9188effb4ae9.mp3",
+	"transcript": "Speaker 2: WOMAN：Good morning. How can I help you?\nSpeaker 3: MAN：Hello, I’ve just been accepted into a study program at the university, so I’d like to know some information about student card application, like the requirements，the cost etc.\nSpeaker 2: WOMAN：Yes, certainly. Let me get a registration form and learn a bit more about your situation and so forth. MAN：Okay, thank you. WOMAN：So first of all, how long would you like to stay?\nSpeaker 3: MAN：Well, the study program lasts for three years but at this stage I’d only like to stay for two years. I’m thinking about going elsewhere for the third year.\nSpeaker 2: WOMAN：Two years are long enough to figure out what’s next.\nSpeaker 3: MAN：I hope so. Anyway. I heard that I can apply for an international student card?\nSpeaker 2: WOMAN：Yes. I’ve checked your student file. You’re eligible for that card. It will give you lots of advantages, such as discounts.\nSpeaker 3: MAN：Sounds good. How can I apply for it?\nSpeaker 2: WOMAN：It’s pretty simple. You just need to leave some necessary personal information with us and pay for a registration fee, which is only £3. Oh sorry, that was for last month, actually it’s £5 now.\nSpeaker 3: MAN：That’s cool. Is the card only for discounts in the university or it can also be used wherever I go?\nSpeaker 2: WOMAN：Sure, all shops on campus will accept this card. You can get textbooks with lower prices. Besides, free admission is granted to the holder of the card at the local museum in the city centre.\nSpeaker 3: MAN：I assume I can also be benefited from booking accommodation on campus?\nSpeaker 2: WOMAN：That’s true. Some places are 20% or 30% cheaper.\nSpeaker 3: MAN：Okay. How about amusement parks?They are my favourite.\nSpeaker 2: WOMAN：Oh yes, I forgot to mention that. They are also included. The card will come with a booklet outlining all the places where you can get the discounts.\nSpeaker 3: MAN：Great, that will be useful. Can I register right now?\nSpeaker 2: WOMAN：Sure you can! WOMAN：I’m going to ask you some routine questions. First of all, can I take your name?\nSpeaker 3: MAN：It’s John Hiddleston.\nSpeaker 2: WOMAN：Could you spell your last name, please?\nSpeaker 3: MAN：Yes. H-I-D-D-L-E-S-T-O-N.\nSpeaker 2: WOMAN：Where do you live currently?I mean, where can I send the student card when it is ready?\nSpeaker 3: MAN：At the moment, I’m living with my parents. Please send it to 15 Station Avenue, New Castle.\nSpeaker 2: WOMAN：Oh, got that. I have been there once. New Castle is a lovely town. How can I contact you?\nSpeaker 3: MAN：Call me at 3-0-7-2-8-3-1-0-0-5, which is my mobile number.\nSpeaker 2: WOMAN：Thank you. Before you go, I just want you to know that we have recently started to offer a booking service to newly registered students. Do you need any help with that?\nSpeaker 3: MAN：Yes, that would be great. One airline ticket will be good since I’m traveling alone.\nSpeaker 2: WOMAN：Alright, can I email you a form which requests information like the dates，airline food and seating preferences and so forth? Then we will do our research and come back to you with flight options.\nSpeaker 3: MAN：Sounds perfect.\nSpeaker 2: WOMAN：What’s your email address?\nSpeaker 3: MAN：It’s johnwhite@gmail.com.\nSpeaker 2: WOMAN：Thank you. That’s all the information I need. Is there anything I can help you with.\n. .",
+	"body": {
+		"text": "Student Card Enquiry Form\nLength of the study program: [1]\nStudent card type: an [2] student card\nCost of registration: £ [3]\nDiscounts can be used for:\ntextbooks\nlocal [4]\n[5] (20% or 30% off)\n[6] parks\nPersonal details\nName: John [7]\nAddress: [8] Avenue, New Castle\nMobile number: [9]\nEmail address: john [10]＠gmail.com",
+		"html": "<h2><strong>Student Card Enquiry Form</strong></h2><p>Length of the study program:  [1]</p><p>Student card type: an  [2] student card</p><p>Cost of registration:  £ [3]</p><p>Discounts can be used for:</p><p>   textbooks</p><p>   local [4]</p><p>   [5] (20% or 30% off)</p><p>   [6]  parks</p><p>Personal details</p><p>   Name: John  [7]</p><p>   Address: [8] Avenue, New Castle</p><p>   Mobile number:  [9]</p><p>   Email address: john [10]＠gmail.com</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Student Card Enquiry Form\nLength of the study program: [1]\nStudent card type: an [2] student card\nCost of registration: £ [3]\nDiscounts can be used for:\ntextbooks\nlocal [4]\n[5] (20% or 30% off)\n[6] parks\nPersonal details\nName: John [7]\nAddress: [8] Avenue, New Castle\nMobile number: [9]\nEmail address: john [10]＠gmail.com",
+			"body_html": "<h2><strong>Student Card Enquiry Form</strong></h2><p>Length of the study program:  [1]</p><p>Student card type: an  [2] student card</p><p>Cost of registration:  £ [3]</p><p>Discounts can be used for:</p><p>   textbooks</p><p>   local [4]</p><p>   [5] (20% or 30% off)</p><p>   [6]  parks</p><p>Personal details</p><p>   Name: John  [7]</p><p>   Address: [8] Avenue, New Castle</p><p>   Mobile number:  [9]</p><p>   Email address: john [10]＠gmail.com</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Length of the study program: [1]",
+					"answer": "3 years / three years",
+					"quotes": [
+						"MAN：Well, the study program lasts for three years but at this stage I’d only like to stay for two years."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Student card type: an [2] student card",
+					"answer": "international",
+					"quotes": [
+						"I heard that I can apply for an international student card?"
+					]
+				},
+				{
+					"number": 3,
+					"text": "Cost of registration: £ [3]",
+					"answer": "5 / five",
+					"quotes": ["Oh sorry, that was for last month, actually it’s £5 now."]
+				},
+				{
+					"number": 4,
+					"text": "local [4]",
+					"answer": "museum",
+					"quotes": [
+						"Besides, free admission is granted to the holder of the card at the local museum in the city centre."
+					]
+				},
+				{
+					"number": 5,
+					"text": "[5] (20% or 30% off)",
+					"answer": "accommodation",
+					"quotes": [
+						"MAN：I assume I can also be benefited from booking accommodation on campus?"
+					]
+				},
+				{
+					"number": 6,
+					"text": "[6] parks",
+					"answer": "amusement",
+					"quotes": ["How about amusement parks?They are my favourite."]
+				},
+				{
+					"number": 7,
+					"text": "Name: John [7]",
+					"answer": "Hiddleston",
+					"quotes": ["MAN：It’s John Hiddleston."]
+				},
+				{
+					"number": 8,
+					"text": "Address: [8] Avenue, New Castle",
+					"answer": "15 Station",
+					"quotes": ["Please send it to 15 Station Avenue, New Castle."]
+				},
+				{
+					"number": 9,
+					"text": "Mobile number: [9]",
+					"answer": "3072831005",
+					"quotes": [
+						"MAN：Call me at 3-0-7-2-8-3-1-0-0-5, which is my mobile number."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Email address: john [10]＠gmail.com",
+					"answer": "white",
+					"quotes": ["MAN：It’s johnwhite@gmail.com."]
+				}
+			]
+		}
+	],
+	"images": []
+}

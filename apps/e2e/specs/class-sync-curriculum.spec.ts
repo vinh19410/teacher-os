@@ -105,7 +105,7 @@ test("1. Giáo viên sync lại giáo trình sau khi template cập nhật, gi�
 		sessionsTotal: 3,
 	});
 
-	await page.goto(`/classes/${classId}`);
+	await page.goto(`/teacher/classes/${classId}`);
 	await expect(
 		page.getByRole("heading", { name: `E2E 700 Lớp ${stamp}` }),
 	).toBeVisible();
@@ -377,7 +377,7 @@ test("2. Lớp đã có học viên và lịch buổi thực tế giữ nguyên 
 		);
 	}
 
-	await page.goto(`/classes/${classId}`);
+	await page.goto(`/teacher/classes/${classId}`);
 	await page.getByRole("tab", { name: "Giáo trình", exact: true }).click();
 	await page.getByRole("button", { name: "Đồng bộ lại", exact: true }).click();
 	const syncDialog = page.getByRole("dialog", {
@@ -457,7 +457,7 @@ test("3. Template gốc bị xóa cho phép chọn template thay thế và đồ
 		200,
 	);
 
-	await page.goto(`/classes/${classId}`);
+	await page.goto(`/teacher/classes/${classId}`);
 	await page.getByRole("tab", { name: "Giáo trình", exact: true }).click();
 	await expect(page.getByText("Template gốc đã bị xóa")).toBeVisible();
 

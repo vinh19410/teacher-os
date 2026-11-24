@@ -1,0 +1,208 @@
+{
+	"id": "f4bed330-460f-45a3-804f-55e65934d5f1",
+	"url": "https://stepielts.com/student/listening/f4bed330-460f-45a3-804f-55e65934d5f1?mode=practice",
+	"title": "Human Geography",
+	"source": "C20T2",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/b8b32b41-1b6f-491b-b80f-8acbd7d2ba47.mp3",
+	"transcript": "Speaker 0: Part three. You will hear two students called Rosie and Colin discussing their human geography assignment. First, you have some time to look at questions 21 to 25. Now listen carefully and answer questions 21 to 25.\nSpeaker 1: Colin, I'm really struggling to think of a topic for our human geography assignment.\nSpeaker 2: Me too, Rosie. I'll tell you what. Let's think about the different aspects of human geography and see if we can narrow the topic down a bit to help us decide.\nSpeaker 1: Okay. So one aspect is population. That would be all about population density and migration and so on lots of facts and statistics. Maybe a bit boring?\nSpeaker 2: Yeah, but quite straightforward to find on the Internet.\nSpeaker 1: Suppose so. How about health? I'd never thought about the links between that and geography until Professor Lee gave us that lecture on cholera how in the nineteenth century, a physician used street plans and plans of water supplies to find the source of a cholera epidemic.\nSpeaker 2: Yes. Fascinating, wasn't it? Or we could do something more general, like economies.\nSpeaker 1: So how financial and commercial factors are linked to the physical environment? Yeah. I thought that had been taken off the syllabus for this year.\nSpeaker 2: Has it?\nSpeaker 1: I'm not sure, but it might be best to avoid it.\nSpeaker 2: Okay. Maybe we could do something on culture. We had that lecture about culture and geography last week.\nSpeaker 1: I didn't get much out of that. It was all so general, and the lecturer didn't give any useful examples.\nSpeaker 2: Yeah. I hardly took any notes. It didn't seem worth it.\nSpeaker 1: Me neither.\nSpeaker 2: We could focus on poverty. That's something that's a global problem.\nSpeaker 1: The trouble is, Doctor Lee was saying, that you have to be careful with some of the figures relating to poverty. They're sometimes deliberately manipulated.\nSpeaker 2: You mean the information gets changed for political reasons?\nSpeaker 1: That sort of thing. Yes.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 26 to 30. Now listen and answer questions 26 to 30.\nSpeaker 1: So what are we going to do our assignment on? I'll tell you what. One of the possibilities we haven't discussed is urbanization, and now over half the world's population lives in cities. That's really important.\nSpeaker 2: Okay. Good idea, Rosie. Let's do that.\nSpeaker 1: I love living in a big city, but of course there are problems.\nSpeaker 2: Things like theft and robbery?\nSpeaker 1: Yes. But where I come from, that's linked to another more serious issue, which is that a lot of people don't have jobs. That's getting worse and worse. And we also still have quite a lot of people who are homeless, though that's not quite so bad as it was.\nSpeaker 2: It'd be nice to talk about some positive developments, like some of the new developments on the outskirts of cities.\nSpeaker 1: Yeah. They've opened some massive new shopping centres outside my city.\nSpeaker 2: Yeah, the same with mine, but it's meant a lot of the shops in the city centre are closing down. But the outskirts are ideal for buildings that need a lot of space, like for conferences. They've opened a couple of big ones.\nSpeaker 1: Yes, we've got some too. It'd be nicer to have more facilities for things like football too, but that's not happening where I live.\nSpeaker 2: Same in my area.\nSpeaker 1: We could include something about developing disused industrial sites. It seems like a good idea because you're not doing any harm to the natural environment.\nSpeaker 2: Yeah. But aren't the buildings architecturally significant?\nSpeaker 1: Not really. And what people forget is that they often used quite dangerous materials chemicals and things which haven't been properly cleared away, so the whole site has to be made safe.\nSpeaker 2: That can't be cheap, and I bet it's often not budgeted for.\nSpeaker 1: You're right.\nSpeaker 2: Have you read about Masdar City?\nSpeaker 1: In Abu Dhabi? Yes. It was designed to be a green city, wasn't it? That might be a good example of a city which set out to depend entirely on renewable energy.\nSpeaker 2: Yes. We should say something about that. It was designed to be totally pedestrianized too, wasn't it, with the transport underground?\nSpeaker 1: Yes. And they had big plans for recycling to reduce waste to the lowest possible level. But let's stick to talking about power sources.\nSpeaker 2: Then there's that ecotown in England, Greenhill Abbots. It's set out to conform to the usual principles sustainability and so on. A lot of people were against it at first. They said the plans were unrealistic. I'm not sure how far they've got with it. I'll check.\nSpeaker 1: Right. So it looks as if we have a sort of plan, and we can work from\nSpeaker 0: That is the end of part three. You now have thirty seconds to check your answers to part three.",
+	"body": {
+		"text": "Population [21]\nHealth [22]\nEconomies [23]\nCulture [24]\nPoverty [25]",
+		"html": "<p>Population [21]</p><p>Health [22]</p><p>Economies [23]</p><p>Culture [24]</p><p>Poverty [25]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-25",
+			"type": "MATCHING",
+			"instructions": "What is Rosie and Colin's opinion about each of the following aspects of human geography?\nChoose FIVE answers from the box and write the correct letter, A-G, next to Questions 21-25.",
+			"options": [
+				{
+					"label": "A",
+					"text": "The information given about this was too vague."
+				},
+				{
+					"label": "B",
+					"text": "This may not be relevant to their course."
+				},
+				{
+					"label": "C",
+					"text": "This will involve only a small number of statistics."
+				},
+				{
+					"label": "D",
+					"text": "It will be easy to find facts about this."
+				},
+				{
+					"label": "E",
+					"text": "The facts about this may not be reliable."
+				},
+				{
+					"label": "F",
+					"text": "No useful research has been done on this."
+				},
+				{
+					"label": "G",
+					"text": "The information provided about this was interesting."
+				}
+			],
+			"body": "Population [21]\nHealth [22]\nEconomies [23]\nCulture [24]\nPoverty [25]",
+			"body_html": "<p>Population [21]</p><p>Health [22]</p><p>Economies [23]</p><p>Culture [24]</p><p>Poverty [25]</p>",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Population",
+					"answer": "D",
+					"quotes": ["Yeah, but quite straightforward to find on the Internet."]
+				},
+				{
+					"number": 22,
+					"text": "Health",
+					"answer": "G",
+					"quotes": ["Fascinating, wasn't it?"]
+				},
+				{
+					"number": 23,
+					"text": "Economies",
+					"answer": "B",
+					"quotes": [
+						"I thought that had been taken off the syllabus for this year."
+					]
+				},
+				{
+					"number": 24,
+					"text": "Culture",
+					"answer": "A",
+					"quotes": [
+						"It was all so general, and the lecturer didn't give any useful examples."
+					]
+				},
+				{
+					"number": 25,
+					"text": "Poverty",
+					"answer": "E",
+					"quotes": [
+						"The trouble is, Doctor Lee was saying, that you have to be careful with some of the figures relating to poverty. They're sometimes deliberately manipulated."
+					]
+				}
+			]
+		},
+		{
+			"range": "26-30",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 26,
+					"text": "Rosie says that in her own city the main problem is",
+					"options": [
+						{
+							"label": "A",
+							"text": "crime"
+						},
+						{
+							"label": "B",
+							"text": "housing"
+						},
+						{
+							"label": "C",
+							"text": "unemployment"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But where I come from, that's linked to another more serious issue, which is that a lot of people don't have jobs."
+					]
+				},
+				{
+					"number": 27,
+					"text": "What recent additions to the outskirts of their cities are both students happy about?",
+					"options": [
+						{
+							"label": "A",
+							"text": "conference centres"
+						},
+						{
+							"label": "B",
+							"text": "sports centres"
+						},
+						{
+							"label": "C",
+							"text": "retail centres"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But the outskirts are ideal for buildings that need a lot of space, like for conferences."
+					]
+				},
+				{
+					"number": 28,
+					"text": "The students agree that developing disused industrial sites may",
+					"options": [
+						{
+							"label": "A",
+							"text": "have unexpected costs."
+						},
+						{
+							"label": "B",
+							"text": "damage the urban environment."
+						},
+						{
+							"label": "C",
+							"text": "destroy valuable historical buildings."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"That can't be cheap, and I bet it's often not budgeted for."
+					]
+				},
+				{
+					"number": 29,
+					"text": "The students will mention Masdar City as an example of an attempt to achieve",
+					"options": [
+						{
+							"label": "A",
+							"text": "daily collections for waste recycling."
+						},
+						{
+							"label": "B",
+							"text": "sustainable energy use."
+						},
+						{
+							"label": "C",
+							"text": "free transport for everyone."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"That might be a good example of a city which set out to depend entirely on renewable energy."
+					]
+				},
+				{
+					"number": 30,
+					"text": "When discussing the ecotown of Greenhill Abbots, Colin is uncertain about",
+					"options": [
+						{
+							"label": "A",
+							"text": "what its objectives were."
+						},
+						{
+							"label": "B",
+							"text": "why there was opposition to it."
+						},
+						{
+							"label": "C",
+							"text": "how much of it has actually been built."
+						}
+					],
+					"answer": "C",
+					"quotes": ["I'm not sure how far they've got with it."]
+				}
+			]
+		}
+	],
+	"images": []
+}

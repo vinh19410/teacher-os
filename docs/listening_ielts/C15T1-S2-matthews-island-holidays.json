@@ -1,0 +1,200 @@
+{
+	"id": "500b35bc-0735-46ca-8796-8a248cc523af",
+	"url": "https://stepielts.com/student/listening/500b35bc-0735-46ca-8796-8a248cc523af?mode=practice",
+	"title": "Matthews Island Holidays",
+	"source": "C15T1",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/40aea626-10e3-4e79-8b35-38ff867cb989.mp3",
+	"transcript": "Speaker 0: Part two. You will hear a woman giving a presentation about a holiday on an island in Britain that her company organizes. First, you have some time to look at questions 11 to 14. Now listen carefully and answer questions 11 to 14.\nSpeaker 1: Good morning. My name's Erica Matthews, and I'm the owner of Matthews Island Holidays, a company set up by my parents. Thank you for coming to this presentation in which I hope to interest you in what we have to offer. We're a small family run company, and we believe in the importance of the personal touch. So we don't aim to compete with other companies on the number of customers. What we do is build on our many years' experience, more than almost any other rail holiday company, to ensure we provide perfect holidays in a small number of destinations, which we've got to know extremely well. I'll start with our six day Isle Of Man holiday. This is a fascinating island in the Irish Sea, with Wales to the South, England to the East, Scotland to the North, and Northern Ireland to the West. Our holiday starts in Heesham, where your tour manager will meet you, then you'll travel by ferry to the Isle Of Man. Some people prefer to fly from Luton instead, and another popular option is to go by train to Liverpool and take a ferry from there. You have five nights in the hotel, and the price covers five breakfasts and dinners and lunch on the three days when there are organized trips. Day four is free, and most people have lunch in a cafe or restaurant in Douglas. The price of the holiday includes the ferry to the Isle Of Man, all travel on the island, the hotel, and the meals I've mentioned. Incidentally, we try to make booking our holidays as simple and fair as possible. So unlike with many companies, the price is the same whether you book six months in advance or at the last minute, and there's no supplement for single rooms in hotels. If you make a booking then need to change the start date, for example, because of illness, you're welcome to change to an alternative date or a different tour for a small administrative fee.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 15 to 20. Now listen and answer questions 15 to 20.\nSpeaker 1: Okay. So what does the holiday consist of? Well, on day one, you'll arrive in time for a short introduction by your tour manager followed by dinner in the hotel. The dining room looks out at the river close to where it flows into the harbor, and there's usually plenty of activity going on. On day two, you'll take the coach to the small town of Peel, on the way calling in at the Tinwald exhibition. The Isle Of Man isn't part of The United Kingdom, and it has its own parliament called Tynwald. It's claimed that this is the world's oldest parliament that's still functioning and that it dates back to September. However, the earliest surviving reference to it is from 1422, so perhaps it isn't quite as old as it claims. Day three, we have a trip to the mountain Snaefell. This begins with a leisurely ride along the promenade in Douglas in a horse drawn tram. Then you board an electric train, which takes you to the fishing village of Laxi. From there, it's an eight kilometer ride in the Snaefell Mountain Railway to the top. Lunch will be in the cafe giving you spectacular views of the island. Day four is free for you to explore using the pass which we'll give you. So you won't have to pay for travel on local transport or for entrance to the island's heritage sites. Or you might just want to take it easy in Douglas and perhaps do a little light shopping. The last full day, day five, is for some people the highlight of the holiday with a ride on the steam railway from Douglas to Port Arran. After some time to explore, a coach will take you to the headland that overlooks the Calf Of Man, a small island just off the coast. From there, you continue to Castletown, which used to be the capital of the Isle Of Man and its medieval castle. And on day six, it's back to the ferry or the airport if you flew to the island and time to go home. Now I'd like to tell you a bit more.\nSpeaker 0: That is the end of part two. You now have thirty seconds to check your answers to part two. Part three. You will hear two psychology students discussing the effects of the order in which the children in a family are born.",
+	"body": {
+		"text": "Timetable for Isle of Man holiday\n\nActivity\nNotes\nDay 1\nArrive\nIntroduction by manager\n\nHotel dining room has view of the [15]\nDay 2\nTynwald Exhibition and Peel\nTynwald may have been founded in [16] not 979.\nDay 3\nTrip to Snaefell\nTravel along promenade in a tram; train to Laxey; train to the [17] of Snaefell\nDay 4\nFree day\nCompany provides a [18] for local transport and heritage sites.\nDay 5\nTake the [19] railway train from Douglas to Port Erin\nFree time, then coach to Castletown – former [20] has old castle.\nDay 6\nLeave\nLeave the island by ferry or plane",
+		"html": "<table><tbody><tr><td colspan=\"3\"><p><strong>Timetable for Isle of Man holiday</strong></p></td></tr><tr><td><p></p></td><td><p><strong>Activity</strong></p></td><td><p><strong>Notes</strong></p></td></tr><tr><td><p>Day 1</p></td><td><p>Arrive</p></td><td><p>Introduction by manager</p><p></p><p>Hotel dining room has view of the [15]</p></td></tr><tr><td><p>Day 2</p></td><td><p>Tynwald Exhibition and Peel</p></td><td><p>Tynwald may have been founded in [16] not 979.</p></td></tr><tr><td><p>Day 3</p></td><td><p>Trip to Snaefell</p></td><td><p>Travel along promenade in a tram; train to Laxey; train to the [17] of Snaefell</p></td></tr><tr><td><p>Day 4</p></td><td><p>Free day</p></td><td><p>Company provides a [18] for local transport and heritage sites.</p></td></tr><tr><td><p>Day 5</p></td><td><p>Take the [19] railway train from Douglas to Port Erin</p></td><td><p>Free time, then coach to Castletown – former [20] has old castle.</p></td></tr><tr><td><p>Day 6</p></td><td><p>Leave</p></td><td><p>Leave the island by ferry or plane</p></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "11-14",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "According to the speaker, the company",
+					"options": [
+						{
+							"label": "A",
+							"text": "has been in business for longer than most of its competitors."
+						},
+						{
+							"label": "B",
+							"text": "arranges holidays to more destinations than its competitors."
+						},
+						{
+							"label": "C",
+							"text": "has more customers than its competitors."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"What we do is build on our many years' experience, more than almost any other rail holiday company, to ensure we provide perfect holidays in a small number of destinations, which we've got to know extremely well."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Where can customers meet the tour manager before travelling to the Isle of Man?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Liverpool"
+						},
+						{
+							"label": "B",
+							"text": "Heysham"
+						},
+						{
+							"label": "C",
+							"text": "Luton"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Our holiday starts in Heesham, where your tour manager will meet you, then you'll travel by ferry to the Isle Of Man."
+					]
+				},
+				{
+					"number": 13,
+					"text": "How many lunches are included in the price of the holiday?",
+					"options": [
+						{
+							"label": "A",
+							"text": "three"
+						},
+						{
+							"label": "B",
+							"text": "four"
+						},
+						{
+							"label": "C",
+							"text": "five"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"You have five nights in the hotel, and the price covers five breakfasts and dinners and lunch on the three days when there are organized trips."
+					]
+				},
+				{
+					"number": 14,
+					"text": "Customers have to pay extra for",
+					"options": [
+						{
+							"label": "A",
+							"text": "guaranteeing themselves a larger room."
+						},
+						{
+							"label": "B",
+							"text": "booking at short notice."
+						},
+						{
+							"label": "C",
+							"text": "transferring to another date."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"If you make a booking then need to change the start date, for example, because of illness, you're welcome to change to an alternative date or a different tour for a small administrative fee."
+					]
+				}
+			]
+		},
+		{
+			"range": "15-20",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Timetable for Isle of Man holiday\n\nActivity\nNotes\nDay 1\nArrive\nIntroduction by manager\n\nHotel dining room has view of the [15]\nDay 2\nTynwald Exhibition and Peel\nTynwald may have been founded in [16] not 979.\nDay 3\nTrip to Snaefell\nTravel along promenade in a tram; train to Laxey; train to the [17] of Snaefell\nDay 4\nFree day\nCompany provides a [18] for local transport and heritage sites.\nDay 5\nTake the [19] railway train from Douglas to Port Erin\nFree time, then coach to Castletown – former [20] has old castle.\nDay 6\nLeave\nLeave the island by ferry or plane",
+			"body_table": [
+				["Timetable for Isle of Man holiday"],
+				["", "Activity", "Notes"],
+				[
+					"Day 1",
+					"Arrive",
+					"Introduction by manager\n\nHotel dining room has view of the [15]"
+				],
+				[
+					"Day 2",
+					"Tynwald Exhibition and Peel",
+					"Tynwald may have been founded in [16] not 979."
+				],
+				[
+					"Day 3",
+					"Trip to Snaefell",
+					"Travel along promenade in a tram; train to Laxey; train to the [17] of Snaefell"
+				],
+				[
+					"Day 4",
+					"Free day",
+					"Company provides a [18] for local transport and heritage sites."
+				],
+				[
+					"Day 5",
+					"Take the [19] railway train from Douglas to Port Erin",
+					"Free time, then coach to Castletown – former [20] has old castle."
+				],
+				["Day 6", "Leave", "Leave the island by ferry or plane"]
+			],
+			"body_html": "<table><tbody><tr><td colspan=\"3\"><p><strong>Timetable for Isle of Man holiday</strong></p></td></tr><tr><td><p></p></td><td><p><strong>Activity</strong></p></td><td><p><strong>Notes</strong></p></td></tr><tr><td><p>Day 1</p></td><td><p>Arrive</p></td><td><p>Introduction by manager</p><p></p><p>Hotel dining room has view of the [15]</p></td></tr><tr><td><p>Day 2</p></td><td><p>Tynwald Exhibition and Peel</p></td><td><p>Tynwald may have been founded in [16] not 979.</p></td></tr><tr><td><p>Day 3</p></td><td><p>Trip to Snaefell</p></td><td><p>Travel along promenade in a tram; train to Laxey; train to the [17] of Snaefell</p></td></tr><tr><td><p>Day 4</p></td><td><p>Free day</p></td><td><p>Company provides a [18] for local transport and heritage sites.</p></td></tr><tr><td><p>Day 5</p></td><td><p>Take the [19] railway train from Douglas to Port Erin</p></td><td><p>Free time, then coach to Castletown – former [20] has old castle.</p></td></tr><tr><td><p>Day 6</p></td><td><p>Leave</p></td><td><p>Leave the island by ferry or plane</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 15,
+					"text": "Hotel dining room has view of the [15]",
+					"answer": "river",
+					"quotes": [
+						"The dining room looks out at the river close to where it flows into the harbor, and there's usually plenty of activity going on."
+					]
+				},
+				{
+					"number": 16,
+					"text": "Tynwald may have been founded in [16] not 979.",
+					"answer": "1422",
+					"quotes": [
+						"However, the earliest surviving reference to it is from 1422, so perhaps it isn't quite as old as it claims."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Travel along promenade in a tram; train to Laxey; train to the [17] of Snaefell",
+					"answer": "top",
+					"quotes": [
+						"From there, it's an eight kilometer ride in the Snaefell Mountain Railway to the top."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Company provides a [18] for local transport and heritage sites.",
+					"answer": "pass",
+					"quotes": [
+						"Day four is free for you to explore using the pass which we'll give you."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Take the [19] railway train from Douglas to Port Erin",
+					"answer": "steam",
+					"quotes": [
+						"The last full day, day five, is for some people the highlight of the holiday with a ride on the steam railway from Douglas to Port Arran."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Free time, then coach to Castletown – former [20] has old castle.",
+					"answer": "capital",
+					"quotes": [
+						"From there, you continue to Castletown, which used to be the capital of the Isle Of Man and its medieval castle."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

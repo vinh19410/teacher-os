@@ -3,7 +3,13 @@ import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
 import { signUpViaApi, verifyStudentEmailFromMailLog } from "./helpers";
-import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import {
+	API_ORIGIN,
+	LMS_ORIGIN,
+	STUDENT_BASE_URL,
+	TEACHER_BASE_URL,
+	WEB_ORIGIN,
+} from "./origins";
 
 const LEAD_ORG_ID = "e2e-lead-org";
 const SEED_DIR = new URL("../../web/public/placement-seed/", import.meta.url);
@@ -223,7 +229,7 @@ test.describe
 			const studentName = "Học Viên Test Đầu Vào";
 
 			try {
-				await studentPage.goto(`${STUDENT_ORIGIN}/login`);
+				await studentPage.goto(`${LMS_ORIGIN}/login`);
 				await studentPage.locator("#tab-signup").click();
 				await studentPage.locator("#signup-name").fill(studentName);
 				await studentPage.locator("#signup-email").fill(email);
@@ -239,7 +245,10 @@ test.describe
 
 				// Hoàn tất onboarding 5 bước
 				await completeStudentOnboarding(studentPage);
-				await expect(studentPage).toHaveURL(/\/$/, { timeout: 20_000 });
+				await expect(studentPage).toHaveURL(
+					new RegExp(`^${STUDENT_BASE_URL}/?$`),
+					{ timeout: 20_000 },
+				);
 
 				// 3. Modal đề xuất lần đầu xuất hiện
 				const promptModal = studentPage.getByTestId("placement-prompt-modal");
@@ -481,7 +490,7 @@ test.describe
 				);
 				expect(unreadCount).toBeGreaterThanOrEqual(1);
 
-				await studentPage.goto(`${STUDENT_ORIGIN}/`);
+				await studentPage.goto(`${STUDENT_BASE_URL}/`);
 				await expect(notificationBadge).toBeVisible({ timeout: 15_000 });
 				await studentPage.getByRole("button", { name: /Thông báo/ }).click();
 				const notificationDialog = studentPage.getByRole("dialog", {
@@ -534,30 +543,47 @@ test.describe
 					db.close();
 				}
 
-				await teacherPage.goto(`${WEB_ORIGIN}/students/${studentId}`);
+				await teacherPage.goto(`${TEACHER_BASE_URL}/students/${studentId}`);
 				await expect(
 					teacherPage.getByTestId("placement-submission-panel"),
 				).toBeVisible({ timeout: 20_000 });
 				await teacherPage.setViewportSize({ width: 1440, height: 900 });
-				await teacherPage.screenshot({
-					path: reportPath("748-web-student-grade-desktop-1440x900.png"),
-				});
+				const potIssue = process.env.CAPTURE_POT_ISSUE?.trim();
+				if (potIssue !== "863") {
+					await teacherPage.screenshot({
+						path: reportPath("748-web-student-grade-desktop-1440x900.png"),
+					});
+				}
 
-				// Nhập điểm IELTS Writing & Speaking rồi chốt trên trang chi tiết học viên
+				// Nhập điểm IELTS Writing & Speaking + nhận xét tiêu chí rồi chốt trên trang chi tiết học viên
+				const STUDENT_WRITING_TASK_COMMENT =
+					"Bài viết triển khai đúng trọng tâm câu hỏi và có kết luận hợp lý.";
+				const STUDENT_SPEAKING_PRONUNCIATION_COMMENT =
+					"Phát âm rõ ràng, chỉ cần cải thiện trọng âm vài từ dài.";
 				await teacherPage.getByTestId("writing-task-input").fill("6.5");
+				await teacherPage
+					.getByTestId("writing-task-comment")
+					.fill(STUDENT_WRITING_TASK_COMMENT);
 				await teacherPage.getByTestId("writing-coherence-input").fill("6.5");
 				await teacherPage.getByTestId("writing-lexical-input").fill("6");
 				await teacherPage.getByTestId("writing-grammar-input").fill("6");
-				if (
-					await teacherPage.getByTestId("toggle-speaking-grading").isChecked()
-				) {
+				const speakingChecked = await teacherPage
+					.getByTestId("toggle-speaking-grading")
+					.isChecked();
+				if (speakingChecked) {
 					await teacherPage.getByTestId("speaking-fluency-input").fill("6");
 					await teacherPage.getByTestId("speaking-lexical-input").fill("6");
 					await teacherPage.getByTestId("speaking-grammar-input").fill("6.5");
 					await teacherPage
 						.getByTestId("speaking-pronunciation-input")
 						.fill("6.5");
+					await teacherPage
+						.getByTestId("speaking-pronunciation-comment")
+						.fill(STUDENT_SPEAKING_PRONUNCIATION_COMMENT);
 				}
+				await teacherPage
+					.getByTestId("placement-course-select")
+					.selectOption({ label: "Foundation" });
 				await expect(
 					teacherPage.getByTestId("save-placement-grade-btn"),
 				).toBeEnabled();
@@ -578,15 +604,75 @@ test.describe
 					teacherPage.getByTestId("student-entry-score"),
 				).not.toHaveText("Chưa có", { timeout: 15_000 });
 
-				// 6. Học viên tải lại /placement-test thấy kết quả chính thức
+				// 6. Học viên tải lại /placement-test thấy kết quả chính thức kèm nhận xét tiêu chí
 				await studentPage.reload();
 				await expect(
 					studentPage.getByTestId("placement-graded-view"),
 				).toBeVisible({ timeout: 20_000 });
-				await studentPage.setViewportSize({ width: 1440, height: 900 });
-				await studentPage.screenshot({
-					path: reportPath("748-student-placement-graded-desktop-1440x900.png"),
-				});
+				await expect(
+					studentPage.getByTestId("student-writing-task-comment"),
+				).toHaveText(STUDENT_WRITING_TASK_COMMENT);
+				await expect(
+					studentPage.getByTestId("student-writing-lexical-comment"),
+				).toHaveCount(0);
+				if (speakingChecked) {
+					await expect(
+						studentPage.getByTestId("student-speaking-pronunciation-comment"),
+					).toHaveText(STUDENT_SPEAKING_PRONUNCIATION_COMMENT);
+					await expect(
+						studentPage.getByTestId("student-speaking-lexical-comment"),
+					).toHaveCount(0);
+				}
+
+				if (potIssue === "863") {
+					const writingCard = studentPage.getByTestId("graded-writing-section");
+					for (const vp of [
+						{ width: 1440, height: 900, label: "desktop-1440x900" },
+						{ width: 768, height: 1024, label: "tablet-768x1024" },
+						{ width: 375, height: 812, label: "mobile-375x812" },
+					]) {
+						await studentPage.setViewportSize({
+							width: vp.width,
+							height: vp.height,
+						});
+						await studentPage.evaluate(() =>
+							document.documentElement.classList.remove("dark"),
+						);
+						await writingCard.scrollIntoViewIfNeeded();
+						const lightOverflow = await studentPage.evaluate(
+							() =>
+								document.documentElement.scrollWidth >
+								document.documentElement.clientWidth,
+						);
+						expect(lightOverflow).toBe(false);
+						await studentPage.screenshot({
+							path: reportPath(`863-student-result-light-${vp.label}.png`),
+						});
+						await studentPage.evaluate(() =>
+							document.documentElement.classList.add("dark"),
+						);
+						await writingCard.scrollIntoViewIfNeeded();
+						const darkOverflow = await studentPage.evaluate(
+							() =>
+								document.documentElement.scrollWidth >
+								document.documentElement.clientWidth,
+						);
+						expect(darkOverflow).toBe(false);
+						await studentPage.screenshot({
+							path: reportPath(`863-student-result-dark-${vp.label}.png`),
+						});
+					}
+					await studentPage.evaluate(() =>
+						document.documentElement.classList.remove("dark"),
+					);
+				} else {
+					await studentPage.setViewportSize({ width: 1440, height: 900 });
+					await studentPage.screenshot({
+						path: reportPath(
+							"748-student-placement-graded-desktop-1440x900.png",
+						),
+					});
+				}
 			} finally {
 				await studentContext.close();
 				await teacherContext.close();
@@ -604,7 +690,7 @@ test.describe
 			await installSyntheticSpeakingDevice(studentPage);
 
 			try {
-				await studentPage.goto(`${STUDENT_ORIGIN}/login`);
+				await studentPage.goto(`${LMS_ORIGIN}/login`);
 				await studentPage.locator("#tab-signup").click();
 				await studentPage.locator("#signup-name").fill("Học Viên Speaking 780");
 				await studentPage.locator("#signup-email").fill(email);
@@ -617,9 +703,12 @@ test.describe
 				).toBeVisible({ timeout: 15_000 });
 				await verifyStudentEmailFromMailLog(studentPage, email);
 				await completeStudentOnboarding(studentPage);
-				await expect(studentPage).toHaveURL(/\/$/, { timeout: 20_000 });
+				await expect(studentPage).toHaveURL(
+					new RegExp(`^${STUDENT_BASE_URL}/?$`),
+					{ timeout: 20_000 },
+				);
 
-				await studentPage.goto(`${STUDENT_ORIGIN}/placement-test`);
+				await studentPage.goto(`${STUDENT_BASE_URL}/placement-test`);
 				await expect(
 					studentPage.getByTestId("placement-intro-card"),
 				).toBeVisible({ timeout: 15_000 });

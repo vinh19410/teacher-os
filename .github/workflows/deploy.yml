@@ -9,7 +9,7 @@
 #   alchemy applies forward-only D1 migrations, and two overlapping deploys
 #   would race the migration ledger.
 # - CORS_ORIGIN must NOT be set here — with APP_DOMAIN present it defaults to
-#   the derived https://app.<domain> and an explicit disagreeing value fails
+#   the derived https://lms.<domain> and an explicit disagreeing value fails
 #   the whole run by design.
 # - ci-workflow.test.mjs forbids secrets in ci.yml/quality.yml/e2e.yml; this
 #   file is deliberately separate so prod credentials stay out of the PR
@@ -35,11 +35,15 @@ permissions:
 
 env:
   # Single source of topology: packages/infra/src/topology.ts derives
-  # app.<domain>, api.<domain>, cookie domain and the Google redirect URI.
+  # lms.<domain> (with legacy aliases app/student/admin.<domain>), api.<domain>,
+  # cookie domain and the Google redirect URI.
   # The apex msmy.io.vn is the teacher profile; landing gets no prod domain.
   APP_DOMAIN: msmy.io.vn
   API_READY_URL: https://api.msmy.io.vn/readyz
-  APP_ORIGIN: https://app.msmy.io.vn
+  LMS_ORIGIN: https://lms.msmy.io.vn
+  LEGACY_APP_ORIGIN: https://app.msmy.io.vn
+  LEGACY_STUDENT_ORIGIN: https://student.msmy.io.vn
+  LEGACY_ADMIN_ORIGIN: https://admin.msmy.io.vn
   API_BASE_URL: https://api.msmy.io.vn
   PROFILE_ORIGIN: https://msmy.io.vn
 
@@ -61,6 +65,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-workspace
+      - name: Detach legacy Worker custom domains before unified LMS cutover
+        if: ${{ !inputs.dry_run }}
+        timeout-minutes: 2
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node packages/infra/scripts/detach-legacy-worker-domains.ts --stage prod
       - name: Deploy to Cloudflare (stage prod)
         working-directory: packages/infra
         env:
@@ -83,6 +94,8 @@ jobs:
           GITHUB_WEBHOOK_SECRET: ${{ secrets.GH_WEBHOOK_SECRET }}
           MAILER_IMPL: ${{ vars.MAILER_IMPL }}
           MAIL_FROM: ${{ vars.MAIL_FROM }}
+          # Cổng quản trị (#413): rỗng = không ai là admin.
+          ADMIN_EMAILS: ${{ vars.ADMIN_EMAILS }}
           # Single-org (#513): danh sách email giáo viên chủ app; rỗng trên prod sẽ fail-closed.
           TEACHER_EMAILS: ${{ vars.TEACHER_EMAILS }}
           # Lead intake & placement test (#506, #515, #524): truyền từ GitHub Environment production.
@@ -113,36 +126,138 @@ jobs:
         if: ${{ !inputs.dry_run }}
         # Issue #125: the removed PWA SW's self-heal chain depends on these
         # files being served as real JavaScript with cache headers that keep
-        # the SW update check on the network. Prod deliberately gets no
+        # the SW update check on the network on BOTH the canonical lms.<domain>
+        # origin and the legacy app.<domain> host. Prod deliberately gets no
         # sign-up smoke (no junk rows in prod D1) — API-level auth is
         # exercised by the staging smoke on develop before promotion.
         # Retries mirror /readyz: first deploys wait on DNS/cert provisioning.
         run: |
           fail() { echo "::error::$1"; exit 1; }
           stubs_ok() {
-            local f code
-            for f in sw.js registerSW.js; do
-              code=$(curl -sS --connect-timeout 5 --max-time 30 \
-                -D /tmp/stub-headers.txt -o "/tmp/$f" -w '%{http_code}' \
-                "$APP_ORIGIN/$f") || return 1
-              [ "$code" = "200" ] || { echo "GET /$f returned HTTP $code"; return 1; }
-              grep -qi '^content-type: text/javascript' /tmp/stub-headers.txt \
-                || { echo "/$f is not served as JavaScript (SPA fallback HTML as SW update target?)"; return 1; }
-              grep -Eiq '^cache-control:.*(max-age=0|no-store|no-cache)' /tmp/stub-headers.txt \
-                || { echo "/$f cache-control must pin the update check to the network (max-age=0, no-store, or no-cache)"; return 1; }
+            local origin f code
+            for origin in "$LMS_ORIGIN" "$LEGACY_APP_ORIGIN"; do
+              for f in sw.js registerSW.js; do
+                code=$(curl -sS --connect-timeout 5 --max-time 30 \
+                  -D /tmp/stub-headers.txt -o "/tmp/$f" -w '%{http_code}' \
+                  "$origin/$f") || { echo "curl failed for $origin/$f"; return 1; }
+                [ "$code" = "200" ] || { echo "GET $origin/$f returned HTTP $code"; return 1; }
+                grep -qi '^content-type: text/javascript' /tmp/stub-headers.txt \
+                  || { echo "$origin/$f is not served as JavaScript (SPA fallback HTML as SW update target?)"; return 1; }
+                grep -Eiq '^cache-control:.*(max-age=0|no-store|no-cache)' /tmp/stub-headers.txt \
+                  || { echo "$origin/$f cache-control must pin the update check to the network (max-age=0, no-store, or no-cache)"; return 1; }
+              done
+              grep -q unregister /tmp/sw.js || { echo "$origin/sw.js must be the self-unregister stub"; return 1; }
+              grep -q "caches.delete" /tmp/sw.js || { echo "$origin/sw.js stub lost its cache purge"; return 1; }
             done
-            grep -q unregister /tmp/sw.js || { echo "/sw.js must be the self-unregister stub"; return 1; }
-            grep -q "caches.delete" /tmp/sw.js || { echo "/sw.js stub lost its cache purge"; return 1; }
             return 0
           }
           ok=""
-          for attempt in 1 2 3; do
+          for attempt in $(seq 1 30); do
             if reason=$(stubs_ok); then ok=1; break; fi
             echo "attempt $attempt failed: $reason — retrying in 20s"
-            [ "$attempt" = "3" ] || sleep 20
+            [ "$attempt" = "30" ] || sleep 20
           done
-          [ -n "$ok" ] || fail "stub smoke failed after 3 attempts: /sw.js + /registerSW.js not correctly served"
-          echo "stub smoke OK: /sw.js + /registerSW.js served as JS with network-first cache headers"
+          [ -n "$ok" ] || fail "stub smoke failed after 30 attempts: /sw.js + /registerSW.js not correctly served on $LMS_ORIGIN and $LEGACY_APP_ORIGIN"
+          echo "stub smoke OK: /sw.js + /registerSW.js served as JS with network-first cache headers on $LMS_ORIGIN and $LEGACY_APP_ORIGIN"
+      - name: Smoke check LMS & legacy 301 redirects
+        if: ${{ !inputs.dry_run }}
+        # Unified LMS custom domain (lms.<domain>) and legacy aliases
+        # (app/student/admin.<domain> -> 301 to lms.<domain>). Polls up to ~10
+        # minutes to allow first-deploy custom-domain cert propagation.
+        run: |
+          fail() { echo "::error::$1"; exit 1; }
+          check_redirect() {
+            local url="$1" expected="$2" code location
+            code=$(curl -sS --connect-timeout 5 --max-time 30 \
+              -D /tmp/lms-redir-headers.txt -o /dev/null -w '%{http_code}' \
+              "$url") || { echo "curl failed for $url"; return 1; }
+            [ "$code" = "301" ] || { echo "GET $url returned HTTP $code, expected 301"; return 1; }
+            location=$(grep -i '^location:' /tmp/lms-redir-headers.txt | head -n 1 | sed -E 's/^[Ll][Oo][Cc][Aa][Tt][Ii][Oo][Nn]:[[:space:]]*//' | tr -d '\r' || true)
+            [ "$location" = "$expected" ] || { echo "GET $url redirected to '$location', expected '$expected'"; return 1; }
+            return 0
+          }
+          check_shell_headers() {
+            local url="$1" verify_bundle="${2:-false}" forbidden_pattern="${3:-}" code asset_path asset_prefix lazy_ref found_api
+            code=$(curl -sS --connect-timeout 5 --max-time 30 \
+              -D /tmp/lms-shell-headers.txt -o /tmp/lms-shell.html -w '%{http_code}' \
+              -H "Accept: text/html" \
+              "$url") || { echo "curl failed for $url"; return 1; }
+            [ "$code" = "200" ] || { echo "GET $url returned HTTP $code, expected 200"; return 1; }
+            grep -qi '^content-type: text/html' /tmp/lms-shell-headers.txt \
+              || { echo "GET $url is not served as text/html"; return 1; }
+            grep -qi '^strict-transport-security:' /tmp/lms-shell-headers.txt \
+              || { echo "GET $url missing Strict-Transport-Security header (runWorkerFirst regression?)"; return 1; }
+            grep -qi "^content-security-policy:.*media-src[^;]*${API_BASE_URL}" /tmp/lms-shell-headers.txt \
+              || { echo "GET $url missing CSP media-src for $API_BASE_URL"; return 1; }
+            if [ "$verify_bundle" = "true" ]; then
+              found_api=""
+              : > /tmp/lms-lazy-assets.txt
+              for asset_path in $( (grep -oE '(src|href)="(/([^"]*/)?assets/[^"]+\.js)"' /tmp/lms-shell.html || true) | sed -E 's/^(src|href)="([^"]+)"$/\2/' | awk '/auth-client|\/dist-|\/index-/ { print "0 " $0; next } { print "1 " $0 }' | sort -u | cut -d' ' -f2); do
+                if curl -fsS --connect-timeout 5 --max-time 30 -o /tmp/lms-asset.js "$LMS_ORIGIN$asset_path"; then
+                  if [ -n "$forbidden_pattern" ] && grep -Eq -- "$forbidden_pattern" /tmp/lms-asset.js; then
+                    echo "GET $url JS bundle ($asset_path) leaked forbidden production flag pattern ($forbidden_pattern)"
+                    return 1
+                  fi
+                  if [ -z "$found_api" ] && grep -Fq "$API_BASE_URL" /tmp/lms-asset.js; then
+                    found_api=1
+                  fi
+                  if [ -n "$found_api" ] && [ -z "$forbidden_pattern" ]; then
+                    break
+                  fi
+                  asset_prefix="${asset_path%/assets/*}"
+                  (grep -oE '"(/?([^"]*/)?assets/[^"]+\.js)"' /tmp/lms-asset.js || true) | tr -d '"' | awk -v prefix="$asset_prefix" '{ if ($0 ~ /^\//) print $0; else print prefix "/" $0 }' >> /tmp/lms-lazy-assets.txt
+                elif [ -n "$forbidden_pattern" ]; then
+                  echo "GET $url failed to fetch JS chunk ($asset_path) during forbidden flag scan"
+                  return 1
+                fi
+              done
+              if { [ -z "$found_api" ] || [ -n "$forbidden_pattern" ]; } && [ -s /tmp/lms-lazy-assets.txt ]; then
+                for lazy_ref in $(awk '/auth-client|\/dist-|\/index-/ { print "0 " $0; next } { print "1 " $0 }' /tmp/lms-lazy-assets.txt | sort -u | cut -d' ' -f2); do
+                  if curl -fsS --connect-timeout 5 --max-time 30 -o /tmp/lms-asset.js "$LMS_ORIGIN$lazy_ref"; then
+                    if [ -n "$forbidden_pattern" ] && grep -Eq -- "$forbidden_pattern" /tmp/lms-asset.js; then
+                      echo "GET $url JS bundle ($lazy_ref) leaked forbidden production flag pattern ($forbidden_pattern)"
+                      return 1
+                    fi
+                    if [ -z "$found_api" ] && grep -Fq "$API_BASE_URL" /tmp/lms-asset.js; then
+                      found_api=1
+                    fi
+                    if [ -n "$found_api" ] && [ -z "$forbidden_pattern" ]; then
+                      break
+                    fi
+                  elif [ -n "$forbidden_pattern" ]; then
+                    echo "GET $url failed to fetch lazy JS chunk ($lazy_ref) during forbidden flag scan"
+                    return 1
+                  fi
+                done
+              fi
+              [ -n "$found_api" ] || { echo "GET $url JS bundle missing VITE_SERVER_URL ($API_BASE_URL) — runtime env validation would white-screen"; return 1; }
+            fi
+            return 0
+          }
+          lms_ok() {
+            local forbidden_practice_regex='VITE_STUDENT_PRACTICE_ENABLED["'\''`]?[[:space:]]*:[[:space:]]*["'\''`]true["'\''`]'
+            check_shell_headers "$LMS_ORIGIN/" || return 1
+            check_shell_headers "$LMS_ORIGIN/login" "true" || return 1
+            check_shell_headers "$LMS_ORIGIN/teacher/" "true" || return 1
+            check_shell_headers "$LMS_ORIGIN/student/" "true" "$forbidden_practice_regex" || return 1
+            check_shell_headers "$LMS_ORIGIN/admin/" "true" || return 1
+            check_redirect "$LEGACY_APP_ORIGIN/" "$LMS_ORIGIN/teacher" || return 1
+            check_redirect "$LEGACY_APP_ORIGIN/classes" "$LMS_ORIGIN/teacher/classes" || return 1
+            check_redirect "$LEGACY_APP_ORIGIN/pay/smoke-token" "$LMS_ORIGIN/pay/smoke-token" || return 1
+            check_redirect "$LEGACY_STUDENT_ORIGIN/" "$LMS_ORIGIN/student" || return 1
+            check_redirect "$LEGACY_STUDENT_ORIGIN/schedule" "$LMS_ORIGIN/student/schedule" || return 1
+            check_redirect "$LEGACY_ADMIN_ORIGIN/" "$LMS_ORIGIN/admin" || return 1
+            check_redirect "$LEGACY_ADMIN_ORIGIN/library/tests" "$LMS_ORIGIN/admin/library/tests" || return 1
+            return 0
+          }
+          ok=""
+          for attempt in $(seq 1 30); do
+            if reason=$(lms_ok); then ok=1; break; fi
+            echo "attempt $attempt failed: $reason — retrying in 20s"
+            [ "$attempt" = "30" ] || sleep 20
+          done
+          [ -n "$ok" ] || fail "LMS & legacy 301 redirect smoke failed after 30 attempts"
+          echo "LMS & legacy 301 redirect smoke OK"
       - name: Smoke check profile
         if: ${{ !inputs.dry_run }}
         # Plan #536: teacher profile StaticSite (msmy.io.vn + www). Resolves

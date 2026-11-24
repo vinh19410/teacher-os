@@ -1,0 +1,235 @@
+{
+	"id": "65493dca-6ddb-4953-9016-5dcbdcc300a5",
+	"url": "https://stepielts.com/student/listening/65493dca-6ddb-4953-9016-5dcbdcc300a5?mode=practice",
+	"title": "Gisborne's tourism",
+	"source": "Actual Test",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/34c8652b-5767-4b57-97a9-953d2ce0a42e.mp3",
+	"transcript": "Greetings all you listeners out there. This is National Radio, and I'm Kevin Lai. This morning, I'm going to tell you what's so special about the laid back city of Gisborne. You'll hear a little bit about its past in the old days, and a lot about what attractions it has to offer foreign and domestic visitors today. So listen up to learn more about what there is to do in this city and its surrounding region, where the economy is booming, but the lifestyle remains unspoiled. The Gisborne region is where the legendary canoe sailed by Maori explorers first landed in New Zealand about fourteen hundred years ago, after its long and risky voyage over the sea. It is also the easternmost point of the country, which is what inspired its original name, Te Tarafiti, which in the Maori language means the coast where the sun rises across the waters. Gisborne was also the place where the European explorer Captain Cook first landed his boat upon discovering New Zealand all the way from England back in 1769. Even in those early days, this district was a center of horticulture, thanks to its fertile soil and subtropical climate. Soon after that, of course, the English settlers arrived, and soon Gisborne was shipping its products to larger settlements such as Auckland and Wellington. This began with maize and root crops, but quickly expanded to butter, meat and wool from the agricultural settlements in the rich pastoral country near the famous Poverty Bay. Wharves and jetties were built beside the sea to service the coastal traders. Many of these wooden structures can still be seen on Gisborne beaches today. Today, Gisborne continues to export fresh produce to other regions of New Zealand. These wares include various award winning cheeses, and, of course, the delicious lobsters and snapper fish harvested by hand from the local reefs and waters. As for exports to Asian markets, there's an increasing demand for the region's oranges and lemons. Gisborne is also becoming well known nationally and internationally as the source of some top quality white and red grapes. Now what's on in Gisborne? Well, first up, there's the annual Gisborne concert held every summertime. This is a great experience. It's held at Waiahiki Vineyard, which is near the traditional Maori meeting house or Marai of the same name. They bring in a piano player and opera singers who perform on a purpose built stage in a kind of natural amphitheatre in the middle of the rows of grapes. It's a fantastic concert like atmosphere, a really good night out. What to do on a rainy day? I'd suggest a visit to the show called The Beach, which is on in Gallery 1 at Taraffiti Museum. It's a big display, so it also takes up the hall next to Gallery 1, and it's divided into different sections of the local culture, like surfing, camping, fashion, and so on. If you buy the book of the exhibition, there are some interesting photographs in there. There's a lot else to see in Gisborne as well. You shouldn't miss the Hot Springs Reserve, which has warm natural mineral pools and little houses where you can stay amongst the bush. Being very secluded and private, this resort is most favored by newlyweds who often book a cabin for their honeymoon. The water is very therapeutic too. It's apparently good for your health to bathe there, though not recommended for pregnant women or the elderly. Around the corner is Mahia Peninsula, legendary as a New Year's Eve party destination for large crowds of university students after their graduation. The surfing and fishing here is excellent, and it's a safe spot for swimming and diving too. Now also good for kids is taking a raft or jet boat ride on the Motu River. This sounds quite wild, doesn't it? But in fact, this activity is often used by local primary schools who take big groups of young children, several classes at a time, out here for a bit of fun while they're on their school camp. No parents required. You can have some time out as this activity is a lot safer than it sounds and is carefully supervised by the rafting company. Finally, don't let's forget the Eden Woodlands Park, which is really a huge tree nursery. You can walk for hours here in the peaceful green surroundings along a variety of tracks. There's even a very nice walkway made wide enough for those in wheelchairs so that everyone can go along and enjoy mother nature at her best.",
+	"body": {
+		"text": "Hot Springs Reserve [17]\nMahia Peninsula [18]\nMotu River Rafting [19]\nEden Woodlands Park [20]",
+		"html": "<ul><li>Hot Springs Reserve [17]</li><li>Mahia Peninsula [18]</li><li>Motu River Rafting [19]</li><li>Eden Woodlands Park [20]</li></ul>"
+	},
+	"question_groups": [
+		{
+			"range": "11-16",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C",
+			"questions": [
+				{
+					"number": 11,
+					"text": "The announcer says that the main topic of today's talk will be Gisborne's",
+					"options": [
+						{
+							"label": "A",
+							"text": "economy"
+						},
+						{
+							"label": "B",
+							"text": "history"
+						},
+						{
+							"label": "C",
+							"text": "tourism"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"You'll hear a little bit about its past in the old days, and a lot about what attractions it has to offer foreign and domestic visitors today.",
+						"This morning, I'm going to tell you what's so special about the laid back city of Gisborne."
+					]
+				},
+				{
+					"number": 12,
+					"text": "The Maori name for the Gisborne region signifies",
+					"options": [
+						{
+							"label": "A",
+							"text": "dangerous journey"
+						},
+						{
+							"label": "B",
+							"text": "east coast"
+						},
+						{
+							"label": "C",
+							"text": "sailing boat"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"It is also the easternmost point of the country, which is what inspired its original name, Te Tarafiti, which in the Maori language means the coast where the sun rises across the waters."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Early exports from Gisborne came from its",
+					"options": [
+						{
+							"label": "A",
+							"text": "farms"
+						},
+						{
+							"label": "B",
+							"text": "fisheries"
+						},
+						{
+							"label": "C",
+							"text": "forests"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Soon after that, of course, the English settlers arrived, and soon Gisborne was shipping its products to larger settlements such as Auckland and Wellington.",
+						"This began with maize and root crops, but quickly expanded to butter, meat and wool from the agricultural settlements in the rich pastoral country near the famous Poverty Bay."
+					]
+				},
+				{
+					"number": 14,
+					"text": "According to the speaker, what does Gisborne export to Asia nowadays?",
+					"options": [
+						{
+							"label": "A",
+							"text": "oranges and lemons"
+						},
+						{
+							"label": "B",
+							"text": "red and white grapes"
+						},
+						{
+							"label": "C",
+							"text": "seafood and shellfish"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"As for exports to Asian markets, there's an increasing demand for the region's oranges and lemons."
+					]
+				},
+				{
+					"number": 15,
+					"text": "The Gisborne Summer Concert takes place in",
+					"options": [
+						{
+							"label": "A",
+							"text": "an opera house"
+						},
+						{
+							"label": "B",
+							"text": "a vineyard"
+						},
+						{
+							"label": "C",
+							"text": "a Maori meeting house"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"It's held at Waiahiki Vineyard, which is near the traditional Maori meeting house or Marai of the same name.",
+						"Well, first up, there's the annual Gisborne concert held every summertime."
+					]
+				},
+				{
+					"number": 16,
+					"text": "On wet days in Gisborne the announcer recommends",
+					"options": [
+						{
+							"label": "A",
+							"text": "a cultural display in the museum"
+						},
+						{
+							"label": "B",
+							"text": "a fashion show in the town hall"
+						},
+						{
+							"label": "C",
+							"text": "a photography exhibition in the art gallery"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"What to do on a rainy day?",
+						"I'd suggest a visit to the show called The Beach, which is on in Gallery 1 at Taraffiti Museum."
+					]
+				}
+			]
+		},
+		{
+			"range": "17-20",
+			"type": "MATCHING",
+			"instructions": "Which group of people is each of the following attractions recommended for?\nChoose FOUR answers from the box and write the correct letter, A-G, next to questions 17 – 20.",
+			"options": [
+				{
+					"label": "A",
+					"text": "disabled people"
+				},
+				{
+					"label": "B",
+					"text": "elderly people"
+				},
+				{
+					"label": "C",
+					"text": "recently married couples"
+				},
+				{
+					"label": "D",
+					"text": "pregnant women"
+				},
+				{
+					"label": "E",
+					"text": "secondary school children"
+				},
+				{
+					"label": "F",
+					"text": "young school children"
+				},
+				{
+					"label": "G",
+					"text": "young adults"
+				}
+			],
+			"body": "Hot Springs Reserve [17]\nMahia Peninsula [18]\nMotu River Rafting [19]\nEden Woodlands Park [20]",
+			"body_html": "<ul><li>Hot Springs Reserve [17]</li><li>Mahia Peninsula [18]</li><li>Motu River Rafting [19]</li><li>Eden Woodlands Park [20]</li></ul>",
+			"questions": [
+				{
+					"number": 17,
+					"text": "Hot Springs Reserve",
+					"answer": "C",
+					"quotes": [
+						"You shouldn't miss the Hot Springs Reserve, which has warm natural mineral pools and little houses where you can stay amongst the bush.",
+						"Being very secluded and private, this resort is most favored by newlyweds who often book a cabin for their honeymoon."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Mahia Peninsula",
+					"answer": "G",
+					"quotes": [
+						"Around the corner is Mahia Peninsula, legendary as a New Year's Eve party destination for large crowds of university students after their graduation."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Motu River Rafting",
+					"answer": "F",
+					"quotes": [
+						"Now also good for kids is taking a raft or jet boat ride on the Motu River.",
+						"But in fact, this activity is often used by local primary schools who take big groups of young children, several classes at a time, out here for a bit of fun while they're on their school camp."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Eden Woodlands Park",
+					"answer": "A",
+					"quotes": [
+						"Finally, don't let's forget the Eden Woodlands Park, which is really a huge tree nursery.",
+						"There's even a very nice walkway made wide enough for those in wheelchairs so that everyone can go along and enjoy mother nature at her best."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,117 @@
+{
+	"id": "ceb34a98-6c86-4ee6-a03f-c870449fc04a",
+	"url": "https://stepielts.com/student/listening/ceb34a98-6c86-4ee6-a03f-c870449fc04a?mode=practice",
+	"title": "Job hunting",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/8d880ac7-9474-42b5-8098-248c3c5a7d75.mp3",
+	"transcript": "Speaker 1: Bradley: Oh, hi, Anna. How’s it going? I haven’t seen you since graduation.\nSpeaker 2: Anna: Hi, Bradley. Things are great. I’ve been traveling around Europe for the last month. But now that I’m back, I really need to find a job so I can start renting my own place.\nSpeaker 1: Bradley: Yeah. Me too. My mom’s driving me crazy. I’ve got an interview on Thursday at a company called Power. I’m pretty nervous.\nSpeaker 2: Anna: Don’t worry. I’m sure you’ll do great. Do you know what the job involves?\nSpeaker 1: Bradley: Well, the company has many sections, like sourcing materials and taking care of waste management. But I’m interviewing for a job in the warehouse section.\nSpeaker 2: Anna: Wow. I bet that will be really interesting.\nSpeaker 1: Bradley: You should apply too. They still have a couple of jobs left. I found the the job I’m interviewing for on their website. The reference is SW35FT.\nSpeaker 2: Anna: Thanks, Bradley. That’s really nice of you. I’ll apply later today. Is there a contact I could ask for?\nSpeaker 1: Bradley: The manager is Susan Thatcher, but you should contact her personal assistant. Her name is Jane Hitcher.\nSpeaker 2: Anna: How do you spell the surname for me, please?\nSpeaker 1: Bradley: Yes. It’s H i t c h e r.\nSpeaker 2: Anna: Okay. Great. I actually found a job listing for a place at Cotton, but the work hours don’t suit me. You should look into it.\nSpeaker 1: Bradley: Ah, that’s the grocery company. Right? I heard that the jobs in their distribution office are really well paid.\nSpeaker 2: Anna: The advertisement I saw was looking for people to work in the supermarket office, but the pay still looked very good.\nSpeaker 1: Bradley: Was there a description of the job?\nSpeaker 2: Anna: The company is looking to increase their production of cakes and pastries so you would be working as a cook in the bakery. After a month, they evaluate your performance and there’s potentially an opportunity for promotion to a management position.\nSpeaker 1: Bradley: That sounds like a great opportunity. I’ll definitely look into it. Do you have the reference number? I’ll write it down in my notebook.\nSpeaker 2: Anna: Sure. I also have the reference for a job at the art museum. I’ll give you the reference for that first. It’s SGH667.\nSpeaker 1: Bradley: Great. That’s really near my house. And what’s the reference number for the bakery job at Cotton?\nSpeaker 2: Anna: The reference is ARW204.\nSpeaker 1: Bradley: I’ll send them my application this afternoon. Who’s the contact?\nSpeaker 2: Anna: The name on the advert was Melanie, but it specifically said not to contact her in person. You should use the office as your contact, so just post your application there directly.\nSpeaker 1: Bradley: You seem to have found way more job listings than I have. Where are you finding them all?\nSpeaker 2: Anna: At first, I was keeping an eye out for listings on the Internet, but all of the jobs listed there were in the city. I found that the best place to find local jobs was in magazine adverts.\nSpeaker 1: Bradley: Adverts?\nSpeaker 2: Anna: You know, the section at the back of Job Plus magazine?\nSpeaker 1: Bradley: Where can I buy that?\nSpeaker 2: Anna: You don’t buy it. It’s a free magazine. Just go to your nearest corner shop and buy the newspaper. The magazine comes with it.\nSpeaker 1: Bradley: Oh, I never realized. My mom buys the newspaper every week, so there’s probably a copy lying around at home somewhere. I’ll have a look for it when I get back. All this job hunting is so stressful and time consuming.\nSpeaker 2: Anna: I can’t wait until it’s over either. I’m so tempted just to pay someone to do all this for me.\nSpeaker 1: Bradley: What do you mean?\nSpeaker 2: Anna: I could go to a recruitment seminar or to an agency.\nSpeaker 1: Bradley: The agency sounds like a great idea. They charge a fee before taking you on as a client though, plus only large corporations hire new employees through an agency.\nSpeaker 2: Anna: Well, I think it would be exciting.\nSpeaker 1: Bradley: If you decide to go to an agency, make sure you take your student card with you. Your student status is valid for another month, and agencies often give students a 10% discount.\nSpeaker 2: Anna: Okay. Great. I’ll remember that.\nSpeaker 1: Bradley: All of the placements I’ve applied to require a referee. I’ve never had a job before, so I don’t know who to ask. Who did you use?\nSpeaker 2: Anna: I had a summer job working as a waitress, so I asked my old boss. I got on with him really well, so I trusted him to give me a good reference. If you haven’t had a job before, you should ask one of your tutors.\nSpeaker 1: Bradley: That’s a really good idea. I used to really enjoy my history classes with mister Fredericks. Perhaps I’ll ask him.\nSpeaker 2: Anna: I miss being a student. I don’t feel mature enough to be earning money and finding a place of my own.\nSpeaker 1: Bradley: Yeah. University was great. Have you heard about their summer program? I’m thinking of applying for the art course.\nSpeaker 2: Anna: That sounds like fun. Do you have to pay?\nSpeaker 1: Bradley: No. The tutors are running it as a research project. You just need to fill out a feedback form at the end.\nSpeaker 2: Anna: Great. Well, I’ll see you there. Good luck with your job hunting.\nSpeaker 1: Bradley: Thanks. Good luck to you too. See you soon.\nSpeaker 2: Anna: Bye.",
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD AND/OR NUMBERS for each answer.",
+			"body": "Company's name Job details Reference Number Contact\nPOWER (manufacturing company)\nwork in a [1] section\nSW35FT Jane [2]\nCOTTON (grocery company)\ngood pay\nwork\nin [3] office\nin a [4]\nchance of promotion\n[5] go to office",
+			"body_table": [
+				["Company's name", "Job details", "Reference Number", "Contact"],
+				[
+					"POWER (manufacturing company)",
+					"work in a [1] section",
+					"SW35FT",
+					"Jane [2]"
+				],
+				[
+					"COTTON (grocery company)",
+					"good pay\nwork\nin [3] office\nin a [4]\nchance of promotion",
+					"[5]",
+					"go to office"
+				]
+			],
+			"body_html": "<table><tbody><tr><td><strong>Company's name</strong></td><td><strong>Job details</strong></td><td><strong>Reference Number</strong></td><td><strong>Contact</strong></td></tr><tr><td>POWER (manufacturing company)</td><td><ul><li>work in a [1] section</li></ul></td><td>SW35FT</td><td>Jane [2]</td></tr><tr><td>COTTON (grocery company)</td><td><ul><li>good pay</li><li>work<ul><li>in [3] office</li><li>in a [4]</li></ul></li><li>chance of promotion</li></ul></td><td>[5]</td><td>go to office</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "work in a [1] section",
+					"answer": "warehouse",
+					"quotes": ["But I’m interviewing for a job in the warehouse section."]
+				},
+				{
+					"number": 2,
+					"text": "SW35FT Jane [2]",
+					"answer": "Hitcher",
+					"quotes": ["Her name is Jane Hitcher."]
+				},
+				{
+					"number": 3,
+					"text": "in [3] office",
+					"answer": "supermarket",
+					"quotes": [
+						"Anna: The advertisement I saw was looking for people to work in the supermarket office, but the pay still looked very good."
+					]
+				},
+				{
+					"number": 4,
+					"text": "in a [4]",
+					"answer": "bakery",
+					"quotes": [
+						"Anna: The company is looking to increase their production of cakes and pastries so you would be working as a cook in the bakery."
+					]
+				},
+				{
+					"number": 5,
+					"text": "[5] go to office",
+					"answer": "ARW204",
+					"quotes": ["Anna: The reference is ARW204."]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "Notes on Jobs\nLocal jobs can be found in the [6].\nBuy the [7] to get one free magazine (Job Plus)\nFeel stress and spend a lot of time looking for jobs\nAdvisable to go to an [8] instead of the recruitment seminar\nBring a student card (10% discount)\nReferee:\nformer boss (once had a job)\none of the [9] (if not)\nIntend to take the art course\nFill out a [10] form at the end of the course",
+			"body_html": "<table><tbody><tr><td><h3><strong>Notes on Jobs</strong></h3><ul><li>Local jobs can be found in the [6].</li><li>Buy the [7] to get one free magazine (Job Plus)</li><li>Feel stress and spend a lot of time looking for jobs</li><li>Advisable to go to an [8] instead of the recruitment seminar</li><li>Bring a student card (10% discount)</li><li>Referee:\n<ul><li>former boss (once had a job)</li><li>one of the [9] (if not)</li></ul></li><li>Intend to take the art course</li><li>Fill out a [10] form at the end of the course</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Local jobs can be found in the [6].",
+					"answer": "magazine",
+					"quotes": [
+						"I found that the best place to find local jobs was in magazine adverts."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Buy the [7] to get one free magazine (Job Plus)",
+					"answer": "newspaper",
+					"quotes": [
+						"Just go to your nearest corner shop and buy the newspaper."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Advisable to go to an [8] instead of the recruitment seminar",
+					"answer": "agency",
+					"quotes": ["Bradley: The agency sounds like a great idea."]
+				},
+				{
+					"number": 9,
+					"text": "one of the [9] (if not)",
+					"answer": "tutors",
+					"quotes": [
+						"If you haven’t had a job before, you should ask one of your tutors."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Fill out a [10] form at the end of the course",
+					"answer": "feedback",
+					"quotes": ["You just need to fill out a feedback form at the end."]
+				}
+			]
+		}
+	],
+	"images": []
+}

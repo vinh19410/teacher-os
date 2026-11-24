@@ -6,6 +6,7 @@ import {
 	type LibraryPartInput,
 	libraryPartUpsertSchema,
 	libraryTestListItemSchema,
+	libraryTestListPageResponseSchema,
 	validatePartForReady,
 } from "@teacher-os/api/library-contracts";
 import * as schema from "@teacher-os/db/schema/index";
@@ -2917,6 +2918,655 @@ describe("GET /api/admin/library/tests D1 limits & resilience", () => {
 			});
 		} finally {
 			errSpy.mockRestore();
+		}
+	});
+
+	test("paginated mode with >100 tests stays within D1 param limits, avoids LIKE and heavy columns, and skips part query on empty page", async () => {
+		resetQueryStats();
+		const res = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?page=1&pageSize=50",
+		)({ user: "admin" });
+		expect(res.status).toBe(200);
+		expect(res.headers.get("cache-control")).toBe("no-store");
+
+		const payload = libraryTestListPageResponseSchema.parse(await res.json());
+		expect(payload.total).toBe(125);
+		expect(payload.page).toBe(1);
+		expect(payload.pageSize).toBe(50);
+		expect(payload.totalPages).toBe(3);
+		expect(payload.tests).toHaveLength(50);
+		expect(payload.counts).toEqual({
+			skill: { reading: 117, listening: 7 },
+			status: { draft: 14, ready: 111 },
+		});
+
+		expect(batchCalls).toBe(1);
+		expect(executeCalls).toBe(1);
+		expect(observedQueries).toHaveLength(5);
+		for (const q of observedQueries) {
+			expect(q.paramCount).toBeLessThanOrEqual(50);
+			expect(q.sql.toLowerCase()).not.toContain(" like ");
+		}
+
+		const headerQueries = observedQueries.filter(
+			(q) =>
+				q.sql.toLowerCase().includes('from "library_test"') &&
+				!q.sql.toLowerCase().includes("library_test_part"),
+		);
+		expect(headerQueries).toHaveLength(4);
+		for (const hq of headerQueries) {
+			const lower = hq.sql.toLowerCase();
+			expect(lower).not.toMatch(/select\s+\*/);
+			expect(lower).not.toContain("created_by");
+		}
+
+		const partQueries = observedQueries.filter((q) =>
+			q.sql.toLowerCase().includes("library_test_part"),
+		);
+		expect(partQueries).toHaveLength(1);
+		for (const pq of partQueries) {
+			const lower = pq.sql.toLowerCase();
+			expect(pq.paramCount).toBe(50);
+			expect(lower).not.toMatch(/select\s+\*/);
+			for (const heavyCol of [
+				"passage",
+				"transcript",
+				"groups",
+				"option_bank",
+				"image_url",
+				"intro",
+				"note",
+				"source",
+			]) {
+				expect(lower).not.toContain(heavyCol);
+			}
+			const stripped = lower
+				.replace(/json_valid\([^)]*questions[^)]*\)/g, "")
+				.replace(/json_array_length\([^)]*questions[^)]*\)/g, "");
+			expect(stripped).not.toContain("questions");
+		}
+
+		expect(payload.tests.find((t) => t.id === "lt-listen-full")).toMatchObject({
+			partCount: 4,
+			questionCount: 4,
+			hasAllAudio: true,
+		});
+		expect(
+			payload.tests.find((t) => t.id === "lt-listen-partial"),
+		).toMatchObject({
+			partCount: 1,
+			questionCount: 1,
+			hasAllAudio: false,
+		});
+		expect(payload.tests.find((t) => t.id === "lt-corrupt-mix")).toMatchObject({
+			partCount: 3,
+			questionCount: 2,
+			hasAllAudio: true,
+		});
+		expect(
+			payload.tests.find((t) => t.id === "lt-corrupt-shapes"),
+		).toMatchObject({
+			partCount: 4,
+			questionCount: 0,
+			hasAllAudio: false,
+		});
+		expect(
+			payload.tests.find((t) => t.id === "lt-unknown-skill")?.hasAllAudio,
+		).toBe(false);
+
+		// Filtered paginated request with q > 100 matching rows stays below D1 bound-param limit without LIKE
+		resetQueryStats();
+		const filteredRes = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?page=1&pageSize=50&skill=reading&status=ready&q=BatchTest",
+		)({ user: "admin" });
+		expect(filteredRes.status).toBe(200);
+		const filteredPayload = libraryTestListPageResponseSchema.parse(
+			await filteredRes.json(),
+		);
+		expect(filteredPayload.total).toBe(110);
+		expect(filteredPayload.totalPages).toBe(3);
+		expect(filteredPayload.tests).toHaveLength(50);
+		expect(filteredPayload.counts).toEqual({
+			skill: { reading: 110, listening: 0 },
+			status: { draft: 0, ready: 110 },
+		});
+		for (const q of observedQueries) {
+			expect(q.paramCount).toBeLessThanOrEqual(50);
+			expect(q.sql.toLowerCase()).not.toContain(" like ");
+		}
+
+		// Out-of-range page (rows.length === 0) skips library_test_part query completely
+		resetQueryStats();
+		const emptyPageRes = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?page=99&pageSize=50",
+		)({ user: "admin" });
+		expect(emptyPageRes.status).toBe(200);
+		const emptyPagePayload = libraryTestListPageResponseSchema.parse(
+			await emptyPageRes.json(),
+		);
+		expect(emptyPagePayload.tests).toEqual([]);
+		expect(emptyPagePayload.total).toBe(125);
+		expect(emptyPagePayload.page).toBe(99);
+		expect(emptyPagePayload.totalPages).toBe(3);
+		expect(batchCalls).toBe(1);
+		expect(executeCalls).toBe(0);
+		expect(observedQueries).toHaveLength(4);
+		expect(
+			observedQueries.some((q) =>
+				q.sql.toLowerCase().includes("library_test_part"),
+			),
+		).toBe(false);
+	});
+});
+
+describe("GET /api/admin/library/tests server-side pagination", () => {
+	let db: Db;
+	let app: ServerApp;
+	const expectedOrderedIds: string[] = [];
+
+	beforeAll(async () => {
+		const client = createClient({ url: "file::memory:" });
+		const libsql = drizzle(client, { schema });
+		await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
+		db = libsql as unknown as Db;
+
+		// Seed 25 tests across three timestamp bands:
+		// - 7 newer tests (updatedAt 60_000..60_006)
+		// - 5 tied tests sharing identical updatedAt = 50_000 (spanning page 1 & page 2 at pageSize=10)
+		// - 13 older tests (updatedAt 40_000..40_012)
+		const newerSpecs: Array<{
+			id: string;
+			skill: "reading" | "listening";
+			status: "ready" | "draft";
+			tag: "Alpha" | "Beta";
+			field: "title" | "description" | "collection" | "testGroup";
+		}> = [
+			{
+				id: "new-0",
+				skill: "reading",
+				status: "ready",
+				tag: "Alpha",
+				field: "title",
+			},
+			{
+				id: "new-1",
+				skill: "reading",
+				status: "ready",
+				tag: "Alpha",
+				field: "collection",
+			},
+			{
+				id: "new-2",
+				skill: "reading",
+				status: "draft",
+				tag: "Alpha",
+				field: "description",
+			},
+			{
+				id: "new-3",
+				skill: "reading",
+				status: "draft",
+				tag: "Beta",
+				field: "title",
+			},
+			{
+				id: "new-4",
+				skill: "listening",
+				status: "ready",
+				tag: "Alpha",
+				field: "testGroup",
+			},
+			{
+				id: "new-5",
+				skill: "listening",
+				status: "ready",
+				tag: "Beta",
+				field: "title",
+			},
+			{
+				id: "new-6",
+				skill: "listening",
+				status: "draft",
+				tag: "Alpha",
+				field: "title",
+			},
+		];
+
+		const tiedSpecs: Array<{
+			id: string;
+			skill: "reading" | "listening";
+			status: "ready" | "draft";
+			tag: "Alpha" | "Beta";
+		}> = [
+			{ id: "tie-a", skill: "reading", status: "ready", tag: "Beta" },
+			{ id: "tie-b", skill: "listening", status: "draft", tag: "Alpha" },
+			{ id: "tie-c", skill: "reading", status: "draft", tag: "Beta" },
+			{ id: "tie-d", skill: "listening", status: "ready", tag: "Alpha" },
+			{ id: "tie-e", skill: "reading", status: "ready", tag: "Alpha" },
+		];
+
+		const olderSpecs: Array<{
+			id: string;
+			skill: "reading" | "listening";
+			status: "ready" | "draft";
+		}> = [
+			{ id: "old-00", skill: "reading", status: "ready" },
+			{ id: "old-01", skill: "reading", status: "ready" },
+			{ id: "old-02", skill: "reading", status: "ready" },
+			{ id: "old-03", skill: "reading", status: "ready" },
+			{ id: "old-04", skill: "reading", status: "ready" },
+			{ id: "old-05", skill: "reading", status: "draft" },
+			{ id: "old-06", skill: "reading", status: "draft" },
+			{ id: "old-07", skill: "reading", status: "draft" },
+			{ id: "old-08", skill: "listening", status: "ready" },
+			{ id: "old-09", skill: "listening", status: "ready" },
+			{ id: "old-10", skill: "listening", status: "draft" },
+			{ id: "old-11", skill: "listening", status: "draft" },
+			{ id: "old-12", skill: "listening", status: "draft" },
+		];
+
+		const rows: Array<typeof libraryTest.$inferInsert> = [];
+		for (const [index, spec] of newerSpecs.entries()) {
+			rows.push({
+				id: spec.id,
+				title:
+					spec.field === "title"
+						? `${spec.tag} Newer ${index}`
+						: `Newer ${index}`,
+				description:
+					spec.field === "description" ? `${spec.tag} desc` : "plain desc",
+				collection:
+					spec.field === "collection" ? `${spec.tag} coll` : "plain coll",
+				testGroup:
+					spec.field === "testGroup" ? `${spec.tag} group` : "plain group",
+				skill: spec.skill,
+				status: spec.status,
+				createdBy: "u-admin",
+				updatedAt: new Date(60_000 + index),
+			});
+		}
+		for (const spec of tiedSpecs) {
+			rows.push({
+				id: spec.id,
+				title: `${spec.tag} Tied ${spec.id}`,
+				skill: spec.skill,
+				status: spec.status,
+				createdBy: "u-admin",
+				updatedAt: new Date(50_000),
+			});
+		}
+		for (const [index, spec] of olderSpecs.entries()) {
+			rows.push({
+				id: spec.id,
+				title: `Beta Older ${index}`,
+				skill: spec.skill,
+				status: spec.status,
+				createdBy: "u-admin",
+				updatedAt: new Date(40_000 + index),
+			});
+		}
+
+		// Expected deterministic order: updatedAt DESC, id DESC
+		expectedOrderedIds.push(
+			...[...newerSpecs].reverse().map((s) => s.id),
+			"tie-e",
+			"tie-d",
+			"tie-c",
+			"tie-b",
+			"tie-a",
+			...[...olderSpecs].reverse().map((s) => s.id),
+		);
+
+		for (let i = 0; i < rows.length; i += 8) {
+			await db.insert(libraryTest).values(rows.slice(i, i + 8));
+		}
+
+		await db.insert(libraryTestPart).values([
+			{
+				id: "pg-part-1",
+				testId: "new-0",
+				part: "p1",
+				questions: JSON.stringify([
+					{ stem: "Q1", answer: "A", alts: "" },
+					{ stem: "Q2", answer: "B", alts: "" },
+				]),
+				updatedAt: new Date(60_000),
+			},
+			{
+				id: "pg-part-2",
+				testId: "new-0",
+				part: "p2",
+				questions: JSON.stringify([{ stem: "Q3", answer: "C", alts: "" }]),
+				updatedAt: new Date(60_000),
+			},
+			{
+				id: "pg-part-l1",
+				testId: "new-4",
+				part: "s1",
+				questions: JSON.stringify([{ stem: "Q1", answer: "1", alts: "" }]),
+				audioKey: "library/new-4/s1/a.mp3",
+				updatedAt: new Date(60_004),
+			},
+		]);
+
+		app = buildApp({
+			getDb: () => db,
+			authHandler: () => new Response(null, { status: 404 }),
+			corsOrigin: [TEACHER_ORIGIN],
+			getSessionUser: async (headers) => {
+				const key = headers.get("x-test-user");
+				return key ? (SESSIONS[key] ?? null) : null;
+			},
+			adminEmails: ADMIN_EMAILS,
+			adminOrigins: [ADMIN_ORIGIN],
+		});
+	});
+
+	test("slices pages cleanly for pageSize 10, 20, 50 and applies defaults when only one pagination param is provided", async () => {
+		const page1Res = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?page=1&pageSize=10",
+		)({ user: "admin" });
+		expect(page1Res.status).toBe(200);
+		expect(page1Res.headers.get("cache-control")).toBe("no-store");
+		const page1 = libraryTestListPageResponseSchema.parse(
+			await page1Res.json(),
+		);
+		expect(page1.total).toBe(25);
+		expect(page1.page).toBe(1);
+		expect(page1.pageSize).toBe(10);
+		expect(page1.totalPages).toBe(3);
+		expect(page1.tests).toHaveLength(10);
+
+		const page2Res = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?page=2&pageSize=10",
+		)({ user: "admin" });
+		expect(page2Res.status).toBe(200);
+		const page2 = libraryTestListPageResponseSchema.parse(
+			await page2Res.json(),
+		);
+		expect(page2.page).toBe(2);
+		expect(page2.tests).toHaveLength(10);
+
+		const page3Res = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?page=3&pageSize=10",
+		)({ user: "admin" });
+		expect(page3Res.status).toBe(200);
+		const page3 = libraryTestListPageResponseSchema.parse(
+			await page3Res.json(),
+		);
+		expect(page3.page).toBe(3);
+		expect(page3.tests).toHaveLength(5);
+
+		const allIds = [...page1.tests, ...page2.tests, ...page3.tests].map(
+			(t) => t.id,
+		);
+		expect(allIds).toEqual(expectedOrderedIds);
+
+		// Part summaries are accurately attached on page items
+		expect(page1.tests.find((t) => t.id === "new-0")).toMatchObject({
+			partCount: 2,
+			questionCount: 3,
+			hasAllAudio: true,
+		});
+		expect(page1.tests.find((t) => t.id === "new-4")).toMatchObject({
+			partCount: 1,
+			questionCount: 1,
+			hasAllAudio: false,
+		});
+
+		// Default pageSize=20 when only page=1 is passed
+		const defaultSizeRes = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?page=1",
+		)({ user: "admin" });
+		expect(defaultSizeRes.status).toBe(200);
+		const defaultSize = libraryTestListPageResponseSchema.parse(
+			await defaultSizeRes.json(),
+		);
+		expect(defaultSize.page).toBe(1);
+		expect(defaultSize.pageSize).toBe(20);
+		expect(defaultSize.totalPages).toBe(2);
+		expect(defaultSize.tests).toHaveLength(20);
+
+		const page2DefaultSizeRes = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?page=2&pageSize=20",
+		)({ user: "admin" });
+		expect(page2DefaultSizeRes.status).toBe(200);
+		const page2DefaultSize = libraryTestListPageResponseSchema.parse(
+			await page2DefaultSizeRes.json(),
+		);
+		expect(page2DefaultSize.tests).toHaveLength(5);
+		expect(
+			[...defaultSize.tests, ...page2DefaultSize.tests].map((t) => t.id),
+		).toEqual(expectedOrderedIds);
+
+		// Default page=1 when only pageSize=10 is passed
+		const defaultPageRes = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?pageSize=10",
+		)({ user: "admin" });
+		expect(defaultPageRes.status).toBe(200);
+		const defaultPage = libraryTestListPageResponseSchema.parse(
+			await defaultPageRes.json(),
+		);
+		expect(defaultPage.page).toBe(1);
+		expect(defaultPage.pageSize).toBe(10);
+		expect(defaultPage.tests.map((t) => t.id)).toEqual(
+			expectedOrderedIds.slice(0, 10),
+		);
+
+		// pageSize=50 returns all 25 items on 1 page
+		const largePageRes = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?page=1&pageSize=50",
+		)({ user: "admin" });
+		expect(largePageRes.status).toBe(200);
+		const largePage = libraryTestListPageResponseSchema.parse(
+			await largePageRes.json(),
+		);
+		expect(largePage.totalPages).toBe(1);
+		expect(largePage.tests.map((t) => t.id)).toEqual(expectedOrderedIds);
+	});
+
+	test("uses deterministic id desc tie-breaker when multiple tests share updatedAt across page boundaries", async () => {
+		const [p1Res, p2Res, unpaginatedRes] = await Promise.all([
+			makeRequest(
+				app,
+				"GET",
+				"/api/admin/library/tests?page=1&pageSize=10",
+			)({ user: "admin" }),
+			makeRequest(
+				app,
+				"GET",
+				"/api/admin/library/tests?page=2&pageSize=10",
+			)({ user: "admin" }),
+			makeRequest(app, "GET", "/api/admin/library/tests")({ user: "admin" }),
+		]);
+		const p1 = libraryTestListPageResponseSchema.parse(await p1Res.json());
+		const p2 = libraryTestListPageResponseSchema.parse(await p2Res.json());
+		const unpaginated = (await unpaginatedRes.json()) as {
+			tests: Array<{ id: string }>;
+		};
+
+		// Page 1 ends with tie-e, tie-d, tie-c and page 2 starts with tie-b, tie-a
+		expect(p1.tests.slice(-3).map((t) => t.id)).toEqual([
+			"tie-e",
+			"tie-d",
+			"tie-c",
+		]);
+		expect(p2.tests.slice(0, 2).map((t) => t.id)).toEqual(["tie-b", "tie-a"]);
+
+		const p1Ids = new Set(p1.tests.map((t) => t.id));
+		for (const item of p2.tests) {
+			expect(p1Ids.has(item.id)).toBe(false);
+		}
+		expect(unpaginated.tests.map((t) => t.id)).toEqual(expectedOrderedIds);
+	});
+
+	test("computes cross-dimensional facet counts accurately across skill, status, and q filters", async () => {
+		// Unfiltered baseline
+		const allRes = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?page=1&pageSize=10",
+		)({ user: "admin" });
+		const all = libraryTestListPageResponseSchema.parse(await allRes.json());
+		expect(all.total).toBe(25);
+		expect(all.counts).toEqual({
+			skill: { reading: 15, listening: 10 },
+			status: { draft: 11, ready: 14 },
+		});
+
+		// Filtering by skill=reading preserves counts.skill.listening while narrowing counts.status
+		const readingRes = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?page=1&pageSize=10&skill=reading",
+		)({ user: "admin" });
+		const reading = libraryTestListPageResponseSchema.parse(
+			await readingRes.json(),
+		);
+		expect(reading.total).toBe(15);
+		expect(reading.totalPages).toBe(2);
+		expect(reading.tests.every((t) => t.skill === "reading")).toBe(true);
+		expect(reading.counts).toEqual({
+			skill: { reading: 15, listening: 10 },
+			status: { draft: 6, ready: 9 },
+		});
+
+		// Filtering by status=ready preserves counts.status.draft while narrowing counts.skill
+		const readyRes = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?page=1&pageSize=10&status=ready",
+		)({ user: "admin" });
+		const ready = libraryTestListPageResponseSchema.parse(
+			await readyRes.json(),
+		);
+		expect(ready.total).toBe(14);
+		expect(ready.tests.every((t) => t.status === "ready")).toBe(true);
+		expect(ready.counts).toEqual({
+			skill: { reading: 9, listening: 5 },
+			status: { draft: 11, ready: 14 },
+		});
+
+		// Combining q=Alpha narrows both facet dimensions
+		const searchRes = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?page=1&pageSize=10&q=Alpha",
+		)({ user: "admin" });
+		const search = libraryTestListPageResponseSchema.parse(
+			await searchRes.json(),
+		);
+		expect(search.total).toBe(8);
+		expect(search.counts).toEqual({
+			skill: { reading: 4, listening: 4 },
+			status: { draft: 3, ready: 5 },
+		});
+
+		// Combining skill + status + q computes each facet without its own dimension
+		const combinedRes = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?page=1&pageSize=10&skill=reading&status=ready&q=Alpha",
+		)({ user: "admin" });
+		const combined = libraryTestListPageResponseSchema.parse(
+			await combinedRes.json(),
+		);
+		expect(combined.total).toBe(3);
+		expect(combined.totalPages).toBe(1);
+		expect(combined.tests.map((t) => t.id)).toEqual([
+			"new-1",
+			"new-0",
+			"tie-e",
+		]);
+		expect(combined.counts).toEqual({
+			skill: { reading: 3, listening: 2 },
+			status: { draft: 1, ready: 3 },
+		});
+	});
+
+	test("handles out-of-range page and zero-match queries gracefully", async () => {
+		const outOfRangeRes = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?page=99&pageSize=10",
+		)({ user: "admin" });
+		expect(outOfRangeRes.status).toBe(200);
+		const outOfRange = libraryTestListPageResponseSchema.parse(
+			await outOfRangeRes.json(),
+		);
+		expect(outOfRange).toEqual({
+			tests: [],
+			total: 25,
+			page: 99,
+			pageSize: 10,
+			totalPages: 3,
+			counts: {
+				skill: { reading: 15, listening: 10 },
+				status: { draft: 11, ready: 14 },
+			},
+		});
+
+		const emptyRes = await makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/tests?page=1&pageSize=20&q=NoSuchMatchKeyword",
+		)({ user: "admin" });
+		expect(emptyRes.status).toBe(200);
+		const empty = libraryTestListPageResponseSchema.parse(
+			await emptyRes.json(),
+		);
+		expect(empty).toEqual({
+			tests: [],
+			total: 0,
+			page: 1,
+			pageSize: 20,
+			totalPages: 1,
+			counts: {
+				skill: { reading: 0, listening: 0 },
+				status: { draft: 0, ready: 0 },
+			},
+		});
+	});
+
+	test("rejects invalid page and pageSize query parameters with 400", async () => {
+		for (const badPage of ["0", "-1", "abc", "1.5", "01", "100001", ""]) {
+			const res = await makeRequest(
+				app,
+				"GET",
+				`/api/admin/library/tests?page=${encodeURIComponent(badPage)}`,
+			)({ user: "admin" });
+			expect(res.status, `page=${badPage}`).toBe(400);
+			expect(await res.json()).toEqual({ error: "invalid page" });
+		}
+
+		for (const badPageSize of ["15", "100", "0", "020", "abc", ""]) {
+			const res = await makeRequest(
+				app,
+				"GET",
+				`/api/admin/library/tests?pageSize=${encodeURIComponent(badPageSize)}`,
+			)({ user: "admin" });
+			expect(res.status, `pageSize=${badPageSize}`).toBe(400);
+			expect(await res.json()).toEqual({ error: "invalid pageSize" });
 		}
 	});
 });

@@ -876,4 +876,26 @@ describe("AssignClassPromptModal", () => {
 			screen.getByText("Mở lại lớp để thêm học viên trước khi giao bài."),
 		).toBeTruthy();
 	});
+
+	it("ẩn chip Band trong khối Xem trước phía học viên nhưng vẫn giữ Band trong danh sách chọn đề", () => {
+		render(
+			<AssignClassPromptModal open onClose={vi.fn()} classGroup={testClass} />,
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: /Writing Task 2 — Opinion/ }),
+		);
+		const previewTrigger = screen.getByRole("button", {
+			name: /Xem trước phía học viên/,
+		});
+		fireEvent.click(previewTrigger);
+		expect(previewTrigger.getAttribute("aria-expanded")).toBe("true");
+		const previewCard = previewTrigger.parentElement;
+		expect(previewCard).not.toBeNull();
+		expect(previewCard?.textContent).toContain(
+			"Some people believe university education should be free.",
+		);
+		expect(previewCard?.textContent).not.toContain("Band 7.0");
+		// Danh sách chọn đề phía giáo viên vẫn hiển thị Band
+		expect(screen.getByText(/Task 2 · 250 từ · Band 7\.0/)).toBeTruthy();
+	});
 });

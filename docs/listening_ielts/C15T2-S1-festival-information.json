@@ -1,0 +1,118 @@
+{
+	"id": "481c7c79-b21f-41c4-b312-34c9849554a2",
+	"url": "https://stepielts.com/student/listening/481c7c79-b21f-41c4-b312-34c9849554a2?mode=practice",
+	"title": "Festival information",
+	"source": "C15T2",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/7bdd9cc9-635a-4723-a7c1-b4ff30b24d45.mp3",
+	"transcript": "Speaker 0: Test two. This is the IELTS listening test. You will hear a number of different recordings, and you will have to answer questions on what you hear. There will be time for you to read the instructions and questions, and you will have a chance to check your work. All the recordings will be played once only. The test is in four parts. At the end of the test, you will be given ten minutes to transfer your answers to the answer sheet. Now turn to part one. Part one. You will hear a woman calling a tourist information office to ask about a festival. First, you have some time to look at questions one to four. Now listen carefully and answer questions one to four.\nSpeaker 1: Good morning. You're through to the tourist information office. Tim speaking. How can I help you?\nSpeaker 2: Oh, hello. Could you give me some information about next month's festival, please? My family and I will be staying in the town that week.\nSpeaker 1: Of course. Well, it starts with a concert on the afternoon of the seventeenth.\nSpeaker 2: Oh, I heard about that. The orchestra and singers come from The USA, don't they?\nSpeaker 1: They're from Canada. They're very popular over there. They're going to perform a number of well known pieces that will appeal to children as well as adults.\nSpeaker 2: That sounds good. My whole family are interested in music.\nSpeaker 1: The next day, the eighteenth, there's a performance by a ballet company called Eustatus. Sorry? The name is spelled e u s t a t I s. They appeared in last year's festival and went down very well. Again, their program is designed for all ages.\nSpeaker 2: Good. I expect we'll go to that. I hope there's going to be a play during the festival, a comedy ideally.\nSpeaker 1: You're in luck. On the nineteenth and twentieth, a local amateur group are performing one written by a member of the group. It's called Jemima. That'll be on in the town hall. They've already performed it two or three times. I haven't seen it myself, but the review in the local paper was very good.\nSpeaker 2: And is it suitable for children?\nSpeaker 1: Yes. In fact, it's aimed more at children than at adults. So both performances are in the afternoon.\nSpeaker 2: And what about dance? Will there be any performances?\nSpeaker 1: Yes. Also on the twentieth, but in the evening. A professional company is putting on a show of modern pieces with electronic music by young composers. Uh-huh. The show is about how people communicate or fail to communicate with each other, so it's got the rather strange name chat.\nSpeaker 2: I suppose that's because that's something we do both face to face and online.\nSpeaker 1: That's right.\nSpeaker 0: Before you hear the rest of the conversation, you have some time to look at questions five to 10. Now listen and answer questions five to 10.\nSpeaker 1: Now there are also some workshops and other activities. They'll all take place at least once every day, so everyone who wants to take part will have a chance.\nSpeaker 2: Good. We're particularly interested in cookery. You don't happen to have a cookery workshop, do you?\nSpeaker 1: We certainly do. It's going to focus on how to make food part of a healthy lifestyle, and it'll show that even sweet things like cakes can contain much less sugar than they usually do.\nSpeaker 2: That might be worth going to. We're trying to encourage our children to cook.\nSpeaker 1: Another workshop is just for children, and that's on creating posters to reflect the history of the town. The aim is to make children aware of how both the town and people's lives have changed over the centuries. The results will be exhibited in the community center. Then the other workshop is in toy making, and that's for adults only.\nSpeaker 2: Oh, why is that?\nSpeaker 1: Because it involves carpentry. Participants will be making toys out of wood, so there'll be a lot of sharp chisels and other tools around.\nSpeaker 2: It makes sense to keep children away from it.\nSpeaker 1: Exactly. Now let me tell you about some of the outdoor activities. They'll be supervised wild swimming.\nSpeaker 2: Wild swimming? What's that?\nSpeaker 1: It just means swimming in natural waters rather than a swimming pool.\nSpeaker 2: Oh, okay. In a lake, for instance.\nSpeaker 1: Yes. There's a beautiful one just outside the town, and that'll be the venue for the swimming. There'll be lifeguards on duty, so it's suitable for all ages. And finally, there'll be a walk in some nearby woods every day. The leader is an expert on insects. He'll show some that live in the woods and how important they are for the environment. So there are going to be all sorts of different things to do during the festival.\nSpeaker 2: There certainly are.\nSpeaker 1: If you'd like to read about how the preparations for the festival are going, the festival organizer is keeping a blog. Just search online for the festival website, and you'll find it.\nSpeaker 2: Well, thank you very much for all the affirmation.\nSpeaker 1: You're welcome. Goodbye.\nSpeaker 2: Goodbye.\nSpeaker 0: That is the end of part one. You now have one minute to check your answers to part one.",
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write ONE WORD ONLY for each answer.",
+			"body": "Festival information\nDate\nType of event\nDetails\n17th\na concert\nperformers from Canada\n18th\na ballet\ncompany called [1]\n19th-20th (afternoon)\na play\ntype of play: a comedy called Jemima has had a good [2]\n20th (evening)\na [3] show\nshow is called [4]",
+			"body_table": [
+				["Festival information"],
+				["Date", "Type of event", "Details"],
+				["17th", "a concert", "performers from Canada"],
+				["18th", "a ballet", "company called [1]"],
+				[
+					"19th-20th (afternoon)",
+					"a play",
+					"type of play: a comedy called Jemima has had a good [2]"
+				],
+				["20th (evening)", "a [3] show", "show is called [4]"]
+			],
+			"body_html": "<table><tbody><tr><td colspan=\"3\"><h4><strong>Festival information</strong></h4></td></tr><tr><td><p><strong>Date</strong></p></td><td><p><strong>Type of event</strong></p></td><td><p><strong>Details</strong></p></td></tr><tr><td><p>17th</p></td><td><p>a concert</p></td><td><p>performers from Canada</p></td></tr><tr><td><p>18th</p></td><td><p>a ballet</p></td><td><p>company called [1]</p></td></tr><tr><td><p>19th-20th (afternoon)</p></td><td><p>a play</p></td><td><p>type of play: a comedy called <em>Jemima</em> has had a good [2]</p></td></tr><tr><td><p>20th (evening)</p></td><td><p>a [3] show</p></td><td><p>show is called [4]</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "company called [1]",
+					"answer": "Eustatis",
+					"quotes": [
+						"The next day, the eighteenth, there's a performance by a ballet company called Eustatus."
+					]
+				},
+				{
+					"number": 2,
+					"text": "type of play: a comedy called Jemima has had a good [2]",
+					"answer": "review",
+					"quotes": [
+						"I haven't seen it myself, but the review in the local paper was very good."
+					]
+				},
+				{
+					"number": 3,
+					"text": "a [3] show",
+					"answer": "dance",
+					"quotes": ["And what about dance?"]
+				},
+				{
+					"number": 4,
+					"text": "show is called [4]",
+					"answer": "Chat",
+					"quotes": [
+						"The show is about how people communicate or fail to communicate with each other, so it's got the rather strange name chat."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+			"body": "Workshops\n● Making [5] food\n● (children only) Making [6]\n● (adults only) Making toys from [7] using various tools\nOutdoor activities\n● Swimming in the [8]\n● Walking in the woods, led by an expert on [9]\nSee the festival organiser’s [10] for more information",
+			"body_html": "<p><strong>Workshops</strong></p><p>●   Making [5] food</p><p>●   (children only) Making [6]</p><p>●   (adults only) Making toys from [7] using various tools</p><p><strong>Outdoor activities</strong></p><p>●   Swimming in the [8]</p><p>●   Walking in the woods, led by an expert on [9]</p><p>See the festival organiser’s [10] for more information</p>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "● Making [5] food",
+					"answer": "healthy",
+					"quotes": [
+						"It's going to focus on how to make food part of a healthy lifestyle, and it'll show that even sweet things like cakes can contain much less sugar than they usually do."
+					]
+				},
+				{
+					"number": 6,
+					"text": "● (children only) Making [6]",
+					"answer": "posters",
+					"quotes": [
+						"Another workshop is just for children, and that's on creating posters to reflect the history of the town."
+					]
+				},
+				{
+					"number": 7,
+					"text": "● (adults only) Making toys from [7] using various tools",
+					"answer": "wood",
+					"quotes": [
+						"Participants will be making toys out of wood, so there'll be a lot of sharp chisels and other tools around."
+					]
+				},
+				{
+					"number": 8,
+					"text": "● Swimming in the [8]",
+					"answer": "lake",
+					"quotes": ["In a lake, for instance."]
+				},
+				{
+					"number": 9,
+					"text": "● Walking in the woods, led by an expert on [9]",
+					"answer": "insects",
+					"quotes": ["The leader is an expert on insects."]
+				},
+				{
+					"number": 10,
+					"text": "See the festival organiser’s [10] for more information",
+					"answer": "blog",
+					"quotes": [
+						"If you'd like to read about how the preparations for the festival are going, the festival organizer is keeping a blog."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

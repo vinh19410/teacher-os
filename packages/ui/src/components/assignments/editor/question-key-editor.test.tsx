@@ -642,13 +642,13 @@ describe("QuestionKeyEditor — Wave 2A (mcq_many & libraryReadingMode)", () => 
 		expect(html).toContain("Bấm lên ảnh để đặt ghim");
 		expect(html).not.toContain("Đặt ghim trên ảnh cho câu này.");
 
-		// Listening map still requires pin when ready
-		const mapHtml = renderToStaticMarkup(
+		// Library listening map also keeps pins optional (maps already carry printed letters A–J)
+		const libraryMapHtml = renderToStaticMarkup(
 			<QuestionKeyEditor
 				{...base}
 				skill="listening"
 				typeId="map"
-				libraryReadingMode
+				libraryMode
 				showErrors
 				status="ready"
 				imageUrl="https://example.com/map.png"
@@ -657,7 +657,23 @@ describe("QuestionKeyEditor — Wave 2A (mcq_many & libraryReadingMode)", () => 
 				]}
 			/>,
 		);
-		expect(mapHtml).toContain("Đặt ghim trên ảnh cho câu này.");
+		expect(libraryMapHtml).not.toContain("Đặt ghim trên ảnh cho câu này.");
+
+		// Teacher bank (non-library) listening map still requires pin when ready
+		const webMapHtml = renderToStaticMarkup(
+			<QuestionKeyEditor
+				{...base}
+				skill="listening"
+				typeId="map"
+				showErrors
+				status="ready"
+				imageUrl="https://example.com/map.png"
+				items={[
+					{ stem: "Location 1", answer: "A", opts: null, alts: "", pin: null },
+				]}
+			/>,
+		);
+		expect(webMapHtml).toContain("Đặt ghim trên ảnh cho câu này.");
 	});
 
 	it("libraryReadingMode match_names/matching show OptionBankEditor with maxBank=20", () => {

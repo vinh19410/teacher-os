@@ -1,0 +1,227 @@
+{
+	"id": "06e75690-7838-4e6c-b37f-5824137019b8",
+	"url": "https://stepielts.com/student/listening/06e75690-7838-4e6c-b37f-5824137019b8?mode=practice",
+	"title": "Report on Geography Field Trip",
+	"source": "Actual Test",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/723c3c2e-e705-4949-a56e-450e66d3e027.mp3",
+	"transcript": "Speaker 0: Now turn to section three on page six.\nSpeaker 1: Part three. You will hear a tutor discussing a report on a geography field trip with a student called Charlotte. First, you have some time to look at questions 21 to 26. Now listen carefully and answer questions 21 to 26.\nSpeaker 2: Hello, Charlotte. Come in. I just wanted to go through the first draft of your report on the field trip to the coastal sand dunes.\nSpeaker 0: Thank you. I'd really like some feedback. I found it quite hard to do.\nSpeaker 2: Yes. But these reports are really important. You did a great presentation on the planning of the trip before you went, and we've already decided to include that in your portfolio. Mhmm. But writing up the report's equally important because if you can identify an area that's caught your interest, you may decide to choose that as your specialty for next term.\nSpeaker 0: Okay. So what do you think of this first draft?\nSpeaker 2: Well, there's one problem, but it's something that can be easily remedied. Did you download the template for reports from the website?\nSpeaker 0: I didn't know there was one.\nSpeaker 2: Look on the course site under report writing.\nSpeaker 0: Mhmm.\nSpeaker 2: The home page is a bit confusing, but once you've got that template, you'll see what we're expecting from a report. Other than that, I think you'll easily meet the word count as you collected lots of data. Now first tell me, how did your group go about choosing the exact location? It's important to explain that in the report.\nSpeaker 0: We didn't want to influence our results in any way. So instead of studying a map and choosing an area that looked as if it would provide useful data, we listed six possible locations, and then we just tossed a dice. We ended up with an area just south of the jetty, nice and easy to get to.\nSpeaker 2: And what did you personally see as your main aim during the field trip?\nSpeaker 0: Well, we were looking at coastal sand dunes and analyzing whether there's any marked change in vegetation type and coverage as you go inland. And although we'd been told that one of the main objectives was to use the fieldwork techniques we'd learnt about, I wanted to look at soil structure. The others were focusing on things like the range of species and the density of the vegetation.\nSpeaker 2: Interesting.\nSpeaker 0: And in the group I was working in, there were people from another college. Can I include their data in my report?\nSpeaker 2: Well, what are the advantages of doing that?\nSpeaker 0: Well, we all looked at the same area of land, so they didn't collect any different data. But by adding theirs, it gives me a bigger sample, and that must make the results more reliable. That's how you can really test a hypothesis, I think.\nSpeaker 2: Good point. So include it. Now let's look at the introduction in a bit more detail. Your reasons for carrying out the study are fully described as are the ways you collected your information. Then you go on to the measurements you took. Was that easy to do?\nSpeaker 0: Some of them took longer than others. For example, getting the proportion of sand to vegetation. But I soon got used to the equipment and could get the elevation of the sand dunes quite quickly. It was funny to see some people trying to measure how high plants were as the plants waved about in the wind. I can imagine.\nSpeaker 1: Before you hear the rest of the discussion, you have some time to look at questions 27 to 30. Now listen and answer questions 27 to 30.\nSpeaker 2: Okay. Now we'd like to have your feedback on the trip as we're keen to make any necessary improvements for future trips.\nSpeaker 0: Okay.\nSpeaker 2: So first, the equipment. Was it easy to use?\nSpeaker 0: It was once you got used to it. It would have been good if we could have found out how to use it at college before we went, though. It's not exactly simple to use.\nSpeaker 2: I've noted that down. Now the data collection sheets you used, I wonder if they could be made more user friendly by cutting down the number of columns on each page.\nSpeaker 0: Yes. I think the information would still be clearly organized.\nSpeaker 2: And what did you think of the reference materials?\nSpeaker 0: Well, we had problems identifying some vegetation.\nSpeaker 2: Was that because you didn't get a full picture from the books you were using?\nSpeaker 0: Yes. I think so.\nSpeaker 2: And finally, how did you feel about working with people you didn't know in your group?\nSpeaker 0: Well, you probably need to discuss this with everyone. But for me, it meant I learned a lot from others too. So I think that's a pattern you should stick to.\nSpeaker 1: That is the end of part three. You now have thirty seconds to check your answers to part three.",
+	"body": {
+		"text": "27. Equipment [27]\n28. Data collection sheets [28]\n29. Reference material [29]\n30. Structure of groups [30]",
+		"html": "<p>27. Equipment [27]</p><p>28. Data collection sheets [28]</p><p>29. Reference material [29]</p><p>30. Structure of groups [30]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "21-26",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "The tutor tells Charlotte that the report is important because it will",
+					"options": [
+						{
+							"label": "A",
+							"text": "go into her portfolio"
+						},
+						{
+							"label": "B",
+							"text": "help her choose her next study option"
+						},
+						{
+							"label": "C",
+							"text": "form the basis of next term's presentation"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But writing up the report's equally important because if you can identify an area that's caught your interest, you may decide to choose that as your specialty for next term."
+					]
+				},
+				{
+					"number": 22,
+					"text": "What is the tutor's first impression of Charlotte's report?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It is under length"
+						},
+						{
+							"label": "B",
+							"text": "It doesn't follow the required format."
+						},
+						{
+							"label": "C",
+							"text": "It contains confusing statistical data."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"So what do you think of this first draft?",
+						"Well, there's one problem, but it's something that can be easily remedied.",
+						"Did you download the template for reports from the website?",
+						"I didn't know there was one.",
+						"Look on the course site under report writing.",
+						"The home page is a bit confusing, but once you've got that template, you'll see what we're expecting from a report."
+					]
+				},
+				{
+					"number": 23,
+					"text": "How did Charlotte's group choose the exact location to study?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They chose a location that had easy access."
+						},
+						{
+							"label": "B",
+							"text": "They found an interesting location on a map."
+						},
+						{
+							"label": "C",
+							"text": "They chose a location at random."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"So instead of studying a map and choosing an area that looked as if it would provide useful data, we listed six possible locations, and then we just tossed a dice."
+					]
+				},
+				{
+					"number": 24,
+					"text": "What was Charlotte's personal aim for the field trip?",
+					"options": [
+						{
+							"label": "A",
+							"text": "to collect information on the range of vegetation"
+						},
+						{
+							"label": "B",
+							"text": "to apply good fieldwork techniques"
+						},
+						{
+							"label": "C",
+							"text": "to analyse the composition of the soil"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"And although we'd been told that one of the main objectives was to use the fieldwork techniques we'd learnt about, I wanted to look at soil structure."
+					]
+				},
+				{
+					"number": 25,
+					"text": "Why does Charlotte want to include other students' data in her report?",
+					"options": [
+						{
+							"label": "A",
+							"text": "to make her findings more valid"
+						},
+						{
+							"label": "B",
+							"text": "to vary the type of data collected"
+						},
+						{
+							"label": "C",
+							"text": "to test several hypotheses"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But by adding theirs, it gives me a bigger sample, and that must make the results more reliable."
+					]
+				},
+				{
+					"number": 26,
+					"text": "Which measurements did Charlotte find easy to take?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the elevation of the land"
+						},
+						{
+							"label": "B",
+							"text": "the height of the vegetation"
+						},
+						{
+							"label": "C",
+							"text": "the ratio of sand to vegetation"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But I soon got used to the equipment and could get the elevation of the sand dunes quite quickly."
+					]
+				}
+			]
+		},
+		{
+			"range": "27-30",
+			"type": "MATCHING",
+			"instructions": "What suggestion is made for each of the following aspects of future field trips?\nChoose FOUR answers from the box and write the correct letter, A-F.",
+			"options": [
+				{
+					"label": "A",
+					"text": "more training needed before trip"
+				},
+				{
+					"label": "B",
+					"text": "reduce complexity"
+				},
+				{
+					"label": "C",
+					"text": "repeat on future trips"
+				},
+				{
+					"label": "D",
+					"text": "offer a wider range"
+				},
+				{
+					"label": "E",
+					"text": "organize additional tasks"
+				},
+				{
+					"label": "F",
+					"text": "more details required during trip"
+				}
+			],
+			"body": "27. Equipment [27]\n28. Data collection sheets [28]\n29. Reference material [29]\n30. Structure of groups [30]",
+			"body_html": "<p>27. Equipment [27]</p><p>28. Data collection sheets [28]</p><p>29. Reference material [29]</p><p>30. Structure of groups [30]</p>",
+			"questions": [
+				{
+					"number": 27,
+					"text": "Equipment",
+					"answer": "A",
+					"quotes": [
+						"It would have been good if we could have found out how to use it at college before we went, though."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Data collection sheets",
+					"answer": "B",
+					"quotes": [
+						"Now the data collection sheets you used, I wonder if they could be made more user friendly by cutting down the number of columns on each page."
+					]
+				},
+				{
+					"number": 29,
+					"text": "Reference material",
+					"answer": "D",
+					"quotes": [
+						"Was that because you didn't get a full picture from the books you were using?"
+					]
+				},
+				{
+					"number": 30,
+					"text": "Structure of groups",
+					"answer": "C",
+					"quotes": ["So I think that's a pattern you should stick to."]
+				}
+			]
+		}
+	],
+	"images": []
+}

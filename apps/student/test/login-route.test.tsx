@@ -190,7 +190,7 @@ describe("/login route", () => {
 		authState.session = {
 			user: { id: "u-student", email: "s@test.local", role: "student" },
 		};
-		router.search = { returnUrl: "/classes" };
+		router.search = { returnUrl: "/student/classes" };
 		render(<LoginPage />);
 
 		expect(router.navigate).toHaveBeenCalledWith({ to: "/classes" });
@@ -211,7 +211,7 @@ describe("/login route", () => {
 		router.search = {
 			error: "ROLE_MISMATCH",
 			error_description: "Email này thuộc tài khoản giáo viên.",
-			returnUrl: "/classes",
+			returnUrl: "/student/classes",
 		};
 		render(<LoginPage />);
 
@@ -219,7 +219,7 @@ describe("/login route", () => {
 			"Email này thuộc tài khoản giáo viên.",
 		);
 		expect(router.navigate).toHaveBeenCalledWith({
-			search: { returnUrl: "/classes" },
+			search: { returnUrl: "/student/classes" },
 			replace: true,
 		});
 	});
@@ -246,7 +246,7 @@ describe("/login route", () => {
 				},
 			},
 		});
-		router.search = { returnUrl: "/classes" };
+		router.search = { returnUrl: "/student/classes" };
 
 		try {
 			render(<LoginPage />);
@@ -259,7 +259,7 @@ describe("/login route", () => {
 			fireEvent.submit(document.getElementById("panel-signin") as Element);
 
 			await waitFor(() => {
-				expect(assignSpy).toHaveBeenCalledWith("/classes");
+				expect(assignSpy).toHaveBeenCalledWith("/student/classes");
 			});
 			expect(callOrder).toEqual(["clearSessionCache", "assign"]);
 		} finally {
@@ -285,7 +285,7 @@ describe("/login route", () => {
 				user: { id: "u-student", email: "new@example.com", role: "student" },
 			},
 		});
-		router.search = { returnUrl: "/onboarding" };
+		router.search = { returnUrl: "/student/onboarding" };
 
 		try {
 			render(<LoginPage />);
@@ -302,7 +302,7 @@ describe("/login route", () => {
 			fireEvent.submit(document.getElementById("panel-signup") as Element);
 
 			await waitFor(() => {
-				expect(assignSpy).toHaveBeenCalledWith("/onboarding");
+				expect(assignSpy).toHaveBeenCalledWith("/student/onboarding");
 			});
 			expect(callOrder).toEqual(["clearSessionCache", "assign"]);
 		} finally {

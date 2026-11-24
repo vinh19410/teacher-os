@@ -1,0 +1,123 @@
+{
+	"id": "781508e9-ee98-416a-bf00-447bf2838ab1",
+	"url": "https://stepielts.com/student/listening/781508e9-ee98-416a-bf00-447bf2838ab1?mode=practice",
+	"title": "Business Course",
+	"source": "Forecast Quý 2-2025",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/2ac826a5-90cb-4bde-9a20-aad6f6417e67.mp3",
+	"transcript": "Speaker 1: Jack, come in. You said you had some personal issues and wanted to talk about the business course?\nSpeaker 2: Yes Ms. Johnson. I accidentally hurt my left wrist playing basketball two weeks ago, it’s still healing now. I’m afraid there may be some tasks or course requirements I can’t fulfill at the moment.\nSpeaker 1: Sorry to hear that. Were you able to attend class last week?\nSpeaker 2: No, I was in the hospital for most of the time. So I missed all the classes. I am hoping that you can provide me with a description of the course and the assignments.\nSpeaker 1: No problem. I’m happy to provide you with a brief verbal description now. The first part of the course involves group discussions.\nSpeaker 2: I assume it’s just in-class discussion?\nSpeaker 1: Yes, but there’s more. Each group will be asked to conduct a research on a business. Let me check what your group was assigned ..... Oh here it is. It’s a small company that is losing money. Your group will need to give advice on what they can do to become more profitable.\nSpeaker 2: OK. I heard from some classmates that we don’t need to buy textbooks for this course.\nSpeaker 1: That’s true. The school will provide the learning materials this semester. And the textbooks will be recycled after the course ends and passed down to new students.\nSpeaker 2: Oh, am I allowed to write notes on them?\nSpeaker 1: For the textbooks, no. But feel free to write on the assigned photocopies.\nSpeaker 2: I see, I’ll remember that.\nSpeaker 1: The second segment of the class is the presentation segment. This is a individual activity in which you’ll choose a trade company and interview them about problems they face using their CRM system. I assume this activity won’t affect your wrist recovery?\nSpeaker 2: Not at all. I’ve done something similar before. But how can I convince them that this is for a school assignment?\nSpeaker 1: I suggest contacting their human resources department first. They generally can assist you and guide you on the relevant work.\nSpeaker 2: OK. What’s the next course arrangement?\nSpeaker 1: The next part of the course deals with an economic study of a hypothetical small business. Please note that it also comes with a test that will consist of about 20-25 multiple choice questions and about 10-15 fill-in-the-blank questions.\nSpeaker 2: When is that?\nSpeaker 1: The first Friday next month.\nSpeaker 2: Ah, I have a doctor’s appointment that day.\nSpeaker 1: Then, you should contact the administrative office to see if they can reschedule for you. By the way, you will answer the questions on a computer or a laptop.\nSpeaker 2: Oh, I’m not sure if I can finish on time, my wrist still hurts when I type.\nSpeaker 1: Hmm, you can also talk to the administrative office about your concern.\nSpeaker 2: OK, will do.\nSpeaker 1: The next part of the course comes with a big change; we’ve replaced the human resources system with communication system this semester.\nSpeaker 2: That’s good news for me. I’m not really into learning how to hire people. So what shall I prepare for this module?\nSpeaker 1: Based on a provided set of data, you will be asked to prepare analysis in essay format. There will be two essays to write and you will have to submit them by the end of next month.\nSpeaker 2: Will I be able to use visual aids in the content?\nSpeaker 1: Yes, visual aids will be allowed, but remember that the written part will still be the most important factor in grading your paper. Finally, the last segment of the course will have to do with development studies. Each student will be given a case study on a company and will be expected to analyze how that company can become more profitable.\nSpeaker 2: How will I know what aspects I need to include in the report?\nSpeaker 1: You need to work on an outline first when I assign the project. If you have trouble structuring it, you can come talk to me.",
+	"body": {
+		"text": "Course Arrangement\nAssignment\nTutor’s Advice\nGroup Discussion\nDo a [1]\nDon’t write [2] on textbooks, but only on [3]\nPresentation\n[4] a company about CRM system issues\nGet in touch with the personnel department\nEconomic Study\nHave a [5] on Friday\nTake it on a [6]\n[7] System\nWrite [8]\nCan use visual aid\nDevelopment Studies\nDo a [9] on a company\nAsk the tutor to help with the [10]",
+		"html": "<table><tbody><tr><td><p>Course Arrangement</p></td><td><p>Assignment </p></td><td><p>Tutor’s Advice</p></td></tr><tr><td><p>Group Discussion</p></td><td><p>Do a [1] </p></td><td><p>Don’t write [2] on textbooks, but only on [3]</p></td></tr><tr><td><p>Presentation</p></td><td><p>[4] a company about CRM system issues</p></td><td><p>Get in touch with the personnel department</p></td></tr><tr><td><p>Economic Study</p></td><td><p>Have a [5] on Friday</p></td><td><p>Take it on a [6]</p></td></tr><tr><td><p>[7]  System</p></td><td><p>Write [8]</p></td><td><p>Can use visual aid </p></td></tr><tr><td><p>Development Studies</p></td><td><p>Do a [9] on a company</p></td><td><p>Ask the tutor to help with the [10] </p></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "Course Arrangement\nAssignment\nTutor’s Advice\nGroup Discussion\nDo a [1]\nDon’t write [2] on textbooks, but only on [3]\nPresentation\n[4] a company about CRM system issues\nGet in touch with the personnel department\nEconomic Study\nHave a [5] on Friday\nTake it on a [6]\n[7] System\nWrite [8]\nCan use visual aid\nDevelopment Studies\nDo a [9] on a company\nAsk the tutor to help with the [10]",
+			"body_table": [
+				["Course Arrangement", "Assignment", "Tutor’s Advice"],
+				[
+					"Group Discussion",
+					"Do a [1]",
+					"Don’t write [2] on textbooks, but only on [3]"
+				],
+				[
+					"Presentation",
+					"[4] a company about CRM system issues",
+					"Get in touch with the personnel department"
+				],
+				["Economic Study", "Have a [5] on Friday", "Take it on a [6]"],
+				["[7] System", "Write [8]", "Can use visual aid"],
+				[
+					"Development Studies",
+					"Do a [9] on a company",
+					"Ask the tutor to help with the [10]"
+				]
+			],
+			"body_html": "<table><tbody><tr><td><p>Course Arrangement</p></td><td><p>Assignment </p></td><td><p>Tutor’s Advice</p></td></tr><tr><td><p>Group Discussion</p></td><td><p>Do a [1] </p></td><td><p>Don’t write [2] on textbooks, but only on [3]</p></td></tr><tr><td><p>Presentation</p></td><td><p>[4] a company about CRM system issues</p></td><td><p>Get in touch with the personnel department</p></td></tr><tr><td><p>Economic Study</p></td><td><p>Have a [5] on Friday</p></td><td><p>Take it on a [6]</p></td></tr><tr><td><p>[7]  System</p></td><td><p>Write [8]</p></td><td><p>Can use visual aid </p></td></tr><tr><td><p>Development Studies</p></td><td><p>Do a [9] on a company</p></td><td><p>Ask the tutor to help with the [10] </p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Do a [1]",
+					"answer": "research",
+					"quotes": [
+						"Each group will be asked to conduct a research on a business."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Don’t write [2] on textbooks, but only on [3]",
+					"answer": "notes",
+					"quotes": ["Oh, am I allowed to write notes on them?"]
+				},
+				{
+					"number": 3,
+					"text": "Don’t write [2] on textbooks, but only on [3]",
+					"answer": "assigned photocopies / photocopies",
+					"quotes": ["But feel free to write on the assigned photocopies."]
+				},
+				{
+					"number": 4,
+					"text": "[4] a company about CRM system issues",
+					"answer": "interview",
+					"quotes": [
+						"This is a individual activity in which you’ll choose a trade company and interview them about problems they face using their CRM system."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Have a [5] on Friday",
+					"answer": "test",
+					"quotes": [
+						"Please note that it also comes with a test that will consist of about 20-25 multiple choice questions and about 10-15 fill-in-the-blank questions."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Take it on a [6]",
+					"answer": "laptop / computer",
+					"quotes": [
+						"By the way, you will answer the questions on a computer or a laptop."
+					]
+				},
+				{
+					"number": 7,
+					"text": "[7] System",
+					"answer": "Communication",
+					"quotes": [
+						"The next part of the course comes with a big change; we’ve replaced the human resources system with communication system this semester."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Write [8]",
+					"answer": "two essays / 2 essays",
+					"quotes": [
+						"There will be two essays to write and you will have to submit them by the end of next month."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Do a [9] on a company",
+					"answer": "case study",
+					"quotes": [
+						"Each student will be given a case study on a company and will be expected to analyze how that company can become more profitable."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Ask the tutor to help with the [10]",
+					"answer": "outline",
+					"quotes": [
+						"You need to work on an outline first when I assign the project."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

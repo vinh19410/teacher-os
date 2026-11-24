@@ -8,7 +8,7 @@ test("tạo syllabus bằng upload XLSX: preview rồi thấy đủ modules/bu�
 	page,
 }) => {
 	await signUpViaApi(page);
-	await page.goto("/syllabus");
+	await page.goto("/teacher/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
 	const dialog = page.getByRole("dialog");
 	await dialog
@@ -64,7 +64,7 @@ test("từ chối file .csv với lỗi rõ ràng, khóa nút Tạo và mở kh�
 	page,
 }) => {
 	await signUpViaApi(page);
-	await page.goto("/syllabus");
+	await page.goto("/teacher/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
 	const dialog = page.getByRole("dialog");
 	const createButton = dialog.getByRole("button", {
@@ -94,7 +94,7 @@ test("import file 4 cột v3 legacy vẫn tạo syllabus không lỗi (regressio
 	page,
 }) => {
 	await signUpViaApi(page);
-	await page.goto("/syllabus");
+	await page.goto("/teacher/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
 	const dialog = page.getByRole("dialog");
 	await dialog
@@ -120,7 +120,7 @@ test("đóng popup tạo syllabus rồi mở lại giữ nguyên dữ liệu đ�
 	page,
 }) => {
 	await signUpViaApi(page);
-	await page.goto("/syllabus");
+	await page.goto("/teacher/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
 	const dialog = page.getByRole("dialog");
 	await dialog.getByPlaceholder("VD: IELTS Writing 7.0").fill("E2E Keep State");
@@ -168,7 +168,7 @@ test("nút gỡ file (X) hoạt động ở cả nhánh preview OK lẫn nhánh 
 	page,
 }) => {
 	await signUpViaApi(page);
-	await page.goto("/syllabus");
+	await page.goto("/teacher/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
 	const dialog = page.getByRole("dialog");
 

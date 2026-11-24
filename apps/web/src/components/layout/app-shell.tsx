@@ -1,7 +1,6 @@
 import {
 	Outlet,
 	redirect,
-	useNavigate,
 	useRouteContext,
 	useRouterState,
 } from "@tanstack/react-router";
@@ -38,6 +37,8 @@ const ROUTE_CRUMBS: Record<string, string[]> = {
 	"/_auth/leads/": ["Đăng ký mới"],
 	"/_auth/placement-test": ["Bài test đầu vào"],
 	"/_auth/placement-test/": ["Bài test đầu vào"],
+	"/_auth/courses": ["Khóa học"],
+	"/_auth/courses/": ["Khóa học"],
 	"/_auth/tuition/": ["Doanh thu"],
 	"/_auth/tuition/$invoiceId": ["Doanh thu"],
 	"/_auth/debts": ["Công nợ"],
@@ -63,7 +64,6 @@ const ORG_NAME = "Cô Mỹ Dạy Tiếng Anh";
 
 export function AppShell() {
 	const { session } = useRouteContext({ from: "/_auth" });
-	const navigate = useNavigate();
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 	const lastRouteId = useRouterState({
 		select: (s) => s.matches.at(-1)?.routeId,
@@ -75,9 +75,9 @@ export function AppShell() {
 	}, [collapsed]);
 
 	// Hard invariant: inside _auth a session must exist; a missing session means
-	// the guard chain is broken — fail loudly back to login instead of faking UI.
+	// the guard chain is broken — fail loudly back to root login instead of faking UI.
 	if (!session?.data?.user) {
-		throw redirect({ to: "/login" });
+		throw redirect({ href: "/login", reloadDocument: true });
 	}
 
 	const user = session.data.user;
@@ -116,13 +116,22 @@ export function AppShell() {
 				aria-label="Đăng xuất"
 				title="Đăng xuất"
 				onClick={() => {
-					authClient.signOut({
-						fetchOptions: {
-							onSuccess: () => {
-								navigate({ to: "/login" });
+					let redirected = false;
+					const goToLogin = () => {
+						if (redirected) return;
+						redirected = true;
+						window.location.assign("/login");
+					};
+					void Promise.resolve(
+						authClient.signOut({
+							fetchOptions: {
+								onSuccess: goToLogin,
+								onError: goToLogin,
 							},
-						},
-					});
+						}),
+					)
+						.catch(() => undefined)
+						.finally(goToLogin);
 				}}
 				className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-4"
 			>

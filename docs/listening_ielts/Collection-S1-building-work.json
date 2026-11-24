@@ -1,0 +1,105 @@
+{
+	"id": "10d73662-055b-4b46-b4a5-d9dc8de57687",
+	"url": "https://stepielts.com/student/listening/10d73662-055b-4b46-b4a5-d9dc8de57687?mode=practice",
+	"title": "Building Work",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/fc3d7902-7a73-43c6-b0bd-c11c845aa8df.mp3",
+	"transcript": "Speaker 1: Sally: Morning. Thanks for coming round. I’m Sally.\nSpeaker 2: Builder: Morning. So just before we get started, I’ll just make a few notes. So, we’re at 15 Hill Street?\nSpeaker 1: Sally: Yes, that’s right.\nSpeaker 2: Builder: Okay, great. And then I need to write down your contact information, just for the office, you know. So first, what’s your surname please, Sally?\nSpeaker 1: Sally: It’s Keyworth. I’ll spell that. K e y w o r t h.\nSpeaker 2: Builder: And your phone number? I’ve got that somewhere. Yes. 0275846613?\nSpeaker 1: Sally: That’s right.\nSpeaker 2: Builder: Okay, Sally. So what building work would you like to have done?\nSpeaker 1: Sally: Well, let’s go into the kitchen first. So you see it’s quite dark in here. We’ve tried having a few lights fitted, but it hasn’t really made any difference. So what we’ve decided is the window is too small. We’d like a larger one.\nSpeaker 2: Builder: That shouldn’t be a problem. And is there anything else you’d like done in the kitchen?\nSpeaker 1: Sally: Well, at this time of year, I mean, I shouldn’t complain really, but I wish it wasn’t so hot in here. Is there anything you can do about that?\nSpeaker 2: Air conditioning?\nSpeaker 1: Builder: It’s too expensive.\nSpeaker 2: How about a fan then?\nSpeaker 1: Sally: Yes. That would be perfect.\nSpeaker 2: Builder: Righto. And what’s next, Sally?\nSpeaker 1: Sally: Well, if we walk through into the bathroom, The thing is, when my father’s staying, he can’t use the bath. So I thought here on the back wall, I’d like you to fit a shower. Is that possible?\nSpeaker 2: Builder: Shouldn’t be too hard. I’ll get you some brochures because there are a few ways of doing that.\nSpeaker 1: Sally: Thanks.\nSpeaker 2: Now those tiles on the wall look new, so do you want to keep those?\nSpeaker 1: Sally: Yes. The tiles are new, but actually my husband doesn’t like them. We want to change to those very small ones. But do I have to choose a color now?\nSpeaker 2: Builder: You can do that later. I’ll get some charts for you to look at.\nSpeaker 1: Sally: Now the last thing, let’s walk outside. I need to show you some things outside the house.\nSpeaker 2: Builder: Righto. Oh, nice garden. And the fence looks in good condition.\nSpeaker 1: Sally: Yes. It’s new, but the thing is the gate. It’s too low. You have to bend down to open it. We need something that’s higher.\nSpeaker 2: Builder: Right. I’ll see to that.\nSpeaker 1: Sally: Then the other thing is the garage here. We had a break in, actually.\nSpeaker 2: Builder: Yeah. I can see. The door should be fine, but the lock, I’ll replace that, shall I?\nSpeaker 1: Sally: Yes. Thanks. Sally: Then also, if you step back here and look up on the roof, you can see that it’s damaged.\nSpeaker 2: Builder: Did that happen in the storm a couple of weeks ago?\nSpeaker 1: Sally: Yes, that’s right.\nSpeaker 2: Builder: I’ll get up there and take a look at that then. That might be quite a big job, but I’ll get back to you once I’ve had a look.\nSpeaker 1: Sally: Okay.\nSpeaker 2: Builder: I can see that your rain gutter is broken as well.\nSpeaker 1: Sally: Can you fix that?\nSpeaker 2: Builder: Well, I’ll need to replace it, maybe with a steel one. It’d be stronger.\nSpeaker 1: Sally: No. Plastic will be fine, thanks. It’s cheaper.\nSpeaker 2: Builder: Okay.\nSpeaker 1: Sally: And that’s everything, I think. Is there any other information you need? What about a start date?\nSpeaker 2: Builder: Well, I’m completely booked all April, and I’ve got a job on May 5. That’ll be a few days, so let’s say May 8..\nSpeaker 1: Sally: Okay.\nSpeaker 2: Builder: Now what about a key in case you’re out?\nSpeaker 1: We have a security code. I’ll give you that. It’s a mix of letters and numbers. The code is AG4176.\nSpeaker 2: Builder: Got that. Okay. We’ll organize some.",
+	"body": {
+		"text": "Address: 15 Hill Street\nContact Information\nName: Sally [1]\nPhone: 027 584 6613\nKitchen\nNeeds a bigger window\nThe kitchen is too hot - fit a [2]\nBathroom\nput in a [3] on the back wall\ndecide the [4] of the small tiles later.\nOutside\nput a higher [5] in the garden.\nput a new [6] on the garage door.\nfix the roof - it was damaged by a [7]\nfit a new rain gutter made of [8]\nOther information\nStart date: [9]\nSecurity code:[10]",
+		"html": "<table><tbody><tr><td colspan=\"1\" rowspan=\"1\"><strong>Address</strong>: 15 Hill Street\n</td></tr><tr><td colspan=\"1\" rowspan=\"1\"><h3>Contact Information</h3><ul><li>\nName: Sally [1]\n</li><li>\nPhone: 027 584 6613\n</li></ul></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><h3>Kitchen</h3><ul><li>\nNeeds a bigger window\n</li><li>\nThe kitchen is too hot - fit a [2]\n</li></ul></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><h3>Bathroom</h3><ul><li>\nput in a [3] on the back wall\n</li><li>\ndecide the [4] of the small tiles later.\n</li></ul></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><h3>Outside</h3><ul><li>\nput a higher [5] in the garden.\n</li><li>\nput a new [6] on the garage door.\n</li><li>\nfix the roof - it was damaged by a [7]\n</li><li>\nfit a new rain gutter made of [8]\n</li></ul></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><h3>Other information</h3><ul><li>\nStart date: [9]\n</li><li>\nSecurity code:[10]\n</li></ul></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Address: 15 Hill Street\nContact Information\nName: Sally [1]\nPhone: 027 584 6613\nKitchen\nNeeds a bigger window\nThe kitchen is too hot - fit a [2]\nBathroom\nput in a [3] on the back wall\ndecide the [4] of the small tiles later.\nOutside\nput a higher [5] in the garden.\nput a new [6] on the garage door.\nfix the roof - it was damaged by a [7]\nfit a new rain gutter made of [8]\nOther information\nStart date: [9]\nSecurity code:[10]",
+			"body_table": [
+				["Address: 15 Hill Street"],
+				["Contact Information\nName: Sally [1]\nPhone: 027 584 6613"],
+				["Kitchen\nNeeds a bigger window\nThe kitchen is too hot - fit a [2]"],
+				[
+					"Bathroom\nput in a [3] on the back wall\ndecide the [4] of the small tiles later."
+				],
+				[
+					"Outside\nput a higher [5] in the garden.\nput a new [6] on the garage door.\nfix the roof - it was damaged by a [7]\nfit a new rain gutter made of [8]"
+				],
+				["Other information\nStart date: [9]\nSecurity code:[10]"]
+			],
+			"body_html": "<table><tbody><tr><td colspan=\"1\" rowspan=\"1\"><strong>Address</strong>: 15 Hill Street\n</td></tr><tr><td colspan=\"1\" rowspan=\"1\"><h3>Contact Information</h3><ul><li>\nName: Sally [1]\n</li><li>\nPhone: 027 584 6613\n</li></ul></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><h3>Kitchen</h3><ul><li>\nNeeds a bigger window\n</li><li>\nThe kitchen is too hot - fit a [2]\n</li></ul></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><h3>Bathroom</h3><ul><li>\nput in a [3] on the back wall\n</li><li>\ndecide the [4] of the small tiles later.\n</li></ul></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><h3>Outside</h3><ul><li>\nput a higher [5] in the garden.\n</li><li>\nput a new [6] on the garage door.\n</li><li>\nfix the roof - it was damaged by a [7]\n</li><li>\nfit a new rain gutter made of [8]\n</li></ul></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><h3>Other information</h3><ul><li>\nStart date: [9]\n</li><li>\nSecurity code:[10]\n</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Name: Sally [1]",
+					"answer": "Keyworth",
+					"quotes": ["Sally: It’s Keyworth."]
+				},
+				{
+					"number": 2,
+					"text": "The kitchen is too hot - fit a [2]",
+					"answer": "fan",
+					"quotes": ["How about a fan then?"]
+				},
+				{
+					"number": 3,
+					"text": "put in a [3] on the back wall",
+					"answer": "shower",
+					"quotes": [
+						"So I thought here on the back wall, I’d like you to fit a shower."
+					]
+				},
+				{
+					"number": 4,
+					"text": "decide the [4] of the small tiles later.",
+					"answer": "color / colour",
+					"quotes": ["But do I have to choose a color now?"]
+				},
+				{
+					"number": 5,
+					"text": "put a higher [5] in the garden.",
+					"answer": "gate",
+					"quotes": ["It’s new, but the thing is the gate."]
+				},
+				{
+					"number": 6,
+					"text": "put a new [6] on the garage door.",
+					"answer": "lock",
+					"quotes": [
+						"The door should be fine, but the lock, I’ll replace that, shall I?"
+					]
+				},
+				{
+					"number": 7,
+					"text": "fix the roof - it was damaged by a [7]",
+					"answer": "storm",
+					"quotes": [
+						"Builder: Did that happen in the storm a couple of weeks ago?"
+					]
+				},
+				{
+					"number": 8,
+					"text": "fit a new rain gutter made of [8]",
+					"answer": "plastic",
+					"quotes": ["Plastic will be fine, thanks."]
+				},
+				{
+					"number": 9,
+					"text": "Start date: [9]",
+					"answer": "8th May / 8 May / May 8 / May 8th",
+					"quotes": ["That’ll be a few days, so let’s say May 8.."]
+				},
+				{
+					"number": 10,
+					"text": "Security code:[10]",
+					"answer": "AG4176",
+					"quotes": ["The code is AG4176."]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,110 @@
+{
+	"id": "74e25b32-8c5f-47c5-9704-36319f210fc1",
+	"url": "https://stepielts.com/student/listening/74e25b32-8c5f-47c5-9704-36319f210fc1?mode=practice",
+	"title": "Student Accommodation Form",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/10df218d-72c1-473f-8004-ca954e7983f8.mp3",
+	"transcript": "Speaker 1: Officer: Good morning. Can I help you?\nSpeaker 2: Student: Yes. I’ve just been accepted on a course at the university, and I’d like to try and arrange accommodation in the hall of residence.\nSpeaker 1: Officer: Yes. Certainly. Please sit down. What I’ll do is fill in a form with you to find out a little more about your preferences and so forth.\nSpeaker 2: Student: Thank you.\nSpeaker 1: Officer: So first of all, can I take your name?\nSpeaker 2: Student: It’s Anubhat.\nSpeaker 1: Officer: Could you spell your name, please?\nSpeaker 2: Student: Yes. A n u b h a, t t.\nSpeaker 1: Officer: Thanks. And could I ask your date of birth?\nSpeaker 2: Student: The 03/31/1972.\nSpeaker 1: Officer: Thank you. And where are you from? Student: India. Officer: Oh, right. And, what will you be studying?\nSpeaker 2: Student: I’m doing a course in nursing.\nSpeaker 1: Officer: Right. Thank you. And how long would you want to stay in hall, do you think?\nSpeaker 2: Student: Well, it would take three years, but I’d only like to stay in hall for two. I’d like to think about living outside for the third year.\nSpeaker 1: Officer: Fine. And what did you have in mind for catering? Do you want to cook for yourself or have all your meals provided? Student: That that’s full board.\nSpeaker 2: Is there something in between?\nSpeaker 1: Officer: Yes. You can just have evening meal provided, which is half board.\nSpeaker 2: Student: That’s what I’d prefer.\nSpeaker 1: Officer: Yes. A lot of students opt for that. Now with that in mind, do you have any special diet? Anything we should know about?\nSpeaker 2: Student: Yes. I don’t take red meat.\nSpeaker 1: No red meat. Officer: Now thinking about the room itself, we have a number of options. You can have a single study bedroom, or you can have a shared one. These are both what we call simple rooms. The other alternative is to opt for a single bed sit, which actually has more space and better facilities. There’s about 20 a week difference between them.\nSpeaker 2: Student: Well, actually, my grant is quite generous, and I think the bedsit sounds the best option.\nSpeaker 1: Officer: Lovely. I’ll put you down for that, and we’ll see what availability is like. Now can I ask some other personal details which we like to have on record?\nSpeaker 2: Student: Yes. Of course.\nSpeaker 1: Officer: I wonder if you could let us know what your interests are. This might help us get a closer match for placing you in a particular hall.\nSpeaker 2: Student: Well, I love the theater.\nSpeaker 1: Officer: Right.\nSpeaker 2: Student: And I enjoy sports, particularly badminton.\nSpeaker 1: Officer: Ah, that’s worth knowing. Now what we finish with on the form is really a list from you of what your priorities are in choosing a hall, and we’ll do our best to take these into account.\nSpeaker 2: Student: Well, the first thing is I’d prefer a hall where there are other mature students, if possible.\nSpeaker 1: Officer: Yes. We do have halls which tend to cater for slightly older students.\nSpeaker 2: Student: And I’d prefer to be out of town.\nSpeaker 1: Officer: That’s actually very good for you because we tend to have more vacancies in out of town halls.\nSpeaker 2: Student: Lucky.\nSpeaker 1: Yes.\nSpeaker 2: Officer: Anything else? Student: Well, I would like somewhere with a shared area, a a TV room, for example, or or something like that. It’s a good way to socialize.\nSpeaker 1: Officer: Certainly is.\nSpeaker 2: That’s it?\nSpeaker 1: Now we just need a contact telephone number for you.\nSpeaker 2: Student: Oh, sure. I’ll just find it. It’s 667549.\nSpeaker 1: Officer: Great. So we’ll be in contact with you as soon as possible.",
+	"body": {
+		"text": "Accommodation Form – Student Information\nExample: Type of accommodation: hall of residence\nName: Anu [1]\nDate of birth: [2] 1972\nCountry of origin: India\nCourse of study: [3]\nNumber of years planned in hall: [4]\nPreferred catering arrangement: half board\nSpecial dietary requirements: no [5] (red)\nPreferred room type: a single [6]\nInterests:\nthe [7]\nbadminton\nPriorities in choice of hall:\nto be with other students who are [8]\nto live outside the [9]\nto have a [10] area for socialising\nContact phone number: 667549",
+		"html": "<h3><strong>Accommodation Form – Student Information</strong></h3><strong>Example: </strong>Type of accommodation: <strong>hall</strong> of residence\n\n<table><tbody><tr><td colspan=\"1\" rowspan=\"1\"><strong>Name:</strong> Anu [1]\n</td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Date of birth:</strong> [2] 1972\n</td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Country of origin:</strong> India\n</td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Course of study:</strong> [3]\n</td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Number of years planned in hall:</strong> [4]\n</td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Preferred catering arrangement:</strong> half board\n</td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Special dietary requirements:</strong> no [5] (red)\n</td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Preferred room type:</strong> a single [6]\n</td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Interests:</strong><ul><li>\nthe [7]\n</li><li>\nbadminton\n</li></ul></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Priorities in choice of hall:</strong><ul><li>\nto be with other students who are [8]\n</li><li>\nto live outside the [9]\n</li><li>\nto have a [10] area for socialising\n</li></ul></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Contact phone number:</strong> 667549\n</td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "FORM_COMPLETION",
+			"instructions": "Complete the form below. Write ONE WORD AND/OR A NUMBER for each answer.",
+			"body": "Accommodation Form – Student Information\nExample: Type of accommodation: hall of residence\nName: Anu [1]\nDate of birth: [2] 1972\nCountry of origin: India\nCourse of study: [3]\nNumber of years planned in hall: [4]\nPreferred catering arrangement: half board\nSpecial dietary requirements: no [5] (red)\nPreferred room type: a single [6]\nInterests:\nthe [7]\nbadminton\nPriorities in choice of hall:\nto be with other students who are [8]\nto live outside the [9]\nto have a [10] area for socialising\nContact phone number: 667549",
+			"body_table": [
+				["Name: Anu [1]"],
+				["Date of birth: [2] 1972"],
+				["Country of origin: India"],
+				["Course of study: [3]"],
+				["Number of years planned in hall: [4]"],
+				["Preferred catering arrangement: half board"],
+				["Special dietary requirements: no [5] (red)"],
+				["Preferred room type: a single [6]"],
+				["Interests:\nthe [7]\nbadminton"],
+				[
+					"Priorities in choice of hall:\nto be with other students who are [8]\nto live outside the [9]\nto have a [10] area for socialising"
+				],
+				["Contact phone number: 667549"]
+			],
+			"body_html": "<h3><strong>Accommodation Form – Student Information</strong></h3><strong>Example: </strong>Type of accommodation: <strong>hall</strong> of residence\n\n<table><tbody><tr><td colspan=\"1\" rowspan=\"1\"><strong>Name:</strong> Anu [1]\n</td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Date of birth:</strong> [2] 1972\n</td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Country of origin:</strong> India\n</td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Course of study:</strong> [3]\n</td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Number of years planned in hall:</strong> [4]\n</td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Preferred catering arrangement:</strong> half board\n</td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Special dietary requirements:</strong> no [5] (red)\n</td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Preferred room type:</strong> a single [6]\n</td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Interests:</strong><ul><li>\nthe [7]\n</li><li>\nbadminton\n</li></ul></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Priorities in choice of hall:</strong><ul><li>\nto be with other students who are [8]\n</li><li>\nto live outside the [9]\n</li><li>\nto have a [10] area for socialising\n</li></ul></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><strong>Contact phone number:</strong> 667549\n</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Name: Anu [1]",
+					"answer": "Bhatt",
+					"quotes": ["A n u b h a, t t."]
+				},
+				{
+					"number": 2,
+					"text": "Date of birth: [2] 1972",
+					"answer": "31 March / 31st March / March 31 / March 31st",
+					"quotes": ["Student: The 03/31/1972."]
+				},
+				{
+					"number": 3,
+					"text": "Course of study: [3]",
+					"answer": "Nursing",
+					"quotes": ["Student: I’m doing a course in nursing."]
+				},
+				{
+					"number": 4,
+					"text": "Number of years planned in hall: [4]",
+					"answer": "2 / two",
+					"quotes": [
+						"Student: Well, it would take three years, but I’d only like to stay in hall for two."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Special dietary requirements: no [5] (red)",
+					"answer": "meat",
+					"quotes": ["No red meat."]
+				},
+				{
+					"number": 6,
+					"text": "Preferred room type: a single [6]",
+					"answer": "bedsit / bed-sit",
+					"quotes": [
+						"Student: Well, actually, my grant is quite generous, and I think the bedsit sounds the best option."
+					]
+				},
+				{
+					"number": 7,
+					"text": "the [7]",
+					"answer": "theatre / theater",
+					"quotes": ["Student: Well, I love the theater."]
+				},
+				{
+					"number": 8,
+					"text": "to be with other students who are [8]",
+					"answer": "mature",
+					"quotes": [
+						"Student: Well, the first thing is I’d prefer a hall where there are other mature students, if possible."
+					]
+				},
+				{
+					"number": 9,
+					"text": "to live outside the [9]",
+					"answer": "town",
+					"quotes": ["Student: And I’d prefer to be out of town."]
+				},
+				{
+					"number": 10,
+					"text": "to have a [10] area for socialising",
+					"answer": "shared",
+					"quotes": [
+						"Student: Well, I would like somewhere with a shared area, a a TV room, for example, or or something like that."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

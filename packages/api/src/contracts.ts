@@ -223,6 +223,8 @@ export const CLASS_ERROR_CODES = {
 	SCHEDULE_LOCKED: "CLASS_SCHEDULE_LOCKED",
 	/** Lớp đang tạm dừng — chặn tuyển sinh mới và thao tác ghi giảng dạy (#694). */
 	CLASS_PAUSED: "CLASS_PAUSED",
+	/** Phiên bản thông báo khai giảng đã thay đổi bởi thao tác đồng thời khác. */
+	OPENING_VERSION_CONFLICT: "CLASS_OPENING_VERSION_CONFLICT",
 } as const;
 export type ClassErrorCode =
 	(typeof CLASS_ERROR_CODES)[keyof typeof CLASS_ERROR_CODES];
@@ -270,6 +272,59 @@ export const classUpdateSchema = z
 	.strict()
 	.superRefine(refineClassFields);
 export type ClassUpdate = z.infer<typeof classUpdateSchema>;
+
+export const CLASS_OPENING_SEND_MODES = ["initial", "new_only", "all"] as const;
+export type ClassOpeningSendMode = (typeof CLASS_OPENING_SEND_MODES)[number];
+
+export const CLASS_OPENING_NOTE_MAX_LENGTH = 1000;
+
+export const classConfirmOpeningSchema = z
+	.object({
+		mode: z.enum(CLASS_OPENING_SEND_MODES),
+		startDate: z
+			.string()
+			.trim()
+			.refine((v) => isValidIsoCalendarDate(v), "Ngày khai giảng không hợp lệ")
+			.optional(),
+		note: z
+			.string()
+			.trim()
+			.max(CLASS_OPENING_NOTE_MAX_LENGTH, "Lời nhắn tối đa 1.000 ký tự")
+			.default(""),
+		expectedVersion: z.number().int().min(0),
+	})
+	.strict();
+export type ClassConfirmOpeningInput = z.infer<
+	typeof classConfirmOpeningSchema
+>;
+
+export const classConfirmOpeningSkippedStudentSchema = z
+	.object({
+		studentId: z.string(),
+		studentName: z.string(),
+	})
+	.strict();
+export type ClassConfirmOpeningSkippedStudent = z.infer<
+	typeof classConfirmOpeningSkippedStudentSchema
+>;
+
+export const classConfirmOpeningResponseSchema = z
+	.object({
+		ok: z.literal(true),
+		openingConfirmedAt: z.string(),
+		openingAnnouncementVersion: z.number().int().min(1),
+		startDate: z.string(),
+		openingNote: z.string(),
+		queuedEmailCount: z.number().int().min(0),
+		inAppOnlyCount: z.number().int().min(0),
+		skippedNoEmail: z.array(classConfirmOpeningSkippedStudentSchema),
+		skippedAlreadySentCount: z.number().int().min(0),
+		notifiedStudentIds: z.array(z.string()),
+	})
+	.strict();
+export type ClassConfirmOpeningResponse = z.infer<
+	typeof classConfirmOpeningResponseSchema
+>;
 
 /**
  * Bulk content cho syllabus create (Excel/CSV import).
@@ -1866,6 +1921,10 @@ export interface KernelClassRow {
 	tuitionFee: number | null;
 	notes: string;
 	schedulingMode?: "auto" | "manual" | string;
+	openingConfirmedAt?: string | null;
+	openingNote?: string;
+	openingAnnouncementVersion?: number;
+	openingNotifiedStudentIds?: string[];
 }
 
 export const ENROLLMENT_STATUSES = ["invited", "active"] as const;
@@ -3057,9 +3116,27 @@ export const studentQuizQuestionSchema = z
 		 * detail.type` (fallback kép). */
 		type: z.string().optional(),
 		pin: z.object({ x: z.number(), y: z.number() }).nullish(),
+		/** Khóa tập đáp án không thứ tự cho `mcq_many` — optional để tương thích ngược. */
+		answerSet: z.string().trim().min(1).max(20).nullish(),
 	})
 	.strict();
 export type StudentQuizQuestion = z.infer<typeof studentQuizQuestionSchema>;
+
+/** Nhóm câu hỏi gửi xuống màn làm bài học viên (giữ nguyên hướng dẫn + optionBank riêng từng nhóm). */
+export const studentQuizGroupSchema = z
+	.object({
+		id: z.string(),
+		type: z.string(),
+		instruction: z.string(),
+		startIndex: z.number().int().min(0),
+		count: z.number().int().min(1).max(40),
+		optionBank: z.array(z.string()).default([]),
+		answersInline: z.boolean().optional(),
+		splitContent: z.boolean().optional(),
+		dragDrop: z.boolean().optional(),
+	})
+	.strict();
+export type StudentQuizGroup = z.infer<typeof studentQuizGroupSchema>;
 
 /**
  * GET /api/student/assignments/:assignmentId/quiz — đề sạch cho take screen.
@@ -3094,6 +3171,8 @@ export const studentQuizDetailSchema = z
 		 * đề tự chấm vẫn giữ kín note tới sau khi nộp (RT#6). */
 		note: z.string().optional(),
 		questions: z.array(studentQuizQuestionSchema),
+		/** Nhóm câu hỏi có cấu trúc từ thư viện đề — giữ optionBank + instruction riêng từng nhóm. */
+		groups: z.array(studentQuizGroupSchema).optional(),
 		/** #574: đề phần Writing đính kèm của bài gộp (chỉ gửi khi có). */
 		writing: studentWritingSectionSchema.optional(),
 		attempt: z
@@ -4361,10 +4440,12 @@ export const NOTIFICATION_EVENT_TYPES = [
 	"assignment_published",
 	"grade_returned",
 	"placement_submitted",
+	"daily_deadline_reminder",
 	"invoice_issued",
 	"tuition_reminder",
 	"schedule_changed",
 	"holiday_created",
+	"class_opening_confirmed",
 ] as const;
 
 /** #454 — 4 nhóm chip lọc màn notification log (plan TOS-21 D2). */
@@ -4387,10 +4468,12 @@ export const NOTIFICATION_EVENT_GROUP_BY_TYPE: Record<
 	assignment_published: "assignment",
 	grade_returned: "assignment",
 	placement_submitted: "assignment",
+	daily_deadline_reminder: "assignment",
 	invoice_issued: "tuition",
 	tuition_reminder: "tuition",
 	schedule_changed: "schedule",
 	holiday_created: "schedule",
+	class_opening_confirmed: "schedule",
 };
 
 export const NOTIFICATION_STATUSES = [

@@ -8,6 +8,7 @@ export * from "./class-assignment";
 export * from "./class-session";
 export * from "./class-session-meeting";
 export * from "./comment-bank";
+export * from "./course-catalog";
 export * from "./credit-wallet";
 export * from "./enrollment";
 export * from "./exam-import-job";

@@ -3,10 +3,13 @@ import { LIBRARY_ANSWER_CHOICES, LIBRARY_OPTION_BANK_MAX } from "./contracts";
 import type {
 	LibraryPartInput,
 	LibraryQuestionGroup,
+	LibraryTestListPageResponse,
 } from "./library-contracts";
 import {
 	countClozeMarkers,
+	DEFAULT_LIBRARY_TEST_PAGE_SIZE,
 	isLibraryBankableType,
+	isLibraryTestPageSize,
 	LIBRARY_AUDIO_MAX_BYTES,
 	LIBRARY_AUDIO_MIME,
 	LIBRARY_CLOZE_TYPES,
@@ -15,13 +18,19 @@ import {
 	LIBRARY_OPTION_BANK_TYPES,
 	LIBRARY_READING_TYPES,
 	LIBRARY_SKILLS,
+	LIBRARY_TEST_MAX_PAGE,
+	LIBRARY_TEST_PAGE_SIZES,
 	libraryOptionBankKindFor,
 	libraryPartDtoSchema,
 	libraryPartUpsertSchema,
 	libraryQuestionGroupSchema,
 	librarySkillTypes,
 	libraryTestCreateSchema,
+	libraryTestListCountsSchema,
+	libraryTestListPageResponseSchema,
 	libraryTestUpdateSchema,
+	parseLibraryTestPageParam,
+	parseLibraryTestPageSizeParam,
 	validatePartForReady,
 	validateTestReady,
 } from "./library-contracts";
@@ -100,7 +109,7 @@ describe("validatePartForReady", () => {
 		expect(issues.some((issue) => issue.path === "questions")).toBe(true);
 	});
 
-	test("image-based: reading diagram chỉ cần imageUrl (pin tuỳ chọn); listening map vẫn cần imageUrl + pin mọi câu", () => {
+	test("image-based: reading diagram và listening map/diagram chỉ cần imageUrl (pin tuỳ chọn)", () => {
 		const diagramWithPins = readingPart({
 			type: "diagram",
 			imageUrl: "https://cdn.example.com/d.png",
@@ -126,29 +135,52 @@ describe("validatePartForReady", () => {
 		);
 		expect(noImage.some((issue) => issue.path === "imageUrl")).toBe(true);
 
-		// listening map — vẫn bắt buộc imageUrl + pin mọi câu.
+		// listening map & diagram: bắt buộc imageUrl, pin tuỳ chọn.
 		const mapNoImage = validatePartForReady(
 			"listening",
 			listeningPart({ type: "map", audioName: "s2.mp3" }),
 		);
 		expect(mapNoImage.some((issue) => issue.path === "imageUrl")).toBe(true);
 
-		const mapMissingPin = validatePartForReady(
+		const mapWithoutPins = validatePartForReady(
 			"listening",
 			listeningPart({
 				type: "map",
 				audioName: "s2.mp3",
 				imageUrl: "https://cdn.example.com/map.png",
-				optionBank: ["Cafe", "Library"],
+				optionBank: ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
 				questions: [
-					{ stem: "q1", answer: "A", alts: "", pin: { x: 10, y: 20 } },
-					{ stem: "q2", answer: "B", alts: "" },
+					{ stem: "Registration area", answer: "G", alts: "" },
+					{ stem: "Judging area", answer: "I", alts: "" },
 				],
 			}),
 		);
+		expect(mapWithoutPins).toEqual([]);
+
+		const listeningDiagramNoImage = validatePartForReady(
+			"listening",
+			listeningPart({
+				part: "s4",
+				type: "diagram",
+				audioName: "s4.mp3",
+				questions: [{ stem: "lid made of ____", answer: "glass", alts: "" }],
+			}),
+		);
 		expect(
-			mapMissingPin.some((issue) => issue.path === "questions.1.pin"),
+			listeningDiagramNoImage.some((issue) => issue.path === "imageUrl"),
 		).toBe(true);
+
+		const listeningDiagramOk = validatePartForReady(
+			"listening",
+			listeningPart({
+				part: "s4",
+				type: "diagram",
+				audioName: "s4.mp3",
+				imageUrl: "https://cdn.example.com/diagram.png",
+				questions: [{ stem: "lid made of ____", answer: "glass", alts: "" }],
+			}),
+		);
+		expect(listeningDiagramOk).toEqual([]);
 	});
 
 	test("type không thuộc catalog của part bị từ chối", () => {
@@ -633,7 +665,18 @@ describe("Issue #762 — 15 IELTS Reading types & validation rules", () => {
 			"flow",
 			"notes",
 			"sent4",
+			"mcq",
 			"mcq_many",
+			"tablecomp",
+			"summary",
+			"fill_blank",
+			"shortans",
+			"diagram",
+			"matching",
+			"info",
+			"match_names",
+			"features",
+			"tfng",
 		]);
 		for (const legacy of ["note", "tablecomp", "flowchart"]) {
 			const issues = validatePartForReady(
@@ -1181,5 +1224,401 @@ describe("listening mcq_many in library part contracts", () => {
 		if (!parsed.success) return;
 		expect(validatePartForReady("listening", parsed.data)).toEqual([]);
 		expect(validateTestReady("listening", [parsed.data])).toEqual([]);
+	});
+});
+
+describe("library test list pagination contracts", () => {
+	function validPageResponse(
+		overrides: Partial<LibraryTestListPageResponse> = {},
+	): LibraryTestListPageResponse {
+		return {
+			tests: [
+				{
+					id: "test-1",
+					title: "Cambridge 18 Test 1",
+					description: "Full reading test",
+					skill: "reading",
+					timeLimitSeconds: 3600,
+					collection: "Cambridge 18",
+					testGroup: "Test 1",
+					status: "ready",
+					createdAt: "2026-10-20T00:00:00.000Z",
+					updatedAt: "2026-10-21T00:00:00.000Z",
+					partCount: 3,
+					questionCount: 40,
+					hasAllAudio: true,
+				},
+			],
+			total: 1,
+			page: 1,
+			pageSize: 20,
+			totalPages: 1,
+			counts: {
+				skill: { reading: 1, listening: 0 },
+				status: { draft: 0, ready: 1 },
+			},
+			...overrides,
+		};
+	}
+
+	test("pagination constants match expected values", () => {
+		expect(LIBRARY_TEST_PAGE_SIZES).toEqual([10, 20, 50]);
+		expect(DEFAULT_LIBRARY_TEST_PAGE_SIZE).toBe(20);
+		expect(LIBRARY_TEST_MAX_PAGE).toBe(100_000);
+	});
+
+	test("isLibraryTestPageSize accepts 10, 20, 50 and rejects other values", () => {
+		for (const valid of [10, 20, 50]) {
+			expect(isLibraryTestPageSize(valid)).toBe(true);
+		}
+		for (const invalid of [
+			0,
+			15,
+			25,
+			100,
+			-10,
+			Number.NaN,
+			Number.POSITIVE_INFINITY,
+			20.5,
+		]) {
+			expect(isLibraryTestPageSize(invalid)).toBe(false);
+		}
+	});
+
+	test("parseLibraryTestPageParam parses canonical integers 1..LIBRARY_TEST_MAX_PAGE", () => {
+		expect(parseLibraryTestPageParam("1")).toBe(1);
+		expect(parseLibraryTestPageParam("42")).toBe(42);
+		expect(parseLibraryTestPageParam(String(LIBRARY_TEST_MAX_PAGE))).toBe(
+			LIBRARY_TEST_MAX_PAGE,
+		);
+
+		for (const invalid of [
+			undefined,
+			"",
+			"0",
+			"-1",
+			"1.5",
+			"01",
+			"abc",
+			" 1",
+			"1 ",
+			"+1",
+			String(LIBRARY_TEST_MAX_PAGE + 1),
+			"999999999999999999999999",
+		]) {
+			expect(parseLibraryTestPageParam(invalid)).toBeNull();
+		}
+	});
+
+	test("parseLibraryTestPageSizeParam accepts only canonical allowed page sizes", () => {
+		expect(parseLibraryTestPageSizeParam("10")).toBe(10);
+		expect(parseLibraryTestPageSizeParam("20")).toBe(20);
+		expect(parseLibraryTestPageSizeParam("50")).toBe(50);
+
+		for (const invalid of [
+			undefined,
+			"",
+			"0",
+			"15",
+			"020",
+			"010",
+			"100",
+			"-10",
+			"20.0",
+			" 20",
+			"abc",
+		]) {
+			expect(parseLibraryTestPageSizeParam(invalid)).toBeNull();
+		}
+	});
+
+	test("libraryTestListCountsSchema validates non-negative integer counts and rejects extras", () => {
+		expect(
+			libraryTestListCountsSchema.safeParse({
+				skill: { reading: 12, listening: 8 },
+				status: { draft: 5, ready: 15 },
+			}).success,
+		).toBe(true);
+
+		expect(
+			libraryTestListCountsSchema.safeParse({
+				skill: { reading: -1, listening: 0 },
+				status: { draft: 0, ready: 0 },
+			}).success,
+		).toBe(false);
+
+		expect(
+			libraryTestListCountsSchema.safeParse({
+				skill: { reading: 1, listening: 0, writing: 0 },
+				status: { draft: 0, ready: 0 },
+			}).success,
+		).toBe(false);
+
+		expect(
+			libraryTestListCountsSchema.safeParse({
+				skill: { reading: 1, listening: 0 },
+				status: { draft: 0, ready: 0, archived: 1 },
+			}).success,
+		).toBe(false);
+	});
+
+	test("libraryTestListPageResponseSchema parses valid payloads including empty page", () => {
+		const populated = validPageResponse();
+		expect(libraryTestListPageResponseSchema.parse(populated)).toEqual(
+			populated,
+		);
+
+		for (const pageSize of [10, 20, 50] as const) {
+			const empty = validPageResponse({
+				tests: [],
+				total: 0,
+				page: 1,
+				pageSize,
+				totalPages: 1,
+				counts: {
+					skill: { reading: 0, listening: 0 },
+					status: { draft: 0, ready: 0 },
+				},
+			});
+			expect(libraryTestListPageResponseSchema.safeParse(empty).success).toBe(
+				true,
+			);
+		}
+	});
+
+	test("libraryTestListPageResponseSchema rejects invalid bounds, pageSize, counts, and extra keys", () => {
+		// Invalid pageSize
+		expect(
+			libraryTestListPageResponseSchema.safeParse({
+				...validPageResponse(),
+				pageSize: 25,
+			}).success,
+		).toBe(false);
+
+		// page < 1
+		expect(
+			libraryTestListPageResponseSchema.safeParse({
+				...validPageResponse(),
+				page: 0,
+			}).success,
+		).toBe(false);
+
+		// totalPages < 1
+		expect(
+			libraryTestListPageResponseSchema.safeParse({
+				...validPageResponse(),
+				totalPages: 0,
+			}).success,
+		).toBe(false);
+
+		// Negative total
+		expect(
+			libraryTestListPageResponseSchema.safeParse({
+				...validPageResponse(),
+				total: -1,
+			}).success,
+		).toBe(false);
+
+		// Non-integer pagination values
+		expect(
+			libraryTestListPageResponseSchema.safeParse({
+				...validPageResponse(),
+				page: 1.5,
+			}).success,
+		).toBe(false);
+
+		// Missing counts
+		const { counts: _omitted, ...withoutCounts } = validPageResponse();
+		expect(
+			libraryTestListPageResponseSchema.safeParse(withoutCounts).success,
+		).toBe(false);
+
+		// Negative counts
+		expect(
+			libraryTestListPageResponseSchema.safeParse({
+				...validPageResponse(),
+				counts: {
+					skill: { reading: 0, listening: 0 },
+					status: { draft: -2, ready: 1 },
+				},
+			}).success,
+		).toBe(false);
+
+		// Extra unknown top-level key
+		expect(
+			libraryTestListPageResponseSchema.safeParse({
+				...validPageResponse(),
+				extra: true,
+			}).success,
+		).toBe(false);
+
+		// Extra unknown key inside counts
+		expect(
+			libraryTestListPageResponseSchema.safeParse({
+				...validPageResponse(),
+				counts: {
+					skill: { reading: 1, listening: 0 },
+					status: { draft: 0, ready: 1 },
+					unknown: 0,
+				},
+			}).success,
+		).toBe(false);
+	});
+});
+
+describe("Extended IELTS Listening library types & rules", () => {
+	test("listening summary & flow hỗ trợ optional word bank và tái dùng chữ cái", () => {
+		expect(isLibraryBankableType("listening", "summary")).toBe(true);
+		expect(isLibraryBankableType("listening", "flow")).toBe(true);
+		expect(
+			libraryOptionBankKindFor("listening", "summary", [], []),
+		).toBeUndefined();
+		expect(
+			libraryOptionBankKindFor("listening", "summary", [], ["Opt A", "Opt B"]),
+		).toBe("letter");
+		expect(
+			libraryOptionBankKindFor("listening", "flow", [], []),
+		).toBeUndefined();
+		expect(
+			libraryOptionBankKindFor("listening", "flow", [], ["Step A", "Step B"]),
+		).toBe("letter");
+
+		// Summary điền từ tự do (không bank)
+		expect(
+			validatePartForReady(
+				"listening",
+				listeningPart({
+					type: "summary",
+					questions: [
+						{ stem: "The river flows ____", answer: "north", alts: "" },
+					],
+					optionBank: [],
+				}),
+			),
+		).toEqual([]);
+
+		// Summary có word bank + tái dùng chữ cái (4 câu dùng 2 options)
+		expect(
+			validatePartForReady(
+				"listening",
+				listeningPart({
+					type: "summary",
+					optionBank: ["higher", "lower"],
+					questions: [
+						{ stem: "Group 1", answer: "A", alts: "" },
+						{ stem: "Group 2", answer: "B", alts: "" },
+						{ stem: "Group 3", answer: "A", alts: "" },
+						{ stem: "Group 4", answer: "B", alts: "" },
+					],
+				}),
+			),
+		).toEqual([]);
+
+		// Flow có word bank
+		expect(
+			validatePartForReady(
+				"listening",
+				listeningPart({
+					part: "s3",
+					type: "flow",
+					optionBank: ["draft", "review", "submit"],
+					questions: [
+						{ stem: "Step 1 ____", answer: "A", alts: "" },
+						{ stem: "Step 2 ____", answer: "C", alts: "" },
+					],
+				}),
+			),
+		).toEqual([]);
+	});
+
+	test("listening matching types cho phép tái dùng chữ cái (bank nhỏ hơn số câu) và hỗ trợ mcq 4 đáp án, tablecomp, shortans, fill_blank, tfng", () => {
+		for (const mType of [
+			"match2",
+			"matching",
+			"info",
+			"match_names",
+			"features",
+		] as const) {
+			expect(
+				validatePartForReady(
+					"listening",
+					listeningPart({
+						part: "s2",
+						type: mType,
+						optionBank: [
+							"very interested",
+							"slightly interested",
+							"not interested",
+						],
+						questions: [
+							{ stem: "Sports", answer: "C", alts: "" },
+							{ stem: "Music", answer: "B", alts: "" },
+							{ stem: "Drama", answer: "A", alts: "" },
+							{ stem: "News", answer: "B", alts: "" },
+						],
+					}),
+				),
+			).toEqual([]);
+		}
+
+		// MCQ 4 đáp án A-D cho listening
+		expect(
+			validatePartForReady(
+				"listening",
+				listeningPart({
+					type: "mcq",
+					questions: [
+						{
+							stem: "Why do people stay?",
+							opts: ["Chairs", "Cheap", "Quiet", "Staff"],
+							answer: "D",
+							alts: "",
+						},
+					],
+				}),
+			),
+		).toEqual([]);
+
+		// tablecomp, shortans, fill_blank, tfng
+		expect(
+			validatePartForReady(
+				"listening",
+				listeningPart({
+					type: "tablecomp",
+					questions: [{ stem: "Bus colour: ____", answer: "green", alts: "" }],
+				}),
+			),
+		).toEqual([]);
+		expect(
+			validatePartForReady(
+				"listening",
+				listeningPart({
+					type: "shortans",
+					questions: [
+						{ stem: "What does it buy?", answer: "computers", alts: "" },
+					],
+				}),
+			),
+		).toEqual([]);
+		expect(
+			validatePartForReady(
+				"listening",
+				listeningPart({
+					type: "fill_blank",
+					questions: [{ stem: "No ____ limit.", answer: "age", alts: "" }],
+				}),
+			),
+		).toEqual([]);
+		expect(
+			validatePartForReady(
+				"listening",
+				listeningPart({
+					type: "tfng",
+					questions: [
+						{ stem: "The mother saves money.", answer: "TRUE", alts: "" },
+					],
+				}),
+			),
+		).toEqual([]);
 	});
 });

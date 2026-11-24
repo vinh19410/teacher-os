@@ -10,7 +10,12 @@ import {
 	vietnamTodayISO,
 } from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
-import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import {
+	API_ORIGIN,
+	LMS_ORIGIN,
+	STUDENT_BASE_URL,
+	WEB_ORIGIN,
+} from "./origins";
 
 const REPORT_DIR = fileURLToPath(
 	new URL("../../../plans/reports", import.meta.url),
@@ -51,7 +56,7 @@ async function signUpStudentOnPortal(
 	opts: { name: string; email: string; password?: string },
 ): Promise<void> {
 	const password = opts.password ?? "password-8chars";
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signup").click();
 	await page.locator("#signup-name").fill(opts.name);
 	await page.locator("#signup-email").fill(opts.email);
@@ -61,7 +66,7 @@ async function signUpStudentOnPortal(
 		timeout: 15_000,
 	});
 	await verifyStudentEmailFromMailLog(page, opts.email);
-	await expect(page).toHaveURL(new RegExp(`^${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 }
@@ -180,11 +185,11 @@ test.describe("Issue #694 — Reversible class pause & resume E2E", () => {
 		}
 
 		// Kiểm chứng trước khi pause: buổi hôm nay hiện trên /schedule.
-		await page.goto("/schedule");
+		await page.goto("/teacher/schedule");
 		await expect(page.getByText(TARGET_CLASS).first()).toBeVisible();
 
 		// 1. Vào /classes/$classId, kiểm tra badge "Đang hoạt động" và di chuyển Tab bàn phím tới "Tạm dừng lớp".
-		await page.goto(`/classes/${targetClassId}`);
+		await page.goto(`/teacher/classes/${targetClassId}`);
 		const statusBadge = page.getByTestId("class-status-badge");
 		await expect(statusBadge).toHaveText("Đang hoạt động");
 
@@ -240,8 +245,8 @@ test.describe("Issue #694 — Reversible class pause & resume E2E", () => {
 			namRow.getByRole("button", { name: "Kích hoạt" }),
 		).toBeDisabled();
 
-		// 2. /students -> AddStudentModal ẩn lớp đang tạm dừng khỏi dropdown.
-		await page.goto("/students");
+		// 2. /teacher/students -> AddStudentModal ẩn lớp đang tạm dừng khỏi dropdown.
+		await page.goto("/teacher/students");
 		await page.getByRole("button", { name: "Thêm học viên" }).first().click();
 		const addStudentDialog = page.getByRole("dialog", {
 			name: "Thêm học viên mới",
@@ -257,22 +262,22 @@ test.describe("Issue #694 — Reversible class pause & resume E2E", () => {
 		await addStudentDialog.getByRole("button", { name: "Hủy" }).click();
 		await expect(addStudentDialog).toBeHidden();
 
-		// 3. /classes -> chip lọc "Tạm dừng" cập nhật URL ?filter=paused & chụp POT 3 viewport Light & Dark.
-		await page.goto("/classes");
+		// 3. /teacher/classes -> chip lọc "Tạm dừng" cập nhật URL ?filter=paused & chụp POT 3 viewport Light & Dark.
+		await page.goto("/teacher/classes");
 		await page.getByRole("button", { name: "Tạm dừng", exact: true }).click();
-		await expect(page).toHaveURL(/\/classes\?filter=paused/);
+		await expect(page).toHaveURL(/\/teacher\/classes\?filter=paused/);
 		await expect(page.locator("h3", { hasText: TARGET_CLASS })).toBeVisible();
 		await expect(page.locator("h3", { hasText: CONTROL_CLASS })).toHaveCount(0);
 		await capturePotScreenshots(page, "694-classes-paused");
 
-		// 4. /schedule & /dashboard ẩn buổi upcoming; /attendance ngày quá khứ giữ lịch sử chỉ xem.
-		await page.goto("/schedule");
+		// 4. /teacher/schedule & /teacher/dashboard ẩn buổi upcoming; /teacher/attendance ngày quá khứ giữ lịch sử chỉ xem.
+		await page.goto("/teacher/schedule");
 		await expect(page.getByText(TARGET_CLASS)).toHaveCount(0);
 
-		await page.goto("/dashboard");
+		await page.goto("/teacher/dashboard");
 		await expect(page.getByText(TARGET_CLASS)).toHaveCount(0);
 
-		await page.goto(`/attendance?date=${pastISO}&status=all`);
+		await page.goto(`/teacher/attendance?date=${pastISO}&status=all`);
 		const pastRowBtn = page.getByRole("button", {
 			name: new RegExp(TARGET_CLASS.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
 		});
@@ -316,7 +321,7 @@ test.describe("Issue #694 — Reversible class pause & resume E2E", () => {
 			name: "Học Viên Lan",
 			email: lanEmail,
 		});
-		await lanPage.goto(`${STUDENT_ORIGIN}/classes/${targetClassId}`);
+		await lanPage.goto(`${STUDENT_BASE_URL}/classes/${targetClassId}`);
 		await expect(lanPage.getByTestId("class-paused-banner")).toBeVisible();
 		await expect(lanPage.getByText("Tạm dừng").first()).toBeVisible();
 		await expect(lanPage.getByText("Buổi tới")).toHaveCount(0);
@@ -331,7 +336,7 @@ test.describe("Issue #694 — Reversible class pause & resume E2E", () => {
 		await lanCtx.close();
 
 		// 6. Giáo viên bấm "Mở lại lớp" -> khôi phục trạng thái "Đang hoạt động", lịch /schedule, nút "Kích hoạt".
-		await page.goto(`/classes/${targetClassId}`);
+		await page.goto(`/teacher/classes/${targetClassId}`);
 		await page.getByRole("button", { name: "Mở lại lớp" }).click();
 		const resumeModal = page.getByRole("dialog", {
 			name: `Mở lại lớp ${TARGET_CLASS}`,
@@ -351,7 +356,7 @@ test.describe("Issue #694 — Reversible class pause & resume E2E", () => {
 				.getByRole("button", { name: "Kích hoạt" }),
 		).toBeEnabled();
 
-		await page.goto("/schedule");
+		await page.goto("/teacher/schedule");
 		await expect(page.getByText(TARGET_CLASS).first()).toBeVisible();
 	});
 });

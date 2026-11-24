@@ -3,8 +3,9 @@ import {
 	buildSkillRubricDisplay,
 	categoryLabel,
 	errorNumberLabel,
+	normalizePlacementErrorCategory,
 	numberErrors,
-	PLACEMENT_ERROR_CATEGORIES,
+	placementErrorCategoriesForSkill,
 } from "./highlight.js";
 
 /**
@@ -12,7 +13,9 @@ import {
  * (createTextNode), không dùng API chèn HTML thô.
  */
 
-const root = document.getElementById("resultRoot");
+function getRoot() {
+	return document.getElementById("resultRoot");
+}
 
 function el(tag, attrs = {}, children = []) {
 	const node = document.createElement(tag);
@@ -44,7 +47,8 @@ function readToken() {
 }
 
 function setView(...nodes) {
-	root.replaceChildren(...nodes);
+	const root = getRoot();
+	if (root) root.replaceChildren(...nodes);
 }
 
 function messageCard({ kicker, title, text, action }) {
@@ -125,16 +129,52 @@ function statTile(label, value) {
 	]);
 }
 
-function rubricList(criteria) {
-	if (!criteria) return null;
+function criterionTile({ key, label, valueText, comment }) {
+	const trimmedComment = typeof comment === "string" ? comment.trim() : "";
+	const children = [
+		el("dt", {}, [
+			el("span", { className: "criterion-dot", "aria-hidden": "true" }),
+			label,
+		]),
+		el("dd", {}, valueText),
+	];
+	if (trimmedComment) {
+		children.push(
+			el(
+				"dd",
+				{
+					className: "result-criterion-comment",
+					"data-criterion-comment": key,
+				},
+				trimmedComment,
+			),
+		);
+	}
 	return el(
-		"dl",
-		{ className: "result-rubric" },
-		criteria.map(({ label, valueText }) => statTile(label, valueText)),
+		"div",
+		{
+			className: `result-stat result-stat--criterion err-border-${key}`,
+		},
+		children,
 	);
 }
 
-function buildLegend() {
+export function rubricList(criteria, isIelts = false) {
+	if (!criteria) return null;
+	return el(
+		"dl",
+		{
+			className: isIelts
+				? "result-rubric result-rubric--criteria"
+				: "result-rubric",
+		},
+		criteria.map((item) =>
+			isIelts ? criterionTile(item) : statTile(item.label, item.valueText),
+		),
+	);
+}
+
+export function buildLegend(skill) {
 	return el(
 		"div",
 		{ className: "error-legend", "aria-label": "Chú giải loại lỗi" },
@@ -143,7 +183,7 @@ function buildLegend() {
 			el(
 				"ul",
 				{ className: "error-legend-list" },
-				PLACEMENT_ERROR_CATEGORIES.map(({ key, label }) =>
+				placementErrorCategoriesForSkill(skill).map(({ key, label }) =>
 					el("li", {}, [
 						el(
 							"span",
@@ -159,8 +199,12 @@ function buildLegend() {
 }
 
 /** Văn bản có highlight + danh sách thẻ lỗi. `prefix` tách id giữa Writing/Speaking. */
-function buildAnnotatedText({ prefix, text, errors }) {
+export function buildAnnotatedText({ prefix, skill, text, errors }) {
 	const numbered = numberErrors(errors);
+	const resolveStyleCategory = (raw) => {
+		const rawCategory = typeof raw === "string" ? raw : "";
+		return normalizePlacementErrorCategory(rawCategory, skill) ?? "grammar";
+	};
 	const textBox = el("p", { className: "annotated-text" });
 	for (const seg of buildHighlightSegments(text, errors)) {
 		if (!seg.error) {
@@ -168,10 +212,12 @@ function buildAnnotatedText({ prefix, text, errors }) {
 			continue;
 		}
 		const e = seg.error;
+		const styleCat = resolveStyleCategory(e.category);
+		const label = categoryLabel(e.category, skill);
 		const mark = el(
 			"mark",
 			{
-				className: `err-mark err-${e.category}`,
+				className: `err-mark err-${styleCat}`,
 				id: `${prefix}-mark-${e.number}`,
 			},
 			[
@@ -181,7 +227,7 @@ function buildAnnotatedText({ prefix, text, errors }) {
 					{
 						className: "err-num",
 						href: `#${prefix}-card-${e.number}`,
-						"aria-label": `Lỗi ${e.number}, ${categoryLabel(e.category)}. Xem giải thích`,
+						"aria-label": `Lỗi ${e.number}, ${label}. Xem giải thích`,
 					},
 					errorNumberLabel(e.number),
 				),
@@ -203,10 +249,12 @@ function buildAnnotatedText({ prefix, text, errors }) {
 					numbered.map((e) => {
 						const located =
 							Number.isInteger(e.start) && Number.isInteger(e.end);
+						const styleCat = resolveStyleCategory(e.category);
+						const label = categoryLabel(e.category, skill);
 						return el(
 							"li",
 							{
-								className: `error-card err-border-${e.category}`,
+								className: `error-card err-border-${styleCat}`,
 								id: `${prefix}-card-${e.number}`,
 								tabindex: "-1",
 							},
@@ -227,7 +275,7 @@ function buildAnnotatedText({ prefix, text, errors }) {
 												{ className: "err-num" },
 												errorNumberLabel(e.number),
 											),
-									el("strong", {}, categoryLabel(e.category)),
+									el("strong", {}, label),
 								]),
 								el("p", { className: "error-fix" }, [
 									el("span", { className: "error-quote" }, e.quote),
@@ -263,7 +311,7 @@ function textBlock(title, text, id) {
 	return section(title, [el("p", { className: "result-prose" }, text)], id);
 }
 
-function renderResult(view) {
+export function renderResult(view) {
 	const obj = view.objective ?? {};
 	const parts = [];
 
@@ -313,6 +361,7 @@ function renderResult(view) {
 		"writing",
 		view.writingScore,
 		view.writingRubric,
+		view.writingCriterionComments,
 	);
 	const writingChildren = [];
 	if (writingDisplay.totalText) {
@@ -320,14 +369,18 @@ function renderResult(view) {
 			el("p", { className: "result-total" }, writingDisplay.totalText),
 		);
 	}
-	const writingRubric = rubricList(writingDisplay.criteria);
+	const writingRubric = rubricList(
+		writingDisplay.criteria,
+		writingDisplay.isIelts,
+	);
 	if (writingRubric) writingChildren.push(writingRubric);
 	if (view.writingText) {
 		writingChildren.push(
 			el("h3", {}, "Bài viết của bạn"),
-			buildLegend(),
+			buildLegend("writing"),
 			...buildAnnotatedText({
 				prefix: "w",
+				skill: "writing",
 				text: view.writingText,
 				errors: view.writingErrors,
 			}),
@@ -341,6 +394,7 @@ function renderResult(view) {
 		"speaking",
 		view.speakingScore,
 		view.speakingRubric,
+		view.speakingCriterionComments,
 	);
 	const speakingChildren = [];
 	if (view.speakingStatus === "skipped") {
@@ -353,14 +407,18 @@ function renderResult(view) {
 			el("p", { className: "result-total" }, speakingDisplay.totalText),
 		);
 	}
-	const speakingRubric = rubricList(speakingDisplay.criteria);
+	const speakingRubric = rubricList(
+		speakingDisplay.criteria,
+		speakingDisplay.isIelts,
+	);
 	if (speakingRubric) speakingChildren.push(speakingRubric);
 	if (view.speakingTranscript) {
 		speakingChildren.push(
 			el("h3", {}, "Transcript bài nói của bạn"),
-			buildLegend(),
+			buildLegend("speaking"),
 			...buildAnnotatedText({
 				prefix: "s",
+				skill: "speaking",
 				text: view.speakingTranscript,
 				errors: view.speakingErrors,
 			}),
@@ -431,4 +489,6 @@ async function load() {
 	renderResult(view);
 }
 
-load();
+if (typeof document !== "undefined" && getRoot()) {
+	load();
+}

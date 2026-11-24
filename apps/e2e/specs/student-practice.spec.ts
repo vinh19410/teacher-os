@@ -2,7 +2,7 @@ import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
 import { verifyStudentEmailFromMailLog } from "./helpers";
 import { type QuizFixture, seedQuizFixture } from "./helpers-quiz";
-import { STUDENT_ORIGIN } from "./origins";
+import { LMS_ORIGIN, STUDENT_BASE_URL } from "./origins";
 
 /**
  * #378 phase 10 — Luyện tập: catalog 5 skill (không Dictation), start đề
@@ -60,12 +60,12 @@ async function seedPracticeTest(): Promise<string> {
 }
 
 async function signIn(page: Page): Promise<void> {
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signin").click();
 	await page.locator("#signin-email").fill(studentEmail);
 	await page.locator("#signin-password").fill(PASSWORD);
 	await page.locator("#panel-signin button[type='submit']").click();
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 }
@@ -92,7 +92,7 @@ test.beforeAll(async ({ browser }) => {
 
 	const context = await browser.newContext();
 	const page = await context.newPage();
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signup").click();
 	await page.locator("#signup-name").fill(studentName);
 	await page.locator("#signup-email").fill(studentEmail);
@@ -102,7 +102,7 @@ test.beforeAll(async ({ browser }) => {
 		timeout: 15_000,
 	});
 	await verifyStudentEmailFromMailLog(page, studentEmail);
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 	await context.close();
@@ -120,7 +120,7 @@ test.describe("Student practice catalog (#378 phase 10)", () => {
 		await expect(nav.getByText("Lịch sử")).toBeVisible();
 
 		// Mục cha dẫn về /practice → redirect skill đầu (/practice/reading).
-		await page.goto(`${STUDENT_ORIGIN}/practice`);
+		await page.goto(`${STUDENT_BASE_URL}/practice`);
 		// Redirect giữ query (?page=1) — khớp path, không neo cuối.
 		await expect(page).toHaveURL(/\/practice\/reading(\?|$)/);
 		await expect(page.getByTestId("student-practice-page")).toBeVisible();
@@ -161,7 +161,7 @@ test.describe("Student practice catalog (#378 phase 10)", () => {
 
 	test("bài luyện tập KHÔNG lọt bảng điểm lớp", async ({ page }) => {
 		await signIn(page);
-		await page.goto(`${STUDENT_ORIGIN}/classes/${fixture.classId}`);
+		await page.goto(`${STUDENT_BASE_URL}/classes/${fixture.classId}`);
 		const body = page.locator("main");
 		await body.getByTestId("class-tab-assignments").click();
 		// Đề practice không bao giờ xuất hiện trong danh sách bài tập lớp;
@@ -181,7 +181,7 @@ test.describe("Student practice catalog (#378 phase 10)", () => {
 
 	test("skill chưa có đề ready → empty state", async ({ page }) => {
 		await signIn(page);
-		await page.goto(`${STUDENT_ORIGIN}/practice/writing`);
+		await page.goto(`${STUDENT_BASE_URL}/practice/writing`);
 		await expect(
 			page.getByText("Giáo viên chưa có đề luyện tập cho kỹ năng này"),
 		).toBeVisible();
@@ -192,7 +192,7 @@ test.describe("Student practice catalog (#378 phase 10)", () => {
 	}) => {
 		await signIn(page);
 		// Keyboard navigation: từ trang Tổng quan (/), focus button "Luyện tập" → Enter mở nhóm → Tab tới "Vocabulary" → Enter
-		await page.goto(`${STUDENT_ORIGIN}/`);
+		await page.goto(`${STUDENT_BASE_URL}/`);
 		const nav = page.getByRole("navigation", { name: "Điều hướng học viên" });
 		const practiceBtn = nav.getByRole("button", { name: "Luyện tập" });
 		await practiceBtn.focus();
@@ -232,7 +232,7 @@ test.describe("Student practice catalog (#378 phase 10)", () => {
 		await page.setViewportSize({ width: 1280, height: 720 });
 
 		// Redirect legacy /vocab → /practice/vocabulary
-		await page.goto(`${STUDENT_ORIGIN}/vocab`);
+		await page.goto(`${STUDENT_BASE_URL}/vocab`);
 		await expect(page).toHaveURL(/\/practice\/vocabulary$/);
 		await expect(page.getByTestId("vocab-overview-page")).toBeVisible();
 	});

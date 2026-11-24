@@ -1,0 +1,103 @@
+{
+	"id": "50a0dc99-43c8-4a93-b799-773f4d1dc86f",
+	"url": "https://stepielts.com/student/listening/50a0dc99-43c8-4a93-b799-773f4d1dc86f?mode=practice",
+	"title": "Southwest Cycle Path",
+	"source": "Collection",
+	"section": 1,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/bd48bf5f-132c-4c45-9d8a-75937a5136ae.mp3",
+	"transcript": "Speaker 0: Hi. I'm really interested in exploring the famous Southwest Cycle Path. Any suggestions?\nSpeaker 1: Definitely. The Southwest Cycle Path is not just for cycling. It can also be used for walking. It's a scenic route that spans 50 kilometers.\nSpeaker 0: That sounds amazing. Is there any information available to help me plan my trip?\nSpeaker 1: Absolutely. I recommend checking out the website greenride.org.uk. As its name suggests, it's dedicated to promoting riding a bike as a green mode of transport.\nSpeaker 0: What information does it offer?\nSpeaker 1: They provide detailed information about the path, including the distance, preparations you can make, and most importantly, a good map to help you navigate. It's a great resource to ensure you don't miss any major attractions or get lost.\nSpeaker 0: That's great. Do they offer guided tours for group travel? Some of my friends want to join me as well.\nSpeaker 1: Yes. If you prefer travelling in groups, they provide a guide for each group consisting of five to 15 people. This ensures a personalised experience for everyone.\nSpeaker 0: Wow. That sounds like a fun way to explore. Are there any specific routes that are popular among cyclists?\nSpeaker 1: Definitely. The Valley Trail is the most popular route. It not only offers stunning scenic views, but also has three huts for bird watching enthusiasts. Just remember, while you can take photos, we don't recommend feeding wildlife.\nSpeaker 0: That's fantastic. Do I need to bring my own bike, or can I rent one?\nSpeaker 1: You can rent a bike from CycleFast. They have rental options starting from £9 for a minimum of five hours. Even if you finish the whole trip within four hours, you still need to pay this amount.\nSpeaker 0: That's reasonable. It's a long and demanding trip after all.\nSpeaker 1: They also offer other cycling equipment like helmets, which are provided for free. Plus, those traveling with children can also rent a child seat at £4.\nSpeaker 0: That's convenient. Should I make a booking in advance?\nSpeaker 1: Yes. It's advisable to make an early booking, especially during the holiday. CycleFast might have limited availability if you wait until the last minute.\nSpeaker 0: Great. How can I contact CycleFast to make bike reservations?\nSpeaker 1: You can reach out to CycleFast to make your booking and inquire about their services. Their hotline is 01743228906.\nSpeaker 0: Thank you for information. Is there anything else I should keep in mind before starting my cycling adventure?\nSpeaker 1: Yes. Make sure to check the weather conditions before you begin. Sometimes, thunderstorms, hurricanes, or hail can lead to the temporary closure of the cycling path for safety reasons.\nSpeaker 0: That's a good reminder. Lastly, what about parking options near the cycling path?\nSpeaker 1: When driving to the cycling path, you can find parking available behind the post office, which should be convenient for you.\nSpeaker 0: Thank you so much for all the information. I can't wait to start cycling and explore the South West Cycle Path.",
+	"body": {
+		"text": "General Information\nThe cycle path is also used for walking.\nIt is 50 kilometres in length.\nInformation is available on [1] .org.uk\nUsers can find information about the distance, preparations and a [2]\nGroups with a minimum of 5 people can be accompanied by a [3]\nThe Valley Trail has three spots for [4]\nCycle Fast\nBike hire costs £9 for a period of [5]\nHiring a [6] costs £4.\nBooking is recommended during the [7] season.\nPhone number: [8]\nOther Suggestions\nFind out about the [9] before they set off.\nCar park is available behind the [10]",
+		"html": "<table><tbody><tr><td><h4><strong>General Information</strong></h4><ul><li>The cycle path is also used for walking.</li><li>It is 50 kilometres in length.</li><li>Information is available on [1] .org.uk</li><li>Users can find information about the distance, preparations and a [2]</li><li>Groups with a minimum of 5 people can be accompanied by a [3]</li><li>The Valley Trail has three spots for [4]</li></ul><h4><strong>Cycle Fast</strong></h4><ul><li>Bike hire costs £9 for a period of [5]</li><li>Hiring a [6] costs £4.</li><li>Booking is recommended during the [7] season.</li><li>Phone number: [8]</li></ul><h4><strong>Other Suggestions</strong></h4><ul><li>Find out about the [9] before they set off.</li><li>Car park is available behind the [10]</li></ul></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "1-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below.\nWrite NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+			"body": "General Information\nThe cycle path is also used for walking.\nIt is 50 kilometres in length.\nInformation is available on [1] .org.uk\nUsers can find information about the distance, preparations and a [2]\nGroups with a minimum of 5 people can be accompanied by a [3]\nThe Valley Trail has three spots for [4]\nCycle Fast\nBike hire costs £9 for a period of [5]\nHiring a [6] costs £4.\nBooking is recommended during the [7] season.\nPhone number: [8]\nOther Suggestions\nFind out about the [9] before they set off.\nCar park is available behind the [10]",
+			"body_html": "<table><tbody><tr><td><h4><strong>General Information</strong></h4><ul><li>The cycle path is also used for walking.</li><li>It is 50 kilometres in length.</li><li>Information is available on [1] .org.uk</li><li>Users can find information about the distance, preparations and a [2]</li><li>Groups with a minimum of 5 people can be accompanied by a [3]</li><li>The Valley Trail has three spots for [4]</li></ul><h4><strong>Cycle Fast</strong></h4><ul><li>Bike hire costs £9 for a period of [5]</li><li>Hiring a [6] costs £4.</li><li>Booking is recommended during the [7] season.</li><li>Phone number: [8]</li></ul><h4><strong>Other Suggestions</strong></h4><ul><li>Find out about the [9] before they set off.</li><li>Car park is available behind the [10]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Information is available on [1] .org.uk",
+					"answer": "greenride",
+					"quotes": ["I recommend checking out the website greenride.org.uk."]
+				},
+				{
+					"number": 2,
+					"text": "Users can find information about the distance, preparations and a [2]",
+					"answer": "good map / map",
+					"quotes": [
+						"They provide detailed information about the path, including the distance, preparations you can make, and most importantly, a good map to help you navigate."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Groups with a minimum of 5 people can be accompanied by a [3]",
+					"answer": "guide",
+					"quotes": [
+						"If you prefer travelling in groups, they provide a guide for each group consisting of five to 15 people."
+					]
+				},
+				{
+					"number": 4,
+					"text": "The Valley Trail has three spots for [4]",
+					"answer": "birdwatching / bird watching",
+					"quotes": [
+						"It not only offers stunning scenic views, but also has three huts for bird watching enthusiasts."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Bike hire costs £9 for a period of [5]",
+					"answer": "five hours / 5 hours",
+					"quotes": [
+						"They have rental options starting from £9 for a minimum of five hours."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Hiring a [6] costs £4.",
+					"answer": "child seat",
+					"quotes": [
+						"Plus, those traveling with children can also rent a child seat at £4."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Booking is recommended during the [7] season.",
+					"answer": "holiday",
+					"quotes": [
+						"It's advisable to make an early booking, especially during the holiday."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Phone number: [8]",
+					"answer": "01743228906",
+					"quotes": ["Their hotline is 01743228906."]
+				},
+				{
+					"number": 9,
+					"text": "Find out about the [9] before they set off.",
+					"answer": "weather conditions / weather",
+					"quotes": [
+						"Make sure to check the weather conditions before you begin."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Car park is available behind the [10]",
+					"answer": "post office",
+					"quotes": [
+						"When driving to the cycling path, you can find parking available behind the post office, which should be convenient for you."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

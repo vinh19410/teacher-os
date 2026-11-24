@@ -1,0 +1,182 @@
+{
+	"id": "4ebeb0fe-1355-48da-a187-7437236a86c3",
+	"url": "https://stepielts.com/student/listening/4ebeb0fe-1355-48da-a187-7437236a86c3?mode=practice",
+	"title": "Peer Assessment",
+	"source": "Actual Test",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/eefba3f5-76a4-4312-ab1f-559d1e574b06.mp3",
+	"transcript": "Speaker 1: Steve: I can’t believe you’re still in the library, Sally. You’ve been here all day. Are you still working on your peer assessment project?\nSpeaker 2: Sally: Hi, Steve. Yes. I’m still here, and I’m nowhere near finished. I’m still processing the reading I’ve done on peer assessment. I’m interested to see if students marking each other’s work is beneficial. I know a lot of the other students are pretty sceptical about its value as a way of assessing their performance. They think the tutors are in favour of it because they don’t have to spend so long marking. But I disagree. I think we can learn a great deal from it.\nSpeaker 1: Steve: Yes. I can see one advantage being that it saves time spent going over things in class.\nSpeaker 2: Sally: Well, initially, it doesn’t seem to work that way, and it can be quite a time consuming business because sometimes things have to be marked again if the tutor thinks the students’ assessments aren’t reliable. The real gain is the fact that the students learn to stand back and assess their own assignments objectively because they’re much more familiar with the marking system.\nSpeaker 1: Steve: Yes. I can see that. It gives them an opportunity to reflect on their own performance. And how do they feel about having another student mark their work? Is that good for rapport?\nSpeaker 2: Sally: In some cases, yes. In some cases, no. I think more research is needed to answer that question.\nSpeaker 1: Steve: What happens if a tutor notices that the marks for a particular assignment seem wrong? Should the students mark them again?\nSpeaker 2: Sally: That might not make any difference. So in that case, the tutor would have to remark all those assignments and then go through the marking criteria really carefully with the students on the next assignment with some sample answers.\nSpeaker 1: Steve: Right.\nSpeaker 2: Sally: I’ve been reading about a research project on peer assessment. The researchers invited a group of students from two different universities to attend a one day conference. They also invited some university lecturers to attend. Each student gave a short presentation on a project of their choice. Each of these presentations was assessed individually by all the participants, both students and lecturers. To support their marking, they used a set of assessment guidelines that had been prepared the day before by a random selection of students.\nSpeaker 1: Steve: So were the student markers reliable?\nSpeaker 2: Sally: Well, comparisons were made between certain categories of student markers and the group as a whole, including the lecturers. The findings showed that there were some variations in the way different groups marked. Gender did come into play, for example.\nSpeaker 1: Steve: I expect the male students were more generous when marking female presenters, were they?\nSpeaker 2: Sally: Quite the reverse, actually. They were harder on the female presenters than on the males, which wasn’t what I’d expected either.\nSpeaker 1: Steve: Did female students show any bias towards male presenters?\nSpeaker 2: Sally: Interestingly not.\nSpeaker 1: Steve: So does that suggest women are fairer and more reliable markers than men?\nSpeaker 2: Sally: Well, I wouldn’t go that far. It’s only a small sample. But significantly, the results showed that when women marked other women, this didn’t affect the grades they gave.\nSpeaker 1: Steve: What about age? Were you able to come to any conclusions about that?\nSpeaker 2: Sally: Yes. Because we had some mature students presenting, and we found the marks awarded to them by their younger peers were rather more generous.\nSpeaker 1: Steve: Oh, I wonder why that is. Now you said there were groups of students from two universities. Did they tend to favor students making presentations from their own universities?\nSpeaker 2: Sally: It didn’t seem to influence marking one way or the other, which is quite encouraging. We’d been interested to see if students’ personal relationships affected their objectivity. One striking variation, though, was in the students who’d been asked to help devise the criteria for the marking scheme. They were actually the toughest markers of all, marking consistently below the tutors.\nSpeaker 1: Steve: Really? Well, it sounds as if it’s generated lots of useful data. I expect you’ll be here for",
+	"body": {
+		"text": "male students marking female presenters [5]\nfemale students marking male presenters [6]\nfemale students marking female presenters [7]\nyounger students marking older presenters [8]\nstudents marking presenters from a different university [9]\nstudents who had helped set criteria [10]",
+		"html": "<p>male students marking female presenters [5]</p><p>female students marking male presenters [6]</p><p>female students marking female presenters [7]</p><p>younger students marking older presenters [8]</p><p>students marking presenters from a different university [9]</p><p>students who had helped set criteria [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Sally says many students see peer assessment as",
+					"options": [
+						{
+							"label": "A",
+							"text": "a way for tutors to save time"
+						},
+						{
+							"label": "B",
+							"text": "a useful learning tool"
+						},
+						{
+							"label": "C",
+							"text": "a valuable form of assessment"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"They think the tutors are in favour of it because they don’t have to spend so long marking."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What do Steve and Sally agree is an advantage of peer assessment?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It's more reliable than self-assessment"
+						},
+						{
+							"label": "B",
+							"text": "It increases students' self-awareness"
+						},
+						{
+							"label": "C",
+							"text": "It builds rapport between students"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"It gives them an opportunity to reflect on their own performance."
+					]
+				},
+				{
+					"number": 3,
+					"text": "If the peer assessment marks seem incorrect,",
+					"options": [
+						{
+							"label": "A",
+							"text": "students should mark the assignments again"
+						},
+						{
+							"label": "B",
+							"text": "the tutor should check those assignments"
+						},
+						{
+							"label": "C",
+							"text": "the marking criteria should be rewritten"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"So in that case, the tutor would have to remark all those assignments and then go through the marking criteria really carefully with the students on the next assignment with some sample answers."
+					]
+				},
+				{
+					"number": 4,
+					"text": "How were the presentations in the research project marked?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Students and lecturers marked all the presentations"
+						},
+						{
+							"label": "B",
+							"text": "Students chose which presentations they wanted to mark"
+						},
+						{
+							"label": "C",
+							"text": "Lecturers marked a selection of presentations"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Each of these presentations was assessed individually by all the participants, both students and lecturers."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "How did the following categories of student markers compare with the rest of the group when marking student presentations?",
+			"options": [
+				{
+					"label": "A",
+					"text": "They gave higher marks"
+				},
+				{
+					"label": "B",
+					"text": "They gave lower marks"
+				},
+				{
+					"label": "C",
+					"text": "Their marks were not significantly different"
+				}
+			],
+			"body": "male students marking female presenters [5]\nfemale students marking male presenters [6]\nfemale students marking female presenters [7]\nyounger students marking older presenters [8]\nstudents marking presenters from a different university [9]\nstudents who had helped set criteria [10]",
+			"body_html": "<p>male students marking female presenters [5]</p><p>female students marking male presenters [6]</p><p>female students marking female presenters [7]</p><p>younger students marking older presenters [8]</p><p>students marking presenters from a different university [9]</p><p>students who had helped set criteria [10]</p>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "male students marking female presenters",
+					"answer": "B",
+					"quotes": [
+						"They were harder on the female presenters than on the males, which wasn’t what I’d expected either."
+					]
+				},
+				{
+					"number": 6,
+					"text": "female students marking male presenters",
+					"answer": "C",
+					"quotes": ["Sally: Interestingly not."]
+				},
+				{
+					"number": 7,
+					"text": "female students marking female presenters",
+					"answer": "C",
+					"quotes": [
+						"But significantly, the results showed that when women marked other women, this didn’t affect the grades they gave."
+					]
+				},
+				{
+					"number": 8,
+					"text": "younger students marking older presenters",
+					"answer": "A",
+					"quotes": [
+						"Because we had some mature students presenting, and we found the marks awarded to them by their younger peers were rather more generous."
+					]
+				},
+				{
+					"number": 9,
+					"text": "students marking presenters from a different university",
+					"answer": "C",
+					"quotes": [
+						"Sally: It didn’t seem to influence marking one way or the other, which is quite encouraging."
+					]
+				},
+				{
+					"number": 10,
+					"text": "students who had helped set criteria",
+					"answer": "B",
+					"quotes": [
+						"They were actually the toughest markers of all, marking consistently below the tutors."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

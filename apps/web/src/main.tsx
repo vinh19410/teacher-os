@@ -10,6 +10,7 @@ import { routeTree } from "./routeTree.gen";
 
 const router = createRouter({
 	routeTree,
+	basepath: "/teacher",
 	defaultPreload: "intent",
 	defaultPendingMs: 200,
 	scrollRestoration: true,

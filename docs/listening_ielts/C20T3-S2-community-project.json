@@ -1,0 +1,196 @@
+{
+	"id": "2d881e2b-0e9f-459f-b440-d206e6f3ce44",
+	"url": "https://stepielts.com/student/listening/2d881e2b-0e9f-459f-b440-d206e6f3ce44?mode=practice",
+	"title": "Community Project",
+	"source": "C20T3",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/b40fbbec-c432-4ca7-950e-08c06140a8ac.mp3",
+	"transcript": "Speaker 1: Hello, I’m Hayden. I’m one of the archaeologists investigating the site here at Bidcaster. This is the third summer for this community project, and most of the people digging here are volunteers. I’m a full-time archaeologist for the town council, but I was asked to join the project by NHA, a charity which sets up projects like this up and down the country. As you can see, we’re next to Bidcaster Castle, which is great, because the owners let us use their facilities. So, how did we get to where we are today? Many archaeology projects happen when an ancient object is found, and in our case that object was a gold coin. Coins are often found by people using metal detectors to look for things buried in the ground, or coins are uncovered when wild animals like rabbits have been digging tunnels. Here, a walker found it on the ground after a rainstorm washed away some of the earth and sand. When the story of the gold coin hit the news, Peter Swift, an amateur historian, contacted me to say he believed there had been a village on this site, centuries before the castle was built. Just by chance, the team found some old maps and documents in our library, which showed 500-year-old drawings of ruined buildings on the grassy area between the outer stone walls of the castle and the river. We knew then we were on to something. Over the three summers the team has been here, we’ve found the remains of several buildings, and more broken pots than you can count. Normally you’d expect to find brooches and other jewellery, but we’re still waiting to uncover any such items. The people who once lived here were skilled at making tools from animal bones, as you’ll see when you visit the exhibition. Besides the discovery of the village, we’ve also found evidence of human activity on the other side of the river. No other houses or huts so far, but we can see the borders of an ancient field system. At one point we found a long wall and thought it was an ancient palace, but it turned out to be a modern wall. This summer’s work will end soon, but we’ll be back next summer. In the meantime, we’re putting on a series of guided tours for school groups this autumn. Oh, and maybe you saw the TV documentary about our project. That suggested the objects we’ve found are going to the town’s museum, but we don’t know that for sure yet.\nSpeaker 0: Before you hear the rest of the talk, you have some time to look at questions 17 to 20. Now listen and answer questions 17 to 20.\nSpeaker 1: When you enter the site, please make sure you keep to the paths at all times. There are a few other things, um, the highlights of the site, if you like, that I want to mention. Take a look at the map. Our present location is marked at the bottom. This year, we’ve identified the foundations of an ancient bridge. And it’s really exciting today because a team of divers are in the river searching for lost objects. To reach the bridge, take the main path ahead of you, go straight on and keep going till the path bends to the left. You’ll see a smaller track leading off to the right. Follow that to take you to the river, where the divers are. You might be interested to see the rubbish pit. This is very near the castle walls, in the northwest corner of the site. It actually dates to the time of the castle, and not the ancient village. We found oyster shells and fish bones, and we assume they were thrown from the castle kitchen above. One area we excavated in the first summer uncovered the site of a meeting hall. We knew it was an important building because it had two rows of post holes, deep enough to support a large roof. It’s the largest structure in the central area of the site, next to the current excavation area. Last year we discovered a fish pond in the ancient village. Normally these were beside a river. The pond here is further away, but it’s possible the river has moved slightly. Anyway, to get there from here, you turn right at the first information board you come to, and follow the path into the trees. Before you come out of the trees, you’ll see it on your right. If you reach the river, you’ve gone too far.",
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Who was responsible for starting the community project?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the castle owners"
+						},
+						{
+							"label": "B",
+							"text": "a national charity"
+						},
+						{
+							"label": "C",
+							"text": "the local council"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I’m a full-time archaeologist for the town council, but I was asked to join the project by NHA, a charity which sets up projects like this up and down the country."
+					]
+				},
+				{
+					"number": 2,
+					"text": "How was the gold coin found?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Heavy rain had removed some of the soil."
+						},
+						{
+							"label": "B",
+							"text": "The ground was dug up by wild rabbits."
+						},
+						{
+							"label": "C",
+							"text": "A person with a metal detector searched the area."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Here, a walker found it on the ground after a rainstorm washed away some of the earth and sand."
+					]
+				},
+				{
+					"number": 3,
+					"text": "What led the archaeologists to believe there was an ancient village on this site?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the lucky discovery of old records"
+						},
+						{
+							"label": "B",
+							"text": "the bases of several structures visible in the grass"
+						},
+						{
+							"label": "C",
+							"text": "the unusual stones found near the castle"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Just by chance, the team found some old maps and documents in our library, which showed 500-year-old drawings of ruined buildings on the grassy area between the outer stone walls of the castle and the river."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What are the team still hoping to find?",
+					"options": [
+						{
+							"label": "A",
+							"text": "everyday pottery"
+						},
+						{
+							"label": "B",
+							"text": "animal bones"
+						},
+						{
+							"label": "C",
+							"text": "pieces of jewellery"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Normally you’d expect to find brooches and other jewellery, but we’re still waiting to uncover any such items."
+					]
+				},
+				{
+					"number": 5,
+					"text": "What was found on the other side of the river to the castle?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the remains of a large palace"
+						},
+						{
+							"label": "B",
+							"text": "the outline of fields"
+						},
+						{
+							"label": "C",
+							"text": "a number of small huts"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"No other houses or huts so far, but we can see the borders of an ancient field system."
+					]
+				},
+				{
+					"number": 6,
+					"text": "What do the team plan to do after work ends this summer?",
+					"options": [
+						{
+							"label": "A",
+							"text": "prepare a display for a museum"
+						},
+						{
+							"label": "B",
+							"text": "take part in a television programme"
+						},
+						{
+							"label": "C",
+							"text": "start to organise school visits"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"In the meantime, we’re putting on a series of guided tours for school groups this autumn."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "MAP_LABELLING",
+			"instructions": "Label the map below.",
+			"instructions_html": "<p>Label the map below.</p><p><strong><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/27eb6edf-9255-4e66-a86b-69bdde7cd926.jpg\" alt=\"Z6771337257595 1a274093d7ea851d33ae3420ce34aca5\"></strong></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G"],
+			"questions": [
+				{
+					"number": 7,
+					"text": "bridge foundations",
+					"answer": "B",
+					"quotes": [
+						"This year, we’ve identified the foundations of an ancient bridge."
+					]
+				},
+				{
+					"number": 8,
+					"text": "rubbish pit",
+					"answer": "A",
+					"quotes": [
+						"You might be interested to see the rubbish pit. This is very near the castle walls, in the northwest corner of the site."
+					]
+				},
+				{
+					"number": 9,
+					"text": "meeting hall",
+					"answer": "G",
+					"quotes": [
+						"One area we excavated in the first summer uncovered the site of a meeting hall. We knew it was an important building because it had two rows of post holes, deep enough to support a large roof. It’s the largest structure in the central area of the site, next to the current excavation area."
+					]
+				},
+				{
+					"number": 10,
+					"text": "fish pond",
+					"answer": "E",
+					"quotes": [
+						"Last year we discovered a fish pond in the ancient village."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/27eb6edf-9255-4e66-a86b-69bdde7cd926.jpg"
+	]
+}

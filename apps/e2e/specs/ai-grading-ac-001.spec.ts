@@ -5,7 +5,12 @@ import {
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
 import { seedQuizFixture } from "./helpers-quiz";
-import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import {
+	API_ORIGIN,
+	LMS_ORIGIN,
+	STUDENT_BASE_URL,
+	TEACHER_BASE_URL,
+} from "./origins";
 
 /**
  * TOS-30 #478 — E2E AC-001 (US-006): nền tảng chấm nháp AI ẩn với học viên
@@ -39,12 +44,12 @@ let attemptId = "";
 
 /** Sign in portal student (fresh context mỗi lần — localStorage portal). */
 async function signIn(page: Page): Promise<void> {
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signin").click();
 	await page.locator("#signin-email").fill(studentEmail);
 	await page.locator("#signin-password").fill(PASSWORD);
 	await page.locator("#panel-signin button[type='submit']").click();
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 	await expect(page.getByRole("heading", { name: "Bài tập" })).toBeVisible();
@@ -82,7 +87,7 @@ async function setBand(page: Page, label: string, band: string): Promise<void> {
 
 test.beforeAll(async ({ browser }) => {
 	test.setTimeout(120_000);
-	teacherContext = await browser.newContext({ baseURL: WEB_ORIGIN });
+	teacherContext = await browser.newContext({ baseURL: LMS_ORIGIN });
 	teacherPage = await teacherContext.newPage();
 	const teacherEmail = await signUpViaApi(teacherPage, {
 		name: "Cô AI Chấm",
@@ -112,7 +117,7 @@ test.beforeAll(async ({ browser }) => {
 	// Student thật: signup + verify qua mail-log (precedent grader spec).
 	const signupContext = await browser.newContext();
 	const page = await signupContext.newPage();
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signup").click();
 	await page.locator("#signup-name").fill("Học Viên AI");
 	await page.locator("#signup-email").fill(studentEmail);
@@ -122,7 +127,7 @@ test.beforeAll(async ({ browser }) => {
 		timeout: 15_000,
 	});
 	await verifyStudentEmailFromMailLog(page, studentEmail);
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 	await signupContext.close();
@@ -183,7 +188,7 @@ test("học viên nộp Writing → chỉ thấy Đã nộp — Đang chờ giá
 
 test("giáo viên thấy Gợi ý từ AI + badge AI đã chấm nháp, ví giảm 1 Credit", async () => {
 	test.setTimeout(60_000);
-	await teacherPage.goto(`${WEB_ORIGIN}/grading/${attemptId}`);
+	await teacherPage.goto(`${TEACHER_BASE_URL}/grading/${attemptId}`);
 
 	const panel = teacherPage.getByTestId("ai-draft-panel");
 	await expect(panel).toBeVisible();
@@ -225,7 +230,7 @@ test("Lưu bản nháp → badge Đang rà soát; học viên vẫn không thấ
 	const context = await browser.newContext();
 	const page = await context.newPage();
 	await signIn(page);
-	await page.goto(`${STUDENT_ORIGIN}/learn/quizzes/attempt/${attemptId}`);
+	await page.goto(`${STUDENT_BASE_URL}/learn/quizzes/attempt/${attemptId}`);
 	await expect(page.getByTestId("awaiting-grade")).toBeVisible();
 	const body = await page.locator("body").textContent();
 	expect(body).not.toContain("Gợi ý từ AI");
@@ -246,7 +251,7 @@ test("Chốt trả bài → học viên thấy điểm cuối cùng", async ({ b
 	const context = await browser.newContext();
 	const page = await context.newPage();
 	await signIn(page);
-	await page.goto(`${STUDENT_ORIGIN}/learn/quizzes/attempt/${attemptId}`);
+	await page.goto(`${STUDENT_BASE_URL}/learn/quizzes/attempt/${attemptId}`);
 	await expect(page.getByTestId("awaiting-grade")).toHaveCount(0);
 	await expect(page.getByText("6.5").first()).toBeVisible();
 	await context.close();

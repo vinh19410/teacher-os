@@ -3,7 +3,12 @@ import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
 import { signUpViaApi } from "./helpers";
-import { API_ORIGIN, PROFILE_ORIGIN, WEB_ORIGIN } from "./origins";
+import {
+	API_ORIGIN,
+	PROFILE_ORIGIN,
+	TEACHER_BASE_URL,
+	WEB_ORIGIN,
+} from "./origins";
 
 /**
  * E2E regression (#742): khi `LEAD_ORG_ID` trỏ vào org QA cũ còn giáo viên
@@ -219,7 +224,7 @@ test.describe
 					(r) => r.url().includes("/api/kernel") && r.ok(),
 					{ timeout: 30_000 },
 				);
-				await teacherPage.goto(`${WEB_ORIGIN}/dashboard`);
+				await teacherPage.goto(`${TEACHER_BASE_URL}/dashboard`);
 				await kernelOk;
 
 				// Kiểm tra org của giáo viên khác e2e-lead-org và /placement-test không báo lệch org.
@@ -239,7 +244,7 @@ test.describe
 				expect(teacherOrgId).not.toBe("");
 				expect(teacherOrgId).not.toBe(LEAD_ORG_ID);
 
-				await teacherPage.goto(`${WEB_ORIGIN}/placement-test`);
+				await teacherPage.goto(`${TEACHER_BASE_URL}/placement-test`);
 				await expect(
 					teacherPage.getByRole("heading", {
 						name: "Chưa có bản nháp bộ đề kiểm tra đầu vào",
@@ -369,7 +374,7 @@ test.describe
 				}
 
 				// 4. Giáo viên mở /leads: thấy Thí Sinh Drift E2E (submitCount=1), KHÔNG thấy QA Lead Cũ.
-				await teacherPage.goto(`${WEB_ORIGIN}/leads`);
+				await teacherPage.goto(`${TEACHER_BASE_URL}/leads`);
 				const table = teacherPage.getByTestId("leads-table");
 				await expect(table).toBeVisible();
 				await expect(table).toContainText("Thí Sinh Drift E2E");

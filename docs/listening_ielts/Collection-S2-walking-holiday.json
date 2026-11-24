@@ -1,0 +1,243 @@
+{
+	"id": "af9e590e-665c-4e93-b67b-30d11ed874ab",
+	"url": "https://stepielts.com/student/listening/af9e590e-665c-4e93-b67b-30d11ed874ab?mode=practice",
+	"title": "Walking Holiday",
+	"source": "Collection",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "11-20",
+	"audio_url": "https://audio.stepielts.com/listening-audio/ca555ed7-e5ef-4fb0-8dda-b4cbcd3c604b.mp3",
+	"transcript": "Speaker 1: Tourist: Well, good evening, everyone. My name’s Gary Payne, and I’ll be the leader for your walking holiday in Spain. And the purpose of this evening’s meeting is for us all to get to know each other in advance and for you to ask any questions you may have about the holiday. So I’ll begin by telling you a little bit about what to expect. Now the ferry crossing from England to Santander in Spain takes about twenty four hours. We’ll be sailing on the Prince Regent, which was first launched in the nineteen eighties. As well as the crew of 160, it can accommodate about 2,000 people and 600 cars, and it sails at an average speed of 37 kilometers an hour. There’ll be an onboard map on one of the decks, which charts the ship’s progress during the voyage. Although our minibus will be on one of the vehicle decks in the boat, access to these decks is prohibited during the crossing. So when you leave our bus, you’ll have to take everything that you’re likely to need with you, like toiletries or books and magazines. In fact, it’s probably a good idea to put these things in a separate bag beforehand. You shouldn’t need snacks on board as meals are provided, and they’re quite substantial. And if you don’t feel well or get a headache, you can get tablets from me. I always carry an adequate supply. Now once we’re in Spain, we’ll be based at a hostel in a small village called La Vega De Libana, about a 120 kilometers from Santander. It’s a very picturesque area that’s retained a lot of its traditional industry and culture. The hostel accommodation’s fairly simple. There are bunk beds, and each room holds four to eight people. But the bathrooms and showers are of a high standard. The hostel residents have the use of tennis courts nearby, if you feel like a game. We’ll be given breakfast and an evening meal at the hostel. In general, the hostel is relaxed, but there are a few rules which the owners enforce strictly. Smoking is not allowed anywhere inside the building, and food and drink is banned in the dormitories. Any chairs or tables which you take outside into the gardens must be returned every evening to their original place. And finally, the doors are locked after midnight out of consideration for other guests who are trying to sleep.\nTourist:\nSpeaker 1: Now that’s enough about travel and accommodation. But before I move on, I should say something briefly about equipment. There’s a list in the guidebook you’ve been sent, but I’ll just elaborate on one or two items. First, boots. Make sure that the ones you bring have thick soles. That’s the most important thing. Don’t bring trainers for walking in. Apart from anything else, they’re dangerous because they slip. It’s important to bring spare socks. Then about waterproofs, I’d strongly advise you not to come with anything heavy, you know, with a thick lining. The ideal things are those lightweight ones because they fold up small. And although they do keep the wind out, they don’t make you too hot. Right? Next, sun cream. This is absolutely essential. And regarding the strength, make sure you get what’s known as total block. Even factor 25 isn’t good enough for those latitudes in July. Then let’s see. Bring a folder to keep your map and other papers in, you know, one of those plastic ones. It’s not very likely to rain, but if it does, you’ll find it soaks everything. So that’s the practicalities over. Now let me tell you a little bit about the area in Spain where we’ll be walking, the Picos De Europa. It’s a very popular area for tourists because of its spectacular peaks. Although they’re only 25 kilometers from the sea, the highest peaks are more than 2,600 meters high and have year round snow caps. On the highest peaks, you’ve got alpine plants that are only free of their snow cover for a few months a year. Then you’ve got meadows that are full of wildflowers at certain times of the year. Then the northern slopes are covered by woodlands, giving homes to rare species such as wolves and bears. And because of the variety of plant life, which survives in that part of Europe due to the traditional way of life there, you",
+	"body": {
+		"text": "Clothes and equipment\nBring:\nboots with thick soles\nspare [15]\nlight waterproofs\nsuncream: strength - [16]\na [17] folder for map, etc.",
+		"html": "<table><tbody><tr><td><p><strong>Clothes and equipment</strong><br>Bring:</p><ul><li>boots with thick soles</li><li>spare [15]</li><li>light waterproofs</li><li>suncream: strength - [16]</li><li>a [17] folder for map, etc.</li></ul></td></tr></tbody></table>"
+	},
+	"question_groups": [
+		{
+			"range": "11-14",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter A, B or C.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Approximately how many passengers does the ferry hold?",
+					"options": [
+						{
+							"label": "A",
+							"text": "160"
+						},
+						{
+							"label": "B",
+							"text": "600"
+						},
+						{
+							"label": "C",
+							"text": "2000"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"As well as the crew of 160, it can accommodate about 2,000 people and 600 cars, and it sails at an average speed of 37 kilometers an hour."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Which items should the tourists pack in a separate bag?",
+					"options": [
+						{
+							"label": "A",
+							"text": "food"
+						},
+						{
+							"label": "B",
+							"text": "reading material"
+						},
+						{
+							"label": "C",
+							"text": "medicines"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"So when you leave our bus, you’ll have to take everything that you’re likely to need with you, like toiletries or books and magazines.",
+						"In fact, it’s probably a good idea to put these things in a separate bag beforehand."
+					]
+				},
+				{
+					"number": 13,
+					"text": "The hostel in La Vega de Liebana has",
+					"options": [
+						{
+							"label": "A",
+							"text": "good washing facilities"
+						},
+						{
+							"label": "B",
+							"text": "a game room"
+						},
+						{
+							"label": "C",
+							"text": "a number of single bedroom"
+						}
+					],
+					"answer": "A",
+					"quotes": ["But the bathrooms and showers are of a high standard."]
+				},
+				{
+					"number": 14,
+					"text": "Residents at the hostel are not allowed to",
+					"options": [
+						{
+							"label": "A",
+							"text": "take furniture out of the hostel building"
+						},
+						{
+							"label": "B",
+							"text": "enter the hostel after a certain time"
+						},
+						{
+							"label": "C",
+							"text": "smoke in the hostel gardens"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"And finally, the doors are locked after midnight out of consideration for other guests who are trying to sleep."
+					]
+				}
+			]
+		},
+		{
+			"range": "15-17",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THAN TWO WORDS for each answer.",
+			"body": "Clothes and equipment\nBring:\nboots with thick soles\nspare [15]\nlight waterproofs\nsuncream: strength - [16]\na [17] folder for map, etc.",
+			"body_html": "<table><tbody><tr><td><p><strong>Clothes and equipment</strong><br>Bring:</p><ul><li>boots with thick soles</li><li>spare [15]</li><li>light waterproofs</li><li>suncream: strength - [16]</li><li>a [17] folder for map, etc.</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 15,
+					"text": "spare [15]",
+					"answer": "socks",
+					"quotes": ["It’s important to bring spare socks."]
+				},
+				{
+					"number": 16,
+					"text": "suncream: strength - [16]",
+					"answer": "total block",
+					"quotes": [
+						"And regarding the strength, make sure you get what’s known as total block."
+					]
+				},
+				{
+					"number": 17,
+					"text": "a [17] folder for map, etc.",
+					"answer": "plastic",
+					"quotes": [
+						"Bring a folder to keep your map and other papers in, you know, one of those plastic ones."
+					]
+				}
+			]
+		},
+		{
+			"range": "18-20",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose THREE letters, A-F.",
+			"questions": [
+				{
+					"number": 18,
+					"text": "Which THREE of the following features of the area in Spain does the speaker talk about?",
+					"options": [
+						{
+							"label": "A",
+							"text": "altitude"
+						},
+						{
+							"label": "B",
+							"text": "coastline"
+						},
+						{
+							"label": "C",
+							"text": "economy"
+						},
+						{
+							"label": "D",
+							"text": "temperatures"
+						},
+						{
+							"label": "E",
+							"text": "vegetation"
+						},
+						{
+							"label": "F",
+							"text": "wildlife"
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 19,
+					"text": "Which THREE of the following features of the area in Spain does the speaker talk about?",
+					"options": [
+						{
+							"label": "A",
+							"text": "altitude"
+						},
+						{
+							"label": "B",
+							"text": "coastline"
+						},
+						{
+							"label": "C",
+							"text": "economy"
+						},
+						{
+							"label": "D",
+							"text": "temperatures"
+						},
+						{
+							"label": "E",
+							"text": "vegetation"
+						},
+						{
+							"label": "F",
+							"text": "wildlife"
+						}
+					],
+					"answer": "E"
+				},
+				{
+					"number": 20,
+					"text": "Which THREE of the following features of the area in Spain does the speaker talk about?",
+					"options": [
+						{
+							"label": "A",
+							"text": "altitude"
+						},
+						{
+							"label": "B",
+							"text": "coastline"
+						},
+						{
+							"label": "C",
+							"text": "economy"
+						},
+						{
+							"label": "D",
+							"text": "temperatures"
+						},
+						{
+							"label": "E",
+							"text": "vegetation"
+						},
+						{
+							"label": "F",
+							"text": "wildlife"
+						}
+					],
+					"answer": "F"
+				}
+			]
+		}
+	],
+	"images": []
+}

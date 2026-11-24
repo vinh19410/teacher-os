@@ -1,0 +1,239 @@
+{
+	"id": "ca47be3b-3324-4672-a427-4a836caa47df",
+	"url": "https://stepielts.com/student/listening/ca47be3b-3324-4672-a427-4a836caa47df?mode=practice",
+	"title": "Study on Gender in Physics",
+	"source": "C11T1",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "21-30",
+	"audio_url": "https://audio.stepielts.com/listening-audio/2a8d099d-d6d5-43ea-a912-6e69e993f327.mp3",
+	"transcript": "Speaker 0: Now turn to section three. Section three. You will hear two psychology students called Lisa and Greg discussing a project they have to do. First, you have some time to look at questions 21 to 27. Now listen carefully and answer questions 21 to 27.\nSpeaker 1: Okay, Greg. So I finally managed to read the article you mentioned, the one about the study on gender and physics.\nSpeaker 2: About the study of college students done by Akira Miyake and his team. Yeah. I was interested that the researchers were actually a mix of psychologists and physicists. That's an unusual combination.\nSpeaker 1: Yeah. I got a little confused at first about which students the study was based on. They weren't actually majoring in physics. They were majoring in what's known as the STEM disciplines. That's science, technology, engineering, and\nSpeaker 2: And math. Yes. But they were all doing physics courses as part of their studies.\nSpeaker 1: That's correct. So as I understood it, Miyake and Co started from the fact that women are underrepresented in introductory physics courses at college, and also that on average, the women who do enroll on these courses perform more poorly than the men. No one really knows why this is the case.\nSpeaker 2: Yeah. But what the researchers wanted to find out was basically what they could do about the relatively low level of the women's results. But in order to find a solution, they needed to find out more about the nature of the problem.\nSpeaker 1: Right. Now let's see if I can remember. It was that in the physics class, the female students thought the male students all assumed that women weren't any good at physics. Was that it? And they thought that the men expected them to get poor results in their tests.\nSpeaker 2: That's what the women thought, and that made them nervous. So they did get poor results. But, actually, they were wrong. No one was making any assumptions about the female students at all.\nSpeaker 1: Anyway, what Miyake's team did was quite simple, getting the students to do some writing before they went into the physics class. What did they call it?\nSpeaker 2: Values affirmation. They had to write an essay focusing on things that were significant to them, not particularly to do with the subject they were studying, but more general things like music or people who mattered to them.\nSpeaker 1: Right. So the idea of doing the writing is that this gets the students thinking in a positive way.\nSpeaker 2: And putting these thoughts into words can relax them and help them overcome the psychological factors that lead to poor performance. Yeah. But what the researchers in the study hadn't expected was that this one activity raised the women's physics grades from the c to the b range.\nSpeaker 1: A huge change. Pity it wasn't to an a, but still no. But it does suggest that the women were seriously underperforming beforehand in comparison with the men.\nSpeaker 2: Yes. Mind you, Miyake's article left out a lot of details, like did the students do the writing just once or several times? And had they been told why they were doing the writing, that might have affected the results.\nSpeaker 1: You mean if they know the researchers thought it might help them to improve, then they just try to fulfill that expectation? Exactly.\nSpeaker 0: Before you hear the rest of the discussion, you have some time to look at questions 28 to 30. Now listen and answer questions 28 to 30.\nSpeaker 2: So, anyway, I thought for our project, we could do a similar study, but investigate whether it really was the writing activity that had that result.\nSpeaker 1: Okay. So we could ask them to do a writing task about something completely different, something more factual, like a general knowledge topic.\nSpeaker 2: Maybe. Or we could have half the students doing a writing task and half doing something else, like an oral task.\nSpeaker 1: Or even half do the same writing task as in the original research and half do a factual writing task. Then we'd see if it really is the topic that made the difference or something else.\nSpeaker 2: That's it. Good. So at our meeting with the supervisor on Monday, we can tell him we've decided on our project. We should have our aims ready by then. I suppose we need to read the original study. The article's just a summary.\nSpeaker 1: And there was another article I read by Smolinski. It was about her research on how women and men perform in mixed teams in class compared with single sex teams and on their own.\nSpeaker 2: Let me guess. The women were better at teamwork.\nSpeaker 1: That's what I expected. But, actually, the men and the women got the same results whether they were working in teams or on their own. But I guess it's not that relevant to us.\nSpeaker 2: What worries me anyway is how we're going to get everything done in the time.\nSpeaker 1: We'll be okay now we know what we're doing. Though I'm not clear how we assess whether the students in our experiment actually make any progress or not.\nSpeaker 2: No. We may need some advice on that. The main thing's to make sure we have the right size sample and not too big or too small.\nSpeaker 1: That shouldn't be difficult. Right. What do we need to do next? We could have a look at the timetable for the science classes, or perhaps we should just make an appointment to see one of the science professors. That'd be better.\nSpeaker 2: Great. And we could even get to observe one of the classes. What for? Well, okay. Maybe let's just go with your idea. Right. Well, I think that's everything from there.\nSpeaker 0: That is the end of section three. You now have half a minute to check your answers.",
+	"question_groups": [
+		{
+			"range": "21-30",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "The students in Akira Miyake’s study were all majoring in",
+					"options": [
+						{
+							"label": "A",
+							"text": "physics."
+						},
+						{
+							"label": "B",
+							"text": "psychology or physics."
+						},
+						{
+							"label": "C",
+							"text": "science, technology, engineering or mathematics."
+						}
+					],
+					"answer": "C",
+					"quotes": ["That's science, technology, engineering, and And math."]
+				},
+				{
+					"number": 22,
+					"text": "The aim of Miyake’s study was to investigate",
+					"options": [
+						{
+							"label": "A",
+							"text": "what kind of women choose to study physics."
+						},
+						{
+							"label": "B",
+							"text": "a way of improving women’s performance in physics."
+						},
+						{
+							"label": "C",
+							"text": "whether fewer women than men study physics at college."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But what the researchers wanted to find out was basically what they could do about the relatively low level of the women's results."
+					]
+				},
+				{
+					"number": 23,
+					"text": "The female physics students were wrong to believe that",
+					"options": [
+						{
+							"label": "A",
+							"text": "the teachers marked them in an unfair way."
+						},
+						{
+							"label": "B",
+							"text": "the male students expected them to do badly."
+						},
+						{
+							"label": "C",
+							"text": "their test results were lower than the male students’."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But, actually, they were wrong. No one was making any assumptions about the female students at all."
+					]
+				},
+				{
+					"number": 24,
+					"text": "Miyake’s team asked the students to write about",
+					"options": [
+						{
+							"label": "A",
+							"text": "what they enjoyed about studying physics."
+						},
+						{
+							"label": "B",
+							"text": "the successful experiences of other people."
+						},
+						{
+							"label": "C",
+							"text": "something that was important to them personally."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"They had to write an essay focusing on things that were significant to them, not particularly to do with the subject they were studying, but more general things like music or people who mattered to them."
+					]
+				},
+				{
+					"number": 25,
+					"text": "What was the aim of the writing exercise done by the subjects?",
+					"options": [
+						{
+							"label": "A",
+							"text": "to reduce stress"
+						},
+						{
+							"label": "B",
+							"text": "to strengthen verbal ability"
+						},
+						{
+							"label": "C",
+							"text": "to encourage logical thinking"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"And putting these thoughts into words can relax them and help them overcome the psychological factors that lead to poor performance."
+					]
+				},
+				{
+					"number": 26,
+					"text": "What surprised the researchers about the study?",
+					"options": [
+						{
+							"label": "A",
+							"text": "how few students managed to get A grades"
+						},
+						{
+							"label": "B",
+							"text": "the positive impact it had on physics results for women"
+						},
+						{
+							"label": "C",
+							"text": "the difference between male and female performance"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But what the researchers in the study hadn't expected was that this one activity raised the women's physics grades from the c to the b range."
+					]
+				},
+				{
+					"number": 27,
+					"text": "Greg and Lisa think Miyake’s results could have been affected by",
+					"options": [
+						{
+							"label": "A",
+							"text": "the length of the writing task."
+						},
+						{
+							"label": "B",
+							"text": "the number of students who took part."
+						},
+						{
+							"label": "C",
+							"text": "the information the students were given."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"And had they been told why they were doing the writing, that might have affected the results. You mean if they know the researchers thought it might help them to improve, then they just try to fulfill that expectation?"
+					]
+				},
+				{
+					"number": 28,
+					"text": "Greg and Lisa decide that in their own project, they will compare the effects of",
+					"options": [
+						{
+							"label": "A",
+							"text": "two different writing tasks."
+						},
+						{
+							"label": "B",
+							"text": "a writing task with an oral task."
+						},
+						{
+							"label": "C",
+							"text": "two different oral tasks."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Or even half do the same writing task as in the original research and half do a factual writing task."
+					]
+				},
+				{
+					"number": 29,
+					"text": "The main finding of Smolinsky’s research was that class teamwork activities",
+					"options": [
+						{
+							"label": "A",
+							"text": "were most effective when done by all-women groups."
+						},
+						{
+							"label": "B",
+							"text": "had no effect on the performance of men or women."
+						},
+						{
+							"label": "C",
+							"text": "improved the results of men more than of women."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But, actually, the men and the women got the same results whether they were working in teams or on their own."
+					]
+				},
+				{
+					"number": 30,
+					"text": "What will Lisa and Greg do next?",
+					"options": [
+						{
+							"label": "A",
+							"text": "talk to a professor"
+						},
+						{
+							"label": "B",
+							"text": "observe a science class"
+						},
+						{
+							"label": "C",
+							"text": "look at the science timetable"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"We could have a look at the timetable for the science classes, or perhaps we should just make an appointment to see one of the science professors. That'd be better."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

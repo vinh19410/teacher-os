@@ -51,7 +51,7 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 				{trimmedTitle}
 			</p>
 			<p className="mt-1.5 text-muted-foreground text-xs">
-				{part.spec} · Band {prompt.band}
+				{part.spec}
 				{prompt.level?.trim() ? ` · ${prompt.level.trim()}` : ""}
 			</p>
 
@@ -187,7 +187,6 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 				<Tag>{skill.name}</Tag>
 				<Tag>{part.label}</Tag>
 				<Tag>{type?.label ?? "Chưa chọn dạng"}</Tag>
-				<Tag>{`Band ${prompt.band}`}</Tag>
 				{prompt.source.trim() && <Tag>{prompt.source.trim()}</Tag>}
 				{isAuto && <Tag>Chấm tự động</Tag>}
 				{isAuto && prompt.writing != null && <Tag>+ Writing</Tag>}

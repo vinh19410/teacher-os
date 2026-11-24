@@ -10,7 +10,7 @@ import { SubmitButton } from "@/components/auth/submit-button";
 import { authClient } from "@/lib/auth-client";
 import { authErrorMessage } from "@/lib/auth-error";
 import { cn } from "@/lib/cn";
-import { validateReturnUrl } from "@/lib/kernel-load-state";
+import { toTeacherReturnUrl, validateReturnUrl } from "@/lib/kernel-load-state";
 import { signUpSchema } from "@/lib/sign-up-schema";
 
 export default function SignUpForm({
@@ -67,7 +67,9 @@ export default function SignUpForm({
 				setAccountCreated(true);
 				// Full page load: the workspace boots through the kernel
 				// load gate with the fresh session.
-				window.location.assign(validateReturnUrl(returnUrl));
+				window.location.assign(
+					toTeacherReturnUrl(validateReturnUrl(returnUrl)),
+				);
 			} catch {
 				toast.error(AUTH_FAILED);
 			} finally {

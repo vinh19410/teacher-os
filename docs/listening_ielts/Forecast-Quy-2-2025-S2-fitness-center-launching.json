@@ -1,0 +1,148 @@
+{
+	"id": "0a5c8dae-5a89-44ce-8631-d514bdfc2a0e",
+	"url": "https://stepielts.com/student/listening/0a5c8dae-5a89-44ce-8631-d514bdfc2a0e?mode=practice",
+	"title": "Fitness Center Launching",
+	"source": "Forecast Quý 2-2025",
+	"section": 2,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/d2c6db12-f79d-4579-87e9-eb1e33a87122.mp3",
+	"transcript": "Speaker 1: Good morning everyone. We are gathered today for the unveiling of our new fitness centre. Our business started in 2006 when we recognized the need for a new, modern and affordable fitness centre for those living in the area. We pooled resources together and started a small centre, just off this road, to your left. We have been there over the years until we decided we needed more room and more facilities, due to the increasing numbers. This new facility is estimated to contain at least a thousand people at a time and is equipped with the latest state-of-the-art fitness facilities you can think of. From the entrance, just to your right you would get to the meeting room, where we hold team meetings sometimes. In the past, our customers usually came in through the West Gate and went to the first room on their left to exercise. Well, this room used to be the gym room, but now it’s the women’s fitting room. Our female customers can change and try on clothes there. The gym room would be the big room on your right as you enter from the West Gate. It houses state-of-the-art gym equipment as well as provides an arena for working out. At the top right corner of the map, we have the men’s fitting room, where men can change with some privacy. Some squash members say they would like to have classes at the room between two fitting rooms as it would be more convenient to change after sweating. Well, we will have a discussion about it and inform you if any changes happen. Now our squash court is still at the other wing, situated directly opposite the West Gate. The larger building behind it is the largest in the state for skating courses. It provides adequate conditioning and the properly selected tracks for beginners. Why invest a lot in fitness and sports? Well, we have observed that in our society, the rate at which people develop preventable diseases is alarming. Statistics show that there is a very strong link between a sedentary lifestyle and these diseases. We have set up this centre to correct and combat it, while making sure it is open, accessible and affordable to all. To develop overall strength in the individual, the fitness machines are built to help those who always complain of muscle weakness to overcome their challenges. We also have rooms for mat exercises. Many people always think that such exercises are only good for limbs and shoulders. Well, actually for anyone who wants to have a flexible body, these exercises, such as plank and crunches, are a good choice. You don’t need any high-end fitness equipment. We also have an expanse of space just behind the building that we use for cycling exercises. This sport is good to help develop strength in the legs and it is equally a good way of freeing the mind. Many members hope that such exercises will help them lose weight, I am afraid they don’t work that way. We offer aerobics for those interested in raising their heart rate. It is a great sport to train your mind and also makes blood flow more efficient and faster. Contrary to what most people think, weight training does little to help you lose weight but it does help you develop solid mental coordination and to stay focused without getting distracted so easily. So, as we unveil this centre today, we’re glad that you can also be a part of this step in the right direction. Thank you all for honouring us!",
+	"body": {
+		"text": "fitness machines [6]\nmat exercises [7]\ncycling class [8]\naerobics class [9]\nweight training [10]",
+		"html": "<p>fitness machines [6]</p><p>mat exercises [7]</p><p>cycling class [8]</p><p>aerobics class [9]</p><p>weight training [10]</p>"
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MAP_LABELLING",
+			"instructions": "",
+			"instructions_html": "<p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/08a98dd7-695b-4887-84df-9fff571cd4cc.png\" alt=\"Forecast T2 Map\"></p>",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H"],
+			"questions": [
+				{
+					"number": 1,
+					"text": "meeting room",
+					"answer": "G",
+					"quotes": [
+						"From the entrance, just to your right you would get to the meeting room, where we hold team meetings sometimes."
+					]
+				},
+				{
+					"number": 2,
+					"text": "women’s fitting room",
+					"answer": "H",
+					"quotes": [
+						"Well, this room used to be the gym room, but now it’s the women’s fitting room."
+					]
+				},
+				{
+					"number": 3,
+					"text": "fitness room",
+					"answer": "C",
+					"quotes": [
+						"The gym room would be the big room on your right as you enter from the West Gate."
+					]
+				},
+				{
+					"number": 4,
+					"text": "men’s fitting room",
+					"answer": "F",
+					"quotes": [
+						"At the top right corner of the map, we have the men’s fitting room, where men can change with some privacy."
+					]
+				},
+				{
+					"number": 5,
+					"text": "squash court",
+					"answer": "B",
+					"quotes": [
+						"Now our squash court is still at the other wing, situated directly opposite the West Gate."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "What is the benefit of each of the following facilities or courses?\nChoose FIVE answers from the box and write the correct letter, A-G, next to Questions 6-10.",
+			"options": [
+				{
+					"label": "A",
+					"text": "good for shoulders"
+				},
+				{
+					"label": "B",
+					"text": "increase heartbeat"
+				},
+				{
+					"label": "C",
+					"text": "good for lower limbs"
+				},
+				{
+					"label": "D",
+					"text": "help body flexibility"
+				},
+				{
+					"label": "E",
+					"text": "improve concentration"
+				},
+				{
+					"label": "F",
+					"text": "build up overall strength"
+				},
+				{
+					"label": "G",
+					"text": "help lose weight"
+				}
+			],
+			"body": "fitness machines [6]\nmat exercises [7]\ncycling class [8]\naerobics class [9]\nweight training [10]",
+			"body_html": "<p>fitness machines [6]</p><p>mat exercises [7]</p><p>cycling class [8]</p><p>aerobics class [9]</p><p>weight training [10]</p>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "fitness machines",
+					"answer": "F",
+					"quotes": [
+						"To develop overall strength in the individual, the fitness machines are built to help those who always complain of muscle weakness to overcome their challenges."
+					]
+				},
+				{
+					"number": 7,
+					"text": "mat exercises",
+					"answer": "D",
+					"quotes": [
+						"Well, actually for anyone who wants to have a flexible body, these exercises, such as plank and crunches, are a good choice."
+					]
+				},
+				{
+					"number": 8,
+					"text": "cycling class",
+					"answer": "C",
+					"quotes": [
+						"This sport is good to help develop strength in the legs and it is equally a good way of freeing the mind."
+					]
+				},
+				{
+					"number": 9,
+					"text": "aerobics class",
+					"answer": "B",
+					"quotes": [
+						"We offer aerobics for those interested in raising their heart rate."
+					]
+				},
+				{
+					"number": 10,
+					"text": "weight training",
+					"answer": "E",
+					"quotes": [
+						"Contrary to what most people think, weight training does little to help you lose weight but it does help you develop solid mental coordination and to stay focused without getting distracted so easily."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/listening-images/08a98dd7-695b-4887-84df-9fff571cd4cc.png"
+	]
+}

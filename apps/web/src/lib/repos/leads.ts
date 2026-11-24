@@ -14,6 +14,7 @@ import type {
 } from "@teacher-os/api/placement-test-contracts";
 import { HttpError } from "@/lib/kernel-load-state";
 import { getApiBaseUrl } from "./api-base-url";
+import { toApiHttpError } from "./courses";
 
 export const LEADS_PAGE_SIZE = 20;
 
@@ -113,8 +114,8 @@ export async function gradeLeadPlacementSubmission(
 		body: JSON.stringify(body),
 	});
 	if (!res.ok) {
-		throw new HttpError(
-			res.status,
+		throw await toApiHttpError(
+			res,
 			`Failed to grade placement submission: ${res.status}`,
 		);
 	}

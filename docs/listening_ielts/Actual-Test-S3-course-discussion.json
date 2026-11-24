@@ -1,0 +1,121 @@
+{
+	"id": "c39bbd81-971d-4446-8ff8-da6a912597f6",
+	"url": "https://stepielts.com/student/listening/c39bbd81-971d-4446-8ff8-da6a912597f6?mode=practice",
+	"title": "Course Discussion",
+	"source": "Actual Test",
+	"section": 3,
+	"time_minutes": 10,
+	"question_range": "1-10",
+	"audio_url": "https://audio.stepielts.com/listening-audio/b4b0b439-744f-46d3-bc49-a25eb5fa8102.mp3",
+	"transcript": "Speaker 0: Sally: Excuse me, professor. Can I talk to you for a minute?\nSpeaker 1: Professor: Yes. Do come in. So you’re Sally Layman?\nSpeaker 0: Sally: That’s it.\nSpeaker 1: Professor: You want to discuss with me changing courses, right? Sally: Yes. Professor: Alright. What course are you doing at present, Sally?\nSpeaker 0: Sally: It’s economic history.\nSpeaker 1: Professor: Okay. And when did you begin this course?\nSpeaker 0: Sally: Let me think. It was last September.\nSpeaker 1: Professor: Right. Good. Before we talk through all your problems with the course, I want to know what courses you’d like to change to.\nSpeaker 0: Sally: Well, there are several courses that I’ve thought about, but my first choice would be politics.\nSpeaker 1: Professor: Oh. It’s one of the most popular courses in our college.\nSpeaker 0: Sally: Yes. I know. So it means there might not be places available.\nSpeaker 1: Professor: That’s right. I’ll still make a note of that, but it’s better to give another option.\nSpeaker 0: Sally: Well, I’ve thought of changing the course entirely to business studies, but then I realized it is new to me, so I think philosophy might be a better choice.\nSpeaker 1: Professor: Okay. That’s useful to know. Then let’s talk through any problems you’ve been having at the moment and see if there is any possibility for us to offer help. After all, with all the efforts that you’ve made already, it’ll be a pity to give up the present course and completely start a new one.\nSpeaker 0: Sally: Yes. I agree with that. I’ve learned something valuable about economic history.\nSpeaker 1: Professor: Good. Well, let’s talk about your problems. What do you think is your significant difficulty in the course?\nSpeaker 0: Sally: Well, I have to say the biggest problem is that the lectures are difficult.\nSpeaker 1: Professor: Okay. And have you tried something to overcome this problem?\nSpeaker 0: Sally: Yes. I have. I tried recording the lectures because I couldn’t follow what the lecturer said.\nSpeaker 1: Professor: Yes. That’s a good idea. And did you find it helped?\nSpeaker 0: Sally: To a certain extent, but—\nSpeaker 1: Professor: Well, recording is a good strategy, but I also advise you to take part in the discussion group with other fellow students to discuss the lectures and exchange ideas with them.\nSpeaker 0: Sally: Yes. I’ve seen some of my classmates doing that. I’ll ask them if I can join.\nSpeaker 1: Professor: Good. I’m sure you’ll find it helps. And any other problems?\nSpeaker 0: Sally: Yes. The second problem is I think there aren’t enough tutorials for this course.\nSpeaker 1: Professor: Okay. I think you can talk to your tutor about this.\nSpeaker 0: Sally: Yes. I did that. But the tutor is so busy that I must wait until she is available.\nSpeaker 1: Professor: Why don’t you try arranging meetings ahead of time?\nSpeaker 0: Sally: Well, I can try this way.\nSpeaker 1: Professor: Good.\nSpeaker 0: Sally: But I suppose the thing that made me upset recently is my poor assignment grade.\nSpeaker 1: Professor: Oh, the grade is an important issue.\nSpeaker 0: Sally: Well, I think I’ve tried my best to achieve a good score. I did more background reading than before for the last assignment we just submitted.\nSpeaker 1: Professor: Good. And did you feel that helped?\nSpeaker 0: Sally: Oh, yes. I think so.\nSpeaker 1: Professor: Well, I think you can try another strategy, which is to visit student services, which offer a lot of helpful advice on assignment preparation.\nSpeaker 0: Sally: Oh, I’ve never heard about that.\nSpeaker 1: Professor: I’ll give you a booklet with details on this. You’ll find it well worth trying.\nSpeaker 0: Sally: Okay. I’ll certainly try it.\nSpeaker 1: Professor: Okay. That’s all the problem. Well, I’ve made a record of our discussions and suggested strategies. Typically, we advise you to try out these suggestions for a short period and then come back to discuss the situation to see whether it is improved. If not, we will start considering alternative courses.\nSpeaker 0: Sally: Okay. When shall I come back?\nSpeaker 1: Professor: How about in a month’s time? Okay. That will be on the February 17. How about half past three in the afternoon? Is that alright for you?\nSpeaker 0: Sally: Yes. Sure. And where shall I meet you?\nSpeaker 1: Professor: I’m afraid I will be on leave at that time, but I’ll leave this record to our senior adviser, and you will meet with him then in this office.\nSpeaker 0: Sally: Okay.\nSpeaker 1: Professor: Good. That’s it. Let’s see whether things can improve, Sally.\nSpeaker 0: Sally: Okay. Thanks very much.\nSpeaker 1: Professor: My pleasure. Bye.",
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THAN THREE WORDS for each answer.",
+			"body": "Possible Course Change\nName of student: Sally Layman\nCurrent course: [1]\nTime started: [2]\nCourses interested in:\n1st choice [3]\n2nd choice [4]",
+			"body_html": "<table><tbody><tr><td><h4><strong>Possible Course Change</strong></h4><ul><li>Name of student: Sally Layman</li><li>Current course: [1]</li><li>Time started: [2]</li><li>Courses interested in:\n<ul><li>1st choice [3]</li><li>2nd choice [4]</li></ul></li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Current course: [1]",
+					"answer": "Economic History",
+					"quotes": ["Sally: It’s economic history."]
+				},
+				{
+					"number": 2,
+					"text": "Time started: [2]",
+					"answer": "last September",
+					"quotes": ["It was last September."]
+				},
+				{
+					"number": 3,
+					"text": "1st choice [3]",
+					"answer": "Politics",
+					"quotes": [
+						"Sally: Well, there are several courses that I’ve thought about, but my first choice would be politics."
+					]
+				},
+				{
+					"number": 4,
+					"text": "2nd choice [4]",
+					"answer": "Philosophy",
+					"quotes": [
+						"Sally: Well, I’ve thought of changing the course entirely to business studies, but then I realized it is new to me, so I think philosophy might be a better choice."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-8",
+			"type": "TABLE_COMPLETION",
+			"instructions": "Complete the table below. Write NO MORE THAN THREE WORDS for each answer.",
+			"body": "Problem\nStrategies tried\nFurther strategies suggested\nFind [5]\nRecording the lectures\nJoin other students in a [6]\n[7]\nTalking to the tutor\nArrange meetings in advance\nBad assignment\nMore background reading\n[8]",
+			"body_table": [
+				["Problem", "Strategies tried", "Further strategies suggested"],
+				["Find [5]", "Recording the lectures", "Join other students in a [6]"],
+				["[7]", "Talking to the tutor", "Arrange meetings in advance"],
+				["Bad assignment", "More background reading", "[8]"]
+			],
+			"body_html": "<table><thead><tr><th><strong>Problem</strong></th><th><strong>Strategies tried</strong></th><th><strong>Further strategies suggested</strong></th></tr></thead><tbody><tr><td>Find [5]</td><td>Recording the lectures</td><td>Join other students in a [6]</td></tr><tr><td>[7]</td><td>Talking to the tutor</td><td>Arrange meetings in advance</td></tr><tr><td>Bad assignment</td><td>More background reading</td><td>[8]</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Find [5]",
+					"answer": "the lectures difficult / lectures difficult",
+					"quotes": [
+						"Sally: Well, I have to say the biggest problem is that the lectures are difficult."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Join other students in a [6]",
+					"answer": "discussion group",
+					"quotes": [
+						"Professor: Well, recording is a good strategy, but I also advise you to take part in the discussion group with other fellow students to discuss the lectures and exchange ideas with them."
+					]
+				},
+				{
+					"number": 7,
+					"text": "",
+					"answer": "not enough tutorials / aren't enough tutorials",
+					"quotes": [
+						"The second problem is I think there aren’t enough tutorials for this course."
+					]
+				},
+				{
+					"number": 8,
+					"text": "",
+					"answer": "visit student services",
+					"quotes": [
+						"Professor: Well, I think you can try another strategy, which is to visit student services, which offer a lot of helpful advice on assignment preparation."
+					]
+				}
+			]
+		},
+		{
+			"range": "9-10",
+			"type": "NOTE_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THAN THREE WORDS AND/OR A NUMBER for each answer.",
+			"body": "Date for next meeting: [9] at 3.30 p.m.\nMeet with: [10]",
+			"body_html": "<table><tbody><tr><td><ul><li>Date for next meeting: [9] at 3.30 p.m.</li><li>Meet with: [10]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 9,
+					"text": "Date for next meeting: [9] at 3.30 p.m.",
+					"answer": "17 February / 17th February / February 17 / February 17th",
+					"quotes": ["That will be on the February 17."]
+				},
+				{
+					"number": 10,
+					"text": "Meet with: [10]",
+					"answer": "senior advisor / senior adviser",
+					"quotes": [
+						"Professor: I’m afraid I will be on leave at that time, but I’ll leave this record to our senior adviser, and you will meet with him then in this office."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

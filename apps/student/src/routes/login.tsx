@@ -44,7 +44,15 @@ function RouteComponent() {
 	useEffect(() => {
 		if (isStudentSession(session)) {
 			authClient.clearSessionCache?.();
-			void navigate({ to: validateReturnUrl(returnUrl) });
+			const target = validateReturnUrl(returnUrl);
+			const stripped = target.replace(/^\/student(?=\/|\?|#|$)/, "");
+			const internalTo =
+				stripped.length === 0
+					? "/"
+					: stripped.startsWith("/")
+						? stripped
+						: `/${stripped}`;
+			void navigate({ to: internalTo });
 		}
 	}, [session, returnUrl, navigate]);
 

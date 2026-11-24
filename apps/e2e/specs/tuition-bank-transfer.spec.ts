@@ -5,7 +5,12 @@ import {
 	signUpViaApi,
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
-import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import {
+	API_ORIGIN,
+	LMS_ORIGIN,
+	STUDENT_BASE_URL,
+	TEACHER_BASE_URL,
+} from "./origins";
 
 /**
  * Tuition bank-transfer flow E2E (#320, plan phase 6). Fake Bank Hub injects
@@ -120,15 +125,16 @@ async function simulateIpn(
 }
 
 async function teacherSignIn(page: Page): Promise<void> {
-	await page.goto(`${WEB_ORIGIN}/login`);
+	await page.context().clearCookies();
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signin").click();
-	await page.locator("#si-email").fill(teacherEmail);
-	await page.locator("#si-password").fill(PASSWORD);
+	await page.locator("#signin-email").fill(teacherEmail);
+	await page.locator("#signin-password").fill(PASSWORD);
 	await Promise.all([
 		page.waitForResponse((r) => r.url().includes("/api/auth/sign-in/email")),
-		page.getByRole("button", { name: "Sign in" }).click(),
+		page.locator("#panel-signin button[type='submit']").click(),
 	]);
-	await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+	await expect(page).toHaveURL(/\/teacher\/dashboard/, { timeout: 30_000 });
 }
 
 async function openPayModalForAmount(
@@ -137,7 +143,7 @@ async function openPayModalForAmount(
 ): Promise<void> {
 	// The tuition table shows the display invoice code (INV-…), not the
 	// transfer memo — locate rows by the student's amount cell instead.
-	await page.goto(`${WEB_ORIGIN}/tuition`);
+	await page.goto(`${TEACHER_BASE_URL}/tuition`);
 	const row = page.locator("tr", { hasText: amount });
 	await row.locator("button", { hasText: "Thu học phí" }).click();
 	await expect(
@@ -156,7 +162,7 @@ test.describe("Tuition bank transfer (#320)", () => {
 		await teacherSignIn(page);
 
 		// #338: panel bank link dời từ trang riêng /payments vào trang Hồ sơ.
-		await page.goto(`${WEB_ORIGIN}/profile`);
+		await page.goto(`${TEACHER_BASE_URL}/profile`);
 		await expect(page.getByText("Nhận học phí qua chuyển khoản")).toBeVisible();
 		await page
 			.getByRole("button", { name: "Liên kết tài khoản ngân hàng" })
@@ -211,7 +217,7 @@ test.describe("Tuition bank transfer (#320)", () => {
 		// Public /pay/<token> in a signed-out context.
 		const anon = await browser.newContext();
 		const anonPage = await anon.newPage();
-		await anonPage.goto(`${WEB_ORIGIN}/pay/${MAIN_TOKEN}`);
+		await anonPage.goto(`${LMS_ORIGIN}/pay/${MAIN_TOKEN}`);
 		await expect(anonPage.locator("img[src*='vietqr.app']")).toBeVisible({
 			timeout: 15_000,
 		});
@@ -238,7 +244,7 @@ test.describe("Tuition bank transfer (#320)", () => {
 
 		// Sign the student up on the portal; provisioning links the student row
 		// by email on first authenticated /api/student/me call.
-		await page.goto(`${STUDENT_ORIGIN}/login`);
+		await page.goto(`${LMS_ORIGIN}/login`);
 		await page.locator("#tab-signup").click();
 		await page.locator("#signup-name").fill("Học Viên QR");
 		await page.locator("#signup-email").fill(studentEmail);
@@ -253,7 +259,7 @@ test.describe("Tuition bank transfer (#320)", () => {
 
 		// verifyStudentEmailFromMailLog ends signed-in on the portal (the
 		// seeded student row links by email at first /api/student/me call).
-		await page.goto(`${STUDENT_ORIGIN}/`);
+		await page.goto(`${STUDENT_BASE_URL}/`);
 		await expect(
 			page.getByRole("heading", { name: "Lớp học của tôi" }),
 		).toBeVisible({ timeout: 30_000 });
@@ -307,7 +313,7 @@ test.describe("Tuition bank transfer (#320)", () => {
 			}),
 		).toBe(200);
 
-		await page.goto(`${WEB_ORIGIN}/pay/${MAIN_TOKEN}`);
+		await page.goto(`${LMS_ORIGIN}/pay/${MAIN_TOKEN}`);
 		await expect(page.getByText("Đã thanh toán đủ")).toBeVisible({
 			timeout: 20_000,
 		});
@@ -352,7 +358,7 @@ test.describe("Tuition bank transfer (#320)", () => {
 		).toBe(200);
 
 		await teacherSignIn(page);
-		await page.goto(`${WEB_ORIGIN}/tuition`);
+		await page.goto(`${TEACHER_BASE_URL}/tuition`);
 		await expect(page.getByText("Giao dịch chưa khớp (1)")).toBeVisible();
 		const row = page.locator("tr", { hasText: "TOSZZZZ9999" });
 		// Picker labels carry the INV- display code + remaining amount — the
@@ -367,7 +373,7 @@ test.describe("Tuition bank transfer (#320)", () => {
 			timeout: 15_000,
 		});
 
-		await page.goto(`${WEB_ORIGIN}/pay/${SECOND_TOKEN}`);
+		await page.goto(`${LMS_ORIGIN}/pay/${SECOND_TOKEN}`);
 		await expect(page.getByText("Đã nhận 150.000đ / 400.000đ")).toBeVisible({
 			timeout: 20_000,
 		});

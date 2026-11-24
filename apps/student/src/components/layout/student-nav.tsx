@@ -88,6 +88,8 @@ export function StudentShellLink({
 	href,
 	className,
 	"aria-current": ariaCurrent,
+	"aria-label": ariaLabel,
+	title,
 	onClick,
 	children,
 }: ShellLinkProps) {
@@ -97,6 +99,8 @@ export function StudentShellLink({
 			onClick={onClick}
 			className={className}
 			aria-current={ariaCurrent}
+			aria-label={ariaLabel}
+			title={title}
 			activeOptions={href === "/" ? { exact: true } : undefined}
 		>
 			{children}
@@ -114,14 +118,19 @@ export const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
 	"/tuition": "tuition",
 };
 
-/** activeKey cho shell — "/" là Tổng quan (exact), còn lại khớp prefix. */
-export function useStudentActiveKey(): string {
-	const pathname = useRouterState({ select: (s) => s.location.pathname });
-	if (pathname === "/") return "overview";
+/** activeKey cho shell — "/" hoặc "/student" là Tổng quan (exact), còn lại khớp prefix. */
+export function resolveStudentActiveKey(pathname: string): string {
+	const normalized = pathname.replace(/^\/student(?=\/|$)/, "") || "/";
+	if (normalized === "/") return "overview";
 	for (const [prefix, key] of Object.entries(ACTIVE_KEY_BY_PREFIX)) {
-		if (pathname.startsWith(prefix)) return key;
+		if (normalized.startsWith(prefix)) return key;
 	}
 	return "";
+}
+
+export function useStudentActiveKey(): string {
+	const pathname = useRouterState({ select: (s) => s.location.pathname });
+	return resolveStudentActiveKey(pathname);
 }
 
 /** Nhãn crumb theo activeKey ("tổ chức › mục"). */

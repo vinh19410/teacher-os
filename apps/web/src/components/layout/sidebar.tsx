@@ -11,6 +11,7 @@ import {
 	CalendarCheck,
 	CalendarDays,
 	ClipboardList,
+	GraduationCap,
 	Inbox,
 	LayoutDashboard,
 	Library,
@@ -56,6 +57,12 @@ export const TEACHER_NAV: NavGroup[] = [
 				label: "Bài test đầu vào",
 				icon: ClipboardList,
 				href: "/placement-test",
+			},
+			{
+				key: "courses",
+				label: "Khóa học",
+				icon: GraduationCap,
+				href: "/courses",
 			},
 			{
 				key: "schedule",
@@ -130,6 +137,7 @@ const FINANCE_NAV_KEY_MAP: Record<string, true> = {
 	debts: true,
 	leads: true,
 	"placement-test": true,
+	courses: true,
 };
 
 /**
@@ -154,6 +162,8 @@ export function TeacherShellLink({
 	href,
 	className,
 	"aria-current": ariaCurrent,
+	"aria-label": ariaLabel,
+	title,
 	onClick,
 	children,
 }: ShellLinkProps) {
@@ -163,6 +173,8 @@ export function TeacherShellLink({
 			onClick={onClick}
 			className={className}
 			aria-current={ariaCurrent}
+			aria-label={ariaLabel}
+			title={title}
 			activeOptions={href === "/" ? { exact: true } : undefined}
 		>
 			{children}
@@ -192,6 +204,7 @@ const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
 	"/students": "students",
 	"/leads": "leads",
 	"/placement-test": "placement-test",
+	"/courses": "courses",
 	"/schedule": "schedule",
 	"/syllabus": "syllabus",
 	"/materials": "materials",
@@ -206,9 +219,10 @@ const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
 };
 
 export function teacherActiveKey(pathname: string): string {
-	if (pathname === "/") return "dashboard";
+	const normalized = pathname.replace(/^\/teacher(?=\/|$)/, "") || "/";
+	if (normalized === "/") return "dashboard";
 	for (const [prefix, key] of Object.entries(ACTIVE_KEY_BY_PREFIX)) {
-		if (pathname.startsWith(prefix)) return key;
+		if (normalized.startsWith(prefix)) return key;
 	}
 	return "";
 }

@@ -16,7 +16,9 @@ import {
 	PLACEMENT_UPLOAD_TOKEN_TTL_MS,
 	type PlacementObjectiveResult,
 	type PlacementSnapshot,
+	parseStoredSpeakingCriterionComments,
 	parseStoredSpeakingRubric,
+	parseStoredWritingCriterionComments,
 	parseStoredWritingRubric,
 	type StudentPlacementStatus,
 	type StudentPlacementStatusResponse,
@@ -217,8 +219,12 @@ function toStudentPlacementSubmissionView(
 			? parseStoredWritingRubric(sub.writingRubricJson)
 			: null,
 		writingScore: isGraded ? (sub.writingBand ?? sub.writingScore) : null,
+		writingCriterionComments: isGraded
+			? parseStoredWritingCriterionComments(sub.writingCriterionCommentsJson)
+			: null,
 		writingErrors: isGraded
-			? (parseStoredErrors(sub.writingErrorsJson, sub.writingText) ?? [])
+			? (parseStoredErrors(sub.writingErrorsJson, sub.writingText, "writing") ??
+				[])
 			: [],
 		speakingStatus: sub.speakingStatus,
 		speakingTranscript: isGraded ? sub.speakingTranscript : "",
@@ -226,9 +232,15 @@ function toStudentPlacementSubmissionView(
 			? parseStoredSpeakingRubric(sub.speakingRubricJson)
 			: null,
 		speakingScore: isGraded ? (sub.speakingBand ?? sub.speakingScore) : null,
+		speakingCriterionComments: isGraded
+			? parseStoredSpeakingCriterionComments(sub.speakingCriterionCommentsJson)
+			: null,
 		speakingErrors: isGraded
-			? (parseStoredErrors(sub.speakingErrorsJson, sub.speakingTranscript) ??
-				[])
+			? (parseStoredErrors(
+					sub.speakingErrorsJson,
+					sub.speakingTranscript,
+					"speaking",
+				) ?? [])
 			: [],
 		finalBandLevel: isGraded ? sub.finalBandLevel : null,
 		finalDisplayCourse: isGraded ? sub.finalDisplayCourse : null,
