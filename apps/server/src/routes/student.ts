@@ -836,6 +836,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	router.use("/schedule", requireStudent);
 	router.use("/schedule/*", requireStudent);
 
+	// Chỉ bản ghi có kênh in_app mới thuộc inbox học viên; bản ghi chỉ gửi email
+	// không được hiển thị trong danh sách, không tính vào unread và không đánh dấu đọc.
+	const hasInAppChannel = sql`instr(',' || ${notificationRecord.channels} || ',', ',in_app,') > 0`;
+
 	// In-app inbox học viên (plan TOS-21 D7): 50 dòng mới nhất của chính học
 	// viên trong org đang chọn; không trả recipient_email/reply_to_email/last_error.
 	router.get("/inbox", async (c) => {
@@ -858,6 +862,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				and(
 					eq(notificationRecord.orgId, ctx.orgId),
 					eq(notificationRecord.studentId, ctx.student.id),
+					hasInAppChannel,
 				),
 			)
 			.orderBy(desc(notificationRecord.createdAt), desc(notificationRecord.id))
@@ -893,6 +898,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					eq(notificationRecord.id, id),
 					eq(notificationRecord.orgId, ctx.orgId),
 					eq(notificationRecord.studentId, ctx.student.id),
+					hasInAppChannel,
 				),
 			);
 
@@ -907,7 +913,14 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					readAt: new Date(),
 					...(record.status === "sent" ? { status: "read" as const } : {}),
 				})
-				.where(eq(notificationRecord.id, id));
+				.where(
+					and(
+						eq(notificationRecord.id, id),
+						eq(notificationRecord.orgId, ctx.orgId),
+						eq(notificationRecord.studentId, ctx.student.id),
+						hasInAppChannel,
+					),
+				);
 		}
 
 		return c.json({ ok: true });

@@ -10,6 +10,7 @@ import {
 	vietnamDateKeyOf,
 } from "@teacher-os/api/vietnam-date";
 import { BRAND_NAME } from "../brand";
+import { escapeHtml, isSafeLinkUrl } from "./deliver";
 
 /** 1 sự kiện phát ra từ route nghiệp vụ, chưa resolve người nhận (D4). */
 export interface NotificationEvent {
@@ -27,8 +28,8 @@ export interface NotificationEvent {
 	linkPath: string;
 	refType: string;
 	refId: string;
-	/** Mặc định enqueue theo email học viên ("email,in_app" nếu có email); đặt "in_app" để chỉ gửi inbox. */
-	channels?: "in_app" | "email,in_app";
+	/** Mặc định enqueue theo email học viên ("email,in_app" nếu có email); "in_app" chỉ gửi inbox; "email" chỉ gửi email và bỏ qua khi trống email. */
+	channels?: "in_app" | "email" | "email,in_app";
 }
 
 export function eventGroupOf(
@@ -295,4 +296,228 @@ export function classOpeningConfirmedEvents(input: {
 			refId: input.classId,
 		};
 	});
+}
+
+export interface DailyDeadlineReminderItem {
+	assignmentId: string;
+	title: string;
+	className: string;
+	dueTimeLabel: string;
+	opensAtLabel?: string | null;
+}
+
+export interface DailyDeadlineReminderDigest {
+	dateISO: string;
+	studentName: string;
+	homework: DailyDeadlineReminderItem[];
+	selfStudy: DailyDeadlineReminderItem[];
+}
+
+function buildStudentPortalLink(baseOrigin: string, path: string): string {
+	return baseOrigin ? `${baseOrigin}${path}` : path;
+}
+
+function renderReminderSectionHtml(
+	heading: string,
+	items: DailyDeadlineReminderItem[],
+	baseOrigin: string,
+): string {
+	if (items.length === 0) return "";
+	const itemRows = items
+		.map((item) => {
+			const trimmedClass = item.className.trim();
+			const trimmedOpens = item.opensAtLabel?.trim() ?? "";
+			const opensHtml = trimmedOpens
+				? ` (mở lúc ${escapeHtml(trimmedOpens)})`
+				: "";
+			const metaHtml = trimmedClass
+				? `${escapeHtml(trimmedClass)} &middot; Hạn ${escapeHtml(item.dueTimeLabel)}${opensHtml}`
+				: `Hạn ${escapeHtml(item.dueTimeLabel)}${opensHtml}`;
+			const itemUrl = buildStudentPortalLink(
+				baseOrigin,
+				`/learn/quizzes/${encodeURIComponent(item.assignmentId)}`,
+			);
+			const safeItemUrl = isSafeLinkUrl(itemUrl) ? escapeHtml(itemUrl) : "";
+			const actionHtml = safeItemUrl
+				? `<div style="margin-top:8px"><a href="${safeItemUrl}" style="font-size:13px;font-weight:600;color:#2563eb;text-decoration:none">Làm bài →</a></div>`
+				: "";
+			return [
+				'<li style="padding:12px 14px;margin:0 0 8px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc">',
+				`<div style="font-size:14px;font-weight:600;color:#0f172a;margin-bottom:4px">${escapeHtml(item.title)}</div>`,
+				`<div style="font-size:13px;color:#475569">${metaHtml}</div>`,
+				actionHtml,
+				"</li>",
+			].join("");
+		})
+		.join("");
+
+	return [
+		`<h2 style="font-size:14px;font-weight:600;color:#0f172a;margin:20px 0 10px">${escapeHtml(heading)} (${items.length})</h2>`,
+		`<ul style="list-style:none;padding:0;margin:0">${itemRows}</ul>`,
+	].join("");
+}
+
+/**
+ * Render email HTML có cấu trúc cho bản tin nhắc hạn bài mỗi ngày, tách riêng
+ * Bài tập về nhà và Bộ đề tự học kèm link trực tiếp tới từng bài.
+ */
+export function renderDailyDeadlineReminderHtml(
+	digest: DailyDeadlineReminderDigest,
+	studentOrigin = "",
+): string {
+	const baseOrigin = studentOrigin.trim().replace(/\/+$/, "");
+	const greetingName = digest.studentName.trim() || "bạn";
+	const displayDate = formatViDateDisplay(digest.dateISO);
+	const totalCount = digest.homework.length + digest.selfStudy.length;
+
+	const homeworkHtml = renderReminderSectionHtml(
+		"Bài tập về nhà",
+		digest.homework,
+		baseOrigin,
+	);
+	const selfStudyHtml = renderReminderSectionHtml(
+		"Bộ đề tự học",
+		digest.selfStudy,
+		baseOrigin,
+	);
+
+	const allAssignmentsUrl = buildStudentPortalLink(baseOrigin, "/assignments");
+	const safeAllUrl = isSafeLinkUrl(allAssignmentsUrl)
+		? escapeHtml(allAssignmentsUrl)
+		: "";
+	const ctaHtml = safeAllUrl
+		? `<p style="margin:24px 0"><a href="${safeAllUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600">Xem tất cả bài tập</a></p>`
+		: "";
+
+	return [
+		'<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"></head><body style="margin:0;font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:#f8fafc;padding:16px">',
+		'<div style="max-width:560px;margin:0 auto;padding:24px;background:#ffffff;border-radius:12px;border:1px solid #e2e8f0">',
+		`<p style="font-size:15px;line-height:1.6;color:#0f172a;margin:0 0 8px">Chào ${escapeHtml(greetingName)},</p>`,
+		`<p style="font-size:15px;line-height:1.6;color:#0f172a;margin:0 0 16px">Bạn có <strong>${totalCount}</strong> bài tập cần hoàn thành trong hôm nay (${escapeHtml(displayDate)}):</p>`,
+		homeworkHtml,
+		selfStudyHtml,
+		ctaHtml,
+		`<p style="font-size:12px;color:#64748b;margin:24px 0 0">Email tự động từ ${escapeHtml(BRAND_NAME)}.</p>`,
+		"</div></body></html>",
+	].join("");
+}
+
+function renderReminderSectionText(
+	heading: string,
+	items: DailyDeadlineReminderItem[],
+	baseOrigin: string,
+): string[] {
+	if (items.length === 0) return [];
+	const lines: string[] = ["", `${heading} (${items.length}):`];
+	for (const item of items) {
+		const trimmedClass = item.className.trim();
+		const classClause = trimmedClass ? ` (${trimmedClass})` : "";
+		const trimmedOpens = item.opensAtLabel?.trim() ?? "";
+		const opensClause = trimmedOpens ? ` (mở lúc ${trimmedOpens})` : "";
+		lines.push(
+			`- ${item.title}${classClause} — Hạn ${item.dueTimeLabel}${opensClause}`,
+		);
+		const itemUrl = buildStudentPortalLink(
+			baseOrigin,
+			`/learn/quizzes/${encodeURIComponent(item.assignmentId)}`,
+		);
+		if (isSafeLinkUrl(itemUrl)) {
+			lines.push(`  Làm bài: ${itemUrl}`);
+		}
+	}
+	return lines;
+}
+
+/**
+ * Render bản plain-text đầy đủ cho email nhắc hạn bài mỗi ngày, giữ phân mục,
+ * link từng bài và link danh sách bài tập ở cuối thư.
+ */
+export function renderDailyDeadlineReminderText(
+	digest: DailyDeadlineReminderDigest,
+	studentOrigin = "",
+): string {
+	const baseOrigin = studentOrigin.trim().replace(/\/+$/, "");
+	const greetingName = digest.studentName.trim() || "bạn";
+	const displayDate = formatViDateDisplay(digest.dateISO);
+	const totalCount = digest.homework.length + digest.selfStudy.length;
+
+	const lines: string[] = [
+		`Chào ${greetingName},`,
+		`Bạn có ${totalCount} bài tập cần hoàn thành trong hôm nay (${displayDate}):`,
+		...renderReminderSectionText("Bài tập về nhà", digest.homework, baseOrigin),
+		...renderReminderSectionText("Bộ đề tự học", digest.selfStudy, baseOrigin),
+	];
+
+	const allAssignmentsUrl = buildStudentPortalLink(baseOrigin, "/assignments");
+	if (isSafeLinkUrl(allAssignmentsUrl)) {
+		lines.push("", `Xem tất cả bài tập: ${allAssignmentsUrl}`);
+	}
+	lines.push("", `Email tự động từ ${BRAND_NAME}.`);
+	return lines.join("\n");
+}
+
+/**
+ * Sự kiện email tổng hợp nhắc bài tập & bộ đề tự học đến hạn trong ngày (chỉ gửi email,
+ * mỗi học viên tối đa 1 email/ngày theo khóa `daily_deadline_reminder:<studentId>:<dateISO>`).
+ * Lưu sẵn `htmlBody` và `textBody` để cả lượt gửi cron lẫn gửi lại thủ công giữ đúng bố cục digest.
+ */
+export function dailyDeadlineReminderEvent(input: {
+	studentId: string;
+	studentName: string;
+	dateISO: string;
+	homework: DailyDeadlineReminderItem[];
+	selfStudy: DailyDeadlineReminderItem[];
+	studentOrigin?: string;
+}): NotificationEvent {
+	const greetingName = input.studentName.trim() || "bạn";
+	const displayDate = formatViDateDisplay(input.dateISO);
+	const totalCount = input.homework.length + input.selfStudy.length;
+
+	const lines: string[] = [
+		`Chào ${greetingName},`,
+		`Bạn có ${totalCount} bài tập cần hoàn thành trong hôm nay (${displayDate}):`,
+	];
+
+	if (input.homework.length > 0) {
+		lines.push("", `Bài tập về nhà (${input.homework.length}):`);
+		for (const item of input.homework) {
+			const trimmedClass = item.className.trim();
+			const classClause = trimmedClass ? ` (${trimmedClass})` : "";
+			lines.push(`- ${item.title}${classClause} — Hạn ${item.dueTimeLabel}`);
+		}
+	}
+
+	if (input.selfStudy.length > 0) {
+		lines.push("", `Bộ đề tự học (${input.selfStudy.length}):`);
+		for (const item of input.selfStudy) {
+			const trimmedClass = item.className.trim();
+			const classClause = trimmedClass ? ` (${trimmedClass})` : "";
+			const trimmedOpens = item.opensAtLabel?.trim() ?? "";
+			const opensClause = trimmedOpens ? ` (mở lúc ${trimmedOpens})` : "";
+			lines.push(
+				`- ${item.title}${classClause} — Hạn ${item.dueTimeLabel}${opensClause}`,
+			);
+		}
+	}
+
+	const digest: DailyDeadlineReminderDigest = {
+		dateISO: input.dateISO,
+		studentName: input.studentName,
+		homework: input.homework,
+		selfStudy: input.selfStudy,
+	};
+
+	return {
+		studentId: input.studentId,
+		eventType: "daily_deadline_reminder",
+		idempotencyKey: `daily_deadline_reminder:${input.studentId}:${input.dateISO}`,
+		title: `Nhắc bài tập đến hạn hôm nay (${displayDate})`,
+		body: lines.join("\n"),
+		htmlBody: renderDailyDeadlineReminderHtml(digest, input.studentOrigin),
+		textBody: renderDailyDeadlineReminderText(digest, input.studentOrigin),
+		linkPath: "/assignments",
+		refType: "daily_deadline_reminder",
+		refId: input.dateISO,
+		channels: "email",
+	};
 }

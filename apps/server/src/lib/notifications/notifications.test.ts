@@ -23,8 +23,11 @@ import {
 import { requeueSingleFailedNotification } from "./requeue";
 import {
 	classOpeningConfirmedEvents,
+	dailyDeadlineReminderEvent,
 	holidayCreatedEvents,
 	placementSubmittedEvent,
+	renderDailyDeadlineReminderHtml,
+	renderDailyDeadlineReminderText,
 	tuitionReminderEvent,
 } from "./templates";
 
@@ -945,6 +948,223 @@ describe("notifications service (#454 phase 2)", () => {
 			errorSpy.mockRestore();
 		}
 	});
+
+	test("channels = email: queues with htmlBody/textBody when student has email and skips when email is empty", async () => {
+		await seedOrg("org-email-only", "Email Only Academy");
+		await seedOwner("org-email-only", "owner-email-only", "teacher@academy.vn");
+		await seedStudent("org-email-only", "stu-eo-1", "  minh@example.com  ");
+		await seedStudent("org-email-only", "stu-eo-2", "   ");
+
+		const eventWithEmail = dailyDeadlineReminderEvent({
+			studentId: "stu-eo-1",
+			studentName: "Minh",
+			dateISO: "2026-05-15",
+			studentOrigin: "https://lms.msmy.io.vn/student",
+			homework: [
+				{
+					assignmentId: "hw-eo-1",
+					title: "Writing Task 1",
+					className: "IELTS 6.5",
+					dueTimeLabel: "21:00",
+				},
+			],
+			selfStudy: [],
+		});
+		const eventNoEmail = dailyDeadlineReminderEvent({
+			studentId: "stu-eo-2",
+			studentName: "Nam",
+			dateISO: "2026-05-15",
+			studentOrigin: "https://lms.msmy.io.vn/student",
+			homework: [
+				{
+					assignmentId: "hw-eo-1",
+					title: "Writing Task 1",
+					className: "IELTS 6.5",
+					dueTimeLabel: "21:00",
+				},
+			],
+			selfStudy: [],
+		});
+
+		const result = await enqueueNotifications(db, "org-email-only", [
+			eventWithEmail,
+			eventNoEmail,
+		]);
+		expect(result.createdIds).toHaveLength(1);
+		expect(result.queuedEmailIds).toHaveLength(1);
+
+		const saved = await rowOf("stu-eo-1");
+		expect(saved.channels).toBe("email");
+		expect(saved.status).toBe("queued");
+		expect(saved.sentAt).toBeNull();
+		expect(saved.recipientEmail).toBe("minh@example.com");
+		expect(saved.htmlBody).toBe(eventWithEmail.htmlBody);
+		expect(saved.textBody).toBe(eventWithEmail.textBody);
+
+		const skippedRows = await rowsOf("stu-eo-2");
+		expect(skippedRows).toHaveLength(0);
+	});
+
+	test("deliverNotifications paces consecutive email sends using sendIntervalMs", async () => {
+		await seedOrg("org-pace", "Paced Academy");
+		const events = [];
+		for (let i = 1; i <= 3; i += 1) {
+			const studentId = `stu-pace-${i}`;
+			await seedStudent("org-pace", studentId, `pace${i}@example.com`);
+			events.push(
+				dailyDeadlineReminderEvent({
+					studentId,
+					studentName: `Hoc Vien ${i}`,
+					dateISO: "2026-05-15",
+					studentOrigin: "https://lms.msmy.io.vn/student",
+					homework: [
+						{
+							assignmentId: `hw-pace-${i}`,
+							title: `Task ${i}`,
+							className: "IELTS",
+							dueTimeLabel: "20:00",
+						},
+					],
+					selfStudy: [],
+				}),
+			);
+		}
+
+		const { queuedEmailIds } = await enqueueNotifications(
+			db,
+			"org-pace",
+			events,
+		);
+		const sleepDelays: number[] = [];
+		const timeoutSpy = vi.spyOn(globalThis, "setTimeout").mockImplementation(((
+			fn: unknown,
+			ms?: number,
+		) => {
+			sleepDelays.push(ms ?? 0);
+			if (typeof fn === "function") (fn as () => void)();
+			return 0 as unknown as ReturnType<typeof setTimeout>;
+		}) as typeof setTimeout);
+
+		try {
+			await deliverNotifications(
+				db,
+				fakeMailer(),
+				queuedEmailIds,
+				"https://lms.msmy.io.vn/student",
+				{ sendIntervalMs: 550 },
+			);
+		} finally {
+			timeoutSpy.mockRestore();
+		}
+
+		expect(sleepDelays).toEqual([550, 550]);
+	});
+
+	test("daily_deadline_reminder requeue resend preserves channels=email and digest HTML/text", async () => {
+		await seedOrg("org-digest", "Digest Academy");
+		await seedOwner("org-digest", "owner-digest", "owner@digest.vn");
+		await seedStudent("org-digest", "stu-digest", "digest@example.com");
+
+		const event = dailyDeadlineReminderEvent({
+			studentId: "stu-digest",
+			studentName: "Quỳnh",
+			dateISO: "2026-05-15",
+			studentOrigin: "https://lms.msmy.io.vn/student/",
+			homework: [
+				{
+					assignmentId: "hw-d1",
+					title: "Writing Task 2",
+					className: "IELTS 7.0",
+					dueTimeLabel: "23:59",
+				},
+			],
+			selfStudy: [
+				{
+					assignmentId: "ss-d1",
+					title: "Reading Day 4",
+					className: "IELTS 7.0",
+					dueTimeLabel: "17:00",
+					opensAtLabel: "08:00",
+				},
+			],
+		});
+
+		const { queuedEmailIds } = await enqueueNotifications(db, "org-digest", [
+			event,
+		]);
+		const recordId = queuedEmailIds[0];
+		if (!recordId) throw new Error("expected queued record");
+
+		await deliverNotifications(
+			db,
+			fakeMailer(async () => {
+				throw new Error("temporary provider outage");
+			}),
+			queuedEmailIds,
+			"https://lms.msmy.io.vn/student/",
+			{ retryDelaysMs: [0, 0] },
+		);
+
+		const failedRow = await rowOf("stu-digest");
+		expect(failedRow.status).toBe("failed");
+		expect(failedRow.channels).toBe("email");
+		expect(failedRow.htmlBody).toBe(event.htmlBody);
+		expect(failedRow.textBody).toBe(event.textBody);
+
+		const requeued = await requeueSingleFailedNotification(
+			db,
+			"org-digest",
+			recordId,
+		);
+		expect(requeued.kind).toBe("ok");
+		if (requeued.kind !== "ok") throw new Error("expected ok requeue");
+
+		const afterRequeue = await rowOf("stu-digest");
+		expect(afterRequeue.channels).toBe("email");
+		expect(afterRequeue.status).toBe("queued");
+
+		const sent: Parameters<Mailer["send"]>[0][] = [];
+		await deliverNotifications(
+			db,
+			fakeMailer(async (input) => {
+				sent.push(input);
+			}),
+			requeued.requeuedIds,
+			"https://lms.msmy.io.vn/student/",
+			{ retryDelaysMs: [0, 0] },
+		);
+
+		expect(sent).toHaveLength(1);
+		const email = sent[0];
+		if (!email) throw new Error("expected email");
+		expect(email.to).toBe("digest@example.com");
+		expect(email.subject).toBe("Nhắc bài tập đến hạn hôm nay (15/05/2026)");
+		expect(email.html).toContain("Bài tập về nhà (1)");
+		expect(email.html).toContain("Bộ đề tự học (1)");
+		expect(email.html).toContain(
+			'href="https://lms.msmy.io.vn/student/learn/quizzes/hw-d1"',
+		);
+		expect(email.html).toContain(
+			'href="https://lms.msmy.io.vn/student/learn/quizzes/ss-d1"',
+		);
+		expect(email.html).toContain(
+			'href="https://lms.msmy.io.vn/student/assignments"',
+		);
+		expect(email.html).toContain("Làm bài →");
+		expect(email.html).toContain("Xem tất cả bài tập");
+		expect(email.html).toContain("(mở lúc 08:00)");
+		expect(email.text).toContain(
+			"https://lms.msmy.io.vn/student/learn/quizzes/hw-d1",
+		);
+		expect(email.text).toContain(
+			"https://lms.msmy.io.vn/student/learn/quizzes/ss-d1",
+		);
+		expect(email.text).toContain("https://lms.msmy.io.vn/student/assignments");
+
+		const finalRow = await rowOf("stu-digest");
+		expect(finalRow.status).toBe("sent");
+		expect(finalRow.channels).toBe("email");
+	});
 });
 
 describe("templates builder", () => {
@@ -1067,5 +1287,72 @@ describe("templates builder", () => {
 		expect(portalMail.html).toContain('href="https://lms.msmy.io.vn/login"');
 		expect(portalMail.text).toContain("https://lms.msmy.io.vn/login");
 		expect(portalMail.html).not.toContain("/student/login");
+	});
+
+	test("renderDailyDeadlineReminderHtml escapes XSS, encodes IDs, omits empty sections, and blocks unsafe origins", () => {
+		const xssDigest = {
+			dateISO: "2026-05-15",
+			studentName: '<img src=x onerror="alert(1)">',
+			homework: [
+				{
+					assignmentId: "a/b?c=1",
+					title: '<script>alert("hw")</script>',
+					className: 'IELTS "Pro" & <A>',
+					dueTimeLabel: "23:59",
+				},
+			],
+			selfStudy: [],
+		};
+
+		const html = renderDailyDeadlineReminderHtml(
+			xssDigest,
+			"https://lms.msmy.io.vn/student/",
+		);
+		expect(html).not.toContain("<script>");
+		expect(html).not.toContain("<img ");
+		expect(html).toContain(
+			"&lt;script&gt;alert(&quot;hw&quot;)&lt;/script&gt;",
+		);
+		expect(html).toContain("IELTS &quot;Pro&quot; &amp; &lt;A&gt;");
+		expect(html).toContain("Bài tập về nhà (1)");
+		expect(html).not.toContain("Bộ đề tự học");
+		expect(html).toContain(
+			'href="https://lms.msmy.io.vn/student/learn/quizzes/a%2Fb%3Fc%3D1"',
+		);
+		expect(html).toContain('href="https://lms.msmy.io.vn/student/assignments"');
+		expect(html).toContain("Email tự động từ Cô Mỹ Dạy Tiếng Anh.");
+
+		const unsafeHtml = renderDailyDeadlineReminderHtml(
+			xssDigest,
+			"javascript:alert(1)",
+		);
+		expect(unsafeHtml).not.toContain("javascript:");
+		expect(unsafeHtml).not.toContain("<a ");
+
+		const relativeText = renderDailyDeadlineReminderText(
+			{
+				dateISO: "2026-05-15",
+				studentName: "",
+				homework: [],
+				selfStudy: [
+					{
+						assignmentId: "ss-9",
+						title: "Reading Day 9",
+						className: "IELTS 6.0",
+						dueTimeLabel: "17:00",
+						opensAtLabel: "08:00",
+					},
+				],
+			},
+			"",
+		);
+		expect(relativeText).toContain("Chào bạn,");
+		expect(relativeText).not.toContain("Bài tập về nhà");
+		expect(relativeText).toContain("Bộ đề tự học (1):");
+		expect(relativeText).toContain(
+			"- Reading Day 9 (IELTS 6.0) — Hạn 17:00 (mở lúc 08:00)",
+		);
+		expect(relativeText).toContain("Làm bài: /learn/quizzes/ss-9");
+		expect(relativeText).toContain("Xem tất cả bài tập: /assignments");
 	});
 });

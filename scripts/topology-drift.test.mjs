@@ -546,3 +546,37 @@ test("student practice nav flag is enabled on staging deploy step, wired via alc
 		"deploy.yml LMS smoke negative scan must fail closed on curl/HTTP errors and forbidden flag matches",
 	);
 });
+
+test("server Worker declares both Zoom sync and daily deadline reminder cron triggers", () => {
+	const run = read("../packages/infra/alchemy.run.ts");
+	const serverBlock = run
+		.split('Cloudflare.Worker("server"')[1]
+		?.split("export type ServerEnv")[0];
+	assert.ok(
+		serverBlock,
+		'Cloudflare.Worker("server") block found in alchemy.run.ts',
+	);
+
+	const cronsMatch = serverBlock.match(/crons:\s*\[([^\]]*)\]/);
+	assert.ok(
+		cronsMatch,
+		'Cloudflare.Worker("server") must declare a crons array in alchemy.run.ts',
+	);
+	const cronsBody = cronsMatch[1].replace(/\/\/[^\n]*/g, "");
+	const crons = [...cronsBody.matchAll(/["']([^"']+)["']/g)].map((m) => m[1]);
+	assert.ok(
+		crons.includes("*/10 * * * *"),
+		'server Worker crons must include "*/10 * * * *" for Zoom recording sync',
+	);
+	assert.ok(
+		crons.includes("0 23 * * *"),
+		'server Worker crons must include "0 23 * * *" for daily deadline reminders',
+	);
+
+	const serverEntry = read("../apps/server/src/index.ts");
+	assert.match(
+		serverEntry,
+		/dispatchScheduledCron\(/,
+		"apps/server/src/index.ts scheduled() must route crons via dispatchScheduledCron",
+	);
+});
