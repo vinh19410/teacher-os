@@ -31,6 +31,19 @@ export function createFsMediaStore(dir: string): MediaStore {
 			}
 			await writeFile(metaFor(key), JSON.stringify({ contentType, size }));
 		},
+		async head(key) {
+			let meta: { contentType: string; size: number };
+			try {
+				meta = JSON.parse(await readFile(metaFor(key), "utf8"));
+			} catch {
+				return null;
+			}
+			return {
+				contentType: meta.contentType,
+				size: meta.size,
+				etag: `"${meta.size}-${encodeURIComponent(key)}"`,
+			};
+		},
 		async get(key, range) {
 			let meta: { contentType: string; size: number };
 			try {
@@ -38,20 +51,32 @@ export function createFsMediaStore(dir: string): MediaStore {
 			} catch {
 				return null;
 			}
-			const streamOpts =
-				range && range.length > 0
+			const clampedRange =
+				range &&
+				Number.isInteger(range.offset) &&
+				Number.isInteger(range.length) &&
+				range.offset >= 0 &&
+				range.offset < meta.size &&
+				range.length > 0
 					? {
-							start: range.offset,
-							end: range.offset + range.length - 1,
+							offset: range.offset,
+							length: Math.min(range.length, meta.size - range.offset),
 						}
 					: undefined;
+			const streamOpts = clampedRange
+				? {
+						start: clampedRange.offset,
+						end: clampedRange.offset + clampedRange.length - 1,
+					}
+				: undefined;
 			return {
 				body: Readable.toWeb(
 					createReadStream(pathFor(key), streamOpts),
 				) as unknown as ReadableStream<Uint8Array>,
 				contentType: meta.contentType,
 				size: meta.size,
-				...(streamOpts && range ? { range } : {}),
+				etag: `"${meta.size}-${encodeURIComponent(key)}"`,
+				...(clampedRange ? { range: clampedRange } : {}),
 			};
 		},
 		async delete(key) {

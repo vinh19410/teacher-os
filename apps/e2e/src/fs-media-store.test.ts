@@ -86,6 +86,24 @@ test("createFsMediaStore đọc toàn bộ hoặc đúng đoạn byte đầu, gi
 			new TextDecoder().decode(await readAllBytes(tail.body)),
 			"CDEF",
 		);
+
+		const meta = await store.head?.("placement/org-1/audio-1");
+		assert.ok(meta);
+		assert.equal(meta.contentType, "audio/mpeg");
+		assert.equal(meta.size, 16);
+		assert.ok(meta.etag && meta.etag.length > 0);
+		assert.equal(await store.head?.("placement/org-1/missing"), null);
+
+		const clamped = await store.get("placement/org-1/audio-1", {
+			offset: 12,
+			length: 100,
+		});
+		assert.ok(clamped);
+		assert.deepEqual(clamped.range, { offset: 12, length: 4 });
+		assert.equal(
+			new TextDecoder().decode(await readAllBytes(clamped.body)),
+			"CDEF",
+		);
 	} finally {
 		await rm(dir, { recursive: true, force: true });
 	}

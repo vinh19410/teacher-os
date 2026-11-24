@@ -631,7 +631,26 @@ test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page 
 	await expect(studentPage.getByText("IELTS Foundation")).toBeVisible();
 	const takeAudio = studentPage.getByTestId("quiz-audio-player");
 	await expect(takeAudio).toBeVisible();
-	await expect(takeAudio).toHaveAttribute("src", /^blob:/);
+	await expect(takeAudio).toHaveAttribute(
+		"src",
+		/\/api\/student\/assignments\/[^/]+\/audio/,
+	);
+	await expect(takeAudio).toHaveAttribute("crossorigin", "use-credentials");
+	await expect(studentPage.getByText("Đang tải file nghe…")).toHaveCount(0);
+	await expect(studentPage.getByText("Không tải được file nghe.")).toHaveCount(
+		0,
+	);
+	await expect
+		.poll(() => takeAudio.evaluate((el: HTMLAudioElement) => el.readyState))
+		.toBeGreaterThanOrEqual(1);
+	const rangeRes = await studentPage.request.get(
+		`${API_ORIGIN}/api/student/assignments/${day1AssignmentId}/audio`,
+		{ headers: { Origin: STUDENT_ORIGIN, Range: "bytes=0-3" } },
+	);
+	expect(rangeRes.status()).toBe(206);
+	expect(rangeRes.headers()["accept-ranges"]).toBe("bytes");
+	expect(rangeRes.headers()["content-range"]).toBe("bytes 0-3/4170");
+	expect(rangeRes.headers()["content-length"]).toBe("4");
 	await expect(studentPage.getByTestId("quiz-review-transcript")).toHaveCount(
 		0,
 	);
@@ -717,7 +736,18 @@ test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page 
 	);
 	const reviewAudio = studentPage.getByTestId("quiz-audio-player");
 	await expect(reviewAudio).toBeVisible();
-	await expect(reviewAudio).toHaveAttribute("src", /^blob:/);
+	await expect(reviewAudio).toHaveAttribute(
+		"src",
+		/\/api\/student\/assignments\/[^/]+\/audio/,
+	);
+	await expect(reviewAudio).toHaveAttribute("crossorigin", "use-credentials");
+	await expect(studentPage.getByText("Đang tải file nghe…")).toHaveCount(0);
+	await expect(studentPage.getByText("Không tải được file nghe.")).toHaveCount(
+		0,
+	);
+	await expect
+		.poll(() => reviewAudio.evaluate((el: HTMLAudioElement) => el.readyState))
+		.toBeGreaterThanOrEqual(1);
 	await expect(reviewAudio).toHaveAttribute("aria-label", "Bài nghe");
 	await expect(studentPage.getByText("education.mp3")).toHaveCount(0);
 	await expect(studentPage.getByText(/🔊/)).toHaveCount(0);

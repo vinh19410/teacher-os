@@ -54,17 +54,32 @@ vi.mock("@/lib/query-client", () => ({
 	reauth: vi.fn(),
 }));
 
-const useQuizAudioObjectUrlMock = vi.fn((_source: unknown) => ({
-	audioSrc: null as string | null,
-	audioLoading: false,
-	audioError: false,
-}));
+const useQuizAudioStreamMock = vi.fn(
+	(_source: unknown, _options?: unknown) => ({
+		audioSrc: null as string | null,
+		audioLoading: false,
+		audioError: false,
+		onAudioError: vi.fn(),
+		retry: vi.fn(),
+	}),
+);
 
 vi.mock("@/lib/repos/quiz", () => ({
+	quizTakeSourceId: (
+		s:
+			| { kind: "assignment"; id: string }
+			| { kind: "practice"; testId: string },
+	) => (s.kind === "assignment" ? s.id : s.testId),
 	quizDetailQueryKey: (s: unknown) => ["quiz-detail", s],
 	useStudentQuizDetail: () => ({ data: mockDetail, isPending: false }),
 	useStartQuizAttempt: () => ({ mutate: vi.fn(), isPending: false }),
-	useQuizAudioObjectUrl: (source: unknown) => useQuizAudioObjectUrlMock(source),
+	useQuizAudioStream: (source: unknown, options?: unknown) =>
+		useQuizAudioStreamMock(source, options),
+	useQuizAudioObjectUrl: () => ({
+		audioSrc: null,
+		audioLoading: false,
+		audioError: false,
+	}),
 	useAssignmentAudioObjectUrl: () => ({
 		audioSrc: null,
 		audioLoading: false,
@@ -88,7 +103,7 @@ describe("QuizTakeView — hybrid MCQ + Writing dual-store runtime (#574)", () =
 		patchAnswerMock.mockClear();
 		patchEssayMock.mockClear();
 		submitMock.mockClear();
-		useQuizAudioObjectUrlMock.mockClear();
+		useQuizAudioStreamMock.mockClear();
 		Object.defineProperty(window, "location", {
 			configurable: true,
 			value: { assign: vi.fn(), href: "http://localhost:8003" },
@@ -292,7 +307,7 @@ describe("QuizTakeView — hybrid MCQ + Writing dual-store runtime (#574)", () =
 		expect(screen.getByTestId("navigator-progress")).toBeTruthy();
 	});
 
-	it("loads practice audio through useQuizAudioObjectUrl when practice listening test hasAudio", () => {
+	it("streams practice audio through useQuizAudioStream with auth recovery callback when practice listening test hasAudio", () => {
 		mockDetail = {
 			...mockDetail,
 			assignmentId: "",
@@ -306,7 +321,8 @@ describe("QuizTakeView — hybrid MCQ + Writing dual-store runtime (#574)", () =
 		const qc = new QueryClient({
 			defaultOptions: { queries: { retry: false } },
 		});
-		render(
+		const invalidateSpy = vi.spyOn(qc, "invalidateQueries");
+		const { rerender } = render(
 			<QueryClientProvider client={qc}>
 				<QuizTakeView
 					source={{ kind: "practice", testId: "test-listen-1" }}
@@ -315,10 +331,25 @@ describe("QuizTakeView — hybrid MCQ + Writing dual-store runtime (#574)", () =
 				/>
 			</QueryClientProvider>,
 		);
-		expect(useQuizAudioObjectUrlMock).toHaveBeenCalledWith({
-			kind: "practice",
-			testId: "test-listen-1",
-		});
+		expect(useQuizAudioStreamMock).toHaveBeenCalledWith(
+			{
+				kind: "practice",
+				testId: "test-listen-1",
+			},
+			expect.objectContaining({
+				onAuthError: expect.any(Function),
+			}),
+		);
+		rerender(
+			<QueryClientProvider client={qc}>
+				<QuizTakeView
+					source={{ kind: "practice", testId: "test-listen-1" }}
+					serverAnswers={{}}
+					serverEssay=""
+				/>
+			</QueryClientProvider>,
+		);
+		expect(invalidateSpy).not.toHaveBeenCalled();
 	});
 
 	it("hides band on start gate for practice auto-graded quiz without hybrid writing", () => {

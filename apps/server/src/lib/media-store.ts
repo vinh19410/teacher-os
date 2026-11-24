@@ -10,11 +10,18 @@ export interface MediaByteRange {
 	length: number;
 }
 
+export interface StoredMediaMeta {
+	contentType: string;
+	size: number;
+	etag?: string;
+}
+
 export interface StoredMedia {
 	body: ReadableStream<Uint8Array>;
 	contentType: string;
 	size: number;
 	range?: MediaByteRange;
+	etag?: string;
 }
 
 export interface MediaStore {
@@ -28,6 +35,7 @@ export interface MediaStore {
 		body: ReadableStream<Uint8Array>,
 		meta: { contentType: string; size: number },
 	): Promise<void>;
+	head?(key: string): Promise<StoredMediaMeta | null>;
 	get(key: string, range?: MediaByteRange): Promise<StoredMedia | null>;
 	delete(key: string): Promise<void>;
 }
