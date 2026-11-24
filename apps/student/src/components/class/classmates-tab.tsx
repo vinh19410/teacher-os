@@ -28,6 +28,9 @@ function ClassmateCard({ mate }: { mate: ClassmatesResponse[number] }) {
  * Tab "Bạn cùng lớp" (#378): lưới card avatar chữ tắt + tên học viên đang
  * ghi danh active vào lớp. Dữ liệu chỉ gồm name/initials — server không trả
  * email/band/học phí/điểm.
+ *
+ * Hiện tab này đang được ẩn khỏi `ClassDetailView` trên giao diện học viên;
+ * component và endpoint backend vẫn được giữ lại để dễ bật lại khi cần.
  */
 export function ClassmatesTab({ classId }: { classId: string }) {
 	const classmatesQuery = useClassmates(classId, true);

@@ -52,13 +52,37 @@ describe("student practice — đồng bộ đề thư viện", () => {
 				const bytes = new Uint8Array(await new Response(body).arrayBuffer());
 				audioObjects.set(key, { bytes, contentType: meta.contentType });
 			},
-			async get(key) {
+			async head(key) {
 				const obj = audioObjects.get(key);
 				if (!obj) return null;
+				return {
+					contentType: obj.contentType,
+					size: obj.bytes.byteLength,
+					etag: `"${obj.bytes.byteLength}-${key}"`,
+				};
+			},
+			async get(key, range) {
+				const obj = audioObjects.get(key);
+				if (!obj) return null;
+				if (range && range.offset >= 0 && range.offset < obj.bytes.byteLength) {
+					const length = Math.min(
+						range.length,
+						obj.bytes.byteLength - range.offset,
+					);
+					const slice = obj.bytes.subarray(range.offset, range.offset + length);
+					return {
+						body: new Response(slice).body as ReadableStream,
+						contentType: obj.contentType,
+						size: obj.bytes.byteLength,
+						range: { offset: range.offset, length },
+						etag: `"${obj.bytes.byteLength}-${key}"`,
+					};
+				}
 				return {
 					body: new Response(obj.bytes).body as ReadableStream,
 					contentType: obj.contentType,
 					size: obj.bytes.byteLength,
+					etag: `"${obj.bytes.byteLength}-${key}"`,
 				};
 			},
 			async delete(key) {
@@ -298,15 +322,101 @@ describe("student practice — đồng bộ đề thư viện", () => {
 		const audioRes = await app.request(
 			`/api/student/practice/${item?.testId}/audio`,
 			{
-				headers: { "x-test-user": "hoa", "x-student-org-id": "org-1" },
+				headers: {
+					"x-test-user": "hoa",
+					"x-student-org-id": "org-1",
+					Origin: "http://localhost:8003",
+				},
 			},
 		);
 		expect(audioRes.status).toBe(200);
 		expect(audioRes.headers.get("content-type")).toBe("audio/mpeg");
+		expect(audioRes.headers.get("accept-ranges")).toBe("bytes");
+		expect(audioRes.headers.get("cache-control")).toBe("private, no-cache");
+		expect(audioRes.headers.get("cross-origin-resource-policy")).toBe(
+			"same-site",
+		);
+		expect(audioRes.headers.get("referrer-policy")).toBe("no-referrer");
+		const etag = audioRes.headers.get("etag");
+		expect(etag).toBeTruthy();
+		expect(audioRes.headers.get("vary") ?? "").toContain("x-student-org-id");
+		const exposeHeaders = (
+			audioRes.headers.get("access-control-expose-headers") ?? ""
+		).toLowerCase();
+		expect(exposeHeaders).toContain("accept-ranges");
+		expect(exposeHeaders).toContain("content-range");
+		expect(exposeHeaders).toContain("content-length");
+		expect(exposeHeaders).toContain("etag");
 		const audioBytes = new Uint8Array(await audioRes.arrayBuffer());
 		expect(Array.from(audioBytes)).toEqual([
 			0x49, 0x44, 0x33, 0x03, 0x00, 0x00,
 		]);
+
+		// Revalidation with If-None-Match -> 304 Not Modified
+		const cachedRes = await app.request(
+			`/api/student/practice/${item?.testId}/audio`,
+			{
+				headers: {
+					"x-test-user": "hoa",
+					"x-student-org-id": "org-1",
+					"if-none-match": etag ?? "",
+				},
+			},
+		);
+		expect(cachedRes.status).toBe(304);
+
+		// Partial Range -> 206
+		const rangeRes = await app.request(
+			`/api/student/practice/${item?.testId}/audio`,
+			{
+				headers: {
+					"x-test-user": "hoa",
+					"x-student-org-id": "org-1",
+					Origin: "http://localhost:8003",
+					Range: "bytes=0-2",
+				},
+			},
+		);
+		expect(rangeRes.status).toBe(206);
+		expect(rangeRes.headers.get("content-range")).toBe("bytes 0-2/6");
+		expect(rangeRes.headers.get("content-length")).toBe("3");
+		expect(Array.from(new Uint8Array(await rangeRes.arrayBuffer()))).toEqual([
+			0x49, 0x44, 0x33,
+		]);
+
+		// Out-of-bounds Range -> 416
+		const badRangeRes = await app.request(
+			`/api/student/practice/${item?.testId}/audio`,
+			{
+				headers: {
+					"x-test-user": "hoa",
+					"x-student-org-id": "org-1",
+					Range: "bytes=100-200",
+				},
+			},
+		);
+		expect(badRangeRes.status).toBe(416);
+		expect(badRangeRes.headers.get("content-range")).toBe("bytes */6");
+
+		// OPTIONS preflight allows Range & If-None-Match
+		const preflight = await app.request(
+			`/api/student/practice/${item?.testId}/audio`,
+			{
+				method: "OPTIONS",
+				headers: {
+					Origin: "http://localhost:8003",
+					"Access-Control-Request-Method": "GET",
+					"Access-Control-Request-Headers":
+						"range, if-none-match, x-student-org-id",
+				},
+			},
+		);
+		expect(preflight.status).toBe(204);
+		const allowHeaders = (
+			preflight.headers.get("access-control-allow-headers") ?? ""
+		).toLowerCase();
+		expect(allowHeaders).toContain("range");
+		expect(allowHeaders).toContain("if-none-match");
 
 		// Org khác không đọc được bản sao của org-1
 		const otherOrgAudio = await app.request(

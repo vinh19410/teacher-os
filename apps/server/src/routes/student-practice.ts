@@ -444,6 +444,10 @@ export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 			audioKey: header.audioKey,
 			audioUrl: header.audioUrl,
 			audioName: header.audioName,
+			rangeHeader: c.req.header("Range"),
+			ifNoneMatch: c.req.header("If-None-Match"),
+			cacheControl: "private, no-cache",
+			vary: "Cookie, x-student-org-id",
 			getLibraryAudioStore: deps.getLibraryAudioStore,
 			fetchExternalAudio: deps.fetchExternalAudio,
 		});

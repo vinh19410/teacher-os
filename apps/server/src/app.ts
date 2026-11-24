@@ -54,6 +54,7 @@ export {
 	MediaSizeMismatchError,
 	type MediaStore,
 	type StoredMedia,
+	type StoredMediaMeta,
 } from "./lib/media-store";
 
 export interface KernelCtx {
@@ -339,6 +340,7 @@ export function buildApp(deps: AppDeps) {
 	for (const path of [
 		"/api/student/attempts/:attemptId/media",
 		"/api/student/assignments/:assignmentId/audio",
+		"/api/student/practice/:testId/audio",
 		"/api/grading/:attemptId/media",
 		"/api/placement-test/audio/:id",
 		"/api/student/placement-test/audio/:id",
@@ -405,12 +407,15 @@ export function buildApp(deps: AppDeps) {
 		allowHeaders: [
 			"Content-Type",
 			"Authorization",
+			"Range",
+			"If-None-Match",
 			"x-student-org-id",
 			"X-File-Name",
 			"X-Upload-Token",
 			"X-Media-Filename",
 			"X-Speaking-Duration",
 		],
+		exposeHeaders: ["Accept-Ranges", "Content-Range", "Content-Length", "ETag"],
 		credentials: true,
 	});
 	// Lead intake (#506 D5): preflight của cors TOÀN CỤC trả sớm với origin
