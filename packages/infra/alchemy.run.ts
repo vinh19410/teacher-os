@@ -204,8 +204,10 @@ export const server = Cloudflare.Worker("server", {
 		date: WORKER_COMPATIBILITY_DATE,
 		flags: ["nodejs_compat"],
 	},
-	// `*/10 * * * *` syncs Zoom cloud recordings; `0 23 * * *` (23:00 UTC = 06:00 Asia/Ho_Chi_Minh) sends daily assignment deadline reminder emails.
-	crons: ["*/10 * * * *", "0 23 * * *"],
+	// Single 10-minute cron trigger to stay within Cloudflare Workers Free's 5-cron/account limit.
+	// `apps/server/src/lib/scheduled.ts` runs Zoom recording sync on every tick and daily deadline
+	// reminder emails during the 23:00–23:09 UTC (06:00 Asia/Ho_Chi_Minh) window.
+	crons: ["*/10 * * * *"],
 	...(topology && { domain: topology.apiHost, workersDev: false }),
 	env: {
 		DB: db,

@@ -547,7 +547,7 @@ test("student practice nav flag is enabled on staging deploy step, wired via alc
 	);
 });
 
-test("server Worker declares both Zoom sync and daily deadline reminder cron triggers", () => {
+test("server Worker declares a single */10 cron trigger and multiplexes daily deadline reminders at 23:00 UTC", () => {
 	const run = read("../packages/infra/alchemy.run.ts");
 	const serverBlock = run
 		.split('Cloudflare.Worker("server"')[1]
@@ -564,13 +564,10 @@ test("server Worker declares both Zoom sync and daily deadline reminder cron tri
 	);
 	const cronsBody = cronsMatch[1].replace(/\/\/[^\n]*/g, "");
 	const crons = [...cronsBody.matchAll(/["']([^"']+)["']/g)].map((m) => m[1]);
-	assert.ok(
-		crons.includes("*/10 * * * *"),
-		'server Worker crons must include "*/10 * * * *" for Zoom recording sync',
-	);
-	assert.ok(
-		crons.includes("0 23 * * *"),
-		'server Worker crons must include "0 23 * * *" for daily deadline reminders',
+	assert.deepEqual(
+		crons,
+		["*/10 * * * *"],
+		'server Worker must keep a single "*/10 * * * *" cron trigger to stay within Cloudflare Workers Free 5-cron account limit',
 	);
 
 	const serverEntry = read("../apps/server/src/index.ts");
@@ -578,5 +575,12 @@ test("server Worker declares both Zoom sync and daily deadline reminder cron tri
 		serverEntry,
 		/dispatchScheduledCron\(/,
 		"apps/server/src/index.ts scheduled() must route crons via dispatchScheduledCron",
+	);
+
+	const scheduledMod = read("../apps/server/src/lib/scheduled.ts");
+	assert.match(
+		scheduledMod,
+		/isDailyDeadlineReminderWindow\(/,
+		"apps/server/src/lib/scheduled.ts must multiplex daily deadline reminders during the 23:00 UTC window of */10 * * * *",
 	);
 });
