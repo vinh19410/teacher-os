@@ -26,7 +26,7 @@ vi.mock("@tanstack/react-router", async () =>
 	(await import("@/test/router-mock")).routerMock(),
 );
 
-import { Route } from "./$classId";
+import { Route, validateClassDetailSearch } from "./$classId";
 
 const ClassDetail = (Route as unknown as { component: () => React.ReactNode })
 	.component;
@@ -162,7 +162,7 @@ function RerenderableClassDetail() {
 }
 
 describe("class detail tabs", () => {
-	it("offers Buổi học & luyện tập, roster, curriculum, vocab and notes — sessions & assignments merged (#391, #520)", async () => {
+	it("offers Buổi học & luyện tập, roster, curriculum, shared materials, vocab and notes", async () => {
 		startKernelServer(twoClasses());
 		renderWithKernel(<ClassDetail />);
 		const tabs = await screen.findAllByRole("tab");
@@ -170,6 +170,7 @@ describe("class detail tabs", () => {
 			"Buổi học & luyện tập",
 			"Học viên",
 			"Giáo trình",
+			"Tài liệu chung",
 			"Từ vựng",
 			"Ghi chú",
 		]);
@@ -212,6 +213,25 @@ describe("class detail tabs", () => {
 			name: "Buổi học & luyện tập",
 		});
 		expect(tab.getAttribute("aria-selected")).toBe("true");
+	});
+
+	it("accepts ?tab=materials and opens the Tài liệu chung tab", async () => {
+		expect(validateClassDetailSearch({ tab: "materials" })).toEqual({
+			tab: "materials",
+		});
+		routerState.search = { tab: "materials" };
+		startKernelServer(twoClasses(), (req) => {
+			if (req.method === "GET" && req.path === "/api/classes/cl-1/materials") {
+				return { status: 200, body: { items: [] } };
+			}
+			return undefined;
+		});
+		renderWithKernel(<ClassDetail />);
+		const tab = await screen.findByRole("tab", { name: "Tài liệu chung" });
+		expect(tab.getAttribute("aria-selected")).toBe("true");
+		expect(
+			await screen.findByTestId("class-shared-materials-empty"),
+		).toBeTruthy();
 	});
 });
 

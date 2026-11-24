@@ -394,6 +394,7 @@ function MaterialsRoute() {
 									folderFilter === undefined
 										? folderPath(folders, item.folderId)
 										: null;
+								const classUsage = item.classUsageCount ?? 0;
 								return (
 									<MaterialItem
 										key={item.id}
@@ -411,11 +412,17 @@ function MaterialsRoute() {
 														{path}
 													</span>
 												)}
-												{item.usageCount > 0 ? (
+												{item.usageCount > 0 && (
 													<Badge variant="outline">
 														{`Dùng ở ${item.usageCount} buổi`}
 													</Badge>
-												) : (
+												)}
+												{classUsage > 0 && (
+													<Badge variant="outline">
+														{`Dùng ở ${classUsage} lớp`}
+													</Badge>
+												)}
+												{item.usageCount === 0 && classUsage === 0 && (
 													<span>Chưa dùng ở buổi nào</span>
 												)}
 											</>

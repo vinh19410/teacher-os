@@ -10,6 +10,9 @@
  */
 import { useQueryClient } from "@tanstack/react-query";
 import {
+	type ClassMaterialLinkCreateInput,
+	type ClassMaterialListResponse,
+	type ClassMaterialView,
 	checkMaterialUpload,
 	type LessonMaterialView,
 	MATERIAL_ERROR_CODES,
@@ -39,6 +42,8 @@ export class MaterialRequestError extends HttpError {
 	readonly sessionCount?: number;
 	/** `MATERIAL_IN_USE`: số bài giáo trình đang gắn tài liệu (#655). */
 	readonly syllabusCount?: number;
+	/** `MATERIAL_IN_USE`: số lớp đang gắn tài liệu ở mục tài liệu chung. */
+	readonly classCount?: number;
 	/** `FILE_TOO_LARGE`: trần dung lượng server áp. */
 	readonly maxBytes?: number;
 
@@ -48,6 +53,7 @@ export class MaterialRequestError extends HttpError {
 		extra: {
 			sessionCount?: number;
 			syllabusCount?: number;
+			classCount?: number;
 			maxBytes?: number;
 		} = {},
 	) {
@@ -58,6 +64,7 @@ export class MaterialRequestError extends HttpError {
 		this.materialCode = materialCode;
 		this.sessionCount = extra.sessionCount;
 		this.syllabusCount = extra.syllabusCount;
+		this.classCount = extra.classCount;
 		this.maxBytes = extra.maxBytes;
 	}
 }
@@ -91,11 +98,14 @@ async function toMaterialError(res: Response): Promise<MaterialRequestError> {
 		typeof record.sessionCount === "number" ? record.sessionCount : undefined;
 	const syllabusCount =
 		typeof record.syllabusCount === "number" ? record.syllabusCount : undefined;
+	const classCount =
+		typeof record.classCount === "number" ? record.classCount : undefined;
 	const maxBytes =
 		typeof record.maxBytes === "number" ? record.maxBytes : undefined;
 	return new MaterialRequestError(res.status, code, {
 		sessionCount,
 		syllabusCount,
+		classCount,
 		maxBytes,
 	});
 }
@@ -158,15 +168,29 @@ export function materialErrorMessage(error: unknown): string {
 		case "FOLDER_CYCLE":
 			return "Không thể chuyển thư mục vào chính nó hoặc thư mục con của nó.";
 		case "MATERIAL_IN_USE": {
-			// #655: tài liệu có thể bị chặn vì đang gắn trên bài giáo trình
-			// (syllabus_lesson_material) chứ không chỉ buổi học — nêu đúng
-			// nguồn để teacher biết chỗ gỡ.
+			// Tài liệu có thể bị chặn vì đang gắn ở buổi học, bài trong giáo trình
+			// hoặc mục tài liệu chung của lớp — nêu đúng các nguồn để giáo viên biết
+			// chỗ gỡ; khi không gắn ở lớp nào thì giữ nguyên thông điệp cũ.
 			const sessions = isMaterialRequestError(error)
 				? (error.sessionCount ?? 0)
 				: 0;
 			const syllabus = isMaterialRequestError(error)
 				? (error.syllabusCount ?? 0)
 				: 0;
+			const classes = isMaterialRequestError(error)
+				? (error.classCount ?? 0)
+				: 0;
+			if (classes > 0) {
+				const parts: string[] = [];
+				if (sessions > 0) parts.push(`${sessions} buổi học`);
+				if (syllabus > 0) parts.push(`${syllabus} bài trong giáo trình`);
+				parts.push(`${classes} lớp học`);
+				if (parts.length === 1) {
+					return `Tài liệu đang được dùng ở ${classes} lớp học. Hãy gỡ khỏi các lớp đó trước khi xóa.`;
+				}
+				const joined = `${parts.slice(0, -1).join(", ")} và ${parts[parts.length - 1]}`;
+				return `Tài liệu đang được dùng ở ${joined}. Hãy gỡ khỏi các nơi đang dùng trước khi xóa.`;
+			}
 			if (sessions > 0 && syllabus > 0) {
 				return `Tài liệu đang được dùng ở ${sessions} buổi học và ${syllabus} bài trong giáo trình. Hãy gỡ khỏi các buổi và bài đó trước khi xóa.`;
 			}
@@ -182,9 +206,9 @@ export function materialErrorMessage(error: unknown): string {
 		case "SESSION_NOT_FOUND":
 			return "Buổi học không còn tồn tại — có thể đã được dời hoặc xóa.";
 		case "ALREADY_ATTACHED":
-			return "Tài liệu này đã được gắn vào buổi học.";
+			return "Tài liệu này đã được gắn trước đó.";
 		case "NOT_ATTACHED":
-			return "Tài liệu không còn gắn với buổi học này.";
+			return "Tài liệu này không còn được gắn.";
 		case "INVALID_FILE":
 			return "File không hợp lệ hoặc rỗng. Hãy chọn file khác.";
 		case "FILE_TOO_LARGE": {
@@ -295,6 +319,9 @@ export const materialListQueryKey = (params: MaterialListParams) =>
 
 export const sessionMaterialsQueryKey = (classId: string, date: string) =>
 	[...materialsAllQueryKey, "session", classId, date] as const;
+
+export const classMaterialsQueryKey = (classId: string) =>
+	[...materialsAllQueryKey, "class", classId] as const;
 
 // ---- Thư mục ----
 
@@ -489,6 +516,67 @@ export async function detachSessionMaterial(
 ): Promise<void> {
 	await request<{ ok: true }>(
 		`${sessionPath(classId, date)}/${encodeURIComponent(materialId)}`,
+		{ method: "DELETE" },
+	);
+}
+
+// ---- Tài liệu chung cấp lớp học ----
+
+function classMaterialsPath(classId: string): string {
+	return `/api/classes/${encodeURIComponent(classId)}/materials`;
+}
+
+export async function fetchClassMaterials(
+	classId: string,
+	signal?: AbortSignal,
+): Promise<ClassMaterialView[]> {
+	const body = await request<ClassMaterialListResponse>(
+		classMaterialsPath(classId),
+		{ signal },
+	);
+	return body.items;
+}
+
+export async function attachClassMaterial(
+	classId: string,
+	materialId: string,
+): Promise<ClassMaterialView> {
+	const body = await request<{ item: ClassMaterialView }>(
+		classMaterialsPath(classId),
+		jsonInit("POST", { materialId }),
+	);
+	return body.item;
+}
+
+export async function uploadClassMaterial(input: {
+	classId: string;
+	file: File;
+	mimeType: string;
+}): Promise<ClassMaterialView> {
+	const body = await request<{ item: ClassMaterialView }>(
+		`${classMaterialsPath(input.classId)}/files`,
+		uploadInit(input.file, input.mimeType),
+	);
+	return body.item;
+}
+
+export async function createClassMaterialLink(
+	classId: string,
+	input: ClassMaterialLinkCreateInput,
+): Promise<ClassMaterialView> {
+	const body = await request<{ item: ClassMaterialView }>(
+		`${classMaterialsPath(classId)}/links`,
+		jsonInit("POST", input),
+	);
+	return body.item;
+}
+
+export async function detachClassMaterial(
+	classId: string,
+	materialId: string,
+): Promise<void> {
+	await request<{ ok: true }>(
+		`${classMaterialsPath(classId)}/${encodeURIComponent(materialId)}`,
 		{ method: "DELETE" },
 	);
 }
