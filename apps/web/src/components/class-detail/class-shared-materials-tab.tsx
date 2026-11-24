@@ -78,6 +78,7 @@ function ClassMaterialLinkDialog({
 
 	function submit(e: FormEvent) {
 		e.preventDefault();
+		if (createLink.isPending) return;
 		const trimmedTitle = title.trim();
 		const trimmedUrl = url.trim();
 		const trimmedDescription = description.trim();

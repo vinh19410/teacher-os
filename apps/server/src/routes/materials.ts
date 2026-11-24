@@ -1646,10 +1646,15 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 				}),
 			]);
 		} catch (error) {
-			if (!(await classExists(db, ctx.orgId, classId))) {
-				return materialError(c, 404, "CLASS_NOT_FOUND");
+			console.error("[materials] class link insert failed", { error });
+			try {
+				if (!(await classExists(db, ctx.orgId, classId))) {
+					return materialError(c, 404, "CLASS_NOT_FOUND");
+				}
+			} catch {
+				// DB đang lỗi toàn cục — trả 500 JSON chuẩn thay vì rơi ra plain-text.
 			}
-			throw error;
+			return c.json({ error: "create link failed" }, 500);
 		}
 		const items = await loadClassMaterials(db, ctx.orgId, classId);
 		const item = items.find((i) => i.id === id);

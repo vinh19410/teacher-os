@@ -671,6 +671,7 @@ export function useLessonMaterials(
 
 export async function fetchClassMaterials(
 	classId: string,
+	signal?: AbortSignal,
 ): Promise<StudentClassMaterialView[]> {
 	const headers = getStudentHeaders();
 	const sentOrgId = headers["x-student-org-id"];
@@ -678,6 +679,7 @@ export async function fetchClassMaterials(
 		method: "GET",
 		headers,
 		credentials: "include",
+		signal,
 	});
 	if (!res.ok) {
 		await throwStudentHttpError(res, sentOrgId);
@@ -690,7 +692,7 @@ export async function fetchClassMaterials(
 export function useClassMaterials(classId: string, enabled = true) {
 	return useQuery({
 		queryKey: ["student", "class", classId, "shared-materials"],
-		queryFn: () => fetchClassMaterials(classId),
+		queryFn: ({ signal }) => fetchClassMaterials(classId, signal),
 		enabled,
 		staleTime: 60_000,
 	});

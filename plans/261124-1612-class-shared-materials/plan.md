@@ -1,6 +1,6 @@
 # Plan: Tab "Tài liệu chung" cấp lớp học (Issue #914)
 
-- **Status:** in_progress
+- **Status:** completed
 - **Issue:** #914 (`https://github.com/vinh19410/teacher-os/issues/914`)
 - **Branch:** `feat/class-shared-materials` (target: `develop` / beta)
 
