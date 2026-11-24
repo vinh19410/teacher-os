@@ -41,6 +41,7 @@ import {
 	isLessonEnded,
 	lessonDayLabel,
 } from "@/components/class/class-lesson-list";
+import * as repos from "@/lib/repos/student";
 
 const TODAY = "2099-03-10";
 // Cặp thời gian cố định cho test: 12:00 giờ VN ngày 10/03/2099.
@@ -253,6 +254,7 @@ const detail: StudentClassDetail = {
 describe("ClassDetailView", () => {
 	afterEach(() => {
 		cleanup();
+		vi.restoreAllMocks();
 	});
 
 	it("renders the class header, todo banner, info card, rings and lessons by default", () => {
@@ -282,15 +284,12 @@ describe("ClassDetailView", () => {
 		// Ring stats.
 		expect(html).toContain("Chuyên cần");
 		expect(html).toContain("Band trung bình");
-		// Tabs: 4 tab design-v2 #378.
-		for (const label of [
-			"Hành trình học",
-			"Bài tập",
-			"Giáo trình",
-			"Bạn cùng lớp",
-		]) {
+		// Tabs: chỉ còn 3 tab (ẩn tab "Bạn cùng lớp").
+		for (const label of ["Hành trình học", "Bài tập", "Giáo trình"]) {
 			expect(html).toContain(label);
 		}
+		expect(html).not.toContain("Bạn cùng lớp");
+		expect(html).not.toContain("class-tab-classmates");
 		expect(html).toContain('href="/"');
 		// Icon mũi tên có aria-hidden để accessible name của link đúng "Trang chủ".
 		expect(html).toContain("Trang chủ");
@@ -338,6 +337,37 @@ describe("ClassDetailView", () => {
 		expect(screen.getByText("1/1 buổi")).toBeTruthy();
 		expect(screen.getByText("Chưa có chủ đề")).toBeTruthy();
 		expect(screen.getByText("0/4 buổi")).toBeTruthy();
+		utils.unmount();
+	});
+
+	it("hides the classmates tab, switches across the 3 remaining tabs, and never calls useClassmates", () => {
+		const useClassmatesSpy = vi.spyOn(repos, "useClassmates");
+		const utils = render(
+			<ClassDetailView detail={detail} todayISO={TODAY} now={NOW} />,
+		);
+
+		const tabs = screen.getAllByRole("tab");
+		expect(tabs.map((tab) => tab.textContent)).toEqual([
+			"Hành trình học",
+			"Bài tập",
+			"Giáo trình",
+		]);
+		expect(screen.queryByRole("tab", { name: "Bạn cùng lớp" })).toBeNull();
+		expect(screen.queryByTestId("class-tab-classmates")).toBeNull();
+
+		fireEvent.click(screen.getByRole("tab", { name: "Bài tập" }));
+		expect(screen.getByRole("table")).toBeTruthy();
+
+		fireEvent.click(screen.getByRole("tab", { name: "Giáo trình" }));
+		expect(screen.getByText("Reading Skimming")).toBeTruthy();
+
+		fireEvent.click(screen.getByRole("tab", { name: "Hành trình học" }));
+		expect(
+			screen.getByRole("heading", { level: 2, name: "Buổi học" }),
+		).toBeTruthy();
+
+		expect(screen.queryByTestId("classmates-grid")).toBeNull();
+		expect(useClassmatesSpy).not.toHaveBeenCalled();
 		utils.unmount();
 	});
 
