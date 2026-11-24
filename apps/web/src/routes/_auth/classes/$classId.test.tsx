@@ -2314,3 +2314,230 @@ describe("class detail → assign homework modal (#717)", () => {
 		).toBe("false");
 	});
 });
+
+describe("class detail → confirm opening confirmation", () => {
+	it("shows Chốt khai giảng for teacher, submits opening confirmation, and updates to badge + Thông báo khai giảng", async () => {
+		const snapshot = snapshotFixture({
+			classes: [
+				classRow({
+					id: "cl-1",
+					name: "IELTS Writing",
+					startDate: "2099-05-10",
+					schedule: '{"days":[0,2],"start":"19:00","end":"20:30"}',
+				}),
+			],
+			students: [
+				studentRow({
+					id: "st-1",
+					name: "Nguyễn Minh Anh",
+					email: "minhanh@example.com",
+				}),
+			],
+			enrollments: [
+				enrollmentRow({
+					id: "en-1",
+					classId: "cl-1",
+					studentId: "st-1",
+					status: "active",
+				}),
+			],
+		});
+		const server = startKernelServer(snapshot, (req, srv) => {
+			if (
+				req.method === "POST" &&
+				req.path === "/api/classes/cl-1/confirm-opening"
+			) {
+				const target = srv.snapshot.classes.find((c) => c.id === "cl-1");
+				if (target) {
+					target.openingConfirmedAt = "2026-11-24T06:00:00.000Z";
+					target.openingAnnouncementVersion = 1;
+					target.openingNote = "Chào mừng cả lớp";
+					target.openingNotifiedStudentIds = ["st-1"];
+				}
+				return {
+					status: 200,
+					body: {
+						ok: true,
+						openingConfirmedAt: "2026-11-24T06:00:00.000Z",
+						openingAnnouncementVersion: 1,
+						startDate: "2099-05-10",
+						openingNote: "Chào mừng cả lớp",
+						queuedEmailCount: 1,
+						inAppOnlyCount: 0,
+						skippedNoEmail: [],
+						skippedAlreadySentCount: 0,
+						notifiedStudentIds: ["st-1"],
+					},
+				};
+			}
+			return undefined;
+		});
+		renderWithKernel(<ClassDetail />);
+
+		const openBtn = await screen.findByRole("button", {
+			name: "Chốt khai giảng",
+		});
+		expect(screen.queryByTestId("opening-confirmed-badge")).toBeNull();
+
+		fireEvent.click(openBtn);
+		const dialog = await screen.findByRole("dialog", {
+			name: "Chốt khai giảng — IELTS Writing",
+		});
+		fireEvent.change(
+			within(dialog).getByLabelText("Lời nhắn cho học viên (tùy chọn)"),
+			{
+				target: { value: "Chào mừng cả lớp" },
+			},
+		);
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Chốt & gửi 1 email" }),
+		);
+
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(server.writes).toContainEqual({
+			method: "POST",
+			path: "/api/classes/cl-1/confirm-opening",
+			body: {
+				mode: "initial",
+				startDate: "2099-05-10",
+				note: "Chào mừng cả lớp",
+				expectedVersion: 0,
+			},
+		});
+		expect(screen.getByTestId("opening-confirmed-badge").textContent).toBe(
+			"Đã chốt khai giảng",
+		);
+		expect(
+			screen.getByRole("button", { name: "Thông báo khai giảng" }),
+		).toBeTruthy();
+	});
+
+	it("renders opening confirmed badge and Thông báo khai giảng button when openingConfirmedAt is set", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						name: "IELTS Writing",
+						startDate: "2099-05-10",
+						openingConfirmedAt: "2026-11-20T02:30:00.000Z",
+						openingAnnouncementVersion: 1,
+						openingNotifiedStudentIds: ["st-1"],
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<ClassDetail />);
+
+		const badge = await screen.findByTestId("opening-confirmed-badge");
+		expect(badge.textContent).toBe("Đã chốt khai giảng");
+		expect(
+			screen.getByRole("button", { name: "Thông báo khai giảng" }),
+		).toBeTruthy();
+	});
+
+	it("hides opening confirmation button for ta role", async () => {
+		startKernelServer({
+			...twoClasses(),
+			viewer: {
+				role: "ta",
+				canAccessFinance: false,
+			},
+		});
+		renderWithKernel(<ClassDetail />);
+
+		expect(await screen.findByTestId("class-status-badge")).toBeTruthy();
+		expect(
+			screen.queryByRole("button", { name: "Chốt khai giảng" }),
+		).toBeNull();
+		expect(
+			screen.queryByRole("button", { name: "Thông báo khai giảng" }),
+		).toBeNull();
+	});
+
+	it("disables opening confirmation button with tooltip when class is paused", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						name: "IELTS Paused",
+						status: "paused",
+						startDate: "2099-05-10",
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<ClassDetail />);
+
+		const btn = (await screen.findByRole("button", {
+			name: "Chốt khai giảng",
+		})) as HTMLButtonElement;
+		expect(btn.disabled).toBe(true);
+		expect(btn.getAttribute("title")).toBe(
+			"Lớp đang tạm dừng — tạm khóa chốt khai giảng",
+		);
+	});
+
+	it("auto-closes ConfirmOpeningModal when class transitions to paused", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						name: "IELTS Writing",
+						startDate: "2099-05-10",
+					}),
+				],
+			}),
+			(req, srv) => {
+				if (req.path === "/api/classes/cl-1/status") {
+					const next = (req.body as { status: "active" | "paused" }).status;
+					srv.snapshot.classes[0] = {
+						...srv.snapshot.classes[0],
+						status: next,
+					};
+				}
+				return undefined;
+			},
+		);
+
+		function PauseDriver() {
+			const { dispatch } = useData();
+			return (
+				<button
+					type="button"
+					data-testid="opening-pause-driver"
+					onClick={() => {
+						void dispatch({
+							type: "update-class-status",
+							classId: "cl-1",
+							status: "paused",
+						});
+					}}
+				>
+					pause
+				</button>
+			);
+		}
+
+		renderWithKernel(
+			<>
+				<ClassDetail />
+				<PauseDriver />
+			</>,
+		);
+
+		fireEvent.click(
+			await screen.findByRole("button", { name: "Chốt khai giảng" }),
+		);
+		expect(
+			await screen.findByRole("dialog", {
+				name: "Chốt khai giảng — IELTS Writing",
+			}),
+		).toBeTruthy();
+
+		fireEvent.click(screen.getByTestId("opening-pause-driver"));
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+	});
+});

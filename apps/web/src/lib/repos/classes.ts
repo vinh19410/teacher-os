@@ -72,5 +72,9 @@ export function mapClasses(snapshot: KernelSnapshot): ClassGroup[] {
 		tuitionFee: row.tuitionFee ?? null,
 		notes: row.notes,
 		schedulingMode: row.schedulingMode ?? "auto",
+		openingConfirmedAt: row.openingConfirmedAt ?? null,
+		openingNote: row.openingNote ?? "",
+		openingAnnouncementVersion: row.openingAnnouncementVersion ?? 0,
+		openingNotifiedStudentIds: row.openingNotifiedStudentIds ?? [],
 	}));
 }
