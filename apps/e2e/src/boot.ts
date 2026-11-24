@@ -232,8 +232,8 @@ const app = buildApp({
 	leadOrigins: [LEAD_ORIGIN],
 	leadIpSecret: "e2e-local-secret-0123456789abcdef0123456789abcdef",
 	appOrigin: `${LMS_ORIGIN}/teacher`,
-	// #702: deterministic offline MP3 stub for curated Listening audio proxy in E2E
-	fetchExternalAudio: async (input) => {
+	// Deterministic offline MP3 stub for curated Listening audio proxy in E2E
+	fetchExternalAudio: async (input, init) => {
 		const url =
 			typeof input === "string"
 				? input
@@ -243,17 +243,95 @@ const app = buildApp({
 		if (!isAllowedStudyPackAudioUrl(url)) {
 			return new Response("not found", { status: 404 });
 		}
-		const bytes = new Uint8Array(256);
-		// Minimal valid MPEG-1 Layer 3 32kbps 44.1kHz mono frame header
-		bytes[0] = 0xff;
-		bytes[1] = 0xfb;
-		bytes[2] = 0x10;
-		bytes[3] = 0xc4;
+		// 10 contiguous MPEG-1 Layer 3 128kbps 44.1kHz frames (417 bytes/frame = 4170 bytes)
+		// so Chromium's audio decoder reaches readyState >= 1 (HAVE_METADATA).
+		const frameSize = 417;
+		const frameCount = 10;
+		const bytes = new Uint8Array(frameSize * frameCount);
+		for (let i = 0; i < frameCount; i += 1) {
+			const offset = i * frameSize;
+			bytes[offset] = 0xff;
+			bytes[offset + 1] = 0xfb;
+			bytes[offset + 2] = 0x90;
+			bytes[offset + 3] = 0x00;
+		}
+		const total = bytes.byteLength;
+		const reqHeaders = new Headers(
+			init?.headers ?? (input instanceof Request ? input.headers : undefined),
+		);
+		const rangeHeader = reqHeaders.get("range");
+		if (rangeHeader) {
+			const match = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader.trim());
+			if (!match) {
+				return new Response(null, {
+					status: 416,
+					headers: {
+						"accept-ranges": "bytes",
+						"content-range": `bytes */${total}`,
+					},
+				});
+			}
+			const [, rawStart, rawEnd] = match;
+			if (rawStart === "" && rawEnd === "") {
+				return new Response(null, {
+					status: 416,
+					headers: {
+						"accept-ranges": "bytes",
+						"content-range": `bytes */${total}`,
+					},
+				});
+			}
+			let start: number;
+			let end: number;
+			if (rawStart === "" && rawEnd !== "") {
+				const suffix = Number(rawEnd);
+				if (!Number.isFinite(suffix) || suffix <= 0) {
+					return new Response(null, {
+						status: 416,
+						headers: {
+							"accept-ranges": "bytes",
+							"content-range": `bytes */${total}`,
+						},
+					});
+				}
+				start = Math.max(0, total - suffix);
+				end = total - 1;
+			} else {
+				start = Number(rawStart);
+				end = rawEnd === "" ? total - 1 : Math.min(Number(rawEnd), total - 1);
+				if (
+					!Number.isFinite(start) ||
+					!Number.isFinite(end) ||
+					start < 0 ||
+					start >= total ||
+					end < start
+				) {
+					return new Response(null, {
+						status: 416,
+						headers: {
+							"accept-ranges": "bytes",
+							"content-range": `bytes */${total}`,
+						},
+					});
+				}
+			}
+			const slice = bytes.subarray(start, end + 1);
+			return new Response(slice, {
+				status: 206,
+				headers: {
+					"content-type": "audio/mpeg",
+					"accept-ranges": "bytes",
+					"content-range": `bytes ${start}-${end}/${total}`,
+					"content-length": String(slice.byteLength),
+				},
+			});
+		}
 		return new Response(bytes, {
 			status: 200,
 			headers: {
 				"content-type": "audio/mpeg",
-				"content-length": String(bytes.byteLength),
+				"accept-ranges": "bytes",
+				"content-length": String(total),
 			},
 		});
 	},

@@ -25,20 +25,49 @@ export function createR2MediaStore(bucket: R2Bucket): MediaStore {
 				throw error;
 			}
 		},
+		async head(key) {
+			const object = await bucket.head(key);
+			if (!object) return null;
+			return {
+				contentType:
+					object.httpMetadata?.contentType ?? "application/octet-stream",
+				size: object.size,
+				...(object.httpEtag ? { etag: object.httpEtag } : {}),
+			};
+		},
 		async get(key, range) {
+			const validRange =
+				range &&
+				Number.isInteger(range.offset) &&
+				Number.isInteger(range.length) &&
+				range.offset >= 0 &&
+				range.length > 0
+					? range
+					: undefined;
 			const object = await bucket.get(
 				key,
-				range
-					? { range: { offset: range.offset, length: range.length } }
+				validRange
+					? { range: { offset: validRange.offset, length: validRange.length } }
 					: undefined,
 			);
 			if (!object) return null;
+			const clampedRange =
+				validRange && validRange.offset < object.size
+					? {
+							offset: validRange.offset,
+							length: Math.min(
+								validRange.length,
+								object.size - validRange.offset,
+							),
+						}
+					: undefined;
 			return {
 				body: object.body,
 				contentType:
 					object.httpMetadata?.contentType ?? "application/octet-stream",
 				size: object.size,
-				...(range ? { range } : {}),
+				...(clampedRange ? { range: clampedRange } : {}),
+				...(object.httpEtag ? { etag: object.httpEtag } : {}),
 			};
 		},
 		async delete(key) {

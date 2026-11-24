@@ -1,4 +1,8 @@
-import type { StudentLessonMaterialView } from "@teacher-os/api/material-contracts";
+import {
+	isSafeMaterialUrl,
+	type StudentClassMaterialView,
+	type StudentLessonMaterialView,
+} from "@teacher-os/api/material-contracts";
 import { isPreviewableDocumentMime } from "@teacher-os/ui/components/document-preview/inline-document-preview";
 import {
 	Download,
@@ -9,7 +13,7 @@ import {
 	Music,
 	Paperclip,
 } from "lucide-react";
-import { useId, useState, useSyncExternalStore } from "react";
+import { type ReactNode, useId, useState, useSyncExternalStore } from "react";
 import { StudentInlineMaterialPreview } from "@/components/class/student-material-preview";
 import { HttpError } from "@/lib/query-client";
 import {
@@ -37,11 +41,11 @@ export function formatFileSize(bytes: number | null): string {
 	return `${value < 10 ? value.toFixed(1) : Math.round(value)} ${unit}`;
 }
 
-function isVideo(m: StudentLessonMaterialView): boolean {
+function isVideo(m: StudentClassMaterialView): boolean {
 	return m.mimeType?.startsWith("video/") ?? false;
 }
 
-function KindIcon({ material }: { material: StudentLessonMaterialView }) {
+function KindIcon({ material }: { material: StudentClassMaterialView }) {
 	const cls = "size-4";
 	if (material.kind === "link")
 		return <Link2 aria-hidden="true" className={cls} />;
@@ -55,38 +59,34 @@ function KindIcon({ material }: { material: StudentLessonMaterialView }) {
 	return <FileText aria-hidden="true" className={cls} />;
 }
 
-function MaterialRow({
+export interface StudentMaterialRowProps {
+	material: StudentClassMaterialView;
+	fileUrl: string;
+	downloadUrl: string;
+	preview?: ReactNode;
+	testId?: string;
+}
+
+/** Hàng tài liệu chỉ đọc dùng chung cho tài liệu buổi học và tài liệu chung của lớp. */
+export function StudentMaterialRow({
 	material,
-	classId,
-	date,
-}: {
-	material: StudentLessonMaterialView;
-	classId: string;
-	date: string;
-}) {
-	useSyncExternalStore(
-		subscribeActiveStudentOrg,
-		getActiveStudentOrgId,
-		getActiveStudentOrgId,
-	);
+	fileUrl,
+	downloadUrl,
+	preview,
+	testId,
+}: StudentMaterialRowProps) {
 	const size = formatFileSize(material.sizeBytes);
-	const fileUrl = lessonMaterialFileUrl(classId, date, material.id);
-	const downloadUrl = lessonMaterialFileUrl(classId, date, material.id, true);
-	const hasThumbnail =
-		isPreviewableDocumentMime(material.kind, material.mimeType) !== null;
+	const hasPreview =
+		preview !== undefined && preview !== null && preview !== false;
 	return (
 		<li
-			data-testid="lesson-material"
+			data-testid={testId}
 			data-kind={material.kind}
 			className="flex min-w-0 flex-col gap-2 py-3 first:pt-0 last:pb-0"
 		>
 			<div className="flex flex-wrap items-start gap-3">
-				{hasThumbnail ? (
-					<StudentInlineMaterialPreview
-						material={material}
-						classId={classId}
-						date={date}
-					/>
+				{hasPreview ? (
+					preview
 				) : (
 					<span
 						aria-hidden="true"
@@ -110,22 +110,24 @@ function MaterialRow({
 				</div>
 				<div
 					className={
-						hasThumbnail
-							? "flex basis-full gap-2 pl-27 sm:flex-none sm:basis-auto sm:pl-0"
-							: "flex basis-full gap-2 pl-11 sm:flex-none sm:basis-auto sm:pl-0"
+						hasPreview
+							? "flex basis-full flex-wrap gap-2 pl-27 sm:flex-none sm:basis-auto sm:pl-0"
+							: "flex basis-full flex-wrap gap-2 pl-11 sm:flex-none sm:basis-auto sm:pl-0"
 					}
 				>
-					{material.kind === "link" && material.url ? (
-						<a
-							href={material.url}
-							target="_blank"
-							rel="noopener noreferrer"
-							className={ACTION_CLASS}
-						>
-							<ExternalLink aria-hidden="true" />
-							Mở liên kết
-							<span className="sr-only"> (tab mới): {material.title}</span>
-						</a>
+					{material.kind === "link" ? (
+						material.url && isSafeMaterialUrl(material.url) ? (
+							<a
+								href={material.url}
+								target="_blank"
+								rel="noopener noreferrer"
+								className={ACTION_CLASS}
+							>
+								<ExternalLink aria-hidden="true" />
+								Mở liên kết
+								<span className="sr-only"> (tab mới): {material.title}</span>
+							</a>
+						) : null
 					) : (
 						<>
 							{/* Tài liệu loại file luôn được server trả dạng attachment nên "Mở" sẽ
@@ -170,6 +172,43 @@ function MaterialRow({
 					/>
 				))}
 		</li>
+	);
+}
+
+function MaterialRow({
+	material,
+	classId,
+	date,
+}: {
+	material: StudentLessonMaterialView;
+	classId: string;
+	date: string;
+}) {
+	useSyncExternalStore(
+		subscribeActiveStudentOrg,
+		getActiveStudentOrgId,
+		getActiveStudentOrgId,
+	);
+	const fileUrl = lessonMaterialFileUrl(classId, date, material.id);
+	const downloadUrl = lessonMaterialFileUrl(classId, date, material.id, true);
+	const hasThumbnail =
+		isPreviewableDocumentMime(material.kind, material.mimeType) !== null;
+	return (
+		<StudentMaterialRow
+			material={material}
+			fileUrl={fileUrl}
+			downloadUrl={downloadUrl}
+			preview={
+				hasThumbnail ? (
+					<StudentInlineMaterialPreview
+						material={material}
+						classId={classId}
+						date={date}
+					/>
+				) : undefined
+			}
+			testId="lesson-material"
+		/>
 	);
 }
 

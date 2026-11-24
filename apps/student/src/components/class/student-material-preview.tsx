@@ -1,4 +1,7 @@
-import type { StudentLessonMaterialView } from "@teacher-os/api/material-contracts";
+import type {
+	StudentClassMaterialView,
+	StudentLessonMaterialView,
+} from "@teacher-os/api/material-contracts";
 import { Button, buttonVariants } from "@teacher-os/ui/components/button";
 import {
 	InlineDocumentPreview,
@@ -16,6 +19,8 @@ import {
 import { createPortal } from "react-dom";
 import { isHttpError } from "@/lib/query-client";
 import {
+	classMaterialFileUrl,
+	fetchClassMaterialBlobUrl,
 	fetchLessonMaterialBlobUrl,
 	getActiveStudentOrgId,
 	lessonMaterialFileUrl,
@@ -182,26 +187,30 @@ function StudentPreviewDialog({
 	);
 }
 
+export interface StudentDocumentPreviewProps {
+	material: StudentClassMaterialView;
+	requestKeyPrefix: string;
+	downloadUrl: string;
+	loadBlobUrl: (signal?: AbortSignal) => Promise<string>;
+}
+
 /**
- * Thumbnail xem trước PDF/ảnh ở đầu hàng tài liệu buổi học tại portal học viên;
- * bấm vào để mở modal portal ra `document.body` (thoát `opacity-60`).
+ * Thumbnail xem trước PDF/ảnh dùng chung ở portal học viên; bấm vào mở modal
+ * portal ra `document.body` (thoát stacking context `opacity-60`).
  */
-export function StudentInlineMaterialPreview({
+export function StudentDocumentPreview({
 	material,
-	classId,
-	date,
-}: {
-	material: StudentLessonMaterialView;
-	classId: string;
-	date: string;
-}) {
+	requestKeyPrefix,
+	downloadUrl,
+	loadBlobUrl,
+}: StudentDocumentPreviewProps) {
 	const activeOrgId = useSyncExternalStore(
 		subscribeActiveStudentOrg,
 		getActiveStudentOrgId,
 		getActiveStudentOrgId,
 	);
-	// Khi 403 STUDENT_ORG_MISMATCH tự xoá org stale -> null, fetchLessonMaterialBlobUrl
-	// đã thử lại tại chỗ; chỉ đổi requestKey khi người dùng chuyển sang org khác.
+	// Khi 403 STUDENT_ORG_MISMATCH tự xoá org stale -> null, loader blob đã thử
+	// lại tại chỗ; chỉ đổi requestKey khi người dùng chuyển sang org khác.
 	const [orgEpoch, setOrgEpoch] = useState(0);
 	const lastNonNullOrg = useRef<string | null>(activeOrgId);
 	useEffect(() => {
@@ -214,17 +223,13 @@ export function StudentInlineMaterialPreview({
 	const mimeType = isPreviewableDocumentMime(material.kind, material.mimeType);
 	if (!mimeType) return null;
 
-	const downloadUrl = lessonMaterialFileUrl(classId, date, material.id, true);
-
 	return (
 		<InlineDocumentPreview
-			requestKey={`${classId}:${date}:${material.id}:${orgEpoch}`}
+			requestKey={`${requestKeyPrefix}:${material.id}:${orgEpoch}`}
 			title={material.title}
 			mimeType={mimeType}
 			sizeBytes={material.sizeBytes}
-			loadBlobUrl={(signal) =>
-				fetchLessonMaterialBlobUrl(classId, date, material.id, signal)
-			}
+			loadBlobUrl={(signal) => loadBlobUrl(signal)}
 			formatError={formatStudentMaterialError}
 			renderExpandedModal={({ blobUrl, onClose }) => (
 				<StudentPreviewDialog
@@ -235,6 +240,62 @@ export function StudentInlineMaterialPreview({
 					onClose={onClose}
 				/>
 			)}
+		/>
+	);
+}
+
+/**
+ * Thumbnail xem trước PDF/ảnh ở đầu hàng tài liệu buổi học tại portal học viên.
+ */
+export function StudentInlineMaterialPreview({
+	material,
+	classId,
+	date,
+}: {
+	material: StudentLessonMaterialView;
+	classId: string;
+	date: string;
+}) {
+	useSyncExternalStore(
+		subscribeActiveStudentOrg,
+		getActiveStudentOrgId,
+		getActiveStudentOrgId,
+	);
+	return (
+		<StudentDocumentPreview
+			material={material}
+			requestKeyPrefix={`${classId}:${date}`}
+			downloadUrl={lessonMaterialFileUrl(classId, date, material.id, true)}
+			loadBlobUrl={(signal) =>
+				fetchLessonMaterialBlobUrl(classId, date, material.id, signal)
+			}
+		/>
+	);
+}
+
+/**
+ * Thumbnail xem trước PDF/ảnh ở đầu hàng tài liệu chung của lớp tại portal học viên.
+ */
+export function StudentClassMaterialPreview({
+	material,
+	classId,
+}: {
+	material: StudentClassMaterialView;
+	classId: string;
+}) {
+	useSyncExternalStore(
+		subscribeActiveStudentOrg,
+		getActiveStudentOrgId,
+		getActiveStudentOrgId,
+	);
+	return (
+		<StudentDocumentPreview
+			material={material}
+			requestKeyPrefix={`class:${classId}`}
+			downloadUrl={classMaterialFileUrl(classId, material.id, true)}
+			loadBlobUrl={(signal) =>
+				fetchClassMaterialBlobUrl(classId, material.id, signal)
+			}
 		/>
 	);
 }

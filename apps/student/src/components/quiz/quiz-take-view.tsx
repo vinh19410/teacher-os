@@ -52,8 +52,9 @@ import {
 	patchQuizEssay,
 	type QuizTakeSource,
 	quizDetailQueryKey,
+	quizTakeSourceId,
 	submitQuizAttempt,
-	useQuizAudioObjectUrl,
+	useQuizAudioStream,
 	useStartQuizAttempt,
 	useStudentQuizDetail,
 } from "@/lib/repos/quiz";
@@ -359,26 +360,39 @@ export function QuizTakeView({
 		submitMutation.mutate();
 	};
 
-	// Speaking (#305): file bài nói & speakingPartLabel giữ ở đây.
-	// Audio proxy (#702): gọi hook TRƯỚC mọi early return để không đổi số hook
+	// Audio streaming: gọi hook TRƯỚC mọi early return để không đổi số hook
 	// khi attempt chuyển từ null -> in_progress (Rules of Hooks).
-	const { audioSrc, audioLoading, audioError } = useQuizAudioObjectUrl(
-		detail?.hasAudio && attempt !== null ? source : null,
-	);
+	const {
+		audioSrc,
+		audioLoading,
+		audioError,
+		onAudioError,
+		retry: retryAudio,
+	} = useQuizAudioStream(detail?.hasAudio && attempt !== null ? source : null, {
+		onAuthError: () => {
+			storeRef.current?.halt("auth");
+			essayStoreRef.current?.halt("auth");
+			setAuthBanner(true);
+			reauth();
+		},
+	});
 
-	// RT red-team G: sau khi rời take screen (store dispose flush PATCH cuối),
-	// đánh dấu query detail stale để lần vào lại bằng SPA nav trong cửa sổ
-	// staleTime 60s loader đọc `attempt.essay`/answers MỚI từ server — nếu
-	// không, cache cũ hiện textarea trống dù server còn bài (writing khuếch
-	// đại vì bài dài). Inactive query chỉ đánh dấu stale; refetch xảy ra ở
-	// mount kế tiếp sau khi PATCH đã kịp lên server.
+	// Sau khi rời take screen (store dispose flush PATCH cuối), đánh dấu query
+	// detail stale để lần vào lại đọc dữ liệu mới từ server. Tách primitive
+	// sourceKind/sourceId để parent truyền object literal không làm invalidate thừa.
+	const sourceKind = source.kind;
+	const sourceId = quizTakeSourceId(source);
 	useEffect(() => {
+		const cleanupSource: QuizTakeSource =
+			sourceKind === "assignment"
+				? { kind: "assignment", id: sourceId }
+				: { kind: "practice", testId: sourceId };
 		return () => {
 			void queryClient.invalidateQueries({
-				queryKey: quizDetailQueryKey(source),
+				queryKey: quizDetailQueryKey(cleanupSource),
 			});
 		};
-	}, [source, queryClient]);
+	}, [sourceKind, sourceId, queryClient]);
 
 	useEffect(() => {
 		if (store === null && essayStore === null) return;
@@ -557,6 +571,9 @@ export function QuizTakeView({
 							audioSrc={audioSrc}
 							audioLoading={audioLoading}
 							audioError={audioError}
+							audioCrossOrigin="use-credentials"
+							onAudioError={onAudioError}
+							onAudioRetry={retryAudio}
 							writingSection={hybridWriting}
 							essay={hybridEssayText}
 							onEssayChange={handleEssayChange}
@@ -575,6 +592,9 @@ export function QuizTakeView({
 							audioSrc={audioSrc}
 							audioLoading={audioLoading}
 							audioError={audioError}
+							audioCrossOrigin="use-credentials"
+							onAudioError={onAudioError}
+							onAudioRetry={retryAudio}
 							writingSection={hybridWriting}
 							essay={hybridEssayText}
 							onEssayChange={handleEssayChange}

@@ -1,7 +1,11 @@
-import type { StudentLessonMaterialView } from "@teacher-os/api/material-contracts";
+import type {
+	StudentClassMaterialView,
+	StudentLessonMaterialView,
+} from "@teacher-os/api/material-contracts";
 import { isMaterialKind } from "@teacher-os/api/material-contracts";
 import { parseStartDateStrict } from "@teacher-os/api/skeleton";
 import {
+	classMaterial,
 	enrollment,
 	lesson,
 	lessonMaterial,
@@ -25,19 +29,46 @@ export interface StudentMaterialRouteDeps extends StudentRouteDeps {
 }
 
 const SESSION_PATH = "/classes/:classId/sessions/:date/materials";
+const CLASS_PATH = "/classes/:classId/materials";
 
 /**
- * Tài liệu buổi học cho học viên (chỉ đọc): GET danh sách và GET file của
- * một tài liệu trong buổi. Học viên phải có enrollment `active` trong lớp
- * (org đang chọn) và chính enrollment đó có dòng lesson ở ngày này — cùng
- * phạm vi buổi học viên thấy ở trang chi tiết lớp. Không thoả → 404 (ngữ
- * nghĩa IDOR như /classes/:classId). Payload không có cột teacher-only.
+ * Tài liệu buổi học và tài liệu chung cấp lớp cho học viên (chỉ đọc):
+ * - Cấp buổi học: yêu cầu enrollment `active` trong lớp (org đang chọn) và
+ *   chính enrollment đó có dòng lesson ở ngày này.
+ * - Cấp lớp học: chỉ yêu cầu enrollment `active` trong lớp (org đang chọn),
+ *   không cần có buổi học và vẫn hoạt động khi lớp đang `paused`.
+ * Không thoả → 404 (ngữ nghĩa IDOR như /classes/:classId). Payload không có
+ * cột teacher-only.
  */
 export function studentMaterialRoutes(deps: StudentMaterialRouteDeps) {
 	const router = new Hono<StudentEnv>();
 	const requireStudent = createStudentGuard(deps);
 	router.use(SESSION_PATH, requireStudent);
 	router.use(`${SESSION_PATH}/*`, requireStudent);
+	router.use(CLASS_PATH, requireStudent);
+	router.use(`${CLASS_PATH}/*`, requireStudent);
+
+	async function resolveActiveClassEnrollment(
+		c: Context<StudentEnv>,
+	): Promise<{ classId: string; orgId: string } | null> {
+		const { student: me, orgId } = c.get("studentCtx");
+		const classId = c.req.param("classId") ?? "";
+		if (!classId) return null;
+		const [row] = await deps
+			.getDb()
+			.select({ id: enrollment.id })
+			.from(enrollment)
+			.where(
+				and(
+					eq(enrollment.orgId, orgId),
+					eq(enrollment.studentId, me.id),
+					eq(enrollment.classId, classId),
+					eq(enrollment.status, "active"),
+				),
+			)
+			.limit(1);
+		return row ? { classId, orgId } : null;
+	}
 
 	async function resolveSession(
 		c: Context<StudentEnv>,
@@ -210,6 +241,97 @@ export function studentMaterialRoutes(deps: StudentMaterialRouteDeps) {
 		const response = await materialFileResponse(
 			store,
 			{ ...bank, objectKey: bank.objectKey },
+			{
+				rangeHeader: c.req.header("Range"),
+				download: c.req.query("download") === "1",
+			},
+		);
+		return response ?? c.json({ error: "material not found" }, 404);
+	});
+
+	router.get(CLASS_PATH, async (c) => {
+		const enrolled = await resolveActiveClassEnrollment(c);
+		if (!enrolled) return c.json({ error: "class not found" }, 404);
+		const rows = await deps
+			.getDb()
+			.select({
+				id: material.id,
+				title: material.title,
+				description: material.description,
+				kind: material.kind,
+				url: material.url,
+				mimeType: material.mimeType,
+				sizeBytes: material.sizeBytes,
+				originalName: material.originalName,
+				position: classMaterial.position,
+			})
+			.from(classMaterial)
+			.innerJoin(
+				material,
+				and(
+					eq(material.id, classMaterial.materialId),
+					eq(material.orgId, enrolled.orgId),
+				),
+			)
+			.where(
+				and(
+					eq(classMaterial.orgId, enrolled.orgId),
+					eq(classMaterial.classId, enrolled.classId),
+				),
+			)
+			.orderBy(
+				asc(classMaterial.position),
+				asc(classMaterial.createdAt),
+				asc(material.id),
+			);
+		const items: StudentClassMaterialView[] = rows.map((row) => ({
+			...row,
+			kind: isMaterialKind(row.kind) ? row.kind : "file",
+		}));
+		return c.json({ items });
+	});
+
+	router.get(`${CLASS_PATH}/:materialId/file`, async (c) => {
+		const store = deps.getMaterialsStore?.();
+		if (!store) {
+			return c.json(
+				{ error: "MATERIALS_DISABLED", code: "MATERIALS_DISABLED" },
+				503,
+			);
+		}
+		const enrolled = await resolveActiveClassEnrollment(c);
+		if (!enrolled) return c.json({ error: "class not found" }, 404);
+		const [row] = await deps
+			.getDb()
+			.select({
+				objectKey: material.objectKey,
+				mimeType: material.mimeType,
+				sizeBytes: material.sizeBytes,
+				originalName: material.originalName,
+				kind: material.kind,
+			})
+			.from(classMaterial)
+			.innerJoin(
+				material,
+				and(
+					eq(material.id, classMaterial.materialId),
+					eq(material.orgId, enrolled.orgId),
+				),
+			)
+			.where(
+				and(
+					eq(classMaterial.orgId, enrolled.orgId),
+					eq(classMaterial.classId, enrolled.classId),
+					eq(classMaterial.materialId, c.req.param("materialId")),
+				),
+			)
+			.limit(1);
+		if (!row || row.objectKey === null) {
+			return c.json({ error: "material not found" }, 404);
+		}
+		const response = await materialFileResponse(
+			store,
+			{ ...row, objectKey: row.objectKey },
 			{
 				rangeHeader: c.req.header("Range"),
 				download: c.req.query("download") === "1",

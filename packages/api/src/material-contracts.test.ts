@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
 import {
 	checkMaterialUpload,
+	classMaterialAttachSchema,
+	classMaterialLinkCreateSchema,
 	isSafeMaterialUrl,
 	lessonMaterialAttachSchema,
 	MATERIAL_DOC_MAX_BYTES,
@@ -462,5 +464,87 @@ describe("material schemas", () => {
 		expect(
 			lessonMaterialAttachSchema.parse({ materialId: "m-1" }).materialId,
 		).toBe("m-1");
+	});
+
+	test("class material attach validates materialId strictly", () => {
+		expect(classMaterialAttachSchema.parse({ materialId: "  m-1  " })).toEqual({
+			materialId: "m-1",
+		});
+		expect(classMaterialAttachSchema.safeParse({}).success).toBe(false);
+		expect(
+			classMaterialAttachSchema.safeParse({ materialId: "   " }).success,
+		).toBe(false);
+		expect(
+			classMaterialAttachSchema.safeParse({ materialId: "m".repeat(101) })
+				.success,
+		).toBe(false);
+		expect(
+			classMaterialAttachSchema.safeParse({
+				materialId: "m-1",
+				extra: true,
+			}).success,
+		).toBe(false);
+	});
+
+	test("class material link create trims, defaults description, and rejects unsafe or extra fields", () => {
+		expect(
+			classMaterialLinkCreateSchema.parse({
+				title: "  Course Handbook  ",
+				url: " https://example.com/handbook ",
+			}),
+		).toEqual({
+			title: "Course Handbook",
+			description: "",
+			url: "https://example.com/handbook",
+		});
+		expect(
+			classMaterialLinkCreateSchema.parse({
+				title: "Reference",
+				description: "  Read before week 1  ",
+				url: "http://example.com/ref",
+			}),
+		).toEqual({
+			title: "Reference",
+			description: "Read before week 1",
+			url: "http://example.com/ref",
+		});
+		expect(
+			classMaterialLinkCreateSchema.safeParse({
+				title: "Bad",
+				url: "javascript:alert(1)",
+			}).success,
+		).toBe(false);
+		expect(
+			classMaterialLinkCreateSchema.safeParse({
+				title: "Bad",
+				url: "data:text/html,<b>x</b>",
+			}).success,
+		).toBe(false);
+		expect(
+			classMaterialLinkCreateSchema.safeParse({
+				title: "   ",
+				url: "https://example.com",
+			}).success,
+		).toBe(false);
+		expect(
+			classMaterialLinkCreateSchema.safeParse({
+				title: "x".repeat(201),
+				url: "https://example.com",
+			}).success,
+		).toBe(false);
+		expect(
+			classMaterialLinkCreateSchema.safeParse({
+				title: "Ok",
+				description: "d".repeat(1001),
+				url: "https://example.com",
+			}).success,
+		).toBe(false);
+		expect(
+			classMaterialLinkCreateSchema.safeParse({
+				title: "Ok",
+				url: "https://example.com",
+				folderId: null,
+			}).success,
+		).toBe(false);
 	});
 });

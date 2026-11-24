@@ -1,6 +1,7 @@
 import type { Query, QueryClient } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+	ACCOUNT_ERROR_CODES,
 	QUIZ_MEDIA_TYPES,
 	type QuizAttemptDetail,
 	type QuizAttemptMedia,
@@ -16,12 +17,19 @@ import {
 } from "@teacher-os/api/contracts";
 import { normalizeMediaType } from "@teacher-os/api/lib/quiz-media";
 import { LIBRARY_AUDIO_MIME } from "@teacher-os/api/library-contracts";
-import { useEffect, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+	useSyncExternalStore,
+} from "react";
 import { z } from "zod";
 import {
 	HttpError,
 	healStudentOrgMismatch,
 	isTeacherOnStudentPortalError,
+	reauth,
 	redirectToLoginForWrongRole,
 	studentQueryClient,
 } from "@/lib/query-client";
@@ -29,6 +37,7 @@ import { getApiBaseUrl, getStudentHeaders } from "@/lib/repos/student";
 import {
 	clearActiveStudentOrgId,
 	getActiveStudentOrgId,
+	subscribeActiveStudentOrg,
 } from "@/lib/student-org-storage";
 
 /** POST start trả về đúng `{ attemptId }` (201 mới / 200 resume). */
@@ -513,88 +522,368 @@ export async function fetchQuizMediaObjectUrl(
 	return URL.createObjectURL(blob);
 }
 
+const AUDIO_FETCH_TIMEOUT_MS = 30_000;
+const AUDIO_PROBE_TIMEOUT_MS = 8_000;
+const MEDIA_ERR_ABORTED = 1;
+
+function quizAudioBaseUrl(source: QuizTakeSource): string {
+	return source.kind === "assignment"
+		? `${getApiBaseUrl()}/api/student/assignments/${encodeURIComponent(source.id)}/audio`
+		: `${getApiBaseUrl()}/api/student/practice/${encodeURIComponent(source.testId)}/audio`;
+}
+
+/**
+ * Dựng direct streaming URL cho `<audio crossOrigin="use-credentials">` của
+ * đề Listening (assignment hoặc practice), gắn `?org=` khi đa-org và `?_r=`
+ * khi bấm Thử lại / tự chữa org để ép trình duyệt gửi request mới.
+ */
+export function resolveQuizAudioUrl(
+	source: QuizTakeSource,
+	options?: { orgId?: string | null; retryNonce?: number },
+): string {
+	const base = quizAudioBaseUrl(source);
+	const params = new URLSearchParams();
+	const orgId = options?.orgId?.trim();
+	if (orgId) {
+		params.set("org", orgId);
+	}
+	if (
+		typeof options?.retryNonce === "number" &&
+		Number.isInteger(options.retryNonce) &&
+		options.retryNonce > 0
+	) {
+		params.set("_r", String(options.retryNonce));
+	}
+	const query = params.toString();
+	return query ? `${base}?${query}` : base;
+}
+
+export interface AudioMediaErrorEventLike {
+	currentTarget?: {
+		error?: { code?: number } | null;
+	} | null;
+}
+
+/**
+ * Quản lý direct streaming `<audio>` cho bài nghe học viên (cả take và review):
+ * - Mount URL ngay ở frame đầu (không chờ tải 100% file vào RAM).
+ * - Khi `<audio>` bắn `onError`, probe 1 lần với `cache: "no-store"` và
+ *   `Range: bytes=0-0` tới URL sạch để tự `reauth()` (401), tự điều hướng
+ *   role sai (403 TEACHER_ON_STUDENT_PORTAL), hoặc tự xoá org stale + retry
+ *   đúng 1 lần (403 STUDENT_ORG_MISMATCH); lỗi thật thì hiện `"Không tải được
+ *   file nghe."` kèm nút `"Thử lại"`.
+ */
+export function useQuizAudioStream(
+	source: QuizTakeSource | null,
+	options?: {
+		onAuthError?: () => void;
+		probeTimeoutMs?: number;
+	},
+): {
+	audioSrc: string | null;
+	audioLoading: boolean;
+	audioError: boolean;
+	onAudioError: (event?: AudioMediaErrorEventLike) => void;
+	retry: () => void;
+} {
+	const activeOrgId = useSyncExternalStore(
+		subscribeActiveStudentOrg,
+		getActiveStudentOrgId,
+		() => null,
+	);
+	const sourceKind = source?.kind ?? null;
+	const sourceId = source === null ? null : quizTakeSourceId(source);
+
+	const [audioError, setAudioError] = useState(false);
+	const [retryNonce, setRetryNonce] = useState(0);
+	const [healedOrgId, setHealedOrgId] = useState<string | null>(null);
+
+	const onAuthErrorRef = useRef(options?.onAuthError);
+	onAuthErrorRef.current = options?.onAuthError;
+	const probeTimeoutMs = options?.probeTimeoutMs ?? AUDIO_PROBE_TIMEOUT_MS;
+
+	const probeRef = useRef<{
+		controller: AbortController | null;
+		generation: number;
+		inFlightSrc: string | null;
+	}>({
+		controller: null,
+		generation: 0,
+		inFlightSrc: null,
+	});
+
+	const prevSourceRef = useRef<{
+		kind: QuizTakeSource["kind"] | null;
+		id: string | null;
+	}>({ kind: sourceKind, id: sourceId });
+	const prevOrgRef = useRef<string | null>(activeOrgId);
+
+	useEffect(() => {
+		const sourceChanged =
+			prevSourceRef.current.kind !== sourceKind ||
+			prevSourceRef.current.id !== sourceId;
+		const orgChanged = prevOrgRef.current !== activeOrgId;
+		prevSourceRef.current = { kind: sourceKind, id: sourceId };
+		prevOrgRef.current = activeOrgId;
+
+		if (sourceChanged || orgChanged) {
+			probeRef.current.generation += 1;
+			probeRef.current.controller?.abort();
+			probeRef.current.controller = null;
+			probeRef.current.inFlightSrc = null;
+			setAudioError(false);
+		}
+		if (sourceChanged) {
+			setRetryNonce(0);
+			setHealedOrgId(null);
+		} else if (orgChanged && activeOrgId !== null) {
+			// Học viên chủ động đổi sang org mới: xóa cờ self-heal cũ để gắn `?org=` mới.
+			setHealedOrgId(null);
+		}
+	}, [sourceKind, sourceId, activeOrgId]);
+
+	useEffect(() => {
+		return () => {
+			probeRef.current.generation += 1;
+			probeRef.current.controller?.abort();
+			probeRef.current.controller = null;
+			probeRef.current.inFlightSrc = null;
+		};
+	}, []);
+
+	const effectiveOrgId =
+		activeOrgId && activeOrgId !== healedOrgId ? activeOrgId : null;
+	const audioSrc =
+		sourceKind && sourceId
+			? resolveQuizAudioUrl(
+					sourceKind === "assignment"
+						? { kind: "assignment", id: sourceId }
+						: { kind: "practice", testId: sourceId },
+					{ orgId: effectiveOrgId, retryNonce },
+				)
+			: null;
+
+	const onAudioError = useCallback(
+		(event?: AudioMediaErrorEventLike) => {
+			if (event?.currentTarget?.error?.code === MEDIA_ERR_ABORTED) {
+				return;
+			}
+			if (!sourceKind || !sourceId || !audioSrc || audioError) {
+				return;
+			}
+			if (probeRef.current.inFlightSrc === audioSrc) {
+				return;
+			}
+
+			probeRef.current.controller?.abort();
+			const myGeneration = probeRef.current.generation + 1;
+			const controller = new AbortController();
+			probeRef.current = {
+				controller,
+				generation: myGeneration,
+				inFlightSrc: audioSrc,
+			};
+
+			const probeSource: QuizTakeSource =
+				sourceKind === "assignment"
+					? { kind: "assignment", id: sourceId }
+					: { kind: "practice", testId: sourceId };
+			const probeUrl = resolveQuizAudioUrl(probeSource);
+
+			const timerId = setTimeout(() => {
+				controller.abort();
+			}, probeTimeoutMs);
+
+			void (async () => {
+				try {
+					const res = await fetch(probeUrl, {
+						method: "GET",
+						credentials: "include",
+						cache: "no-store",
+						headers: getStudentHeaders(
+							{ Accept: "audio/*", Range: "bytes=0-0" },
+							effectiveOrgId,
+						),
+						signal: controller.signal,
+					});
+					if (probeRef.current.generation !== myGeneration) {
+						void res.body?.cancel().catch(() => {});
+						return;
+					}
+					if (res.status === 401) {
+						void res.body?.cancel().catch(() => {});
+						(onAuthErrorRef.current ?? reauth)();
+						return;
+					}
+					if (res.status === 403) {
+						const { code } = await parseErrorBody(res);
+						if (probeRef.current.generation !== myGeneration) {
+							return;
+						}
+						if (code === ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL) {
+							redirectToLoginForWrongRole();
+							return;
+						}
+						if (code === STUDENT_ERROR_CODES.ORG_MISMATCH && effectiveOrgId) {
+							setHealedOrgId(effectiveOrgId);
+							if (getActiveStudentOrgId() === effectiveOrgId) {
+								clearActiveStudentOrgId();
+								void studentQueryClient.invalidateQueries({
+									queryKey: ["student", "orgs"],
+									exact: true,
+								});
+							}
+							setRetryNonce((prev) => prev + 1);
+							return;
+						}
+						setAudioError(true);
+						return;
+					}
+					void res.body?.cancel().catch(() => {});
+					setAudioError(true);
+				} catch {
+					if (probeRef.current.generation !== myGeneration) {
+						return;
+					}
+					setAudioError(true);
+				} finally {
+					clearTimeout(timerId);
+					if (probeRef.current.generation === myGeneration) {
+						probeRef.current.controller = null;
+						probeRef.current.inFlightSrc = null;
+					}
+				}
+			})();
+		},
+		[
+			audioError,
+			audioSrc,
+			effectiveOrgId,
+			probeTimeoutMs,
+			sourceId,
+			sourceKind,
+		],
+	);
+
+	const retry = useCallback(() => {
+		probeRef.current.generation += 1;
+		probeRef.current.controller?.abort();
+		probeRef.current.controller = null;
+		probeRef.current.inFlightSrc = null;
+		setAudioError(false);
+		setRetryNonce((prev) => prev + 1);
+	}, []);
+
+	return {
+		audioSrc,
+		audioLoading: false,
+		audioError,
+		onAudioError,
+		retry,
+	};
+}
+
 async function fetchStudentAudioObjectUrl(
 	url: string,
 	signal?: AbortSignal,
+	timeoutMs: number = AUDIO_FETCH_TIMEOUT_MS,
 ): Promise<string> {
-	const headers = getStudentHeaders({ Accept: "audio/*" });
-	const sentOrgId = headers["x-student-org-id"];
-	let res = await fetch(url, {
-		method: "GET",
-		credentials: "include",
-		headers,
-		signal,
-	});
-	if (!res.ok) {
-		let { code } = await parseErrorBody(res);
-		if (
-			res.status === 403 &&
-			code === STUDENT_ERROR_CODES.ORG_MISMATCH &&
-			sentOrgId
-		) {
-			if (getActiveStudentOrgId() === sentOrgId) {
-				clearActiveStudentOrgId();
-				void studentQueryClient.invalidateQueries({
-					queryKey: ["student", "orgs"],
-					exact: true,
+	const controller = new AbortController();
+	const onExternalAbort = () => controller.abort();
+	if (signal?.aborted) {
+		controller.abort();
+	} else {
+		signal?.addEventListener("abort", onExternalAbort, { once: true });
+	}
+	const timerId = setTimeout(() => controller.abort(), timeoutMs);
+	try {
+		const headers = getStudentHeaders({ Accept: "audio/*" });
+		const sentOrgId = headers["x-student-org-id"];
+		let res = await fetch(url, {
+			method: "GET",
+			credentials: "include",
+			headers,
+			signal: controller.signal,
+		});
+		if (!res.ok) {
+			let { code } = await parseErrorBody(res);
+			if (
+				res.status === 403 &&
+				code === STUDENT_ERROR_CODES.ORG_MISMATCH &&
+				sentOrgId
+			) {
+				if (getActiveStudentOrgId() === sentOrgId) {
+					clearActiveStudentOrgId();
+					void studentQueryClient.invalidateQueries({
+						queryKey: ["student", "orgs"],
+						exact: true,
+					});
+				}
+				res = await fetch(url, {
+					method: "GET",
+					credentials: "include",
+					headers: getStudentHeaders({ Accept: "audio/*" }, null),
+					signal: controller.signal,
 				});
-			}
-			res = await fetch(url, {
-				method: "GET",
-				credentials: "include",
-				headers: getStudentHeaders({ Accept: "audio/*" }, null),
-				signal,
-			});
-			if (!res.ok) {
-				({ code } = await parseErrorBody(res));
+				if (!res.ok) {
+					({ code } = await parseErrorBody(res));
+					throw createQuizHttpError(
+						res.status,
+						`Request failed with status ${res.status}`,
+						{ code },
+					);
+				}
+			} else {
 				throw createQuizHttpError(
 					res.status,
 					`Request failed with status ${res.status}`,
-					{ code },
+					{
+						code,
+						sentOrgId,
+					},
 				);
 			}
-		} else {
-			throw createQuizHttpError(
+		}
+		const type = normalizeMediaType(res.headers.get("Content-Type") ?? "");
+		if (!Object.hasOwn(LIBRARY_AUDIO_MIME, type)) {
+			await res.body?.cancel().catch(() => {});
+			throw new HttpError(
 				res.status,
-				`Request failed with status ${res.status}`,
-				{
-					code,
-					sentOrgId,
-				},
+				"Unexpected listening audio content type",
 			);
 		}
+		const blob = new Blob([await res.blob()], { type });
+		return URL.createObjectURL(blob);
+	} finally {
+		clearTimeout(timerId);
+		signal?.removeEventListener("abort", onExternalAbort);
 	}
-	const type = normalizeMediaType(res.headers.get("Content-Type") ?? "");
-	if (!Object.hasOwn(LIBRARY_AUDIO_MIME, type)) {
-		await res.body?.cancel().catch(() => {});
-		throw new HttpError(res.status, "Unexpected listening audio content type");
-	}
-	const blob = new Blob([await res.blob()], { type });
-	return URL.createObjectURL(blob);
 }
 
 /**
  * Tải audio Listening từ `/api/student/assignments/:assignmentId/audio` về blob
- * URL (#702) — giữ CSP `media-src 'self' blob:` và truyền header `x-student-org-id`.
+ * URL (#702) — giữ tương thích ngược cho caller ngoài luồng streaming trực tiếp.
  */
 export async function fetchAssignmentAudioObjectUrl(
 	assignmentId: string,
 	signal?: AbortSignal,
+	timeoutMs?: number,
 ): Promise<string> {
 	const url = `${getApiBaseUrl()}/api/student/assignments/${encodeURIComponent(assignmentId)}/audio`;
-	return fetchStudentAudioObjectUrl(url, signal);
+	return fetchStudentAudioObjectUrl(url, signal, timeoutMs);
 }
 
 /**
  * Tải audio Listening của đề tự luyện từ `/api/student/practice/:testId/audio`
- * về blob URL — cùng cơ chế CSP + org-mismatch retry với luồng assignment.
+ * về blob URL — giữ tương thích ngược cho caller ngoài luồng streaming trực tiếp.
  */
 export async function fetchPracticeAudioObjectUrl(
 	testId: string,
 	signal?: AbortSignal,
+	timeoutMs?: number,
 ): Promise<string> {
 	const url = `${getApiBaseUrl()}/api/student/practice/${encodeURIComponent(testId)}/audio`;
-	return fetchStudentAudioObjectUrl(url, signal);
+	return fetchStudentAudioObjectUrl(url, signal, timeoutMs);
 }
 
 export function useQuizAudioObjectUrl(source: QuizTakeSource | null): {
@@ -641,11 +930,8 @@ export function useQuizAudioObjectUrl(source: QuizTakeSource | null): {
 				setAudioSrc(url);
 				setAudioLoading(false);
 			})
-			.catch((err) => {
-				if (
-					controller.signal.aborted ||
-					(err instanceof DOMException && err.name === "AbortError")
-				) {
+			.catch(() => {
+				if (controller.signal.aborted) {
 					return;
 				}
 				setAudioSrc(null);

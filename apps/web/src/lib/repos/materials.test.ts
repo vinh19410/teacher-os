@@ -3,13 +3,19 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { UPLOAD_HELP } from "@/components/materials/material-dialogs";
 import { HttpError } from "@/lib/kernel-load-state";
 import {
+	attachClassMaterial,
+	classMaterialsQueryKey,
+	createClassMaterialLink,
 	deleteMaterial,
+	detachClassMaterial,
+	fetchClassMaterials,
 	fetchMaterials,
 	formatBytes,
 	isMaterialRequestError,
 	MaterialRequestError,
 	materialErrorMessage,
 	prepareMaterialUpload,
+	uploadClassMaterial,
 	uploadMaterialFile,
 	uploadSessionMaterial,
 } from "./materials";
@@ -122,10 +128,54 @@ describe("materialErrorMessage", () => {
 	it("includes the session count for MATERIAL_IN_USE", () => {
 		expect(
 			materialErrorMessage(
-				new MaterialRequestError(409, "MATERIAL_IN_USE", { sessionCount: 3 }),
+				new MaterialRequestError(409, "MATERIAL_IN_USE", {
+					sessionCount: 3,
+					classCount: 0,
+				}),
 			),
 		).toBe(
 			"Tài liệu đang được dùng ở 3 buổi học. Hãy gỡ khỏi các buổi đó trước khi xóa.",
+		);
+	});
+
+	it("formats MATERIAL_IN_USE with classCount alone and combined with session/syllabus counts", () => {
+		expect(
+			materialErrorMessage(
+				new MaterialRequestError(409, "MATERIAL_IN_USE", { classCount: 2 }),
+			),
+		).toBe(
+			"Tài liệu đang được dùng ở 2 lớp học. Hãy gỡ khỏi các lớp đó trước khi xóa.",
+		);
+		expect(
+			materialErrorMessage(
+				new MaterialRequestError(409, "MATERIAL_IN_USE", {
+					sessionCount: 2,
+					classCount: 1,
+				}),
+			),
+		).toBe(
+			"Tài liệu đang được dùng ở 2 buổi học và 1 lớp học. Hãy gỡ khỏi các nơi đang dùng trước khi xóa.",
+		);
+		expect(
+			materialErrorMessage(
+				new MaterialRequestError(409, "MATERIAL_IN_USE", {
+					syllabusCount: 3,
+					classCount: 2,
+				}),
+			),
+		).toBe(
+			"Tài liệu đang được dùng ở 3 bài trong giáo trình và 2 lớp học. Hãy gỡ khỏi các nơi đang dùng trước khi xóa.",
+		);
+		expect(
+			materialErrorMessage(
+				new MaterialRequestError(409, "MATERIAL_IN_USE", {
+					sessionCount: 1,
+					syllabusCount: 2,
+					classCount: 3,
+				}),
+			),
+		).toBe(
+			"Tài liệu đang được dùng ở 1 buổi học, 2 bài trong giáo trình và 3 lớp học. Hãy gỡ khỏi các nơi đang dùng trước khi xóa.",
 		);
 	});
 
@@ -148,6 +198,8 @@ describe("material requests", () => {
 			error: "MATERIAL_IN_USE",
 			code: "MATERIAL_IN_USE",
 			sessionCount: 2,
+			syllabusCount: 1,
+			classCount: 3,
 		});
 		const error = await deleteMaterial("m-1").catch((e: unknown) => e);
 		expect(isMaterialRequestError(error)).toBe(true);
@@ -155,6 +207,8 @@ describe("material requests", () => {
 			expect(error.status).toBe(409);
 			expect(error.materialCode).toBe("MATERIAL_IN_USE");
 			expect(error.sessionCount).toBe(2);
+			expect(error.syllabusCount).toBe(1);
+			expect(error.classCount).toBe(3);
 		}
 	});
 
@@ -200,6 +254,76 @@ describe("material requests", () => {
 		expect(String(fetchMock.mock.calls[0]?.[0])).toMatch(
 			/\/api\/classes\/cl-1\/sessions\/2026-10-12\/materials\/files$/,
 		);
+	});
+
+	it("manages class shared materials under /api/classes/:classId/materials", async () => {
+		expect(classMaterialsQueryKey("cl-1")).toEqual([
+			"materials",
+			"class",
+			"cl-1",
+		]);
+
+		const getMock = stubFetch(200, { items: [{ id: "m-1" }] });
+		const listed = await fetchClassMaterials("cl-1");
+		expect(listed).toEqual([{ id: "m-1" }]);
+		expect(String(getMock.mock.calls[0]?.[0])).toMatch(
+			/\/api\/classes\/cl-1\/materials$/,
+		);
+
+		const attachMock = stubFetch(201, { item: { id: "m-1" } });
+		const attached = await attachClassMaterial("cl-1", "m-1");
+		expect(attached).toEqual({ id: "m-1" });
+		expect(String(attachMock.mock.calls[0]?.[0])).toMatch(
+			/\/api\/classes\/cl-1\/materials$/,
+		);
+		expect(attachMock.mock.calls[0]?.[1]?.method).toBe("POST");
+		expect(attachMock.mock.calls[0]?.[1]?.body).toBe(
+			JSON.stringify({ materialId: "m-1" }),
+		);
+
+		const uploadMock = stubFetch(201, { item: { id: "m-2" } });
+		const file = fileOf("Đề cương.pdf", "application/pdf", 128);
+		const uploaded = await uploadClassMaterial({
+			classId: "cl-1",
+			file,
+			mimeType: "application/pdf",
+		});
+		expect(uploaded).toEqual({ id: "m-2" });
+		expect(String(uploadMock.mock.calls[0]?.[0])).toMatch(
+			/\/api\/classes\/cl-1\/materials\/files$/,
+		);
+		expect(uploadMock.mock.calls[0]?.[1]?.method).toBe("PUT");
+		expect(uploadMock.mock.calls[0]?.[1]?.body).toBe(file);
+		expect(uploadMock.mock.calls[0]?.[1]?.headers).toEqual({
+			"Content-Type": "application/pdf",
+			"X-File-Name": encodeURIComponent("Đề cương.pdf"),
+		});
+
+		const linkMock = stubFetch(201, { item: { id: "m-3" } });
+		const created = await createClassMaterialLink("cl-1", {
+			title: "Từ điển Cambridge",
+			url: "https://dictionary.cambridge.org/",
+			description: "Tra phát âm",
+		});
+		expect(created).toEqual({ id: "m-3" });
+		expect(String(linkMock.mock.calls[0]?.[0])).toMatch(
+			/\/api\/classes\/cl-1\/materials\/links$/,
+		);
+		expect(linkMock.mock.calls[0]?.[1]?.method).toBe("POST");
+		expect(linkMock.mock.calls[0]?.[1]?.body).toBe(
+			JSON.stringify({
+				title: "Từ điển Cambridge",
+				url: "https://dictionary.cambridge.org/",
+				description: "Tra phát âm",
+			}),
+		);
+
+		const detachMock = stubFetch(200, { ok: true });
+		await detachClassMaterial("cl-1", "m-3");
+		expect(String(detachMock.mock.calls[0]?.[0])).toMatch(
+			/\/api\/classes\/cl-1\/materials\/m-3$/,
+		);
+		expect(detachMock.mock.calls[0]?.[1]?.method).toBe("DELETE");
 	});
 });
 

@@ -410,9 +410,35 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 						headers: { "content-type": "audio/mpeg" },
 					});
 				}
-				return new Response(new Uint8Array([0x49, 0x44, 0x33, 0x03, 0, 0]), {
+				const payload = new Uint8Array([0x49, 0x44, 0x33, 0x03, 0, 0]);
+				const range = new Headers(init?.headers).get("range");
+				if (range === "bytes=0-2") {
+					return new Response(payload.subarray(0, 3), {
+						status: 206,
+						headers: {
+							"content-type": "audio/mpeg",
+							"content-length": "3",
+							"content-range": "bytes 0-2/6",
+							"accept-ranges": "bytes",
+						},
+					});
+				}
+				if (range === "bytes=100-200") {
+					return new Response(null, {
+						status: 416,
+						headers: {
+							"content-range": "bytes */6",
+							"accept-ranges": "bytes",
+						},
+					});
+				}
+				return new Response(payload, {
 					status: 200,
-					headers: { "content-type": "audio/mpeg" },
+					headers: {
+						"content-type": "audio/mpeg",
+						"content-length": String(payload.byteLength),
+						"accept-ranges": "bytes",
+					},
 				});
 			},
 		});
@@ -1699,6 +1725,26 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		);
 		expect(audioOk.status).toBe(200);
 		expect(audioOk.headers.get("content-type")).toBe("audio/mpeg");
+		expect(audioOk.headers.get("accept-ranges")).toBe("bytes");
+		expect(audioOk.headers.get("cache-control")).toBe("private, no-cache");
+
+		const audioPartial = await app.request(
+			"/api/student/assignments/ca-listen-702/audio",
+			{ headers: { ...OWNER, Range: "bytes=0-2" } },
+		);
+		expect(audioPartial.status).toBe(206);
+		expect(audioPartial.headers.get("content-range")).toBe("bytes 0-2/6");
+		expect(audioPartial.headers.get("content-length")).toBe("3");
+		expect(
+			Array.from(new Uint8Array(await audioPartial.arrayBuffer())),
+		).toEqual([0x49, 0x44, 0x33]);
+
+		const audioOutOfRange = await app.request(
+			"/api/student/assignments/ca-listen-702/audio",
+			{ headers: { ...OWNER, Range: "bytes=100-200" } },
+		);
+		expect(audioOutOfRange.status).toBe(416);
+		expect(audioOutOfRange.headers.get("content-range")).toBe("bytes */6");
 
 		const audioBad = await app.request(
 			"/api/student/assignments/ca-listen-bad-host/audio",

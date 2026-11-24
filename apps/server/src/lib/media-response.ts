@@ -59,24 +59,51 @@ function isAllowedInlineMediaObjectMime(normalized: string): boolean {
  *   `exam-imports` hiển thị `inline`; MIME rỗng hoặc nguy hiểm (`text/html`,
  *   `image/svg+xml`, JS…) bị ép về `application/octet-stream` + `attachment`.
  */
+export interface MediaObjectResponseOptions {
+	cacheControl?: string;
+	acceptRanges?: boolean;
+	status?: 200 | 206;
+	contentRange?: string;
+	contentLength?: number;
+	etag?: string;
+	vary?: string;
+}
+
 export function mediaObjectResponse(
 	object: StoredMedia,
 	meta: { mediaType: string | null; mediaName: string | null },
+	opts?: MediaObjectResponseOptions,
 ): Response {
 	const rawMime = meta.mediaType?.trim() || object.contentType?.trim() || "";
 	const normalized = rawMime ? normalizeMediaType(rawMime) : "";
 	const allowlisted = isAllowedInlineMediaObjectMime(normalized);
 	const contentType = allowlisted ? normalized : "application/octet-stream";
 	const disposition = allowlisted ? "inline" : "attachment";
+	const contentLength =
+		opts?.contentLength ?? (object.range ? object.range.length : object.size);
+	const headers: Record<string, string> = {
+		"Content-Type": contentType,
+		"Content-Length": String(contentLength),
+		"Content-Disposition": `${disposition}; filename*=UTF-8''${encodeRfc8187(meta.mediaName ?? "media")}`,
+		"X-Content-Type-Options": "nosniff",
+		"Cross-Origin-Opener-Policy": "same-origin",
+		"Content-Security-Policy": "default-src 'none'; sandbox",
+		"Cache-Control": opts?.cacheControl ?? "private, no-store",
+	};
+	if (opts?.acceptRanges) {
+		headers["Accept-Ranges"] = "bytes";
+	}
+	if (opts?.contentRange) {
+		headers["Content-Range"] = opts.contentRange;
+	}
+	if (opts?.etag) {
+		headers.ETag = opts.etag;
+	}
+	if (opts?.vary) {
+		headers.Vary = opts.vary;
+	}
 	return new Response(object.body, {
-		headers: {
-			"Content-Type": contentType,
-			"Content-Length": String(object.size),
-			"Content-Disposition": `${disposition}; filename*=UTF-8''${encodeRfc8187(meta.mediaName ?? "media")}`,
-			"X-Content-Type-Options": "nosniff",
-			"Cross-Origin-Opener-Policy": "same-origin",
-			"Content-Security-Policy": "default-src 'none'; sandbox",
-			"Cache-Control": "private, no-store",
-		},
+		status: opts?.status ?? 200,
+		headers,
 	});
 }
