@@ -9,6 +9,7 @@ import { fmtDue } from "@/components/assignments/assignment-status";
 import { ClassRosterTab } from "@/components/class-detail/class-roster-tab";
 import { ClassSessionsManageModal } from "@/components/class-detail/class-sessions-manage-modal";
 import { ClassSessionsSection } from "@/components/class-detail/class-sessions-section";
+import { ClassSharedMaterialsTab } from "@/components/class-detail/class-shared-materials-tab";
 import { CurriculumManagementSection } from "@/components/class-detail/curriculum-management-section";
 import type {
 	OccurrenceActionResult,
@@ -56,6 +57,7 @@ const CLASS_DETAIL_TABS = [
 	"sessions-practice",
 	"roster",
 	"curriculum",
+	"materials",
 	"vocab",
 	"notes",
 ] as const;
@@ -443,6 +445,7 @@ function ClassDetailRoute() {
 					{ id: "sessions-practice", label: "Buổi học & luyện tập" },
 					{ id: "roster", label: "Học viên" },
 					{ id: "curriculum", label: "Giáo trình" },
+					{ id: "materials", label: "Tài liệu chung" },
 					{ id: "vocab", label: "Từ vựng" },
 					{ id: "notes", label: "Ghi chú" },
 				]}
@@ -590,6 +593,10 @@ function ClassDetailRoute() {
 						busy={busy}
 					/>
 				</Section>
+			)}
+
+			{tab === "materials" && (
+				<ClassSharedMaterialsTab key={`materials-${cls.id}`} classId={cls.id} />
 			)}
 
 			{tab === "notes" && (

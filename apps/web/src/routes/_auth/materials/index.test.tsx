@@ -213,6 +213,42 @@ describe("/materials list", () => {
 		expect(within(nav).getByRole("button", { name: "Writing" })).toBeTruthy();
 	});
 
+	it("shows class usage count badges alongside session usage counts", async () => {
+		renderRoute([
+			material({
+				id: "m-class-only",
+				title: "Đề cương khóa học",
+				usageCount: 0,
+				classUsageCount: 2,
+			}),
+			material({
+				id: "m-both",
+				title: "Bảng tiêu chí chấm",
+				usageCount: 1,
+				classUsageCount: 3,
+			}),
+			material({
+				id: "m-unused",
+				title: "Tài liệu chưa dùng",
+				usageCount: 0,
+				classUsageCount: 0,
+			}),
+		]);
+
+		const items = await screen.findAllByTestId("material-item");
+		expect(items).toHaveLength(3);
+
+		expect(within(items[0]).getByText("Dùng ở 2 lớp")).toBeTruthy();
+		expect(within(items[0]).queryByText("Chưa dùng ở buổi nào")).toBeNull();
+
+		expect(within(items[1]).getByText("Dùng ở 1 buổi")).toBeTruthy();
+		expect(within(items[1]).getByText("Dùng ở 3 lớp")).toBeTruthy();
+		expect(within(items[1]).queryByText("Chưa dùng ở buổi nào")).toBeNull();
+
+		expect(within(items[2]).getByText("Chưa dùng ở buổi nào")).toBeTruthy();
+		expect(within(items[2]).queryByText(/Dùng ở \d+ lớp/)).toBeNull();
+	});
+
 	it("filters kind client-side with aria-hidden counts and writes kind to the URL", async () => {
 		renderRoute([
 			material(),

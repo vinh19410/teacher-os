@@ -284,8 +284,13 @@ describe("ClassDetailView", () => {
 		// Ring stats.
 		expect(html).toContain("Chuyên cần");
 		expect(html).toContain("Band trung bình");
-		// Tabs: chỉ còn 3 tab (ẩn tab "Bạn cùng lớp").
-		for (const label of ["Hành trình học", "Bài tập", "Giáo trình"]) {
+		// Tabs: gồm 4 tab (ẩn tab "Bạn cùng lớp").
+		for (const label of [
+			"Hành trình học",
+			"Bài tập",
+			"Giáo trình",
+			"Tài liệu chung",
+		]) {
 			expect(html).toContain(label);
 		}
 		expect(html).not.toContain("Bạn cùng lớp");
@@ -340,7 +345,7 @@ describe("ClassDetailView", () => {
 		utils.unmount();
 	});
 
-	it("hides the classmates tab, switches across the 3 remaining tabs, and never calls useClassmates", () => {
+	it("hides the classmates tab, switches across the remaining tabs, and never calls useClassmates", () => {
 		const useClassmatesSpy = vi.spyOn(repos, "useClassmates");
 		const utils = render(
 			<ClassDetailView detail={detail} todayISO={TODAY} now={NOW} />,
@@ -351,6 +356,7 @@ describe("ClassDetailView", () => {
 			"Hành trình học",
 			"Bài tập",
 			"Giáo trình",
+			"Tài liệu chung",
 		]);
 		expect(screen.queryByRole("tab", { name: "Bạn cùng lớp" })).toBeNull();
 		expect(screen.queryByTestId("class-tab-classmates")).toBeNull();

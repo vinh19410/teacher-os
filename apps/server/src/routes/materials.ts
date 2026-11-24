@@ -1,6 +1,9 @@
 import { sanitizeMediaFileName } from "@teacher-os/api/lib/quiz-media";
 import {
+	type ClassMaterialView,
 	checkMaterialUpload,
+	classMaterialAttachSchema,
+	classMaterialLinkCreateSchema,
 	isMaterialKind,
 	type LessonMaterialView,
 	lessonMaterialAttachSchema,
@@ -25,6 +28,7 @@ import { classTable } from "@teacher-os/db/schema/class";
 import { classSession } from "@teacher-os/db/schema/class-session";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import {
+	classMaterial,
 	lessonMaterial,
 	material,
 	materialFolder,
@@ -67,9 +71,13 @@ function materialError(
 /** Số buổi đang gắn tài liệu — cột tính, dùng chung cho list/detail. */
 const usageCountColumn = sql<number>`(select count(*) from ${lessonMaterial} where ${lessonMaterial.materialId} = ${material.id})`;
 
+/** Số lớp đang gắn tài liệu chung — cột tính, dùng chung cho list/detail. */
+const classUsageCountColumn = sql<number>`(select count(*) from ${classMaterial} where ${classMaterial.materialId} = ${material.id})`;
+
 export function toMaterialView(
 	row: MaterialRow,
 	usageCount: number,
+	classUsageCount = 0,
 ): MaterialView {
 	return {
 		id: row.id,
@@ -82,6 +90,7 @@ export function toMaterialView(
 		sizeBytes: row.sizeBytes,
 		originalName: row.originalName,
 		usageCount: Number(usageCount),
+		classUsageCount: Number(classUsageCount),
 		createdAt: row.createdAt.toISOString(),
 		updatedAt: row.updatedAt.toISOString(),
 	};
@@ -170,6 +179,8 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 	};
 	routes.use("/materials", gate);
 	routes.use("/materials/*", gate);
+	routes.use("/classes/:classId/materials", gate);
+	routes.use("/classes/:classId/materials/*", gate);
 	routes.use("/classes/:classId/sessions/:date/materials", gate);
 	routes.use("/classes/:classId/sessions/:date/materials/*", gate);
 
@@ -251,26 +262,43 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		db: Db,
 		orgId: string,
 		id: string,
-	): Promise<{ row: MaterialRow; usageCount: number } | null> {
+	): Promise<{
+		row: MaterialRow;
+		usageCount: number;
+		classUsageCount: number;
+	} | null> {
 		const [found] = await db
-			.select({ row: material, usageCount: usageCountColumn })
+			.select({
+				row: material,
+				usageCount: usageCountColumn,
+				classUsageCount: classUsageCountColumn,
+			})
 			.from(material)
 			.where(and(eq(material.id, id), eq(material.orgId, orgId)))
 			.limit(1);
 		return found
-			? { row: found.row, usageCount: Number(found.usageCount) }
+			? {
+					row: found.row,
+					usageCount: Number(found.usageCount),
+					classUsageCount: Number(found.classUsageCount),
+				}
 			: null;
 	}
 
 	/**
-	 * Mức sử dụng của tài liệu trên CẢ hai bảng link (#655): `lesson_material`
-	 * (buổi học thật) + `syllabus_lesson_material` (bài học giáo trình). Lỗi
-	 * 409 xoá tài liệu đang dùng nêu cả hai số.
+	 * Mức sử dụng của tài liệu trên cả ba bảng link: `lesson_material`
+	 * (buổi học thật), `syllabus_lesson_material` (bài học giáo trình) và
+	 * `class_material` (tài liệu chung cấp lớp). Lỗi 409 khi xoá tài liệu
+	 * đang dùng nêu đầy đủ cả ba bộ đếm.
 	 */
 	async function materialUsage(
 		db: Db,
 		materialId: string,
-	): Promise<{ sessionCount: number; syllabusCount: number }> {
+	): Promise<{
+		sessionCount: number;
+		syllabusCount: number;
+		classCount: number;
+	}> {
 		const [sessionRow] = await db
 			.select({ n: sql<number>`count(*)` })
 			.from(lessonMaterial)
@@ -279,9 +307,14 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			.select({ n: sql<number>`count(*)` })
 			.from(syllabusLessonMaterial)
 			.where(eq(syllabusLessonMaterial.materialId, materialId));
+		const [classRow] = await db
+			.select({ n: sql<number>`count(*)` })
+			.from(classMaterial)
+			.where(eq(classMaterial.materialId, materialId));
 		return {
 			sessionCount: Number(sessionRow?.n ?? 0),
 			syllabusCount: Number(syllabusRow?.n ?? 0),
+			classCount: Number(classRow?.n ?? 0),
 		};
 	}
 
@@ -612,6 +645,34 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		return { ok: true, classId, date };
 	}
 
+	async function classExists(
+		db: Db,
+		orgId: string,
+		classId: string,
+	): Promise<boolean> {
+		const [cls] = await db
+			.select({ id: classTable.id })
+			.from(classTable)
+			.where(and(eq(classTable.id, classId), eq(classTable.orgId, orgId)))
+			.limit(1);
+		return cls !== undefined;
+	}
+
+	/** Lớp thuộc org — dùng cho route tài liệu chung cấp lớp (không chặn lớp đang tạm dừng). */
+	async function resolveClass(
+		c: MaterialContext,
+		db: Db,
+		orgId: string,
+	): Promise<
+		{ ok: true; classId: string } | { ok: false; response: Response }
+	> {
+		const classId = c.req.param("classId") ?? "";
+		if (!classId || !(await classExists(db, orgId, classId))) {
+			return { ok: false, response: materialError(c, 404, "CLASS_NOT_FOUND") };
+		}
+		return { ok: true, classId };
+	}
+
 	async function loadSessionMaterials(
 		db: Db,
 		orgId: string,
@@ -622,6 +683,7 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			.select({
 				row: material,
 				usageCount: usageCountColumn,
+				classUsageCount: classUsageCountColumn,
 				position: lessonMaterial.position,
 				attachedAt: lessonMaterial.createdAt,
 			})
@@ -646,7 +708,43 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 				asc(material.id),
 			);
 		return rows.map((r) => ({
-			...toMaterialView(r.row, r.usageCount),
+			...toMaterialView(r.row, r.usageCount, r.classUsageCount),
+			position: r.position,
+			attachedAt: r.attachedAt.toISOString(),
+		}));
+	}
+
+	async function loadClassMaterials(
+		db: Db,
+		orgId: string,
+		classId: string,
+	): Promise<ClassMaterialView[]> {
+		const rows = await db
+			.select({
+				row: material,
+				usageCount: usageCountColumn,
+				classUsageCount: classUsageCountColumn,
+				position: classMaterial.position,
+				attachedAt: classMaterial.createdAt,
+			})
+			.from(classMaterial)
+			.innerJoin(
+				material,
+				and(
+					eq(material.id, classMaterial.materialId),
+					eq(material.orgId, orgId),
+				),
+			)
+			.where(
+				and(eq(classMaterial.orgId, orgId), eq(classMaterial.classId, classId)),
+			)
+			.orderBy(
+				asc(classMaterial.position),
+				asc(classMaterial.createdAt),
+				asc(material.id),
+			);
+		return rows.map((r) => ({
+			...toMaterialView(r.row, r.usageCount, r.classUsageCount),
 			position: r.position,
 			attachedAt: r.attachedAt.toISOString(),
 		}));
@@ -655,6 +753,10 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 	/** Vị trí kế tiếp trong buổi — tính trong chính câu INSERT. */
 	const nextPosition = (classId: string, date: string) =>
 		sql<number>`(select coalesce(max(${lessonMaterial.position}), -1) + 1 from ${lessonMaterial} where ${lessonMaterial.classId} = ${classId} and ${lessonMaterial.date} = ${date})`;
+
+	/** Vị trí kế tiếp trong danh sách tài liệu chung của lớp — tính trong chính câu INSERT. */
+	const nextClassMaterialPosition = (classId: string) =>
+		sql<number>`(select coalesce(max(${classMaterial.position}), -1) + 1 from ${classMaterial} where ${classMaterial.classId} = ${classId})`;
 
 	// ---- Thư mục ----
 
@@ -998,7 +1100,11 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		const folderId = c.req.query("folderId");
 		const rows = await deps
 			.getDb()
-			.select({ row: material, usageCount: usageCountColumn })
+			.select({
+				row: material,
+				usageCount: usageCountColumn,
+				classUsageCount: classUsageCountColumn,
+			})
 			.from(material)
 			.where(
 				and(
@@ -1025,7 +1131,9 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 						),
 					);
 		return c.json({
-			items: matched.map((r) => toMaterialView(r.row, r.usageCount)),
+			items: matched.map((r) =>
+				toMaterialView(r.row, r.usageCount, r.classUsageCount),
+			),
 		});
 	});
 
@@ -1037,7 +1145,13 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			c.req.param("id"),
 		);
 		if (!found) return materialError(c, 404, "MATERIAL_NOT_FOUND");
-		return c.json({ material: toMaterialView(found.row, found.usageCount) });
+		return c.json({
+			material: toMaterialView(
+				found.row,
+				found.usageCount,
+				found.classUsageCount,
+			),
+		});
 	});
 
 	routes.post("/materials/links", async (c) => {
@@ -1061,7 +1175,7 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			})
 			.returning();
 		if (!row) throw new Error("material insert returned no row");
-		return c.json({ material: toMaterialView(row, 0) }, 201);
+		return c.json({ material: toMaterialView(row, 0, 0) }, 201);
 	});
 
 	routes.put("/materials/files", async (c) => {
@@ -1085,7 +1199,7 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 				})
 				.returning();
 			if (!row) throw new Error("material insert returned no row");
-			return c.json({ material: toMaterialView(row, 0) }, 201);
+			return c.json({ material: toMaterialView(row, 0, 0) }, 201);
 		} catch (error) {
 			upload.discard();
 			console.error("[materials] material insert failed", { error });
@@ -1129,7 +1243,13 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		if (!row) return materialError(c, 404, "MATERIAL_NOT_FOUND");
 		const found = await loadMaterial(db, ctx.orgId, id);
 		if (!found) return materialError(c, 404, "MATERIAL_NOT_FOUND");
-		return c.json({ material: toMaterialView(found.row, found.usageCount) });
+		return c.json({
+			material: toMaterialView(
+				found.row,
+				found.usageCount,
+				found.classUsageCount,
+			),
+		});
 	});
 
 	routes.delete("/materials/:id", async (c) => {
@@ -1138,15 +1258,26 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		const id = c.req.param("id");
 		const found = await loadMaterial(db, ctx.orgId, id);
 		if (!found) return materialError(c, 404, "MATERIAL_NOT_FOUND");
-		// #655: đếm mức dùng trên cả hai bảng — buổi học thật lẫn bài học giáo
-		// trình; 409 nêu cả hai số (`sessionCount` giữ nguyên nghĩa cũ).
-		const inUse = (usage: { sessionCount: number; syllabusCount: number }) =>
+		// Đếm mức dùng trên cả ba bảng: buổi học thật, bài học giáo trình và
+		// tài liệu chung cấp lớp; 409 nêu đầy đủ cả ba bộ đếm.
+		const inUse = (usage: {
+			sessionCount: number;
+			syllabusCount: number;
+			classCount: number;
+		}) =>
 			materialError(c, 409, "MATERIAL_IN_USE", {
 				sessionCount: usage.sessionCount,
 				syllabusCount: usage.syllabusCount,
+				classCount: usage.classCount,
 			});
 		const usage = await materialUsage(db, id);
-		if (usage.sessionCount > 0 || usage.syllabusCount > 0) return inUse(usage);
+		if (
+			usage.sessionCount > 0 ||
+			usage.syllabusCount > 0 ||
+			usage.classCount > 0
+		) {
+			return inUse(usage);
+		}
 		const objectKey = found.row.objectKey;
 		// File cần kho để xoá object — thiếu binding thì không xoá row, tránh
 		// object mồ côi không ai dọn.
@@ -1158,10 +1289,14 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 				.delete(material)
 				.where(and(eq(material.id, id), eq(material.orgId, ctx.orgId)));
 		} catch (error) {
-			// FK NO ACTION chặn khi một buổi/bài học vừa gắn tài liệu giữa lúc
-			// kiểm và xoá.
+			// FK NO ACTION chặn khi buổi học, bài học giáo trình hoặc lớp học
+			// vừa gắn tài liệu giữa lúc kiểm và xoá.
 			const recount = await materialUsage(db, id);
-			if (recount.sessionCount > 0 || recount.syllabusCount > 0) {
+			if (
+				recount.sessionCount > 0 ||
+				recount.syllabusCount > 0 ||
+				recount.classCount > 0
+			) {
 				return inUse(recount);
 			}
 			throw error;
@@ -1384,6 +1519,167 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			return c.json({ ok: true });
 		},
 	);
+
+	// ---- Tài liệu chung cấp lớp học (classId) ----
+
+	routes.get("/classes/:classId/materials", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const db = deps.getDb();
+		const resolved = await resolveClass(c, db, ctx.orgId);
+		if (!resolved.ok) return resolved.response;
+		const items = await loadClassMaterials(db, ctx.orgId, resolved.classId);
+		return c.json({ items });
+	});
+
+	routes.post("/classes/:classId/materials", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const body = await readBody(c, classMaterialAttachSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+		const resolved = await resolveClass(c, db, ctx.orgId);
+		if (!resolved.ok) return resolved.response;
+		const { classId } = resolved;
+		const { materialId } = body.data;
+		if (!(await loadMaterial(db, ctx.orgId, materialId))) {
+			return materialError(c, 404, "MATERIAL_NOT_FOUND");
+		}
+		let inserted: { materialId: string }[];
+		try {
+			inserted = await db
+				.insert(classMaterial)
+				.values({
+					orgId: ctx.orgId,
+					classId,
+					materialId,
+					position: nextClassMaterialPosition(classId),
+				})
+				.onConflictDoNothing()
+				.returning({ materialId: classMaterial.materialId });
+		} catch (error) {
+			// Lớp hoặc tài liệu bị xoá giữa lúc kiểm và lúc ghi → FK lỗi, trả 404 nghiệp vụ.
+			if (!(await classExists(db, ctx.orgId, classId))) {
+				return materialError(c, 404, "CLASS_NOT_FOUND");
+			}
+			if (!(await loadMaterial(db, ctx.orgId, materialId))) {
+				return materialError(c, 404, "MATERIAL_NOT_FOUND");
+			}
+			throw error;
+		}
+		if (inserted.length === 0) return materialError(c, 409, "ALREADY_ATTACHED");
+		const items = await loadClassMaterials(db, ctx.orgId, classId);
+		const item = items.find((i) => i.id === materialId);
+		if (!item) throw new Error("attached class material missing after insert");
+		return c.json({ item }, 201);
+	});
+
+	routes.put("/classes/:classId/materials/files", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const store = deps.getMaterialsStore?.();
+		if (!store) return materialError(c, 503, "MATERIALS_DISABLED");
+		const db = deps.getDb();
+		const resolved = await resolveClass(c, db, ctx.orgId);
+		if (!resolved.ok) return resolved.response;
+		const { classId } = resolved;
+		const upload = await storeUpload(c, store, ctx.orgId);
+		if (!upload.ok) return upload.response;
+		try {
+			// Một batch nguyên tử: tạo tài liệu ở gốc ngân hàng + gắn vào lớp.
+			await db.batch([
+				db.insert(material).values({
+					...upload.values,
+					orgId: ctx.orgId,
+					folderId: null,
+					createdBy: ctx.userId,
+				}),
+				db.insert(classMaterial).values({
+					orgId: ctx.orgId,
+					classId,
+					materialId: upload.values.id,
+					position: nextClassMaterialPosition(classId),
+				}),
+			]);
+		} catch (error) {
+			upload.discard();
+			console.error("[materials] class upload insert failed", { error });
+			try {
+				if (!(await classExists(db, ctx.orgId, classId))) {
+					return materialError(c, 404, "CLASS_NOT_FOUND");
+				}
+			} catch {
+				// DB đang lỗi toàn cục — trả 500 chuẩn thay vì rơi ra 500 plain-text.
+			}
+			return c.json({ error: "upload failed" }, 500);
+		}
+		const items = await loadClassMaterials(db, ctx.orgId, classId);
+		const item = items.find((i) => i.id === upload.values.id);
+		if (!item) throw new Error("uploaded class material missing after insert");
+		return c.json({ item }, 201);
+	});
+
+	routes.post("/classes/:classId/materials/links", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const body = await readBody(c, classMaterialLinkCreateSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+		const resolved = await resolveClass(c, db, ctx.orgId);
+		if (!resolved.ok) return resolved.response;
+		const { classId } = resolved;
+		const id = crypto.randomUUID();
+		try {
+			// Một batch nguyên tử: tạo liên kết ở gốc ngân hàng + gắn vào lớp.
+			await db.batch([
+				db.insert(material).values({
+					id,
+					orgId: ctx.orgId,
+					folderId: null,
+					title: body.data.title,
+					description: body.data.description,
+					kind: "link",
+					url: body.data.url,
+					createdBy: ctx.userId,
+				}),
+				db.insert(classMaterial).values({
+					orgId: ctx.orgId,
+					classId,
+					materialId: id,
+					position: nextClassMaterialPosition(classId),
+				}),
+			]);
+		} catch (error) {
+			console.error("[materials] class link insert failed", { error });
+			try {
+				if (!(await classExists(db, ctx.orgId, classId))) {
+					return materialError(c, 404, "CLASS_NOT_FOUND");
+				}
+			} catch {
+				// DB đang lỗi toàn cục — trả 500 JSON chuẩn thay vì rơi ra plain-text.
+			}
+			return c.json({ error: "create link failed" }, 500);
+		}
+		const items = await loadClassMaterials(db, ctx.orgId, classId);
+		const item = items.find((i) => i.id === id);
+		if (!item) throw new Error("created class link missing after insert");
+		return c.json({ item }, 201);
+	});
+
+	routes.delete("/classes/:classId/materials/:materialId", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const db = deps.getDb();
+		const resolved = await resolveClass(c, db, ctx.orgId);
+		if (!resolved.ok) return resolved.response;
+		const removed = await db
+			.delete(classMaterial)
+			.where(
+				and(
+					eq(classMaterial.orgId, ctx.orgId),
+					eq(classMaterial.classId, resolved.classId),
+					eq(classMaterial.materialId, c.req.param("materialId")),
+				),
+			)
+			.returning({ materialId: classMaterial.materialId });
+		if (removed.length === 0) return materialError(c, 404, "NOT_ATTACHED");
+		return c.json({ ok: true });
+	});
 
 	return routes;
 }

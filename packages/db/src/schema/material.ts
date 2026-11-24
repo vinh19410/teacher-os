@@ -162,3 +162,36 @@ export const syllabusLessonMaterial = sqliteTable(
 		index("syllabus_lesson_material_org_idx").on(table.orgId),
 	],
 );
+
+/**
+ * Tài liệu chung gắn trực tiếp ở cấp lớp học (không phụ thuộc buổi học hay bài
+ * giáo trình). Dùng cho bộ tài liệu xuyên suốt khóa như quy định lớp, sách
+ * tham khảo, tổng hợp từ vựng. Xoá lớp cascade dọn liên kết; FK tới `material`
+ * là NO ACTION để tài liệu đang gắn ở lớp không xoá được.
+ */
+export const classMaterial = sqliteTable(
+	"class_material",
+	{
+		orgId: text("org_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		classId: text("class_id")
+			.notNull()
+			.references(() => classTable.id, { onDelete: "cascade" }),
+		materialId: text("material_id")
+			.notNull()
+			.references(() => material.id, { onDelete: "no action" }),
+		position: integer("position").notNull().default(0),
+		createdAt: integer("created_at", { mode: "timestamp_ms" })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+	},
+	(table) => [
+		primaryKey({
+			name: "class_material_pk",
+			columns: [table.classId, table.materialId],
+		}),
+		index("class_material_material_idx").on(table.materialId),
+		index("class_material_org_idx").on(table.orgId),
+	],
+);
