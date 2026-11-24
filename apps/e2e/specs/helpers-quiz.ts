@@ -21,6 +21,21 @@ export interface QuizSeedQuestion {
 	alts: string;
 	/** Dạng bài riêng của câu (đề trộn dạng) — fallback type prompt. */
 	type?: string;
+	/** Giải thích đáp án riêng của câu (rich text HTML). */
+	explanation?: string;
+}
+
+/** Mirror of `StudentQuizGroup` in contracts for multi-group prompts. */
+export interface QuizSeedGroup {
+	id: string;
+	type: string;
+	instruction: string;
+	startIndex: number;
+	count: number;
+	optionBank: string[];
+	answersInline?: boolean;
+	splitContent?: boolean;
+	dragDrop?: boolean;
 }
 
 export interface QuizSeedPrompt {
@@ -35,10 +50,16 @@ export interface QuizSeedPrompt {
 	/** Đề bài rich-text HTML (#304 — Writing prompt-only cần nội dung đề). */
 	prompt?: string;
 	intro?: string;
+	/** Transcript bài nghe — chỉ lộ ở màn xem lại sau khi nộp. */
+	transcript?: string;
 	/** Cue card Speaking Part 2 (#305) — mặc định "". */
 	cueTopic?: string;
 	/** Bullet cue card, mỗi dòng một ý — mặc định "". */
 	cuePoints?: string;
+	/** Ngân hàng lựa chọn cấp đề — mặc định []. */
+	optionBank?: string[];
+	/** Nhóm câu hỏi có cấu trúc (hướng dẫn và ngân hàng lựa chọn riêng từng nhóm) — mặc định []. */
+	groups?: QuizSeedGroup[];
 	questions: QuizSeedQuestion[];
 }
 
@@ -184,8 +205,8 @@ export async function seedQuizFixture(opts: {
 				sql: `INSERT INTO assignment_prompt (
 						id, org_id, task, genre, skill, part, type, title, band, source,
 						prompt, intro, passage, transcript, cue_topic, cue_points,
-						audio_name, image_url, questions, option_bank, note, status, created_at
-					) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'ready', ?)`,
+						audio_name, image_url, questions, option_bank, groups, note, status, created_at
+					) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'ready', ?)`,
 				args: [
 					promptId,
 					orgId,
@@ -202,13 +223,14 @@ export async function seedQuizFixture(opts: {
 					prompt.prompt ?? "",
 					prompt.intro ?? "",
 					prompt.passage,
-					"",
+					prompt.transcript ?? "",
 					prompt.cueTopic ?? "",
 					prompt.cuePoints ?? "",
 					"",
 					"",
 					JSON.stringify(prompt.questions),
-					"[]",
+					JSON.stringify(prompt.optionBank ?? []),
+					JSON.stringify(prompt.groups ?? []),
 					prompt.note,
 					now,
 				],
