@@ -75,6 +75,8 @@ function StubLink({
 	href,
 	className,
 	"aria-current": ariaCurrent,
+	"aria-label": ariaLabel,
+	title,
 	onClick,
 	children,
 }: ShellLinkProps) {
@@ -83,6 +85,8 @@ function StubLink({
 			href={href}
 			className={className}
 			aria-current={ariaCurrent}
+			aria-label={ariaLabel}
+			title={title}
 			onClick={onClick}
 		>
 			{children}

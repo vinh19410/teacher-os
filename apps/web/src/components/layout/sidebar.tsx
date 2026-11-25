@@ -162,6 +162,8 @@ export function TeacherShellLink({
 	href,
 	className,
 	"aria-current": ariaCurrent,
+	"aria-label": ariaLabel,
+	title,
 	onClick,
 	children,
 }: ShellLinkProps) {
@@ -171,6 +173,8 @@ export function TeacherShellLink({
 			onClick={onClick}
 			className={className}
 			aria-current={ariaCurrent}
+			aria-label={ariaLabel}
+			title={title}
 			activeOptions={href === "/" ? { exact: true } : undefined}
 		>
 			{children}
