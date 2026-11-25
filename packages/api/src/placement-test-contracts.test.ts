@@ -1638,6 +1638,12 @@ describe("placement-test-contracts v2", () => {
 			filename: "speaking.aac",
 		});
 
+		// Brand ảnh HEIC / AVIF / JP2 hoặc QuickTime 'qt  ' bị từ chối (khớp media-magic.ts)
+		const qtHeader = new Uint8Array(24);
+		qtHeader[3] = 24;
+		qtHeader.set([0x66, 0x74, 0x79, 0x70, 0x71, 0x74, 0x20, 0x20], 4);
+		expect(detectSpeakingAudioMimeFromBytes(qtHeader)).toBeNull();
+
 		// Chuỗi rỗng, MIME không hỗ trợ hoặc khóa prototype → mặc định audio/webm
 		expect(resolvePlacementSpeakingUploadMeta("")).toEqual({
 			contentType: "audio/webm",

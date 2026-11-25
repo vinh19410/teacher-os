@@ -1801,4 +1801,29 @@ describe("chốt kết quả: token và email (#730)", () => {
 			],
 		});
 	});
+
+	test("allowRedraftForSpeaking finalizes a stale processing Writing-only job before re-claiming for late Speaking upload", async () => {
+		const h = await createHarness();
+		const created = await h.submit({ speakingMode: "upload" });
+		await h.flush();
+
+		// Simulate a stale Writing-only processing job (> 15 minutes old, no job IDs)
+		await h.db
+			.update(schema.placementTestSubmission)
+			.set({
+				aiStatus: "processing",
+				aiStartedAt: new Date(Date.now() - 20 * 60 * 1000),
+				aiWritingResponseId: null,
+				aiSpeakingResponseId: null,
+			})
+			.where(eq(schema.placementTestSubmission.id, created.submissionId));
+
+		await h.upload(created.submissionId, created.uploadToken);
+		await h.flush();
+		const detail = await h.detail(created.leadId);
+		expect(detail.aiStatus).toBe("drafted");
+		expect(detail.speakingTranscript).toBe(FAKE_PLACEMENT_TRANSCRIPT);
+		expect(h.calls.transcribe).toBe(1);
+		expect(h.calls.speaking).toBe(1);
+	});
 });

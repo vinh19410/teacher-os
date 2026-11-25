@@ -126,7 +126,13 @@ function openSpeakingBackupDb(idbFactory: IDBFactory): Promise<IDBDatabase> {
 				finishReject(err);
 			}
 		};
-		req.onsuccess = () => finishResolve(req.result);
+		req.onsuccess = () => {
+			if (settled) {
+				closeDbSafely(req.result);
+				return;
+			}
+			finishResolve(req.result);
+		};
 		req.onerror = () =>
 			finishReject(req.error ?? new Error("IndexedDB open failed"));
 		req.onblocked = () => finishReject(new Error("IndexedDB open blocked"));
@@ -144,6 +150,10 @@ function closeDbSafely(db: IDBDatabase | null): void {
 
 function isValidStoredBlob(value: unknown): value is Blob {
 	if (!value || typeof value !== "object") return false;
+	const isBlobLike =
+		(typeof Blob !== "undefined" && value instanceof Blob) ||
+		typeof (value as { slice?: unknown }).slice === "function";
+	if (!isBlobLike) return false;
 	const candidate = value as { size?: unknown };
 	return (
 		typeof candidate.size === "number" &&

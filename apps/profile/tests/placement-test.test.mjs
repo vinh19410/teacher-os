@@ -2079,4 +2079,49 @@ test("IndexedDB speaking backup fails open when unavailable and respects 15-minu
 	});
 	assert.equal(expired, null);
 	assert.equal(records.has("sub-1"), false);
+
+	// Corrupted non-Blob object in IndexedDB -> rejected and auto-deleted
+	records.set("sub-corrupt", {
+		submissionId: "sub-corrupt",
+		blob: { size: 128 },
+		mimeType: "audio/mp4",
+		durationSec: 12,
+		savedAt: t0,
+		expiresAt: t0 + 10 * 60 * 1000,
+	});
+	const corruptLoaded = await loadSpeakingBackup("sub-corrupt", {
+		now: t0 + 1000,
+		idbFactory: fakeIdb,
+	});
+	assert.equal(corruptLoaded, null);
+	assert.equal(records.has("sub-corrupt"), false);
+
+	// QuickTime 'qt  ' brand and invalid ftyp box size -> rejected (matching server media-magic)
+	const qtBox = new Uint8Array(24);
+	qtBox[3] = 24;
+	qtBox.set([0x66, 0x74, 0x79, 0x70, 0x71, 0x74, 0x20, 0x20], 4);
+	assert.equal(detectSpeakingAudioMimeFromBytes(qtBox), null);
+	const badSizeFtyp = new Uint8Array(24);
+	badSizeFtyp[3] = 17; // not a multiple of 4
+	badSizeFtyp.set([0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x41, 0x20], 4);
+	assert.equal(detectSpeakingAudioMimeFromBytes(badSizeFtyp), null);
+
+	// Profile test.js persists pending result state before awaiting uploadSpeakingMedia
+	const testJsSource = readFileSync(
+		new URL("../public/kiem-tra-dau-vao/test.js", import.meta.url),
+		"utf8",
+	);
+	const saveBackupIdx = testJsSource.indexOf("await saveSpeakingBackup({");
+	const persistPendingIdx = testJsSource.indexOf(
+		'saveAttemptState(snapshot.version, { ...state, step: "result" })',
+	);
+	const uploadCallIdx = testJsSource.indexOf(
+		"await uploadSpeakingMedia(",
+		saveBackupIdx,
+	);
+	assert.ok(saveBackupIdx > 0);
+	assert.ok(
+		persistPendingIdx > saveBackupIdx && persistPendingIdx < uploadCallIdx,
+		"localStorage must persist pending result state after IndexedDB save and before speaking upload",
+	);
 });

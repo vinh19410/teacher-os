@@ -62,6 +62,7 @@ import {
 	uploadStudentPlacementSpeaking,
 	useSubmitStudentPlacement,
 } from "@/lib/repos/placement-test";
+import { getActiveStudentOrgId } from "@/lib/student-org-storage";
 
 export interface PendingSpeakingRetry {
 	submissionId: string;
@@ -99,6 +100,7 @@ export function PlacementTestRunner({
 	const [stepSwitchError, setStepSwitchError] = useState("");
 	const [submitStage, setSubmitStage] = useState<PlacementSubmitStage>("idle");
 	const submitStageRef = useRef<PlacementSubmitStage>("idle");
+	const unmountedRef = useRef(false);
 	const isSubmitting = submitStage !== "idle";
 	const [confirmUnanswered, setConfirmUnanswered] = useState<{
 		unansweredObjective: number;
@@ -109,7 +111,9 @@ export function PlacementTestRunner({
 
 	const updateSubmitStage = useCallback((next: PlacementSubmitStage) => {
 		submitStageRef.current = next;
-		setSubmitStage(next);
+		if (!unmountedRef.current) {
+			setSubmitStage(next);
+		}
 	}, []);
 
 	useEffect(() => {
@@ -141,7 +145,9 @@ export function PlacementTestRunner({
 	}, [recordedAudio]);
 
 	useEffect(() => {
+		unmountedRef.current = false;
 		return () => {
+			unmountedRef.current = true;
 			if (recordedUrlRef.current) {
 				try {
 					URL.revokeObjectURL(recordedUrlRef.current);
@@ -222,6 +228,9 @@ export function PlacementTestRunner({
 
 	const executeSubmission = async (finalSpeakingMode: "upload" | "none") => {
 		if (submitStageRef.current !== "idle") return;
+		const submitOrgId = getActiveStudentOrgId();
+		const isSameSessionContext = () =>
+			!unmountedRef.current && getActiveStudentOrgId() === submitOrgId;
 		setConfirmUnanswered(null);
 		updateSubmitStage("submitting");
 		setSubmitError("");
@@ -257,7 +266,7 @@ export function PlacementTestRunner({
 					durationSec: recordedAudio.durationSec,
 				});
 
-				if (res.uploadToken) {
+				if (res.uploadToken && isSameSessionContext()) {
 					updateSubmitStage("uploading_speaking");
 					try {
 						await uploadStudentPlacementSpeaking(
@@ -285,7 +294,7 @@ export function PlacementTestRunner({
 									: "Không thể tải file Speaking lên máy chủ.",
 						};
 					}
-				} else {
+				} else if (!res.uploadToken) {
 					speakingStatus = "pending_upload";
 					pendingRetry = {
 						submissionId: res.submissionId,
@@ -300,6 +309,10 @@ export function PlacementTestRunner({
 			}
 
 			clearPlacementDraft(studentId, snapshot.version);
+
+			if (!isSameSessionContext()) {
+				return;
+			}
 
 			const optimisticView: StudentPlacementSubmissionView = {
 				id: res.submissionId,
@@ -354,11 +367,13 @@ export function PlacementTestRunner({
 			});
 			void queryClient.invalidateQueries({ queryKey: ["student", "inbox"] });
 		} catch (err) {
-			setSubmitError(
-				err instanceof Error && err.message
-					? err.message
-					: "Không thể nộp bài kiểm tra. Vui lòng kiểm tra kết nối và thử lại.",
-			);
+			if (isSameSessionContext()) {
+				setSubmitError(
+					err instanceof Error && err.message
+						? err.message
+						: "Không thể nộp bài kiểm tra. Vui lòng kiểm tra kết nối và thử lại.",
+				);
+			}
 		} finally {
 			updateSubmitStage("idle");
 		}

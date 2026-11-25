@@ -483,6 +483,9 @@ export async function runPlacementAiGrading(
 			);
 		return;
 	}
+	if (allowRedraftForSpeaking && sub.aiStatus === "processing") {
+		await finalizePlacementAiGrading(deps, sub);
+	}
 	const from: PlacementAiStatus[] = allowRedraftForSpeaking
 		? ["none", "failed", "drafted"]
 		: ["none", "failed"];

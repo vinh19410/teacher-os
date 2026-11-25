@@ -40,6 +40,7 @@ import {
 	uploadStudentPlacementSpeaking,
 	useStudentPlacementView,
 } from "@/lib/repos/placement-test";
+import { getActiveStudentOrgId } from "@/lib/student-org-storage";
 
 export const Route = createFileRoute("/_auth/placement-test")({
 	component: StudentPlacementTestRoute,
@@ -147,7 +148,12 @@ function StudentPlacementTestRoute() {
 
 	return (
 		<StudentPageGate sessionEmail={sessionEmail}>
-			{(me) => <StudentPlacementTestContent studentId={me.student.id} />}
+			{(me) => (
+				<StudentPlacementTestContent
+					key={me.student.id}
+					studentId={me.student.id}
+				/>
+			)}
 		</StudentPageGate>
 	);
 }
@@ -220,9 +226,12 @@ export function StudentPlacementTestContent({
 		async (
 			submission: StudentPlacementSubmissionView,
 			outcome: SpeakingUploadOutcome,
+			expectedOrgId: string | null,
 		) => {
 			await deleteStudentSpeakingBackup(studentId, submission.id);
-			if (unmountedRef.current) return;
+			if (unmountedRef.current || getActiveStudentOrgId() !== expectedOrgId) {
+				return;
+			}
 
 			pendingRetryRef.current = null;
 			setPendingRetry(null);
@@ -298,6 +307,7 @@ export function StudentPlacementTestContent({
 
 		autoRecoveryAttemptedRef.current.add(autoRecoveryKey);
 		setIsAutoRecoveringSpeaking(true);
+		const capturedOrgId = getActiveStudentOrgId();
 
 		void (async () => {
 			try {
@@ -305,7 +315,9 @@ export function StudentPlacementTestContent({
 					studentId,
 					submission.id,
 				);
-				if (unmountedRef.current) return;
+				if (unmountedRef.current || getActiveStudentOrgId() !== capturedOrgId) {
+					return;
+				}
 				if (!backup) return;
 
 				const restoredRetry: PendingSpeakingRetry = {
@@ -327,17 +339,34 @@ export function StudentPlacementTestContent({
 						restoredRetry,
 						(token) => {
 							refreshedToken = token;
-							if (!unmountedRef.current) {
+							if (
+								!unmountedRef.current &&
+								getActiveStudentOrgId() === capturedOrgId
+							) {
 								setPendingRetry((prev) =>
 									prev ? { ...prev, uploadToken: token } : prev,
 								);
 							}
 						},
 					);
-					if (unmountedRef.current) return;
-					await finalizeSpeakingUploadSuccess(submission, outcome);
+					if (
+						unmountedRef.current ||
+						getActiveStudentOrgId() !== capturedOrgId
+					) {
+						return;
+					}
+					await finalizeSpeakingUploadSuccess(
+						submission,
+						outcome,
+						capturedOrgId,
+					);
 				} catch (err) {
-					if (unmountedRef.current) return;
+					if (
+						unmountedRef.current ||
+						getActiveStudentOrgId() !== capturedOrgId
+					) {
+						return;
+					}
 					const msg =
 						err instanceof Error && err.message
 							? err.message
@@ -416,20 +445,28 @@ export function StudentPlacementTestContent({
 		isUploadingSpeakingRef.current = true;
 		setIsRetryingUpload(true);
 		setSpeakingUploadSuccessMessage("");
+		const capturedOrgId = getActiveStudentOrgId();
 		let latestToken: string | null = target.uploadToken;
 		try {
 			const outcome = await uploadSpeakingWithTokenRefresh(target, (token) => {
 				latestToken = token;
-				if (!unmountedRef.current) {
+				if (
+					!unmountedRef.current &&
+					getActiveStudentOrgId() === capturedOrgId
+				) {
 					setPendingRetry((prev) =>
 						prev ? { ...prev, uploadToken: token } : prev,
 					);
 				}
 			});
-			if (unmountedRef.current) return;
-			await finalizeSpeakingUploadSuccess(submission, outcome);
+			if (unmountedRef.current || getActiveStudentOrgId() !== capturedOrgId) {
+				return;
+			}
+			await finalizeSpeakingUploadSuccess(submission, outcome, capturedOrgId);
 		} catch (err) {
-			if (unmountedRef.current) return;
+			if (unmountedRef.current || getActiveStudentOrgId() !== capturedOrgId) {
+				return;
+			}
 			const msg =
 				err instanceof Error && err.message
 					? err.message
@@ -460,6 +497,7 @@ export function StudentPlacementTestContent({
 
 		isUploadingSpeakingRef.current = true;
 		setSpeakingUploadSuccessMessage("");
+		const capturedOrgId = getActiveStudentOrgId();
 		let refreshedToken: string | null = null;
 		try {
 			await saveStudentSpeakingBackup({
@@ -482,15 +520,17 @@ export function StudentPlacementTestContent({
 					refreshedToken = token;
 				},
 			);
-			if (unmountedRef.current) return { ok: true };
-			await finalizeSpeakingUploadSuccess(submission, outcome);
+			if (unmountedRef.current || getActiveStudentOrgId() !== capturedOrgId) {
+				return { ok: true };
+			}
+			await finalizeSpeakingUploadSuccess(submission, outcome, capturedOrgId);
 			return { ok: true };
 		} catch (err) {
 			const msg =
 				err instanceof Error && err.message
 					? err.message
 					: "Không thể tải lên bản ghi Speaking. Vui lòng thử lại.";
-			if (!unmountedRef.current) {
+			if (!unmountedRef.current && getActiveStudentOrgId() === capturedOrgId) {
 				const retryInfo: PendingSpeakingRetry = {
 					submissionId: submission.id,
 					uploadToken:

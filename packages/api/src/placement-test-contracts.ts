@@ -2878,6 +2878,7 @@ const BANNED_SPEAKING_FTYP_BRANDS: Readonly<Record<string, true>> = {
 	avif: true,
 	avis: true,
 	"jp2 ": true,
+	"qt  ": true,
 };
 
 function hasMagicBytesAt(

@@ -716,6 +716,7 @@ const BANNED_IMAGE_FTYP_BRANDS = new Set([
 	"avif",
 	"avis",
 	"jp2 ",
+	"qt  ",
 ]);
 
 const IN_APP_BROWSER_RE =
@@ -773,17 +774,32 @@ export function detectSpeakingAudioMimeFromBytes(headBytes) {
 		return "audio/wav";
 	}
 
-	// ISO BMFF / MP4 / M4A: ....ftyp with non-image 4CC major brand at offset 8 or 16
+	// ISO BMFF / MP4 / M4A: ....ftyp with valid box size & non-image/non-QuickTime 4CC major brand
 	if (
 		bytes.byteLength >= 16 &&
 		hasBytesAt(bytes, 4, [0x66, 0x74, 0x79, 0x70])
 	) {
 		const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 		const rawSize = view.getUint32(0, false);
-		const brandOffset = rawSize === 1 ? 16 : 8;
-		const brand = readFourCcAlnumSpace(bytes, brandOffset);
-		if (brand !== null && !BANNED_IMAGE_FTYP_BRANDS.has(brand)) {
-			return "audio/mp4";
+		let effectiveSize = rawSize;
+		let brandOffset = 8;
+		let sizeValid = true;
+		if (rawSize === 1) {
+			if (bytes.byteLength < 24 || view.getUint32(8, false) !== 0) {
+				sizeValid = false;
+			} else {
+				effectiveSize = view.getUint32(12, false);
+				if (effectiveSize < 24) sizeValid = false;
+				brandOffset = 16;
+			}
+		} else if (rawSize < 16) {
+			sizeValid = false;
+		}
+		if (sizeValid && effectiveSize <= 4096 && effectiveSize % 4 === 0) {
+			const brand = readFourCcAlnumSpace(bytes, brandOffset);
+			if (brand !== null && !BANNED_IMAGE_FTYP_BRANDS.has(brand)) {
+				return "audio/mp4";
+			}
 		}
 		return null;
 	}

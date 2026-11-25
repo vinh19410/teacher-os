@@ -3600,4 +3600,160 @@ describe("Placement Speaking upload resilience, WebKit compatibility & recovery"
 			false,
 		);
 	});
+
+	it("ignores rapid double-click on Upload Recovered Speaking button without cancelling loading state or showing fake error", async () => {
+		const { PlacementPendingResultView } = await import(
+			"@/components/placement/placement-result-views"
+		);
+
+		installMockRecorder({
+			recorderMimeType: "audio/mp4",
+			supportedMime: "audio/mp4",
+			chunkBytes: makeMp4FtypBytes(),
+		});
+
+		const deferred: {
+			resolve?: (res: { ok: boolean; errorMessage?: string }) => void;
+		} = {};
+		const onUploadRecovered = vi.fn(
+			() =>
+				new Promise<{ ok: boolean; errorMessage?: string }>((resolve) => {
+					deferred.resolve = resolve;
+				}),
+		);
+
+		render(
+			<PlacementPendingResultView
+				submission={createPendingSubmissionFixture({
+					speakingStatus: "pending_upload",
+				})}
+				recoverySpeakingTasks={SAMPLE_SNAPSHOT.parts[4].tasks}
+				onUploadRecoveredSpeaking={onUploadRecovered}
+			/>,
+		);
+
+		fireEvent.click(screen.getByTestId("rerecord-speaking-btn"));
+		await completeSingleSpeakingTaskRecording();
+
+		const uploadBtn = await screen.findByTestId(
+			"upload-recovered-speaking-btn",
+		);
+		await waitFor(() => {
+			expect((uploadBtn as HTMLButtonElement).disabled).toBe(false);
+		});
+
+		// Fire two synchronous clicks before React flushes disabled state
+		fireEvent.click(uploadBtn);
+		fireEvent.click(uploadBtn);
+
+		expect(onUploadRecovered).toHaveBeenCalledTimes(1);
+		expect(
+			screen.getByText(/Đang tải bản ghi Speaking lên máy chủ/i),
+		).toBeTruthy();
+		expect(
+			screen.queryByText(/Đang có tiến trình tải Speaking khác/i),
+		).toBeNull();
+
+		deferred.resolve?.({ ok: true });
+		await waitFor(() => {
+			expect(
+				screen.queryByText(/Đang tải bản ghi Speaking lên máy chủ/i),
+			).toBeNull();
+		});
+	});
+
+	it("rejects corrupted non-Blob records in IndexedDB backup and resets state cleanly on studentId/org switch", async () => {
+		const mockIdb = createInMemoryIdbFactory();
+		Object.defineProperty(globalThis, "indexedDB", {
+			configurable: true,
+			writable: true,
+			value: mockIdb.factory,
+		});
+		const { loadStudentSpeakingBackup } = await import(
+			"@/lib/placement-speaking-backup"
+		);
+
+		// 1. Corrupt non-Blob object in IndexedDB must be rejected and auto-deleted
+		mockIdb.stores.set(
+			"recordings",
+			new Map([
+				[
+					"stu-1:sub-corrupt",
+					{
+						key: "stu-1:sub-corrupt",
+						studentId: "stu-1",
+						submissionId: "sub-corrupt",
+						blob: { size: 256 },
+						mimeType: "audio/mp4",
+						durationSec: 10,
+						savedAt: Date.now(),
+						expiresAt: Date.now() + 60_000,
+					},
+				],
+			]),
+		);
+		const corrupt = await loadStudentSpeakingBackup("stu-1", "sub-corrupt");
+		expect(corrupt).toBeNull();
+		expect(mockIdb.stores.get("recordings")?.has("stu-1:sub-corrupt")).toBe(
+			false,
+		);
+
+		// 2. Switching studentId via key remount prevents Org A state from leaking into Org B
+		const queryClient = createTestQueryClient();
+		let activeOrg = "org-a";
+		globalThis.fetch = vi.fn(async (input) => {
+			const url = typeof input === "string" ? input : input.toString();
+			if (url.endsWith("/api/student/placement-test")) {
+				if (activeOrg === "org-a") {
+					const orgAView: StudentPlacementViewResponse = {
+						status: "pending_grading",
+						hasEntryScore: false,
+						entryScore: null,
+						promptDismissedAt: null,
+						submissionId: "sub-org-a",
+						testAvailable: true,
+						testVersion: 3,
+						snapshot: null,
+						submission: createPendingSubmissionFixture({
+							id: "sub-org-a",
+							speakingStatus: "uploaded",
+						}),
+						speakingTasks: null,
+					};
+					return makeJsonResponse(orgAView);
+				}
+				const orgBView: StudentPlacementViewResponse = {
+					status: "not_started",
+					hasEntryScore: false,
+					entryScore: null,
+					promptDismissedAt: null,
+					submissionId: null,
+					testAvailable: true,
+					testVersion: 3,
+					snapshot: SAMPLE_SNAPSHOT,
+					submission: null,
+					speakingTasks: null,
+				};
+				return makeJsonResponse(orgBView);
+			}
+			throw new Error(`Unexpected fetch: ${url}`);
+		});
+
+		const { rerender } = render(
+			<QueryClientProvider client={queryClient}>
+				<StudentPlacementTestContent key="stu-org-a" studentId="stu-org-a" />
+			</QueryClientProvider>,
+		);
+		expect(await screen.findByTestId("placement-pending-view")).toBeTruthy();
+
+		activeOrg = "org-b";
+		await queryClient.invalidateQueries();
+		rerender(
+			<QueryClientProvider client={queryClient}>
+				<StudentPlacementTestContent key="stu-org-b" studentId="stu-org-b" />
+			</QueryClientProvider>,
+		);
+		expect(await screen.findByTestId("placement-intro-card")).toBeTruthy();
+		expect(screen.queryByTestId("placement-pending-view")).toBeNull();
+	});
 });

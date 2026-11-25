@@ -255,6 +255,8 @@ export function PlacementPendingResultView({
 	const [isUploadingRecovered, setIsUploadingRecovered] = useState(false);
 	const [recoveryUploadError, setRecoveryUploadError] = useState("");
 	const recoveredUrlRef = useRef<string | null>(null);
+	const isUploadingRecoveredRef = useRef(false);
+	const unmountedRef = useRef(false);
 
 	useEffect(() => {
 		const prev = recoveredUrlRef.current;
@@ -270,7 +272,9 @@ export function PlacementPendingResultView({
 	}, [recoveredAudio]);
 
 	useEffect(() => {
+		unmountedRef.current = false;
 		return () => {
+			unmountedRef.current = true;
 			if (recoveredUrlRef.current) {
 				try {
 					URL.revokeObjectURL(recoveredUrlRef.current);
@@ -281,8 +285,13 @@ export function PlacementPendingResultView({
 		};
 	}, []);
 
+	const isAnySpeakingUploadActive =
+		isUploadingRecovered ||
+		isRetryingSpeakingUpload ||
+		isAutoRecoveringSpeaking;
+
 	useEffect(() => {
-		if (!isUploadingRecovered || typeof window === "undefined") {
+		if (!isAnySpeakingUploadActive || typeof window === "undefined") {
 			return;
 		}
 		const handleBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -293,7 +302,7 @@ export function PlacementPendingResultView({
 		return () => {
 			window.removeEventListener("beforeunload", handleBeforeUnload);
 		};
-	}, [isUploadingRecovered]);
+	}, [isAnySpeakingUploadActive]);
 
 	useEffect(() => {
 		if (submission.speakingStatus !== "pending_upload") {
@@ -320,27 +329,37 @@ export function PlacementPendingResultView({
 	);
 
 	const handleUploadRecovered = async () => {
-		if (!recoveredAudio || !onUploadRecoveredSpeaking || isUploadingRecovered) {
+		if (
+			!recoveredAudio ||
+			!onUploadRecoveredSpeaking ||
+			isUploadingRecoveredRef.current
+		) {
 			return;
 		}
+		isUploadingRecoveredRef.current = true;
 		setIsUploadingRecovered(true);
 		setRecoveryUploadError("");
 		try {
 			const res = await onUploadRecoveredSpeaking(recoveredAudio);
-			if (!res.ok) {
+			if (!unmountedRef.current && !res.ok) {
 				setRecoveryUploadError(
 					res.errorMessage ||
 						"Không thể tải lên bản ghi Speaking. Vui lòng thử lại.",
 				);
 			}
 		} catch (err) {
-			setRecoveryUploadError(
-				err instanceof Error && err.message
-					? err.message
-					: "Không thể tải lên bản ghi Speaking. Vui lòng thử lại.",
-			);
+			if (!unmountedRef.current) {
+				setRecoveryUploadError(
+					err instanceof Error && err.message
+						? err.message
+						: "Không thể tải lên bản ghi Speaking. Vui lòng thử lại.",
+				);
+			}
 		} finally {
-			setIsUploadingRecovered(false);
+			isUploadingRecoveredRef.current = false;
+			if (!unmountedRef.current) {
+				setIsUploadingRecovered(false);
+			}
 		}
 	};
 
@@ -485,7 +504,9 @@ export function PlacementPendingResultView({
 										Bản ghi Speaking chưa tải lên hoàn tất
 									</p>
 									<p className="text-muted-foreground text-xs leading-relaxed">
-										{speakingUploadError ||
+										{(isRecoveryPanelOpen && recoveryUploadError
+											? ""
+											: speakingUploadError) ||
 											"Bài làm 4 kỹ năng còn lại đã được lưu an toàn. Bản ghi Speaking vẫn còn trên thiết bị này — hãy bấm nút bên dưới để tải lại."}
 									</p>
 									<div className="flex flex-wrap items-center gap-2">
@@ -495,7 +516,9 @@ export function PlacementPendingResultView({
 											data-testid="retry-speaking-upload-btn"
 											onClick={onRetrySpeakingUpload}
 											disabled={
-												isRetryingSpeakingUpload || isUploadingRecovered
+												isRetryingSpeakingUpload ||
+												isUploadingRecovered ||
+												isRecoverySpeakingBusy
 											}
 										>
 											<RefreshCw

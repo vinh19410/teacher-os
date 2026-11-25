@@ -787,11 +787,16 @@ export async function loadSpeakingBackup(
 		}
 	});
 	if (!record || typeof record !== "object") return null;
+	const isBlobLike =
+		record.blob &&
+		typeof record.blob === "object" &&
+		((typeof Blob !== "undefined" && record.blob instanceof Blob) ||
+			typeof record.blob.slice === "function");
 	if (
 		typeof record.expiresAt !== "number" ||
 		record.expiresAt <= now ||
-		!record.blob ||
-		!(record.blob.size > 0)
+		!isBlobLike ||
+		!(typeof record.blob.size === "number" && record.blob.size > 0)
 	) {
 		await deleteSpeakingBackup(submissionId, { idbFactory });
 		return null;
@@ -1100,6 +1105,9 @@ function createApp() {
 	}
 
 	function navigateToStep(nextStep) {
+		if (isSubmitting || isUploadingSpeaking) {
+			return;
+		}
 		if (isSpeakingBusy()) {
 			speakingMediaError =
 				"Vui lòng hoàn thành hoặc bấm Kết thúc phần Speaking trước khi chuyển phần khác.";
@@ -1139,6 +1147,7 @@ function createApp() {
 					className: `skill-step-pill${isActive ? " is-active" : ""}`,
 					dataset: { skillStep: skill.id },
 					"aria-current": isActive ? "step" : undefined,
+					disabled: isSubmitting || isUploadingSpeaking,
 				},
 				[skill.shortLabel],
 			);
@@ -1165,6 +1174,7 @@ function createApp() {
 						type: "button",
 						id: "changeLeadInfoBtn",
 						className: "link-inline-btn",
+						disabled: isSubmitting || isUploadingSpeaking,
 					},
 					["Đổi thông tin"],
 				),
@@ -2696,6 +2706,7 @@ function createApp() {
 					mimeType: recordedBlob.type || "",
 					durationSec: state.speakingDurationSec ?? 0,
 				});
+				saveAttemptState(snapshot.version, { ...state, step: "result" });
 				isUploadingSpeaking = true;
 				window.addEventListener("beforeunload", handleBeforeUnloadDuringUpload);
 				render();
