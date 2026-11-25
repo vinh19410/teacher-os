@@ -704,11 +704,17 @@ export function useClassMaterials(classId: string, enabled = true) {
 export async function fetchPracticeCatalog(filters: {
 	skill: PracticeSkill;
 	collection?: string;
+	part?: string;
+	type?: string;
+	band?: string;
 	q?: string;
 	page?: number;
 }): Promise<PracticeCatalogResponse> {
-	const params = new URLSearchParams({ skill: filters.skill });
+	const params = new URLSearchParams({ skill: filters.skill, facets: "1" });
 	if (filters.collection) params.set("collection", filters.collection);
+	if (filters.part) params.set("part", filters.part);
+	if (filters.type) params.set("type", filters.type);
+	if (filters.band) params.set("band", filters.band);
 	if (filters.q) params.set("q", filters.q);
 	if (filters.page && filters.page > 1)
 		params.set("page", String(filters.page));
@@ -732,6 +738,9 @@ export async function fetchPracticeCatalog(filters: {
 export function usePracticeCatalog(filters: {
 	skill: PracticeSkill;
 	collection?: string;
+	part?: string;
+	type?: string;
+	band?: string;
 	q?: string;
 	page?: number;
 }) {
@@ -741,11 +750,18 @@ export function usePracticeCatalog(filters: {
 			"practice",
 			filters.skill,
 			filters.collection ?? "",
+			filters.part ?? "",
+			filters.type ?? "",
+			filters.band ?? "",
 			filters.q ?? "",
 			filters.page ?? 1,
 		],
 		queryFn: () => fetchPracticeCatalog(filters),
 		staleTime: 30_000,
+		// Giữ dữ liệu + facets trong cùng skill khi đổi trang/filter/search để
+		// tránh unmount dropdown và mất focus bàn phím; không rò sang skill khác.
+		placeholderData: (prev, prevQuery) =>
+			prevQuery?.queryKey[2] === filters.skill ? prev : undefined,
 	});
 }
 

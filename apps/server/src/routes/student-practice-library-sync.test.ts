@@ -427,4 +427,24 @@ describe("student practice — đồng bộ đề thư viện", () => {
 		);
 		expect(otherOrgAudio.status).toBe(404);
 	});
+
+	test("đề thư viện listening đồng bộ hiện đủ dạng câu hỏi nhóm phụ (mcq_many) trong facets và lọc đúng (#884)", async () => {
+		const res = await app.request(
+			"/api/student/practice?skill=listening&facets=1&type=mcq_many&part=s4",
+			{
+				headers: { "x-test-user": "hoa", "x-student-org-id": "org-1" },
+			},
+		);
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as {
+			total: number;
+			items: Array<{ title: string }>;
+			facets?: { types: string[]; parts: string[]; bands: string[] };
+		};
+		expect(body.total).toBe(1);
+		expect(body.items[0]?.title).toBe("Talking about the history of bikes");
+		expect(body.facets?.types).toEqual(["mcq_many", "notes"]);
+		expect(body.facets?.parts).toEqual(["s4"]);
+		expect(body.facets?.bands).toEqual(["7.0"]);
+	});
 });
