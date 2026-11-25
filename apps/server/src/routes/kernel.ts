@@ -2536,8 +2536,10 @@ export function kernelRoutes(deps: {
 	 * Chốt hoặc gửi lại thông báo lịch khai giảng lớp học kèm email HTML thương hiệu.
 	 * Chế độ `initial` / `all` bảo vệ bằng CAS trên `openingAnnouncementVersion`
 	 * (và khóa đổi `startDate` nguyên tử bằng `NOT EXISTS` khi lớp đã có buổi học
-	 * thực tế); chế độ `new_only` không ghi đè bản ghi lớp mà chỉ gửi bổ sung cho
-	 * học viên chưa nhận đủ thông báo.
+	 * thực tế); chế độ `new_only` giữ nguyên `startDate`, `openingConfirmedAt`,
+	 * `openingAnnouncementVersion`, và nếu caller truyền `note` mới khi có học
+	 * viên mới (`targets.length > 0`) thì cập nhật `openingNote` bằng CAS (khóa
+	 * `status`, `openingAnnouncementVersion`, `openingNote`) trước khi gửi email.
 	 */
 	kernel.post("/classes/:id/confirm-opening", async (c) => {
 		const ctx = c.get("kernelCtx");
@@ -2615,6 +2617,13 @@ export function kernelRoutes(deps: {
 			);
 		}
 
+		const effectiveNote =
+			input.note !== undefined
+				? input.note
+				: input.mode === "new_only"
+					? cls.openingNote
+					: "";
+
 		let confirmedAt: Date;
 		let announcementVersion: number;
 		let persistedStartDate: string;
@@ -2644,7 +2653,7 @@ export function kernelRoutes(deps: {
 				.update(classTable)
 				.set({
 					openingConfirmedAt: now,
-					openingNote: input.note,
+					openingNote: effectiveNote,
 					openingAnnouncementVersion: nextVersion,
 					...(startDateChanged ? { startDate: effectiveStartDate } : {}),
 				})
@@ -2759,6 +2768,41 @@ export function kernelRoutes(deps: {
 			return c.json(payload, 200);
 		}
 
+		if (input.mode === "new_only" && effectiveNote !== cls.openingNote) {
+			const updatedNoteRows = await db
+				.update(classTable)
+				.set({ openingNote: effectiveNote })
+				.where(
+					and(
+						eq(classTable.id, classId),
+						eq(classTable.orgId, ctx.orgId),
+						eq(classTable.status, "active"),
+						eq(classTable.openingAnnouncementVersion, currentVersion),
+						eq(classTable.openingNote, cls.openingNote),
+					),
+				)
+				.returning({ openingNote: classTable.openingNote });
+			const updatedNoteRow = updatedNoteRows[0];
+			if (!updatedNoteRow) {
+				const stillExists = await findClass(db, classId, ctx.orgId);
+				if (!stillExists) {
+					return c.json({ error: "class not found" }, 404);
+				}
+				if (stillExists.status !== "active") {
+					return classPausedResponse(c);
+				}
+				return c.json(
+					{
+						error:
+							"Trạng thái chốt khai giảng của lớp vừa thay đổi, vui lòng tải lại.",
+						code: CLASS_ERROR_CODES.OPENING_VERSION_CONFLICT,
+					},
+					409,
+				);
+			}
+			persistedNote = updatedNoteRow.openingNote;
+		}
+
 		const skippedNoEmail = targets
 			.filter((r) => r.email.trim() === "")
 			.map((r) => ({
@@ -2776,7 +2820,7 @@ export function kernelRoutes(deps: {
 			level: cls.level,
 			version: announcementVersion,
 			isUpdate: input.mode === "all",
-			teacherNote: input.note,
+			teacherNote: persistedNote,
 			orgName: senderName,
 			studentOrigin: deps.studentOrigin,
 			students: targets.map((t) => ({

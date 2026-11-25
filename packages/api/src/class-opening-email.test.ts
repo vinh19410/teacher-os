@@ -354,7 +354,7 @@ describe("class opening confirmation contracts", () => {
 		expect(CLASS_OPENING_NOTE_MAX_LENGTH).toBe(1000);
 	});
 
-	test("classConfirmOpeningSchema accepts valid payloads and defaults note", () => {
+	test("classConfirmOpeningSchema accepts valid payloads and keeps omitted note undefined", () => {
 		const minimal = classConfirmOpeningSchema.safeParse({
 			mode: "initial",
 			expectedVersion: 0,
@@ -363,9 +363,9 @@ describe("class opening confirmation contracts", () => {
 		if (minimal.success) {
 			expect(minimal.data).toEqual({
 				mode: "initial",
-				note: "",
 				expectedVersion: 0,
 			});
+			expect(minimal.data.note).toBeUndefined();
 		}
 
 		const full = classConfirmOpeningSchema.safeParse({
@@ -377,7 +377,7 @@ describe("class opening confirmation contracts", () => {
 		expect(full.success).toBe(true);
 		if (full.success) {
 			expect(full.data.startDate).toBe("2026-09-15");
-			expect(full.data.note.length).toBe(CLASS_OPENING_NOTE_MAX_LENGTH);
+			expect(full.data.note?.length).toBe(CLASS_OPENING_NOTE_MAX_LENGTH);
 		}
 	});
 

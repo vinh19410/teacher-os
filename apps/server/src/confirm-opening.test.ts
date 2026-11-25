@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { createClient } from "@libsql/client";
+import { createClient, type InArgs, type InStatement } from "@libsql/client";
 import {
 	CLASS_ERROR_CODES,
 	classConfirmOpeningResponseSchema,
@@ -46,6 +46,19 @@ async function setupTestApp(options?: {
 	now?: () => Date;
 }) {
 	const client = createClient({ url: "file::memory:" });
+	let beforeNextClassUpdateSql: (() => Promise<void>) | null = null;
+	const origExecute = client.execute.bind(client);
+	client.execute = async (stmt: InStatement, args?: InArgs) => {
+		const sqlText = typeof stmt === "string" ? stmt : stmt.sql;
+		if (beforeNextClassUpdateSql && /^\s*update\s+"?class"?\b/i.test(sqlText)) {
+			const hook = beforeNextClassUpdateSql;
+			beforeNextClassUpdateSql = null;
+			await hook();
+		}
+		return typeof stmt === "string"
+			? origExecute(stmt, args)
+			: origExecute(stmt);
+	};
 	const libsql = drizzle(client, { schema });
 	await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
 	const db = libsql as unknown as Db;
@@ -256,6 +269,10 @@ async function setupTestApp(options?: {
 		setMailerImpl(impl: Mailer["send"]) {
 			currentMailerImpl = impl;
 		},
+		setBeforeNextClassUpdate(fn: (() => Promise<void>) | null) {
+			beforeNextClassUpdateSql = fn;
+		},
+		rawExecute: origExecute,
 		insertUser,
 		addTaToTeacherOrg,
 		getOrgIdForUser,
@@ -690,7 +707,7 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 		);
 		expect(newOnlyBody.openingAnnouncementVersion).toBe(1);
 		expect(newOnlyBody.openingConfirmedAt).toBe("2026-05-01T08:00:00.000Z");
-		expect(newOnlyBody.openingNote).toBe("Lần đầu khai giảng");
+		expect(newOnlyBody.openingNote).toBe("Chào mừng học viên mới");
 		expect(newOnlyBody.queuedEmailCount).toBe(1);
 		expect(newOnlyBody.inAppOnlyCount).toBe(0);
 		expect(newOnlyBody.skippedAlreadySentCount).toBe(1);
@@ -698,6 +715,17 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 		expect(t.sentMails).toHaveLength(1);
 		expect(t.sentMails[0]?.to).toBe("s2@example.com");
 		expect(t.sentMails[0]?.subject).toContain("Thông báo khai giảng lớp");
+		expect(t.sentMails[0]?.html).toContain("Chào mừng học viên mới");
+
+		const [clsAfterNewOnly] = await t.libsql
+			.select()
+			.from(schema.classTable)
+			.where(eq(schema.classTable.id, classId));
+		expect(clsAfterNewOnly?.openingNote).toBe("Chào mừng học viên mới");
+		expect(clsAfterNewOnly?.openingAnnouncementVersion).toBe(1);
+		expect(clsAfterNewOnly?.openingConfirmedAt?.toISOString()).toBe(
+			"2026-05-01T08:00:00.000Z",
+		);
 
 		// Second new_only immediately is idempotent: sends 0 emails
 		t.sentMails.length = 0;
@@ -1171,5 +1199,151 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 			expect(row.htmlBody).toContain("<!DOCTYPE html>");
 			expect(row.textBody).toContain("Hẹn gặp cả lớp đúng giờ!");
 		}
+	});
+
+	test("new_only preserves existing openingNote when note is omitted, and rejects mid-flight CAS conflict without sending emails", async () => {
+		const fixedNow = new Date("2026-06-01T08:00:00.000Z");
+		const t = await setupTestApp({ now: () => fixedNow });
+		const teacher = await t.insertUser("Teacher NewOnly Note");
+		const startDate = futureMondayISO(10);
+		const classId = await t.createClass(teacher.token, {
+			name: "IELTS NewOnly CAS",
+			startDate,
+		});
+		const orgId = await t.getOrgIdForUser(teacher.id);
+
+		await t.seedStudentAndEnroll({
+			orgId,
+			classId,
+			name: "Học viên 1",
+			email: "s1@example.com",
+			status: "active",
+		});
+
+		const initialRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/confirm-opening`,
+			{
+				body: {
+					mode: "initial",
+					note: "Ghi chú gốc",
+					expectedVersion: 0,
+				},
+			},
+		);
+		expect(initialRes.status).toBe(200);
+
+		// Part A: omit `note` in `new_only` -> preserves DB openingNote and uses it in email
+		await t.seedStudentAndEnroll({
+			orgId,
+			classId,
+			name: "Học viên 2",
+			email: "s2@example.com",
+			status: "active",
+		});
+		t.sentMails.length = 0;
+
+		const omitRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/confirm-opening`,
+			{
+				body: {
+					mode: "new_only",
+					expectedVersion: 1,
+				},
+			},
+		);
+		expect(omitRes.status).toBe(200);
+		const omitBody = classConfirmOpeningResponseSchema.parse(
+			await omitRes.json(),
+		);
+		expect(omitBody.openingNote).toBe("Ghi chú gốc");
+		expect(omitBody.openingAnnouncementVersion).toBe(1);
+		expect(omitBody.queuedEmailCount).toBe(1);
+		expect(t.sentMails).toHaveLength(1);
+		expect(t.sentMails[0]?.to).toBe("s2@example.com");
+		expect(t.sentMails[0]?.html).toContain("Ghi chú gốc");
+
+		const [clsAfterOmit] = await t.libsql
+			.select()
+			.from(schema.classTable)
+			.where(eq(schema.classTable.id, classId));
+		expect(clsAfterOmit?.openingNote).toBe("Ghi chú gốc");
+
+		// Part A2: explicit empty string `note: ""` clears openingNote and omits it from email
+		await t.seedStudentAndEnroll({
+			orgId,
+			classId,
+			name: "Học viên 2b",
+			email: "s2b@example.com",
+			status: "active",
+		});
+		t.sentMails.length = 0;
+
+		const clearRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/confirm-opening`,
+			{
+				body: {
+					mode: "new_only",
+					note: "",
+					expectedVersion: 1,
+				},
+			},
+		);
+		expect(clearRes.status).toBe(200);
+		const clearBody = classConfirmOpeningResponseSchema.parse(
+			await clearRes.json(),
+		);
+		expect(clearBody.openingNote).toBe("");
+		expect(clearBody.openingAnnouncementVersion).toBe(1);
+		expect(t.sentMails).toHaveLength(1);
+		expect(t.sentMails[0]?.to).toBe("s2b@example.com");
+		expect(t.sentMails[0]?.html).not.toContain("Ghi chú gốc");
+
+		const [clsAfterClear] = await t.libsql
+			.select()
+			.from(schema.classTable)
+			.where(eq(schema.classTable.id, classId));
+		expect(clsAfterClear?.openingNote).toBe("");
+
+		// Part B: mid-flight CAS miss when another tab updates opening_note between findClass and UPDATE
+		await t.seedStudentAndEnroll({
+			orgId,
+			classId,
+			name: "Học viên 3",
+			email: "s3@example.com",
+			status: "active",
+		});
+		t.sentMails.length = 0;
+		t.setBeforeNextClassUpdate(async () => {
+			await t.rawExecute({
+				sql: 'UPDATE "class" SET opening_note = ? WHERE id = ?',
+				args: ["Ghi chú từ tab khác", classId],
+			});
+		});
+
+		const casRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/confirm-opening`,
+			{
+				body: {
+					mode: "new_only",
+					note: "Ghi chú xung đột",
+					expectedVersion: 1,
+				},
+			},
+		);
+		expect(casRes.status).toBe(409);
+		expect(await casRes.json()).toMatchObject({
+			code: CLASS_ERROR_CODES.OPENING_VERSION_CONFLICT,
+		});
+		expect(t.sentMails).toHaveLength(0);
+
+		const [clsAfterCas] = await t.libsql
+			.select()
+			.from(schema.classTable)
+			.where(eq(schema.classTable.id, classId));
+		expect(clsAfterCas?.openingNote).toBe("Ghi chú từ tab khác");
 	});
 });

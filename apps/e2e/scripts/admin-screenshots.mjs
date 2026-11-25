@@ -9,7 +9,6 @@ import { spawn } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createClient } from "@libsql/client";
 import { chromium } from "@playwright/test";
 import { buildServices } from "../devserver-services.mjs";
 
@@ -85,30 +84,23 @@ async function main() {
 	await waitReady(`${API_ORIGIN}/readyz`, 120_000);
 	await waitReady(services.lms.pollUrl, 120_000);
 
-	// Seed admin: sign-up qua API với Origin LMS rồi khóa DB như helper e2e.
-	const signup = await fetch(`${API_ORIGIN}/api/auth/sign-up/email`, {
+	// Seed admin qua endpoint E2E-only (sign-up/email bị chặn cho ADMIN_EMAILS).
+	const seedRes = await fetch(`${API_ORIGIN}/__e2e/seed-user`, {
 		method: "POST",
-		headers: { "content-type": "application/json", origin: LMS_ORIGIN },
+		headers: { "content-type": "application/json" },
 		body: JSON.stringify({
 			name: "E2E Admin",
 			email: ADMIN_EMAIL,
 			password: ADMIN_PASSWORD,
+			role: "admin",
+			emailVerified: true,
 		}),
 	});
-	if (signup.status !== 200) {
-		const body = await signup.text();
-		if (!/already|exists|tồn tại|registered/i.test(body))
-			throw new Error(`admin sign-up failed (${signup.status}): ${body}`);
+	if (seedRes.status !== 200) {
+		throw new Error(
+			`admin seed failed (${seedRes.status}): ${await seedRes.text()}`,
+		);
 	}
-	const db = createClient({
-		url: `file:${join(ROOT, "apps/e2e/local.db")}`,
-	});
-	await db.execute("PRAGMA busy_timeout = 5000;");
-	await db.execute({
-		sql: "UPDATE user SET role = 'admin', email_verified = 1 WHERE lower(email) = lower(?)",
-		args: [ADMIN_EMAIL],
-	});
-	db.close();
 
 	const browser = await chromium.launch();
 	const context = await browser.newContext({

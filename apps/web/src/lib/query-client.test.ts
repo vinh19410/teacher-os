@@ -12,8 +12,10 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 import { createKernelQueryClient } from "@/lib/query-client";
+import { resetReauthForTests } from "@/lib/reauth";
 
 afterEach(() => {
+	resetReauthForTests();
 	vi.unstubAllGlobals();
 });
 
@@ -52,7 +54,9 @@ describe("createKernelQueryClient", () => {
 		await Promise.all([first, second]);
 
 		expect(signOutMock).toHaveBeenCalledTimes(1);
-		expect(assign).toHaveBeenCalledTimes(1);
+		await vi.waitFor(() => {
+			expect(assign).toHaveBeenCalledTimes(1);
+		});
 		expect(assign).toHaveBeenCalledWith("/login?returnUrl=%2Fteacher%2Fdash");
 	});
 });

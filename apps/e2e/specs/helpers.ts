@@ -11,9 +11,9 @@ const LOCAL_DB_PATH = fileURLToPath(
 	new URL("../local.db", import.meta.url).href,
 );
 /** Sign up through the unified `/login?tab=signup` UI (`apps/lms`).
- * Under the unified LMS origin, role is resolved by allowlist (`ADMIN_EMAILS` >
- * `TEACHER_EMAILS` > `student`), so ordinary emails land under `/student` while
- * allowlisted teacher/admin emails land under `/teacher` or `/admin`.
+ * Under the unified LMS origin, public email/password sign-up creates `student`
+ * accounts landing under `/student`; emails in `ADMIN_EMAILS` / `TEACHER_EMAILS`
+ * are rejected on public sign-up (`403 ROLE_SIGNUP_FORBIDDEN`).
  * Returns the email used so specs can address the created user row. */
 export async function signUpViaUi(
 	page: Page,
@@ -427,12 +427,6 @@ export async function acceptAllClassEnrollments(
 
 // --- Admin console (plan #413 phase 7) --------------------------------------
 
-function sleep(ms: number): Promise<void> {
-	const { promise, resolve } = Promise.withResolvers<void>();
-	setTimeout(resolve, ms);
-	return promise;
-}
-
 /** Email admin mặc định của e2e — khớp E2E_ADMIN_EMAILS trong boot.ts. */
 export const ADMIN_EMAIL =
 	(process.env.E2E_ADMIN_EMAILS ?? "admin@e2e.local").split(",")[0]?.trim() ??
@@ -440,43 +434,66 @@ export const ADMIN_EMAIL =
 export const ADMIN_PASSWORD = "password-8chars";
 
 /**
- * Đảm bảo có đúng MỘT tài khoản admin hợp lệ cho cả run: đăng ký qua API
- * thật với unified LMS origin (allowlist của boot tự gán role `admin` cho
- * `ADMIN_EMAIL`), sau đó khóa DB đảm bảo `role='admin'` + `email_verified=1`
- * (requireAdmin đòi cả hai; đăng ký mới của better-auth để email chưa verify).
- * Idempotent — chạy lại khi account đã tồn tại chỉ còn nhánh UPDATE.
+ * Seed/upsert tài khoản có mật khẩu credential qua endpoint E2E-only
+ * `POST /__e2e/seed-user` (chỉ có trong `apps/e2e/src/boot.ts`, giữ parity
+ * tuyệt đối với production khi chặn `ADMIN_EMAILS` / `TEACHER_EMAILS` tự đăng
+ * ký qua `POST /api/auth/sign-up/email`).
+ */
+export async function seedUserViaE2e(
+	request: APIRequestContext,
+	opts: {
+		email: string;
+		password?: string;
+		name?: string;
+		role: "admin" | "teacher" | "student";
+		emailVerified?: boolean;
+	},
+): Promise<{
+	ok: true;
+	id: string;
+	email: string;
+	role: string;
+	emailVerified: boolean;
+}> {
+	const res = await request.post(`${API_ORIGIN}/__e2e/seed-user`, {
+		headers: { "Content-Type": "application/json" },
+		data: {
+			email: opts.email,
+			password: opts.password ?? "password-8chars",
+			name: opts.name ?? "E2E User",
+			role: opts.role,
+			emailVerified: opts.emailVerified ?? true,
+		},
+	});
+	if (res.status() !== 200) {
+		throw new Error(
+			`seedUserViaE2e failed (${res.status()}): ${await res.text()}`,
+		);
+	}
+	return (await res.json()) as {
+		ok: true;
+		id: string;
+		email: string;
+		role: string;
+		emailVerified: boolean;
+	};
+}
+
+/**
+ * Đảm bảo có đúng MỘT tài khoản admin hợp lệ (`role='admin'`,
+ * `email_verified=1`) cho cả run thông qua endpoint E2E-only
+ * `POST /__e2e/seed-user`. Idempotent.
  */
 export async function ensureAdminAccount(
 	request: APIRequestContext,
 ): Promise<void> {
-	const res = await request.post(`${API_ORIGIN}/api/auth/sign-up/email`, {
-		data: { name: "E2E Admin", email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
-		headers: { "Content-Type": "application/json", Origin: LMS_ORIGIN },
+	await seedUserViaE2e(request, {
+		email: ADMIN_EMAIL,
+		password: ADMIN_PASSWORD,
+		name: "E2E Admin",
+		role: "admin",
+		emailVerified: true,
 	});
-	if (res.status() !== 200) {
-		// Đã tồn tại (422/400) là đường lặp lại hợp lệ; từ chối khác → fail loud.
-		const body = await res.text();
-		if (!/already|exists|tồn tại|registered/i.test(body)) {
-			throw new Error(`admin sign-up failed (${res.status()}): ${body}`);
-		}
-	}
-	const client = createClient({
-		url: `file:${LOCAL_DB_PATH}`,
-	});
-	try {
-		await client.execute("PRAGMA busy_timeout = 5000;");
-		for (let i = 0; ; i++) {
-			const rs = await client.execute({
-				sql: "UPDATE user SET role = 'admin', email_verified = 1 WHERE lower(email) = lower(?)",
-				args: [ADMIN_EMAIL],
-			});
-			if (Number(rs.rowsAffected) > 0) break;
-			if (i >= 30) throw new Error("admin user row chưa xuất hiện sau sign-up");
-			await sleep(100 * (i + 1));
-		}
-	} finally {
-		client.close();
-	}
 }
 
 /** Đăng nhập admin qua form hợp nhất `/login` → tự redirect `/admin/library/tests`. */

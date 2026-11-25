@@ -59,9 +59,22 @@ export function healStudentOrgMismatch(
 	void client.invalidateQueries({ queryKey: ["student"] });
 }
 
+const REAUTH_SIGNOUT_TIMEOUT_MS = 2_000;
+
 let reauthing = false;
+let reauthEpoch = 0;
+let activeTimer: ReturnType<typeof setTimeout> | undefined;
 let redirectingForWrongRole = false;
 let lastAuthenticatedUserId: string | null = null;
+
+function cancelPendingReauth(): void {
+	reauthing = false;
+	reauthEpoch += 1;
+	if (activeTimer !== undefined) {
+		clearTimeout(activeTimer);
+		activeTimer = undefined;
+	}
+}
 
 /**
  * Đồng bộ danh tính phiên hiện tại với cả `localStorage` lẫn RAM `QueryClient`
@@ -110,16 +123,22 @@ export function resetStudentSessionUserForTests(): void {
 }
 
 export function resetRedirectGuardsForTests(): void {
-	reauthing = false;
+	cancelPendingReauth();
 	redirectingForWrongRole = false;
 }
 
-if (typeof window !== "undefined") {
+if (
+	typeof window !== "undefined" &&
+	typeof window.addEventListener === "function"
+) {
 	window.addEventListener("pageshow", (event) => {
 		if (event.persisted) {
-			reauthing = false;
+			cancelPendingReauth();
 			redirectingForWrongRole = false;
 		}
+	});
+	window.addEventListener("pagehide", () => {
+		cancelPendingReauth();
 	});
 	// Khi tab khác đăng xuất hoặc đổi học viên, xoá ngay RAM QueryClient
 	// (không ghi lại localStorage) để hover preload không đọc nhầm cache cũ.
@@ -134,11 +153,41 @@ if (typeof window !== "undefined") {
 export function reauth(): void {
 	if (reauthing) return;
 	reauthing = true;
+	const epoch = reauthEpoch;
 	syncStudentSessionUser(null);
-	void authClient.signOut().catch(() => undefined);
+	authClient.clearSessionCache?.();
 	const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 	const returnUrl = validateReturnUrl(current);
-	window.location.assign(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+	const targetUrl = `/login?returnUrl=${encodeURIComponent(returnUrl)}`;
+
+	let signOutPromise: Promise<unknown>;
+	try {
+		signOutPromise = Promise.resolve(authClient.signOut()).catch(
+			() => undefined,
+		);
+	} catch {
+		signOutPromise = Promise.resolve();
+	}
+
+	void (async () => {
+		let timer: ReturnType<typeof setTimeout> | undefined;
+		try {
+			await Promise.race([
+				signOutPromise,
+				new Promise<void>((resolve) => {
+					timer = setTimeout(resolve, REAUTH_SIGNOUT_TIMEOUT_MS);
+					activeTimer = timer;
+				}),
+			]);
+		} finally {
+			if (timer !== undefined) {
+				clearTimeout(timer);
+				if (activeTimer === timer) activeTimer = undefined;
+			}
+		}
+		if (epoch !== reauthEpoch || typeof window === "undefined") return;
+		window.location.assign(targetUrl);
+	})();
 }
 
 export function redirectToLoginForWrongRole(

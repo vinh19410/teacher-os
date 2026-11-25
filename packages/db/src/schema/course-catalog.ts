@@ -1,5 +1,11 @@
 import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+	index,
+	integer,
+	sqliteTable,
+	text,
+	uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 import { organization } from "./organization";
 
 /**
@@ -42,6 +48,12 @@ export const courseCategory = sqliteTable(
 			table.sortOrder,
 			table.id,
 		),
+		// SQLite `lower()` chỉ hạ chữ cái ASCII; tầng ứng dụng vẫn giữ
+		// `normalizeCourseNameKey` để chuẩn hóa Unicode tiếng Việt & khoảng trắng.
+		uniqueIndex("course_category_org_name_uq").on(
+			table.orgId,
+			sql`lower(trim(${table.name}))`,
+		),
 	],
 );
 
@@ -74,6 +86,13 @@ export const course = sqliteTable(
 			table.categoryId,
 			table.sortOrder,
 			table.id,
+		),
+		// SQLite `lower()` chỉ hạ chữ cái ASCII; tầng ứng dụng vẫn giữ
+		// `normalizeCourseNameKey` để chuẩn hóa Unicode tiếng Việt & khoảng trắng.
+		uniqueIndex("course_org_category_name_uq").on(
+			table.orgId,
+			table.categoryId,
+			sql`lower(trim(${table.name}))`,
 		),
 	],
 );

@@ -47,9 +47,12 @@ export interface CreateAuthInput {
 	corsOrigin: string | string[];
 	/**
 	 * Origins phục vụ cổng LMS hợp nhất (một origin chung cho teacher, student,
-	 * admin với auto-redirect theo role). Đăng ký qua origin hợp nhất gán role
-	 * theo allowlist (`adminEmails` > `teacherEmails` > `"student"`), và đăng
-	 * nhập / xác thực email / đặt lại mật khẩu cho phép mọi role hợp lệ.
+	 * admin với auto-redirect theo role). Đăng ký công khai qua email/mật khẩu
+	 * chỉ tạo tài khoản `student` (chặn `adminEmails`/`teacherEmails` trả 403
+	 * `ROLE_SIGNUP_FORBIDDEN` để đóng account squatting & pre-hijacking); khởi
+	 * tạo tài khoản `admin`/`teacher` lần đầu đi qua Google OAuth (gán role theo
+	 * `adminEmails` > `teacherEmails` > `"student"`). Đăng nhập / xác thực email
+	 * / đặt lại mật khẩu cho phép mọi role hợp lệ.
 	 */
 	unifiedOrigins?: string[];
 	/**
@@ -118,6 +121,16 @@ const ROLE_MISMATCH_TEACHER_ON_PORTAL_MESSAGE =
 /** Tài khoản quản trị chỉ dùng cổng admin; role khác không vào cổng admin (plan #413). */
 const ROLE_MISMATCH_ADMIN_MESSAGE =
 	"Tài khoản này không được phép đăng nhập vào cổng quản trị.";
+/**
+ * Chặn tự đăng ký bằng email/mật khẩu cho email đặc quyền (ADMIN_EMAILS /
+ * TEACHER_EMAILS) trên unified LMS để đóng cửa sổ account squatting &
+ * verification-link pre-hijacking. Dùng chung một mã/thông báo cho cả hai role
+ * và chặn sớm ở hooks.before (đóng claimed-vs-unclaimed oracle và admin-vs-teacher
+ * oracle; chấp nhận trade-off allowlist-oracle để hướng dẫn chủ tài khoản đăng
+ * nhập bằng Google).
+ */
+const UNIFIED_PRIVILEGED_SIGNUP_FORBIDDEN_MESSAGE =
+	'Email này không thể tự đăng ký bằng mật khẩu. Nếu đây là tài khoản của bạn, vui lòng chọn "Tiếp tục với Google" để đăng nhập.';
 
 export function createAuth(input: CreateAuthInput) {
 	const cookieDomain = crossSubDomainCookieDomain(input.cookieDomain);
@@ -146,6 +159,29 @@ export function createAuth(input: CreateAuthInput) {
 
 	function isUnifiedOrigin(origin: string | null | undefined): boolean {
 		return matchesOriginList(origin, unifiedOrigins);
+	}
+
+	// Đọc live input.adminEmails / input.teacherEmails trên từng request (không
+	// copy/snapshot thành Set lúc khởi tạo) để E2E /__e2e/teacher-emails mutate
+	// mảng tại chỗ có hiệu lực tức thời.
+	function isEmailInList(
+		email: string | null | undefined,
+		list: string[] | undefined,
+	): boolean {
+		const normalized = (email ?? "").trim().toLowerCase();
+		return (
+			normalized.length > 0 &&
+			(list ?? []).some((entry) => entry.trim().toLowerCase() === normalized)
+		);
+	}
+
+	function isPrivilegedAllowlistEmail(
+		email: string | null | undefined,
+	): boolean {
+		return (
+			isEmailInList(email, input.adminEmails) ||
+			isEmailInList(email, input.teacherEmails)
+		);
 	}
 
 	/** App nguồn từ OAuth state (server-side stamp tại /sign-in/social). */
@@ -406,6 +442,18 @@ export function createAuth(input: CreateAuthInput) {
 						},
 					};
 				}
+				if (ctx.path === "/sign-up/email" && unifiedOrigins.length > 0) {
+					const body = (ctx.body ?? {}) as Record<string, unknown>;
+					if (
+						typeof body.email === "string" &&
+						isPrivilegedAllowlistEmail(body.email)
+					) {
+						throw new APIError("FORBIDDEN", {
+							message: UNIFIED_PRIVILEGED_SIGNUP_FORBIDDEN_MESSAGE,
+							code: "ROLE_SIGNUP_FORBIDDEN",
+						});
+					}
+				}
 				if (ctx.path !== "/update-user") return;
 				const body = (ctx.body ?? {}) as Record<string, unknown>;
 				const message =
@@ -420,6 +468,20 @@ export function createAuth(input: CreateAuthInput) {
 			user: {
 				create: {
 					before: async (user, ctx) => {
+						if (unifiedOrigins.length > 0) {
+							const oauthApp = await readOAuthApp();
+							const isUnifiedOAuthCallback =
+								ctx?.path === "/callback/:id" && oauthApp === "unified";
+							if (
+								isPrivilegedAllowlistEmail(user.email) &&
+								!isUnifiedOAuthCallback
+							) {
+								throw new APIError("FORBIDDEN", {
+									message: UNIFIED_PRIVILEGED_SIGNUP_FORBIDDEN_MESSAGE,
+									code: "ROLE_SIGNUP_FORBIDDEN",
+								});
+							}
+						}
 						if (await isUnifiedContext(ctx)) {
 							const role = resolveAllowlistRole(user.email, {
 								adminEmails: input.adminEmails,
@@ -440,17 +502,25 @@ export function createAuth(input: CreateAuthInput) {
 						// người lạ — chỉ email trong ADMIN_EMAILS được tạo user role
 						// admin (áp cho cả email/password lẫn Google callback).
 						if (appRole === "admin") {
-							const email = user.email?.trim().toLowerCase() ?? "";
-							const allow = (input.adminEmails ?? []).some(
-								(e) => e.trim().toLowerCase() === email,
-							);
-							if (!email || !allow) {
+							if (!isEmailInList(user.email, input.adminEmails)) {
 								throw new APIError("FORBIDDEN", {
 									message:
 										"Email này không được cấp quyền quản trị. Vui lòng dùng cổng học viên hoặc liên hệ quản trị viên.",
 									code: "ADMIN_SIGNUP_FORBIDDEN",
 								});
 							}
+						}
+						// Chặn role-poisoning thành student cho email thuộc ADMIN_EMAILS
+						// trên cổng học viên hoặc request thiếu/"null" Origin.
+						if (
+							appRole === "student" &&
+							isEmailInList(user.email, input.adminEmails)
+						) {
+							throw new APIError("FORBIDDEN", {
+								message:
+									"Email này thuộc tài khoản quản trị. Vui lòng đăng nhập tại cổng quản trị.",
+								code: "ADMIN_SIGNUP_FORBIDDEN",
+							});
 						}
 						// Single-org (#513, #524): khi TEACHER_EMAILS khác rỗng, chỉ email
 						// trong allowlist mới đăng ký được tài khoản giáo viên; đồng thời

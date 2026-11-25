@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
-import { signUpViaApi } from "./helpers";
+import { seedUserViaE2e, signUpViaApi } from "./helpers";
 import {
 	API_ORIGIN,
 	PROFILE_ORIGIN,
@@ -188,37 +188,33 @@ test.describe
 				await seedCtx.close();
 			}
 
-			// 2. Bật TEACHER_EMAILS cho giáo viên mới, xác thực email rồi vào /dashboard
-			// để bootstrapMiddleware tạo org mới riêng (ctx.orgId != e2e-lead-org).
+			// 2. Bật TEACHER_EMAILS cho giáo viên mới, seed tài khoản đã xác thực + đăng nhập
+			// rồi vào /dashboard để bootstrapMiddleware tạo org mới riêng (ctx.orgId != e2e-lead-org).
 			const teacherCtx = await browser.newContext();
 			const teacherPage = await teacherCtx.newPage();
 			try {
 				await setTeacherEmails(teacherPage, [teacherEmail]);
-				const signUpRes = await teacherPage.request.post(
-					`${API_ORIGIN}/api/auth/sign-up/email`,
+				await seedUserViaE2e(teacherPage.request, {
+					name: "Cô Mỹ Drift E2E",
+					email: teacherEmail,
+					password: "password-8chars",
+					role: "teacher",
+					emailVerified: true,
+				});
+				const signInRes = await teacherPage.request.post(
+					`${API_ORIGIN}/api/auth/sign-in/email`,
 					{
 						headers: {
 							"Content-Type": "application/json",
 							Origin: WEB_ORIGIN,
 						},
 						data: {
-							name: "Cô Mỹ Drift E2E",
 							email: teacherEmail,
 							password: "password-8chars",
 						},
 					},
 				);
-				expect(signUpRes.status()).toBe(200);
-
-				const db = await openDb();
-				try {
-					await db.execute({
-						sql: "UPDATE user SET email_verified = 1 WHERE lower(email) = lower(?)",
-						args: [teacherEmail],
-					});
-				} finally {
-					db.close();
-				}
+				expect(signInRes.status()).toBe(200);
 
 				const kernelOk = teacherPage.waitForResponse(
 					(r) => r.url().includes("/api/kernel") && r.ok(),
