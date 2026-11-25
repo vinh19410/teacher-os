@@ -1,0 +1,14 @@
+{
+	"$schema": "https://turbo.build/schema.json",
+	"extends": ["//"],
+	"tasks": {
+		"test": {
+			"inputs": [
+				"$TURBO_DEFAULT$",
+				".env*",
+				"../../docs/reading-ielts/reading-practice/**",
+				"../../docs/listening_ielts/**"
+			]
+		}
+	}
+}
