@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { StudentQuizDetail } from "@teacher-os/api/contracts";
 import {
+	act,
 	cleanup,
 	fireEvent,
 	render,
@@ -133,6 +134,10 @@ import {
 	QuizTakeError,
 	QuizTakeView,
 } from "@/components/quiz/quiz-take-view";
+import {
+	resetServerClockForTests,
+	syncServerClock,
+} from "@/lib/attempt-format";
 
 describe("QuizTakeView — hybrid MCQ + Writing dual-store runtime (#574)", () => {
 	beforeEach(() => {
@@ -936,5 +941,262 @@ describe("QuizTakeView — hybrid MCQ + Writing dual-store runtime (#574)", () =
 			},
 			{ timeout: 1500 },
 		);
+	});
+});
+
+describe("QuizTakeView — practice countdown timer & split-pane height safety", () => {
+	const BASE_NOW = Date.parse("2026-11-24T10:03:00.000Z");
+	const STARTED_AT = "2026-11-24T10:00:00.000Z";
+
+	beforeEach(() => {
+		vi.useFakeTimers();
+		vi.setSystemTime(BASE_NOW);
+		resetServerClockForTests();
+		localStorage.clear();
+		patchAnswerMock.mockClear();
+		patchEssayMock.mockClear();
+		submitMock.mockClear();
+		navigateMock.mockClear();
+		toastErrorMock.mockClear();
+		startMutateMock.mockClear();
+		isHttpErrorMock.mockReset().mockReturnValue(false);
+		isStudentOrgMismatchErrorMock.mockReset().mockReturnValue(false);
+		useQuizAudioStreamMock.mockClear();
+		mockQuizIsError = false;
+		mockQuizError = null;
+		mockStartIsPending = false;
+		mockDetail = {
+			assignmentId: "",
+			title: "Reading Practice Timed",
+			due: "",
+			dueAt: null,
+			timeLimitSeconds: 1200,
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			band: "7.0",
+			intro: "",
+			prompt: "",
+			passage: "<p>Paragraph one.</p><p>Paragraph two.</p>",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			optionBank: [],
+			questions: [
+				{
+					stem: "Question 1",
+					opts: null,
+					type: "tfng",
+					pin: null,
+				},
+			],
+			attempt: {
+				id: "att-prac-1",
+				status: "in_progress",
+				answers: {},
+				essay: "",
+				media: null,
+				startedAt: STARTED_AT,
+			},
+		};
+	});
+
+	afterEach(() => {
+		cleanup();
+		resetServerClockForTests();
+		vi.useRealTimers();
+	});
+
+	function renderPractice(serverAnswers: Record<string, string> = {}) {
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		return render(
+			<QueryClientProvider client={qc}>
+				<QuizTakeView
+					source={{ kind: "practice", testId: "test-timed-1" }}
+					serverAnswers={serverAnswers}
+				/>
+			</QueryClientProvider>,
+		);
+	}
+
+	it("renders live MM:SS countdown badge, ticks every second, and compensates client clock skew", () => {
+		renderPractice();
+		const badge = screen.getByTestId("quiz-timer-badge");
+		expect(badge.textContent).toBe("17:00");
+		expect(badge.getAttribute("data-state")).toBe("running");
+		expect(badge.getAttribute("aria-live")).toBeNull();
+
+		act(() => {
+			vi.advanceTimersByTime(1000);
+		});
+		expect(badge.textContent).toBe("16:59");
+
+		cleanup();
+
+		// Client clock skewed +5m ahead of server → syncServerClock compensates back to 17:00
+		const skewedNow = BASE_NOW + 300_000;
+		vi.setSystemTime(skewedNow);
+		syncServerClock(new Date(BASE_NOW).toISOString(), skewedNow);
+		renderPractice();
+		expect(screen.getByTestId("quiz-timer-badge").textContent).toBe("17:00");
+	});
+
+	it("switches to warn phase at threshold and transitions to soft expiry without auto-submit or lingering intervals", () => {
+		// 10m limit, 8m elapsed -> 02:00 (warn)
+		mockDetail = {
+			...mockDetail,
+			timeLimitSeconds: 600,
+		};
+		vi.setSystemTime(Date.parse(STARTED_AT) + 480_000);
+		renderPractice();
+		const warnBadge = screen.getByTestId("quiz-timer-badge");
+		expect(warnBadge.textContent).toBe("02:00");
+		expect(warnBadge.getAttribute("data-state")).toBe("warn");
+		expect(screen.queryByTestId("quiz-time-expired-banner")).toBeNull();
+
+		cleanup();
+
+		// Reload on an already-expired attempt (10m05s elapsed) → immediate banner, 00:00, no interval, submit still enabled
+		vi.setSystemTime(Date.parse(STARTED_AT) + 605_000);
+		renderPractice();
+		const expiredBadge = screen.getByTestId("quiz-timer-badge");
+		expect(expiredBadge.textContent).toBe("00:00");
+		expect(expiredBadge.getAttribute("data-state")).toBe("expired");
+		expect(screen.getByTestId("quiz-time-expired-banner")).toBeTruthy();
+		expect(vi.getTimerCount()).toBe(0);
+		expect(submitMock).not.toHaveBeenCalled();
+		const submitBtn = screen.getByRole("button", {
+			name: "Nộp bài",
+		}) as HTMLButtonElement;
+		expect(submitBtn.disabled).toBe(false);
+
+		cleanup();
+
+		// Live tick crossing 00:01 → 00:00 clears running interval (1 → 0) and shows banner on the same instance
+		vi.setSystemTime(Date.parse(STARTED_AT) + 599_000);
+		renderPractice();
+		const liveBadge = screen.getByTestId("quiz-timer-badge");
+		expect(liveBadge.textContent).toBe("00:01");
+		expect(liveBadge.getAttribute("data-state")).toBe("warn");
+		expect(screen.queryByTestId("quiz-time-expired-banner")).toBeNull();
+		expect(vi.getTimerCount()).toBe(1);
+
+		act(() => {
+			vi.advanceTimersByTime(1000);
+		});
+		expect(liveBadge.textContent).toBe("00:00");
+		expect(liveBadge.getAttribute("data-state")).toBe("expired");
+		expect(screen.getByTestId("quiz-time-expired-banner")).toBeTruthy();
+		expect(vi.getTimerCount()).toBe(0);
+		expect(submitMock).not.toHaveBeenCalled();
+	});
+
+	it("keeps ticking from original startedAt while QuizResumeDialog is open on reload", () => {
+		renderPractice({ "0": "TRUE" });
+		expect(
+			screen.getByText(
+				"Bạn có bài làm chưa hoàn thành. Bạn có muốn tiếp tục không?",
+			),
+		).toBeTruthy();
+		const badge = screen.getByTestId("quiz-timer-badge");
+		expect(badge.textContent).toBe("17:00");
+
+		act(() => {
+			vi.advanceTimersByTime(2000);
+		});
+		expect(badge.textContent).toBe("16:58");
+	});
+
+	it("hides timer badge on untimed practice and assignments, and displays static duration on start gate", () => {
+		// Untimed practice
+		mockDetail = { ...mockDetail, timeLimitSeconds: null };
+		renderPractice();
+		expect(screen.queryByTestId("quiz-timer-badge")).toBeNull();
+		cleanup();
+
+		// Assignment (timeLimitSeconds omitted)
+		mockDetail = {
+			...mockDetail,
+			assignmentId: "ca-1",
+			timeLimitSeconds: undefined,
+		};
+		const assignmentQc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={assignmentQc}>
+				<QuizTakeView
+					source={{ kind: "assignment", id: "ca-1" }}
+					serverAnswers={{}}
+				/>
+			</QueryClientProvider>,
+		);
+		expect(screen.queryByTestId("quiz-timer-badge")).toBeNull();
+		cleanup();
+
+		// Timed practice intro screen (attempt === null) → transition to in_progress mounts countdown timer
+		mockDetail = {
+			...mockDetail,
+			assignmentId: "",
+			timeLimitSeconds: 1200,
+			attempt: null,
+		};
+		const transitionQc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const { rerender } = render(
+			<QueryClientProvider client={transitionQc}>
+				<QuizTakeView
+					source={{ kind: "practice", testId: "test-timed-1" }}
+					serverAnswers={{}}
+				/>
+			</QueryClientProvider>,
+		);
+		expect(screen.queryByTestId("quiz-timer-badge")).toBeNull();
+		expect(screen.getByTestId("practice-intro-screen")).toBeTruthy();
+		expect(screen.getByText("1 câu hỏi", { exact: true })).toBeTruthy();
+		expect(screen.getByText("20 phút", { exact: true })).toBeTruthy();
+
+		// Start resolves with server startedAt = BASE_NOW → timer mounts at 20:00 and ticks to 19:59
+		mockDetail = {
+			...mockDetail,
+			attempt: {
+				id: "att-started-from-intro",
+				status: "in_progress",
+				answers: {},
+				essay: "",
+				media: null,
+				startedAt: new Date(BASE_NOW).toISOString(),
+			},
+		};
+		rerender(
+			<QueryClientProvider client={transitionQc}>
+				<QuizTakeView
+					source={{ kind: "practice", testId: "test-timed-1" }}
+					serverAnswers={{}}
+				/>
+			</QueryClientProvider>,
+		);
+		expect(screen.queryByTestId("practice-intro-screen")).toBeNull();
+		const startedBadge = screen.getByTestId("quiz-timer-badge");
+		expect(startedBadge.textContent).toBe("20:00");
+		act(() => {
+			vi.advanceTimersByTime(1000);
+		});
+		expect(startedBadge.textContent).toBe("19:59");
+	});
+
+	it("locks Reading split-pane wrapper to lg:h-svh with min-h-0 flex-1 child around fillParent layout", () => {
+		const { container } = renderPractice();
+		const root = container.firstElementChild;
+		expect(root?.className).toContain("lg:h-svh");
+		expect(root?.className).toContain("lg:overflow-hidden");
+		const splitWrapper = screen.getByTestId("reading-passage-pane")
+			.parentElement?.parentElement;
+		expect(splitWrapper?.className).toContain("min-h-0");
+		expect(splitWrapper?.className).toContain("flex-1");
 	});
 });

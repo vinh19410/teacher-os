@@ -55,6 +55,16 @@ function invalidParam(c: Context<StudentEnv>, message: string) {
 	return c.json({ error: message }, 400);
 }
 
+/** Chuẩn hoá thời lượng đề tự luyện: chỉ chấp nhận số nguyên dương (giây),
+ * còn null hoặc dữ liệu cũ <= 0 được coi như không giới hạn thời gian. */
+function normalizeTimeLimitSeconds(
+	raw: number | null | undefined,
+): number | null {
+	return typeof raw === "number" && Number.isInteger(raw) && raw > 0
+		? raw
+		: null;
+}
+
 async function loadPracticeTestWithParts(
 	db: Db,
 	orgId: string,
@@ -148,14 +158,6 @@ function parseStudentQuizGroups(raw: string | undefined): StudentQuizGroup[] {
 	}
 }
 
-function normalizeTimeLimitSeconds(
-	raw: number | null | undefined,
-): number | null {
-	return typeof raw === "number" && Number.isInteger(raw) && raw > 0
-		? raw
-		: null;
-}
-
 /** Query take/review dùng chung shape với đề luồng assignment. Chrome
  * (passage/prompt/cue/audio/optionBank) lấy từ prompt của part ĐẦU — đề
  * luyện tập nhiều part dùng chung một khung giấy như flow assignment
@@ -172,6 +174,9 @@ function toPracticeQuizDetail(
 	};
 	const groups =
 		loaded.parts.length === 1 ? parseStudentQuizGroups(header?.groups) : [];
+	const timeLimitSeconds = normalizeTimeLimitSeconds(
+		loaded.test.timeLimitSeconds,
+	);
 	return {
 		// Tự luyện không có lượt giao — trường giữ shape contract, client điều
 		// hướng qua testId.
@@ -180,7 +185,7 @@ function toPracticeQuizDetail(
 		// Practice không có hạn nộp.
 		due: "",
 		dueAt: null,
-		timeLimitSeconds: normalizeTimeLimitSeconds(loaded.test.timeLimitSeconds),
+		timeLimitSeconds,
 		partsCount: loaded.parts.length,
 		collection: loaded.test.collection ?? null,
 		testGroup: loaded.test.testGroup ?? null,
@@ -217,6 +222,7 @@ function toPracticeQuizDetail(
 					answers: parseQuizAnswers(attempt.answers),
 					essay: attempt.essay,
 					media: toQuizAttemptMedia(attempt),
+					startedAt: attempt.startedAt.toISOString(),
 				}
 			: null,
 	};
@@ -237,6 +243,7 @@ function assertValidDetail(raw: unknown): StudentQuizDetail | null {
 export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 	const router = new Hono<StudentEnv>();
 	const requireStudent = createStudentGuard(deps);
+	const getNow = () => (deps.now ? deps.now() : new Date());
 
 	router.use("/practice", requireStudent);
 	router.use("/practice/*", requireStudent);
@@ -423,7 +430,7 @@ export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 					eq(quizAttempt.status, "in_progress"),
 				),
 			)
-			.orderBy(desc(quizAttempt.startedAt), desc(quizAttempt.id))
+			.orderBy(asc(quizAttempt.startedAt), asc(quizAttempt.id))
 			.limit(1);
 
 		const questions = attempt
@@ -436,6 +443,7 @@ export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 			// chính sách guard với luồng assignment (parse fallback []).
 			return c.json({ error: "test not found" }, 404);
 		}
+		c.header("X-Server-Now", getNow().toISOString());
 		return c.json(verified);
 	});
 
@@ -505,7 +513,7 @@ export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 			.select({ id: quizAttempt.id })
 			.from(quizAttempt)
 			.where(practiceFilter)
-			.orderBy(desc(quizAttempt.startedAt), desc(quizAttempt.id))
+			.orderBy(asc(quizAttempt.startedAt), asc(quizAttempt.id))
 			.limit(1);
 		if (existing) {
 			const resume: StartPracticeResponse = { attemptId: existing.id };
@@ -513,23 +521,41 @@ export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 		}
 
 		const attemptId = crypto.randomUUID();
-		await db.insert(quizAttempt).values({
-			id: attemptId,
-			orgId,
-			assignmentId: null,
-			studentId: s.id,
-			testId,
-			mode: "practice",
-			questionsSnapshot: JSON.stringify(
-				buildMergedQuestions(loaded.parts, testId),
-			),
-			answers: "{}",
-			startedAt: new Date(),
-		});
-		const created: StartPracticeResponse = startPracticeResponseSchema.parse({
-			attemptId,
-		});
-		return c.json(created, 201);
+		try {
+			await db.insert(quizAttempt).values({
+				id: attemptId,
+				orgId,
+				assignmentId: null,
+				studentId: s.id,
+				testId,
+				mode: "practice",
+				questionsSnapshot: JSON.stringify(
+					buildMergedQuestions(loaded.parts, testId),
+				),
+				answers: "{}",
+				startedAt: getNow(),
+			});
+			const created: StartPracticeResponse = startPracticeResponseSchema.parse({
+				attemptId,
+			});
+			return c.json(created, 201);
+		} catch (err) {
+			// Partial unique index (org_id, student_id, test_id) WHERE
+			// mode='practice' AND status='in_progress' bắt request đồng thời:
+			// đọc lại bản ghi duy nhất đang mở thay vì trả 500.
+			const [raced] = await db
+				.select({ id: quizAttempt.id })
+				.from(quizAttempt)
+				.where(practiceFilter)
+				.orderBy(asc(quizAttempt.startedAt), asc(quizAttempt.id))
+				.limit(1);
+			if (raced) {
+				const resumed: StartPracticeResponse =
+					startPracticeResponseSchema.parse({ attemptId: raced.id });
+				return c.json(resumed, 200);
+			}
+			throw err;
+		}
 	});
 
 	return router;

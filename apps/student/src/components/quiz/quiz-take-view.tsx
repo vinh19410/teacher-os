@@ -36,11 +36,13 @@ import {
 	type QuizRuntimeExitTarget,
 	QuizRuntimeHeader,
 } from "@/components/quiz/quiz-runtime-header";
+import { QuizTimerBadge } from "@/components/quiz/quiz-timer-badge";
 import {
 	SpeakingGuideCard,
 	SpeakingSubmissionPanel,
 } from "@/components/quiz/speaking-submission-panel";
 import { formatQuizDueText } from "@/lib/assignment-status";
+import { cn } from "@/lib/cn";
 import {
 	isHttpError,
 	isStudentOrgMismatchError,
@@ -135,6 +137,18 @@ export function QuizTakeView({
 	const [guardOpen, setGuardOpen] = useState(false);
 	const [currentQuestion, setCurrentQuestion] = useState<number | null>(null);
 	const [authBanner, setAuthBanner] = useState(false);
+	// Dùng identity key thay cho boolean + useEffect reset để tránh race
+	// child-before-parent nuốt mất banner hết giờ khi tải lại bài đã về 00:00.
+	const [expiredTimerKey, setExpiredTimerKey] = useState<string | null>(null);
+	const timerKey =
+		detail?.timeLimitSeconds &&
+		detail.timeLimitSeconds > 0 &&
+		attempt?.status === "in_progress" &&
+		attempt.startedAt &&
+		attemptId
+			? `${attemptId}:${detail.timeLimitSeconds}:${attempt.startedAt}`
+			: null;
+	const timeExpired = timerKey !== null && expiredTimerKey === timerKey;
 	// Speaking (#305): đang upload/xử lý file → chặn nộp.
 	const [mediaUploading, setMediaUploading] = useState(false);
 	const mediaUploadingRef = useRef(false);
@@ -670,7 +684,12 @@ export function QuizTakeView({
 	const splitPane = isReadingSplitPane(detail.skill, detail.passage);
 
 	return (
-		<div className="flex min-h-svh flex-col bg-muted/30">
+		<div
+			className={cn(
+				"flex min-h-svh flex-col bg-muted/30",
+				splitPane && "lg:h-svh lg:overflow-hidden",
+			)}
+		>
 			<QuizRuntimeHeader
 				title={detail.title}
 				dueText={dueText}
@@ -679,39 +698,66 @@ export function QuizTakeView({
 				onSubmitClick={handleSubmitClick}
 				submitDisabled={submitDisabled}
 				exitTarget={exitTarget}
-			/>
+			>
+				{timerKey && detail.timeLimitSeconds && attempt.startedAt ? (
+					<QuizTimerBadge
+						key={timerKey}
+						timeLimitSeconds={detail.timeLimitSeconds}
+						startedAt={attempt.startedAt}
+						onExpiredChange={(expired) =>
+							setExpiredTimerKey(expired ? timerKey : null)
+						}
+					/>
+				) : null}
+			</QuizRuntimeHeader>
 			{authBanner && (
 				<div
 					role="alert"
 					data-testid="auth-error-banner"
-					className="border-danger/30 border-b bg-danger-soft px-4 py-2 text-danger text-sm"
+					className="shrink-0 border-danger/30 border-b bg-danger-soft px-4 py-2 text-danger text-sm"
 				>
 					Phiên đăng nhập đã hết hạn — bài làm của bạn được giữ lại. Đang chuyển
 					đến trang đăng nhập…
 				</div>
 			)}
+			{timeExpired && (
+				<div
+					role="status"
+					data-testid="quiz-time-expired-banner"
+					className="shrink-0 border-warn/40 border-b bg-warn-soft px-4 py-2 text-foreground text-xs sm:text-sm"
+				>
+					Đã hết thời gian làm bài — bạn vẫn có thể hoàn thành câu trả lời và
+					nộp bài bình thường.
+				</div>
+			)}
 			{splitPane ? (
-				<QuizReadingSplitLayout passage={detail.passage} navigator={navigator}>
-					<div className="mx-auto w-full max-w-[720px]">
-						<QuizPaper
-							detail={detail}
-							parts={parts}
-							answers={answers}
-							onAnswer={handleAnswer}
-							currentQuestion={currentQuestion}
-							hidePassage
-							audioSrc={audioSrc}
-							audioLoading={audioLoading}
-							audioError={audioError}
-							audioCrossOrigin="use-credentials"
-							onAudioError={onAudioError}
-							onAudioRetry={retryAudio}
-							writingSection={hybridWriting}
-							essay={hybridEssayText}
-							onEssayChange={handleEssayChange}
-						/>
-					</div>
-				</QuizReadingSplitLayout>
+				<div className="flex min-h-0 flex-1 flex-col">
+					<QuizReadingSplitLayout
+						fillParent
+						passage={detail.passage}
+						navigator={navigator}
+					>
+						<div className="mx-auto w-full max-w-[720px]">
+							<QuizPaper
+								detail={detail}
+								parts={parts}
+								answers={answers}
+								onAnswer={handleAnswer}
+								currentQuestion={currentQuestion}
+								hidePassage
+								audioSrc={audioSrc}
+								audioLoading={audioLoading}
+								audioError={audioError}
+								audioCrossOrigin="use-credentials"
+								onAudioError={onAudioError}
+								onAudioRetry={retryAudio}
+								writingSection={hybridWriting}
+								essay={hybridEssayText}
+								onEssayChange={handleEssayChange}
+							/>
+						</div>
+					</QuizReadingSplitLayout>
+				</div>
 			) : (
 				<>
 					<main className="mx-auto w-full max-w-[720px] flex-1 px-4 py-6">

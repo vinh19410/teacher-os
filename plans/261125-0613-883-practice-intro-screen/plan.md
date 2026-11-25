@@ -1,7 +1,7 @@
 ---
 title: "Practice Intro Screen Before Starting Attempt (#883)"
 description: "Add an inline intro screen at /learn/quizzes/practice/$testId showing test metadata, duration, and general instructions before creating an attempt or starting timing."
-status: in-progress
+status: completed
 priority: P1
 effort: "4h"
 tags: [practice, student, ux, tdd, advice]
@@ -24,7 +24,7 @@ Clicking a test card on `/practice/$skill` (`reading`, `listening`, `writing`, `
   - Update unit tests, server tests, contract tests, and all 3 affected E2E specs (`apps/e2e/specs/student-practice.spec.ts`, `apps/e2e/specs/student-history.spec.ts`, `apps/e2e/specs/teacher-grade-submission.spec.ts` — run only these targeted specs locally per `AGENTS.md`); verify UI across 3 viewports + 320px + light/dark per `REVIEW.md`.
 - **Trust Boundary Note:**
   - Pre-start read endpoints (`GET /api/student/practice/:testId/quiz` and `GET /api/student/practice/:testId/audio`) remain readable by authenticated org students before attempt creation (same trust boundary as `GET /api/student/assignments/:assignmentId/quiz` and required by `attempt/$attemptId.detail.tsx` review chrome and `student-practice-library-sync.test.ts:291-353`). The intro gate prevents UI rendering of questions/passage and prevents the browser from initiating audio streaming or creating an attempt until the student clicks `"Bắt đầu làm bài"`.
-  - Concurrent multi-tab `POST /api/student/practice/:testId/attempts` TOCTOU protection via a D1 partial unique index migration is deferred out of #883 to avoid schema migration risk in a UI/contract feature PR; client double-click/pending-refetch protection is enforced by returning the invalidation promise in `useStartQuizAttempt`.
+  - Concurrent multi-tab `POST /api/student/practice/:testId/attempts` TOCTOU protection was reconciled on merge with `origin/develop` (`58fbd502`, PR #931 / #880), which introduces migration `0090_concerned_mach_iv.sql` (partial unique index `quiz_attempt_practice_in_progress_uq`) and server conflict recovery; client double-click/pending-refetch protection is also enforced by returning the invalidation promise in `useStartQuizAttempt`.
 - **Explicit Non-Goals:**
   - No live countdown timer or resume duration accounting changes on the take screen (owned by #880).
   - No changes to `QuizResumeDialog` submit-lock UX or tooltip (owned by #885).
@@ -43,17 +43,17 @@ Clicking a test card on `/practice/$skill` (`reading`, `listening`, `writing`, `
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: Contract & Server Practice Detail Metadata](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: Student Practice Intro Screen, Navigation & Hydration](./phase-02-student-practice-intro-ui.md) | Pending |
-| 3 | [Phase 3: E2E Specs, UI Verification & Quality Gates](./phase-03-e2e-and-ui-verification.md) | Pending |
+| 1 | [Phase 1: Contract & Server Practice Detail Metadata](./phase-01-start.md) | Completed |
+| 2 | [Phase 2: Student Practice Intro Screen, Navigation & Hydration](./phase-02-student-practice-intro-ui.md) | Completed |
+| 3 | [Phase 3: E2E Specs, UI Verification & Quality Gates](./phase-03-e2e-and-ui-verification.md) | Completed |
 
 ## Success Criteria
 
-- [ ] Clicking any Reading/Listening/Writing/Speaking card on `/practice/$skill` navigates to `/learn/quizzes/practice/$testId`, displays `PracticeIntroScreen` (question/task summary, parts count, duration, optional rich-text description, general instructions, `"Bắt đầu làm bài"` button, `"Quay lại danh sách"` button), and triggers **0** `POST /api/student/practice/:testId/attempts` requests and **0** browser audio requests before clicking Start.
-- [ ] Clicking `"Quay lại danh sách"` or header `"Thoát"` returns to `/practice/$skill` without creating a `quiz_attempt` row.
-- [ ] Clicking `"Bắt đầu làm bài"` sends `POST /api/student/practice/:testId/attempts`, keeps Start/Back disabled until `GET /quiz` settles, transitions cleanly into the take screen, safely hydrates answers once if another tab already started and answered, and does NOT dispose the store or pop `QuizResumeDialog` on subsequent refetches.
-- [ ] `detail.band` never renders on `PracticeIntroScreen`; class assignment flow (`source.kind === "assignment"`) still shows `QuizStartDialog` (`role="alertdialog"`) with `"/"` exit link.
-- [ ] `pnpm exec biome check .`, `pnpm run check-types`, targeted unit/server/contract tests, and all 3 affected E2E specs (`student-practice.spec.ts`, `student-history.spec.ts`, `teacher-grade-submission.spec.ts` on ports 8100–8105) pass, plus 3-viewport + light/dark visual verification per `REVIEW.md`.
+- [x] Clicking any Reading/Listening/Writing/Speaking card on `/practice/$skill` navigates to `/learn/quizzes/practice/$testId`, displays `PracticeIntroScreen` (question/task summary, parts count, duration, optional rich-text description, general instructions, `"Bắt đầu làm bài"` button, `"Quay lại danh sách"` button), and triggers **0** `POST /api/student/practice/:testId/attempts` requests and **0** browser audio requests before clicking Start.
+- [x] Clicking `"Quay lại danh sách"` or header `"Thoát"` returns to `/practice/$skill` without creating a `quiz_attempt` row.
+- [x] Clicking `"Bắt đầu làm bài"` sends `POST /api/student/practice/:testId/attempts`, keeps Start/Back disabled until `GET /quiz` settles, transitions cleanly into the take screen, safely hydrates answers once if another tab already started and answered, and does NOT dispose the store or pop `QuizResumeDialog` on subsequent refetches.
+- [x] `detail.band` never renders on `PracticeIntroScreen`; class assignment flow (`source.kind === "assignment"`) still shows `QuizStartDialog` (`role="alertdialog"`) with `"/"` exit link.
+- [x] `pnpm exec biome check .`, `pnpm run check-types`, targeted unit/server/contract tests, and all 3 affected E2E specs (`student-practice.spec.ts`, `student-history.spec.ts`, `teacher-grade-submission.spec.ts` on ports 8100–8105) pass, plus 3-viewport + light/dark visual verification per `REVIEW.md`.
 
 ## Red Team Review
 

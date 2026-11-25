@@ -1776,4 +1776,41 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		expect(reviewBody.hasAudio).toBe(true);
 		expect(reviewBody.transcript).toBe("Accidents happen every day at work.");
 	});
+
+	test("GET /assignments/:id/quiz emits X-Server-Now header and attempt.startedAt with zero new top-level keys", async () => {
+		// Tự seed lượt giao riêng để test chạy độc lập bằng `-t`, không phụ thuộc thứ tự test trước.
+		await libsql.insert(schema.classAssignment).values({
+			id: "ca-timing-880",
+			orgId: "org-1",
+			classId: "class-1",
+			promptId: "prompt-quiz",
+			title: "Assignment Timing Check",
+			due: "2099-01-10",
+		});
+		await libsql.insert(schema.classAssignmentTarget).values({
+			id: "cat-timing-880",
+			orgId: "org-1",
+			assignmentId: "ca-timing-880",
+			studentId: "student-1",
+			submittedAt: null,
+		});
+		await startAttempt("ca-timing-880");
+
+		const takeRes = await app.request(
+			"/api/student/assignments/ca-timing-880/quiz",
+			{ headers: OWNER },
+		);
+		expect(takeRes.status).toBe(200);
+		const serverNow = takeRes.headers.get("X-Server-Now");
+		expect(serverNow).toBeTruthy();
+		expect(Number.isNaN(Date.parse(serverNow ?? ""))).toBe(false);
+
+		const body = (await takeRes.json()) as Record<string, unknown> & {
+			attempt: { id: string; startedAt?: string } | null;
+		};
+		expect("timeLimitSeconds" in body).toBe(false);
+		expect("serverNow" in body).toBe(false);
+		expect(body.attempt?.startedAt).toBeTruthy();
+		expect(Number.isNaN(Date.parse(body.attempt?.startedAt ?? ""))).toBe(false);
+	});
 });

@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: Contract & Server Practice Detail Metadata"
-status: todo
+status: completed
 priority: P1
 effort: "1h"
 dependencies: []

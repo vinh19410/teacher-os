@@ -49,10 +49,13 @@ export function QuizRuntimeHeader({
 	exitTarget?: QuizRuntimeExitTarget;
 	children?: ReactNode;
 }) {
-	const exitClassName = cn(buttonVariants({ variant: "ghost" }));
+	const exitClassName = cn(
+		buttonVariants({ variant: "ghost" }),
+		"shrink-0 px-2 sm:px-3",
+	);
 	return (
-		<header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-border border-b bg-background/95 px-4 backdrop-blur">
-			<div className="flex min-w-0 items-center gap-3">
+		<header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-1.5 border-border border-b bg-background/95 px-2 backdrop-blur sm:gap-3 sm:px-4">
+			<div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
 				{exitTarget.to === "/practice/$skill" ? (
 					<Link
 						to="/practice/$skill"
@@ -84,7 +87,7 @@ export function QuizRuntimeHeader({
 					) : null}
 				</div>
 			</div>
-			<div className="flex flex-none items-center gap-3">
+			<div className="flex flex-none items-center gap-1.5 sm:gap-3">
 				{saveState !== null && (
 					<span
 						role="status"
@@ -92,7 +95,7 @@ export function QuizRuntimeHeader({
 						data-state={saveState}
 						aria-live="polite"
 						className={cn(
-							"font-mono text-xs uppercase tracking-[0.08em]",
+							"whitespace-nowrap font-mono text-[11px] uppercase tracking-normal sm:text-xs sm:tracking-[0.08em]",
 							SAVE_STATE_CLASSES[saveState],
 						)}
 					>
@@ -104,7 +107,7 @@ export function QuizRuntimeHeader({
 					<Button
 						onClick={onSubmitClick}
 						disabled={submitDisabled}
-						className="rounded-lg"
+						className="shrink-0 rounded-lg px-2.5 sm:px-4"
 					>
 						Nộp bài
 					</Button>
