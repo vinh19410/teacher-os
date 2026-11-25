@@ -19,6 +19,7 @@ import {
 	type QuizChoiceRow,
 	questionChoiceRows,
 } from "@teacher-os/ui/components/quiz/quiz-question-item";
+import { TranscriptBody } from "@teacher-os/ui/components/quiz/transcript-body";
 import { parseTableStem } from "@teacher-os/ui/lib/cloze";
 import {
 	Check,
@@ -610,11 +611,10 @@ export function StudyPackItemViewer({
 										)}
 									</Button>
 									{transcriptOpen && (
-										<div className="mt-2 rounded-md border border-border bg-card p-3.5">
-											<RichTextBody
+										<div className="mt-2 min-w-0 rounded-md border border-border bg-card p-3.5">
+											<TranscriptBody
 												text={detail.transcript}
-												legacyWhitespace="pre-wrap"
-												className="font-normal text-foreground text-sm leading-[1.85]"
+												className="text-sm"
 											/>
 										</div>
 									)}

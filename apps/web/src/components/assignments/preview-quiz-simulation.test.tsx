@@ -65,7 +65,13 @@ function mcqDraft(): PreviewDraft {
 
 /** Harness mirror wiring của route preview.tsx: state sống ở harness
  * (route-level), tab render điều kiện đúng 1 tab tại một thời điểm. */
-function SimHarness({ sim }: { sim: QuizSimulation }) {
+function SimHarness({
+	sim,
+	transcript,
+}: {
+	sim: QuizSimulation;
+	transcript?: string;
+}) {
 	const [tab, setTab] = useState<"paper" | "sim">("paper");
 	const quiz = useQuizSimulation(sim);
 	return (
@@ -92,6 +98,7 @@ function SimHarness({ sim }: { sim: QuizSimulation }) {
 					onAnswer={quiz.onAnswer}
 					onSubmit={quiz.submit}
 					onReset={quiz.reset}
+					transcript={transcript}
 				/>
 			) : (
 				<div data-testid="harness-paper" />
@@ -369,5 +376,38 @@ describe("PreviewQuizSimulation — Choose THREE unordered grading & answerSet c
 			expect.stringContaining("Đáp án: C, D"),
 			expect.stringContaining("Đáp án: C, D"),
 		]);
+	});
+
+	it("ẩn transcript hoàn toàn ở take mode và hiển thị TranscriptBody có nhãn người nói ở review mode sau khi nộp (#888)", () => {
+		const listeningDraft: PreviewDraft = {
+			...mcqDraft(),
+			skill: "listening",
+			part: "s1",
+			title: "City Health Services",
+		};
+		const transcript =
+			"Speaker 1: Agent: CANARY-SECRET-TRANSCRIPT Good morning.\nSpeaker 2: Customer: Hello there.";
+		render(
+			<SimHarness
+				sim={simOf(listeningDraft, "listening-transcript-canary")}
+				transcript={transcript}
+			/>,
+		);
+		fireEvent.click(screen.getByTestId("harness-tab-sim"));
+
+		// Take mode must never leak transcript
+		expect(document.body.innerHTML).not.toContain("CANARY-SECRET-TRANSCRIPT");
+		expect(screen.queryByTestId("quiz-review-transcript")).toBeNull();
+
+		fireEvent.click(screen.getByRole("radio", { name: "C Paris" }));
+		fireEvent.click(screen.getByRole("button", { name: /Nộp bài/ }));
+
+		const transcriptBox = screen.getByTestId("quiz-review-transcript");
+		const speakers = Array.from(
+			transcriptBox.querySelectorAll('[data-testid="transcript-speaker"]'),
+		).map((el) => el.textContent);
+		expect(speakers).toEqual(["Agent:", "Customer:"]);
+		expect(transcriptBox.textContent).toContain("CANARY-SECRET-TRANSCRIPT");
+		expect(transcriptBox.textContent).not.toContain("Speaker 1:");
 	});
 });
