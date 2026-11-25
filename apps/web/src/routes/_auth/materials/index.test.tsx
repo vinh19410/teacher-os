@@ -94,7 +94,11 @@ const FOLDERS: MaterialFolderView[] = [
 ];
 
 type Reply = { status: number; body: unknown };
-type Handler = (method: string, url: URL, init?: RequestInit) => Reply | null;
+type Handler = (
+	method: string,
+	url: URL,
+	init?: RequestInit,
+) => Reply | null | Promise<Reply | null>;
 
 let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -116,7 +120,7 @@ function renderRoute(
 				headers: { "content-type": "application/pdf" },
 			});
 		}
-		const custom = handler?.(method, url, init);
+		const custom = await handler?.(method, url, init);
 		const reply: Reply =
 			custom ??
 			(url.pathname === "/api/materials/folders"
@@ -526,5 +530,430 @@ describe("/materials writes", () => {
 		expect(
 			within(empty).queryByRole("button", { name: "Tải file lên" }),
 		).toBeNull();
+	});
+
+	it("uploads multiple valid files into the active folder and closes the dialog", async () => {
+		mockSearch.current = { folderId: "f-1" };
+		let seq = 0;
+		renderRoute([], (method) => {
+			if (method === "PUT") {
+				seq += 1;
+				return {
+					status: 201,
+					body: { material: material({ id: `m-batch-${seq}` }) },
+				};
+			}
+			return null;
+		});
+		await screen.findByTestId("materials-empty");
+		fireEvent.click(screen.getAllByRole("button", { name: "Tải file lên" })[0]);
+		const dialog = await screen.findByRole("dialog", { name: "Tải file lên" });
+
+		const fileA = new File(["%PDF-1"], "Bài 1.pdf", {
+			type: "application/pdf",
+			lastModified: 1000,
+		});
+		const fileB = new File(["%PDF-2"], "Bài 2.pdf", {
+			type: "application/pdf",
+			lastModified: 2000,
+		});
+		fireEvent.change(within(dialog).getByLabelText("File"), {
+			target: { files: [fileA, fileB] },
+		});
+
+		expect(
+			within(dialog).getByText("Có thể chọn thêm nhiều đợt trước khi tải lên."),
+		).toBeTruthy();
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Tải lên 2 file" }),
+		);
+
+		await waitFor(() =>
+			expect(toastMock.success).toHaveBeenCalledWith("Đã tải lên 2 file."),
+		);
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog", { name: "Tải file lên" })).toBeNull(),
+		);
+
+		const putCalls = writes();
+		expect(putCalls).toHaveLength(2);
+		const uploadedHeaders = putCalls.map(([input, init]) => {
+			expect(String(input)).toMatch(/\/api\/materials\/files\?folderId=f-1$/);
+			return (init as RequestInit).headers as Record<string, string>;
+		});
+		expect(uploadedHeaders.map((h) => h["X-File-Name"]).sort()).toEqual(
+			[encodeURIComponent("Bài 1.pdf"), encodeURIComponent("Bài 2.pdf")].sort(),
+		);
+	});
+
+	it("supports drag-and-drop, multi-round append, duplicate skipping, and item removal before upload", async () => {
+		renderRoute([], (method) =>
+			method === "PUT"
+				? { status: 201, body: { material: material({ id: "m-drop" }) } }
+				: null,
+		);
+		await screen.findByTestId("materials-empty");
+		fireEvent.click(screen.getAllByRole("button", { name: "Tải file lên" })[0]);
+		const dialog = await screen.findByRole("dialog", { name: "Tải file lên" });
+
+		// Bấm tải lên khi chưa chọn file báo lỗi hợp lệ và không gửi request.
+		fireEvent.click(within(dialog).getByRole("button", { name: "Tải lên" }));
+		expect((await within(dialog).findByRole("alert")).textContent).toBe(
+			"Chọn ít nhất một file để tải lên.",
+		);
+		expect(writes()).toHaveLength(0);
+
+		const dropzone = within(dialog).getByRole("button", {
+			name: /Kéo thả nhiều file vào đây/,
+		});
+		fireEvent.dragOver(dropzone);
+		expect(dropzone.className).toContain("border-primary");
+		expect(dropzone.className).toContain("bg-accent");
+		fireEvent.dragLeave(dropzone);
+		expect(dropzone.className).toContain("border-input");
+
+		// Đợt 1: kéo thả file đầu tiên.
+		const file1 = new File(["%PDF-a"], "reading-1.pdf", {
+			type: "application/pdf",
+			lastModified: 1000,
+		});
+		fireEvent.drop(dropzone, { dataTransfer: { files: [file1] } });
+		expect(within(dialog).queryByRole("alert")).toBeNull();
+		expect(within(dialog).getByText("reading-1.pdf")).toBeTruthy();
+
+		// Đợt 2: chọn thêm file khác qua input.
+		const file2 = new File(["%PDF-b"], "reading-2.pdf", {
+			type: "application/pdf",
+			lastModified: 2000,
+		});
+		fireEvent.change(within(dialog).getByLabelText("File"), {
+			target: { files: [file2] },
+		});
+		expect(within(dialog).getByText("reading-1.pdf")).toBeTruthy();
+		expect(within(dialog).getByText("reading-2.pdf")).toBeTruthy();
+		expect(
+			within(dialog).getByRole("button", { name: "Tải lên 2 file" }),
+		).toBeTruthy();
+
+		// Đợt 3: thả lại file trùng dấu vân tay → bỏ qua và chỉ hiện nhắc nhở dịu (không role="alert").
+		const duplicateFile1 = new File(["%PDF-a"], "reading-1.pdf", {
+			type: "application/pdf",
+			lastModified: 1000,
+		});
+		fireEvent.drop(dropzone, { dataTransfer: { files: [duplicateFile1] } });
+		expect(
+			within(dialog).getByText("File vừa chọn đã có trong danh sách."),
+		).toBeTruthy();
+		expect(within(dialog).queryByRole("alert")).toBeNull();
+		expect(
+			within(dialog).getByRole("button", { name: "Tải lên 2 file" }),
+		).toBeTruthy();
+
+		// Gỡ file đầu tiên khỏi hàng đợi trước khi tải lên.
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Bỏ reading-1.pdf" }),
+		);
+		expect(within(dialog).queryByText("reading-1.pdf")).toBeNull();
+		expect(
+			within(dialog).queryByText("File vừa chọn đã có trong danh sách."),
+		).toBeNull();
+		expect(within(dialog).getByText("reading-2.pdf")).toBeTruthy();
+
+		fireEvent.click(within(dialog).getByRole("button", { name: "Tải lên" }));
+		await waitFor(() =>
+			expect(toastMock.success).toHaveBeenCalledWith("Đã tải file lên."),
+		);
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog", { name: "Tải file lên" })).toBeNull(),
+		);
+		expect(writes()).toHaveLength(1);
+		const [, init] = writes()[0] as [unknown, RequestInit];
+		expect((init.headers as Record<string, string>)["X-File-Name"]).toBe(
+			encodeURIComponent("reading-2.pdf"),
+		);
+	});
+
+	it("uploads only valid files in a mixed batch and keeps the dialog open for invalid items", async () => {
+		renderRoute([], (method) =>
+			method === "PUT"
+				? { status: 201, body: { material: material({ id: "m-mixed" }) } }
+				: null,
+		);
+		await screen.findByTestId("materials-empty");
+		fireEvent.click(screen.getAllByRole("button", { name: "Tải file lên" })[0]);
+		const dialog = await screen.findByRole("dialog", { name: "Tải file lên" });
+
+		const validFile = new File(["%PDF"], "hop-le.pdf", {
+			type: "application/pdf",
+			lastModified: 1000,
+		});
+		const invalidFile = new File(["<html>"], "sai-dinh-dang.html", {
+			type: "text/html",
+			lastModified: 2000,
+		});
+		fireEvent.change(within(dialog).getByLabelText("File"), {
+			target: { files: [validFile, invalidFile] },
+		});
+
+		expect(within(dialog).getAllByRole("alert")).toHaveLength(1);
+		expect(within(dialog).getByRole("alert").textContent).toMatch(
+			/Định dạng chưa hỗ trợ/,
+		);
+
+		fireEvent.click(within(dialog).getByRole("button", { name: "Tải lên" }));
+		await waitFor(() =>
+			expect(toastMock.success).toHaveBeenCalledWith("Đã tải 1 file lên."),
+		);
+
+		// Chỉ gửi file hợp lệ, không gọi API cho file không hợp lệ và giữ dialog mở.
+		expect(writes()).toHaveLength(1);
+		const [, init] = writes()[0] as [unknown, RequestInit];
+		expect((init.headers as Record<string, string>)["X-File-Name"]).toBe(
+			encodeURIComponent("hop-le.pdf"),
+		);
+		expect(screen.getByRole("dialog", { name: "Tải file lên" })).toBeTruthy();
+		expect(within(dialog).getByText("Đã tải")).toBeTruthy();
+		expect(within(dialog).getByText("Không hợp lệ")).toBeTruthy();
+		expect(within(dialog).getByRole("alert").textContent).toMatch(
+			/Định dạng chưa hỗ trợ/,
+		);
+		expect(
+			within(dialog).queryByRole("button", { name: /Tải lên/ }),
+		).toBeNull();
+		const closeButtons = within(dialog).getAllByRole("button", {
+			name: "Đóng",
+		});
+		expect(closeButtons).toHaveLength(2);
+		fireEvent.click(closeButtons[1]);
+		expect(screen.queryByRole("dialog", { name: "Tải file lên" })).toBeNull();
+	});
+
+	it("retries only failed files after a partial server error and closes the dialog on recovery", async () => {
+		const attemptsByName = new Map<string, number>();
+		renderRoute([], (method, _url, init) => {
+			if (method !== "PUT") return null;
+			const headers = init?.headers as Record<string, string> | undefined;
+			const decodedName = decodeURIComponent(headers?.["X-File-Name"] ?? "");
+			const attempt = (attemptsByName.get(decodedName) ?? 0) + 1;
+			attemptsByName.set(decodedName, attempt);
+			if (decodedName === "file-loi.pdf" && attempt === 1) {
+				return { status: 500, body: {} };
+			}
+			return {
+				status: 201,
+				body: { material: material({ id: `m-${decodedName}-${attempt}` }) },
+			};
+		});
+		await screen.findByTestId("materials-empty");
+		fireEvent.click(screen.getAllByRole("button", { name: "Tải file lên" })[0]);
+		const dialog = await screen.findByRole("dialog", { name: "Tải file lên" });
+
+		const okFile = new File(["%PDF-1"], "file-ok.pdf", {
+			type: "application/pdf",
+			lastModified: 1000,
+		});
+		const flakyFile = new File(["%PDF-2"], "file-loi.pdf", {
+			type: "application/pdf",
+			lastModified: 2000,
+		});
+		fireEvent.change(within(dialog).getByLabelText("File"), {
+			target: { files: [okFile, flakyFile] },
+		});
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Tải lên 2 file" }),
+		);
+
+		await waitFor(() =>
+			expect(toastMock.success).toHaveBeenCalledWith("Đã tải 1 file lên."),
+		);
+		expect(screen.getByRole("dialog", { name: "Tải file lên" })).toBeTruthy();
+		expect(within(dialog).getAllByRole("alert")).toHaveLength(1);
+		const retryButtons = within(dialog).getAllByRole("button", {
+			name: "Thử lại 1 file lỗi",
+		});
+		expect(retryButtons).toHaveLength(1);
+		expect(writes()).toHaveLength(2);
+
+		fireEvent.click(retryButtons[0]);
+		await waitFor(() =>
+			expect(toastMock.success).toHaveBeenCalledWith("Đã tải lên 2 file."),
+		);
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog", { name: "Tải file lên" })).toBeNull(),
+		);
+		// Lần thử lại chỉ gửi đúng file bị lỗi, không tải lại file đã thành công.
+		expect(writes()).toHaveLength(3);
+		expect(attemptsByName.get("file-ok.pdf")).toBe(1);
+		expect(attemptsByName.get("file-loi.pdf")).toBe(2);
+	});
+
+	it("locks modal closing and folder selection while upload is in flight", async () => {
+		let resolvePut!: (reply: Reply) => void;
+		const putPromise = new Promise<Reply>((resolve) => {
+			resolvePut = resolve;
+		});
+		renderRoute([], (method) => (method === "PUT" ? putPromise : null));
+		await screen.findByTestId("materials-empty");
+		fireEvent.click(screen.getAllByRole("button", { name: "Tải file lên" })[0]);
+		const dialog = await screen.findByRole("dialog", { name: "Tải file lên" });
+
+		fireEvent.change(within(dialog).getByLabelText("File"), {
+			target: {
+				files: [
+					new File(["%PDF"], "dang-tai.pdf", {
+						type: "application/pdf",
+						lastModified: 1000,
+					}),
+				],
+			},
+		});
+		fireEvent.click(within(dialog).getByRole("button", { name: "Tải lên" }));
+
+		const busyButton = await within(dialog).findByRole("button", {
+			name: "Đang tải lên…",
+		});
+		expect((busyButton as HTMLButtonElement).disabled).toBe(true);
+		expect(busyButton.getAttribute("aria-busy")).toBe("true");
+		const cancelButton = within(dialog).getByRole("button", {
+			name: "Hủy",
+		}) as HTMLButtonElement;
+		expect(cancelButton.disabled).toBe(true);
+		expect(
+			(within(dialog).getByLabelText("Thư mục") as HTMLSelectElement).disabled,
+		).toBe(true);
+
+		// Escape, nút Đóng góc trên và nút Hủy đều bị khóa trong lúc đang tải.
+		fireEvent.keyDown(document, { key: "Escape" });
+		fireEvent.click(within(dialog).getByRole("button", { name: "Đóng" }));
+		fireEvent.click(cancelButton);
+		expect(screen.getByRole("dialog", { name: "Tải file lên" })).toBeTruthy();
+
+		resolvePut({
+			status: 201,
+			body: { material: material({ id: "m-inflight" }) },
+		});
+		await waitFor(() =>
+			expect(toastMock.success).toHaveBeenCalledWith("Đã tải file lên."),
+		);
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog", { name: "Tải file lên" })).toBeNull(),
+		);
+	});
+
+	it("replaces a stale invalid-only selection when choosing a valid file next", async () => {
+		renderRoute([], (method) =>
+			method === "PUT"
+				? { status: 201, body: { material: material({ id: "m-replaced" }) } }
+				: null,
+		);
+		await screen.findByTestId("materials-empty");
+		fireEvent.click(screen.getAllByRole("button", { name: "Tải file lên" })[0]);
+		const dialog = await screen.findByRole("dialog", { name: "Tải file lên" });
+
+		fireEvent.change(within(dialog).getByLabelText("File"), {
+			target: {
+				files: [
+					new File(["<html>"], "bad.html", {
+						type: "text/html",
+						lastModified: 1000,
+					}),
+				],
+			},
+		});
+		expect((await within(dialog).findByRole("alert")).textContent).toMatch(
+			/Định dạng chưa hỗ trợ/,
+		);
+		fireEvent.click(within(dialog).getByRole("button", { name: "Tải lên" }));
+		expect(writes()).toHaveLength(0);
+
+		fireEvent.change(within(dialog).getByLabelText("File"), {
+			target: {
+				files: [
+					new File(["%PDF"], "hop-le.pdf", {
+						type: "application/pdf",
+						lastModified: 2000,
+					}),
+				],
+			},
+		});
+		expect(within(dialog).queryByRole("alert")).toBeNull();
+		expect(within(dialog).queryByText("bad.html")).toBeNull();
+		expect(within(dialog).getByText("hop-le.pdf")).toBeTruthy();
+
+		fireEvent.click(within(dialog).getByRole("button", { name: "Tải lên" }));
+		await waitFor(() =>
+			expect(toastMock.success).toHaveBeenCalledWith("Đã tải file lên."),
+		);
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog", { name: "Tải file lên" })).toBeNull(),
+		);
+		expect(writes()).toHaveLength(1);
+		const [, init] = writes()[0] as [unknown, RequestInit];
+		expect((init.headers as Record<string, string>)["X-File-Name"]).toBe(
+			encodeURIComponent("hop-le.pdf"),
+		);
+	});
+
+	it("falls back to root folder when retrying after the selected folder returns 404 and disappears on refetch", async () => {
+		mockSearch.current = { folderId: "f-1" };
+		let activeFolders = [...FOLDERS];
+		let putCalls = 0;
+
+		renderRoute([], (method, url) => {
+			if (method === "GET" && url.pathname === "/api/materials/folders") {
+				return { status: 200, body: { folders: activeFolders } };
+			}
+			if (method === "PUT" && url.pathname === "/api/materials/files") {
+				putCalls += 1;
+				if (url.searchParams.get("folderId") === "f-1") {
+					// Thư mục đã bị xóa trước đó → refetch thư mục sẽ không còn f-1.
+					activeFolders = [];
+					return {
+						status: 404,
+						body: { error: "FOLDER_NOT_FOUND", code: "FOLDER_NOT_FOUND" },
+					};
+				}
+				return {
+					status: 201,
+					body: {
+						material: material({ id: "m-root-retry", folderId: null }),
+					},
+				};
+			}
+			return null;
+		});
+
+		await screen.findByTestId("materials-empty");
+		fireEvent.click(screen.getAllByRole("button", { name: "Tải file lên" })[0]);
+		const dialog = await screen.findByRole("dialog", { name: "Tải file lên" });
+
+		fireEvent.change(within(dialog).getByLabelText("File"), {
+			target: {
+				files: [
+					new File(["%PDF"], "bi-xoa-thu-muc.pdf", {
+						type: "application/pdf",
+						lastModified: 1000,
+					}),
+				],
+			},
+		});
+		fireEvent.click(within(dialog).getByRole("button", { name: "Tải lên" }));
+
+		const retryButton = await within(dialog).findByRole("button", {
+			name: "Thử lại 1 file lỗi",
+		});
+		expect(putCalls).toBe(1);
+
+		fireEvent.click(retryButton);
+		await waitFor(() =>
+			expect(toastMock.success).toHaveBeenCalledWith("Đã tải file lên."),
+		);
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog", { name: "Tải file lên" })).toBeNull(),
+		);
+		expect(putCalls).toBe(2);
+		const retryUrl = new URL(String(writes()[1]?.[0]));
+		expect(retryUrl.pathname).toBe("/api/materials/files");
+		expect(retryUrl.searchParams.get("folderId")).toBeNull();
 	});
 });

@@ -19,6 +19,11 @@ import {
 	MaterialInlinePreview,
 	materialPreviewMime,
 } from "@/components/materials/material-preview";
+import {
+	MATERIAL_FILE_ACCEPT,
+	MaterialUploadQueueList,
+	useMaterialUploadQueue,
+} from "@/components/materials/material-upload-queue";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
@@ -33,13 +38,9 @@ import {
 	fetchClassMaterials,
 	materialErrorMessage,
 	materialsAllQueryKey,
-	prepareMaterialUpload,
 	uploadClassMaterial,
 	useCanWriteMaterials,
 } from "@/lib/repos/materials";
-
-const MATERIAL_FILE_ACCEPT =
-	".pdf,.png,.jpg,.jpeg,.webp,.docx,.pptx,.xlsx,.mp3,.m4a,.mp4";
 
 function ClassMaterialLinkDialog({
 	classId,
@@ -188,6 +189,35 @@ export function ClassSharedMaterialsTab({ classId }: { classId: string }) {
 	const [error, setError] = useState<string | null>(null);
 	const [pickerError, setPickerError] = useState<string | null>(null);
 	const fileInput = useRef<HTMLInputElement>(null);
+	const clearUploadQueueRef = useRef<() => void>(() => undefined);
+
+	const uploadQueue = useMaterialUploadQueue({
+		upload: (input) => uploadClassMaterial({ classId, ...input }),
+		onBatchSettled: ({ run, summary }) => {
+			if (run.succeeded.length === 0) return;
+			if (
+				summary.total === 1 &&
+				summary.done === 1 &&
+				summary.error === 0 &&
+				summary.invalid === 0
+			) {
+				toast.success("Đã tải lên và thêm vào tài liệu chung.");
+				clearUploadQueueRef.current();
+				return;
+			}
+			if (summary.done > 1 && summary.error === 0 && summary.invalid === 0) {
+				toast.success(`Đã tải lên ${summary.done} file vào tài liệu chung.`);
+				return;
+			}
+			toast.success(
+				run.succeeded.length === 1
+					? "Đã tải lên 1 file vào tài liệu chung."
+					: `Đã tải lên ${run.succeeded.length} file vào tài liệu chung.`,
+			);
+		},
+	});
+	const clearUploadQueue = uploadQueue.clear;
+	clearUploadQueueRef.current = clearUploadQueue;
 
 	useEffect(() => {
 		if (!canWrite) {
@@ -195,8 +225,9 @@ export function ClassSharedMaterialsTab({ classId }: { classId: string }) {
 			setLinkModalOpen(false);
 			setError(null);
 			setPickerError(null);
+			clearUploadQueue();
 		}
-	}, [canWrite]);
+	}, [canWrite, clearUploadQueue]);
 
 	const itemsQuery = useQuery({
 		queryKey: classMaterialsQueryKey(classId),
@@ -232,14 +263,6 @@ export function ClassSharedMaterialsTab({ classId }: { classId: string }) {
 		onError: (err) => handleMutationError(err, setPickerError),
 	});
 
-	const upload = useMutation({
-		mutationFn: (input: { file: File; mimeType: string }) =>
-			uploadClassMaterial({ classId, ...input }),
-		onMutate: () => setError(null),
-		onSuccess: () => onWriteSuccess("Đã tải lên và thêm vào tài liệu chung."),
-		onError: (err) => handleMutationError(err, setError),
-	});
-
 	const detach = useMutation({
 		mutationFn: (materialId: string) =>
 			detachClassMaterial(classId, materialId),
@@ -248,17 +271,14 @@ export function ClassSharedMaterialsTab({ classId }: { classId: string }) {
 		onError: (err) => handleMutationError(err, setError),
 	});
 
-	const busy = attach.isPending || upload.isPending || detach.isPending;
+	const busy = attach.isPending || uploadQueue.isUploading || detach.isPending;
 
-	function pickFile(file: File | undefined) {
+	function pickFiles(files: FileList | null) {
+		const picked = files ? Array.from(files) : [];
 		if (fileInput.current) fileInput.current.value = "";
-		if (!file) return;
-		const prep = prepareMaterialUpload(file);
-		if (!prep.ok) {
-			setError(prep.message);
-			return;
-		}
-		upload.mutate({ file, mimeType: prep.mimeType });
+		if (picked.length === 0 || busy) return;
+		setError(null);
+		void uploadQueue.uploadFilesNow(picked);
 	}
 
 	return (
@@ -268,7 +288,7 @@ export function ClassSharedMaterialsTab({ classId }: { classId: string }) {
 		>
 			<div className="flex min-w-0 flex-col gap-4">
 				{canWrite && (
-					<div className="flex flex-col gap-2">
+					<div className="flex min-w-0 flex-col gap-2">
 						<div className="flex flex-wrap gap-2">
 							<Button
 								variant="outline"
@@ -287,20 +307,25 @@ export function ClassSharedMaterialsTab({ classId }: { classId: string }) {
 								variant="outline"
 								size="sm"
 								disabled={busy}
-								aria-busy={upload.isPending}
+								aria-busy={uploadQueue.isUploading}
 								onClick={() => fileInput.current?.click()}
 							>
 								<Upload aria-hidden="true" />
-								{upload.isPending ? "Đang tải lên…" : "Tải file lên"}
+								{uploadQueue.isUploading
+									? uploadQueue.summary.validTotal > 1
+										? `Đang tải lên (${uploadQueue.summary.completedValid}/${uploadQueue.summary.validTotal})…`
+										: "Đang tải lên…"
+									: "Tải file lên"}
 							</Button>
 							<input
 								ref={fileInput}
 								type="file"
+								multiple
 								className="sr-only"
 								tabIndex={-1}
 								aria-label="Chọn file tải lên cho lớp học"
 								accept={MATERIAL_FILE_ACCEPT}
-								onChange={(e) => pickFile(e.target.files?.[0])}
+								onChange={(e) => pickFiles(e.target.files)}
 							/>
 							<Button
 								variant="outline"
@@ -318,6 +343,21 @@ export function ClassSharedMaterialsTab({ classId }: { classId: string }) {
 						<p className="text-muted-foreground text-xs">
 							{`${UPLOAD_HELP} File tải lên và liên kết mới được lưu vào Ngân hàng tài liệu (Chưa xếp thư mục).`}
 						</p>
+						{uploadQueue.items.length > 0 && (
+							<MaterialUploadQueueList
+								compact
+								items={uploadQueue.items}
+								summary={uploadQueue.summary}
+								disabled={busy}
+								suppressAlert={Boolean(error)}
+								onRetryFailed={() => {
+									if (busy) return;
+									setError(null);
+									void uploadQueue.retryFailed();
+								}}
+								onDismiss={uploadQueue.clear}
+							/>
+						)}
 					</div>
 				)}
 

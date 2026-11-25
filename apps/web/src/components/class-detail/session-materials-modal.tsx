@@ -12,6 +12,11 @@ import {
 	MaterialInlinePreview,
 	materialPreviewMime,
 } from "@/components/materials/material-preview";
+import {
+	MATERIAL_FILE_ACCEPT,
+	MaterialUploadQueueList,
+	useMaterialUploadQueue,
+} from "@/components/materials/material-upload-queue";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -24,11 +29,14 @@ import {
 	materialErrorMessage,
 	materialFileUrl,
 	materialsAllQueryKey,
-	prepareMaterialUpload,
 	sessionMaterialsQueryKey,
 	uploadSessionMaterial,
 	useCanWriteMaterials,
 } from "@/lib/repos/materials";
+
+function noopClose() {
+	// Khóa đóng hộp thoại trong khi hàng đợi tải file đang chạy.
+}
 
 /**
  * Tài liệu của một buổi học (lớp + ngày): liệt kê tài liệu đã gắn, gỡ, chọn
@@ -54,13 +62,44 @@ export function SessionMaterialsModal({
 	const queryClient = useQueryClient();
 	const canWrite = useCanWriteMaterials();
 	const activeView = canWrite ? view : "list";
+	const clearUploadQueueRef = useRef<() => void>(() => {});
+
+	const uploadQueue = useMaterialUploadQueue({
+		upload: (input) =>
+			uploadSessionMaterial({ classId, date: dateISO, ...input }),
+		onBatchSettled: ({ run, summary }) => {
+			if (run.succeeded.length === 0) return;
+			if (
+				summary.total === 1 &&
+				summary.done === 1 &&
+				summary.error === 0 &&
+				summary.invalid === 0
+			) {
+				toast.success("Đã tải lên và gắn vào buổi học.");
+				clearUploadQueueRef.current();
+				return;
+			}
+			if (summary.done > 1 && summary.error === 0 && summary.invalid === 0) {
+				toast.success(`Đã tải lên ${summary.done} file và gắn vào buổi học.`);
+				return;
+			}
+			toast.success(
+				run.succeeded.length === 1
+					? "Đã tải lên 1 file và gắn vào buổi học."
+					: `Đã tải lên ${run.succeeded.length} file và gắn vào buổi học.`,
+			);
+		},
+	});
+	const clearUploadQueue = uploadQueue.clear;
+	clearUploadQueueRef.current = clearUploadQueue;
 
 	useEffect(() => {
 		if (!canWrite) {
 			setView("list");
 			setError(null);
+			clearUploadQueue();
 		}
-	}, [canWrite]);
+	}, [canWrite, clearUploadQueue]);
 	const sessionKey = sessionMaterialsQueryKey(classId, dateISO);
 	const sessionQuery = useQuery({
 		queryKey: sessionKey,
@@ -101,31 +140,22 @@ export function SessionMaterialsModal({
 		onSuccess: () => onWriteSuccess("Đã gỡ tài liệu khỏi buổi học."),
 		onError: handleError,
 	});
-	const upload = useMutation({
-		mutationFn: (input: { file: File; mimeType: string }) =>
-			uploadSessionMaterial({ classId, date: dateISO, ...input }),
-		onMutate: () => setError(null),
-		onSuccess: () => onWriteSuccess("Đã tải lên và gắn vào buổi học."),
-		onError: handleError,
-	});
-	const busy = attach.isPending || detach.isPending || upload.isPending;
+	const busy = attach.isPending || detach.isPending || uploadQueue.isUploading;
 
 	const fileInput = useRef<HTMLInputElement>(null);
-	function pickFile(file: File | undefined) {
+	function pickFiles(files: FileList | null) {
+		const picked = files ? Array.from(files) : [];
 		if (fileInput.current) fileInput.current.value = "";
-		if (!file) return;
-		const prep = prepareMaterialUpload(file);
-		if (!prep.ok) {
-			setError(prep.message);
-			return;
-		}
-		upload.mutate({ file, mimeType: prep.mimeType });
+		if (picked.length === 0 || busy) return;
+		setError(null);
+		void uploadQueue.uploadFilesNow(picked);
 	}
 
 	return (
 		<Modal
 			open
-			onClose={onClose}
+			onClose={uploadQueue.isUploading ? noopClose : onClose}
+			scrollableBody
 			title={
 				activeView === "list"
 					? `Tài liệu buổi ${sessionLabel}`
@@ -136,6 +166,7 @@ export function SessionMaterialsModal({
 					<Button
 						variant="outline"
 						size="sm"
+						disabled={busy}
 						onClick={() => {
 							setError(null);
 							setView("list");
@@ -145,7 +176,14 @@ export function SessionMaterialsModal({
 						Quay lại
 					</Button>
 				) : (
-					<Button variant="outline" size="sm" onClick={onClose}>
+					<Button
+						variant="outline"
+						size="sm"
+						disabled={uploadQueue.isUploading}
+						onClick={() => {
+							if (!uploadQueue.isUploading) onClose();
+						}}
+					>
 						Đóng
 					</Button>
 				)
@@ -166,7 +204,7 @@ export function SessionMaterialsModal({
 			) : (
 				<>
 					{canWrite && (
-						<>
+						<div className="flex min-w-0 shrink-0 flex-col gap-2">
 							<div className="flex flex-wrap gap-2">
 								<Button
 									variant="outline"
@@ -184,26 +222,46 @@ export function SessionMaterialsModal({
 									variant="outline"
 									size="sm"
 									disabled={busy}
-									aria-busy={upload.isPending}
+									aria-busy={uploadQueue.isUploading}
 									onClick={() => fileInput.current?.click()}
 								>
 									<Upload aria-hidden="true" />
-									{upload.isPending ? "Đang tải lên…" : "Tải lên mới"}
+									{uploadQueue.isUploading
+										? uploadQueue.summary.validTotal > 1
+											? `Đang tải lên (${uploadQueue.summary.completedValid}/${uploadQueue.summary.validTotal})…`
+											: "Đang tải lên…"
+										: "Tải lên mới"}
 								</Button>
 								<input
 									ref={fileInput}
 									type="file"
+									multiple
 									className="sr-only"
 									tabIndex={-1}
 									aria-label="Chọn file tải lên cho buổi học"
-									accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.pptx,.xlsx,.mp3,.m4a,.mp4"
-									onChange={(e) => pickFile(e.target.files?.[0])}
+									accept={MATERIAL_FILE_ACCEPT}
+									onChange={(e) => pickFiles(e.target.files)}
 								/>
 							</div>
 							<p className="text-muted-foreground text-xs">
 								{`${UPLOAD_HELP} File tải lên được lưu vào ngân hàng tài liệu (Chưa xếp thư mục).`}
 							</p>
-						</>
+							{uploadQueue.items.length > 0 && (
+								<MaterialUploadQueueList
+									compact
+									items={uploadQueue.items}
+									summary={uploadQueue.summary}
+									disabled={busy}
+									suppressAlert={Boolean(error)}
+									onRetryFailed={() => {
+										if (busy) return;
+										setError(null);
+										void uploadQueue.retryFailed();
+									}}
+									onDismiss={uploadQueue.clear}
+								/>
+							)}
+						</div>
 					)}
 					{sessionQuery.isPending ? (
 						<p className="text-muted-foreground text-sm">Đang tải tài liệu…</p>
