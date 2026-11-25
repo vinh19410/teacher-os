@@ -633,15 +633,115 @@ describe("parseTranscript — edge cases & real corpus fixtures", () => {
 		expect(turns.length).toBeGreaterThan(0);
 		expect(elapsed2).toBeLessThan(500);
 	});
+
+	it("handles single-line inline Speaker N: Role: drift/binding, dot-normalized mixed casing, flat-HTML entity boundary, and standalone Speaker N headers", () => {
+		// Repro A: single-line ASR drift — Speaker 1 binds to both Agent and Customer, so bare Speaker 1 stays Speaker 1
+		const singleLineDrift = parseTranscript(
+			"Speaker 1: Agent: Good morning. Speaker 1: Customer: Hello there. Speaker 1: Bye.",
+		);
+		expect(singleLineDrift).toEqual([
+			{ speaker: "Agent", paragraphs: ["Good morning."] },
+			{ speaker: "Customer", paragraphs: ["Hello there."] },
+			{ speaker: "Speaker 1", paragraphs: ["Bye."] },
+		]);
+
+		// Repro B: single-line unambiguous inline Speaker 2 -> Customer maps subsequent bare Speaker 2
+		const singleLineBound = parseTranscript(
+			"Speaker 1: Agent: Good morning. Speaker 2: Customer: Hello there. Speaker 1: When can we come? Speaker 2: Tomorrow.",
+		);
+		expect(singleLineBound).toEqual([
+			{ speaker: "Agent", paragraphs: ["Good morning."] },
+			{ speaker: "Customer", paragraphs: ["Hello there."] },
+			{ speaker: "Agent", paragraphs: ["When can we come?"] },
+			{ speaker: "Customer", paragraphs: ["Tomorrow."] },
+		]);
+
+		// Dot-normalized mixed casing (`Dr. Twain:` at line start matches `DR.TWAIN:` inline spaced & tight)
+		const dotMixed = parseTranscript(
+			"Dr. Twain: Welcome back. Student: Hello! DR.TWAIN: Let's begin the lecture. Student: Thank you!",
+		);
+		expect(dotMixed).toEqual([
+			{ speaker: "Dr. Twain", paragraphs: ["Welcome back."] },
+			{ speaker: "Student", paragraphs: ["Hello!"] },
+			{ speaker: "Dr. Twain", paragraphs: ["Let's begin the lecture."] },
+			{ speaker: "Student", paragraphs: ["Thank you!"] },
+		]);
+
+		const dotMixedTight = parseTranscript(
+			"Dr. Twain: Welcome. Student: Hi!DR.TWAIN: Begin. Student: Ok.",
+		);
+		expect(dotMixedTight).toEqual([
+			{ speaker: "Dr. Twain", paragraphs: ["Welcome."] },
+			{ speaker: "Student", paragraphs: ["Hi!"] },
+			{ speaker: "Dr. Twain", paragraphs: ["Begin."] },
+			{ speaker: "Student", paragraphs: ["Ok."] },
+		]);
+
+		// Casing variant cap keeps adversarial 25 KB multi-casing payloads bounded and fast
+		const variantChunks: string[] = ["Alex: Start."];
+		for (let mask = 0; mask < 16; mask += 1) {
+			const cased = [..."alex"]
+				.map((ch, idx) => ((mask >> idx) & 1 ? ch.toUpperCase() : ch))
+				.join("");
+			if (/^[A-Z]/.test(cased)) {
+				variantChunks.push(`${cased}: Turn ${mask}.`);
+			}
+		}
+		const variantPayload = Array.from({ length: 40 }, () =>
+			variantChunks.join(" "),
+		).join(" ");
+		const tVar = performance.now();
+		const variantTurns = parseTranscript(variantPayload);
+		expect(performance.now() - tVar).toBeLessThan(500);
+		expect(variantTurns.length).toBeGreaterThan(0);
+
+		// Flat HTML entity stripping uses space so `AT&T&nbsp;corp;` does not glue into fake entity `&Tcorp;`
+		const flatEntity = classifyTranscriptInput("<p>AT&T&nbsp;corp;</p>");
+		expect(flatEntity).toEqual({ kind: "plain", text: "AT&T corp;" });
+
+		// Standalone `Speaker N:` headers preserve Speaker 1 / Speaker 2 labels
+		expect(
+			parseTranscript("Speaker 1:\nGood morning.\nSpeaker 2:\nHello."),
+		).toEqual([
+			{ speaker: "Speaker 1", paragraphs: ["Good morning."] },
+			{ speaker: "Speaker 2", paragraphs: ["Hello."] },
+		]);
+
+		// Standalone role header above standalone `Speaker N:` preserves role without clobbering
+		expect(
+			parseTranscript(
+				"Lectuerer:\nSpeaker 1:\nGood morning.\nSpeaker 1: Let's review chapter two.",
+			),
+		).toEqual([
+			{
+				speaker: "Lectuerer",
+				paragraphs: ["Good morning.", "Let's review chapter two."],
+			},
+		]);
+
+		// Standalone `Speaker 1:` above `Agent: ...` binds `Speaker 1 -> Agent`
+		expect(
+			parseTranscript(
+				"Speaker 1:\nAgent: Good morning.\nSpeaker 2:\nCustomer: Hi.\nSpeaker 1: How can I help?",
+			),
+		).toEqual([
+			{ speaker: "Agent", paragraphs: ["Good morning."] },
+			{ speaker: "Customer", paragraphs: ["Hi."] },
+			{ speaker: "Agent", paragraphs: ["How can I help?"] },
+		]);
+	});
 });
 
 describe("parseTranscript — full 498 + 60 corpus invariants", () => {
-	it("parses all 498 listening library files and 60 study-pack transcripts losslessly without crashes or single-block >800 char walls", () => {
+	it("parses all listening library files (>=498) and study-pack transcripts (>=60) losslessly without crashes or single-block >800 char walls", () => {
 		const entries: Array<{ label: string; transcript: string }> = [];
+		let listeningCount = 0;
+		let studyPackCount = 0;
 
 		for (const fileName of readdirSync(LISTENING_DIR)
 			.filter((f) => f.endsWith(".json") && f !== "_index.json")
 			.sort()) {
+			listeningCount += 1;
 			entries.push({
 				label: `listening/${fileName}`,
 				transcript: readListeningTranscript(fileName),
@@ -657,6 +757,7 @@ describe("parseTranscript — full 498 + 60 corpus invariants", () => {
 			) as { exercises: Array<{ id: string; transcript?: string }> };
 			for (const ex of pack.exercises) {
 				if (ex.transcript && ex.transcript.trim().length > 0) {
+					studyPackCount += 1;
 					entries.push({
 						label: `${packFile}#${ex.id}`,
 						transcript: ex.transcript,
@@ -665,7 +766,9 @@ describe("parseTranscript — full 498 + 60 corpus invariants", () => {
 			}
 		}
 
-		expect(entries.length).toBe(558);
+		expect(listeningCount).toBeGreaterThanOrEqual(498);
+		expect(studyPackCount).toBeGreaterThanOrEqual(60);
+		expect(entries.length).toBeGreaterThanOrEqual(558);
 
 		const failures: string[] = [];
 		for (const { label, transcript } of entries) {

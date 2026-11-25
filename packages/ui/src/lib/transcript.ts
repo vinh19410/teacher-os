@@ -16,9 +16,13 @@ export type TranscriptClassification =
 
 const MAX_SPEAKER_LABEL_LEN = 40;
 const MAX_INLINE_ROSTER_SIZE = 24;
+const MAX_VARIANTS_PER_SPEAKER = 8;
 const MAX_INLINE_PARSE_LENGTH = 25_000;
 const MONOLOGUE_SPLIT_MIN_CHARS = 550;
 const MONOLOGUE_SPLIT_MIN_SENTENCES = 5;
+
+const INLINE_SPEAKER_ID_RE =
+	/(^|[.!?…]["”’)\]}]*(?:\s?\]?\[\d+\]\})?\s*)[Ss](?:peaker|PEAKER)\s+(\d+)\s*:\s*/g;
 
 const DANGEROUS_OR_HEAD_TAG_RE =
 	/<(?:script|style|svg|iframe|object|embed|math|title|noscript|link|base)\b/i;
@@ -60,7 +64,7 @@ const POS_PAREN_RE = /\((?:n|v|adj|adv|prep|conj|phr|idiom)\)$/i;
 const TRAILING_PAREN_RE = /\s*\(([^()]{1,24})\)$/;
 const TITLE_WORD_RE = /^(?:Dr|Mr|Mrs|Ms|Prof|St)\.$/i;
 const GLUED_TITLE_WORD_RE =
-	/^(?:Dr|Mr|Mrs|Ms|Prof|St)\.\p{Lu}[\p{L}'\u2019-]*$/u;
+	/^(?:Dr|DR|Mr|MR|Mrs|MRS|Ms|MS|Prof|PROF|St|ST)\.\p{Lu}[\p{L}'\u2019-]*$/u;
 const TITLE_BEFORE_DOT_RE = /\b(?:Dr|Mr|Mrs|Ms|Prof|St)$/i;
 const UPPERCASE_START_RE = /^\p{Lu}/u;
 
@@ -275,9 +279,11 @@ export function classifyTranscriptInput(raw: string): TranscriptClassification {
 		if (!withoutFlatTags.includes("<") && !withoutFlatTags.includes(">")) {
 			// If flat HTML contains unknown entities outside our single-pass decode table,
 			// delegate to RichTextBody so the browser decodes them faithfully.
+			// Replace known entities with space (not empty string) so adjacent tokens like
+			// `AT&T&nbsp;corp;` cannot glue into a synthetic entity (`&Tcorp;`).
 			const withoutKnownEntities = withoutFlatTags.replace(
 				SINGLE_PASS_ENTITY_RE,
-				"",
+				" ",
 			);
 			if (UNKNOWN_HTML_ENTITY_RE.test(withoutKnownEntities)) {
 				return { kind: "html" };
@@ -319,6 +325,12 @@ function normalizeSpeakerLabel(label: string): string {
 	return collapsed;
 }
 
+function speakerLookupKey(label: string): string {
+	return label.includes(".")
+		? label.toLowerCase().replace(/\.\s*/g, ".")
+		: label.toLowerCase();
+}
+
 function isValidSpeakerLabel(
 	rawLabel: string,
 	options?: {
@@ -341,9 +353,6 @@ function isValidSpeakerLabel(
 	}
 	if (POS_PAREN_RE.test(label)) {
 		return false;
-	}
-	if (!options?.alreadyNormalized && SPEAKER_ID_RE.test(label)) {
-		return true;
 	}
 	// Reject digits in any non-"Speaker N" label (blocks Step 1, Phase 2, 09:30).
 	if (/\d/.test(label)) {
@@ -475,7 +484,8 @@ function preprocessLines(normalized: string): ParsedLine[] {
 	}
 
 	const result: ParsedLine[] = [];
-	let pendingSpeaker: string | null = null;
+	let pendingSpeakerId: string | null = null;
+	let pendingRole: string | null = null;
 	let sawBlankSinceLastContent = false;
 	let inGlossary = false;
 
@@ -488,7 +498,8 @@ function preprocessLines(normalized: string): ParsedLine[] {
 
 		if (USEFUL_VOCAB_HEADING_RE.test(trimmed)) {
 			inGlossary = true;
-			pendingSpeaker = null;
+			pendingSpeakerId = null;
+			pendingRole = null;
 			result.push({
 				rawSpeakerId: null,
 				leadingRole: null,
@@ -512,23 +523,29 @@ function preprocessLines(normalized: string): ParsedLine[] {
 			continue;
 		}
 
-		// Check if line is a standalone speaker header (e.g., `LISA:`, `joe:`, `Lectuerer:`)
+		// Check if line is a standalone speaker header (e.g., `LISA:`, `joe:`, `Lectuerer:`, `Speaker 1:`)
 		const standaloneMatch = trimmed.endsWith(":")
 			? /^([^:\n]{1,45}?)\s*:$/.exec(trimmed)
 			: null;
 		if (standaloneMatch) {
 			const rawCandidate = normalizeSpeakerLabel(standaloneMatch[1] ?? "");
+			if (SPEAKER_ID_RE.test(rawCandidate)) {
+				// Record standalone `Speaker N:` without clobbering any prior `pendingRole`
+				// (preserves `Lectuerer:\nSpeaker 1:\nGood morning.`).
+				pendingSpeakerId = rawCandidate;
+				sawBlankSinceLastContent = false;
+				continue;
+			}
 			const isLowercaseName =
 				standaloneHeaderCount > 0 && /^[a-z]{2,20}$/.test(rawCandidate);
 			if (
-				!SPEAKER_ID_RE.test(rawCandidate) &&
 				isValidSpeakerLabel(rawCandidate, {
 					allowLowercase: isLowercaseName,
 					allowSingleChar: false,
 					alreadyNormalized: true,
 				})
 			) {
-				pendingSpeaker =
+				pendingRole =
 					standaloneCapitalized.get(rawCandidate.toLowerCase()) ?? rawCandidate;
 				sawBlankSinceLastContent = false;
 				continue;
@@ -537,23 +554,43 @@ function preprocessLines(normalized: string): ParsedLine[] {
 
 		const extracted = extractLeadingLineParts(trimmed, true);
 
-		if (pendingSpeaker !== null) {
-			if (extracted.leadingRole === null) {
-				// Merge pending standalone header with next line (including bare `Speaker N:` lines)
-				if (extracted.body.length > 0) {
-					result.push({
-						rawSpeakerId: extracted.rawSpeakerId,
-						leadingRole: pendingSpeaker,
-						body: extracted.body,
-						hadBlankLineBefore: false,
-						inGlossary: false,
-					});
-					pendingSpeaker = null;
-					sawBlankSinceLastContent = false;
-					continue;
-				}
+		if (pendingRole !== null || pendingSpeakerId !== null) {
+			if (extracted.leadingRole === null && extracted.body.length > 0) {
+				// Merge pending standalone header(s) with next line (including bare `Speaker N:` lines)
+				result.push({
+					rawSpeakerId: extracted.rawSpeakerId ?? pendingSpeakerId,
+					leadingRole: pendingRole,
+					body: extracted.body,
+					hadBlankLineBefore: false,
+					inGlossary: false,
+				});
+				pendingRole = null;
+				pendingSpeakerId = null;
+				sawBlankSinceLastContent = false;
+				continue;
 			}
-			pendingSpeaker = null;
+			if (
+				extracted.leadingRole !== null &&
+				extracted.body.length > 0 &&
+				pendingRole === null &&
+				extracted.rawSpeakerId === null &&
+				pendingSpeakerId !== null
+			) {
+				// Preserve `Speaker 1:\nAgent: Good morning.` speaker-id -> role binding
+				result.push({
+					rawSpeakerId: pendingSpeakerId,
+					leadingRole: extracted.leadingRole,
+					body: extracted.body,
+					hadBlankLineBefore: false,
+					inGlossary: false,
+				});
+				pendingRole = null;
+				pendingSpeakerId = null;
+				sawBlankSinceLastContent = false;
+				continue;
+			}
+			pendingRole = null;
+			pendingSpeakerId = null;
 		}
 
 		if (extracted.body.length === 0) {
@@ -595,31 +632,33 @@ function discoverInlineSpeakers(
 	const canonicalByLower = new Map<string, string>();
 	const variantsByLower = new Map<string, Set<string>>();
 
-	const recordVariant = (lower: string, variant: string) => {
-		let set = variantsByLower.get(lower);
+	const recordVariant = (key: string, variant: string) => {
+		let set = variantsByLower.get(key);
 		if (!set) {
 			set = new Set<string>();
-			variantsByLower.set(lower, set);
+			variantsByLower.set(key, set);
 		}
-		set.add(variant);
+		if (set.size < MAX_VARIANTS_PER_SPEAKER) {
+			set.add(variant);
+		}
 	};
 
 	for (const [label, n] of lineStartCounts) {
-		const lower = label.toLowerCase();
-		counts.set(lower, (counts.get(lower) ?? 0) + n);
-		if (!canonicalByLower.has(lower)) {
-			canonicalByLower.set(lower, label);
+		const key = speakerLookupKey(label);
+		counts.set(key, (counts.get(key) ?? 0) + n);
+		if (!canonicalByLower.has(key)) {
+			canonicalByLower.set(key, label);
 		}
-		recordVariant(lower, label);
+		recordVariant(key, label);
 	}
 
 	// Pattern 1 (with whitespace after sentence boundary): 1–3 word Title-Case / ALL-CAPS / title-prefixed (Unicode-safe; allows lowercase subsequent words like `Học viên` / `Tax officer`)
 	const spacedRe =
-		/(?:^|[.!?…]["”’)\]}]*(?:\s?\]?\[\d+\]\})?\s+)((?:(?:Dr|Mr|Mrs|Ms|Prof|St)\.\s*)?\p{Lu}[\p{L}'\u2019-]*(?:\s+[\p{L}'\u2019-]+){0,2}(?:\s*\(\p{Lu}[\p{L}'\u2019-]{1,20}\))?)\s*:(?=\s)/gu;
+		/(?:^|[.!?…]["”’)\]}]*(?:\s?\]?\[\d+\]\})?\s+)((?:(?:Dr|DR|Mr|MR|Mrs|MRS|Ms|MS|Prof|PROF|St|ST)\.\s*)?\p{Lu}[\p{L}'\u2019-]*(?:\s+[\p{L}'\u2019-]+){0,2}(?:\s*\(\p{Lu}[\p{L}'\u2019-]{1,20}\))?)\s*:(?=\s)/gu;
 
 	// Pattern 2 (missing whitespace after sentence boundary): strict short ALL-CAPS, Title-Case single word, or Title+Name (Unicode-safe)
 	const tightRe =
-		/[.!?…]["”’)\]}]*(?:\s?\]?\[\d+\]\})?((?:(?:Dr|Mr|Mrs|Ms|Prof|St)\.\s*\p{Lu}\p{L}{1,20})|\p{Lu}{2,20}|\p{Lu}\p{Ll}{1,20})\s*:(?=\s|$)/gu;
+		/[.!?…]["”’)\]}]*(?:\s?\]?\[\d+\]\})?((?:(?:Dr|DR|Mr|MR|Mrs|MRS|Ms|MS|Prof|PROF|St|ST)\.\s*\p{Lu}\p{L}{1,20})|\p{Lu}{2,20}|\p{Lu}\p{Ll}{1,20})\s*:(?=\s|$)/gu;
 
 	const record = (
 		rawCandidate: string,
@@ -640,12 +679,12 @@ function discoverInlineSpeakers(
 		) {
 			return;
 		}
-		const lower = candidate.toLowerCase();
-		counts.set(lower, (counts.get(lower) ?? 0) + 1);
-		if (!canonicalByLower.has(lower)) {
-			canonicalByLower.set(lower, candidate);
+		const key = speakerLookupKey(candidate);
+		counts.set(key, (counts.get(key) ?? 0) + 1);
+		if (!canonicalByLower.has(key)) {
+			canonicalByLower.set(key, candidate);
 		}
-		recordVariant(lower, candidate);
+		recordVariant(key, candidate);
 	};
 
 	for (const line of lines) {
@@ -686,7 +725,7 @@ function buildRosterInlineRegex(
 	const allLiterals = new Set<string>();
 	for (const label of roster) {
 		allLiterals.add(label);
-		const variants = variantsByLower?.get(label.toLowerCase());
+		const variants = variantsByLower?.get(speakerLookupKey(label));
 		if (variants) {
 			for (const v of variants) {
 				allLiterals.add(v);
@@ -889,27 +928,59 @@ export function parseTranscript(raw: string): TranscriptTurn[] {
 	const canonicalByLower = new Map<string, string>();
 
 	const rememberCanonical = (label: string): string => {
-		const lower = label.includes(".")
-			? label.toLowerCase().replace(/\.\s*/g, ".")
-			: label.toLowerCase();
-		const existing = canonicalByLower.get(lower);
+		const key = speakerLookupKey(label);
+		const existing = canonicalByLower.get(key);
 		if (existing) return existing;
-		canonicalByLower.set(lower, label);
+		canonicalByLower.set(key, label);
 		return label;
+	};
+
+	const recordRoleBinding = (rawSpeakerId: string | null, rawRole: string) => {
+		const canonical = rememberCanonical(rawRole);
+		lineStartCounts.set(canonical, (lineStartCounts.get(canonical) ?? 0) + 1);
+		if (rawSpeakerId) {
+			let roles = spToRoles.get(rawSpeakerId);
+			if (!roles) {
+				roles = new Set<string>();
+				spToRoles.set(rawSpeakerId, roles);
+			}
+			roles.add(canonical);
+		}
 	};
 
 	for (const line of lines) {
 		if (line.inGlossary) continue;
 		if (line.leadingRole) {
-			const canonical = rememberCanonical(line.leadingRole);
-			lineStartCounts.set(canonical, (lineStartCounts.get(canonical) ?? 0) + 1);
-			if (line.rawSpeakerId) {
-				let roles = spToRoles.get(line.rawSpeakerId);
-				if (!roles) {
-					roles = new Set<string>();
-					spToRoles.set(line.rawSpeakerId, roles);
+			recordRoleBinding(line.rawSpeakerId, line.leadingRole);
+		}
+		// Also scan inline double prefixes (`Speaker N: Role:`) using the same sentence
+		// boundary and title-dot guard as Pass 3 so single-line transcripts enforce
+		// unambiguous Speaker N -> Role mapping and ASR drift protection consistently.
+		if (
+			normalized.length <= MAX_INLINE_PARSE_LENGTH &&
+			/\bSpeaker\s+\d+\s*:/i.test(line.body)
+		) {
+			INLINE_SPEAKER_ID_RE.lastIndex = 0;
+			for (
+				let m = INLINE_SPEAKER_ID_RE.exec(line.body);
+				m !== null;
+				m = INLINE_SPEAKER_ID_RE.exec(line.body)
+			) {
+				const boundary = m[1] ?? "";
+				const boundaryEnd = m.index + boundary.length;
+				if (m.index > 0 && isPrecededByTitleDot(line.body, boundaryEnd)) {
+					continue;
 				}
-				roles.add(canonical);
+				const rest = line.body.slice(m.index + m[0].length).trimStart();
+				if (rest.length === 0) continue;
+				const nested = extractLeadingLineParts(rest, false);
+				if (
+					nested.rawSpeakerId === null &&
+					nested.leadingRole !== null &&
+					nested.body.length > 0
+				) {
+					recordRoleBinding(`Speaker ${m[2]}`, nested.leadingRole);
+				}
 			}
 		}
 	}
@@ -1051,7 +1122,11 @@ export function parseTranscript(raw: string): TranscriptTurn[] {
 			// Handle mid-line double prefix `Speaker N: Role: ...` without leaking `Role:` into text
 			if (current.isSpeakerId && segText.length > 0) {
 				const nested = extractLeadingLineParts(segText, false);
-				if (nested.leadingRole !== null && nested.body.length > 0) {
+				if (
+					nested.rawSpeakerId === null &&
+					nested.leadingRole !== null &&
+					nested.body.length > 0
+				) {
 					segSpeaker = resolveSpeaker(nested.leadingRole) ?? segSpeaker;
 					segText = nested.body;
 				}
@@ -1064,7 +1139,7 @@ export function parseTranscript(raw: string): TranscriptTurn[] {
 		}
 	}
 
-	// Pass 4: Merge consecutive turns with matching speaker & expand long monologues
+	// Pass 4 & Pass 5: Merge consecutive turns with matching speaker & expand long monologues
 	const turns: TranscriptTurn[] = [];
 	for (const seg of rawSegments) {
 		const trimmed = seg.text.trim();
