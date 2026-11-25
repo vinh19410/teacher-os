@@ -25,6 +25,7 @@ import {
 	useSyncExternalStore,
 } from "react";
 import { z } from "zod";
+import { syncServerClock } from "@/lib/attempt-format";
 import {
 	HttpError,
 	healStudentOrgMismatch,
@@ -152,6 +153,8 @@ async function request<T>(
 			);
 		}
 	}
+	const serverNow = res.headers?.get?.("X-Server-Now");
+	if (serverNow) syncServerClock(serverNow, Date.now());
 	if (res.status === 204) return undefined as T;
 	return parse(await res.json());
 }
@@ -973,9 +976,13 @@ export async function setQuizDetailMedia(
 	// Refetch đang bay (sau hủy/conflict) có thể trả về sau và đè media mới
 	// bằng dữ liệu cũ — hủy nó trước khi ghi.
 	await queryClient.cancelQueries({ queryKey });
-	queryClient.setQueryData<StudentQuizDetail>(queryKey, (detail) =>
-		detail?.attempt
-			? { ...detail, attempt: { ...detail.attempt, media } }
-			: detail,
+	const prevUpdatedAt = queryClient.getQueryState(queryKey)?.dataUpdatedAt;
+	queryClient.setQueryData<StudentQuizDetail>(
+		queryKey,
+		(detail) =>
+			detail?.attempt
+				? { ...detail, attempt: { ...detail.attempt, media } }
+				: detail,
+		prevUpdatedAt ? { updatedAt: prevUpdatedAt } : undefined,
 	);
 }

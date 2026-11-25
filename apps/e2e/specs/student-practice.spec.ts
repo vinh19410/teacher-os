@@ -20,10 +20,58 @@ const PRACTICE_PROMPT_QUESTIONS = [
 	{ stem: "Số 1", opts: ["A", "B"], answer: "A", alts: "", pin: null },
 	{ stem: "Số 2", opts: ["A", "B"], answer: "B", alts: "", pin: null },
 ];
+const PRACTICE_READING_PASSAGE = [
+	"<p><strong>The Falkirk Wheel</strong> is a rotating boat lift in central Scotland, connecting the Forth and Clyde Canal with the Union Canal. Opened in 2002, it replaced a series of eleven locks that previously took almost a full day to navigate.</p>",
+	"<p>The structure uses Archimedes' principle: because a floating object displaces its own weight in water, both water-filled gondolas always weigh the same regardless of how many boats enter. As a result, rotating the wheel through 180 degrees requires remarkably little electrical energy.</p>",
+	"<p>Engineers designed the central axle and hydraulic motors to operate smoothly across seasonal temperature shifts, turning an industrial transport link into an iconic landmark visited by hundreds of thousands of people every year.</p>",
+].join("");
 const practiceTestTitle = "The Falkirk Wheel";
 const classQuizTitle = "Quiz tuần 3 đọc hiểu";
 
 let fixture: QuizFixture;
+let practiceTestId = "";
+
+function parseClockSeconds(text: string): number {
+	const match = text.trim().match(/^(\d+):(\d{2})$/);
+	if (!match) return Number.NaN;
+	return Number(match[1]) * 60 + Number(match[2]);
+}
+
+async function backdateActivePracticeAttempt(
+	testId: string,
+	deltaMs: number,
+): Promise<void> {
+	const db = createClient({
+		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
+	});
+	await db.execute("PRAGMA busy_timeout = 5000;");
+	await db.execute({
+		sql: `UPDATE quiz_attempt
+			SET started_at = started_at - ?
+			WHERE org_id = ?
+				AND test_id = ?
+				AND mode = 'practice'
+				AND status = 'in_progress'`,
+		args: [deltaMs, fixture.orgId, testId],
+	});
+	db.close();
+}
+
+async function clearActivePracticeAttempts(testId: string): Promise<void> {
+	const db = createClient({
+		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
+	});
+	await db.execute("PRAGMA busy_timeout = 5000;");
+	await db.execute({
+		sql: `DELETE FROM quiz_attempt
+			WHERE org_id = ?
+				AND test_id = ?
+				AND mode = 'practice'
+				AND status = 'in_progress'`,
+		args: [fixture.orgId, testId],
+	});
+	db.close();
+}
 
 async function seedPracticeTest(): Promise<string> {
 	const db = createClient({
@@ -36,11 +84,12 @@ async function seedPracticeTest(): Promise<string> {
 
 	await db.execute({
 		sql: `INSERT INTO assignment_prompt (
-				id, org_id, task, genre, skill, part, type, title, prompt, questions, status, created_at
-			) VALUES (?,?, 'task1', '', 'reading', 'p1', 'mcq', 'Passage 1', '', ?, 'ready', ?)`,
+				id, org_id, task, genre, skill, part, type, title, prompt, passage, questions, status, created_at
+			) VALUES (?,?, 'task1', '', 'reading', 'p1', 'mcq', 'Passage 1', '', ?, ?, 'ready', ?)`,
 		args: [
 			promptId,
 			fixture.orgId,
+			PRACTICE_READING_PASSAGE,
 			JSON.stringify(PRACTICE_PROMPT_QUESTIONS),
 			now,
 		],
@@ -88,7 +137,7 @@ test.beforeAll(async ({ browser }) => {
 			},
 		],
 	});
-	await seedPracticeTest();
+	practiceTestId = await seedPracticeTest();
 
 	const context = await browser.newContext();
 	const page = await context.newPage();
@@ -109,6 +158,14 @@ test.beforeAll(async ({ browser }) => {
 });
 
 test.describe("Student practice catalog (#378 phase 10)", () => {
+	test.beforeEach(async () => {
+		// Dọn lượt in_progress còn sót (ví dụ sau khi test fail giữa chừng trước
+		// bước nộp và CI retry) để mỗi test/retry luôn bắt đầu ở trạng thái sạch.
+		if (practiceTestId) {
+			await clearActivePracticeAttempts(practiceTestId);
+		}
+	});
+
 	test("Luyện tập › Reading: mở đề seed → nộp → thấy điểm", async ({
 		page,
 	}) => {
@@ -136,12 +193,42 @@ test.describe("Student practice catalog (#378 phase 10)", () => {
 		await card.click();
 		await expect(page).toHaveURL(/\/learn\/quizzes\/practice\//);
 
+		// Reading có passage → split-pane + đồng hồ đếm ngược 20 phút trên header.
+		await expect(page.getByTestId("reading-passage-pane")).toBeVisible();
+		await expect(page.getByTestId("reading-work-pane")).toBeVisible();
+		const timerBadge = page.getByTestId("quiz-timer-badge");
+		await expect(timerBadge).toBeVisible();
+		await expect(timerBadge).toHaveAttribute("data-state", "running");
+		const initialSec = parseClockSeconds(await timerBadge.innerText());
+		expect(initialSec).toBeGreaterThanOrEqual(1140);
+		expect(initialSec).toBeLessThanOrEqual(1200);
+
 		const progress = page.getByTestId("navigator-progress");
 		await expect(progress).toHaveText("Đã trả lời 0/2 câu");
 		await page
 			.locator('[data-question="0"] label', { hasText: "A" })
 			.first()
 			.click();
+		await expect(progress).toHaveText("Đã trả lời 1/2 câu");
+		await expect(page.getByTestId("save-state")).toHaveAttribute(
+			"data-state",
+			"saved",
+		);
+
+		// Lùi started_at đi 3 phút rồi tải lại trang: đồng hồ phải tiếp tục từ
+		// ~17:00 ngay khi dialog tiếp tục hiện ra và tổng thời gian lúc nộp phải
+		// tính cả 3 phút trước khi tải lại.
+		await backdateActivePracticeAttempt(practiceTestId, 180_000);
+		await page.reload();
+
+		await expect(page.getByText("Tiếp tục bài làm")).toBeVisible();
+		await expect(timerBadge).toBeVisible();
+		const resumedSec = parseClockSeconds(await timerBadge.innerText());
+		expect(resumedSec).toBeGreaterThanOrEqual(900);
+		expect(resumedSec).toBeLessThanOrEqual(1020);
+		expect(initialSec - resumedSec).toBeGreaterThanOrEqual(170);
+
+		await page.getByRole("button", { name: "Tiếp tục" }).click();
 		await page
 			.locator('[data-question="1"] label', { hasText: "B" })
 			.first()
@@ -152,11 +239,101 @@ test.describe("Student practice catalog (#378 phase 10)", () => {
 			"saved",
 		);
 
+		// Kiểm tra không tràn ngang trên 4 viewport (gồm 320px reflow) cả Light & Dark,
+		// và desktop 1440×900 split-pane giữ document scrollTop === 0.
+		for (const dark of [false, true]) {
+			await page.evaluate((isDark) => {
+				document.documentElement.classList.toggle("dark", isDark);
+			}, dark);
+			for (const vp of [
+				{ width: 1440, height: 900 },
+				{ width: 768, height: 1024 },
+				{ width: 375, height: 812 },
+				{ width: 320, height: 568 },
+			]) {
+				await page.setViewportSize(vp);
+				const metrics = await page.evaluate(() => ({
+					overflowX:
+						document.documentElement.scrollWidth >
+						document.documentElement.clientWidth,
+					docScrollTop: document.scrollingElement?.scrollTop ?? 0,
+				}));
+				expect(
+					metrics.overflowX,
+					`practice take overflow at ${vp.width}x${vp.height} dark=${dark}`,
+				).toBe(false);
+				if (vp.width === 1440) {
+					expect(metrics.docScrollTop).toBe(0);
+				}
+			}
+		}
+		await page.evaluate(() => {
+			document.documentElement.classList.remove("dark");
+		});
+		await page.setViewportSize({ width: 1280, height: 720 });
+
 		await page.getByRole("button", { name: "Nộp bài" }).click();
-		// Summary: 2/2 đúng — điểm tự chấm hiển thị ngay sau khi nộp.
+		// Summary: 2/2 đúng và tổng thời gian tính đủ cả trước + sau khi tải lại.
 		await expect(page).toHaveURL(/\/learn\/quizzes\/attempt\//);
 		await expect(page.getByTestId("attempt-correct-count")).toHaveText("2");
 		await expect(page.getByTestId("attempt-correct")).toHaveText("2");
+		await expect(page.locator("main")).toContainText(
+			/hoàn thành trong [3-5] phút/,
+		);
+	});
+
+	test("Luyện tập › Reading: hết giờ mềm hiện 00:00 + banner cảnh báo, split-pane không tràn dọc và vẫn nộp được bài", async ({
+		page,
+	}) => {
+		await signIn(page);
+		await page.goto(`${STUDENT_BASE_URL}/practice/reading`);
+		const card = page
+			.getByTestId("practice-test-card")
+			.filter({ hasText: practiceTestTitle });
+		await card.click();
+		await expect(page).toHaveURL(/\/learn\/quizzes\/practice\//);
+
+		const timerBadge = page.getByTestId("quiz-timer-badge");
+		await expect(timerBadge).toBeVisible();
+		await page
+			.locator('[data-question="0"] label', { hasText: "A" })
+			.first()
+			.click();
+		await expect(page.getByTestId("save-state")).toHaveAttribute(
+			"data-state",
+			"saved",
+		);
+
+		// Lùi started_at vượt quá 20 phút (21 phút) rồi tải lại trang.
+		await backdateActivePracticeAttempt(practiceTestId, 1_260_000);
+		await page.reload();
+		await page.getByRole("button", { name: "Tiếp tục" }).click();
+
+		await expect(timerBadge).toHaveAttribute("data-state", "expired");
+		await expect(timerBadge).toHaveText("00:00");
+		await expect(page.getByTestId("quiz-time-expired-banner")).toBeVisible();
+
+		// Desktop split-pane phải giữ nguyên chiều cao 100svh kể cả khi có banner hết giờ.
+		await page.setViewportSize({ width: 1440, height: 900 });
+		const splitMetrics = await page.evaluate(() => ({
+			docOverflowY:
+				document.documentElement.scrollHeight -
+				document.documentElement.clientHeight,
+			docScrollTop: document.scrollingElement?.scrollTop ?? 0,
+		}));
+		expect(splitMetrics.docOverflowY).toBeLessThanOrEqual(1);
+		expect(splitMetrics.docScrollTop).toBe(0);
+
+		// Hết giờ mềm KHÔNG tự nộp và KHÔNG khoá nút Nộp bài.
+		const submitBtn = page.getByRole("button", { name: "Nộp bài" });
+		await expect(submitBtn).toBeEnabled();
+		await submitBtn.click();
+		// Câu 2 chưa làm → mở dialog xác nhận nộp bài.
+		const dialog = page.getByRole("alertdialog");
+		await expect(dialog).toBeVisible();
+		await dialog.getByRole("button", { name: "Nộp bài" }).click();
+		await expect(page).toHaveURL(/\/learn\/quizzes\/attempt\//);
+		await expect(page.getByTestId("attempt-correct-count")).toHaveText("1");
 	});
 
 	test("bài luyện tập KHÔNG lọt bảng điểm lớp", async ({ page }) => {

@@ -415,7 +415,13 @@ export function buildApp(deps: AppDeps) {
 			"X-Media-Filename",
 			"X-Speaking-Duration",
 		],
-		exposeHeaders: ["Accept-Ranges", "Content-Range", "Content-Length", "ETag"],
+		exposeHeaders: [
+			"Accept-Ranges",
+			"Content-Range",
+			"Content-Length",
+			"ETag",
+			"X-Server-Now",
+		],
 		credentials: true,
 	});
 	// Lead intake (#506 D5): preflight của cors TOÀN CỤC trả sớm với origin

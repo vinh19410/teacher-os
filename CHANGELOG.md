@@ -10,6 +10,14 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-11-25
+
+### Fixed
+- **Bổ sung đồng hồ đếm ngược đồng bộ giờ server trên trang làm bài tự luyện và bảo toàn tổng thời lượng sau khi tải lại (`packages/api`, `packages/db`, `apps/server`, `apps/student`, `apps/e2e`):**
+  - Mở rộng `studentQuizDetailSchema` với `timeLimitSeconds` (chỉ phát ở đề tự luyện có thời lượng dương, hỗ trợ đến 4 giờ) và `attempt.startedAt`; đồng bộ độ lệch đồng hồ qua CORS-exposed header `X-Server-Now` để không thêm khóa JSON top-level mới trên `/assignments/:id/quiz` trong cửa sổ rolling deploy.
+  - Thêm migration `0090_concerned_mach_iv.sql` gom trùng các lượt `in_progress` tự luyện theo độ giàu nội dung (`media_key`, số đáp án thực không rỗng an toàn JSON1, độ dài bài viết `essay`, `rowid DESC`), giữ `MIN(started_at)` trên nhóm đang làm và tạo partial unique index `quiz_attempt_practice_in_progress_uq`; chuyển sắp xếp sang `asc(startedAt), asc(id)`, khôi phục xung đột unique ở `POST /practice/:testId/attempts` và dùng chung `deps.now` trên các route quiz.
+  - Xây dựng leaf component `<QuizTimerBadge>` (`role="timer"`, dừng interval tại `00:00`, cảnh báo ngưỡng `min(300s, 20%)`, banner hết giờ mềm không tự nộp bài và không re-render `QuizPaper` mỗi giây), khóa double-click `usePracticeOpenLock`, `fetchQuery` ở loader trang làm bài để chờ dữ liệu mới sau invalidation, khóa chiều cao `100svh` cho split-pane Reading và tối ưu header `320px` (#880).
+
 ## 2026-11-20
 
 ### Added
