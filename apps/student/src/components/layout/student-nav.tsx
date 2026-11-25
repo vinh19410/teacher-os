@@ -88,6 +88,8 @@ export function StudentShellLink({
 	href,
 	className,
 	"aria-current": ariaCurrent,
+	"aria-label": ariaLabel,
+	title,
 	onClick,
 	children,
 }: ShellLinkProps) {
@@ -97,6 +99,8 @@ export function StudentShellLink({
 			onClick={onClick}
 			className={className}
 			aria-current={ariaCurrent}
+			aria-label={ariaLabel}
+			title={title}
 			activeOptions={href === "/" ? { exact: true } : undefined}
 		>
 			{children}

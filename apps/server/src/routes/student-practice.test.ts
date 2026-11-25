@@ -96,6 +96,7 @@ describe("student practice (#378 phase 10)", () => {
 				id: "test-read-1",
 				orgId: "org-1",
 				title: "The Falkirk Wheel",
+				description: "<p>Đọc kỹ đề.</p>",
 				skill: "reading",
 				timeLimitSeconds: 3600,
 				collection: "IELTS Trainer 2",
@@ -140,6 +141,28 @@ describe("student practice (#378 phase 10)", () => {
 				timeLimitSeconds: null,
 				collection: null,
 				testGroup: null,
+				status: "ready",
+			},
+			{
+				id: "test-listen-meta",
+				orgId: "org-1",
+				title: "Listening Full Meta",
+				description: "<p>Nghe kỹ băng.</p>",
+				skill: "listening",
+				timeLimitSeconds: 1800,
+				collection: "Cambridge 19",
+				testGroup: "TEST 2",
+				status: "ready",
+			},
+			{
+				id: "test-listen-zero",
+				orgId: "org-1",
+				title: "Listening Zero Limit",
+				description: null,
+				skill: "listening",
+				timeLimitSeconds: 0,
+				collection: null,
+				testGroup: "SECTION 1",
 				status: "ready",
 			},
 		]);
@@ -213,6 +236,32 @@ describe("student practice (#378 phase 10)", () => {
 				questions: JSON.stringify(READING_QUESTIONS_P1),
 				status: "ready",
 			},
+			{
+				id: "prompt-listen-s1",
+				orgId: "org-1",
+				task: "task1",
+				genre: "",
+				skill: "listening",
+				part: "s1",
+				type: "mcq",
+				title: "Section 1",
+				prompt: "",
+				questions: JSON.stringify(READING_QUESTIONS_P2),
+				status: "ready",
+			},
+			{
+				id: "prompt-listen-s2",
+				orgId: "org-1",
+				task: "task1",
+				genre: "",
+				skill: "listening",
+				part: "s2",
+				type: "tfng",
+				title: "Section 2",
+				prompt: "",
+				questions: JSON.stringify(READING_QUESTIONS_P1),
+				status: "ready",
+			},
 		]);
 		await libsql.insert(schema.assignmentTestPart).values([
 			{
@@ -255,6 +304,27 @@ describe("student practice (#378 phase 10)", () => {
 				testId: "test-read-org2",
 				promptId: "prompt-read-org2",
 				part: "p1",
+				position: 1,
+			},
+			{
+				id: "atp-7",
+				testId: "test-listen-meta",
+				promptId: "prompt-listen-s1",
+				part: "s1",
+				position: 1,
+			},
+			{
+				id: "atp-8",
+				testId: "test-listen-meta",
+				promptId: "prompt-listen-s2",
+				part: "s2",
+				position: 2,
+			},
+			{
+				id: "atp-9",
+				testId: "test-listen-zero",
+				promptId: "prompt-listen-s1",
+				part: "s1",
 				position: 1,
 			},
 		]);
@@ -543,6 +613,12 @@ describe("student practice (#378 phase 10)", () => {
 			expect(detail.dueAt).toBeNull();
 			expect(detail.skill).toBe("writing");
 			expect(detail.questions).toEqual([]);
+			expect(detail.attempt).toBeNull();
+			expect(detail.timeLimitSeconds).toBeNull();
+			expect(detail.partsCount).toBe(2);
+			expect(detail.collection).toBeNull();
+			expect(detail.testGroup).toBeNull();
+			expect(detail.description).toBeNull();
 
 			// Start rồi mới lấy take payload → có attempt + chrome part đầu.
 			await studentPost("/api/student/practice/test-writ-1/attempts");
@@ -558,6 +634,67 @@ describe("student practice (#378 phase 10)", () => {
 			expect(resumedDetail.prompt).toBe("<p>Describe the graph.</p>");
 			expect(resumedDetail.part).toBe("task1");
 			expect(resumedDetail.attempt?.status).toBe("in_progress");
+		});
+
+		test("trả đủ practice intro metadata trước start (fresh) và sau start (in_progress), chuẩn hoá timeLimitSeconds <= 0 (#883)", async () => {
+			const freshListen = await studentGet(
+				"/api/student/practice/test-listen-meta/quiz",
+			);
+			expect(freshListen.status).toBe(200);
+			const freshBody = (await freshListen.json()) as Record<string, unknown>;
+			expect(freshBody.attempt).toBeNull();
+			expect(freshBody.timeLimitSeconds).toBe(1800);
+			expect(freshBody.partsCount).toBe(2);
+			expect(freshBody.collection).toBe("Cambridge 19");
+			expect(freshBody.testGroup).toBe("TEST 2");
+			expect(freshBody.description).toBe("<p>Nghe kỹ băng.</p>");
+			expect(Array.isArray(freshBody.questions)).toBe(true);
+			expect((freshBody.questions as unknown[]).length).toBe(3);
+
+			// test-read-1 đã được POST /attempts ở block trên → kiểm metadata giữ nguyên ở trạng thái in_progress.
+			const inProgressRead = await studentGet(
+				"/api/student/practice/test-read-1/quiz",
+			);
+			expect(inProgressRead.status).toBe(200);
+			const readBody = (await inProgressRead.json()) as {
+				attempt: { status: string } | null;
+				timeLimitSeconds: number | null;
+				partsCount: number;
+				collection: string | null;
+				testGroup: string | null;
+				description: string | null;
+				questions: unknown[];
+			};
+			expect(readBody.attempt?.status).toBe("in_progress");
+			expect(readBody.timeLimitSeconds).toBe(3600);
+			expect(readBody.partsCount).toBe(2);
+			expect(readBody.collection).toBe("IELTS Trainer 2");
+			expect(readBody.testGroup).toBe("TEST 1");
+			expect(readBody.description).toBe("<p>Đọc kỹ đề.</p>");
+			expect(readBody.questions).toHaveLength(3);
+
+			// timeLimitSeconds <= 0 không gây 404 fail-closed mà chuẩn hoá về null ở cả /quiz lẫn catalog.
+			const zeroRes = await studentGet(
+				"/api/student/practice/test-listen-zero/quiz",
+			);
+			expect(zeroRes.status).toBe(200);
+			const zeroBody = (await zeroRes.json()) as Record<string, unknown>;
+			expect(zeroBody.timeLimitSeconds).toBeNull();
+			expect(zeroBody.partsCount).toBe(1);
+			expect(zeroBody.collection).toBeNull();
+			expect(zeroBody.testGroup).toBe("SECTION 1");
+
+			const catalogRes = await studentGet(
+				"/api/student/practice?skill=listening",
+			);
+			expect(catalogRes.status).toBe(200);
+			const catalogBody = (await catalogRes.json()) as {
+				items: Array<{ testId: string; durationMin: number | null }>;
+			};
+			const zeroCard = catalogBody.items.find(
+				(i) => i.testId === "test-listen-zero",
+			);
+			expect(zeroCard?.durationMin).toBeNull();
 		});
 
 		test("đề draft → 404", async () => {
@@ -782,5 +919,287 @@ describe("student practice (#378 phase 10)", () => {
 			});
 			expect(res.status).toBe(404);
 		});
+	});
+});
+
+describe("practice timer, clock header, concurrency & cross-reload duration", () => {
+	let app: ServerApp;
+	let libsql: Db;
+	let nowMs = Date.parse("2026-11-24T10:00:00.000Z");
+
+	beforeAll(async () => {
+		const client = createClient({ url: "file::memory:" });
+		const db = drizzle(client, { schema });
+		await migrate(db, { migrationsFolder: MIGRATIONS_DIR });
+		libsql = db as unknown as Db;
+
+		await libsql
+			.insert(schema.organization)
+			.values({ id: "org-t", name: "Timer Academy" });
+		await libsql.insert(schema.student).values({
+			id: "student-t",
+			orgId: "org-t",
+			name: "Minh",
+			email: "minh@test.local",
+		});
+		await libsql.insert(schema.assignmentTest).values([
+			{
+				id: "test-timed",
+				orgId: "org-t",
+				title: "Reading 20m",
+				skill: "reading",
+				timeLimitSeconds: 1200,
+				status: "ready",
+			},
+			{
+				id: "test-untimed",
+				orgId: "org-t",
+				title: "Reading Untimed",
+				skill: "reading",
+				timeLimitSeconds: null,
+				status: "ready",
+			},
+			{
+				id: "test-zero-limit",
+				orgId: "org-t",
+				title: "Reading Legacy Zero",
+				skill: "reading",
+				timeLimitSeconds: 0,
+				status: "ready",
+			},
+			{
+				id: "test-race",
+				orgId: "org-t",
+				title: "Reading Race",
+				skill: "reading",
+				timeLimitSeconds: 600,
+				status: "ready",
+			},
+		]);
+		await libsql.insert(schema.assignmentPrompt).values({
+			id: "prompt-t",
+			orgId: "org-t",
+			task: "task1",
+			genre: "",
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			title: "Passage 1",
+			prompt: "",
+			passage: "<p>Passage body</p>",
+			questions: JSON.stringify(READING_QUESTIONS_P1),
+			status: "ready",
+		});
+		await libsql.insert(schema.assignmentTestPart).values([
+			{
+				id: "atp-t1",
+				testId: "test-timed",
+				promptId: "prompt-t",
+				part: "p1",
+				position: 1,
+			},
+			{
+				id: "atp-t2",
+				testId: "test-untimed",
+				promptId: "prompt-t",
+				part: "p1",
+				position: 1,
+			},
+			{
+				id: "atp-t3",
+				testId: "test-zero-limit",
+				promptId: "prompt-t",
+				part: "p1",
+				position: 1,
+			},
+			{
+				id: "atp-t4",
+				testId: "test-race",
+				promptId: "prompt-t",
+				part: "p1",
+				position: 1,
+			},
+		]);
+
+		app = buildApp({
+			getDb: () => libsql as unknown as Db,
+			corsOrigin: CORS_ORIGINS,
+			now: () => new Date(nowMs),
+			getSessionUser: async (headers: Headers): Promise<SessionUser | null> => {
+				if (headers.get("x-test-user") === "minh") {
+					return {
+						userId: "u-minh",
+						userName: "Minh",
+						email: "minh@test.local",
+						emailVerified: true,
+						role: "student",
+					};
+				}
+				return null;
+			},
+			authHandler: () => new Response("auth OK"),
+		});
+	});
+
+	async function studentGet(path: string): Promise<Response> {
+		return app.request(path, {
+			method: "GET",
+			headers: {
+				"x-test-user": "minh",
+				"x-student-org-id": "org-t",
+				Origin: STUDENT_ORIGIN,
+			},
+		});
+	}
+
+	async function studentMutate(
+		path: string,
+		method: "POST" | "PATCH",
+		body = "{}",
+	): Promise<Response> {
+		return app.request(path, {
+			method,
+			headers: {
+				"x-test-user": "minh",
+				"x-student-org-id": "org-t",
+				Origin: STUDENT_ORIGIN,
+				"Content-Type": "application/json",
+			},
+			body,
+		});
+	}
+
+	test("timed practice emits timeLimitSeconds and X-Server-Now header (CORS-exposed); untimed & <=0 normalize cleanly", async () => {
+		nowMs = Date.parse("2026-11-24T10:00:00.000Z");
+
+		const catalogRes = await studentGet("/api/student/practice?skill=reading");
+		expect(catalogRes.status).toBe(200);
+		const catalog = (await catalogRes.json()) as {
+			items: Array<{ testId: string; durationMin: number | null }>;
+		};
+		const byId = new Map(catalog.items.map((i) => [i.testId, i.durationMin]));
+		expect(byId.get("test-timed")).toBe(20);
+		expect(byId.get("test-untimed")).toBeNull();
+		expect(byId.get("test-zero-limit")).toBeNull();
+
+		const timedRes = await studentGet("/api/student/practice/test-timed/quiz");
+		expect(timedRes.status).toBe(200);
+		expect(timedRes.headers.get("X-Server-Now")).toBe(
+			"2026-11-24T10:00:00.000Z",
+		);
+		expect(timedRes.headers.get("Access-Control-Expose-Headers")).toContain(
+			"X-Server-Now",
+		);
+		const timedDetail = (await timedRes.json()) as Record<string, unknown>;
+		expect(timedDetail.timeLimitSeconds).toBe(1200);
+		expect(timedDetail.attempt).toBeNull();
+		expect("serverNow" in timedDetail).toBe(false);
+
+		for (const id of ["test-untimed", "test-zero-limit"]) {
+			const res = await studentGet(`/api/student/practice/${id}/quiz`);
+			expect(res.status).toBe(200);
+			const body = (await res.json()) as Record<string, unknown>;
+			expect(body.timeLimitSeconds).toBeNull();
+		}
+	});
+
+	test("concurrent POST /practice/:testId/attempts resolves to one canonical attemptId and single in_progress row", async () => {
+		nowMs = Date.parse("2026-11-24T10:00:00.000Z");
+		const [r1, r2] = await Promise.all([
+			studentMutate("/api/student/practice/test-race/attempts", "POST"),
+			studentMutate("/api/student/practice/test-race/attempts", "POST"),
+		]);
+		expect([r1.status, r2.status].sort()).toEqual([200, 201]);
+		const id1 = startPracticeResponseSchema.parse(await r1.json()).attemptId;
+		const id2 = startPracticeResponseSchema.parse(await r2.json()).attemptId;
+		expect(id1).toBe(id2);
+
+		const rows = await libsql
+			.select({ id: schema.quizAttempt.id })
+			.from(schema.quizAttempt)
+			.where(eq(schema.quizAttempt.testId, "test-race"));
+		expect(rows).toHaveLength(1);
+	});
+
+	test("cross-reload trace preserves startedAt and counts full pre-reload + post-resume duration", async () => {
+		const t0Iso = "2026-11-24T10:00:00.000Z";
+		const t0 = Date.parse(t0Iso);
+		nowMs = t0;
+
+		const startRes = await studentMutate(
+			"/api/student/practice/test-timed/attempts",
+			"POST",
+		);
+		expect(startRes.status).toBe(201);
+		const { attemptId } = startPracticeResponseSchema.parse(
+			await startRes.json(),
+		);
+
+		// T0 + 2m30s: answer Q0
+		nowMs = t0 + 150_000;
+		const patch0 = await studentMutate(
+			`/api/student/attempts/${attemptId}/answer`,
+			"PATCH",
+			JSON.stringify({ q: 0, value: "TRUE" }),
+		);
+		expect(patch0.status).toBe(200);
+
+		// T0 + 3m00s: simulated page reload GET /quiz
+		nowMs = t0 + 180_000;
+		const reloadRes = await studentGet("/api/student/practice/test-timed/quiz");
+		expect(reloadRes.status).toBe(200);
+		expect(reloadRes.headers.get("X-Server-Now")).toBe(
+			new Date(t0 + 180_000).toISOString(),
+		);
+		const reloadBody = (await reloadRes.json()) as {
+			timeLimitSeconds?: number;
+			attempt: {
+				id: string;
+				startedAt?: string;
+				answers: Record<string, string>;
+			} | null;
+		};
+		expect(reloadBody.timeLimitSeconds).toBe(1200);
+		expect(reloadBody.attempt?.id).toBe(attemptId);
+		expect(reloadBody.attempt?.startedAt).toBe(t0Iso);
+		expect(reloadBody.attempt?.answers).toEqual({ "0": "TRUE" });
+
+		// T0 + 3m05s: re-clicking card in catalog returns 200 same attemptId and keeps startedAt
+		nowMs = t0 + 185_000;
+		const reopenRes = await studentMutate(
+			"/api/student/practice/test-timed/attempts",
+			"POST",
+		);
+		expect(reopenRes.status).toBe(200);
+		expect(
+			startPracticeResponseSchema.parse(await reopenRes.json()).attemptId,
+		).toBe(attemptId);
+
+		// T0 + 4m44s (284s total): answer Q1 and submit
+		nowMs = t0 + 284_000;
+		const patch1 = await studentMutate(
+			`/api/student/attempts/${attemptId}/answer`,
+			"PATCH",
+			JSON.stringify({ q: 1, value: "FALSE" }),
+		);
+		expect(patch1.status).toBe(200);
+		const submitRes = await studentMutate(
+			`/api/student/attempts/${attemptId}/submit`,
+			"POST",
+		);
+		expect(submitRes.status).toBe(200);
+
+		// Summary reports exact pre-reload + post-resume duration (284s = 4 phút 44 giây)
+		const summaryRes = await studentGet(`/api/student/attempts/${attemptId}`);
+		expect(summaryRes.status).toBe(200);
+		const summary = (await summaryRes.json()) as {
+			startedAt: string;
+			submittedAt: string;
+		};
+		expect(summary.startedAt).toBe(t0Iso);
+		expect(summary.submittedAt).toBe(new Date(t0 + 284_000).toISOString());
+		expect(
+			Date.parse(summary.submittedAt) - Date.parse(summary.startedAt),
+		).toBe(284_000);
 	});
 });

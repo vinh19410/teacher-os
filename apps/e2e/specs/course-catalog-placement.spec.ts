@@ -343,19 +343,21 @@ test.describe
 				document.documentElement.classList.remove("dark"),
 			);
 
-			// 5. Chốt kết quả → kiểm tra link công khai + đồng bộ tên khóa trên /leads.
+			// 5. Chốt kết quả → kiểm tra phiếu PDF + link kết quả công khai từ PATCH response + đồng bộ tên khóa trên /leads.
 			const patchPromise = page.waitForResponse(
 				(res) =>
 					/\/api\/leads\/[^/]+\/placement-submission$/.test(res.url()) &&
 					res.request().method() === "PATCH",
 			);
 			await saveBtn.click();
-			expect((await patchPromise).status()).toBe(200);
-
-			const resultLink = page.getByTestId("placement-result-link");
-			await expect(resultLink).toBeVisible();
-			const resultUrl = await resultLink.locator("a").getAttribute("href");
+			const patchRes = await patchPromise;
+			expect(patchRes.status()).toBe(200);
+			const graded = (await patchRes.json()) as { resultUrl?: string | null };
+			const resultUrl = graded.resultUrl ?? null;
 			expect(resultUrl).toBeTruthy();
+
+			await expect(page.getByTestId("placement-result-link")).toHaveCount(0);
+			await expect(page.getByTestId("placement-result-pdf")).toBeVisible();
 
 			await page.keyboard.press("Escape");
 			await expect(panel).toBeHidden();

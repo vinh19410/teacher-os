@@ -364,6 +364,7 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 		await expect(card).toContainText("Cambridge 18");
 		await card.click();
 		await expect(sp).toHaveURL(/\/learn\/quizzes\/practice\//);
+		await sp.getByTestId("practice-start-btn").click();
 
 		const textarea = sp.getByLabel("Bài viết của bạn");
 		await expect(textarea).toBeVisible();

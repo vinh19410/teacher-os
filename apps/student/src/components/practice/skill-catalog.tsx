@@ -6,15 +6,10 @@ import { BookOpen, Mic } from "lucide-react";
 import { Loader } from "@/components/loader";
 import { Pager } from "@/components/practice/pager";
 import { PracticeFilters } from "@/components/practice/practice-filters";
+import { PRACTICE_SKILL_LABELS } from "@/components/practice/practice-skill-labels";
 import { usePracticeCatalog } from "@/lib/repos/student";
 
-/** Nhãn kỹ năng cho header + empty state (design-v2 PRACTICE_INFO, rút gọn). */
-export const PRACTICE_SKILL_LABELS: Record<PracticeSkill, string> = {
-	reading: "Reading",
-	listening: "Listening",
-	writing: "Writing",
-	speaking: "Speaking",
-};
+export { PRACTICE_SKILL_LABELS };
 
 const SEARCH_LABELS: Record<PracticeSkill, string> = {
 	reading: "Tìm đề Reading theo tiêu đề…",

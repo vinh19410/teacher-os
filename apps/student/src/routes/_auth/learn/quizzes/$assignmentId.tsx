@@ -4,7 +4,7 @@ import {
 	QuizTakeError,
 	QuizTakeView,
 } from "@/components/quiz/quiz-take-view";
-import { isHttpError, studentQueryClient } from "@/lib/query-client";
+import { studentQueryClient } from "@/lib/query-client";
 import {
 	quizAttemptEssayMirrorKey,
 	quizAttemptMirrorKey,
@@ -15,7 +15,7 @@ import { quizDetailQueryOptions } from "@/lib/repos/quiz";
 export const Route = createFileRoute("/_auth/learn/quizzes/$assignmentId")({
 	loader: async ({ params: { assignmentId } }) => {
 		const source: QuizTakeSource = { kind: "assignment", id: assignmentId };
-		const detail = await studentQueryClient.ensureQueryData(
+		const detail = await studentQueryClient.fetchQuery(
 			quizDetailQueryOptions(source),
 		);
 		// Đã nộp (tab khác / lượt vào trước) → thẳng summary, không vào take.
@@ -57,6 +57,7 @@ function TakeAssignmentPage() {
 	const { serverAnswers, serverEssay } = Route.useLoaderData();
 	return (
 		<QuizTakeView
+			key={assignmentId}
 			source={{ kind: "assignment", id: assignmentId }}
 			serverAnswers={serverAnswers}
 			serverEssay={serverEssay}

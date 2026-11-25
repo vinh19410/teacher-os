@@ -36,8 +36,13 @@ import { AttemptCompactList } from "@teacher-os/ui/components/quiz/attempt-compa
 import { AttemptScoreCard } from "@teacher-os/ui/components/quiz/attempt-score-card";
 import { AttemptGradeCard } from "@/components/quiz/attempt-grade-card";
 import {
+	computeQuizTimerState,
 	formatAttemptDuration,
+	formatQuizClock,
 	formatVietnamSubmittedAt,
+	getServerClockSkewMs,
+	resetServerClockForTests,
+	syncServerClock,
 } from "@/lib/attempt-format";
 import { cn } from "@/lib/cn";
 import {
@@ -111,6 +116,172 @@ describe("formatVietnamSubmittedAt — giờ Việt Nam cố định", () => {
 
 	it("ISO hỏng → rỗng", () => {
 		expect(formatVietnamSubmittedAt("abc")).toBe("");
+	});
+});
+
+describe("quiz countdown timer & server clock skew helpers", () => {
+	it("formatQuizClock formats seconds as MM:SS and clamps invalid/negative inputs to 00:00", () => {
+		expect(formatQuizClock(1200)).toBe("20:00");
+		expect(formatQuizClock(600)).toBe("10:00");
+		expect(formatQuizClock(3600)).toBe("60:00");
+		expect(formatQuizClock(14400)).toBe("240:00");
+		expect(formatQuizClock(59)).toBe("00:59");
+		expect(formatQuizClock(0)).toBe("00:00");
+		expect(formatQuizClock(-10)).toBe("00:00");
+		expect(formatQuizClock(Number.NaN)).toBe("00:00");
+	});
+
+	it("syncServerClock records positive/negative skew, ignores invalid values, and resets cleanly", () => {
+		resetServerClockForTests();
+		expect(getServerClockSkewMs()).toBe(0);
+
+		const serverIso = "2026-11-24T10:00:00.000Z";
+		const serverMs = Date.parse(serverIso);
+		syncServerClock(serverIso, serverMs + 120_000);
+		expect(getServerClockSkewMs()).toBe(120_000);
+
+		// Invalid inputs preserve prior recorded skew
+		syncServerClock(null, serverMs);
+		syncServerClock(undefined, serverMs);
+		syncServerClock("invalid", serverMs);
+		expect(getServerClockSkewMs()).toBe(120_000);
+
+		// Negative skew (client behind server) overwrites previous skew
+		syncServerClock(serverIso, serverMs - 90_000);
+		expect(getServerClockSkewMs()).toBe(-90_000);
+
+		resetServerClockForTests();
+		expect(getServerClockSkewMs()).toBe(0);
+	});
+
+	it("computeQuizTimerState handles missing limits, thresholds, clock skew, negative jitter, and expiry", () => {
+		const t0Iso = "2026-11-24T10:00:00.000Z";
+		const t0 = Date.parse(t0Iso);
+
+		// Untimed or invalid inputs → null
+		expect(
+			computeQuizTimerState({
+				timeLimitSeconds: null,
+				startedAt: t0Iso,
+				nowMs: t0,
+				clockSkewMs: 0,
+			}),
+		).toBeNull();
+		expect(
+			computeQuizTimerState({
+				timeLimitSeconds: 0,
+				startedAt: t0Iso,
+				nowMs: t0,
+				clockSkewMs: 0,
+			}),
+		).toBeNull();
+		expect(
+			computeQuizTimerState({
+				timeLimitSeconds: 1200,
+				startedAt: "invalid",
+				nowMs: t0,
+				clockSkewMs: 0,
+			}),
+		).toBeNull();
+
+		// 20m limit: warn threshold = min(300, floor(1200 * 0.2)) = 240s
+		const running20 = computeQuizTimerState({
+			timeLimitSeconds: 1200,
+			startedAt: t0Iso,
+			nowMs: t0 + 959_000,
+			clockSkewMs: 0,
+		});
+		expect(running20).toEqual({
+			remainingSeconds: 241,
+			formatted: "04:01",
+			phase: "running",
+		});
+		const warn20 = computeQuizTimerState({
+			timeLimitSeconds: 1200,
+			startedAt: t0Iso,
+			nowMs: t0 + 960_000,
+			clockSkewMs: 0,
+		});
+		expect(warn20).toEqual({
+			remainingSeconds: 240,
+			formatted: "04:00",
+			phase: "warn",
+		});
+
+		// 10m limit: warn threshold = 120s; 60m limit: warn threshold capped at 300s
+		expect(
+			computeQuizTimerState({
+				timeLimitSeconds: 600,
+				startedAt: t0Iso,
+				nowMs: t0 + 480_000,
+				clockSkewMs: 0,
+			})?.phase,
+		).toBe("warn");
+		expect(
+			computeQuizTimerState({
+				timeLimitSeconds: 3600,
+				startedAt: t0Iso,
+				nowMs: t0 + 3299_000,
+				clockSkewMs: 0,
+			})?.phase,
+		).toBe("running");
+		expect(
+			computeQuizTimerState({
+				timeLimitSeconds: 3600,
+				startedAt: t0Iso,
+				nowMs: t0 + 3300_000,
+				clockSkewMs: 0,
+			})?.phase,
+		).toBe("warn");
+
+		// Clock skew (+5m and -5m) produces identical remaining time
+		const actualElapsed = 180_000;
+		const skewAhead = computeQuizTimerState({
+			timeLimitSeconds: 1200,
+			startedAt: t0Iso,
+			nowMs: t0 + actualElapsed + 300_000,
+			clockSkewMs: 300_000,
+		});
+		const skewBehind = computeQuizTimerState({
+			timeLimitSeconds: 1200,
+			startedAt: t0Iso,
+			nowMs: t0 + actualElapsed - 300_000,
+			clockSkewMs: -300_000,
+		});
+		expect(skewAhead).toEqual({
+			remainingSeconds: 1020,
+			formatted: "17:00",
+			phase: "running",
+		});
+		expect(skewBehind).toEqual(skewAhead);
+
+		// Sub-second negative jitter clamps elapsed to 0 (never exceeds limit)
+		expect(
+			computeQuizTimerState({
+				timeLimitSeconds: 1200,
+				startedAt: t0Iso,
+				nowMs: t0 - 500,
+				clockSkewMs: 0,
+			}),
+		).toEqual({
+			remainingSeconds: 1200,
+			formatted: "20:00",
+			phase: "running",
+		});
+
+		// Expired
+		expect(
+			computeQuizTimerState({
+				timeLimitSeconds: 600,
+				startedAt: t0Iso,
+				nowMs: t0 + 605_000,
+				clockSkewMs: 0,
+			}),
+		).toEqual({
+			remainingSeconds: 0,
+			formatted: "00:00",
+			phase: "expired",
+		});
 	});
 });
 
