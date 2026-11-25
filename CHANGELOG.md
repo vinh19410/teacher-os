@@ -13,6 +13,9 @@ Quy ước khi cập nhật:
 ## 2026-11-25
 
 ### Added
+- **Hỗ trợ giáo viên tải lên nhiều file tài liệu cùng lúc trên toàn bộ 4 bề mặt tài liệu (`apps/web`, `apps/e2e`):**
+  - Bổ sung lõi hàng đợi tải lên thuần TypeScript (`material-upload-queue.ts`: kiểm định trước bằng `prepareMaterialUpload`, bỏ trùng theo dấu vân tay `name + size + lastModified`, worker pool tối đa 3 file song song qua `fetch`, dừng hàng đợi + gọi `reauth()` đúng một lần khi `401`, tính `shouldInvalidate` cho `201/404/409`) cùng hook `useMaterialUploadQueue` và component `MaterialUploadQueueList` dùng chung (`DESIGN.md` semantic tokens, một vùng `aria-live="polite"`, một `role="alert"` duy nhất, thử lại riêng file lỗi mạng/server).
+  - Nâng cấp `UploadDialog` (`/materials`) với vùng kéo-thả + chọn thêm nhiều đợt, gỡ từng file trước khi tải, bỏ qua file không hợp lệ để vẫn tải các file hợp lệ, giữ modal mở để xem/thử lại file lỗi và khóa đóng modal khi đang tải; nâng cấp 3 bề mặt tải trực tiếp (`ClassSharedMaterialsTab`, `SessionMaterialsModal`, `MaterialPicker`) bật `<input type="file" multiple>` kèm bảng tiến độ gọn inline (`Progress` tổng `X/N`, nút thử lại file lỗi, nút `Ẩn`), đồng thời `MaterialPicker` chặn trước khi số file hợp lệ vượt số slot còn lại của `MATERIAL_LINKS_MAX = 20` và `SessionMaterialsModal` khóa đóng modal khi đang tải (#938).
 - **Tab "Tài liệu chung" cho lớp ở cả giáo viên và học viên (`packages/db`, `packages/api`, `apps/server`, `apps/web`, `apps/student`):** giáo viên gắn/gỡ tài liệu dùng chung theo lớp, học viên đang `active` trong lớp xem và mở tài liệu qua endpoint riêng không lộ `objectKey`; `href` luôn đi qua `isSafeMaterialUrl` (#914, #918).
 - **Tự cuộn tab đang chọn vào vùng nhìn thấy trong `Tabs` cuộn ngang (`packages/ui`) (#920).**
 - **Màn hình giới thiệu inline trước khi bắt đầu làm bài tự luyện (`packages/api`, `apps/server`, `apps/student`, `apps/e2e`):**

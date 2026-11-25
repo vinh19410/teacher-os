@@ -477,7 +477,7 @@ describe("SessionMaterialsModal", () => {
 		}
 
 		const queueList = within(dialog).getByRole("list", {
-			name: "Danh sách file tải lên",
+			name: "Hàng đợi tải lên",
 		});
 		expect(within(queueList).getByText("handout-1.pdf")).toBeTruthy();
 		expect(within(queueList).getByText("handout-2.pdf")).toBeTruthy();
@@ -495,7 +495,7 @@ describe("SessionMaterialsModal", () => {
 		expect(dismissBtn.textContent).toBe("Ẩn");
 		fireEvent.click(dismissBtn);
 		expect(
-			within(dialog).queryByRole("list", { name: "Danh sách file tải lên" }),
+			within(dialog).queryByRole("list", { name: "Hàng đợi tải lên" }),
 		).toBeNull();
 	});
 
@@ -548,7 +548,7 @@ describe("SessionMaterialsModal", () => {
 		]);
 
 		const queueList = within(dialog).getByRole("list", {
-			name: "Danh sách file tải lên",
+			name: "Hàng đợi tải lên",
 		});
 		expect(within(queueList).getByText("bai-doc.pdf")).toBeTruthy();
 		expect(within(queueList).getByText("trang-web.html")).toBeTruthy();
@@ -714,7 +714,7 @@ describe("SessionMaterialsModal", () => {
 			),
 		);
 		expect(
-			within(dialog).queryByRole("list", { name: "Danh sách file tải lên" }),
+			within(dialog).queryByRole("list", { name: "Hàng đợi tải lên" }),
 		).toBeNull();
 		expect(footerCloseBtn?.disabled).toBe(false);
 

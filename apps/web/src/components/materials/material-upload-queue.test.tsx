@@ -157,9 +157,7 @@ describe("useMaterialUploadQueue + MaterialUploadQueueList", () => {
 		);
 
 		// Khi rỗng không render danh sách.
-		expect(
-			screen.queryByRole("list", { name: "Danh sách file tải lên" }),
-		).toBeNull();
+		expect(screen.queryByRole("list", { name: "Hàng đợi tải lên" })).toBeNull();
 
 		const f1 = makeFile("lesson-1.pdf", { size: 1024 });
 		const f2 = makeFile("lesson-2.pdf", { size: 2048 });
@@ -322,8 +320,10 @@ describe("useMaterialUploadQueue + MaterialUploadQueueList", () => {
 		const alertsSingle = screen.getAllByRole("alert");
 		expect(alertsSingle).toHaveLength(1);
 		expect(alertsSingle[0]?.textContent).toBe(oneInvalid[0]?.errorMessage);
-		const list = screen.getByRole("list", { name: "Danh sách file tải lên" });
-		expect(within(list).queryByRole("alert")).toBeNull();
+		// Không lặp thông báo lỗi 2 lần khi chỉ có 1 file không hợp lệ.
+		expect(screen.getAllByText(oneInvalid[0]?.errorMessage ?? "")).toHaveLength(
+			1,
+		);
 
 		const twoInvalidOneValid = [
 			createUploadQueueItem(makeFile("ok.pdf", { size: 128 }), "ok-1"),
@@ -349,6 +349,8 @@ describe("useMaterialUploadQueue + MaterialUploadQueueList", () => {
 		expect(screen.getByRole("alert").textContent).toBe(
 			"2 file không hợp lệ sẽ được bỏ qua khi tải lên. Xem chi tiết từng file bên dưới.",
 		);
+		const list = screen.getByRole("list", { name: "Hàng đợi tải lên" });
+		expect(within(list).queryByRole("alert")).toBeNull();
 
 		const twoErrorsOneInvalid: MaterialUploadQueueItem[] = [
 			{

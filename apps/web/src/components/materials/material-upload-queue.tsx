@@ -396,9 +396,22 @@ export function MaterialUploadQueueList({
 	if (items.length === 0) return null;
 
 	const statusText = formatQueueStatusText(summary);
-	const alertMessage = suppressAlert
-		? null
-		: formatQueueAlertMessage(items, summary);
+	const problemItems = items.filter(
+		(item) => item.status === "invalid" || item.status === "error",
+	);
+	// Khi có đúng 1 file lỗi có thông điệp cụ thể, gắn role="alert" trực tiếp lên
+	// dòng lỗi của file đó để tránh lặp câu lỗi đỏ 2 lần trong cùng hộp thoại.
+	const singleAlertItemId =
+		!suppressAlert &&
+		!summary.isUploading &&
+		problemItems.length === 1 &&
+		problemItems[0]?.errorMessage
+			? problemItems[0].id
+			: null;
+	const alertMessage =
+		suppressAlert || singleAlertItemId !== null
+			? null
+			: formatQueueAlertMessage(items, summary);
 	const shouldShowProgress =
 		showProgress &&
 		summary.validTotal > 0 &&
@@ -431,7 +444,7 @@ export function MaterialUploadQueueList({
 			)}
 
 			<ul
-				aria-label="Danh sách file tải lên"
+				aria-label="Hàng đợi tải lên"
 				className={cn(
 					"grid min-w-0 gap-1.5 overflow-y-auto",
 					compact ? "max-h-44" : "max-h-56",
@@ -476,7 +489,10 @@ export function MaterialUploadQueueList({
 									</span>
 								</div>
 								{item.errorMessage && (
-									<p className="mt-1 break-words text-destructive text-xs">
+									<p
+										role={singleAlertItemId === item.id ? "alert" : undefined}
+										className="mt-1 break-words text-destructive text-xs"
+									>
 										{item.errorMessage}
 									</p>
 								)}

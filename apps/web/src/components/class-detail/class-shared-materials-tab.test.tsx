@@ -775,7 +775,7 @@ describe("ClassSharedMaterialsTab", () => {
 		}
 
 		const queueList = screen.getByRole("list", {
-			name: "Danh sách file tải lên",
+			name: "Hàng đợi tải lên",
 		});
 		expect(within(queueList).getByText("de-cuong-1.pdf")).toBeTruthy();
 		expect(within(queueList).getByText("de-cuong-2.pdf")).toBeTruthy();
@@ -792,9 +792,7 @@ describe("ClassSharedMaterialsTab", () => {
 		});
 		expect(dismissBtn.textContent).toBe("Ẩn");
 		fireEvent.click(dismissBtn);
-		expect(
-			screen.queryByRole("list", { name: "Danh sách file tải lên" }),
-		).toBeNull();
+		expect(screen.queryByRole("list", { name: "Hàng đợi tải lên" })).toBeNull();
 	});
 
 	it("uploads only valid files in a mixed batch and reports unsupported files inline", async () => {
@@ -852,7 +850,7 @@ describe("ClassSharedMaterialsTab", () => {
 		});
 
 		const queueList = screen.getByRole("list", {
-			name: "Danh sách file tải lên",
+			name: "Hàng đợi tải lên",
 		});
 		expect(within(queueList).getByText("bai-doc.pdf")).toBeTruthy();
 		expect(within(queueList).getByText("khong-ho-tro.html")).toBeTruthy();
@@ -997,7 +995,7 @@ describe("ClassSharedMaterialsTab", () => {
 		expect(toastMock.success).not.toHaveBeenCalled();
 
 		const queueList = screen.getByRole("list", {
-			name: "Danh sách file tải lên",
+			name: "Hàng đợi tải lên",
 		});
 		expect(within(queueList).getAllByText("Chờ tải").length).toBeGreaterThan(0);
 	});

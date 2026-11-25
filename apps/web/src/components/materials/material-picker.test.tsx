@@ -401,7 +401,7 @@ describe("MaterialPicker", () => {
 		expect(within(selectedList).getByText("Bài đọc 2")).toBeTruthy();
 
 		const queueList = screen.getByRole("list", {
-			name: "Danh sách file tải lên",
+			name: "Hàng đợi tải lên",
 		});
 		expect(within(queueList).getByText("bai-doc-1.pdf")).toBeTruthy();
 		expect(within(queueList).getByText("bai-doc-2.pdf")).toBeTruthy();
@@ -412,9 +412,7 @@ describe("MaterialPicker", () => {
 		});
 		expect(dismissBtn.textContent).toBe("Ẩn");
 		fireEvent.click(dismissBtn);
-		expect(
-			screen.queryByRole("list", { name: "Danh sách file tải lên" }),
-		).toBeNull();
+		expect(screen.queryByRole("list", { name: "Hàng đợi tải lên" })).toBeNull();
 	});
 
 	it("blocks upload upfront without sending requests when valid files exceed remaining cap slots", async () => {
@@ -449,9 +447,7 @@ describe("MaterialPicker", () => {
 		expect(alert.textContent).toContain("19/20");
 		expect(uploads).toHaveLength(0);
 		expect(onPick).not.toHaveBeenCalled();
-		expect(
-			screen.queryByRole("list", { name: "Danh sách file tải lên" }),
-		).toBeNull();
+		expect(screen.queryByRole("list", { name: "Hàng đợi tải lên" })).toBeNull();
 	});
 
 	it("uploads only valid files in a mixed batch when valid count fits remaining cap slots", async () => {
@@ -504,7 +500,7 @@ describe("MaterialPicker", () => {
 		);
 
 		const queueList = screen.getByRole("list", {
-			name: "Danh sách file tải lên",
+			name: "Hàng đợi tải lên",
 		});
 		expect(within(queueList).getByText("fit.pdf")).toBeTruthy();
 		expect(within(queueList).getByText("khong-ho-tro.html")).toBeTruthy();
