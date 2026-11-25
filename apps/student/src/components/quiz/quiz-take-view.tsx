@@ -23,19 +23,25 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import Loader from "@/components/loader";
 import {
+	getPracticeExitTarget,
+	PracticeIntroScreen,
+} from "@/components/quiz/practice-intro-screen";
+import {
 	QuizDialog,
 	QuizResumeDialog,
 	QuizStartDialog,
 	QuizSubmitGuardDialog,
 } from "@/components/quiz/quiz-lifecycle-dialogs";
-import { QuizRuntimeHeader } from "@/components/quiz/quiz-runtime-header";
+import {
+	type QuizRuntimeExitTarget,
+	QuizRuntimeHeader,
+} from "@/components/quiz/quiz-runtime-header";
 import { QuizTimerBadge } from "@/components/quiz/quiz-timer-badge";
 import {
 	SpeakingGuideCard,
 	SpeakingSubmissionPanel,
 } from "@/components/quiz/speaking-submission-panel";
 import { formatQuizDueText } from "@/lib/assignment-status";
-import { formatQuizClock } from "@/lib/attempt-format";
 import { cn } from "@/lib/cn";
 import {
 	isHttpError,
@@ -157,14 +163,83 @@ export function QuizTakeView({
 	});
 
 	const startMutation = useStartQuizAttempt(source);
+	const sourceKind = source.kind;
+	const sourceId = quizTakeSourceId(source);
+	const sourceKey = `${sourceKind}:${sourceId}`;
+	const isWriting = detail?.skill === "writing";
+	const isSpeaking = detail?.skill === "speaking";
 	const hybridWriting = detail?.writing ?? null;
 	const hasHybridWriting = hybridWriting !== null;
+
+	// Chốt one-shot baseline khi chuyển từ màn giới thiệu/start gate (attempt === null)
+	// sang in_progress (#883): hydrate đáp án nếu tab khác đã start+làm trước đó,
+	// và không đọc lại live attempt.answers ở các refetch nền sau này (tránh lật
+	// needsResumeDialog và dispose store đang chạy).
+	const gateLifecycleRef = useRef<{
+		sourceKey: string;
+		startedFromNull: boolean | null;
+		hydratedAttemptId: string | null;
+		hydratedAnswers: Record<string, string>;
+		hydratedEssay: string;
+	}>({
+		sourceKey,
+		startedFromNull: null,
+		hydratedAttemptId: null,
+		hydratedAnswers: {},
+		hydratedEssay: "",
+	});
+	if (gateLifecycleRef.current.sourceKey !== sourceKey) {
+		gateLifecycleRef.current = {
+			sourceKey,
+			startedFromNull: null,
+			hydratedAttemptId: null,
+			hydratedAnswers: {},
+			hydratedEssay: "",
+		};
+	}
+	if (detail !== null && detail.attempt === null) {
+		gateLifecycleRef.current.startedFromNull = true;
+		gateLifecycleRef.current.hydratedAttemptId = null;
+		gateLifecycleRef.current.hydratedAnswers = {};
+		gateLifecycleRef.current.hydratedEssay = "";
+	} else if (
+		gateLifecycleRef.current.startedFromNull === null &&
+		detail !== null
+	) {
+		gateLifecycleRef.current.startedFromNull = false;
+	}
+	if (
+		gateLifecycleRef.current.startedFromNull === true &&
+		attempt !== null &&
+		gateLifecycleRef.current.hydratedAttemptId !== attempt.id
+	) {
+		gateLifecycleRef.current.hydratedAttemptId = attempt.id;
+		gateLifecycleRef.current.hydratedAnswers = isWriting
+			? attempt.essay
+				? { "0": attempt.essay }
+				: {}
+			: attempt.answers;
+		gateLifecycleRef.current.hydratedEssay = hasHybridWriting
+			? (attempt.essay ?? "")
+			: "";
+	}
+	const startedFromGate = gateLifecycleRef.current.startedFromNull === true;
+	const effectiveServerAnswers =
+		startedFromGate && gateLifecycleRef.current.hydratedAttemptId === attemptId
+			? gateLifecycleRef.current.hydratedAnswers
+			: serverAnswers;
+	const effectiveServerEssay =
+		startedFromGate && gateLifecycleRef.current.hydratedAttemptId === attemptId
+			? gateLifecycleRef.current.hydratedEssay
+			: serverEssay;
+
 	const serverHasAnswers =
-		Object.keys(serverAnswers).length > 0 ||
-		(hasHybridWriting && serverEssay.trim().length > 0);
+		Object.keys(effectiveServerAnswers).length > 0 ||
+		(hasHybridWriting && effectiveServerEssay.trim().length > 0);
 	// Dialog resume chỉ khi vào lại attempt đang làm ĐÃ có answers trên server
-	// (Selfomy parity); start mới thì vào thẳng paper.
+	// (Selfomy parity); phiên vừa bấm Bắt đầu từ gate/intro đi thẳng vào bài làm.
 	const needsResumeDialog =
+		!startedFromGate &&
 		attempt !== null &&
 		attempt.status === "in_progress" &&
 		serverHasAnswers &&
@@ -174,8 +249,6 @@ export function QuizTakeView({
 	// store giữ sai sender/clamp (red-team K).
 	const storeActive =
 		attempt !== null && attempt.status === "in_progress" && !needsResumeDialog;
-	const isWriting = detail?.skill === "writing";
-	const isSpeaking = detail?.skill === "speaking";
 	// File bài nói đọc thẳng từ cache take payload — panel ghi cache khi
 	// upload/xoá, không giữ bản sao state dễ lệch server (#305).
 	const media = attempt?.media ?? null;
@@ -190,7 +263,7 @@ export function QuizTakeView({
 
 	const store = useQuizAttemptStore({
 		attemptId: storeActive ? attemptId : null,
-		serverAnswers,
+		serverAnswers: effectiveServerAnswers,
 		send: isWriting
 			? (_q, value, opts) => patchQuizEssay(attemptId ?? "", value, opts)
 			: (q, value, opts) => patchQuizAnswer(attemptId ?? "", q, value, opts),
@@ -217,9 +290,9 @@ export function QuizTakeView({
 
 	const initialEssayAnswers = useMemo((): Record<string, string> => {
 		const out: Record<string, string> = {};
-		if (serverEssay) out["0"] = serverEssay;
+		if (effectiveServerEssay) out["0"] = effectiveServerEssay;
 		return out;
-	}, [serverEssay]);
+	}, [effectiveServerEssay]);
 	const essayStore = useQuizAttemptStore({
 		attemptId: storeActive && hasHybridWriting ? attemptId : null,
 		serverAnswers: initialEssayAnswers,
@@ -263,16 +336,16 @@ export function QuizTakeView({
 			detail ? formatQuizDueText({ due: detail.due, dueAt: detail.dueAt }) : "",
 		[detail],
 	);
-	// Trước khi store tồn tại (resume chưa confirm), UI đọc server answers —
-	// string index vẫn tra cứu được theo key số ở runtime.
-	const answers = store ? snapshot.answers : serverAnswers;
+	// Trước khi store tồn tại (frame đầu sau start hoặc resume chưa confirm),
+	// UI đọc effectiveServerAnswers — string index vẫn tra cứu được theo key số ở runtime.
+	const answers = store ? snapshot.answers : effectiveServerAnswers;
 	const unansweredCount = allQuestions.filter(
 		({ q }) => !isAnsweredValue(answers[q]),
 	).length;
 	// Đếm từ Writing (#304) hoặc phần Writing của bài gộp (#574).
 	const hybridEssayText = essayStore
 		? (essaySnapshot.answers[0] ?? "")
-		: serverEssay;
+		: effectiveServerEssay;
 	const essayText = isWriting ? (answers[0] ?? "") : hybridEssayText;
 	const wordCount = countWords(essayText);
 	const minWords = isWriting
@@ -393,10 +466,7 @@ export function QuizTakeView({
 	});
 
 	// Sau khi rời take screen (store dispose flush PATCH cuối), đánh dấu query
-	// detail stale để lần vào lại đọc dữ liệu mới từ server. Tách primitive
-	// sourceKind/sourceId để parent truyền object literal không làm invalidate thừa.
-	const sourceKind = source.kind;
-	const sourceId = quizTakeSourceId(source);
+	// detail stale để lần vào lại đọc dữ liệu mới từ server.
 	useEffect(() => {
 		const cleanupSource: QuizTakeSource =
 			sourceKind === "assignment"
@@ -446,12 +516,87 @@ export function QuizTakeView({
 		}
 	}, [attempt?.status, attemptId]);
 
-	if (quizQuery.isPending || detail === null) {
+	if (quizQuery.isPending) {
 		return <Loader />;
 	}
 
-	// Chưa start: gate card + dialog xác nhận.
+	if (attempt === null && quizQuery.isError) {
+		return <QuizTakeError error={quizQuery.error} />;
+	}
+
+	if (detail === null) {
+		return <Loader />;
+	}
+
+	const exitTarget: QuizRuntimeExitTarget =
+		source.kind === "practice"
+			? getPracticeExitTarget(detail.skill)
+			: { to: "/" };
+
+	const navigateToExit = () => {
+		if (exitTarget.to === "/practice/$skill") {
+			void navigate({ to: "/practice/$skill", params: exitTarget.params });
+			return;
+		}
+		void navigate({ to: exitTarget.to });
+	};
+
+	const handleStartAttempt = () =>
+		startMutation.mutate(undefined, {
+			onError: (error) => {
+				if (isHttpError(error) && error.status === 409) {
+					void queryClient.invalidateQueries({
+						queryKey: quizDetailQueryKey(source),
+					});
+					return;
+				}
+				if (isStudentOrgMismatchError(error)) {
+					toast.error("Tổ chức học tập vừa thay đổi — vui lòng tải lại trang.");
+					return;
+				}
+				if (isHttpError(error) && error.status === 404) {
+					void queryClient.invalidateQueries({
+						queryKey: quizDetailQueryKey(source),
+					});
+					toast.error(
+						source.kind === "practice"
+							? "Đề luyện tập này hiện không còn khả dụng."
+							: "Bài tập này hiện không còn khả dụng.",
+					);
+					return;
+				}
+				toast.error("Không bắt đầu được bài làm", {
+					description: "Vui lòng kiểm tra kết nối rồi thử lại.",
+				});
+			},
+		});
+
+	// Chưa start: bài tự luyện hiện màn hình giới thiệu inline (#883);
+	// bài giao lớp giữ nguyên gate card + QuizStartDialog modal.
 	if (attempt === null) {
+		if (source.kind === "practice") {
+			return (
+				<div className="flex min-h-svh flex-col bg-muted/30">
+					<QuizRuntimeHeader
+						title={detail.title}
+						dueText={dueText}
+						saveState={null}
+						onSubmitClick={null}
+						exitTarget={exitTarget}
+					/>
+					<PracticeIntroScreen
+						detail={detail}
+						questionCount={allQuestions.length}
+						hasHybridWriting={hasHybridWriting}
+						minWords={minWords}
+						speakingPartLabel={speakingPartLabel}
+						starting={startMutation.isPending}
+						onStart={handleStartAttempt}
+						onBack={navigateToExit}
+					/>
+				</div>
+			);
+		}
 		return (
 			<div className="flex min-h-svh flex-col bg-muted/30">
 				<QuizRuntimeHeader
@@ -459,6 +604,7 @@ export function QuizTakeView({
 					dueText={dueText}
 					saveState={null}
 					onSubmitClick={null}
+					exitTarget={exitTarget}
 				/>
 				<main className="mx-auto flex w-full max-w-[720px] flex-1 flex-col justify-center px-4 py-8">
 					<div className="rounded-lg rounded-xl border bg-card p-6 shadow-sm">
@@ -486,13 +632,6 @@ export function QuizTakeView({
 									{hasHybridWriting ? " + Bài viết" : ""}
 								</>
 							)}
-							{detail.timeLimitSeconds != null && detail.timeLimitSeconds > 0
-								? ` · ${
-										detail.timeLimitSeconds < 60
-											? formatQuizClock(detail.timeLimitSeconds)
-											: `${Math.round(detail.timeLimitSeconds / 60)} phút`
-									}`
-								: null}
 						</p>
 						<p className="mt-1 text-muted-foreground text-sm">
 							Bài làm được lưu tự động trong khi bạn làm.
@@ -502,24 +641,8 @@ export function QuizTakeView({
 				<QuizStartDialog
 					open
 					starting={startMutation.isPending}
-					onStart={() =>
-						startMutation.mutate(undefined, {
-							onError: (error) => {
-								if (isHttpError(error) && error.status === 409) {
-									void queryClient.invalidateQueries({
-										queryKey: quizDetailQueryKey(source),
-									});
-									return;
-								}
-								toast.error("Không bắt đầu được bài làm", {
-									description: "Vui lòng kiểm tra kết nối rồi thử lại.",
-								});
-							},
-						})
-					}
-					onCancel={() => {
-						void navigate({ to: "/" });
-					}}
+					onStart={handleStartAttempt}
+					onCancel={navigateToExit}
 				/>
 			</div>
 		);
@@ -574,6 +697,7 @@ export function QuizTakeView({
 				saveState={store && !isSpeaking ? combinedSaveState : null}
 				onSubmitClick={handleSubmitClick}
 				submitDisabled={submitDisabled}
+				exitTarget={exitTarget}
 			>
 				{timerKey && detail.timeLimitSeconds && attempt.startedAt ? (
 					<QuizTimerBadge
@@ -689,9 +813,7 @@ export function QuizTakeView({
 				<QuizResumeDialog
 					open
 					onResume={() => setResumeConfirmed(true)}
-					onCancel={() => {
-						void navigate({ to: "/" });
-					}}
+					onCancel={navigateToExit}
 				/>
 			)}
 			<QuizDialog

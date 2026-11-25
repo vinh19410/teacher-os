@@ -3152,8 +3152,16 @@ export const studentQuizDetailSchema = z
 		due: z.string(),
 		/** ISO datetime hạn nộp (UTC, tính từ giờ VN lúc giao); null/undefined trên dữ liệu cũ hoặc bài tự luyện (#572, #587). */
 		dueAt: z.string().nullable().optional(),
-		/** Thời lượng làm bài tính bằng giây cho đề tự luyện có giới hạn thời gian; null/undefined khi không giới hạn hoặc ở bài tập lớp. */
+		/** Thời lượng làm bài (giây) của đề tự luyện; null = không giới hạn, undefined = không gửi (assignment/bundle cũ) (#880, #883). */
 		timeLimitSeconds: z.number().int().positive().nullable().optional(),
+		/** Số phần (slot) ghép trong đề tự luyện (#883). */
+		partsCount: z.number().int().min(1).optional(),
+		/** Bộ sưu tập nguồn của đề tự luyện (#883). */
+		collection: z.string().nullable().optional(),
+		/** Nhóm đề trong bộ sưu tập (#883). */
+		testGroup: z.string().nullable().optional(),
+		/** Mô tả đề tự luyện (rich-text HTML từ thư viện/giáo viên) (#883). */
+		description: z.string().nullable().optional(),
 		skill: z.string(),
 		part: z.string(),
 		type: z.string(),

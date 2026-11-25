@@ -3,19 +3,13 @@ import type {
 	PracticeSkill,
 } from "@teacher-os/api/contracts";
 import { BookOpen, Mic } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
 import { Loader } from "@/components/loader";
 import { Pager } from "@/components/practice/pager";
 import { PracticeFilters } from "@/components/practice/practice-filters";
+import { PRACTICE_SKILL_LABELS } from "@/components/practice/practice-skill-labels";
 import { usePracticeCatalog } from "@/lib/repos/student";
 
-/** Nhãn kỹ năng cho header + empty state (design-v2 PRACTICE_INFO, rút gọn). */
-export const PRACTICE_SKILL_LABELS: Record<PracticeSkill, string> = {
-	reading: "Reading",
-	listening: "Listening",
-	writing: "Writing",
-	speaking: "Speaking",
-};
+export { PRACTICE_SKILL_LABELS };
 
 const SEARCH_LABELS: Record<PracticeSkill, string> = {
 	reading: "Tìm đề Reading theo tiêu đề…",
@@ -37,11 +31,9 @@ function scorePercent(score: string): number {
 
 function TestCard({
 	item,
-	disabled,
 	onOpen,
 }: {
 	item: PracticeCatalogItem;
-	disabled?: boolean;
 	onOpen: (item: PracticeCatalogItem) => void;
 }) {
 	const isSpeaking = item.skill === "speaking";
@@ -54,9 +46,8 @@ function TestCard({
 		<button
 			type="button"
 			data-testid="practice-test-card"
-			disabled={disabled}
 			onClick={() => onOpen(item)}
-			className="group flex flex-col overflow-hidden rounded-xl border bg-card text-left text-card-foreground shadow-sm outline-none transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-60"
+			className="group flex flex-col overflow-hidden rounded-xl border bg-card text-left text-card-foreground shadow-sm outline-none transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-[3px] focus-visible:ring-ring/50"
 		>
 			<div className="relative grid aspect-[16/9] place-items-center overflow-hidden bg-gradient-to-br from-muted to-muted-foreground/15">
 				<div className="absolute inset-0 opacity-40 [background-image:radial-gradient(circle_at_center,var(--color-foreground)_1px,transparent_1px)] [background-size:14px_14px] [mask-image:radial-gradient(circle,black,transparent_70%)]" />
@@ -113,62 +104,6 @@ function TestCard({
 	);
 }
 
-export function usePracticeOpenLock({
-	skill,
-	startAttempt,
-	navigateToTest,
-	onError,
-}: {
-	skill: PracticeSkill;
-	startAttempt: (
-		testId: string,
-		callbacks: { onSuccess: () => void; onError: (error: unknown) => void },
-	) => void;
-	navigateToTest: (testId: string) => unknown;
-	onError: (error: unknown) => void;
-}) {
-	const openingRef = useRef(false);
-	const epochRef = useRef(0);
-	const [openingTestId, setOpeningTestId] = useState<string | null>(null);
-
-	// Đổi tab skill không unmount PracticeSkillPage — tăng epoch để hủy điều
-	// hướng của request cũ và nhả khoá cho tab mới.
-	useEffect(() => {
-		void skill;
-		epochRef.current += 1;
-		openingRef.current = false;
-		setOpeningTestId(null);
-	}, [skill]);
-
-	const handleOpen = (item: PracticeCatalogItem) => {
-		if (openingRef.current) return;
-		const epoch = epochRef.current;
-		openingRef.current = true;
-		setOpeningTestId(item.testId);
-		startAttempt(item.testId, {
-			onSuccess: () => {
-				if (epochRef.current !== epoch) return;
-				void Promise.resolve(navigateToTest(item.testId))
-					.catch(() => undefined)
-					.finally(() => {
-						if (epochRef.current === epoch) {
-							openingRef.current = false;
-							setOpeningTestId(null);
-						}
-					});
-			},
-			onError: (error) => {
-				if (epochRef.current !== epoch) return;
-				openingRef.current = false;
-				setOpeningTestId(null);
-				onError(error);
-			},
-		});
-	};
-
-	return { openingTestId, handleOpen };
-}
-
 /**
  * Catalog đề luyện tập một kỹ năng (Reading/Listening/Writing/Speaking) —
  * bố cục design-v2 `SkillCatalog`/`SpeakingCatalog`: hàng filter (bộ đề +
@@ -180,7 +115,6 @@ export function SkillCatalog({
 	collection,
 	q,
 	page,
-	openingTestId = null,
 	onFilterChange,
 	onOpen,
 }: {
@@ -188,7 +122,6 @@ export function SkillCatalog({
 	collection: string;
 	q: string;
 	page: number;
-	openingTestId?: string | null;
 	onFilterChange: (next: {
 		collection: string;
 		q: string;
@@ -243,12 +176,7 @@ export function SkillCatalog({
 					) : (
 						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 							{catalog.items.map((item) => (
-								<TestCard
-									key={item.testId}
-									item={item}
-									disabled={Boolean(openingTestId)}
-									onOpen={onOpen}
-								/>
+								<TestCard key={item.testId} item={item} onOpen={onOpen} />
 							))}
 						</div>
 					)}

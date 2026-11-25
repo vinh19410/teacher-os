@@ -11,12 +11,22 @@ import {
 } from "@/components/quiz/quiz-lifecycle-dialogs";
 import { QuizRuntimeHeader } from "@/components/quiz/quiz-runtime-header";
 
-// QuizRuntimeHeader dùng TanStack Link (exit về overview) — stub thành <a>
-// để renderToStaticMarkup chạy không cần router context.
+// QuizRuntimeHeader dùng TanStack Link (exit về overview hoặc practice) —
+// stub thành <a> có nội suy $param để renderToStaticMarkup chạy không cần router context.
 vi.mock("@tanstack/react-router", () => ({
-	Link: (props: { to: string; children: React.ReactNode }) => (
-		<a href={props.to}>{props.children}</a>
-	),
+	Link: (props: {
+		to: string;
+		params?: Record<string, string>;
+		children: React.ReactNode;
+	}) => {
+		const href = props.params
+			? Object.entries(props.params).reduce(
+					(acc, [key, value]) => acc.replace(`$${key}`, value),
+					props.to,
+				)
+			: props.to;
+		return <a href={href}>{props.children}</a>;
+	},
 }));
 
 const fiveQuestions: StudentQuizQuestion[] = Array.from(
@@ -252,6 +262,33 @@ describe("QuizRuntimeHeader — save-state element (RT#7)", () => {
 		expect(html).toContain("shrink-0");
 		expect(html).toContain("Thoát");
 		expect(html).toContain("Nộp bài");
+	});
+
+	it("hỗ trợ exitTarget cho đề luyện tập (/practice/$skill và /practice) trong khi giữ mặc định href='/' (#883)", () => {
+		const defaultHtml = renderToStaticMarkup(
+			<QuizRuntimeHeader title="A" saveState={null} onSubmitClick={null} />,
+		);
+		expect(defaultHtml).toContain('href="/"');
+
+		const practiceSkillHtml = renderToStaticMarkup(
+			<QuizRuntimeHeader
+				title="Reading"
+				saveState={null}
+				onSubmitClick={null}
+				exitTarget={{ to: "/practice/$skill", params: { skill: "reading" } }}
+			/>,
+		);
+		expect(practiceSkillHtml).toContain('href="/practice/reading"');
+
+		const practiceFallbackHtml = renderToStaticMarkup(
+			<QuizRuntimeHeader
+				title="Practice"
+				saveState={null}
+				onSubmitClick={null}
+				exitTarget={{ to: "/practice" }}
+			/>,
+		);
+		expect(practiceFallbackHtml).toContain('href="/practice"');
 	});
 
 	it("giữ h-14 shrink-0 và render children (đồng hồ đếm ngược) trước nút Nộp bài", () => {
