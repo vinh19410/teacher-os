@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { PracticeCatalogItem } from "@teacher-os/api/contracts";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { HistoryButton } from "@/components/practice/history-button";
 import { Pager } from "@/components/practice/pager";
@@ -450,6 +456,99 @@ describe("Practice catalog facets, filters, URL coercion, and debounce races (#8
 			"",
 			"Cambridge 18",
 		]);
+	});
+
+	it("trims, joins, and truncates TestCard source badges consistently across collection/testGroup combinations (#887)", () => {
+		vi.spyOn(repos, "usePracticeCatalog").mockReturnValue({
+			isLoading: false,
+			isError: false,
+			data: {
+				items: [
+					{
+						...ITEM,
+						testId: "t-full",
+						skill: "listening",
+						title: "Talking about the history of bikes",
+						collection: "Other sources",
+						testGroup: "Section 4",
+					},
+					{
+						...ITEM,
+						testId: "t-blank-col",
+						skill: "listening",
+						title: "Blank Collection",
+						collection: "   ",
+						testGroup: "Section 2",
+					},
+					{
+						...ITEM,
+						testId: "t-null-col",
+						skill: "listening",
+						title: "Null Collection",
+						collection: null,
+						testGroup: "Section 3",
+					},
+					{
+						...ITEM,
+						testId: "t-none",
+						skill: "listening",
+						title: "No Metadata",
+						collection: "  ",
+						testGroup: "  ",
+					},
+				],
+				page: 1,
+				pages: 1,
+				total: 4,
+				facets: {
+					collections: ["Other sources"],
+					parts: ["s2", "s3", "s4"],
+					types: ["tablecomp"],
+					bands: ["7.0"],
+				},
+			},
+		} as never);
+
+		renderWithClient(
+			<SkillCatalog
+				skill="listening"
+				collection=""
+				part=""
+				type=""
+				band=""
+				q=""
+				page={1}
+				onFilterChange={vi.fn()}
+				onOpen={vi.fn()}
+			/>,
+		);
+
+		const cards = screen.getAllByTestId("practice-test-card");
+		expect(cards).toHaveLength(4);
+
+		const badgeFull = within(cards[0] as HTMLElement).getByTestId(
+			"practice-card-source-badge",
+		);
+		expect(badgeFull.textContent).toBe("Other sources · Section 4");
+		expect(badgeFull.getAttribute("title")).toBe("Other sources · Section 4");
+		expect(badgeFull.className).toContain("truncate");
+		expect(badgeFull.className).toContain("max-w-[calc(100%-1.25rem)]");
+
+		expect(
+			within(cards[1] as HTMLElement).getByTestId("practice-card-source-badge")
+				.textContent,
+		).toBe("Section 2");
+
+		expect(
+			within(cards[2] as HTMLElement).getByTestId("practice-card-source-badge")
+				.textContent,
+		).toBe("Section 3");
+
+		expect(
+			within(cards[3] as HTMLElement).queryByTestId(
+				"practice-card-source-badge",
+			),
+		).toBeNull();
 	});
 
 	it("prevents stale onSearch closure when dropdown changes mid-debounce, clears draft from both reset buttons, and cancels debounce on skill switch", () => {

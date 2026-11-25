@@ -190,17 +190,19 @@ async function loadPracticeTestWithParts(
 	db: Db,
 	orgId: string,
 	testId: string,
+	options?: { allowDraft?: boolean },
 ): Promise<PracticeTestWithParts | null> {
+	const testConditions: SQL[] = [
+		eq(assignmentTest.id, testId),
+		eq(assignmentTest.orgId, orgId),
+	];
+	if (!options?.allowDraft) {
+		testConditions.push(eq(assignmentTest.status, "ready"));
+	}
 	const [test] = await db
 		.select()
 		.from(assignmentTest)
-		.where(
-			and(
-				eq(assignmentTest.id, testId),
-				eq(assignmentTest.orgId, orgId),
-				eq(assignmentTest.status, "ready"),
-			),
-		)
+		.where(and(...testConditions))
 		.limit(1);
 	if (!test) return null;
 
@@ -224,6 +226,38 @@ async function loadPracticeTestWithParts(
 		.orderBy(asc(assignmentTestPart.position));
 
 	return { test, parts: partRows };
+}
+
+/** Tải đề cho các route đọc (`/quiz`, `/audio`): ưu tiên đề `ready`; nếu đề
+ * đã bị hạ `draft` (vd khử trùng đề thư viện) nhưng học viên hiện tại đã từng
+ * nộp lượt tự luyện cho đúng đề đó thì vẫn cho đọc để màn xem chi tiết bài
+ * làm và phát audio lịch sử không bị 404. Học viên chưa từng nộp bài và
+ * `POST /attempts` vẫn bị chặn 404 như đề nháp riêng tư của giáo viên. */
+async function loadPracticeTestForRead(
+	db: Db,
+	orgId: string,
+	studentId: string,
+	testId: string,
+): Promise<PracticeTestWithParts | null> {
+	const ready = await loadPracticeTestWithParts(db, orgId, testId);
+	if (ready) return ready;
+
+	const [submitted] = await db
+		.select({ id: quizAttempt.id })
+		.from(quizAttempt)
+		.where(
+			and(
+				eq(quizAttempt.orgId, orgId),
+				eq(quizAttempt.studentId, studentId),
+				eq(quizAttempt.testId, testId),
+				eq(quizAttempt.mode, "practice"),
+				eq(quizAttempt.status, "submitted"),
+			),
+		)
+		.limit(1);
+	if (!submitted) return null;
+
+	return loadPracticeTestWithParts(db, orgId, testId, { allowDraft: true });
 }
 
 /** Gộp questions của mọi part thành MỘT snapshot theo thứ tự position —
@@ -700,25 +734,28 @@ export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 		const db: Db = deps.getDb();
 		const testId = c.req.param("testId");
 
-		const loaded = await loadPracticeTestWithParts(db, orgId, testId);
+		const loaded = await loadPracticeTestForRead(db, orgId, s.id, testId);
 		if (!loaded || loaded.parts.length === 0) {
 			return c.json({ error: "test not found" }, 404);
 		}
 
-		const [attempt] = await db
-			.select()
-			.from(quizAttempt)
-			.where(
-				and(
-					eq(quizAttempt.orgId, orgId),
-					eq(quizAttempt.studentId, s.id),
-					eq(quizAttempt.testId, testId),
-					eq(quizAttempt.mode, "practice"),
-					eq(quizAttempt.status, "in_progress"),
-				),
-			)
-			.orderBy(asc(quizAttempt.startedAt), asc(quizAttempt.id))
-			.limit(1);
+		const [attempt] =
+			loaded.test.status === "ready"
+				? await db
+						.select()
+						.from(quizAttempt)
+						.where(
+							and(
+								eq(quizAttempt.orgId, orgId),
+								eq(quizAttempt.studentId, s.id),
+								eq(quizAttempt.testId, testId),
+								eq(quizAttempt.mode, "practice"),
+								eq(quizAttempt.status, "in_progress"),
+							),
+						)
+						.orderBy(asc(quizAttempt.startedAt), asc(quizAttempt.id))
+						.limit(1)
+				: [];
 
 		const questions = attempt
 			? parseQuizQuestions(attempt.questionsSnapshot, attempt.id)
@@ -740,11 +777,11 @@ export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 	 * `serveStudyPackAudio` với luồng assignment).
 	 */
 	router.get("/practice/:testId/audio", async (c) => {
-		const { orgId } = c.get("studentCtx");
+		const { student: s, orgId } = c.get("studentCtx");
 		const db: Db = deps.getDb();
 		const testId = c.req.param("testId");
 
-		const loaded = await loadPracticeTestWithParts(db, orgId, testId);
+		const loaded = await loadPracticeTestForRead(db, orgId, s.id, testId);
 		const header = loaded?.parts[0]?.prompt;
 		if (!header || (!header.audioUrl && !header.audioKey)) {
 			return c.json({ error: "audio not found" }, 404);
