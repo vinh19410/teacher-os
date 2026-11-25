@@ -7,6 +7,8 @@ import {
 	countReadingQuestions,
 	countWords,
 	createInitialSpeakingSession,
+	isLikelyInAppBrowser,
+	isRetryableSpeakingUploadError,
 	MAX_SPEAKING_RETRIES_PER_TASK,
 	matchBandByPct,
 	pickSupportedRecorderMime,
@@ -35,12 +37,20 @@ import {
 	PLACEMENT_STUDY_MODES,
 	validateLeadForm,
 } from "./lead-gate.js";
-import { mergeSpeakingAudioSegments } from "./speaking-audio.js";
+import {
+	mergeSpeakingAudioSegments,
+	readBlobHeadBytes,
+} from "./speaking-audio.js";
 
 const DEFAULT_API_BASE = "https://api.msmy.io.vn";
 const ZALO_URL = "https://zalo.me/0929060994";
 const STORAGE_KEY = "msmy_placement_attempt_v2";
 const LEAD_DRAFT_KEY = "msmy_lead_draft_v1";
+const SPEAKING_BACKUP_DB_NAME = "msmy_placement_speaking_backup_v1";
+const SPEAKING_BACKUP_DB_VERSION = 1;
+const SPEAKING_BACKUP_STORE = "recordings";
+const SPEAKING_BACKUP_TTL_MS = 15 * 60 * 1000;
+const SPEAKING_UPLOAD_RETRY_DELAYS_MS = [800, 2000];
 
 const RECOMMENDED_TIMER_SECONDS = 40 * 60;
 const SPEAKING_MAX_BYTES = 50 * 1024 * 1024;
@@ -620,6 +630,245 @@ export function buildSkillReportCards(objective, bands = []) {
 	});
 }
 
+function getSafeIndexedDb(overrideFactory) {
+	if (overrideFactory !== undefined) return overrideFactory;
+	try {
+		return globalThis.indexedDB ?? null;
+	} catch {
+		return null;
+	}
+}
+
+function openSpeakingBackupDb(overrideFactory) {
+	const idb = getSafeIndexedDb(overrideFactory);
+	if (!idb || typeof idb.open !== "function") {
+		return Promise.resolve(null);
+	}
+	return new Promise((resolve) => {
+		let settled = false;
+		const finish = (db) => {
+			if (!settled) {
+				settled = true;
+				resolve(db);
+			}
+		};
+		try {
+			const req = idb.open(SPEAKING_BACKUP_DB_NAME, SPEAKING_BACKUP_DB_VERSION);
+			req.onupgradeneeded = () => {
+				try {
+					const db = req.result;
+					if (!db.objectStoreNames.contains(SPEAKING_BACKUP_STORE)) {
+						db.createObjectStore(SPEAKING_BACKUP_STORE, {
+							keyPath: "submissionId",
+						});
+					}
+				} catch {
+					// Ignore schema upgrade errors
+				}
+			};
+			req.onsuccess = () => finish(req.result ?? null);
+			req.onerror = () => finish(null);
+			req.onblocked = () => finish(null);
+		} catch {
+			finish(null);
+		}
+	});
+}
+
+/**
+ * Fail-open IndexedDB backup for recorded Speaking audio during the upload token TTL window.
+ */
+export async function saveSpeakingBackup({
+	submissionId,
+	blob,
+	mimeType,
+	durationSec,
+	now = Date.now(),
+	idbFactory,
+} = {}) {
+	if (!submissionId || !blob || !(blob.size > 0)) return false;
+	const db = await openSpeakingBackupDb(idbFactory);
+	if (!db) return false;
+	return await new Promise((resolve) => {
+		let settled = false;
+		const finish = (ok) => {
+			if (!settled) {
+				settled = true;
+				try {
+					db.close?.();
+				} catch {
+					// Ignore close errors
+				}
+				resolve(ok);
+			}
+		};
+		try {
+			const tx = db.transaction(SPEAKING_BACKUP_STORE, "readwrite");
+			const store = tx.objectStore(SPEAKING_BACKUP_STORE);
+			const req = store.put({
+				submissionId: String(submissionId),
+				blob,
+				mimeType: String(mimeType ?? blob.type ?? ""),
+				durationSec: Math.max(0, Math.round(Number(durationSec) || 0)),
+				savedAt: now,
+				expiresAt: now + SPEAKING_BACKUP_TTL_MS,
+			});
+			tx.oncomplete = () => finish(true);
+			tx.onerror = () => finish(false);
+			tx.onabort = () => finish(false);
+			req.onerror = () => finish(false);
+		} catch {
+			finish(false);
+		}
+	});
+}
+
+export async function deleteSpeakingBackup(submissionId, { idbFactory } = {}) {
+	if (!submissionId) return false;
+	const db = await openSpeakingBackupDb(idbFactory);
+	if (!db) return false;
+	return await new Promise((resolve) => {
+		let settled = false;
+		const finish = (ok) => {
+			if (!settled) {
+				settled = true;
+				try {
+					db.close?.();
+				} catch {
+					// Ignore close errors
+				}
+				resolve(ok);
+			}
+		};
+		try {
+			const tx = db.transaction(SPEAKING_BACKUP_STORE, "readwrite");
+			const store = tx.objectStore(SPEAKING_BACKUP_STORE);
+			const req = store.delete(String(submissionId));
+			tx.oncomplete = () => finish(true);
+			tx.onerror = () => finish(false);
+			tx.onabort = () => finish(false);
+			req.onerror = () => finish(false);
+		} catch {
+			finish(false);
+		}
+	});
+}
+
+export async function loadSpeakingBackup(
+	submissionId,
+	{ now = Date.now(), idbFactory } = {},
+) {
+	if (!submissionId) return null;
+	const db = await openSpeakingBackupDb(idbFactory);
+	if (!db) return null;
+	const record = await new Promise((resolve) => {
+		let settled = false;
+		const finish = (val) => {
+			if (!settled) {
+				settled = true;
+				try {
+					db.close?.();
+				} catch {
+					// Ignore close errors
+				}
+				resolve(val);
+			}
+		};
+		try {
+			const tx = db.transaction(SPEAKING_BACKUP_STORE, "readonly");
+			const store = tx.objectStore(SPEAKING_BACKUP_STORE);
+			const req = store.get(String(submissionId));
+			req.onsuccess = () => finish(req.result ?? null);
+			req.onerror = () => finish(null);
+			tx.onerror = () => finish(null);
+			tx.onabort = () => finish(null);
+		} catch {
+			finish(null);
+		}
+	});
+	if (!record || typeof record !== "object") return null;
+	if (
+		typeof record.expiresAt !== "number" ||
+		record.expiresAt <= now ||
+		!record.blob ||
+		!(record.blob.size > 0)
+	) {
+		await deleteSpeakingBackup(submissionId, { idbFactory });
+		return null;
+	}
+	return record;
+}
+
+/**
+ * Uploads recorded Speaking audio with magic-byte Content-Type resolution and
+ * automatic retry (up to 2 retries) for transient network/408/429/5xx failures.
+ */
+export async function uploadSpeakingMediaWithRetry({
+	apiBase,
+	submissionId,
+	uploadToken,
+	blob,
+	durationSec,
+	fetchImpl = fetch,
+	retryDelaysMs = SPEAKING_UPLOAD_RETRY_DELAYS_MS,
+	sleepImpl = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+}) {
+	const headBytes = await readBlobHeadBytes(blob, 64);
+	const meta = resolveSpeakingUploadMeta(blob?.type, headBytes);
+	const headers = {
+		"X-Upload-Token": uploadToken,
+		"Content-Type": meta.contentType,
+		"X-Media-Filename": meta.filename,
+		"X-Speaking-Duration": String(Math.max(0, Math.round(durationSec ?? 0))),
+	};
+	const url = `${apiBase}/public/placement-test/submissions/${encodeURIComponent(submissionId)}/speaking-media`;
+	const delays = Array.isArray(retryDelaysMs) ? retryDelaysMs : [];
+
+	for (let attempt = 0; attempt <= delays.length; attempt += 1) {
+		let res;
+		try {
+			res = await fetchImpl(url, {
+				method: "PUT",
+				headers,
+				body: blob,
+			});
+		} catch (networkErr) {
+			if (attempt < delays.length && isRetryableSpeakingUploadError(0)) {
+				await sleepImpl(delays[attempt]);
+				continue;
+			}
+			const err = new Error(
+				"Không thể kết nối máy chủ để tải file Speaking. Bài làm vẫn đã được lưu — bạn có thể bấm Thử tải lại bên dưới.",
+			);
+			err.status = 0;
+			err.cause = networkErr;
+			throw err;
+		}
+
+		let body = null;
+		try {
+			body = await res.json();
+		} catch {
+			body = null;
+		}
+
+		if (res.ok) {
+			return body;
+		}
+
+		if (attempt < delays.length && isRetryableSpeakingUploadError(res.status)) {
+			await sleepImpl(delays[attempt]);
+			continue;
+		}
+
+		const errCode = body?.error || `HTTP ${res.status}`;
+		const err = new Error(`Tải file Speaking chưa thành công (${errCode}).`);
+		err.status = res.status;
+		throw err;
+	}
+	return null;
+}
+
 function createApp() {
 	const appRoot = document.getElementById("appRoot");
 	if (!appRoot) return;
@@ -658,15 +907,23 @@ function createApp() {
 	let isFinalizingRecording = false;
 	let showEarlyFinishConfirm = false;
 	let speakingMediaError = "";
+	let micAccessFailed = false;
 	let speakingUploadError = "";
 	let speakingRetrySucceeded = false;
 	let isUploadingSpeaking = false;
+	let isRestoringSpeakingBackup = false;
 	let submitError = "";
 	let isSubmitting = false;
 	let readingBackfillNotice = false;
 	let unansweredConfirmState = null;
 	let consultSavedMessage = "";
 	let consultSaving = false;
+
+	function handleBeforeUnloadDuringUpload(event) {
+		if (!isUploadingSpeaking) return;
+		event.preventDefault();
+		event.returnValue = "";
+	}
 
 	function persist() {
 		if (!snapshot) return;
@@ -854,6 +1111,7 @@ function createApp() {
 		unansweredConfirmState = null;
 		submitError = "";
 		speakingMediaError = "";
+		micAccessFailed = false;
 		speakingRetrySucceeded = false;
 		if (nextStep !== "reading") {
 			readingBackfillNotice = false;
@@ -2348,32 +2606,13 @@ function createApp() {
 		blob,
 		durationSec,
 	) {
-		const meta = resolveSpeakingUploadMeta(blob.type);
-		const headers = {
-			"X-Upload-Token": uploadToken,
-			"Content-Type": meta.contentType,
-			"X-Media-Filename": meta.filename,
-			"X-Speaking-Duration": String(Math.max(0, Math.round(durationSec ?? 0))),
-		};
-		const res = await fetch(
-			`${apiBase}/public/placement-test/submissions/${encodeURIComponent(submissionId)}/speaking-media`,
-			{
-				method: "PUT",
-				headers,
-				body: blob,
-			},
-		);
-		let body = null;
-		try {
-			body = await res.json();
-		} catch {
-			body = null;
-		}
-		if (!res.ok) {
-			const errCode = body?.error || `HTTP ${res.status}`;
-			throw new Error(`Tải file Speaking chưa thành công (${errCode}).`);
-		}
-		return body;
+		return await uploadSpeakingMediaWithRetry({
+			apiBase,
+			submissionId,
+			uploadToken,
+			blob,
+			durationSec,
+		});
 	}
 
 	async function executeSubmission(finalSpeakingMode) {
@@ -2451,6 +2690,15 @@ function createApp() {
 				body.uploadToken &&
 				body.submissionId
 			) {
+				await saveSpeakingBackup({
+					submissionId: body.submissionId,
+					blob: recordedBlob,
+					mimeType: recordedBlob.type || "",
+					durationSec: state.speakingDurationSec ?? 0,
+				});
+				isUploadingSpeaking = true;
+				window.addEventListener("beforeunload", handleBeforeUnloadDuringUpload);
+				render();
 				try {
 					await uploadSpeakingMedia(
 						body.submissionId,
@@ -2460,12 +2708,19 @@ function createApp() {
 					);
 					state.submission.speakingStatus = "uploaded";
 					state.submission.uploadToken = null;
+					void deleteSpeakingBackup(body.submissionId);
 				} catch (uploadErr) {
 					state.submission.speakingStatus = "pending_upload";
 					speakingUploadError =
 						uploadErr instanceof Error
 							? uploadErr.message
 							: "Không thể tải file Speaking lên máy chủ. Bài làm vẫn đã được lưu — bạn có thể bấm Thử tải lại bên dưới.";
+				} finally {
+					isUploadingSpeaking = false;
+					window.removeEventListener(
+						"beforeunload",
+						handleBeforeUnloadDuringUpload,
+					);
 				}
 			}
 
@@ -2686,16 +2941,25 @@ function createApp() {
 		answerStartedAt = 0;
 		const durationMs = startedAt > 0 ? Math.max(0, Date.now() - startedAt) : 0;
 
+		const buildSegmentBlob = () => {
+			const chunkType = chunks.find((c) => c?.type)?.type || "";
+			const rawMime =
+				recorder?.mimeType || chunkType || preferredRecorderMime || "";
+			const normalizedMime = rawMime
+				? resolveSpeakingUploadMeta(rawMime).contentType
+				: "";
+			return normalizedMime
+				? new Blob(chunks, { type: normalizedMime })
+				: new Blob(chunks);
+		};
+
 		if (!recorder || recorder.state === "inactive") {
 			mediaRecorder = null;
 			recordedChunks = [];
 			if (discard || chunks.length === 0) {
 				return Promise.resolve(null);
 			}
-			const rawMime =
-				recorder?.mimeType || preferredRecorderMime || "audio/webm";
-			const normalizedMime = resolveSpeakingUploadMeta(rawMime).contentType;
-			const blob = new Blob(chunks, { type: normalizedMime });
+			const blob = buildSegmentBlob();
 			return Promise.resolve(blob.size > 0 ? { blob, durationMs } : null);
 		}
 
@@ -2715,10 +2979,7 @@ function createApp() {
 					resolve(null);
 					return;
 				}
-				const rawMime =
-					recorder.mimeType || preferredRecorderMime || "audio/webm";
-				const normalizedMime = resolveSpeakingUploadMeta(rawMime).contentType;
-				const blob = new Blob(chunks, { type: normalizedMime });
+				const blob = buildSegmentBlob();
 				resolve(blob.size > 0 ? { blob, durationMs } : null);
 			};
 			recorder.addEventListener("stop", finish, { once: true });
@@ -3043,6 +3304,10 @@ function createApp() {
 				className: "card speaking-recorder-card",
 			});
 
+			const isInAppBrowser = isLikelyInAppBrowser(
+				typeof navigator !== "undefined" ? navigator.userAgent : "",
+			);
+
 			if (speakingMediaError) {
 				recorderCard.appendChild(
 					el(
@@ -3062,6 +3327,26 @@ function createApp() {
 					el("div", { className: "provisional-notice-box" }, [
 						"Trình duyệt hoặc thiết bị hiện tại không hỗ trợ API ghi âm (MediaRecorder). Vui lòng sử dụng trình duyệt/thiết bị có Micro (Chrome, Safari, Edge) để hoàn thành phần Speaking trước khi nộp bài.",
 					]),
+				);
+			}
+
+			if (
+				(isInAppBrowser || micAccessFailed) &&
+				!isSpeakingActive &&
+				!hasValidBlob
+			) {
+				recorderCard.appendChild(
+					el(
+						"div",
+						{
+							id: "speakingInAppBrowserHint",
+							className: "provisional-notice-box",
+							role: "note",
+						},
+						[
+							"Mẹo: Nếu ghi âm không hoạt động trong trình duyệt của Zalo, Messenger hoặc Facebook, hãy bấm biểu tượng ⋯ / chia sẻ để mở link bằng Safari hoặc Chrome.",
+						],
+					),
 				);
 			}
 
@@ -3659,6 +3944,7 @@ function createApp() {
 						}
 
 						isRequestingMic = false;
+						micAccessFailed = false;
 						stopMediaStream();
 						mediaStream = stream;
 						speakingSessionToken += 1;
@@ -3692,6 +3978,7 @@ function createApp() {
 						beginTaskReadingPhase(0, tasks);
 					} catch {
 						isRequestingMic = false;
+						micAccessFailed = true;
 						mediaRecorder = null;
 						stopMediaStream();
 						speakingSession = createInitialSpeakingSession(tasks.length);
@@ -3755,6 +4042,7 @@ function createApp() {
 								type: "button",
 								id: "cancelSubmitBtn",
 								className: "btn btn-ghost",
+								disabled: isSubmitting || isUploadingSpeaking,
 							},
 							["Quay lại kiểm tra"],
 						),
@@ -3764,9 +4052,15 @@ function createApp() {
 								type: "button",
 								id: "confirmSubmitBtn",
 								className: "btn btn-primary",
-								disabled: isSubmitting,
+								disabled: isSubmitting || isUploadingSpeaking,
 							},
-							[isSubmitting ? "Đang nộp bài..." : "Vẫn nộp bài ngay"],
+							[
+								isUploadingSpeaking
+									? "Đang tải bài nói Speaking lên máy chủ..."
+									: isSubmitting
+										? "Đang nộp bài..."
+										: "Vẫn nộp bài ngay",
+							],
 						),
 					]),
 				],
@@ -3786,6 +4080,23 @@ function createApp() {
 			wrapper.appendChild(confirmBox);
 		}
 
+		if (isUploadingSpeaking) {
+			wrapper.appendChild(
+				el(
+					"div",
+					{
+						id: "speakingUploadStatusBanner",
+						className: "provisional-notice-box",
+						role: "status",
+						"aria-live": "polite",
+					},
+					[
+						"Đang tải bài nói Speaking lên máy chủ... Vui lòng giữ nguyên trang cho đến khi hoàn tất.",
+					],
+				),
+			);
+		}
+
 		const navBar = el("div", { className: "step-nav-bar" }, [
 			el(
 				"button",
@@ -3793,6 +4104,7 @@ function createApp() {
 					type: "button",
 					className: "btn btn-ghost",
 					id: "prevToWritingBtn",
+					disabled: isSubmitting || isUploadingSpeaking,
 				},
 				["← Quay lại Writing"],
 			),
@@ -3802,9 +4114,15 @@ function createApp() {
 					type: "button",
 					id: "submitTestBtn",
 					className: "btn btn-primary btn-lg",
-					disabled: isSubmitting || isSpeakingBusy(),
+					disabled: isSubmitting || isUploadingSpeaking || isSpeakingBusy(),
 				},
-				[isSubmitting ? "Đang nộp bài..." : "Hoàn thành & Nộp bài 5 kỹ năng"],
+				[
+					isUploadingSpeaking
+						? "Đang tải bài nói Speaking lên máy chủ..."
+						: isSubmitting
+							? "Đang nộp bài..."
+							: "Hoàn thành & Nộp bài 5 kỹ năng",
+				],
 			),
 		]);
 		navBar
@@ -3946,7 +4264,7 @@ function createApp() {
 					},
 					[
 						isUploadingSpeaking
-							? "Đang tải lại..."
+							? "Đang tải bài nói Speaking lên máy chủ..."
 							: "Thử tải lại audio Speaking",
 					],
 				);
@@ -3954,6 +4272,10 @@ function createApp() {
 					if (isUploadingSpeaking) return;
 					isUploadingSpeaking = true;
 					speakingUploadError = "";
+					window.addEventListener(
+						"beforeunload",
+						handleBeforeUnloadDuringUpload,
+					);
 					render();
 					try {
 						await uploadSpeakingMedia(
@@ -3965,6 +4287,7 @@ function createApp() {
 						state.submission.speakingStatus = "uploaded";
 						state.submission.uploadToken = null;
 						speakingRetrySucceeded = true;
+						void deleteSpeakingBackup(submission.submissionId);
 						persist();
 					} catch (err) {
 						speakingUploadError =
@@ -3973,10 +4296,20 @@ function createApp() {
 								: "Thử tải lại chưa thành công. Vui lòng thử lại hoặc nhắn Zalo cô Mỹ.";
 					} finally {
 						isUploadingSpeaking = false;
+						window.removeEventListener(
+							"beforeunload",
+							handleBeforeUnloadDuringUpload,
+						);
 						render();
 					}
 				});
 				retryBox.appendChild(retryUploadBtn);
+			} else if (isRestoringSpeakingBackup) {
+				retryBox.appendChild(
+					el("p", { className: "muted-copy", role: "status" }, [
+						"Đang khôi phục bản ghi Speaking tạm từ trình duyệt...",
+					]),
+				);
 			} else {
 				retryBox.appendChild(
 					el("p", { className: "muted-copy" }, [
@@ -4091,6 +4424,10 @@ function createApp() {
 		]);
 
 		ctaRow.querySelector("#retryTestBtn")?.addEventListener("click", () => {
+			const previousSubmissionId = state.submission?.submissionId;
+			if (previousSubmissionId) {
+				void deleteSpeakingBackup(previousSubmissionId);
+			}
 			stopActiveAudio();
 			resetSpeakingSessionRuntime();
 			stopPageTimer();
@@ -4099,6 +4436,8 @@ function createApp() {
 			speakingUploadError = "";
 			speakingRetrySucceeded = false;
 			speakingMediaError = "";
+			micAccessFailed = false;
+			isRestoringSpeakingBackup = false;
 			consultSavedMessage = "";
 			const preservedLead = { ...state.lead };
 			state = createInitialState();
@@ -4241,7 +4580,31 @@ function createApp() {
 				readingBackfillNotice = true;
 				saveAttemptState(snapshot.version, state);
 			}
+			const pendingSubmissionId =
+				state.step === "result" &&
+				state.submission?.speakingStatus === "pending_upload" &&
+				state.submission?.submissionId &&
+				state.submission?.uploadToken &&
+				!recordedBlob
+					? state.submission.submissionId
+					: null;
+			isRestoringSpeakingBackup = Boolean(pendingSubmissionId);
 			render();
+			if (pendingSubmissionId) {
+				void loadSpeakingBackup(pendingSubmissionId).then((backup) => {
+					const stillPending =
+						state.step === "result" &&
+						state.submission?.submissionId === pendingSubmissionId &&
+						state.submission?.speakingStatus === "pending_upload";
+					if (!stillPending) return;
+					isRestoringSpeakingBackup = false;
+					if (backup && !recordedBlob) {
+						recordedBlob = backup.blob;
+						state.speakingDurationSec = backup.durationSec;
+					}
+					render();
+				});
+			}
 		} catch (err) {
 			renderLoadError(
 				err instanceof Error

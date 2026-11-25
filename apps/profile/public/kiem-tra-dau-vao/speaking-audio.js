@@ -3,7 +3,58 @@
  * into a single 16 kHz mono 16-bit PCM WAV (`audio/wav`) with safe fallback.
  */
 
+import { detectSpeakingAudioMimeFromBytes } from "./grading.js";
+
 export const TARGET_SPEAKING_SAMPLE_RATE = 16000;
+const SPEAKING_MAGIC_PEEK_BYTES = 64;
+
+/**
+ * Reads a Blob into an ArrayBuffer with fallbacks for older WebKit builds
+ * that lack `Blob.prototype.arrayBuffer()`.
+ */
+export async function readBlobArrayBuffer(blob) {
+	if (!blob) return new ArrayBuffer(0);
+	if (typeof blob.arrayBuffer === "function") {
+		return await blob.arrayBuffer();
+	}
+	if (typeof FileReader === "function") {
+		return await new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () =>
+				resolve(
+					reader.result instanceof ArrayBuffer
+						? reader.result
+						: new ArrayBuffer(0),
+				);
+			reader.onerror = () =>
+				reject(reader.error ?? new Error("FileReader failed"));
+			reader.readAsArrayBuffer(blob);
+		});
+	}
+	if (typeof Response === "function") {
+		return await new Response(blob).arrayBuffer();
+	}
+	throw new Error("Blob arrayBuffer reader is unavailable");
+}
+
+/**
+ * Peeks up to `maxBytes` leading bytes from a Blob without loading the full payload.
+ * Returns `null` if reading is unavailable or fails.
+ */
+export async function readBlobHeadBytes(
+	blob,
+	maxBytes = SPEAKING_MAGIC_PEEK_BYTES,
+) {
+	if (!blob || !(blob.size > 0)) return null;
+	try {
+		const slice =
+			typeof blob.slice === "function" ? blob.slice(0, maxBytes) : blob;
+		const buf = await readBlobArrayBuffer(slice);
+		return new Uint8Array(buf, 0, Math.min(buf.byteLength, maxBytes));
+	} catch {
+		return null;
+	}
+}
 
 function writeAscii(view, offset, str) {
 	for (let i = 0; i < str.length; i += 1) {
@@ -146,11 +197,23 @@ async function resampleToTargetRate(audioBuffer, targetRate) {
 	return resampleMonoLinear(mono, sourceRate, targetRate);
 }
 
+async function buildFallbackMergedBlob(blobs) {
+	const headBytes = await readBlobHeadBytes(
+		blobs[0],
+		SPEAKING_MAGIC_PEEK_BYTES,
+	);
+	const detectedMime = detectSpeakingAudioMimeFromBytes(headBytes);
+	const fallbackType = detectedMime || blobs[0].type || "";
+	return fallbackType
+		? new Blob(blobs, { type: fallbackType })
+		: new Blob(blobs);
+}
+
 /**
  * Merges an array of recorded speaking segments (`{ blob, durationMs }` or `Blob`)
  * into a single WAV (`audio/wav`, 16 kHz mono 16-bit PCM) Blob.
- * Falls back safely to the single Blob (1 segment) or `new Blob(blobs, { type })`
- * when Web Audio API is absent or decoding fails.
+ * Falls back safely to the single Blob (1 segment) or a merged Blob preserving
+ * detected magic-byte / source MIME without forcing `audio/webm` on unknown blobs.
  */
 export async function mergeSpeakingAudioSegments(segments) {
 	const blobs = (Array.isArray(segments) ? segments : [])
@@ -161,13 +224,23 @@ export async function mergeSpeakingAudioSegments(segments) {
 		return null;
 	}
 	if (blobs.length === 1) {
-		return blobs[0];
+		const single = blobs[0];
+		if (!single.type) {
+			const headBytes = await readBlobHeadBytes(
+				single,
+				SPEAKING_MAGIC_PEEK_BYTES,
+			);
+			const detectedMime = detectSpeakingAudioMimeFromBytes(headBytes);
+			if (detectedMime) {
+				return new Blob([single], { type: detectedMime });
+			}
+		}
+		return single;
 	}
 
-	const fallbackType = blobs[0].type || "audio/webm";
 	const AudioCtx = globalThis.AudioContext || globalThis.webkitAudioContext;
 	if (typeof AudioCtx !== "function") {
-		return new Blob(blobs, { type: fallbackType });
+		return buildFallbackMergedBlob(blobs);
 	}
 
 	let ctx = null;
@@ -177,7 +250,7 @@ export async function mergeSpeakingAudioSegments(segments) {
 		let totalSamples = 0;
 
 		for (const blob of blobs) {
-			const arrayBuf = await blob.arrayBuffer();
+			const arrayBuf = await readBlobArrayBuffer(blob);
 			const audioBuffer = await decodeAudioBuffer(ctx, arrayBuf);
 			const mono16k = await resampleToTargetRate(
 				audioBuffer,
@@ -188,7 +261,7 @@ export async function mergeSpeakingAudioSegments(segments) {
 		}
 
 		if (totalSamples === 0) {
-			return new Blob(blobs, { type: fallbackType });
+			return buildFallbackMergedBlob(blobs);
 		}
 
 		const mergedSamples = new Float32Array(totalSamples);
@@ -204,7 +277,7 @@ export async function mergeSpeakingAudioSegments(segments) {
 		);
 		return new Blob([wavBuffer], { type: "audio/wav" });
 	} catch {
-		return new Blob(blobs, { type: fallbackType });
+		return buildFallbackMergedBlob(blobs);
 	} finally {
 		if (ctx && typeof ctx.close === "function") {
 			try {

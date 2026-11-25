@@ -20,6 +20,9 @@ import {
 	countObjectiveProgress,
 	countWords,
 	createInitialSpeakingSession,
+	detectSpeakingAudioMimeFromBytes,
+	isLikelyInAppBrowser,
+	isRetryableSpeakingUploadError,
 	LEAD_PLACEMENT_MAX,
 	MAX_SPEAKING_RETRIES_PER_TASK,
 	matchBandByPct,
@@ -29,6 +32,7 @@ import {
 	resolveSpeakingStatusDisplay,
 	resolveSpeakingStepState,
 	resolveSpeakingSubmitDecision,
+	resolveSpeakingUploadMeta,
 	resolveTaskTimings,
 	resolveWritingPromptState,
 	retrySpeakingCurrentTask,
@@ -63,16 +67,21 @@ import {
 import {
 	encodeWavPcm16,
 	mergeSpeakingAudioSegments,
+	readBlobArrayBuffer,
 	TARGET_SPEAKING_SAMPLE_RATE,
 } from "../public/kiem-tra-dau-vao/speaking-audio.js";
 import {
 	buildGapPromptSegments,
 	buildIntroOverviewRows,
 	buildSkillReportCards,
+	deleteSpeakingBackup,
+	loadSpeakingBackup,
 	resolveClipDisplayTitle,
 	resolvePartHeaderState,
 	resolveReadingPassageHeaderState,
+	saveSpeakingBackup,
 	shouldShowReadingTitle,
+	uploadSpeakingMediaWithRetry,
 } from "../public/kiem-tra-dau-vao/test.js";
 import { createProfileServer } from "../serve.mjs";
 
@@ -1615,4 +1624,459 @@ test("ket-qua/highlight.js hỗ trợ hiển thị cả IELTS 0–9 lẫn fallba
 		"utf8",
 	);
 	assert.ok(!highlightJs.toLowerCase().includes("khách quan"));
+});
+
+function buildFtypBytes(brand, { extendedSize = false } = {}) {
+	if (extendedSize) {
+		const buf = new Uint8Array(24);
+		buf[3] = 1; // 64-bit size marker
+		buf.set([0x66, 0x74, 0x79, 0x70], 4); // "ftyp"
+		buf[15] = 24; // 64-bit size = 24
+		for (let i = 0; i < 4; i += 1) {
+			buf[16 + i] = brand.charCodeAt(i);
+		}
+		return buf;
+	}
+	const buf = new Uint8Array(20);
+	buf[3] = 20;
+	buf.set([0x66, 0x74, 0x79, 0x70], 4); // "ftyp"
+	for (let i = 0; i < 4; i += 1) {
+		buf[8 + i] = brand.charCodeAt(i);
+	}
+	return buf;
+}
+
+test("detectSpeakingAudioMimeFromBytes recognizes WAV, MP4, WebM, OGG, MP3, AAC and rejects image/unknown bytes", () => {
+	const wavBuf = encodeWavPcm16(new Float32Array([0, 0.25]), 16000);
+	assert.equal(detectSpeakingAudioMimeFromBytes(wavBuf), "audio/wav");
+	assert.equal(
+		detectSpeakingAudioMimeFromBytes(new Uint8Array(wavBuf)),
+		"audio/wav",
+	);
+
+	const rf64Wav = new Uint8Array(20);
+	rf64Wav.set([0x52, 0x46, 0x36, 0x34], 0); // "RF64"
+	rf64Wav.set([0xff, 0xff, 0xff, 0xff], 4);
+	rf64Wav.set([0x57, 0x41, 0x56, 0x45], 8); // "WAVE"
+	assert.equal(detectSpeakingAudioMimeFromBytes(rf64Wav), "audio/wav");
+
+	assert.equal(
+		detectSpeakingAudioMimeFromBytes(buildFtypBytes("M4A ")),
+		"audio/mp4",
+	);
+	assert.equal(
+		detectSpeakingAudioMimeFromBytes(buildFtypBytes("isom")),
+		"audio/mp4",
+	);
+	assert.equal(
+		detectSpeakingAudioMimeFromBytes(
+			buildFtypBytes("mp42", { extendedSize: true }),
+		),
+		"audio/mp4",
+	);
+
+	for (const imageBrand of [
+		"heic",
+		"heix",
+		"hevc",
+		"hevx",
+		"mif1",
+		"msf1",
+		"avif",
+		"avis",
+		"jp2 ",
+	]) {
+		assert.equal(
+			detectSpeakingAudioMimeFromBytes(buildFtypBytes(imageBrand)),
+			null,
+			`image ftyp brand '${imageBrand}' must not be detected as audio/mp4`,
+		);
+	}
+
+	const webm = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0x9f, 0x42, 0x86, 0x81]);
+	assert.equal(detectSpeakingAudioMimeFromBytes(webm), "audio/webm");
+
+	const ogg = new Uint8Array([0x4f, 0x67, 0x67, 0x53, 0x00, 0x02, 0x00, 0x00]);
+	assert.equal(detectSpeakingAudioMimeFromBytes(ogg), "audio/ogg");
+
+	const mp3Id3 = new Uint8Array([
+		0x49, 0x44, 0x33, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	]);
+	assert.equal(detectSpeakingAudioMimeFromBytes(mp3Id3), "audio/mpeg");
+
+	const mp3Sync = new Uint8Array([0xff, 0xfb, 0x90, 0x00]);
+	assert.equal(detectSpeakingAudioMimeFromBytes(mp3Sync), "audio/mpeg");
+
+	const aacAdts = new Uint8Array([0xff, 0xf1, 0x50, 0x80, 0x01, 0x7f, 0xfc]);
+	assert.equal(detectSpeakingAudioMimeFromBytes(aacAdts), "audio/aac");
+
+	assert.equal(
+		detectSpeakingAudioMimeFromBytes(new Uint8Array([1, 2, 3, 4])),
+		null,
+	);
+	assert.equal(
+		detectSpeakingAudioMimeFromBytes(
+			new TextEncoder().encode("<html>hi</html>"),
+		),
+		null,
+	);
+	assert.equal(detectSpeakingAudioMimeFromBytes(null), null);
+	assert.equal(detectSpeakingAudioMimeFromBytes(new Uint8Array(0)), null);
+});
+
+test("resolveSpeakingUploadMeta normalizes MIME aliases and overrides mislabeled blob types from magic bytes", () => {
+	assert.deepEqual(resolveSpeakingUploadMeta("video/mp4"), {
+		contentType: "audio/mp4",
+		filename: "speaking.m4a",
+	});
+	assert.deepEqual(resolveSpeakingUploadMeta("audio/x-m4a"), {
+		contentType: "audio/mp4",
+		filename: "speaking.m4a",
+	});
+	assert.deepEqual(resolveSpeakingUploadMeta("audio/mp4a-latm"), {
+		contentType: "audio/mp4",
+		filename: "speaking.m4a",
+	});
+	assert.deepEqual(resolveSpeakingUploadMeta("audio/wave"), {
+		contentType: "audio/wav",
+		filename: "speaking.wav",
+	});
+	assert.deepEqual(resolveSpeakingUploadMeta("audio/vnd.wave"), {
+		contentType: "audio/wav",
+		filename: "speaking.wav",
+	});
+	assert.deepEqual(resolveSpeakingUploadMeta("audio/opus"), {
+		contentType: "audio/ogg",
+		filename: "speaking.ogg",
+	});
+	assert.deepEqual(resolveSpeakingUploadMeta("application/ogg"), {
+		contentType: "audio/ogg",
+		filename: "speaking.ogg",
+	});
+	assert.deepEqual(resolveSpeakingUploadMeta("audio/x-mpeg-3"), {
+		contentType: "audio/mpeg",
+		filename: "speaking.mp3",
+	});
+	assert.deepEqual(resolveSpeakingUploadMeta("audio/adts"), {
+		contentType: "audio/aac",
+		filename: "speaking.aac",
+	});
+	assert.deepEqual(resolveSpeakingUploadMeta(""), {
+		contentType: "audio/webm",
+		filename: "speaking.webm",
+	});
+
+	// Magic-byte sniffing overrides mislabeled WebKit/empty blob types
+	const mp4Head = buildFtypBytes("M4A ");
+	assert.deepEqual(resolveSpeakingUploadMeta("audio/webm", mp4Head), {
+		contentType: "audio/mp4",
+		filename: "speaking.m4a",
+	});
+	assert.deepEqual(resolveSpeakingUploadMeta("", mp4Head), {
+		contentType: "audio/mp4",
+		filename: "speaking.m4a",
+	});
+	assert.deepEqual(resolveSpeakingUploadMeta("video/mp4", mp4Head), {
+		contentType: "audio/mp4",
+		filename: "speaking.m4a",
+	});
+
+	// Unknown magic bytes fall back to declared blob type
+	assert.deepEqual(
+		resolveSpeakingUploadMeta("audio/x-m4a", new Uint8Array([0, 1, 2, 3])),
+		{
+			contentType: "audio/mp4",
+			filename: "speaking.m4a",
+		},
+	);
+});
+
+test("isLikelyInAppBrowser detects mobile social WebViews and excludes standard Safari/Chrome UAs", () => {
+	for (const ua of [
+		"Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Zalo/24.03.01",
+		"Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 [FBAN/FBIOS;FBAV/450.0.0]",
+		"Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124.0 FB_IAB/FB4A;FBAV/450.0",
+		"Mozilla/5.0 (iPhone; CPU iPhone OS 17_4) AppleWebKit/605.1.15 MessengerLiteForiOS",
+		"Mozilla/5.0 (iPhone; CPU iPhone OS 17_4) AppleWebKit/605.1.15 Instagram 325.0.0",
+		"Mozilla/5.0 (iPhone; CPU iPhone OS 17_4) AppleWebKit/605.1.15 Line/14.2.0",
+		"Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 BytedanceWebview/d8a21c6",
+		"Mozilla/5.0 (iPhone; CPU iPhone OS 17_4) AppleWebKit/605.1.15 musical_ly_34.0.0",
+		"Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 TikTok 34.0.0",
+	]) {
+		assert.equal(
+			isLikelyInAppBrowser(ua),
+			true,
+			`expected in-app match: ${ua}`,
+		);
+	}
+
+	for (const ua of [
+		"Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+		"Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
+		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+		"",
+		null,
+	]) {
+		assert.equal(
+			isLikelyInAppBrowser(ua),
+			false,
+			`expected normal browser UA: ${ua}`,
+		);
+	}
+});
+
+test("isRetryableSpeakingUploadError retries only network, 408, 429 and 5xx errors", () => {
+	for (const retryable of [0, null, undefined, 408, 429, 500, 502, 503, 504]) {
+		assert.equal(
+			isRetryableSpeakingUploadError(retryable),
+			true,
+			`status ${retryable} should be retryable`,
+		);
+	}
+	for (const nonRetryable of [200, 400, 401, 403, 404, 409, 413, 415, 422]) {
+		assert.equal(
+			isRetryableSpeakingUploadError(nonRetryable),
+			false,
+			`status ${nonRetryable} should not be retryable`,
+		);
+	}
+});
+
+test("mergeSpeakingAudioSegments preserves MP4 magic-byte type without forcing audio/webm and supports arrayBuffer fallback", async () => {
+	const prevAudioContext = globalThis.AudioContext;
+	const prevWebkitAudioContext = globalThis.webkitAudioContext;
+	delete globalThis.AudioContext;
+	delete globalThis.webkitAudioContext;
+
+	try {
+		const mp4Head = buildFtypBytes("M4A ");
+		const singleEmptyTypeMp4 = new Blob([mp4Head]);
+		const singleMerged = await mergeSpeakingAudioSegments([
+			{ blob: singleEmptyTypeMp4, durationMs: 1000 },
+		]);
+		assert.equal(singleMerged.type, "audio/mp4");
+
+		const mp4Seg1 = new Blob([mp4Head]);
+		const mp4Seg2 = new Blob([new Uint8Array([0x00, 0x01, 0x02, 0x03])]);
+		const fallbackMp4 = await mergeSpeakingAudioSegments([
+			{ blob: mp4Seg1, durationMs: 800 },
+			{ blob: mp4Seg2, durationMs: 800 },
+		]);
+		assert.equal(fallbackMp4.type, "audio/mp4");
+
+		const unknownSeg1 = new Blob([new Uint8Array([1, 2, 3, 4])]);
+		const unknownSeg2 = new Blob([new Uint8Array([5, 6, 7, 8])]);
+		const fallbackUnknown = await mergeSpeakingAudioSegments([
+			{ blob: unknownSeg1, durationMs: 500 },
+			{ blob: unknownSeg2, durationMs: 500 },
+		]);
+		assert.equal(fallbackUnknown.type, "");
+
+		// Verify readBlobArrayBuffer falls back cleanly when blob.arrayBuffer is absent
+		const legacyBlob = new Blob([new Uint8Array([9, 8, 7, 6])]);
+		Object.defineProperty(legacyBlob, "arrayBuffer", { value: undefined });
+		const buf = await readBlobArrayBuffer(legacyBlob);
+		assert.deepEqual(Array.from(new Uint8Array(buf)), [9, 8, 7, 6]);
+	} finally {
+		if (prevAudioContext === undefined) {
+			delete globalThis.AudioContext;
+		} else {
+			globalThis.AudioContext = prevAudioContext;
+		}
+		if (prevWebkitAudioContext === undefined) {
+			delete globalThis.webkitAudioContext;
+		} else {
+			globalThis.webkitAudioContext = prevWebkitAudioContext;
+		}
+	}
+});
+
+test("uploadSpeakingMediaWithRetry sniffs magic bytes, retries transient failures with backoff, and stops immediately on 4xx", async () => {
+	const mp4Blob = new Blob([buildFtypBytes("M4A ")], { type: "audio/webm" });
+	const observedHeaders = [];
+	const delays = [];
+	let attempts = 0;
+
+	const result = await uploadSpeakingMediaWithRetry({
+		apiBase: "https://api.example.test",
+		submissionId: "sub-123",
+		uploadToken: "tok-abc",
+		blob: mp4Blob,
+		durationSec: 42,
+		sleepImpl: async (ms) => {
+			delays.push(ms);
+		},
+		fetchImpl: async (_url, init) => {
+			attempts += 1;
+			observedHeaders.push(init.headers);
+			if (attempts === 1) {
+				throw new TypeError("Failed to fetch");
+			}
+			if (attempts === 2) {
+				return new Response(JSON.stringify({ error: "SERVER_BUSY" }), {
+					status: 503,
+					headers: { "Content-Type": "application/json" },
+				});
+			}
+			return new Response(JSON.stringify({ ok: true }), {
+				status: 200,
+				headers: { "Content-Type": "application/json" },
+			});
+		},
+	});
+
+	assert.deepEqual(result, { ok: true });
+	assert.equal(attempts, 3);
+	assert.deepEqual(delays, [800, 2000]);
+	assert.equal(observedHeaders[0]["Content-Type"], "audio/mp4");
+	assert.equal(observedHeaders[0]["X-Media-Filename"], "speaking.m4a");
+	assert.equal(observedHeaders[0]["X-Speaking-Duration"], "42");
+
+	// Non-retryable 415 must fail immediately without retry
+	let nonRetryAttempts = 0;
+	const nonRetryDelays = [];
+	await assert.rejects(
+		uploadSpeakingMediaWithRetry({
+			apiBase: "https://api.example.test",
+			submissionId: "sub-415",
+			uploadToken: "tok-abc",
+			blob: mp4Blob,
+			durationSec: 12,
+			sleepImpl: async (ms) => {
+				nonRetryDelays.push(ms);
+			},
+			fetchImpl: async () => {
+				nonRetryAttempts += 1;
+				return new Response(JSON.stringify({ error: "UNSUPPORTED_MEDIA" }), {
+					status: 415,
+					headers: { "Content-Type": "application/json" },
+				});
+			},
+		}),
+		/UNSUPPORTED_MEDIA/,
+	);
+	assert.equal(nonRetryAttempts, 1);
+	assert.deepEqual(nonRetryDelays, []);
+});
+
+test("IndexedDB speaking backup fails open when unavailable and respects 15-minute TTL", async () => {
+	const blob = new Blob([buildFtypBytes("M4A ")], { type: "audio/mp4" });
+
+	// Fail-open when indexedDB is missing or throws
+	assert.equal(
+		await saveSpeakingBackup({
+			submissionId: "sub-none",
+			blob,
+			mimeType: "audio/mp4",
+			durationSec: 20,
+			idbFactory: null,
+		}),
+		false,
+	);
+	assert.equal(
+		await loadSpeakingBackup("sub-none", { idbFactory: null }),
+		null,
+	);
+	assert.equal(
+		await deleteSpeakingBackup("sub-none", {
+			idbFactory: {
+				open() {
+					throw new Error("SecurityError");
+				},
+			},
+		}),
+		false,
+	);
+
+	// Round-trip save, load within TTL, expire after TTL, and delete
+	const records = new Map();
+	const fakeIdb = {
+		open() {
+			const openReq = { result: null };
+			queueMicrotask(() => {
+				const db = {
+					objectStoreNames: { contains: () => true },
+					createObjectStore() {},
+					close() {},
+					transaction() {
+						const tx = {};
+						return {
+							objectStore() {
+								return {
+									put(val) {
+										const req = {};
+										records.set(val.submissionId, val);
+										queueMicrotask(() => {
+											req.onsuccess?.();
+											tx.oncomplete?.();
+										});
+										return req;
+									},
+									get(key) {
+										const req = { result: records.get(key) };
+										queueMicrotask(() => {
+											req.onsuccess?.();
+											tx.oncomplete?.();
+										});
+										return req;
+									},
+									delete(key) {
+										const req = {};
+										records.delete(key);
+										queueMicrotask(() => {
+											req.onsuccess?.();
+											tx.oncomplete?.();
+										});
+										return req;
+									},
+								};
+							},
+							set oncomplete(fn) {
+								tx.oncomplete = fn;
+							},
+							set onerror(fn) {
+								tx.onerror = fn;
+							},
+							set onabort(fn) {
+								tx.onabort = fn;
+							},
+						};
+					},
+				};
+				openReq.result = db;
+				openReq.onupgradeneeded?.();
+				openReq.onsuccess?.();
+			});
+			return openReq;
+		},
+	};
+
+	const t0 = 1_700_000_000_000;
+	const saved = await saveSpeakingBackup({
+		submissionId: "sub-1",
+		blob,
+		mimeType: "audio/mp4",
+		durationSec: 35,
+		now: t0,
+		idbFactory: fakeIdb,
+	});
+	assert.equal(saved, true);
+
+	const restored = await loadSpeakingBackup("sub-1", {
+		now: t0 + 5 * 60 * 1000,
+		idbFactory: fakeIdb,
+	});
+	assert.ok(restored);
+	assert.equal(restored.submissionId, "sub-1");
+	assert.equal(restored.durationSec, 35);
+	assert.equal(restored.mimeType, "audio/mp4");
+	assert.equal(restored.blob.size, blob.size);
+
+	// Past 15m TTL -> returns null and clears expired entry
+	const expired = await loadSpeakingBackup("sub-1", {
+		now: t0 + 16 * 60 * 1000,
+		idbFactory: fakeIdb,
+	});
+	assert.equal(expired, null);
+	assert.equal(records.has("sub-1"), false);
 });
