@@ -17,6 +17,7 @@ import {
 	computeSpeechFallbackTimeoutMs,
 	createInitialSpeakingSession,
 	formatPlacementClock,
+	isLikelyInAppBrowser,
 	MAX_SPEAKING_RETRIES_PER_TASK,
 	PLACEMENT_SPEAKING_MAX_BYTES,
 	pickSupportedRecorderMime,
@@ -57,11 +58,13 @@ export function PlacementSpeakingStep({
 	recordedAudio,
 	onRecordedAudioChange,
 	onBusyChange,
+	hideIntroHeader = false,
 }: {
 	tasks: readonly PlacementPublishedSpeakingTask[];
 	recordedAudio: RecordedSpeakingAudio | null;
 	onRecordedAudioChange: (next: RecordedSpeakingAudio | null) => void;
 	onBusyChange: (busy: boolean) => void;
+	hideIntroHeader?: boolean;
 }) {
 	const activeOrgId = useActiveStudentOrgId();
 	const [session, setSession] = useState<SpeakingSessionState>(() =>
@@ -295,9 +298,15 @@ export function PlacementSpeakingStep({
 				}
 				const durationMs = Math.max(0, Date.now() - startedAt);
 				const rawMime =
-					recorder.mimeType || preferredMimeRef.current || "audio/webm";
-				const normalizedMime = resolveSpeakingUploadMeta(rawMime).contentType;
-				const blob = new Blob(chunks, { type: normalizedMime });
+					recorder.mimeType ||
+					preferredMimeRef.current ||
+					chunks[0]?.type ||
+					"";
+				const blob = rawMime
+					? new Blob(chunks, {
+							type: resolveSpeakingUploadMeta(rawMime).contentType,
+						})
+					: new Blob(chunks);
 				const seg = !discardThis && blob.size > 0 ? { blob, durationMs } : null;
 				if (seg) {
 					recordedSegmentsRef.current[taskIndex] = seg;
@@ -804,14 +813,20 @@ export function PlacementSpeakingStep({
 	}, 0);
 	const estimatedMinutes = Math.max(1, Math.ceil(estimatedTotalSec / 60));
 
+	const inAppBrowser = isLikelyInAppBrowser(
+		typeof navigator !== "undefined" ? navigator.userAgent : "",
+	);
+
 	if (tasks.length === 0) {
 		return (
 			<div className="space-y-6" data-testid="placement-step-speaking">
 				<Card>
 					<CardHeader>
-						<CardDescription className="font-mono text-[11px] uppercase tracking-[0.16em]">
-							Phần 5 / 5 · Nói (Speaking)
-						</CardDescription>
+						{hideIntroHeader ? null : (
+							<CardDescription className="font-mono text-[11px] uppercase tracking-[0.16em]">
+								Phần 5 / 5 · Nói (Speaking)
+							</CardDescription>
+						)}
 						<CardTitle className="text-xl">Kiểm tra Speaking</CardTitle>
 						<CardDescription>
 							Đề kiểm tra hiện tại không có câu hỏi Speaking. Bạn có thể bấm nộp
@@ -840,14 +855,16 @@ export function PlacementSpeakingStep({
 
 	return (
 		<div className="space-y-6" data-testid="placement-step-speaking">
-			<Card>
-				<CardHeader>
-					<CardDescription className="font-mono text-[11px] uppercase tracking-[0.16em]">
-						Phần 5 / 5 · Nói (Speaking)
-					</CardDescription>
-					<CardTitle className="text-xl">Kiểm tra Speaking</CardTitle>
-				</CardHeader>
-			</Card>
+			{hideIntroHeader ? null : (
+				<Card>
+					<CardHeader>
+						<CardDescription className="font-mono text-[11px] uppercase tracking-[0.16em]">
+							Phần 5 / 5 · Nói (Speaking)
+						</CardDescription>
+						<CardTitle className="text-xl">Kiểm tra Speaking</CardTitle>
+					</CardHeader>
+				</Card>
+			)}
 
 			<Card>
 				<CardContent className="space-y-4">
@@ -866,6 +883,19 @@ export function PlacementSpeakingStep({
 							(MediaRecorder). Vui lòng sử dụng trình duyệt/thiết bị có Micro
 							(Chrome, Safari, Edge) để hoàn thành phần Speaking trước khi nộp
 							bài.
+						</div>
+					) : null}
+
+					{inAppBrowser || mediaError ? (
+						<div
+							data-testid="speaking-in-app-browser-hint"
+							className="rounded-lg border border-warn/40 bg-warn-soft p-3 text-foreground text-xs leading-relaxed"
+						>
+							Nếu bạn đang mở bài kiểm tra trong trình duyệt tích hợp (Zalo,
+							Facebook, Messenger) và gặp lỗi Micro hoặc không ghi âm được, hãy
+							chọn{" "}
+							<strong className="font-semibold">Mở bằng Safari / Chrome</strong>{" "}
+							để ghi âm và tải bài nói ổn định hơn.
 						</div>
 					) : null}
 

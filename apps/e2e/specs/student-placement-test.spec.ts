@@ -839,4 +839,270 @@ test.describe
 				await studentContext.close();
 			}
 		});
+
+		test("khôi phục Speaking bị pending_upload: tải lại trang mất bản ghi tạm -> ghi âm lại đúng đề -> cấp token mới & upload thành công -> giáo viên nghe được audio", async ({
+			browser,
+		}) => {
+			test.setTimeout(180_000);
+			const teacherContext = await browser.newContext();
+			const teacherPage = await teacherContext.newPage();
+			await ensurePlacementPublished(teacherPage);
+
+			const studentContext = await browser.newContext();
+			const studentPage = await studentContext.newPage();
+			await installSyntheticSpeakingDevice(studentPage);
+			const email = `e2e-speaking-recover-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@test.local`;
+
+			try {
+				await studentPage.goto(`${LMS_ORIGIN}/login`);
+				await studentPage.locator("#tab-signup").click();
+				await studentPage
+					.locator("#signup-name")
+					.fill("Học Viên Khôi Phục Speaking");
+				await studentPage.locator("#signup-email").fill(email);
+				await studentPage.locator("#signup-password").fill("password-8chars");
+				await studentPage
+					.locator("#panel-signup button[type='submit']")
+					.click();
+				await expect(
+					studentPage.getByText("Email chưa được xác thực"),
+				).toBeVisible({ timeout: 15_000 });
+				await verifyStudentEmailFromMailLog(studentPage, email);
+				await completeStudentOnboarding(studentPage);
+				await expect(studentPage).toHaveURL(
+					new RegExp(`^${STUDENT_BASE_URL}/?$`),
+					{ timeout: 20_000 },
+				);
+
+				// 1. Vào bài test, điền Writing và ghi âm Speaking lượt 1
+				await studentPage.goto(`${STUDENT_BASE_URL}/placement-test`);
+				await expect(
+					studentPage.getByTestId("placement-intro-card"),
+				).toBeVisible({ timeout: 15_000 });
+				await studentPage.getByTestId("start-placement-test-btn").click();
+				await studentPage.getByTestId("placement-tab-writing").click();
+				await studentPage
+					.locator("textarea")
+					.fill(
+						"I enjoy studying English because it helps me communicate confidently at work and travel abroad.",
+					);
+				await studentPage.getByTestId("placement-tab-speaking").click();
+				await studentPage
+					.getByRole("button", { name: /Bắt đầu làm bài Speaking/ })
+					.click();
+				await expect(
+					studentPage.getByTestId("speaking-prep-stage"),
+				).toBeVisible({ timeout: 5000 });
+				await studentPage.getByRole("button", { name: /Trả lời ngay/ }).click();
+				await studentPage.waitForTimeout(350);
+				await studentPage
+					.getByRole("button", { name: "Kết thúc phần Speaking" })
+					.click();
+				await studentPage
+					.getByRole("button", { name: "Xác nhận kết thúc sớm" })
+					.click();
+				await expect(
+					studentPage.getByTestId("speaking-review-box"),
+				).toBeVisible({ timeout: 10_000 });
+
+				// 2. Giả lập lỗi không retry được (415) ở lượt PUT đầu để bài rơi vào pending_upload
+				let blockInitialUpload = true;
+				await studentPage.route(
+					"**/api/student/placement-test/submissions/*/speaking",
+					async (route) => {
+						if (blockInitialUpload && route.request().method() === "PUT") {
+							await route.fulfill({
+								status: 415,
+								contentType: "application/json",
+								body: JSON.stringify({ error: "unsupported media type" }),
+							});
+							return;
+						}
+						await route.continue();
+					},
+				);
+
+				await studentPage.getByTestId("submit-placement-test-btn").click();
+				const confirmBox = studentPage.getByTestId(
+					"placement-unanswered-confirm",
+				);
+				if (await confirmBox.isVisible()) {
+					await confirmBox
+						.getByRole("button", { name: "Vẫn nộp bài ngay" })
+						.click();
+				}
+
+				await expect(
+					studentPage.getByTestId("placement-pending-view"),
+				).toBeVisible({ timeout: 20_000 });
+				await expect(
+					studentPage.getByTestId("pending-speaking-status"),
+				).toHaveText("Chưa tải lên được bài nói");
+				await expect(
+					studentPage.getByTestId("retry-speaking-upload-btn"),
+				).toBeVisible();
+
+				// 3. Xóa IndexedDB backup + reload để mô phỏng tình huống mở lại sau khi đóng in-app browser
+				blockInitialUpload = false;
+				await studentPage.evaluate(async () => {
+					await new Promise<void>((resolve) => {
+						const req = indexedDB.deleteDatabase(
+							"msmy_student_placement_speaking_v1",
+						);
+						req.onsuccess = () => resolve();
+						req.onerror = () => resolve();
+						req.onblocked = () => resolve();
+					});
+				});
+				await studentPage.reload();
+
+				await expect(
+					studentPage.getByTestId("placement-pending-view"),
+				).toBeVisible({ timeout: 20_000 });
+				await expect(
+					studentPage.getByTestId("pending-speaking-status"),
+				).toHaveText("Chưa tải lên được bài nói");
+				const rerecordBtn = studentPage.getByTestId("rerecord-speaking-btn");
+				await expect(rerecordBtn).toBeVisible({ timeout: 10_000 });
+				await expect(studentPage.locator('input[type="file"]')).toHaveCount(0);
+
+				// Kiểm tra 3 viewport + dark mode + 320px reflow cho màn hình pending_upload có nút ghi âm lại
+				const potTag = process.env.CAPTURE_SPEAKING_RECOVERY_POT?.trim();
+				for (const vp of [
+					...VIEWPORTS,
+					{ width: 320, height: 568, label: "reflow-320x568" },
+				] as const) {
+					await studentPage.setViewportSize({
+						width: vp.width,
+						height: vp.height,
+					});
+					await studentPage.waitForTimeout(250);
+					const noOverflow = await studentPage.evaluate(
+						() =>
+							document.documentElement.scrollWidth <=
+							document.documentElement.clientWidth,
+					);
+					expect(
+						noOverflow,
+						`Màn pending_upload recovery không tràn ngang ở ${vp.label}`,
+					).toBe(true);
+					if (potTag && vp.label !== "reflow-320x568") {
+						if (vp.label === "mobile-375x812") {
+							await rerecordBtn.scrollIntoViewIfNeeded();
+						}
+						await studentPage.screenshot({
+							path: reportPath(
+								`${potTag}-speaking-recovery-pending-${vp.label}.png`,
+							),
+						});
+					}
+				}
+				if (potTag) {
+					await studentPage.setViewportSize({ width: 1440, height: 900 });
+					await studentPage.evaluate(() =>
+						document.documentElement.classList.add("dark"),
+					);
+					await studentPage.waitForTimeout(200);
+					await studentPage.screenshot({
+						path: reportPath(
+							`${potTag}-speaking-recovery-pending-desktop-dark.png`,
+						),
+					});
+					await studentPage.evaluate(() =>
+						document.documentElement.classList.remove("dark"),
+					);
+				}
+				await studentPage.setViewportSize({ width: 1440, height: 900 });
+
+				// 4. Bấm Ghi âm lại -> hoàn thành thu âm -> tải lên bằng token cấp mới -> Đã gửi bài nói
+				await rerecordBtn.click();
+				const recoveryPanel = studentPage.getByTestId(
+					"speaking-recovery-panel",
+				);
+				await expect(recoveryPanel).toBeVisible();
+				await recoveryPanel
+					.getByRole("button", { name: /Bắt đầu làm bài Speaking/ })
+					.click();
+				await expect(
+					recoveryPanel.getByTestId("speaking-prep-stage"),
+				).toBeVisible({ timeout: 5000 });
+				await recoveryPanel
+					.getByRole("button", { name: /Trả lời ngay/ })
+					.click();
+				await studentPage.waitForTimeout(350);
+				await recoveryPanel
+					.getByRole("button", { name: "Kết thúc phần Speaking" })
+					.click();
+				await recoveryPanel
+					.getByRole("button", { name: "Xác nhận kết thúc sớm" })
+					.click();
+				await expect(
+					recoveryPanel.getByTestId("speaking-review-box"),
+				).toBeVisible({ timeout: 10_000 });
+
+				await Promise.all([
+					studentPage.waitForResponse(
+						(res) =>
+							/\/api\/student\/placement-test\/submissions\/[^/]+\/speaking-upload-token$/.test(
+								res.url(),
+							) &&
+							res.request().method() === "POST" &&
+							res.status() === 200,
+					),
+					studentPage.waitForResponse(
+						(res) =>
+							/\/api\/student\/placement-test\/submissions\/[^/]+\/speaking$/.test(
+								res.url(),
+							) &&
+							res.request().method() === "PUT" &&
+							res.status() === 200,
+					),
+					studentPage.getByTestId("upload-recovered-speaking-btn").click(),
+				]);
+
+				await expect(
+					studentPage.getByTestId("pending-speaking-status"),
+				).toHaveText("Đã gửi bài nói", { timeout: 15_000 });
+				await expect(
+					studentPage.getByTestId("speaking-upload-success-banner"),
+				).toBeVisible();
+				if (potTag) {
+					await studentPage.setViewportSize({ width: 1440, height: 900 });
+					await studentPage.waitForTimeout(200);
+					await studentPage.screenshot({
+						path: reportPath(
+							`${potTag}-speaking-recovery-uploaded-desktop-1440x900.png`,
+						),
+					});
+				}
+
+				// 5. Giáo viên mở trang học viên thấy trình phát audio Speaking (không còn báo chưa tải lên)
+				const db = await openDb();
+				let studentId = "";
+				try {
+					const sRow = await db.execute({
+						sql: "SELECT id FROM student WHERE lower(trim(email)) = lower(?) LIMIT 1",
+						args: [email],
+					});
+					studentId = String(sRow.rows[0]?.id ?? "");
+					expect(studentId).not.toBe("");
+				} finally {
+					db.close();
+				}
+
+				await teacherPage.goto(`${TEACHER_BASE_URL}/students/${studentId}`);
+				await expect(
+					teacherPage.getByTestId("placement-submission-panel"),
+				).toBeVisible({ timeout: 20_000 });
+				await expect(
+					teacherPage.getByTestId("speaking-media-player"),
+				).toBeVisible({ timeout: 15_000 });
+				await expect(
+					teacherPage.getByText("File ghi âm Speaking chưa hoàn tất tải lên."),
+				).toHaveCount(0);
+			} finally {
+				await studentContext.close();
+				await teacherContext.close();
+			}
+		});
 	});

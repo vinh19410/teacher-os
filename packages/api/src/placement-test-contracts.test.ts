@@ -8,11 +8,13 @@ import {
 	buildPlacementZaloText,
 	computePlacementFinal,
 	countPlacementWords,
+	detectSpeakingAudioMimeFromBytes,
 	extractReferencedAudioIds,
 	gradePlacementObjective,
 	hasPlacementSpeakingTasks,
 	isIeltsSpeakingRubric,
 	isIeltsWritingRubric,
+	isLikelyInAppBrowser,
 	matchPlacementBand,
 	normalizePlacementGapAnswer,
 	normalizePublishedPlacementSnapshot,
@@ -27,6 +29,7 @@ import {
 	parseStoredWritingRubric,
 	placementContentSchema,
 	placementPublicSubmitSchema,
+	resolvePlacementSpeakingUploadMeta,
 	studentPlacementSubmitSchema,
 	upgradeLegacyPlacementContent,
 	validatePlacementForPublish,
@@ -1429,5 +1432,263 @@ describe("placement-test-contracts v2", () => {
 				speakingMode: "upload",
 			}).success,
 		).toBe(true);
+	});
+
+	it("detectSpeakingAudioMimeFromBytes nhận diện đúng magic bytes audio và từ chối ảnh/payload lạ", () => {
+		const ascii = (s: string) => [...s].map((ch) => ch.charCodeAt(0));
+		const makeFtyp = (brand: string, size = 24) => {
+			const buf = new Uint8Array(Math.max(16, size));
+			const view = new DataView(buf.buffer);
+			view.setUint32(0, size, false);
+			buf.set(ascii("ftyp"), 4);
+			buf.set(ascii(brand), 8);
+			return buf;
+		};
+
+		// WAV: RIFF....WAVE và RF64....WAVE
+		const riffWav = new Uint8Array([
+			...ascii("RIFF"),
+			0x24,
+			0x00,
+			0x00,
+			0x00,
+			...ascii("WAVE"),
+			...ascii("fmt "),
+		]);
+		expect(detectSpeakingAudioMimeFromBytes(riffWav)).toBe("audio/wav");
+
+		const rf64Wav = new Uint8Array([
+			...ascii("RF64"),
+			0xff,
+			0xff,
+			0xff,
+			0xff,
+			...ascii("WAVE"),
+			...ascii("ds64"),
+		]);
+		expect(detectSpeakingAudioMimeFromBytes(rf64Wav)).toBe("audio/wav");
+
+		const riffWebp = new Uint8Array([
+			...ascii("RIFF"),
+			0x24,
+			0x00,
+			0x00,
+			0x00,
+			...ascii("WEBP"),
+		]);
+		expect(detectSpeakingAudioMimeFromBytes(riffWebp)).toBeNull();
+
+		// ISO BMFF ftyp: audio brands hợp lệ, 64-bit extended size, subarray có byteOffset
+		expect(detectSpeakingAudioMimeFromBytes(makeFtyp("M4A "))).toBe(
+			"audio/mp4",
+		);
+		expect(detectSpeakingAudioMimeFromBytes(makeFtyp("isom"))).toBe(
+			"audio/mp4",
+		);
+		expect(detectSpeakingAudioMimeFromBytes(makeFtyp("mp42"))).toBe(
+			"audio/mp4",
+		);
+
+		const ext64Ftyp = new Uint8Array(24);
+		const extView = new DataView(ext64Ftyp.buffer);
+		extView.setUint32(0, 1, false);
+		ext64Ftyp.set(ascii("ftyp"), 4);
+		extView.setUint32(8, 0, false);
+		extView.setUint32(12, 24, false);
+		ext64Ftyp.set(ascii("M4A "), 16);
+		expect(detectSpeakingAudioMimeFromBytes(ext64Ftyp)).toBe("audio/mp4");
+
+		const padded = new Uint8Array(32);
+		padded.set(makeFtyp("M4A ", 16), 8);
+		expect(detectSpeakingAudioMimeFromBytes(padded.subarray(8, 24))).toBe(
+			"audio/mp4",
+		);
+
+		// Banned image ftyp brands và ftyp size không hợp lệ
+		for (const banned of [
+			"heic",
+			"heix",
+			"hevc",
+			"hevx",
+			"mif1",
+			"msf1",
+			"avif",
+			"avis",
+			"jp2 ",
+		]) {
+			expect(detectSpeakingAudioMimeFromBytes(makeFtyp(banned))).toBeNull();
+		}
+		expect(detectSpeakingAudioMimeFromBytes(makeFtyp("M4A ", 12))).toBeNull();
+		expect(detectSpeakingAudioMimeFromBytes(makeFtyp("M4A ", 18))).toBeNull();
+
+		// WebM (EBML)
+		expect(
+			detectSpeakingAudioMimeFromBytes(
+				new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0x9f]),
+			),
+		).toBe("audio/webm");
+
+		// OggS
+		expect(
+			detectSpeakingAudioMimeFromBytes(
+				new Uint8Array([0x4f, 0x67, 0x67, 0x53, 0x00]),
+			),
+		).toBe("audio/ogg");
+
+		// MP3: ID3 tag và MPEG Layer 3 frame sync
+		expect(
+			detectSpeakingAudioMimeFromBytes(
+				new Uint8Array([0x49, 0x44, 0x33, 0x03, 0x00]),
+			),
+		).toBe("audio/mpeg");
+		expect(
+			detectSpeakingAudioMimeFromBytes(
+				new Uint8Array([0xff, 0xfb, 0x90, 0x00]),
+			),
+		).toBe("audio/mpeg");
+
+		// AAC: ADTS frame sync
+		expect(
+			detectSpeakingAudioMimeFromBytes(
+				new Uint8Array([0xff, 0xf1, 0x50, 0x80]),
+			),
+		).toBe("audio/aac");
+
+		// Buffer ngắn hoặc payload lạ (HTML) -> null
+		expect(
+			detectSpeakingAudioMimeFromBytes(new Uint8Array([0x1a, 0x45, 0xdf])),
+		).toBeNull();
+		expect(
+			detectSpeakingAudioMimeFromBytes(new TextEncoder().encode("<html>")),
+		).toBeNull();
+	});
+
+	it("resolvePlacementSpeakingUploadMeta ưu tiên magic bytes hơn MIME trình duyệt và chuẩn hoá đủ các alias audio", () => {
+		const mp4Head = new Uint8Array([
+			0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x41, 0x20,
+			0x00, 0x00, 0x00, 0x00,
+		]);
+		const webmHead = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0x9f]);
+
+		// Magic bytes MP4 ghi đè nhãn sai từ trình duyệt (audio/webm, video/mp4, rỗng)
+		expect(resolvePlacementSpeakingUploadMeta("audio/webm", mp4Head)).toEqual({
+			contentType: "audio/mp4",
+			filename: "speaking.m4a",
+		});
+		expect(
+			resolvePlacementSpeakingUploadMeta("video/mp4;codecs=mp4a.40.2", mp4Head),
+		).toEqual({
+			contentType: "audio/mp4",
+			filename: "speaking.m4a",
+		});
+		expect(resolvePlacementSpeakingUploadMeta("", mp4Head)).toEqual({
+			contentType: "audio/mp4",
+			filename: "speaking.m4a",
+		});
+
+		// Magic bytes WebM ghi đè chuỗi rỗng
+		expect(resolvePlacementSpeakingUploadMeta("", webmHead)).toEqual({
+			contentType: "audio/webm",
+			filename: "speaking.webm",
+		});
+
+		// Fallback theo blobType khi không có headBytes hoặc không nhận diện được
+		expect(
+			resolvePlacementSpeakingUploadMeta("video/mp4; codecs=avc1"),
+		).toEqual({
+			contentType: "audio/mp4",
+			filename: "speaking.m4a",
+		});
+		expect(resolvePlacementSpeakingUploadMeta("audio/x-m4a", null)).toEqual({
+			contentType: "audio/mp4",
+			filename: "speaking.m4a",
+		});
+		expect(resolvePlacementSpeakingUploadMeta("audio/mp4a-latm")).toEqual({
+			contentType: "audio/mp4",
+			filename: "speaking.m4a",
+		});
+		expect(
+			resolvePlacementSpeakingUploadMeta("audio/webm;codecs=opus"),
+		).toEqual({
+			contentType: "audio/webm",
+			filename: "speaking.webm",
+		});
+		expect(resolvePlacementSpeakingUploadMeta("video/webm")).toEqual({
+			contentType: "audio/webm",
+			filename: "speaking.webm",
+		});
+		expect(resolvePlacementSpeakingUploadMeta("audio/x-opus+ogg")).toEqual({
+			contentType: "audio/ogg",
+			filename: "speaking.ogg",
+		});
+		expect(resolvePlacementSpeakingUploadMeta("application/ogg")).toEqual({
+			contentType: "audio/ogg",
+			filename: "speaking.ogg",
+		});
+		expect(resolvePlacementSpeakingUploadMeta("audio/mp3")).toEqual({
+			contentType: "audio/mpeg",
+			filename: "speaking.mp3",
+		});
+		expect(resolvePlacementSpeakingUploadMeta("audio/vnd.wave")).toEqual({
+			contentType: "audio/wav",
+			filename: "speaking.wav",
+		});
+		expect(resolvePlacementSpeakingUploadMeta("audio/adts")).toEqual({
+			contentType: "audio/aac",
+			filename: "speaking.aac",
+		});
+
+		// Brand ảnh HEIC / AVIF / JP2 hoặc QuickTime 'qt  ' bị từ chối (khớp media-magic.ts)
+		const qtHeader = new Uint8Array(24);
+		qtHeader[3] = 24;
+		qtHeader.set([0x66, 0x74, 0x79, 0x70, 0x71, 0x74, 0x20, 0x20], 4);
+		expect(detectSpeakingAudioMimeFromBytes(qtHeader)).toBeNull();
+
+		// Chuỗi rỗng, MIME không hỗ trợ hoặc khóa prototype → mặc định audio/webm
+		expect(resolvePlacementSpeakingUploadMeta("")).toEqual({
+			contentType: "audio/webm",
+			filename: "speaking.webm",
+		});
+		expect(
+			resolvePlacementSpeakingUploadMeta(
+				"application/octet-stream",
+				new Uint8Array([0x00, 0x01, 0x02, 0x03]),
+			),
+		).toEqual({
+			contentType: "audio/webm",
+			filename: "speaking.webm",
+		});
+		expect(resolvePlacementSpeakingUploadMeta("toString")).toEqual({
+			contentType: "audio/webm",
+			filename: "speaking.webm",
+		});
+	});
+
+	it("isLikelyInAppBrowser phát hiện WebView di động phổ biến và bỏ qua trình duyệt thường", () => {
+		const inAppAgents = [
+			"Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Zalo/24.02.01",
+			"Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) [FBAN/FBIOS;FBAV/450.0.0]",
+			"Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 FB_IAB/FB4A",
+			"Mozilla/5.0 (iPhone) MessengerForiOS/440.0",
+			"Mozilla/5.0 (iPhone) Instagram 318.0.0.21.109",
+			"Mozilla/5.0 (Linux; Android 13) Line/13.20.0",
+			"Mozilla/5.0 (Linux; Android 13) BytedanceWebview/d8a21c6",
+			"Mozilla/5.0 (iPhone) musical_ly_33.5.0",
+			"Mozilla/5.0 (iPhone) TikTok 33.5.0",
+		];
+		for (const ua of inAppAgents) {
+			expect(isLikelyInAppBrowser(ua)).toBe(true);
+		}
+
+		const standardAgents = [
+			"",
+			"Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+			"Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
+			"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36",
+			"Mozilla/5.0 (Android 14; Mobile; rv:125.0) Gecko/125.0 Firefox/125.0 online-reader/1.0",
+		];
+		for (const ua of standardAgents) {
+			expect(isLikelyInAppBrowser(ua)).toBe(false);
+		}
 	});
 });

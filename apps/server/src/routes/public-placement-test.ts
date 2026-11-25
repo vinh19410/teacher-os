@@ -823,6 +823,19 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 			return c.json({ error: "UPLOAD_TOKEN_INVALID" }, 401);
 		}
 
+		if (
+			sub.status !== "pending_grading" ||
+			sub.speakingStatus !== "pending_upload"
+		) {
+			return c.json(
+				{
+					error: "SPEAKING_UPLOAD_NOT_PENDING",
+					code: "SPEAKING_UPLOAD_NOT_PENDING",
+				},
+				409,
+			);
+		}
+
 		const rawFileName = c.req.header("X-Media-Filename") ?? "speaking.webm";
 		const fileName = sanitizeMediaFileName(rawFileName);
 		if (!fileName) {
@@ -913,6 +926,8 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 					and(
 						eq(placementTestSubmission.id, sub.id),
 						eq(placementTestSubmission.orgId, sub.orgId),
+						eq(placementTestSubmission.status, "pending_grading"),
+						eq(placementTestSubmission.speakingStatus, "pending_upload"),
 						eq(placementTestSubmission.uploadTokenHash, sub.uploadTokenHash),
 					),
 				)
@@ -927,8 +942,11 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 			return c.json({ error: "UPLOAD_CONFLICT" }, 409);
 		}
 
-		// #730: chấm nháp AI Writing + Speaking cùng lượt sau upload.
-		schedulePlacementAiTask(deps, runPlacementAiGrading(deps, sub.id));
+		// Chấm nháp AI Writing + Speaking cùng lượt sau upload (cho phép claim lại từ drafted khi bổ sung Speaking).
+		schedulePlacementAiTask(
+			deps,
+			runPlacementAiGrading(deps, sub.id, { allowRedraftForSpeaking: true }),
+		);
 
 		return c.json({
 			ok: true,

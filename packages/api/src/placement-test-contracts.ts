@@ -2850,6 +2850,12 @@ export interface StudentPlacementViewResponse
 	extends StudentPlacementStatusResponse {
 	snapshot: PlacementSnapshot | null;
 	submission: StudentPlacementSubmissionView | null;
+	speakingTasks?: PlacementPublishedSpeakingTask[] | null;
+}
+
+export interface StudentPlacementSpeakingTokenResponse {
+	uploadToken: string;
+	uploadTokenExpiresAt: string;
 }
 
 export interface StudentPlacementSubmitResponse {
@@ -2860,4 +2866,211 @@ export interface StudentPlacementSubmitResponse {
 		PlacementObjectiveResult,
 		"listening" | "vocabGrammar" | "reading"
 	>;
+}
+
+const BANNED_SPEAKING_FTYP_BRANDS: Readonly<Record<string, true>> = {
+	heic: true,
+	heix: true,
+	hevc: true,
+	hevx: true,
+	mif1: true,
+	msf1: true,
+	avif: true,
+	avis: true,
+	"jp2 ": true,
+	"qt  ": true,
+};
+
+function hasMagicBytesAt(
+	buf: Uint8Array,
+	offset: number,
+	expected: readonly number[],
+): boolean {
+	if (buf.byteLength < offset + expected.length) return false;
+	for (let i = 0; i < expected.length; i += 1) {
+		if (buf[offset + i] !== expected[i]) return false;
+	}
+	return true;
+}
+
+function readFourCcAlnumSpace(buf: Uint8Array, offset: number): string | null {
+	if (buf.byteLength < offset + 4) return null;
+	let out = "";
+	for (let i = 0; i < 4; i += 1) {
+		const b = buf[offset + i] ?? 0;
+		const valid =
+			b === 0x20 ||
+			(b >= 0x30 && b <= 0x39) ||
+			(b >= 0x41 && b <= 0x5a) ||
+			(b >= 0x61 && b <= 0x7a);
+		if (!valid) return null;
+		out += String.fromCharCode(b);
+	}
+	return out;
+}
+
+/**
+ * Nhận diện MIME audio thực tế từ các byte đầu của payload Speaking, khớp với
+ * các chữ ký container audio được server chấp nhận. Trả `null` nếu byte đầu
+ * không khớp container audio hợp lệ.
+ */
+export function detectSpeakingAudioMimeFromBytes(
+	head: Uint8Array,
+): string | null {
+	if (head.byteLength < 4) return null;
+
+	// RIFF....WAVE hoặc RF64....WAVE
+	if (
+		head.byteLength >= 12 &&
+		(hasMagicBytesAt(head, 0, [0x52, 0x49, 0x46, 0x46]) ||
+			hasMagicBytesAt(head, 0, [0x52, 0x46, 0x36, 0x34])) &&
+		hasMagicBytesAt(head, 8, [0x57, 0x41, 0x56, 0x45])
+	) {
+		return "audio/wav";
+	}
+
+	// ISO BMFF ftyp box (MP4/M4A audio), loại trừ brand ảnh (HEIC/AVIF/JP2)
+	if (
+		head.byteLength >= 16 &&
+		hasMagicBytesAt(head, 4, [0x66, 0x74, 0x79, 0x70])
+	) {
+		const view = new DataView(head.buffer, head.byteOffset, head.byteLength);
+		const rawSize = view.getUint32(0, false);
+		let effectiveSize = rawSize;
+		let brandOffset = 8;
+		let sizeValid = true;
+		if (rawSize === 1) {
+			if (head.byteLength < 24 || view.getUint32(8, false) !== 0) {
+				sizeValid = false;
+			} else {
+				effectiveSize = view.getUint32(12, false);
+				if (effectiveSize < 24) sizeValid = false;
+				brandOffset = 16;
+			}
+		} else if (rawSize < 16) {
+			sizeValid = false;
+		}
+		if (sizeValid && effectiveSize <= 4096 && effectiveSize % 4 === 0) {
+			const brand = readFourCcAlnumSpace(head, brandOffset);
+			if (
+				brand !== null &&
+				!Object.hasOwn(BANNED_SPEAKING_FTYP_BRANDS, brand)
+			) {
+				return "audio/mp4";
+			}
+		}
+		return null;
+	}
+
+	// EBML (WebM / Matroska)
+	if (hasMagicBytesAt(head, 0, [0x1a, 0x45, 0xdf, 0xa3])) {
+		return "audio/webm";
+	}
+
+	// OggS
+	if (hasMagicBytesAt(head, 0, [0x4f, 0x67, 0x67, 0x53])) {
+		return "audio/ogg";
+	}
+
+	// ID3 tag hoặc MPEG Layer 3 frame sync
+	const b0 = head[0] ?? 0;
+	const b1 = head[1] ?? 0;
+	const b2 = head[2] ?? 0;
+	if (
+		hasMagicBytesAt(head, 0, [0x49, 0x44, 0x33]) ||
+		(b0 === 0xff &&
+			(b1 & 0xe0) === 0xe0 &&
+			(b1 & 0x18) !== 0x08 &&
+			(b1 & 0x06) === 0x02 &&
+			(b2 & 0xf0) !== 0x00 &&
+			(b2 & 0xf0) !== 0xf0 &&
+			(b2 & 0x0c) !== 0x0c)
+	) {
+		return "audio/mpeg";
+	}
+
+	// ADTS AAC frame sync
+	if (b0 === 0xff && (b1 & 0xf6) === 0xf0 && ((b2 >> 2) & 0x0f) < 13) {
+		return "audio/aac";
+	}
+
+	return null;
+}
+
+const PLACEMENT_SPEAKING_UPLOAD_META_BY_MIME: Readonly<
+	Record<string, { contentType: string; filename: string }>
+> = {
+	"audio/webm": { contentType: "audio/webm", filename: "speaking.webm" },
+	"video/webm": { contentType: "audio/webm", filename: "speaking.webm" },
+	"audio/mp4": { contentType: "audio/mp4", filename: "speaking.m4a" },
+	"video/mp4": { contentType: "audio/mp4", filename: "speaking.m4a" },
+	"audio/x-m4a": { contentType: "audio/mp4", filename: "speaking.m4a" },
+	"audio/m4a": { contentType: "audio/mp4", filename: "speaking.m4a" },
+	"audio/mp4a-latm": { contentType: "audio/mp4", filename: "speaking.m4a" },
+	"audio/ogg": { contentType: "audio/ogg", filename: "speaking.ogg" },
+	"audio/opus": { contentType: "audio/ogg", filename: "speaking.ogg" },
+	"audio/x-opus+ogg": { contentType: "audio/ogg", filename: "speaking.ogg" },
+	"audio/x-vorbis+ogg": { contentType: "audio/ogg", filename: "speaking.ogg" },
+	"video/ogg": { contentType: "audio/ogg", filename: "speaking.ogg" },
+	"application/ogg": { contentType: "audio/ogg", filename: "speaking.ogg" },
+	"audio/mpeg": { contentType: "audio/mpeg", filename: "speaking.mp3" },
+	"audio/mp3": { contentType: "audio/mpeg", filename: "speaking.mp3" },
+	"audio/x-mp3": { contentType: "audio/mpeg", filename: "speaking.mp3" },
+	"audio/x-mpeg": { contentType: "audio/mpeg", filename: "speaking.mp3" },
+	"audio/mpeg3": { contentType: "audio/mpeg", filename: "speaking.mp3" },
+	"audio/x-mpeg-3": { contentType: "audio/mpeg", filename: "speaking.mp3" },
+	"audio/wav": { contentType: "audio/wav", filename: "speaking.wav" },
+	"audio/x-wav": { contentType: "audio/wav", filename: "speaking.wav" },
+	"audio/wave": { contentType: "audio/wav", filename: "speaking.wav" },
+	"audio/vnd.wave": { contentType: "audio/wav", filename: "speaking.wav" },
+	"audio/aac": { contentType: "audio/aac", filename: "speaking.aac" },
+	"audio/x-aac": { contentType: "audio/aac", filename: "speaking.aac" },
+	"audio/aacp": { contentType: "audio/aac", filename: "speaking.aac" },
+	"audio/vnd.dlna.adts": { contentType: "audio/aac", filename: "speaking.aac" },
+	"audio/adts": { contentType: "audio/aac", filename: "speaking.aac" },
+	"audio/x-hx-aac-adts": { contentType: "audio/aac", filename: "speaking.aac" },
+};
+
+const DEFAULT_PLACEMENT_SPEAKING_UPLOAD_META = {
+	contentType: "audio/webm",
+	filename: "speaking.webm",
+} as const;
+
+/**
+ * Chuẩn hoá `Content-Type` và tên file gửi lên server khi tải bài Speaking:
+ * ưu tiên chữ ký magic-byte thực tế trong `headBytes` khi có (tránh trường hợp
+ * WebKit/iOS gắn `video/mp4`, chuỗi rỗng hoặc fallback sai so với byte thật).
+ */
+export function resolvePlacementSpeakingUploadMeta(
+	blobType: string,
+	headBytes?: Uint8Array | null,
+): { contentType: string; filename: string } {
+	if (headBytes && headBytes.byteLength >= 4) {
+		const detected = detectSpeakingAudioMimeFromBytes(headBytes);
+		if (
+			detected &&
+			Object.hasOwn(PLACEMENT_SPEAKING_UPLOAD_META_BY_MIME, detected)
+		) {
+			const meta = PLACEMENT_SPEAKING_UPLOAD_META_BY_MIME[detected];
+			if (meta) return { ...meta };
+		}
+	}
+	const normalized = (blobType.split(";")[0] ?? "").trim().toLowerCase();
+	if (Object.hasOwn(PLACEMENT_SPEAKING_UPLOAD_META_BY_MIME, normalized)) {
+		const meta = PLACEMENT_SPEAKING_UPLOAD_META_BY_MIME[normalized];
+		if (meta) return { ...meta };
+	}
+	return { ...DEFAULT_PLACEMENT_SPEAKING_UPLOAD_META };
+}
+
+const IN_APP_BROWSER_RE =
+	/zalo|fban|fbav|fb_iab|messenger|instagram|line\/|bytedancewebview|musical_ly|tiktok/i;
+
+/**
+ * Nhận diện WebView trong ứng dụng di động (Zalo, Facebook/Messenger,
+ * Instagram, Line, TikTok) thường hạn chế quyền mic hoặc `MediaRecorder`.
+ */
+export function isLikelyInAppBrowser(userAgent: string): boolean {
+	if (!userAgent) return false;
+	return IN_APP_BROWSER_RE.test(userAgent);
 }
