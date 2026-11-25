@@ -104,20 +104,44 @@ function errorCodeOf(error: unknown): PlacementAiErrorCode {
 	return PLACEMENT_AI_ERROR_CODES.FAILED;
 }
 
-function audioFilename(mime: string): string {
-	const ext = mime.includes("webm")
-		? "webm"
-		: mime === "video/mp4"
-			? "mp4"
-			: mime.includes("mp4") || mime.includes("m4a")
-				? "m4a"
-				: mime.includes("mpeg") || mime.includes("mp3")
-					? "mp3"
-					: mime.includes("ogg")
-						? "ogg"
-						: mime.includes("wav")
-							? "wav"
-							: "webm";
+const AUDIO_EXTENSION_BY_MIME: Readonly<Record<string, string>> = {
+	"audio/webm": "webm",
+	"video/webm": "webm",
+	"video/mp4": "mp4",
+	"audio/mp4": "m4a",
+	"audio/x-m4a": "m4a",
+	"audio/m4a": "m4a",
+	"audio/mp4a-latm": "m4a",
+	"audio/aac": "aac",
+	"audio/x-aac": "aac",
+	"audio/aacp": "aac",
+	"audio/adts": "aac",
+	"audio/vnd.dlna.adts": "aac",
+	"audio/x-hx-aac-adts": "aac",
+	"audio/mpeg": "mp3",
+	"audio/mp3": "mp3",
+	"audio/x-mp3": "mp3",
+	"audio/x-mpeg": "mp3",
+	"audio/mpeg3": "mp3",
+	"audio/x-mpeg-3": "mp3",
+	"audio/ogg": "ogg",
+	"audio/opus": "ogg",
+	"audio/x-opus+ogg": "ogg",
+	"audio/x-vorbis+ogg": "ogg",
+	"audio/x-speex+ogg": "ogg",
+	"video/ogg": "ogg",
+	"application/ogg": "ogg",
+	"audio/wav": "wav",
+	"audio/x-wav": "wav",
+	"audio/wave": "wav",
+	"audio/vnd.wave": "wav",
+};
+
+export function audioFilename(mime: string): string {
+	const normalized = normalizeMediaType(mime);
+	const ext = Object.hasOwn(AUDIO_EXTENSION_BY_MIME, normalized)
+		? (AUDIO_EXTENSION_BY_MIME[normalized] ?? "webm")
+		: "webm";
 	return `speaking.${ext}`;
 }
 
