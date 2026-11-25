@@ -4009,9 +4009,9 @@
 		"question_types": ["SENTENCE_COMPLETION", "TRUE/FALSE/NOT GIVEN"]
 	},
 	{
-		"file": "Collection-investment-in-shares-versus-investment-in-other-assets-which-gives-the-greater-investment-in-shares-versus-investment-in-other-assets-which-gives-the-greater-gain.json",
+		"file": "Collection-investment-in-shares-versus-investment-in-other-assets-which-gives-the-greater-gain.json",
 		"id": "b8927676-3e2d-441d-97a7-12199ef4f2ba",
-		"title": "Investment in shares versus investment in other assets - which gives the greater Investment in shares versus investment in other assets - which gives the greater gain?",
+		"title": "Investment in shares versus investment in other assets - which gives the greater gain?",
 		"source": "Collection",
 		"passage_number": 2,
 		"question_count": 13,

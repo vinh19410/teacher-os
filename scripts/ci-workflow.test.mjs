@@ -412,6 +412,24 @@ test("reusable quality workflow defines the 4-job parallel quality gate without 
 		"apps/server/turbo.json must preserve $TURBO_DEFAULT$, .env*, and all 3 cross-package test input globs",
 	);
 
+	const dbTurboPath = join(repoRoot, "packages/db/turbo.json");
+	assert.equal(
+		existsSync(dbTurboPath),
+		true,
+		"missing packages/db/turbo.json for cross-package dataset test inputs",
+	);
+	const dbTurbo = JSON.parse(readFileSync(dbTurboPath, "utf8"));
+	assert.deepEqual(
+		dbTurbo.tasks?.test?.inputs,
+		[
+			"$TURBO_DEFAULT$",
+			".env*",
+			"../../docs/reading-ielts/reading-practice/**",
+			"../../docs/listening_ielts/**",
+		],
+		"packages/db/turbo.json must preserve $TURBO_DEFAULT$, .env*, and Reading/Listening dataset input globs",
+	);
+
 	for (const app of ["web", "student", "admin"]) {
 		const appPkg = JSON.parse(
 			readFileSync(join(repoRoot, `apps/${app}/package.json`), "utf8"),
