@@ -8,8 +8,99 @@ import { AvatarInitials } from "@/components/ui/avatar-initials";
 import { Badge } from "@/components/ui/badge";
 import { Tabs } from "@/components/ui/tabs";
 
+type SavedDescriptor = {
+	target: object;
+	prop: PropertyKey;
+	descriptor: PropertyDescriptor | undefined;
+};
+
+const savedDescriptors: SavedDescriptor[] = [];
+
+function stubDescriptor(
+	target: object,
+	prop: PropertyKey,
+	descriptor: PropertyDescriptor,
+): void {
+	const exists = savedDescriptors.some(
+		(entry) => entry.target === target && entry.prop === prop,
+	);
+	if (!exists) {
+		savedDescriptors.push({
+			target,
+			prop,
+			descriptor: Object.getOwnPropertyDescriptor(target, prop),
+		});
+	}
+	Object.defineProperty(target, prop, descriptor);
+}
+
+function restoreDescriptors(): void {
+	while (savedDescriptors.length > 0) {
+		const entry = savedDescriptors.pop();
+		if (!entry) continue;
+		if (entry.descriptor) {
+			Object.defineProperty(entry.target, entry.prop, entry.descriptor);
+		} else {
+			Reflect.deleteProperty(entry.target, entry.prop);
+		}
+	}
+}
+
+function makeRect(left: number, width: number): DOMRect {
+	return {
+		x: left,
+		y: 0,
+		left,
+		top: 0,
+		width,
+		height: 36,
+		right: left + width,
+		bottom: 36,
+		toJSON() {
+			return {};
+		},
+	} as DOMRect;
+}
+
+function stubReducedMotion(matches: boolean): void {
+	stubDescriptor(window, "matchMedia", {
+		configurable: true,
+		writable: true,
+		value: vi.fn((query: string) => ({
+			matches: query === "(prefers-reduced-motion: reduce)" ? matches : false,
+			media: query,
+			onchange: null,
+			addListener: vi.fn(),
+			removeListener: vi.fn(),
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+			dispatchEvent: vi.fn(),
+		})),
+	});
+}
+
+class MockResizeObserver {
+	static instances: MockResizeObserver[] = [];
+	callback: ResizeObserverCallback;
+
+	constructor(callback: ResizeObserverCallback) {
+		this.callback = callback;
+		MockResizeObserver.instances.push(this);
+	}
+
+	observe(): void {}
+	unobserve(): void {}
+	disconnect(): void {}
+	trigger(): void {
+		this.callback([], this as unknown as ResizeObserver);
+	}
+}
+
 afterEach(() => {
 	cleanup();
+	MockResizeObserver.instances = [];
+	restoreDescriptors();
+	vi.restoreAllMocks();
 });
 
 describe("Tabs (student v2 primitive)", () => {
@@ -17,7 +108,84 @@ describe("Tabs (student v2 primitive)", () => {
 		{ id: "journey", label: "Hành trình học" },
 		{ id: "assignments", label: "Bài tập" },
 		{ id: "syllabus", label: "Giáo trình" },
+		{ id: "materials", label: "Tài liệu chung" },
 	] as const;
+
+	function installStudentTabsLayoutMock(model: {
+		clientWidth: number;
+		scrollWidth: number;
+		tabWidth: number;
+		scrollLeft: number;
+	}) {
+		const scrollToSpy = vi.fn(function scrollTo(
+			this: HTMLElement,
+			options?: ScrollToOptions,
+		) {
+			if (this.getAttribute("role") === "tablist" && options) {
+				if (typeof options.left === "number") {
+					model.scrollLeft = options.left;
+				}
+			}
+		});
+		const scrollIntoViewSpy = vi.fn();
+
+		stubDescriptor(HTMLElement.prototype, "clientWidth", {
+			configurable: true,
+			get() {
+				return (this as HTMLElement).getAttribute("role") === "tablist"
+					? model.clientWidth
+					: model.tabWidth;
+			},
+		});
+		stubDescriptor(HTMLElement.prototype, "scrollWidth", {
+			configurable: true,
+			get() {
+				return (this as HTMLElement).getAttribute("role") === "tablist"
+					? model.scrollWidth
+					: model.tabWidth;
+			},
+		});
+		stubDescriptor(HTMLElement.prototype, "scrollLeft", {
+			configurable: true,
+			get() {
+				return (this as HTMLElement).getAttribute("role") === "tablist"
+					? model.scrollLeft
+					: 0;
+			},
+			set(value: number) {
+				if ((this as HTMLElement).getAttribute("role") === "tablist") {
+					model.scrollLeft = value;
+				}
+			},
+		});
+		stubDescriptor(HTMLElement.prototype, "getBoundingClientRect", {
+			configurable: true,
+			value: function getBoundingClientRect() {
+				const el = this as HTMLElement;
+				if (el.getAttribute("role") === "tablist") {
+					return makeRect(0, model.clientWidth);
+				}
+				const index = items.findIndex((tab) => tab.label === el.textContent);
+				const safeIndex = index >= 0 ? index : 0;
+				return makeRect(
+					safeIndex * model.tabWidth - model.scrollLeft,
+					model.tabWidth,
+				);
+			},
+		});
+		stubDescriptor(HTMLElement.prototype, "scrollTo", {
+			configurable: true,
+			writable: true,
+			value: scrollToSpy,
+		});
+		stubDescriptor(HTMLElement.prototype, "scrollIntoView", {
+			configurable: true,
+			writable: true,
+			value: scrollIntoViewSpy,
+		});
+
+		return { scrollToSpy, scrollIntoViewSpy };
+	}
 
 	it("renders tablist, aria-selected, testIdPrefix and invokes onChange", () => {
 		const onChange = vi.fn();
@@ -50,6 +218,103 @@ describe("Tabs (student v2 primitive)", () => {
 
 		fireEvent.click(assignmentsTab);
 		expect(onChange).toHaveBeenCalledWith("assignments");
+	});
+
+	it("auto-scrolls an off-screen active tab on mount without calling scrollIntoView", () => {
+		stubReducedMotion(false);
+		const model = {
+			clientWidth: 340,
+			scrollWidth: 480,
+			tabWidth: 120,
+			scrollLeft: 0,
+		};
+		const { scrollToSpy, scrollIntoViewSpy } =
+			installStudentTabsLayoutMock(model);
+
+		render(
+			<Tabs
+				tabs={items}
+				active="materials"
+				onChange={() => {}}
+				ariaLabel="Mục của lớp học"
+				testIdPrefix="class-tab"
+			/>,
+		);
+
+		// materials is index 3 => [360..480], clientWidth 340 => left = 140
+		expect(scrollToSpy).toHaveBeenCalledWith({
+			left: 140,
+			behavior: "instant",
+		});
+		expect(scrollIntoViewSpy).not.toHaveBeenCalled();
+	});
+
+	it("scrolls horizontally on active switch respecting prefers-reduced-motion", () => {
+		stubReducedMotion(false);
+		const model = {
+			clientWidth: 340,
+			scrollWidth: 480,
+			tabWidth: 120,
+			scrollLeft: 0,
+		};
+		const { scrollToSpy } = installStudentTabsLayoutMock(model);
+
+		const { rerender } = render(
+			<Tabs tabs={items} active="journey" onChange={() => {}} />,
+		);
+		expect(scrollToSpy).not.toHaveBeenCalled();
+
+		rerender(<Tabs tabs={items} active="materials" onChange={() => {}} />);
+		expect(scrollToSpy).toHaveBeenLastCalledWith({
+			left: 140,
+			behavior: "smooth",
+		});
+
+		stubReducedMotion(true);
+		rerender(<Tabs tabs={items} active="journey" onChange={() => {}} />);
+		expect(scrollToSpy).toHaveBeenLastCalledWith({
+			left: 0,
+			behavior: "instant",
+		});
+	});
+
+	it("realigns active tab with instant behavior when tablist resizes narrower", () => {
+		stubReducedMotion(false);
+		MockResizeObserver.instances = [];
+		stubDescriptor(globalThis, "ResizeObserver", {
+			configurable: true,
+			writable: true,
+			value: MockResizeObserver,
+		});
+		stubDescriptor(globalThis, "requestAnimationFrame", {
+			configurable: true,
+			writable: true,
+			value: vi.fn((cb: FrameRequestCallback) => {
+				cb(0);
+				return 1;
+			}),
+		});
+
+		const model = {
+			clientWidth: 640,
+			scrollWidth: 480,
+			tabWidth: 120,
+			scrollLeft: 0,
+		};
+		const { scrollToSpy } = installStudentTabsLayoutMock(model);
+
+		render(<Tabs tabs={items} active="materials" onChange={() => {}} />);
+		expect(scrollToSpy).not.toHaveBeenCalled();
+
+		const observer = MockResizeObserver.instances[0];
+		expect(observer).toBeDefined();
+
+		model.clientWidth = 340;
+		observer?.trigger();
+		expect(scrollToSpy).toHaveBeenCalledWith({
+			left: 140,
+			behavior: "instant",
+		});
 	});
 });
 
