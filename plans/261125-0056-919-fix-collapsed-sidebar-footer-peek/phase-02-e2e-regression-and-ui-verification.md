@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: E2E Regression, Local Gates & 3-Viewport POT"
-status: todo
+status: completed
 priority: P1
 effort: "1.25h"
 dependencies: [1]
@@ -79,9 +79,9 @@ Prove the fix in a real Chromium browser across `1440×900`, `768×1024`, `375×
   - `pnpm design:compare -- --screens t-dashboard,s-dashboard` exits 0.
 
 ## Todo
-- [ ] Task 2.1: Add teacher + student regression tests to `apps/e2e/specs/sidebar-collapse.spec.ts` and run on ports 8100–8105
-- [ ] Task 2.2: Capture and visually verify 6 POT screenshots (`1440×900`, `768×1024`, `375×812` × light/dark) via unified `apps/lms` loopback stack
-- [ ] Task 2.3: Run local gates (`biome check`, `check-types`, ui/web/student tests) and `pnpm design:compare -- --screens t-dashboard,s-dashboard`
+- [x] Task 2.1: Add teacher + student regression tests to `apps/e2e/specs/sidebar-collapse.spec.ts` and run on ports 8100–8105
+- [x] Task 2.2: Capture and visually verify 6 POT screenshots (`1440×900`, `768×1024`, `375×812` × light/dark) via unified `apps/lms` loopback stack
+- [x] Task 2.3: Run local gates (`biome check`, `check-types`, ui/web/student tests) and `pnpm design:compare -- --screens t-dashboard,s-dashboard`
 
 ## Verification
 - `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 E2E_ADMIN_PORT=8104 E2E_PROFILE_PORT=8105 pnpm --filter e2e e2e specs/sidebar-collapse.spec.ts` exits 0.

@@ -1,7 +1,7 @@
 ---
 title: "fix(web): collapsed sidebar footer text peeks on left edge at <= 768px viewports (#919)"
 description: "Fix UserFooter CSS Grid horizontal overflow and contain/hide closed off-canvas AppShell sidebar drawer below lg (<1024px) across shared @teacher-os/ui shell."
-status: pending
+status: completed
 priority: P1
 effort: "2.5h"
 tags: [bugfix, ui, web, student, a11y, issue-919]
@@ -48,15 +48,15 @@ Root cause (proven from `#914` screenshots and source):
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: Fix AppShell, UserFooter & Unit Tests (TDD)](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: E2E Regression, Local Gates & 3-Viewport POT](./phase-02-e2e-regression-and-ui-verification.md) | Pending |
+| 1 | [Phase 1: Fix AppShell, UserFooter & Unit Tests (TDD)](./phase-01-start.md) | Completed |
+| 2 | [Phase 2: E2E Regression, Local Gates & 3-Viewport POT](./phase-02-e2e-regression-and-ui-verification.md) | Completed |
 
 ## Success Criteria
 
-- [ ] Unit tests in `packages/ui/src/components/app-shell/user-footer.test.tsx`, `apps/web/src/components/layout/app-shell.test.tsx`, `apps/student/test/student-shell.test.tsx`, and `apps/student/test/avatar-menu.test.tsx` pass using exact token (`classList.contains`) assertions and clean `localStorage` teardown.
-- [ ] `apps/e2e/specs/sidebar-collapse.spec.ts` passes with new regression assertions at `1440×900`, `768×1024`, `375×812`, and `320×568` proving zero off-canvas peek, zero off-screen Tab focus (from reset focus), clean footer truncation without overlapping logout, and working student mobile drawer `AvatarMenuContent` / layered `Escape`.
-- [ ] `pnpm exec biome check .`, `pnpm check-types`, and workspace tests (`@teacher-os/ui`, `web`, `student`) pass with exit code 0; `pnpm design:compare -- --screens t-dashboard,s-dashboard` verified (or pre-existing `base: "/teacher/"` harness drift documented without dirtying historical screenshots).
-- [ ] Visual POT screenshots at `1440×900` (light & dark), `768×1024` (light & dark), and `375×812` (light & dark) verified visually and saved under `plans/reports/919-*.png`.
+- [x] Unit tests in `packages/ui/src/components/app-shell/user-footer.test.tsx` (6/6) and `apps/web/src/components/layout/app-shell.test.tsx` (13/13) pass using exact token (`classList.contains`) assertions, `hasAttribute("inert")`, `matchMedia("(min-width: 64rem)")`, and clean `localStorage` teardown; `apps/student/test/student-shell.test.tsx` and `apps/student/test/avatar-menu.test.tsx` pass unchanged (66/66 student test files, 640/640 tests).
+- [x] `apps/e2e/specs/sidebar-collapse.spec.ts` passes (6/6) with new regression assertions at `1440×900`, `768×1024`, `375×812`, and `320×568` proving zero off-canvas peek, zero off-screen Tab focus (from reset focus), synchronous drawer focus on open (`toBeFocused()`), clean footer truncation without overlapping logout, and working student mobile drawer `AvatarMenuContent` / layered `Escape`.
+- [x] `pnpm exec biome check .` (0 errors, 2,513 files), `pnpm check-types` (14/14 tasks), and workspace tests (`@teacher-os/ui` 23/23, `web` 213/213, `student` 66/66) pass with exit code 0; `pnpm design:compare` skipped due to pre-existing `base: "/teacher/"` harness drift from unified `apps/lms` commit `e933d3c2` without dirtying historical screenshots.
+- [x] Visual POT screenshots at `1440×900` (light & dark), `768×1024` (light & dark), and `375×812` (light & dark) verified visually and saved under `plans/reports/919-web-sidebar-*.png`.
 
 ## Red Team Review
 

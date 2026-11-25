@@ -7,6 +7,7 @@ import type {
 	ShellLinkProps,
 } from "@teacher-os/ui/components/app-shell/nav-group";
 import {
+	act,
 	cleanup,
 	fireEvent,
 	render,
@@ -45,6 +46,7 @@ import { AppShell } from "./app-shell";
 
 afterEach(() => {
 	cleanup();
+	window.localStorage.clear();
 	vi.unstubAllGlobals();
 	mockSignOut.mockReset();
 });
@@ -137,7 +139,9 @@ describe("Shared shell — mobile drawer", () => {
 
 	it("opens the drawer with the menu button", () => {
 		const drawer = openDrawer();
-		expect(drawer.className).toContain("translate-x-0");
+		expect(drawer.classList.contains("translate-x-0")).toBe(true);
+		expect(drawer.classList.contains("visible")).toBe(true);
+		expect(drawer.classList.contains("invisible")).toBe(false);
 	});
 
 	it("closes on Escape and returns focus to the menu button", () => {
@@ -146,7 +150,8 @@ describe("Shared shell — mobile drawer", () => {
 			name: "Open navigation",
 		});
 		fireEvent.keyDown(document, { key: "Escape" });
-		expect(drawer.className).toContain("-translate-x-full");
+		expect(drawer.classList.contains("-translate-x-full")).toBe(true);
+		expect(drawer.classList.contains("invisible")).toBe(true);
 		expect(document.activeElement).toBe(menuButton);
 	});
 
@@ -157,12 +162,153 @@ describe("Shared shell — mobile drawer", () => {
 		expect(overlay).not.toBeNull();
 		fireEvent.click(overlay as Element);
 		const drawer = screen.getByRole("complementary", { hidden: true });
-		expect(drawer.className).toContain("-translate-x-full");
+		expect(drawer.classList.contains("-translate-x-full")).toBe(true);
+		expect(drawer.classList.contains("invisible")).toBe(true);
 
 		fireEvent.click(screen.getByRole("button", { name: "Open navigation" }));
 		fireEvent.click(screen.getByRole("link", { name: "Tổng quan" }));
 		expect(onSelect).toHaveBeenCalledWith("overview");
-		expect(drawer.className).toContain("-translate-x-full");
+		expect(drawer.classList.contains("-translate-x-full")).toBe(true);
+		expect(drawer.classList.contains("invisible")).toBe(true);
+	});
+
+	it("hides closed off-canvas drawer below lg, isolates open drawer with focus/inert, and preserves user.menu with layered Escape", () => {
+		renderSharedShell({
+			user: {
+				name: "Học viên Trung tâm Tài Liệu 1795543335456",
+				email: "long.student@test.local",
+				initials: "HV",
+				label: "Tài khoản học viên",
+				menu: <div>menu-tai-khoan</div>,
+			},
+		});
+
+		const drawer = screen.getByRole("complementary", { hidden: true });
+		const menuButton = screen.getByRole("button", {
+			name: "Open navigation",
+		});
+		const contentWrapper = menuButton.closest("header")?.parentElement;
+		if (!contentWrapper) throw new Error("contentWrapper không tồn tại");
+
+		// Trạng thái đóng: ẩn hoàn toàn dưới lg, giữ desktop hiển thị từ lg trở lên.
+		expect(drawer.classList.contains("overflow-hidden")).toBe(true);
+		expect(drawer.classList.contains("invisible")).toBe(true);
+		expect(drawer.classList.contains("lg:visible")).toBe(true);
+		expect(drawer.classList.contains("pointer-events-none")).toBe(true);
+		expect(drawer.classList.contains("lg:pointer-events-auto")).toBe(true);
+		expect(drawer.classList.contains("shadow-none")).toBe(true);
+		expect(drawer.classList.contains("-translate-x-full")).toBe(true);
+		expect(drawer.classList.contains("motion-reduce:transition-none")).toBe(
+			true,
+		);
+		expect(
+			drawer.classList.contains("transition-[transform,translate,visibility]"),
+		).toBe(true);
+		expect(drawer.classList.contains("visible")).toBe(false);
+		expect(drawer.classList.contains("translate-x-0")).toBe(false);
+		expect(drawer.classList.contains("shadow-lg")).toBe(false);
+		expect(menuButton.getAttribute("aria-expanded")).toBe("false");
+		expect(contentWrapper.hasAttribute("inert")).toBe(false);
+
+		// Mở drawer: hiển thị ngay visibility (không transition visibility để focus() không bị drop ở t=0), chuyển focus vào aside, khóa nền bằng inert.
+		fireEvent.click(menuButton);
+		expect(drawer.classList.contains("visible")).toBe(true);
+		expect(drawer.classList.contains("translate-x-0")).toBe(true);
+		expect(drawer.classList.contains("shadow-lg")).toBe(true);
+		expect(drawer.classList.contains("transition-[transform,translate]")).toBe(
+			true,
+		);
+		expect(
+			drawer.classList.contains("transition-[transform,translate,visibility]"),
+		).toBe(false);
+		expect(drawer.classList.contains("invisible")).toBe(false);
+		expect(drawer.classList.contains("pointer-events-none")).toBe(false);
+		expect(drawer.classList.contains("shadow-none")).toBe(false);
+		expect(drawer.classList.contains("-translate-x-full")).toBe(false);
+		expect(menuButton.getAttribute("aria-expanded")).toBe("true");
+		expect(document.activeElement).toBe(drawer);
+		expect(contentWrapper.hasAttribute("inert")).toBe(true);
+
+		// Mở user.menu (AvatarMenuContent) bên trong drawer không được đóng drawer.
+		fireEvent.click(screen.getByRole("button", { name: "Tài khoản học viên" }));
+		expect(screen.getByText("menu-tai-khoan")).toBeTruthy();
+		expect(drawer.classList.contains("visible")).toBe(true);
+		expect(drawer.classList.contains("invisible")).toBe(false);
+
+		// Escape lần 1 chỉ đóng popover, giữ drawer mở.
+		fireEvent.keyDown(document, { key: "Escape" });
+		expect(screen.queryByText("menu-tai-khoan")).toBeNull();
+		expect(drawer.classList.contains("visible")).toBe(true);
+
+		// Escape lần 2 đóng drawer, gỡ inert và trả focus về nút menu.
+		fireEvent.keyDown(document, { key: "Escape" });
+		expect(drawer.classList.contains("invisible")).toBe(true);
+		expect(drawer.classList.contains("-translate-x-full")).toBe(true);
+		expect(
+			drawer.classList.contains("transition-[transform,translate,visibility]"),
+		).toBe(true);
+		expect(menuButton.getAttribute("aria-expanded")).toBe("false");
+		expect(contentWrapper.hasAttribute("inert")).toBe(false);
+		expect(document.activeElement).toBe(menuButton);
+	});
+
+	it("auto-closes mobile drawer on resize to >= 64rem (lg) without focusing hidden mobile menu button", () => {
+		let matches = false;
+		const listeners = new Set<(event: MediaQueryListEvent) => void>();
+		const matchMediaSpy = vi.fn((query: string) => {
+			expect(query).toBe("(min-width: 64rem)");
+			return {
+				get matches() {
+					return matches;
+				},
+				media: query,
+				onchange: null,
+				addEventListener: (
+					_type: string,
+					cb: (event: MediaQueryListEvent) => void,
+				) => {
+					listeners.add(cb);
+				},
+				removeEventListener: (
+					_type: string,
+					cb: (event: MediaQueryListEvent) => void,
+				) => {
+					listeners.delete(cb);
+				},
+				addListener: vi.fn(),
+				removeListener: vi.fn(),
+				dispatchEvent: vi.fn(),
+			} as unknown as MediaQueryList;
+		});
+		vi.stubGlobal("matchMedia", matchMediaSpy);
+
+		renderSharedShell();
+		const drawer = screen.getByRole("complementary", { hidden: true });
+		const menuButton = screen.getByRole("button", {
+			name: "Open navigation",
+		});
+		const contentWrapper = menuButton.closest("header")?.parentElement;
+		if (!contentWrapper) throw new Error("contentWrapper không tồn tại");
+
+		fireEvent.click(menuButton);
+		expect(drawer.classList.contains("visible")).toBe(true);
+		expect(contentWrapper.hasAttribute("inert")).toBe(true);
+		expect(document.activeElement).toBe(drawer);
+
+		act(() => {
+			matches = true;
+			for (const cb of listeners) {
+				cb({
+					matches: true,
+					media: "(min-width: 64rem)",
+				} as MediaQueryListEvent);
+			}
+		});
+
+		expect(drawer.classList.contains("invisible")).toBe(true);
+		expect(contentWrapper.hasAttribute("inert")).toBe(false);
+		expect(document.activeElement).not.toBe(menuButton);
+		expect(document.activeElement).not.toBe(drawer);
 	});
 
 	it("collapse toggle swaps aria-label and respects collapsed prop", () => {
@@ -234,6 +380,13 @@ describe("Web AppShell v2", () => {
 		expect(footer.getAttribute("aria-label")).toBe("Hồ sơ cá nhân");
 		expect(footer.textContent).not.toContain("Google");
 		expect(screen.getByTestId("sidebar-avatar")).toBeTruthy();
+	});
+
+	it("hides VersionBadge visually with lg:sr-only when desktop sidebar is collapsed", async () => {
+		window.localStorage.setItem("teacher-os.sidebar.collapsed", "true");
+		renderWebShell("/_auth/dashboard", "/dashboard");
+		const version = await screen.findByTestId("app-version");
+		expect(version.parentElement?.classList.contains("lg:sr-only")).toBe(true);
 	});
 
 	it("renders the v2 nav groups with app labels kept for e2e", async () => {

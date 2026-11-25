@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: Fix AppShell, UserFooter & Unit Tests (TDD)"
-status: todo
+status: completed
 priority: P1
 effort: "1.25h"
 dependencies: []
@@ -132,9 +132,9 @@ Fix the CSS Grid truncation overflow in `UserFooter` (`TextBlock`), prevent `use
   - `pnpm --filter @teacher-os/ui check-types && pnpm --filter web check-types && pnpm --filter student check-types` exits 0.
 
 ## Todo
-- [ ] Task 1.1: Add failing exact-token TDD unit tests in `user-footer.test.tsx` and `app-shell.test.tsx` (with `localStorage.clear()` teardown)
-- [ ] Task 1.2: Fix `TextBlock`, `hasMenu` click & capture `Escape` in `user-footer.tsx`, harden `team-switcher.tsx` & `avatar-menu.tsx`
-- [ ] Task 1.3: Update `<aside>` (`transition-[transform,translate,visibility]`, `overflow-hidden`, `invisible lg:visible`, focus/`inert`/resize, `aria-expanded`) in `packages/ui/.../app-shell.tsx` and `VersionBadge` wrapper in `apps/web/.../app-shell.tsx`
+- [x] Task 1.1: Add failing exact-token TDD unit tests in `user-footer.test.tsx` and `app-shell.test.tsx` (with `localStorage.clear()` teardown)
+- [x] Task 1.2: Fix `TextBlock`, `hasMenu` click & capture `Escape` in `user-footer.tsx`, harden `team-switcher.tsx` & `avatar-menu.tsx`
+- [x] Task 1.3: Update `<aside>` (`transition-[transform,translate,visibility]`, `overflow-hidden`, `invisible lg:visible`, focus/`inert`/resize, `aria-expanded`) in `packages/ui/.../app-shell.tsx` and `VersionBadge` wrapper in `apps/web/.../app-shell.tsx`
 
 ## Verification
 - `pnpm --filter @teacher-os/ui test src/components/app-shell/user-footer.test.tsx` exits 0.

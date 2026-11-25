@@ -33,7 +33,7 @@ export function AvatarMenuContent({
 		<div
 			role="menu"
 			aria-label="Menu tài khoản"
-			className="w-56 rounded-md border bg-popover text-popover-foreground shadow-md"
+			className="w-full rounded-md border bg-popover text-popover-foreground shadow-md"
 		>
 			<div className="border-b px-3 py-2.5">
 				<div className="flex items-center justify-between gap-2">
