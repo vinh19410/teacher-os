@@ -45,6 +45,7 @@ import {
 	VERDICT_BLOCK_CLASSES,
 	VerdictIcon,
 } from "@teacher-os/ui/components/quiz/quiz-verdict";
+import { TranscriptBody } from "@teacher-os/ui/components/quiz/transcript-body";
 import {
 	type ParsedInlineInstruction,
 	parseInlineInstruction,
@@ -864,15 +865,13 @@ export function QuizPaper({
 			{reviewMode && transcript && !isEmptyRichText(transcript) && (
 				<details
 					open
-					className="rounded-lg border border-border bg-muted/40 p-4 text-sm"
+					className="min-w-0 rounded-lg border border-border bg-muted/40 p-4 text-sm"
 					data-testid="quiz-review-transcript"
 				>
-					<summary className="cursor-pointer font-semibold text-foreground">
+					<summary className="cursor-pointer rounded-sm font-semibold text-foreground focus-visible:outline-2 focus-visible:outline-ring">
 						Transcript bài nghe
 					</summary>
-					<div className="mt-2 whitespace-pre-line text-muted-foreground leading-relaxed">
-						{transcript}
-					</div>
+					<TranscriptBody text={transcript} className="mt-3" />
 				</details>
 			)}
 

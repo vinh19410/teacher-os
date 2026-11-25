@@ -3447,4 +3447,278 @@ describe("QuizPaper — inline answer inputs", () => {
 			expect(inlineDetails?.textContent).toContain("(không tính thứ tự)");
 		});
 	});
+
+	describe("QuizPaper — listening transcript formatting (#888)", () => {
+		const simpleListeningPart: QuizPart = {
+			id: "part-listen-1",
+			label: "Questions 1–1",
+			qStart: 1,
+			typeId: "mcq",
+			questions: [
+				{
+					q: 0,
+					number: 1,
+					stem: "What is the topic?",
+					opts: ["Bikes", "Boats", "Trains"],
+					pin: null,
+					type: "mcq",
+				},
+			],
+		};
+
+		const simpleReview: Record<number, QuizReviewInfo> = {
+			0: { verdict: "correct", key: "A", alts: "", answer: "A", note: "" },
+		};
+
+		it("renders multi-speaker City Health Services excerpt as structured turns with styled speaker labels and no Speaker N noise", () => {
+			const transcript = [
+				"Speaker 1: Agent: Good morning. City Health Services. How may I help you?",
+				"Speaker 2: Customer: Good morning. I'd like to arrange cleaning. Agent: Certainly. Customer: Thank you.",
+				"Speaker 1: Agent: Excellent. Agent: Any extra services you need?",
+				"Speaker 1: When is it convenient for us to come over?",
+			].join("\n");
+
+			const { container } = render(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{ 0: "A" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={simpleReview}
+					transcript={transcript}
+				/>,
+			);
+
+			const box = container.querySelector(
+				'[data-testid="quiz-review-transcript"]',
+			);
+			expect(box).not.toBeNull();
+			expect(
+				box?.querySelector('[data-testid="transcript-body"]'),
+			).not.toBeNull();
+			const turns = Array.from(
+				box?.querySelectorAll('[data-testid="transcript-turn"]') ?? [],
+			);
+			expect(turns).toHaveLength(5);
+			const speakers = Array.from(
+				box?.querySelectorAll('[data-testid="transcript-speaker"]') ?? [],
+			).map((el) => el.textContent);
+			expect(speakers).toEqual([
+				"Agent:",
+				"Customer:",
+				"Agent:",
+				"Customer:",
+				"Agent:",
+			]);
+			expect(box?.textContent).not.toContain("Speaker 1:");
+			expect(box?.textContent).not.toContain("Speaker 2:");
+			// Consecutive Agent turns at end merge into 3 paragraphs under 1 Agent label
+			expect(turns[4]?.querySelectorAll("p")).toHaveLength(3);
+		});
+
+		it("renders Talking about the history of bikes excerpt with a single NARRATOR header, separated paragraphs, and intact prose colons", () => {
+			const transcript =
+				'Speaker 1: NARRATOR: Good afternoon, ladies and gentlemen. NARRATOR: Probably because this was the start of the Machine Age: people wanted machines to do all the work. NARRATOR: There was one problem when you were going quickly and comfortably: "OH NO! HOW DO I STOP?"';
+
+			const { container } = render(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{ 0: "A" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={simpleReview}
+					transcript={transcript}
+				/>,
+			);
+
+			const box = container.querySelector(
+				'[data-testid="quiz-review-transcript"]',
+			);
+			const turns = Array.from(
+				box?.querySelectorAll('[data-testid="transcript-turn"]') ?? [],
+			);
+			expect(turns).toHaveLength(1);
+			expect(
+				box?.querySelectorAll('[data-testid="transcript-speaker"]'),
+			).toHaveLength(1);
+			expect(
+				box?.querySelector('[data-testid="transcript-speaker"]')?.textContent,
+			).toBe("NARRATOR:");
+			expect(turns[0]?.querySelectorAll("p")).toHaveLength(3);
+			expect(box?.textContent).toContain(
+				"Machine Age: people wanted machines to do all the work.",
+			);
+			expect(box?.textContent).toContain(
+				'comfortably: "OH NO! HOW DO I STOP?"',
+			);
+		});
+
+		it("splits long unbroken monologues without newlines into multiple <p> elements", () => {
+			const monologue =
+				"Welcome everyone to today's university orientation session for new engineering students. We have prepared a full schedule covering laboratory safety, library access, and workshop tools. Every student should pick up a badge from the reception desk before noon. Firstly, let us walk through the main lecture theatres located in the northern wing of the campus. These rooms host all first-year introductory courses and weekly review clinics. Secondly, remember that the computer labs stay open until ten every evening during term time. Finally, please ask any senior tutor if you need help setting up your account.";
+
+			const { container } = render(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{ 0: "A" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={simpleReview}
+					transcript={monologue}
+				/>,
+			);
+
+			const paras = container.querySelectorAll(
+				'[data-testid="transcript-body"] p',
+			);
+			expect(paras.length).toBeGreaterThanOrEqual(2);
+		});
+
+		it("extracts flat Tiptap/legacy <p>/<br> HTML into structured turns with decoded entities", () => {
+			const flatHtml =
+				"<p>Speaker 1: Agent: Welcome to B&amp;B.<br>Speaker 2: Customer: Hello &amp; thanks.</p>";
+
+			const { container } = render(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{ 0: "A" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={simpleReview}
+					transcript={flatHtml}
+				/>,
+			);
+
+			const speakers = Array.from(
+				container.querySelectorAll('[data-testid="transcript-speaker"]'),
+			).map((el) => el.textContent);
+			expect(speakers).toEqual(["Agent:", "Customer:"]);
+			expect(
+				container.querySelector('[data-testid="transcript-body"]')?.textContent,
+			).toContain("Welcome to B&B.");
+		});
+
+		it("sanitizes rich HTML via RichTextBody, fails closed on head-scoped/unclosed dangerous tags, survives HTML<->plain rerenders, and hides transcript in take mode", () => {
+			const richHtml =
+				"<p><strong>Agent:</strong> Hello</p><p>Second paragraph</p><script>alert(1)</script>";
+
+			const { container, rerender } = render(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{ 0: "A" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={simpleReview}
+					transcript={richHtml}
+				/>,
+			);
+
+			const box = container.querySelector(
+				'[data-testid="quiz-review-transcript"]',
+			);
+			expect(box?.querySelector("script")).toBeNull();
+			expect(box?.textContent).not.toContain("alert(1)");
+			expect(box?.querySelector("strong")?.textContent).toBe("Agent:");
+			expect(box?.querySelectorAll("p")).toHaveLength(2);
+			expect(box?.innerHTML).toContain("[&amp;_p+p]:mt-2.5");
+
+			// Standalone <head>-scoped <script> and unclosed <svg>: fail closed via React escaped text (no DOM script/svg nodes inside transcript box)
+			rerender(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{ 0: "A" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={simpleReview}
+					transcript="<script>alert(1)</script>Agent: Hello"
+				/>,
+			);
+			const headScriptBox = container.querySelector(
+				'[data-testid="quiz-review-transcript"]',
+			);
+			expect(headScriptBox).not.toBeNull();
+			expect(headScriptBox?.querySelector("script, svg")).toBeNull();
+			expect(headScriptBox?.innerHTML).not.toContain("<script");
+
+			rerender(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{ 0: "A" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={simpleReview}
+					transcript="<svg onload=alert(1)>Hi"
+				/>,
+			);
+			const unclosedSvgBox = container.querySelector(
+				'[data-testid="quiz-review-transcript"]',
+			);
+			expect(unclosedSvgBox).not.toBeNull();
+			expect(unclosedSvgBox?.querySelector("script, svg")).toBeNull();
+			expect(unclosedSvgBox?.innerHTML).not.toContain("<svg");
+
+			// Rerender back and forth between plain and rich HTML: zero Rules of Hooks crash
+			rerender(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{ 0: "A" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={simpleReview}
+					transcript="Agent: Back to plain text."
+				/>,
+			);
+			expect(
+				container.querySelector('[data-testid="transcript-speaker"]')
+					?.textContent,
+			).toBe("Agent:");
+
+			rerender(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{ 0: "A" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={simpleReview}
+					transcript={richHtml}
+				/>,
+			);
+			expect(container.querySelector("strong")?.textContent).toBe("Agent:");
+
+			// Take mode never renders transcript
+			rerender(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="take"
+					transcript="Agent: Secret transcript line"
+				/>,
+			);
+			expect(
+				container.querySelector('[data-testid="quiz-review-transcript"]'),
+			).toBeNull();
+			expect(container.textContent).not.toContain("Secret transcript line");
+		});
+	});
 });

@@ -430,6 +430,24 @@ test("reusable quality workflow defines the 4-job parallel quality gate without 
 		"packages/db/turbo.json must preserve $TURBO_DEFAULT$, .env*, and Reading/Listening dataset input globs",
 	);
 
+	const uiTurboPath = join(repoRoot, "packages/ui/turbo.json");
+	assert.equal(
+		existsSync(uiTurboPath),
+		true,
+		"missing packages/ui/turbo.json for cross-package listening/study-pack test inputs",
+	);
+	const uiTurbo = JSON.parse(readFileSync(uiTurboPath, "utf8"));
+	assert.deepEqual(
+		uiTurbo.tasks?.test?.inputs,
+		[
+			"$TURBO_DEFAULT$",
+			".env*",
+			"../../docs/listening_ielts/**",
+			"../../packages/db/seed-data/study-packs/**",
+		],
+		"packages/ui/turbo.json must preserve $TURBO_DEFAULT$, .env*, and Listening/Study-pack test input globs",
+	);
+
 	for (const app of ["web", "student", "admin"]) {
 		const appPkg = JSON.parse(
 			readFileSync(join(repoRoot, `apps/${app}/package.json`), "utf8"),
