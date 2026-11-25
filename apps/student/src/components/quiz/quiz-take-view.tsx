@@ -47,6 +47,7 @@ import {
 	useQuizAttemptSnapshot,
 	useQuizAttemptStore,
 } from "@/lib/quiz-attempt-store";
+import { useReadingAnnotationsStorage } from "@/lib/reading-annotations-store";
 import {
 	patchQuizAnswer,
 	patchQuizEssay,
@@ -360,8 +361,10 @@ export function QuizTakeView({
 		submitMutation.mutate();
 	};
 
-	// Audio streaming: gọi hook TRƯỚC mọi early return để không đổi số hook
-	// khi attempt chuyển từ null -> in_progress (Rules of Hooks).
+	// Audio streaming & reading annotations: gọi hook TRƯỚC mọi early return để
+	// không đổi số hook khi attempt chuyển từ null -> in_progress (Rules of Hooks).
+	const [readingAnnotations, setReadingAnnotations] =
+		useReadingAnnotationsStorage(attemptId, detail?.passage ?? "");
 	const {
 		audioSrc,
 		audioLoading,
@@ -559,7 +562,19 @@ export function QuizTakeView({
 				</div>
 			)}
 			{splitPane ? (
-				<QuizReadingSplitLayout passage={detail.passage} navigator={navigator}>
+				<QuizReadingSplitLayout
+					passage={detail.passage}
+					navigator={navigator}
+					annotations={
+						attemptId
+							? {
+									mode: storeActive ? "edit" : "readonly",
+									items: readingAnnotations,
+									onChange: storeActive ? setReadingAnnotations : undefined,
+								}
+							: undefined
+					}
+				>
 					<div className="mx-auto w-full max-w-[720px]">
 						<QuizPaper
 							detail={detail}
