@@ -7,12 +7,20 @@ import {
 	type MaterialFolderView,
 	type MaterialView,
 } from "@teacher-os/api/material-contracts";
-import { type FormEvent, useId, useState } from "react";
+import { Upload } from "lucide-react";
+import { type FormEvent, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { FolderSelect } from "@/components/materials/folder-select";
+import {
+	MATERIAL_FILE_ACCEPT,
+	type MaterialUploadBatchSummary,
+	MaterialUploadQueueList,
+	useMaterialUploadQueue,
+} from "@/components/materials/material-upload-queue";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
+import { cn } from "@/lib/cn";
 import { isHttpError } from "@/lib/kernel-load-state";
 import { folderSubtreeIds } from "@/lib/material-folders";
 import { reauth } from "@/lib/reauth";
@@ -21,11 +29,9 @@ import {
 	createMaterialLink,
 	deleteMaterial,
 	deleteMaterialFolder,
-	formatBytes,
 	isMaterialRequestError,
 	materialErrorMessage,
 	materialsAllQueryKey,
-	prepareMaterialUpload,
 	updateMaterial,
 	updateMaterialFolder,
 	uploadMaterialFile,
@@ -347,6 +353,33 @@ export function LinkDialog({
 export const UPLOAD_HELP =
 	"PDF, PNG/JPG/WEBP, DOCX/PPTX/XLSX tối đa 25 MB; MP3/M4A/MP4 tối đa 95 MB.";
 
+function noopClose() {
+	// Khóa đóng hộp thoại trong khi hàng đợi tải file đang chạy.
+}
+
+function getUploadSubmitLabel(
+	isUploading: boolean,
+	summary: MaterialUploadBatchSummary,
+): string | null {
+	if (isUploading) {
+		return summary.validTotal > 1
+			? `Đang tải (${summary.completedValid}/${summary.validTotal})…`
+			: "Đang tải lên…";
+	}
+	if (summary.pending > 0) {
+		return summary.pending === 1
+			? "Tải lên"
+			: `Tải lên ${summary.pending} file`;
+	}
+	if (summary.error > 0) {
+		return `Thử lại ${summary.error} file lỗi`;
+	}
+	if (summary.done > 0) {
+		return null;
+	}
+	return "Tải lên";
+}
+
 export function UploadDialog({
 	folders,
 	defaultFolderId,
@@ -357,76 +390,192 @@ export function UploadDialog({
 	onClose: () => void;
 }) {
 	const formId = useId();
-	const [file, setFile] = useState<File | null>(null);
+	const fileInputId = useId();
+	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [folderId, setFolderId] = useState(defaultFolderId);
-	const { mutation, error, setError } = useMaterialWrite(
-		(input: { file: File; mimeType: string }) =>
-			uploadMaterialFile({ ...input, folderId }),
-		{ successText: "Đã tải file lên.", onDone: onClose },
-	);
+	const [dragOver, setDragOver] = useState(false);
+	const [formError, setFormError] = useState<string | null>(null);
+	const [duplicateNotice, setDuplicateNotice] = useState<string | null>(null);
 
-	function pick(next: File | null) {
-		setFile(next);
-		setError(null);
-		if (next) {
-			const prep = prepareMaterialUpload(next);
-			if (!prep.ok) setError(prep.message);
+	const queue = useMaterialUploadQueue({
+		upload: (input) => uploadMaterialFile({ ...input, folderId }),
+		onBatchSettled: ({ run, summary }) => {
+			if (
+				run.succeeded.length > 0 &&
+				summary.error === 0 &&
+				summary.invalid === 0 &&
+				summary.pending === 0
+			) {
+				toast.success(
+					summary.done === 1
+						? "Đã tải file lên."
+						: `Đã tải lên ${summary.done} file.`,
+				);
+				onClose();
+			} else if (run.succeeded.length > 0) {
+				toast.success(
+					run.succeeded.length === 1
+						? "Đã tải 1 file lên."
+						: `Đã tải lên ${run.succeeded.length} file.`,
+				);
+			}
+		},
+	});
+
+	const { summary } = queue;
+	const submitLabel = getUploadSubmitLabel(queue.isUploading, summary);
+
+	function handleAddFiles(files: FileList | readonly File[] | null) {
+		if (!files || files.length === 0 || queue.isUploading) return;
+		setFormError(null);
+		const result = queue.addFiles(files, { replaceIfOnlyInvalid: true });
+		if (result.skippedDuplicates > 0 && result.addedCount === 0) {
+			setDuplicateNotice("File vừa chọn đã có trong danh sách.");
+		} else {
+			setDuplicateNotice(null);
 		}
 	}
 
 	function submit(e: FormEvent) {
 		e.preventDefault();
-		if (!file) {
-			setError("Chọn một file để tải lên.");
+		if (queue.isUploading) return;
+		if (queue.items.length === 0) {
+			setFormError("Chọn ít nhất một file để tải lên.");
 			return;
 		}
-		const prep = prepareMaterialUpload(file);
-		if (!prep.ok) {
-			setError(prep.message);
+		if (summary.pending > 0) {
+			setFormError(null);
+			setDuplicateNotice(null);
+			void queue.startUpload();
 			return;
 		}
-		mutation.mutate({ file, mimeType: prep.mimeType });
+		if (summary.error > 0) {
+			setFormError(null);
+			setDuplicateNotice(null);
+			void queue.retryFailed();
+		}
 	}
 
 	return (
 		<Modal
 			open
-			onClose={onClose}
+			onClose={queue.isUploading ? noopClose : onClose}
 			title="Tải file lên"
+			scrollableBody
 			footer={
-				<DialogFooter
-					formId={formId}
-					pending={mutation.isPending}
-					submitLabel="Tải lên"
-					onClose={onClose}
-				/>
+				<>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						disabled={queue.isUploading}
+						onClick={() => {
+							if (!queue.isUploading) onClose();
+						}}
+					>
+						{summary.done > 0 || summary.error > 0 ? "Đóng" : "Hủy"}
+					</Button>
+					{submitLabel !== null && (
+						<Button
+							type="submit"
+							form={formId}
+							size="sm"
+							disabled={queue.isUploading}
+							aria-busy={queue.isUploading}
+						>
+							{submitLabel}
+						</Button>
+					)}
+				</>
 			}
 		>
 			<form id={formId} onSubmit={submit} noValidate>
-				<Field label="File" help={UPLOAD_HELP}>
-					<Input
+				<Field label="File" htmlFor={fileInputId} help={UPLOAD_HELP}>
+					{/* Input đặt ngoài nút kéo-thả để kích hoạt chọn file không tạo vòng lặp sự kiện click. */}
+					<input
+						ref={fileInputRef}
+						id={fileInputId}
 						type="file"
-						className="h-auto py-1.5"
-						accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.pptx,.xlsx,.mp3,.m4a,.mp4"
-						onChange={(e) => pick(e.target.files?.[0] ?? null)}
-						disabled={mutation.isPending}
+						multiple
+						accept={MATERIAL_FILE_ACCEPT}
+						aria-describedby={`${fileInputId}-help`}
+						tabIndex={-1}
+						className="sr-only"
+						disabled={queue.isUploading}
+						onChange={(e) => {
+							handleAddFiles(e.target.files);
+							// Xóa value sau khi đọc để có thể chọn lại cùng file ở đợt sau.
+							e.target.value = "";
+						}}
 					/>
+					<button
+						type="button"
+						disabled={queue.isUploading}
+						onClick={() => fileInputRef.current?.click()}
+						onDragEnter={(e) => {
+							e.preventDefault();
+							if (!queue.isUploading) setDragOver(true);
+						}}
+						onDragOver={(e) => {
+							e.preventDefault();
+							if (!queue.isUploading) setDragOver(true);
+						}}
+						onDragLeave={(e) => {
+							if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+								setDragOver(false);
+							}
+						}}
+						onDrop={(e) => {
+							e.preventDefault();
+							setDragOver(false);
+							if (queue.isUploading) return;
+							handleAddFiles(e.dataTransfer?.files ?? null);
+						}}
+						className={cn(
+							"flex min-h-28 w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed p-5 text-center transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+							dragOver && !queue.isUploading
+								? "border-primary bg-accent"
+								: "border-input hover:bg-accent/50",
+							queue.isUploading && "pointer-events-none opacity-60",
+						)}
+					>
+						<Upload
+							aria-hidden="true"
+							className="size-5 text-muted-foreground"
+						/>
+						<p className="font-medium text-foreground text-sm">
+							Kéo thả nhiều file vào đây, hoặc bấm để chọn
+						</p>
+						{queue.items.length > 0 && (
+							<p className="text-muted-foreground text-xs">
+								Có thể chọn thêm nhiều đợt trước khi tải lên.
+							</p>
+						)}
+					</button>
 				</Field>
-				{file && (
-					<p className="break-all text-muted-foreground text-xs">
-						{`${file.name} · ${formatBytes(file.size)}`}
-					</p>
+				{duplicateNotice && (
+					<p className="text-muted-foreground text-xs">{duplicateNotice}</p>
 				)}
+				<MaterialUploadQueueList
+					items={queue.items}
+					summary={summary}
+					allowRemove
+					onRemove={(id) => {
+						setFormError(null);
+						setDuplicateNotice(null);
+						queue.removeItem(id);
+					}}
+				/>
 				<Field label="Thư mục">
 					<FolderSelect
 						folders={folders}
 						value={folderId}
 						onChange={setFolderId}
 						rootLabel={ROOT_LABEL}
-						disabled={mutation.isPending}
+						disabled={queue.isUploading}
 					/>
 				</Field>
-				<FormError message={error} />
+				<FormError message={formError} />
 			</form>
 		</Modal>
 	);
