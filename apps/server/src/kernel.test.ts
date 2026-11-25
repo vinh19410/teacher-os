@@ -6449,6 +6449,94 @@ describe("assignment prompt bank (issue #202)", () => {
 			});
 			expect(edited?.questions[1]).toMatchObject({ type: null });
 		});
+
+		test("answerSet survives snapshot round-trip and resending snapshot questions on a locked prompt stays 200", async () => {
+			const post = await t.call("/api/assignments/prompts", {
+				session: orgA,
+				method: "POST",
+				body: bankBody({
+					part: "p1",
+					type: "note",
+					title: "Reading answerSet round-trip",
+					optionBank: [],
+					questions: [
+						{
+							stem: "Choose TWO benefits — slot 1",
+							opts: ["A", "B", "C", "D"],
+							answer: "A",
+							alts: "",
+							answerSet: "set-bikes",
+						},
+						{
+							stem: "Choose TWO benefits — slot 2",
+							opts: ["A", "B", "C", "D"],
+							answer: "C",
+							alts: "",
+							answerSet: "set-bikes",
+						},
+						{
+							stem: "Regular note ____ question",
+							opts: null,
+							answer: "river",
+							alts: "",
+						},
+					],
+				}),
+			});
+			expect(post.status).toBe(201);
+			const { id } = (await post.json()) as { id: string };
+			const row = (await t.kernel(orgA)).assignmentPrompts.find(
+				(r) => r.id === id,
+			);
+			expect(row?.questions).toHaveLength(3);
+			expect(row?.questions[0]?.answerSet).toBe("set-bikes");
+			expect(row?.questions[1]?.answerSet).toBe("set-bikes");
+			expect("answerSet" in (row?.questions[2] ?? {})).toBe(false);
+
+			// Seed a submitted quiz attempt linked to this prompt so content-lock is active.
+			const orgId = await t.orgIdOf(orgA);
+			const clsId = await t.createClass(orgA, "Lock Round-Trip Class");
+			const stuId = await t.addActiveStudent(orgA, "Học viên Lock", {
+				classId: clsId,
+			});
+			const caId = crypto.randomUUID();
+			await t.db.insert(schema.classAssignment).values({
+				id: caId,
+				orgId,
+				classId: clsId,
+				promptId: id,
+				title: "Locked assignment",
+				due: "2099-01-01",
+			});
+			await t.db.insert(schema.quizAttempt).values({
+				id: crypto.randomUUID(),
+				orgId,
+				assignmentId: caId,
+				studentId: stuId,
+				mode: "assignment",
+				status: "submitted",
+				questionsSnapshot: JSON.stringify(row?.questions ?? []),
+				answers: "{}",
+			});
+
+			// Resend snapshot questions (which carry type: null, pin: null) with a title rename.
+			const rename = await t.call(`/api/assignments/prompts/${id}`, {
+				session: orgA,
+				method: "PATCH",
+				body: {
+					title: "Renamed title",
+					questions: row?.questions,
+				},
+			});
+			expect(rename.status).toBe(200);
+			const after = (await t.kernel(orgA)).assignmentPrompts.find(
+				(r) => r.id === id,
+			);
+			expect(after?.title).toBe("Renamed title");
+			expect(after?.questions[0]?.answerSet).toBe("set-bikes");
+			expect(after?.questions[1]?.answerSet).toBe("set-bikes");
+			expect("answerSet" in (after?.questions[2] ?? {})).toBe(false);
+		});
 	});
 });
 

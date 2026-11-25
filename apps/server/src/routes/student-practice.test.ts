@@ -1917,3 +1917,520 @@ describe("GET /api/student/practice — facets & part/type/band filters (#884)",
 		}
 	});
 });
+
+describe("student practice multi-part & overlong answerSet isolation", () => {
+	let app: ServerApp;
+	let libsql: Db;
+
+	const MCQ_OPTS = ["Opt A", "Opt B", "Opt C", "Opt D", "Opt E"];
+
+	beforeAll(async () => {
+		const client = createClient({ url: "file::memory:" });
+		const db = drizzle(client, { schema });
+		await migrate(db, { migrationsFolder: MIGRATIONS_DIR });
+		libsql = db as unknown as Db;
+
+		await libsql
+			.insert(schema.organization)
+			.values({ id: "org-as", name: "AnswerSet Academy" });
+		await libsql.insert(schema.student).values({
+			id: "student-as",
+			orgId: "org-as",
+			name: "Linh",
+			email: "linh@test.local",
+		});
+
+		const twentyCharKey = "set-0123456789abcdef";
+		const overlongKey = "legacy-overlong-answerset-key-01";
+
+		await libsql.insert(schema.assignmentTest).values([
+			{
+				id: "test-mp-explicit",
+				orgId: "org-as",
+				title: "Multi-Part Explicit 20-char Set",
+				skill: "listening",
+				timeLimitSeconds: null,
+				status: "ready",
+			},
+			{
+				id: "test-mp-implicit",
+				orgId: "org-as",
+				title: "Multi-Part Implicit Boundary",
+				skill: "listening",
+				timeLimitSeconds: null,
+				status: "ready",
+			},
+			{
+				id: "test-overlong-single",
+				orgId: "org-as",
+				title: "Single-Part Overlong Key",
+				skill: "listening",
+				timeLimitSeconds: null,
+				status: "ready",
+			},
+			{
+				id: "test-mp-solo-boundary",
+				orgId: "org-as",
+				title: "Multi-Part Solo mcq_many Boundary",
+				skill: "listening",
+				timeLimitSeconds: null,
+				status: "ready",
+			},
+		]);
+
+		await libsql.insert(schema.assignmentPrompt).values([
+			{
+				id: "prompt-mp-exp-1",
+				orgId: "org-as",
+				task: "task1",
+				genre: "",
+				skill: "listening",
+				part: "s1",
+				type: "mcq_many",
+				title: "Part 1 Explicit",
+				prompt: "",
+				passage: "",
+				questions: JSON.stringify([
+					{
+						stem: "Choose TWO letters, A-E.",
+						opts: MCQ_OPTS,
+						answer: "A",
+						alts: "",
+						type: "mcq_many",
+						answerSet: twentyCharKey,
+					},
+					{
+						stem: "Choose TWO letters, A-E.",
+						opts: MCQ_OPTS,
+						answer: "B",
+						alts: "",
+						type: "mcq_many",
+						answerSet: twentyCharKey,
+					},
+				]),
+				status: "ready",
+			},
+			{
+				id: "prompt-mp-exp-2",
+				orgId: "org-as",
+				task: "task1",
+				genre: "",
+				skill: "listening",
+				part: "s2",
+				type: "mcq_many",
+				title: "Part 2 Explicit",
+				prompt: "",
+				passage: "",
+				questions: JSON.stringify([
+					{
+						stem: "Choose TWO letters, A-E.",
+						opts: MCQ_OPTS,
+						answer: "C",
+						alts: "",
+						type: "mcq_many",
+						answerSet: twentyCharKey,
+					},
+					{
+						stem: "Choose TWO letters, A-E.",
+						opts: MCQ_OPTS,
+						answer: "D",
+						alts: "",
+						type: "mcq_many",
+						answerSet: twentyCharKey,
+					},
+				]),
+				status: "ready",
+			},
+			{
+				id: "prompt-mp-imp-1",
+				orgId: "org-as",
+				task: "task1",
+				genre: "",
+				skill: "listening",
+				part: "s1",
+				type: "mcq_many",
+				title: "Part 1 Implicit",
+				prompt: "",
+				passage: "",
+				questions: JSON.stringify([
+					{
+						stem: "Choose TWO letters, A-E.",
+						opts: MCQ_OPTS,
+						answer: "A",
+						alts: "",
+						type: "mcq_many",
+					},
+					{
+						stem: "Choose TWO letters, A-E.",
+						opts: MCQ_OPTS,
+						answer: "B",
+						alts: "",
+						type: "mcq_many",
+					},
+				]),
+				status: "ready",
+			},
+			{
+				id: "prompt-mp-imp-2",
+				orgId: "org-as",
+				task: "task1",
+				genre: "",
+				skill: "listening",
+				part: "s2",
+				type: "mcq_many",
+				title: "Part 2 Implicit",
+				prompt: "",
+				passage: "",
+				questions: JSON.stringify([
+					{
+						stem: "Choose TWO letters, A-E.",
+						opts: MCQ_OPTS,
+						answer: "C",
+						alts: "",
+						type: "mcq_many",
+					},
+					{
+						stem: "Choose TWO letters, A-E.",
+						opts: MCQ_OPTS,
+						answer: "D",
+						alts: "",
+						type: "mcq_many",
+					},
+				]),
+				status: "ready",
+			},
+			{
+				id: "prompt-overlong",
+				orgId: "org-as",
+				task: "task1",
+				genre: "",
+				skill: "listening",
+				part: "s1",
+				type: "mcq_many",
+				title: "Single Part Overlong",
+				prompt: "",
+				passage: "",
+				questions: JSON.stringify([
+					{
+						stem: "Choose TWO letters, A-E.",
+						opts: MCQ_OPTS,
+						answer: "C",
+						alts: "",
+						type: "mcq_many",
+						answerSet: overlongKey,
+					},
+					{
+						stem: "Choose TWO letters, A-E.",
+						opts: MCQ_OPTS,
+						answer: "E",
+						alts: "",
+						type: "mcq_many",
+						answerSet: overlongKey,
+					},
+				]),
+				status: "ready",
+			},
+			{
+				id: "prompt-solo-1",
+				orgId: "org-as",
+				task: "task1",
+				genre: "",
+				skill: "listening",
+				part: "s1",
+				type: "mcq_many",
+				title: "Part 1 Solo mcq_many",
+				prompt: "",
+				passage: "",
+				questions: JSON.stringify([
+					{
+						stem: "Choose TWO letters, A-E.",
+						opts: MCQ_OPTS,
+						answer: "A",
+						alts: "",
+						type: "mcq_many",
+					},
+				]),
+				status: "ready",
+			},
+			{
+				id: "prompt-solo-2",
+				orgId: "org-as",
+				task: "task1",
+				genre: "",
+				skill: "listening",
+				part: "s2",
+				type: "mcq_many",
+				title: "Part 2 Solo mcq_many",
+				prompt: "",
+				passage: "",
+				questions: JSON.stringify([
+					{
+						stem: "Choose TWO letters, A-E.",
+						opts: MCQ_OPTS,
+						answer: "B",
+						alts: "",
+						type: "mcq_many",
+					},
+				]),
+				status: "ready",
+			},
+		]);
+
+		await libsql.insert(schema.assignmentTestPart).values([
+			{
+				id: "atp-as-1",
+				testId: "test-mp-explicit",
+				promptId: "prompt-mp-exp-1",
+				part: "s1",
+				position: 1,
+			},
+			{
+				id: "atp-as-2",
+				testId: "test-mp-explicit",
+				promptId: "prompt-mp-exp-2",
+				part: "s2",
+				position: 2,
+			},
+			{
+				id: "atp-as-3",
+				testId: "test-mp-implicit",
+				promptId: "prompt-mp-imp-1",
+				part: "s1",
+				position: 1,
+			},
+			{
+				id: "atp-as-4",
+				testId: "test-mp-implicit",
+				promptId: "prompt-mp-imp-2",
+				part: "s2",
+				position: 2,
+			},
+			{
+				id: "atp-as-5",
+				testId: "test-overlong-single",
+				promptId: "prompt-overlong",
+				part: "s1",
+				position: 1,
+			},
+			{
+				id: "atp-as-6",
+				testId: "test-mp-solo-boundary",
+				promptId: "prompt-solo-1",
+				part: "s1",
+				position: 1,
+			},
+			{
+				id: "atp-as-7",
+				testId: "test-mp-solo-boundary",
+				promptId: "prompt-solo-2",
+				part: "s2",
+				position: 2,
+			},
+		]);
+
+		app = buildApp({
+			getDb: () => libsql as unknown as Db,
+			corsOrigin: CORS_ORIGINS,
+			getSessionUser: async (headers: Headers): Promise<SessionUser | null> => {
+				if (headers.get("x-test-user") === "linh") {
+					return {
+						userId: "u-linh",
+						userName: "Linh",
+						email: "linh@test.local",
+						emailVerified: true,
+						role: "student",
+					};
+				}
+				return null;
+			},
+			authHandler: () => new Response("auth OK"),
+		});
+	});
+
+	async function asGet(path: string): Promise<Response> {
+		return app.request(path, {
+			method: "GET",
+			headers: {
+				"x-test-user": "linh",
+				"x-student-org-id": "org-as",
+				Origin: STUDENT_ORIGIN,
+			},
+		});
+	}
+
+	async function asMutate(
+		path: string,
+		method: "POST" | "PATCH",
+		body = "{}",
+	): Promise<Response> {
+		return app.request(path, {
+			method,
+			headers: {
+				"x-test-user": "linh",
+				"x-student-org-id": "org-as",
+				Origin: STUDENT_ORIGIN,
+				"Content-Type": "application/json",
+			},
+			body,
+		});
+	}
+
+	async function takeAndSubmit(
+		testId: string,
+		answers: Record<number, string>,
+	) {
+		const startRes = await asMutate(
+			`/api/student/practice/${testId}/attempts`,
+			"POST",
+		);
+		expect(startRes.status).toBe(201);
+		const { attemptId } = startPracticeResponseSchema.parse(
+			await startRes.json(),
+		);
+		for (const [q, value] of Object.entries(answers)) {
+			const res = await asMutate(
+				`/api/student/attempts/${attemptId}/answer`,
+				"PATCH",
+				JSON.stringify({ q: Number(q), value }),
+			);
+			expect(res.status).toBe(200);
+		}
+		const submitRes = await asMutate(
+			`/api/student/attempts/${attemptId}/submit`,
+			"POST",
+		);
+		expect(submitRes.status).toBe(200);
+		const submitted = (await submitRes.json()) as {
+			correctCount: number;
+			wrongCount: number;
+			skippedCount: number;
+			totalCount: number;
+		};
+		const summaryRes = await asGet(`/api/student/attempts/${attemptId}`);
+		expect(summaryRes.status).toBe(200);
+		const summary = (await summaryRes.json()) as {
+			correctCount: number;
+			items: Array<{ verdict: string; key: string; answer: string | null }>;
+		};
+		return { attemptId, submitted, summary };
+	}
+
+	test("multi-part explicit 20-char answerSet stays <= 20 chars, isolates parts, and grades permutations per part", async () => {
+		const quizRes = await asGet("/api/student/practice/test-mp-explicit/quiz");
+		expect(quizRes.status).toBe(200);
+		const quiz = (await quizRes.json()) as {
+			questions: Array<{ answerSet?: string }>;
+		};
+		expect(quiz.questions).toHaveLength(4);
+		const sets = quiz.questions.map((q) => q.answerSet);
+		expect(sets[0]).toBeTruthy();
+		expect(sets[0]).toBe(sets[1]);
+		expect(sets[2]).toBeTruthy();
+		expect(sets[2]).toBe(sets[3]);
+		expect(sets[0]).not.toBe(sets[2]);
+		for (const s of sets) {
+			expect((s ?? "").length).toBeLessThanOrEqual(20);
+		}
+
+		// Cross-part swapped answers must NOT match across parts.
+		const crossSwap = await takeAndSubmit("test-mp-explicit", {
+			0: "C",
+			1: "D",
+			2: "A",
+			3: "B",
+		});
+		expect(crossSwap.submitted.correctCount).toBe(0);
+
+		// Within-part reversed answers score 4/4 and show part-scoped summary keys.
+		const intraSwap = await takeAndSubmit("test-mp-explicit", {
+			0: "B",
+			1: "A",
+			2: "D",
+			3: "C",
+		});
+		expect(intraSwap.submitted.correctCount).toBe(4);
+		expect(intraSwap.summary.items.map((item) => item.key)).toEqual([
+			"A, B",
+			"A, B",
+			"C, D",
+			"C, D",
+		]);
+	});
+
+	test("multi-part implicit mcq_many boundary separates consecutive clusters across parts", async () => {
+		const quizRes = await asGet("/api/student/practice/test-mp-implicit/quiz");
+		expect(quizRes.status).toBe(200);
+		const quiz = (await quizRes.json()) as {
+			questions: Array<{ answerSet?: string }>;
+		};
+		expect(quiz.questions).toHaveLength(4);
+		expect(quiz.questions[0]?.answerSet).toBeTruthy();
+		expect(quiz.questions[0]?.answerSet).toBe(quiz.questions[1]?.answerSet);
+		expect(quiz.questions[2]?.answerSet).toBeTruthy();
+		expect(quiz.questions[2]?.answerSet).toBe(quiz.questions[3]?.answerSet);
+		expect(quiz.questions[0]?.answerSet).not.toBe(quiz.questions[2]?.answerSet);
+
+		// Cross-part swap must score 0 (never merged into a single 4-question cluster).
+		const crossSwap = await takeAndSubmit("test-mp-implicit", {
+			0: "C",
+			1: "D",
+			2: "A",
+			3: "B",
+		});
+		expect(crossSwap.submitted.correctCount).toBe(0);
+
+		// Within-part swap scores 4/4.
+		const intraSwap = await takeAndSubmit("test-mp-implicit", {
+			0: "B",
+			1: "A",
+			2: "D",
+			3: "C",
+		});
+		expect(intraSwap.submitted.correctCount).toBe(4);
+	});
+
+	test("single-part overlong legacy answerSet (> 20 chars) is sanitized without 404 and preserves unordered grading", async () => {
+		const quizRes = await asGet(
+			"/api/student/practice/test-overlong-single/quiz",
+		);
+		expect(quizRes.status).toBe(200);
+		const quiz = (await quizRes.json()) as {
+			questions: Array<{ answerSet?: string }>;
+		};
+		expect(quiz.questions).toHaveLength(2);
+		expect(quiz.questions[0]?.answerSet).toBeTruthy();
+		expect(quiz.questions[0]?.answerSet).toBe(quiz.questions[1]?.answerSet);
+		expect((quiz.questions[0]?.answerSet ?? "").length).toBeLessThanOrEqual(20);
+
+		const result = await takeAndSubmit("test-overlong-single", {
+			0: "E",
+			1: "C",
+		});
+		expect(result.submitted.correctCount).toBe(2);
+		expect(result.summary.items.map((item) => item.key)).toEqual([
+			"C, E",
+			"C, E",
+		]);
+	});
+
+	test("multi-part solo mcq_many without answerSet at part boundaries never merge across parts", async () => {
+		const quizRes = await asGet(
+			"/api/student/practice/test-mp-solo-boundary/quiz",
+		);
+		expect(quizRes.status).toBe(200);
+		const quiz = (await quizRes.json()) as {
+			questions: Array<{ answerSet?: string }>;
+		};
+		expect(quiz.questions).toHaveLength(2);
+		expect(quiz.questions[0]?.answerSet).toBeTruthy();
+		expect(quiz.questions[1]?.answerSet).toBeTruthy();
+		expect(quiz.questions[0]?.answerSet).not.toBe(quiz.questions[1]?.answerSet);
+
+		// Swapping Part 1 and Part 2 answers must score 0 (each solo question grades positionally).
+		const swapped = await takeAndSubmit("test-mp-solo-boundary", {
+			0: "B",
+			1: "A",
+		});
+		expect(swapped.submitted.correctCount).toBe(0);
+	});
+});

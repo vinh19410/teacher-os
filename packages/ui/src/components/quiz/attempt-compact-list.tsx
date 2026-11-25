@@ -44,7 +44,7 @@ export function AttemptCompactList({
 					</span>
 					{/* Key luôn xanh — cùng rule với dòng "Đáp án:" ở màn detail
 						(review PR #355 F5: một ngôn ngữ cho cùng datum). */}
-					<span className="shrink-0 font-mono text-[13px] text-verdict-correct">
+					<span className="min-w-0 max-w-[55%] break-words text-right font-mono text-[13px] text-verdict-correct sm:max-w-[50%]">
 						Đáp án: {item.key}
 					</span>
 				</li>

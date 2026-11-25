@@ -15,6 +15,7 @@ import {
 	studentQuizDetailSchema,
 	studentQuizGroupSchema,
 } from "@teacher-os/api/contracts";
+import { resolveAnswerSetGroups } from "@teacher-os/api/lib/grade-quiz";
 import { formatBand, ieltsOverallBand } from "@teacher-os/api/lib/ielts-band";
 import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
 import {
@@ -234,16 +235,46 @@ function buildMergedQuestions(
 	parts: PracticeTestWithParts["parts"],
 	testId: string,
 ): AssignmentQuestion[] {
-	return parts.flatMap((row) => {
+	return parts.flatMap((row, partIndex) => {
 		const parsed = parseQuizQuestions(
 			row.prompt.questions,
 			`${testId}:${row.part}`,
 		);
 		const effectiveTypes = inferQuestionTypes(parsed, row.prompt.type);
-		return parsed.map((q, index) => ({
+		const partQuestions = parsed.map((q, index) => ({
 			...q,
 			type: effectiveTypes[index] ?? row.prompt.type,
 		}));
+		if (parts.length <= 1) {
+			return partQuestions;
+		}
+		const { unorderedGroups, positional } = resolveAnswerSetGroups(
+			partQuestions,
+			{ promptType: row.prompt.type },
+		);
+		const scopedKeyByIndex = new Map<number, string>();
+		let seq = 0;
+		for (const group of unorderedGroups) {
+			seq += 1;
+			const scopedKey = `p${partIndex + 1}-s${seq}`;
+			for (const member of group) {
+				scopedKeyByIndex.set(member.index, scopedKey);
+			}
+		}
+		for (const member of positional) {
+			const rawKey = member.question.answerSet?.trim();
+			const effectiveType =
+				member.question.type?.trim() || row.prompt.type?.trim();
+			if (rawKey || effectiveType === "mcq_many") {
+				seq += 1;
+				scopedKeyByIndex.set(member.index, `p${partIndex + 1}-s${seq}`);
+			}
+		}
+		return partQuestions.map((q, index) => {
+			const { answerSet: _drop, ...rest } = q;
+			const scopedKey = scopedKeyByIndex.get(index);
+			return scopedKey ? { ...rest, answerSet: scopedKey } : rest;
+		});
 	});
 }
 

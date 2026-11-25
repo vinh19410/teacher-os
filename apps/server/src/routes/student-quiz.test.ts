@@ -1813,4 +1813,396 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		expect(body.attempt?.startedAt).toBeTruthy();
 		expect(Number.isNaN(Date.parse(body.attempt?.startedAt ?? ""))).toBe(false);
 	});
+
+	describe("Choose THREE unordered grading, summary set keys, and practice promptType parity", () => {
+		const BIKES_OPTS = [
+			"Option A",
+			"Option B",
+			"Option C",
+			"Option D",
+			"Option E",
+			"Option F",
+		];
+
+		test("Bikes Choose THREE with answerSet returns set key on summary while keeping single wire key on detail", async () => {
+			await libsql.insert(schema.assignmentPrompt).values({
+				id: "prompt-bikes-explicit",
+				orgId: "org-1",
+				task: "task1",
+				genre: "",
+				skill: "listening",
+				part: "s3",
+				type: "mcq_many",
+				title: "Talking about the history of bikes",
+				prompt: "",
+				passage: "",
+				questions: JSON.stringify([
+					{
+						stem: "Choose THREE letters, A-F.",
+						opts: BIKES_OPTS,
+						answer: "C",
+						alts: "",
+						type: "mcq_many",
+						answerSet: "set-2",
+					},
+					{
+						stem: "Choose THREE letters, A-F.",
+						opts: BIKES_OPTS,
+						answer: "D",
+						alts: "",
+						type: "mcq_many",
+						answerSet: "set-2",
+					},
+					{
+						stem: "Choose THREE letters, A-F.",
+						opts: BIKES_OPTS,
+						answer: "F",
+						alts: "",
+						type: "mcq_many",
+						answerSet: "set-2",
+					},
+				]),
+				status: "ready",
+			});
+			await libsql.insert(schema.classAssignment).values({
+				id: "ca-bikes-explicit",
+				orgId: "org-1",
+				classId: "class-1",
+				promptId: "prompt-bikes-explicit",
+				title: "Bikes Explicit",
+				due: "2099-01-10",
+			});
+			await libsql.insert(schema.classAssignmentTarget).values({
+				id: "cat-bikes-explicit",
+				orgId: "org-1",
+				assignmentId: "ca-bikes-explicit",
+				studentId: "student-1",
+				submittedAt: null,
+			});
+
+			const attemptId = await startAttempt("ca-bikes-explicit");
+			await patchAnswer(attemptId, 0, "A");
+			await patchAnswer(attemptId, 1, "C");
+			await patchAnswer(attemptId, 2, "D");
+
+			const submitRes = await submit(attemptId);
+			expect(submitRes.status).toBe(200);
+			expect(await submitRes.json()).toEqual({
+				correctCount: 2,
+				totalCount: 3,
+				wrongCount: 1,
+				skippedCount: 0,
+			});
+
+			const summaryRes = await app.request(
+				`/api/student/attempts/${attemptId}`,
+				{
+					headers: OWNER,
+				},
+			);
+			expect(summaryRes.status).toBe(200);
+			const summary = (await summaryRes.json()) as QuizAttemptSummary;
+			expect(summary.items.map((item) => item.verdict)).toEqual([
+				"wrong",
+				"correct",
+				"correct",
+			]);
+			expect(summary.items.map((item) => item.key)).toEqual([
+				"C, D, F",
+				"C, D, F",
+				"C, D, F",
+			]);
+
+			const detailRes = await app.request(
+				`/api/student/attempts/${attemptId}/detail`,
+				{ headers: OWNER },
+			);
+			expect(detailRes.status).toBe(200);
+			const detail = (await detailRes.json()) as QuizAttemptDetail;
+			expect(detail.questions.map((q) => q.key)).toEqual(["C", "D", "F"]);
+			expect(detail.questions.map((q) => q.verdict)).toEqual([
+				"wrong",
+				"correct",
+				"correct",
+			]);
+		});
+
+		test("legacy assignment snapshot missing answerSet with prompt.type=mcq_many and question.type=null grades unordered", async () => {
+			await libsql.insert(schema.assignmentPrompt).values({
+				id: "prompt-bikes-legacy",
+				orgId: "org-1",
+				task: "task1",
+				genre: "",
+				skill: "listening",
+				part: "s3",
+				type: "mcq_many",
+				title: "Bikes Legacy Missing AnswerSet",
+				prompt: "",
+				passage: "",
+				questions: JSON.stringify([
+					{
+						stem: "Choose THREE letters, A-F.",
+						opts: BIKES_OPTS,
+						answer: "C",
+						alts: "",
+						type: null,
+					},
+					{
+						stem: "Choose THREE letters, A-F.",
+						opts: BIKES_OPTS,
+						answer: "D",
+						alts: "",
+						type: null,
+					},
+					{
+						stem: "Choose THREE letters, A-F.",
+						opts: BIKES_OPTS,
+						answer: "F",
+						alts: "",
+						type: null,
+					},
+				]),
+				status: "ready",
+			});
+			await libsql.insert(schema.classAssignment).values({
+				id: "ca-bikes-legacy",
+				orgId: "org-1",
+				classId: "class-1",
+				promptId: "prompt-bikes-legacy",
+				title: "Bikes Legacy",
+				due: "2099-01-10",
+			});
+			await libsql.insert(schema.classAssignmentTarget).values({
+				id: "cat-bikes-legacy",
+				orgId: "org-1",
+				assignmentId: "ca-bikes-legacy",
+				studentId: "student-1",
+				submittedAt: null,
+			});
+
+			const attemptId = await startAttempt("ca-bikes-legacy");
+			await patchAnswer(attemptId, 0, "F");
+			await patchAnswer(attemptId, 1, "C");
+			await patchAnswer(attemptId, 2, "D");
+
+			const submitRes = await submit(attemptId);
+			expect(submitRes.status).toBe(200);
+			expect(await submitRes.json()).toEqual({
+				correctCount: 3,
+				totalCount: 3,
+				wrongCount: 0,
+				skippedCount: 0,
+			});
+
+			const summaryRes = await app.request(
+				`/api/student/attempts/${attemptId}`,
+				{
+					headers: OWNER,
+				},
+			);
+			expect(summaryRes.status).toBe(200);
+			const summary = (await summaryRes.json()) as QuizAttemptSummary;
+			expect(summary.correctCount).toBe(3);
+			expect(summary.items.map((item) => item.key)).toEqual([
+				"C, D, F",
+				"C, D, F",
+				"C, D, F",
+			]);
+
+			const detailRes = await app.request(
+				`/api/student/attempts/${attemptId}/detail`,
+				{ headers: OWNER },
+			);
+			expect(detailRes.status).toBe(200);
+			const detail = (await detailRes.json()) as QuizAttemptDetail;
+			expect(detail.questions.map((q) => q.verdict)).toEqual([
+				"correct",
+				"correct",
+				"correct",
+			]);
+			expect(detail.questions.map((q) => q.key)).toEqual(["C", "D", "F"]);
+		});
+
+		test("practice 2-part attempt keeps submit, summary, and detail in parity without bleeding Part 1 mcq_many onto Part 2", async () => {
+			await libsql.insert(schema.assignmentTest).values({
+				id: "test-parity-2part",
+				orgId: "org-1",
+				title: "Practice 2-part Parity",
+				skill: "listening",
+				timeLimitSeconds: null,
+				status: "ready",
+			});
+			await libsql.insert(schema.assignmentPrompt).values([
+				{
+					id: "prompt-parity-p1",
+					orgId: "org-1",
+					task: "task1",
+					genre: "",
+					skill: "listening",
+					part: "s1",
+					type: "mcq_many",
+					title: "Part 1 mcq_many",
+					prompt: "",
+					passage: "",
+					questions: JSON.stringify([
+						{
+							stem: "Choose TWO letters, A-E.",
+							opts: ["A", "B", "C", "D", "E"],
+							answer: "A",
+							alts: "",
+							type: "mcq_many",
+						},
+						{
+							stem: "Choose TWO letters, A-E.",
+							opts: ["A", "B", "C", "D", "E"],
+							answer: "B",
+							alts: "",
+							type: "mcq_many",
+						},
+					]),
+					status: "ready",
+				},
+				{
+					id: "prompt-parity-p2",
+					orgId: "org-1",
+					task: "task1",
+					genre: "",
+					skill: "listening",
+					part: "s2",
+					type: "mcq",
+					title: "Part 2 regular",
+					prompt: "",
+					passage: "",
+					questions: JSON.stringify([
+						{
+							stem: "Pick the matching option",
+							opts: ["A", "B", "C"],
+							answer: "A",
+							alts: "",
+							type: null,
+						},
+						{
+							stem: "Pick the matching option",
+							opts: ["A", "B", "C"],
+							answer: "B",
+							alts: "",
+							type: null,
+						},
+					]),
+					status: "ready",
+				},
+			]);
+			await libsql.insert(schema.assignmentTestPart).values([
+				{
+					id: "atp-parity-1",
+					testId: "test-parity-2part",
+					promptId: "prompt-parity-p1",
+					part: "s1",
+					position: 1,
+				},
+				{
+					id: "atp-parity-2",
+					testId: "test-parity-2part",
+					promptId: "prompt-parity-p2",
+					part: "s2",
+					position: 2,
+				},
+			]);
+
+			// Seed an in_progress practice attempt whose snapshot has Part 1 mcq_many
+			// and Part 2 questions with empty/null type (testing zero bleed from Part 1 prompt.type).
+			const attemptId = "attempt-parity-2part";
+			await libsql.insert(schema.quizAttempt).values({
+				id: attemptId,
+				orgId: "org-1",
+				assignmentId: null,
+				testId: "test-parity-2part",
+				studentId: "student-1",
+				mode: "practice",
+				status: "in_progress",
+				questionsSnapshot: JSON.stringify([
+					{
+						stem: "Choose TWO letters, A-E.",
+						opts: ["A", "B", "C", "D", "E"],
+						answer: "A",
+						alts: "",
+						type: "mcq_many",
+					},
+					{
+						stem: "Choose TWO letters, A-E.",
+						opts: ["A", "B", "C", "D", "E"],
+						answer: "B",
+						alts: "",
+						type: "mcq_many",
+					},
+					{
+						stem: "Pick the matching option",
+						opts: ["A", "B", "C"],
+						answer: "A",
+						alts: "",
+						type: "",
+					},
+					{
+						stem: "Pick the matching option",
+						opts: ["A", "B", "C"],
+						answer: "B",
+						alts: "",
+						type: null,
+					},
+				]),
+				answers: JSON.stringify({ "0": "B", "1": "A", "2": "B", "3": "A" }),
+			});
+
+			const submitRes = await submit(attemptId);
+			expect(submitRes.status).toBe(200);
+			const submitted = (await submitRes.json()) as {
+				correctCount: number;
+				wrongCount: number;
+			};
+			expect(submitted.correctCount).toBe(2);
+			expect(submitted.wrongCount).toBe(2);
+
+			const summaryRes = await app.request(
+				`/api/student/attempts/${attemptId}`,
+				{
+					headers: OWNER,
+				},
+			);
+			expect(summaryRes.status).toBe(200);
+			const summary = (await summaryRes.json()) as QuizAttemptSummary;
+			expect(summary.correctCount).toBe(2);
+			expect(summary.items.map((item) => item.verdict)).toEqual([
+				"correct",
+				"correct",
+				"wrong",
+				"wrong",
+			]);
+			expect(summary.items.map((item) => item.key)).toEqual([
+				"A, B",
+				"A, B",
+				"A",
+				"B",
+			]);
+
+			const detailRes = await app.request(
+				`/api/student/attempts/${attemptId}/detail`,
+				{ headers: OWNER },
+			);
+			expect(detailRes.status).toBe(200);
+			const detail = (await detailRes.json()) as QuizAttemptDetail;
+			expect(detail.correctCount).toBe(2);
+			expect(detail.questions.map((q) => q.verdict)).toEqual([
+				"correct",
+				"correct",
+				"wrong",
+				"wrong",
+			]);
+			expect(detail.questions.map((q) => q.type)).toEqual([
+				"mcq_many",
+				"mcq_many",
+				"",
+				"",
+			]);
+		});
+	});
 });

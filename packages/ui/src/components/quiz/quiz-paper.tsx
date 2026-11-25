@@ -1,6 +1,7 @@
 import {
 	ASSIGNMENT_ANSWER_CHOICES,
 	ASSIGNMENT_IMAGE_SRC_PATTERN,
+	type AssignmentQuestion,
 	answerKindByType,
 	extendedAnswerChoices,
 	QUIZ_ESSAY_MAX,
@@ -9,6 +10,11 @@ import {
 	type StudentQuizDetail,
 	WRITING_MIN_WORDS,
 } from "@teacher-os/api/contracts";
+import {
+	canClusterImplicitMcqMany,
+	resolveAnswerSetGroups,
+	resolveSummaryAnswerKeys,
+} from "@teacher-os/api/lib/grade-quiz";
 import { splitQuizIntro } from "@teacher-os/api/lib/quiz-intro-sections";
 import type {
 	QuizPart,
@@ -140,10 +146,7 @@ function canClusterMcqMany(
 	if (prevSet || currSet) {
 		return Boolean(prevSet && currSet && prevSet === currSet);
 	}
-	return (
-		prev.stem === curr.stem &&
-		JSON.stringify(prev.opts ?? null) === JSON.stringify(curr.opts ?? null)
-	);
+	return canClusterImplicitMcqMany(prev, curr);
 }
 
 function buildPartRenderUnits(
@@ -153,7 +156,8 @@ function buildPartRenderUnits(
 	const units: PartRenderUnit[] = [];
 	for (const question of part.questions) {
 		const effectiveType =
-			question.type ?? (part.source === "group" ? part.typeId : promptType);
+			question.type?.trim() ||
+			(part.source === "group" ? part.typeId : promptType);
 		if (effectiveType === "mcq_many") {
 			const last = units[units.length - 1];
 			const prev =
@@ -208,8 +212,10 @@ function QuizMcqManyCard({
 		questions.some((question) => question.q === currentQuestion);
 
 	const rawSelected = reviewMode
-		? questions.map((q) => (review?.[q.q]?.answer ?? answers[q.q] ?? "").trim())
-		: questions.map((q) => (answers[q.q] ?? "").trim());
+		? questions.map((q) =>
+				(review?.[q.q]?.answer ?? answers[q.q] ?? "").trim().toUpperCase(),
+			)
+		: questions.map((q) => (answers[q.q] ?? "").trim().toUpperCase());
 	const selectedLetters = new Set(
 		rawSelected.filter((letter) =>
 			optionLetters.includes(letter as (typeof optionLetters)[number]),
@@ -219,7 +225,7 @@ function QuizMcqManyCard({
 
 	const keyLetters = new Set(
 		questions
-			.map((q) => review?.[q.q]?.key?.trim() ?? "")
+			.map((q) => (review?.[q.q]?.key ?? "").trim().toUpperCase())
 			.filter((letter) => letter.length > 0),
 	);
 	const reviewInfos = questions
@@ -444,6 +450,11 @@ function QuizMcqManyCard({
 									.filter((letter) => keyLetters.has(letter))
 									.join(", ") || [...keyLetters].join(", ")}
 							</span>
+							{k >= 2 && (
+								<span className="ml-1 text-muted-foreground text-xs">
+									(không tính thứ tự)
+								</span>
+							)}
 						</p>
 					)}
 					{explanations.map((text, index) => (
@@ -731,6 +742,57 @@ export function QuizPaper({
 			}
 		}
 	}
+	const effectiveReview = useMemo<
+		Record<number, QuizReviewInfo> | undefined
+	>(() => {
+		if (!reviewMode || !review) return review;
+		const entries: Array<{
+			q: number;
+			effectiveType: string;
+			gradeQuestion: AssignmentQuestion;
+		}> = [];
+		for (const part of parts) {
+			for (const question of part.questions) {
+				const effectiveType =
+					question.type?.trim() ||
+					(part.source === "group" ? part.typeId : typeId);
+				entries.push({
+					q: question.q,
+					effectiveType,
+					gradeQuestion: {
+						answer: review[question.q]?.key ?? "",
+						alts: review[question.q]?.alts ?? "",
+						stem: question.stem,
+						opts: question.opts,
+						type: effectiveType,
+						...(question.answerSet ? { answerSet: question.answerSet } : {}),
+					},
+				});
+			}
+		}
+		const gradeQuestions = entries.map((entry) => entry.gradeQuestion);
+		const { unorderedGroups } = resolveAnswerSetGroups(gradeQuestions);
+		if (unorderedGroups.length === 0) return review;
+		const summaryKeys = resolveSummaryAnswerKeys(gradeQuestions);
+		const unorderedIndices = new Set<number>();
+		for (const group of unorderedGroups) {
+			for (const member of group) {
+				unorderedIndices.add(member.index);
+			}
+		}
+		let changed = false;
+		const nextReview: Record<number, QuizReviewInfo> = { ...review };
+		for (const arrayIndex of unorderedIndices) {
+			const entry = entries[arrayIndex];
+			if (!entry || entry.effectiveType === "mcq_many") continue;
+			const info = review[entry.q];
+			const summaryKey = summaryKeys[arrayIndex]?.trim() ?? "";
+			if (!info || !summaryKey) continue;
+			nextReview[entry.q] = { ...info, answerSetKey: summaryKey };
+			changed = true;
+		}
+		return changed ? nextReview : review;
+	}, [reviewMode, review, parts, typeId]);
 	// PinOverlay chỉ ĐỌC `pin` + key answers theo `item.q ?? offset` — truyền
 	// ĐỦ questions (không lọc pin): QuizPartQuestion mang `q`/`number` toàn
 	// cục nên multi-part (#433) không đè đáp án; caller web không có `q` giữ
@@ -1045,7 +1107,7 @@ export function QuizPaper({
 									onAnswer={onAnswer}
 									currentQuestion={currentQuestion}
 									mode={mode}
-									review={review}
+									review={effectiveReview}
 								/>
 							)}
 							{remainingUnits.length > 0 && (
@@ -1076,7 +1138,7 @@ export function QuizPaper({
 												onAnswer={onAnswer}
 												current={currentQuestion === unit.question.q}
 												mode={mode}
-												review={review?.[unit.question.q]}
+												review={effectiveReview?.[unit.question.q]}
 											/>
 										),
 									)}

@@ -3,6 +3,7 @@ import type {
 	AssignmentWritingSection,
 	StudentQuizQuestion,
 } from "@teacher-os/api/contracts";
+import { sanitizeAnswerSetKeys } from "@teacher-os/api/lib/grade-quiz";
 import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
 import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import type { QuizPaperDetail } from "@teacher-os/ui/components/quiz/quiz-paper";
@@ -74,9 +75,13 @@ export function buildQuizSim(
 	// rỗng, lọc opts non-string, pin invalid về null, bỏ item thiếu stem —
 	// không để TypeError trong `gradeQuiz` lúc nộp hay crash render take với
 	// items legacy malformed.
-	const fullQuestions = (draft.items ?? [])
-		.filter((item) => typeof item.stem === "string" && item.stem.trim() !== "")
-		.map(normalizeQuestion);
+	const fullQuestions = sanitizeAnswerSetKeys(
+		(draft.items ?? [])
+			.filter(
+				(item) => typeof item.stem === "string" && item.stem.trim() !== "",
+			)
+			.map(normalizeQuestion),
+	);
 	if (fullQuestions.length === 0) return null;
 	// Type hiệu dụng từng câu — cùng helper với take/review payload của server
 	// (type riêng ?? type đề, kèm suy luận tfng/ynng cho câu T/F/NG markerless).
@@ -87,6 +92,7 @@ export function buildQuizSim(
 			opts: question.opts,
 			type: types[index] ?? typeId,
 			pin: question.pin ?? null,
+			...(question.answerSet ? { answerSet: question.answerSet } : {}),
 		}),
 	);
 	const detail: QuizPaperDetail = {
