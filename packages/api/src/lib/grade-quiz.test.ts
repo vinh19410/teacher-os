@@ -4,7 +4,13 @@ import {
 	assignmentPromptCreateSchema,
 	assignmentTestCreateSchema,
 } from "../contracts";
-import { gradeQuiz, isAcceptedAnswer } from "./grade-quiz";
+import {
+	canClusterImplicitMcqMany,
+	gradeQuiz,
+	isAcceptedAnswer,
+	resolveSummaryAnswerKeys,
+	sanitizeAnswerSetKeys,
+} from "./grade-quiz";
 
 const question = (
 	overrides: Partial<AssignmentQuestion> = {},
@@ -259,5 +265,393 @@ describe("gradeQuiz & contracts — Grammar & Vocabulary (#533)", () => {
 			timeLimitSeconds: 1800,
 		});
 		expect(invalidTestSkill.success).toBe(false);
+	});
+});
+
+describe("gradeQuiz — Choose THREE unordered grading & implicit mcq_many fallback", () => {
+	const bikesOpts = [
+		"Wheel size",
+		"Balance",
+		"Rate of speed",
+		"The back wheel",
+		"Safety",
+		"Downhill travel",
+	];
+	const bikesStem =
+		"Choose THREE letters, A-F, and write them next to questions 8-10. The invention of different gears on a bicycle affected which THREE of the following?";
+
+	const bikesQuestions = (withAnswerSet: boolean): AssignmentQuestion[] => [
+		question({
+			type: "mcq_many",
+			stem: bikesStem,
+			opts: bikesOpts,
+			answer: "C",
+			...(withAnswerSet ? { answerSet: "set-2" } : {}),
+		}),
+		question({
+			type: "mcq_many",
+			stem: `  ${bikesStem}  `,
+			opts: bikesOpts.map((opt) => ` ${opt} `),
+			answer: "D",
+			...(withAnswerSet ? { answerSet: "set-2" } : {}),
+		}),
+		question({
+			type: "mcq_many",
+			stem: bikesStem,
+			opts: bikesOpts,
+			answer: "F",
+			...(withAnswerSet ? { answerSet: "set-2" } : {}),
+		}),
+	];
+
+	test.each([true, false])(
+		"Bikes Q8–10 (withAnswerSet=%s): mọi hoán vị của C, D, F đều 3/3; A, C, D → 2/3; A, E, F → 1/3; trùng lặp không tính hai lần; bỏ trống → skipped",
+		(withAnswerSet) => {
+			const qs = bikesQuestions(withAnswerSet);
+
+			expect(gradeQuiz(qs, { "0": "F", "1": "C", "2": "D" })).toMatchObject({
+				verdicts: ["correct", "correct", "correct"],
+				correctCount: 3,
+				wrongCount: 0,
+				skippedCount: 0,
+			});
+
+			expect(gradeQuiz(qs, { "0": "D", "1": "F", "2": "C" })).toMatchObject({
+				verdicts: ["correct", "correct", "correct"],
+				correctCount: 3,
+			});
+
+			expect(gradeQuiz(qs, { "0": "A", "1": "C", "2": "D" })).toMatchObject({
+				verdicts: ["wrong", "correct", "correct"],
+				correctCount: 2,
+				wrongCount: 1,
+			});
+
+			expect(gradeQuiz(qs, { "0": "A", "1": "E", "2": "F" })).toMatchObject({
+				verdicts: ["wrong", "wrong", "correct"],
+				correctCount: 1,
+				wrongCount: 2,
+			});
+
+			expect(gradeQuiz(qs, { "0": "C", "1": "C", "2": "D" })).toMatchObject({
+				verdicts: ["correct", "wrong", "correct"],
+				correctCount: 2,
+				wrongCount: 1,
+			});
+
+			expect(gradeQuiz(qs, { "0": "D", "1": "F" })).toMatchObject({
+				verdicts: ["correct", "correct", "skipped"],
+				correctCount: 2,
+				wrongCount: 0,
+				skippedCount: 1,
+			});
+		},
+	);
+
+	test("study-pack slot suffix stems (lựa chọn 1/3..3/3) without answerSet cluster together, while consecutive (1/2, 2/2) + (1/2, 2/2) stay separate", () => {
+		const opts = ["Opt A", "Opt B", "Opt C", "Opt D", "Opt E", "Opt F"];
+		const b59WithoutSet = [
+			question({
+				type: "mcq_many",
+				stem: "Questions 1 (lựa chọn 1/3)",
+				opts,
+				answer: "A",
+			}),
+			question({
+				type: "mcq_many",
+				stem: "Questions 1 (lựa chọn 2/3)",
+				opts,
+				answer: "D",
+			}),
+			question({
+				type: "mcq_many",
+				stem: "Questions 1 (lựa chọn 3/3)",
+				opts,
+				answer: "F",
+			}),
+		];
+		expect(
+			gradeQuiz(b59WithoutSet, { "0": "F", "1": "A", "2": "D" }),
+		).toMatchObject({
+			verdicts: ["correct", "correct", "correct"],
+			correctCount: 3,
+		});
+
+		const twoConsecutivePairs = [
+			question({
+				type: "mcq_many",
+				stem: "Questions 1 (lựa chọn 1/2)",
+				opts,
+				answer: "A",
+			}),
+			question({
+				type: "mcq_many",
+				stem: "Questions 1 (lựa chọn 2/2)",
+				opts,
+				answer: "B",
+			}),
+			question({
+				type: "mcq_many",
+				stem: "Questions 1 (lựa chọn 1/2)",
+				opts,
+				answer: "C",
+			}),
+			question({
+				type: "mcq_many",
+				stem: "Questions 1 (lựa chọn 2/2)",
+				opts,
+				answer: "D",
+			}),
+		];
+		// Cross-swapping cluster 1 and cluster 2 must score 0/4.
+		expect(
+			gradeQuiz(twoConsecutivePairs, {
+				"0": "C",
+				"1": "D",
+				"2": "A",
+				"3": "B",
+			}),
+		).toMatchObject({
+			verdicts: ["wrong", "wrong", "wrong", "wrong"],
+			correctCount: 0,
+		});
+		// Swapping within each cluster must score 4/4.
+		expect(
+			gradeQuiz(twoConsecutivePairs, {
+				"0": "B",
+				"1": "A",
+				"2": "D",
+				"3": "C",
+			}),
+		).toMatchObject({
+			verdicts: ["correct", "correct", "correct", "correct"],
+			correctCount: 4,
+		});
+	});
+
+	test("inherits promptType: 'mcq_many' when question.type is null, undefined, or empty string", () => {
+		const qs = [
+			question({ type: null, stem: bikesStem, opts: bikesOpts, answer: "C" }),
+			question({
+				type: undefined,
+				stem: bikesStem,
+				opts: bikesOpts,
+				answer: "D",
+			}),
+			question({ type: "", stem: bikesStem, opts: bikesOpts, answer: "F" }),
+		];
+		expect(
+			gradeQuiz(
+				qs,
+				{ "0": "F", "1": "C", "2": "D" },
+				{ promptType: "mcq_many" },
+			),
+		).toMatchObject({
+			verdicts: ["correct", "correct", "correct"],
+			correctCount: 3,
+		});
+	});
+
+	test("non-consecutive same-stem mcq_many clusters never merge across intervening questions", () => {
+		const qs = [
+			question({
+				type: "mcq_many",
+				stem: bikesStem,
+				opts: bikesOpts,
+				answer: "A",
+			}),
+			question({
+				type: "mcq_many",
+				stem: bikesStem,
+				opts: bikesOpts,
+				answer: "B",
+			}),
+			question({
+				type: "mcq",
+				stem: "Middle single MCQ",
+				opts: ["One", "Two", "Three"],
+				answer: "A",
+			}),
+			question({
+				type: "mcq_many",
+				stem: bikesStem,
+				opts: bikesOpts,
+				answer: "C",
+			}),
+			question({
+				type: "mcq_many",
+				stem: bikesStem,
+				opts: bikesOpts,
+				answer: "D",
+			}),
+		];
+		expect(
+			gradeQuiz(qs, { "0": "C", "1": "D", "2": "A", "3": "A", "4": "B" }),
+		).toMatchObject({
+			verdicts: ["wrong", "wrong", "correct", "wrong", "wrong"],
+			correctCount: 1,
+		});
+	});
+
+	test("malformed opts (null, <2 non-empty items) never trigger implicit clustering", () => {
+		const invalidCases: Array<string[] | null> = [
+			null,
+			[],
+			["Only one"],
+			["", ""],
+			["Only one", "   "],
+		];
+		for (const opts of invalidCases) {
+			const a = question({
+				type: "mcq_many",
+				stem: "Choose TWO",
+				opts,
+				answer: "A",
+			});
+			const b = question({
+				type: "mcq_many",
+				stem: "Choose TWO",
+				opts,
+				answer: "B",
+			});
+			expect(canClusterImplicitMcqMany(a, b)).toBe(false);
+			expect(gradeQuiz([a, b], { "0": "B", "1": "A" }).verdicts).toEqual([
+				"wrong",
+				"wrong",
+			]);
+		}
+	});
+});
+
+describe("resolveSummaryAnswerKeys — unordered set display keys", () => {
+	const bikesOpts = [
+		"Wheel size",
+		"Balance",
+		"Rate of speed",
+		"The back wheel",
+		"Safety",
+		"Downhill travel",
+	];
+
+	test("formats Bikes Q8–10 as 'C, D, F' sorted ascending for both explicit and implicit clusters", () => {
+		const explicitUnsorted = [
+			question({
+				type: "mcq_many",
+				stem: "Choose THREE",
+				opts: bikesOpts,
+				answer: "f",
+				answerSet: "set-2",
+			}),
+			question({
+				type: "mcq_many",
+				stem: "Choose THREE",
+				opts: bikesOpts,
+				answer: "c",
+				answerSet: "set-2",
+			}),
+			question({
+				type: "mcq_many",
+				stem: "Choose THREE",
+				opts: bikesOpts,
+				answer: "d",
+				answerSet: "set-2",
+			}),
+		];
+		expect(resolveSummaryAnswerKeys(explicitUnsorted)).toEqual([
+			"C, D, F",
+			"C, D, F",
+			"C, D, F",
+		]);
+
+		const implicit = [
+			question({
+				type: "mcq_many",
+				stem: "Choose THREE",
+				opts: bikesOpts,
+				answer: "F",
+			}),
+			question({
+				type: "mcq_many",
+				stem: "Choose THREE",
+				opts: bikesOpts,
+				answer: "C",
+			}),
+			question({
+				type: "mcq_many",
+				stem: "Choose THREE",
+				opts: bikesOpts,
+				answer: "D",
+			}),
+		];
+		expect(resolveSummaryAnswerKeys(implicit)).toEqual([
+			"C, D, F",
+			"C, D, F",
+			"C, D, F",
+		]);
+	});
+
+	test("supports extended A–Z letter sets (sent4), protects lowercase Roman headings, and deduplicates free-text sets in order", () => {
+		const extendedLetters = [
+			question({ type: "sent4", opts: null, answer: "K", answerSet: "q1-4" }),
+			question({ type: "sent4", opts: null, answer: "C", answerSet: "q1-4" }),
+			question({ type: "sent4", opts: null, answer: "G", answerSet: "q1-4" }),
+			question({ type: "sent4", opts: null, answer: "E", answerSet: "q1-4" }),
+		];
+		expect(resolveSummaryAnswerKeys(extendedLetters)).toEqual([
+			"C, E, G, K",
+			"C, E, G, K",
+			"C, E, G, K",
+			"C, E, G, K",
+		]);
+
+		const romanHeadings = [
+			question({ type: "headings", opts: null, answer: "i", answerSet: "h1" }),
+			question({ type: "headings", opts: null, answer: "v", answerSet: "h1" }),
+		];
+		expect(resolveSummaryAnswerKeys(romanHeadings)).toEqual(["i, v", "i, v"]);
+
+		const freeText = [
+			question({ answer: "  solar  power ", answerSet: "t1" }),
+			question({ answer: "wind", answerSet: "t1" }),
+			question({ answer: "SOLAR POWER", answerSet: "t1" }),
+		];
+		expect(resolveSummaryAnswerKeys(freeText)).toEqual([
+			"solar power, wind",
+			"solar power, wind",
+			"solar power, wind",
+		]);
+
+		const singleAndPositional = [
+			question({ answer: "Paris" }),
+			question({ answer: "B", answerSet: "solo" }),
+		];
+		expect(resolveSummaryAnswerKeys(singleAndPositional)).toEqual([
+			"Paris",
+			"B",
+		]);
+	});
+});
+
+describe("sanitizeAnswerSetKeys — bounded length without collisions", () => {
+	test("preserves <=20 trimmed keys, strips whitespace-only keys, and remaps >20 keys without prefix or existing-key collisions", () => {
+		const items = [
+			{ id: 1, answerSet: " s1 " },
+			{ id: 2, answerSet: "   " },
+			{ id: 3, answerSet: "very-long-answerset-prefix-1" },
+			{ id: 4, answerSet: "  very-long-answerset-prefix-1  " },
+			{ id: 5, answerSet: "very-long-answerset-prefix-2" },
+			{ id: 6 },
+		];
+		const sanitized = sanitizeAnswerSetKeys(items);
+		expect(sanitized[0]?.answerSet).toBe("s1");
+		expect("answerSet" in (sanitized[1] ?? {})).toBe(false);
+		expect("answerSet" in (sanitized[5] ?? {})).toBe(false);
+		expect(sanitized[2]?.answerSet).toBeDefined();
+		expect(sanitized[2]?.answerSet).toBe(sanitized[3]?.answerSet);
+		expect(sanitized[2]?.answerSet).not.toBe(sanitized[4]?.answerSet);
+		expect(sanitized[2]?.answerSet).not.toBe("s1");
+		expect(sanitized[4]?.answerSet).not.toBe("s1");
+		expect((sanitized[2]?.answerSet ?? "").length).toBeLessThanOrEqual(20);
+		expect((sanitized[4]?.answerSet ?? "").length).toBeLessThanOrEqual(20);
 	});
 });

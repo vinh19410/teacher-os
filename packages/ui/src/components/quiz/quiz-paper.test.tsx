@@ -3134,4 +3134,317 @@ describe("QuizPaper — inline answer inputs", () => {
 			}
 		});
 	});
+
+	describe("unordered answerSet review clarity and shared implicit mcq_many clustering", () => {
+		const BIKES_OPTS = [
+			"Option A",
+			"Option B",
+			"Option C",
+			"Option D",
+			"Option E",
+			"Option F",
+		];
+
+		it("normalizes lowercase answer/key in QuizMcqManyCard review and appends unordered note", () => {
+			const part: QuizPart = {
+				id: "part-bikes",
+				label: "Questions 8–10",
+				qStart: 8,
+				typeId: "mcq_many",
+				source: "group",
+				questions: [
+					{
+						q: 7,
+						number: 8,
+						stem: "Choose THREE letters, A-F.",
+						opts: BIKES_OPTS,
+						pin: null,
+						type: "mcq_many",
+						answerSet: "set-2",
+					},
+					{
+						q: 8,
+						number: 9,
+						stem: "Choose THREE letters, A-F.",
+						opts: BIKES_OPTS,
+						pin: null,
+						type: "mcq_many",
+						answerSet: "set-2",
+					},
+					{
+						q: 9,
+						number: 10,
+						stem: "Choose THREE letters, A-F.",
+						opts: BIKES_OPTS,
+						pin: null,
+						type: "mcq_many",
+						answerSet: "set-2",
+					},
+				],
+			};
+			const review: Record<number, QuizReviewInfo> = {
+				7: {
+					verdict: "wrong",
+					key: " c ",
+					alts: "",
+					answer: " a ",
+					note: "",
+				},
+				8: {
+					verdict: "correct",
+					key: "d",
+					alts: "",
+					answer: "c",
+					note: "",
+				},
+				9: {
+					verdict: "correct",
+					key: "f",
+					alts: "",
+					answer: "d",
+					note: "",
+				},
+			};
+
+			const { container } = render(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq_many" })}
+					parts={[part]}
+					answers={{ 7: "a", 8: "c", 9: "d" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={review}
+				/>,
+			);
+
+			const labels = Array.from(container.querySelectorAll("label"));
+			expect(labels[0]?.textContent).toContain("Bạn chọn");
+			expect(labels[2]?.textContent).toContain("Đúng");
+			expect(labels[3]?.textContent).toContain("Đúng");
+			expect(labels[5]?.textContent).toContain("Đáp án đúng");
+
+			const reviewFooter = container.querySelector(
+				'[data-testid="quiz-review-item"]',
+			);
+			expect(reviewFooter?.textContent).toContain("C, D, F");
+			expect(reviewFooter?.textContent).toContain("(không tính thứ tự)");
+		});
+
+		it("clusters implicit mcq_many with slot suffixes (lựa chọn 1/3..3/3) and refuses < 2 non-empty opts", () => {
+			const slotPart: QuizPart = {
+				id: "part-slot",
+				label: "Questions 1–3",
+				qStart: 1,
+				typeId: "mcq_many",
+				questions: [
+					{
+						q: 0,
+						number: 1,
+						stem: "  Questions 1 (lựa chọn 1/3)  ",
+						opts: BIKES_OPTS,
+						pin: null,
+						type: "mcq_many",
+					},
+					{
+						q: 1,
+						number: 2,
+						stem: "Questions 1 (lựa chọn 2/3)",
+						opts: BIKES_OPTS,
+						pin: null,
+						type: "mcq_many",
+					},
+					{
+						q: 2,
+						number: 3,
+						stem: "Questions 1 (lựa chọn 3/3)",
+						opts: BIKES_OPTS,
+						pin: null,
+						type: "mcq_many",
+					},
+				],
+			};
+			const slotHtml = renderToStaticMarkup(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq_many" })}
+					parts={[slotPart]}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+				/>,
+			);
+			expect(slotHtml).toContain("Chọn 3 đáp án");
+
+			const emptyOptsPart: QuizPart = {
+				id: "part-empty-opts",
+				label: "Questions 1–2",
+				qStart: 1,
+				typeId: "mcq_many",
+				questions: [
+					{
+						q: 0,
+						number: 1,
+						stem: "Same stem",
+						opts: ["Only one", "   "],
+						pin: null,
+						type: "mcq_many",
+					},
+					{
+						q: 1,
+						number: 2,
+						stem: "Same stem",
+						opts: ["Only one", "   "],
+						pin: null,
+						type: "mcq_many",
+					},
+				],
+			};
+			const emptyOptsHtml = renderToStaticMarkup(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq_many" })}
+					parts={[emptyOptsPart]}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+				/>,
+			);
+			expect(emptyOptsHtml).not.toContain("Chọn 2 đáp án");
+			expect((emptyOptsHtml.match(/Chọn 1 đáp án/g) ?? []).length).toBe(2);
+		});
+
+		it("shows unordered set key with (không tính thứ tự) for non-mcq_many answerSet items in QuizReviewItem and InlineAnswerSlot", () => {
+			// Non-zero starting q offset (q = 2..5) to verify index-to-q mapping.
+			const sent4Part: QuizPart = {
+				id: "part-sent4",
+				label: "Questions 3–6",
+				qStart: 3,
+				typeId: "sent4",
+				questions: [
+					{
+						q: 2,
+						number: 3,
+						stem: "Choose FOUR letters (1)",
+						opts: null,
+						pin: null,
+						type: "sent4",
+						answerSet: "q1-4",
+					},
+					{
+						q: 3,
+						number: 4,
+						stem: "Choose FOUR letters (2)",
+						opts: null,
+						pin: null,
+						type: "sent4",
+						answerSet: "q1-4",
+					},
+					{
+						q: 4,
+						number: 5,
+						stem: "Choose FOUR letters (3)",
+						opts: null,
+						pin: null,
+						type: "sent4",
+						answerSet: "q1-4",
+					},
+					{
+						q: 5,
+						number: 6,
+						stem: "Choose FOUR letters (4)",
+						opts: null,
+						pin: null,
+						type: "sent4",
+						answerSet: "q1-4",
+					},
+				],
+			};
+			const review: Record<number, QuizReviewInfo> = {
+				2: { verdict: "correct", key: "C", alts: "", answer: "K", note: "" },
+				3: { verdict: "correct", key: "E", alts: "", answer: "G", note: "" },
+				4: { verdict: "correct", key: "G", alts: "", answer: "E", note: "" },
+				5: { verdict: "correct", key: "K", alts: "", answer: "C", note: "" },
+			};
+
+			const { container } = render(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "sent4" })}
+					parts={[sent4Part]}
+					answers={{ 2: "K", 3: "G", 4: "E", 5: "C" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={review}
+				/>,
+			);
+
+			const items = Array.from(
+				container.querySelectorAll('[data-testid="quiz-review-item"]'),
+			);
+			expect(items).toHaveLength(4);
+			for (const item of items) {
+				expect(item.textContent).toContain("C, E, G, K");
+				expect(item.textContent).toContain("(không tính thứ tự)");
+			}
+
+			// InlineAnswerSlot variant with wrong answer must show set key "→ C, E" instead of single positional "→ C".
+			cleanup();
+			const inlinePart: QuizPart = {
+				id: "part-inline-set",
+				label: "Questions 1–2",
+				qStart: 1,
+				typeId: "sent4",
+				source: "group",
+				instructionHtml:
+					"<p>Write TWO letters: first <strong>(1)</strong> and second <strong>(2)</strong>.</p>",
+				questions: [
+					{
+						q: 0,
+						number: 1,
+						stem: "First letter",
+						opts: null,
+						pin: null,
+						type: "sent4",
+						answerSet: "q1-2",
+					},
+					{
+						q: 1,
+						number: 2,
+						stem: "Second letter",
+						opts: null,
+						pin: null,
+						type: "sent4",
+						answerSet: "q1-2",
+					},
+				],
+			};
+			const inlineReview: Record<number, QuizReviewInfo> = {
+				0: { verdict: "wrong", key: "C", alts: "", answer: "X", note: "" },
+				1: { verdict: "correct", key: "E", alts: "", answer: "C", note: "" },
+			};
+			const { container: inlineContainer } = render(
+				<QuizPaper
+					detail={baseDetail({
+						skill: "listening",
+						type: "sent4",
+						passage: "",
+					})}
+					parts={[inlinePart]}
+					answers={{ 0: "X", 1: "C" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={inlineReview}
+				/>,
+			);
+			const inlineKey = inlineContainer.querySelector(
+				'[data-testid="quiz-inline-slot"][data-question="0"] [data-testid="quiz-inline-key"]',
+			);
+			expect(inlineKey?.textContent).toContain("→ C, E");
+			const inlineDetails = inlineContainer.querySelector(
+				'[data-testid="quiz-inline-review-details"]',
+			);
+			expect(inlineDetails?.textContent).toContain("C, E");
+			expect(inlineDetails?.textContent).toContain("(không tính thứ tự)");
+		});
+	});
 });

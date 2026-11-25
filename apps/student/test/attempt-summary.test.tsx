@@ -371,6 +371,31 @@ describe("AttemptCompactList — n → đáp án học viên → Đáp án đún
 		// Key xanh khi câu được chấm (đúng/sai).
 		expect(html).toContain("text-verdict-correct");
 	});
+
+	it("hiển thị trọn vẹn tập đáp án 'C, D, F' và đáp án text dài với break-words, không shrink-0/truncate cắt chữ", () => {
+		const longSetKey = "solar panel, wind turbine, hydro power";
+		const setHtml = renderToStaticMarkup(
+			<AttemptCompactList
+				items={[
+					{ verdict: "wrong", key: "C, D, F", answer: "A" },
+					{ verdict: "correct", key: "C, D, F", answer: "C" },
+					{ verdict: "correct", key: longSetKey, answer: "wind turbine" },
+				]}
+			/>,
+		);
+		expect(setHtml).toContain("Đáp án: C, D, F");
+		expect(setHtml).toContain(`Đáp án: ${longSetKey}`);
+		const keySpans = setHtml.match(
+			/<span[^>]*text-verdict-correct[^>]*>Đáp án:[^<]*<\/span>/g,
+		);
+		expect(keySpans).toHaveLength(3);
+		for (const span of keySpans ?? []) {
+			expect(span).toContain("break-words");
+			expect(span).toContain("min-w-0");
+			expect(span).not.toContain("shrink-0");
+			expect(span).not.toContain("truncate");
+		}
+	});
 });
 describe("AttemptSummaryBody — CTA nhãn 'Xem chi tiết bài làm' (#579)", () => {
 	it("CTA chính trên AttemptScoreCard mang nhãn 'Xem chi tiết bài làm'", () => {

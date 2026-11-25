@@ -236,4 +236,32 @@ describe("gradeQuiz — answerSet (Choose TWO)", () => {
 		expect(grade.verdicts).toEqual(["correct", "correct", "correct"]);
 		expect(grade.correctCount).toBe(3);
 	});
+
+	test("Choose THREE mcq_many thiếu answerSet vẫn chấm không thứ tự cho mọi hoán vị và chọn lệch vị trí", () => {
+		const opts = [
+			"Wheel size",
+			"Balance",
+			"Rate of speed",
+			"The back wheel",
+			"Safety",
+			"Downhill travel",
+		];
+		const stem =
+			"Choose THREE letters, A-F, and write them next to questions 8-10.";
+		const bikes = [
+			q({ type: "mcq_many", stem, opts, answer: "C" }),
+			q({ type: "mcq_many", stem, opts, answer: "D" }),
+			q({ type: "mcq_many", stem, opts, answer: "F" }),
+		];
+
+		expect(gradeQuiz(bikes, { "0": "F", "1": "C", "2": "D" })).toMatchObject({
+			verdicts: ["correct", "correct", "correct"],
+			correctCount: 3,
+		});
+		expect(gradeQuiz(bikes, { "0": "A", "1": "C", "2": "D" })).toMatchObject({
+			verdicts: ["wrong", "correct", "correct"],
+			correctCount: 2,
+			wrongCount: 1,
+		});
+	});
 });

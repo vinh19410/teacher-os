@@ -425,7 +425,21 @@ export function assignmentRoutes(deps: {
 			// rồi so JSON — đổi thứ tự key/giá trị mặc định không tính là đổi.
 			const normalizeQuestions = (value: unknown) => {
 				const parsed = promptQuestionsSchema.safeParse(value);
-				return JSON.stringify(parsed.success ? parsed.data : value);
+				if (!parsed.success) return JSON.stringify(value);
+				return JSON.stringify(
+					parsed.data.map((q) => ({
+						stem: q.stem,
+						opts: q.opts ?? null,
+						answer: q.answer,
+						alts: q.alts,
+						...(q.type ? { type: q.type } : {}),
+						...(q.pin != null ? { pin: { x: q.pin.x, y: q.pin.y } } : {}),
+						...(q.explanation !== undefined
+							? { explanation: q.explanation }
+							: {}),
+						...(q.answerSet ? { answerSet: q.answerSet } : {}),
+					})),
+				);
 			};
 			let storedQuestions: unknown;
 			try {

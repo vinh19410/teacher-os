@@ -61,6 +61,7 @@ function InlineAnswerSlot({
 	info,
 }: InlineAnswerSlotProps) {
 	const verdict = reviewMode && info ? info.verdict : null;
+	const inlineKey = info ? info.answerSetKey?.trim() || info.key.trim() : "";
 	const answered = value.trim().length > 0;
 	const widthCh = Math.min(
 		MAX_INLINE_INPUT_WIDTH_CH,
@@ -162,12 +163,12 @@ function InlineAnswerSlot({
 						className={cn("size-3.5 shrink-0", VERDICT_TEXT_CLASSES[verdict])}
 					/>
 					{(verdict === "wrong" || verdict === "skipped") &&
-						info.key.trim().length > 0 && (
+						inlineKey.length > 0 && (
 							<span
 								data-testid="quiz-inline-key"
 								className="inline-flex items-center rounded border border-verdict-correct/40 bg-verdict-correct-soft px-1.5 py-0.5 font-medium font-mono text-verdict-correct text-xs"
 							>
-								→ {info.key}
+								→ {inlineKey}
 							</span>
 						)}
 				</>
