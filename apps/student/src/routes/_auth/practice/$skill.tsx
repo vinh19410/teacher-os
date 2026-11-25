@@ -1,13 +1,12 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import type { PracticeCatalogItem } from "@teacher-os/api/contracts";
-import { toast } from "sonner";
 import { StudentPageGate } from "@/components/layout/student-page-gate";
 import { HistoryButton } from "@/components/practice/history-button";
 import {
 	PRACTICE_SKILL_LABELS,
 	SkillCatalog,
 } from "@/components/practice/skill-catalog";
-import { useHistoryList, useStartPractice } from "@/lib/repos/student";
+import { useHistoryList } from "@/lib/repos/student";
 
 const SKILL_SLUGS = ["reading", "listening", "writing", "speaking"] as const;
 type SkillSlug = (typeof SKILL_SLUGS)[number];
@@ -56,7 +55,6 @@ function PracticeSkillPage() {
 	const skill = parseSkill(rawSkill) as SkillSlug;
 	const search = Route.useSearch();
 	const navigate = useNavigate();
-	const startPractice = useStartPractice();
 
 	// HistoryButton (phase 11): đếm thật từ total của list lọc skill.
 	const historyCount = useHistoryList(
@@ -84,21 +82,9 @@ function PracticeSkillPage() {
 	};
 
 	const handleOpen = (item: PracticeCatalogItem) => {
-		startPractice.mutate(item.testId, {
-			onSuccess: () => {
-				void navigate({
-					to: "/learn/quizzes/practice/$testId",
-					params: { testId: item.testId },
-				});
-			},
-			onError: (error) => {
-				toast.error("Không bắt đầu được bài luyện tập", {
-					description:
-						error instanceof Error && error.message
-							? error.message
-							: "Vui lòng thử lại.",
-				});
-			},
+		void navigate({
+			to: "/learn/quizzes/practice/$testId",
+			params: { testId: item.testId },
 		});
 	};
 

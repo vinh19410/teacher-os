@@ -4,7 +4,7 @@ import {
 	QuizTakeError,
 	QuizTakeView,
 } from "@/components/quiz/quiz-take-view";
-import { isHttpError, studentQueryClient } from "@/lib/query-client";
+import { studentQueryClient } from "@/lib/query-client";
 import {
 	quizAttemptEssayMirrorKey,
 	quizAttemptMirrorKey,
@@ -57,6 +57,7 @@ function TakeAssignmentPage() {
 	const { serverAnswers, serverEssay } = Route.useLoaderData();
 	return (
 		<QuizTakeView
+			key={assignmentId}
 			source={{ kind: "assignment", id: assignmentId }}
 			serverAnswers={serverAnswers}
 			serverEssay={serverEssay}

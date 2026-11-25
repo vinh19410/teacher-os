@@ -148,6 +148,14 @@ function parseStudentQuizGroups(raw: string | undefined): StudentQuizGroup[] {
 	}
 }
 
+function normalizeTimeLimitSeconds(
+	raw: number | null | undefined,
+): number | null {
+	return typeof raw === "number" && Number.isInteger(raw) && raw > 0
+		? raw
+		: null;
+}
+
 /** Query take/review dùng chung shape với đề luồng assignment. Chrome
  * (passage/prompt/cue/audio/optionBank) lấy từ prompt của part ĐẦU — đề
  * luyện tập nhiều part dùng chung một khung giấy như flow assignment
@@ -172,6 +180,11 @@ function toPracticeQuizDetail(
 		// Practice không có hạn nộp.
 		due: "",
 		dueAt: null,
+		timeLimitSeconds: normalizeTimeLimitSeconds(loaded.test.timeLimitSeconds),
+		partsCount: loaded.parts.length,
+		collection: loaded.test.collection ?? null,
+		testGroup: loaded.test.testGroup ?? null,
+		description: loaded.test.description ?? null,
 		skill: loaded.test.skill,
 		part: loaded.parts[0]?.part ?? "",
 		...effectiveDefaults,
@@ -344,6 +357,7 @@ export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 
 		const items = rows.map((row) => {
 			const lastAttempt = lastAttemptByTest.get(row.id) ?? null;
+			const normalizedLimit = normalizeTimeLimitSeconds(row.timeLimitSeconds);
 			return {
 				testId: row.id,
 				title: row.title,
@@ -352,9 +366,9 @@ export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 				collection: row.collection ?? null,
 				testGroup: row.testGroup ?? null,
 				durationMin:
-					row.timeLimitSeconds === null
+					normalizedLimit === null
 						? null
-						: Math.round(row.timeLimitSeconds / 60),
+						: Math.max(1, Math.round(normalizedLimit / 60)),
 				lastAttempt: lastAttempt
 					? {
 							submittedAt: lastAttempt.submittedAt

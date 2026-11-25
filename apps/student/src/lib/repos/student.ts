@@ -16,7 +16,6 @@ import {
 	type PracticeSkill,
 	practiceCatalogResponseSchema,
 	STUDENT_ERROR_CODES,
-	type StartPracticeResponse,
 	type StudentClass,
 	type StudentClassDetail,
 	type StudentInboxResponse,
@@ -29,7 +28,6 @@ import {
 	type StudentScheduleResponse,
 	type StudentZoomJoinError,
 	type StudentZoomJoinResponse,
-	startPracticeResponseSchema,
 	studentClassDetailSchema,
 	studentInboxResponseSchema,
 	studentMeSchema,
@@ -746,43 +744,6 @@ export function usePracticeCatalog(filters: {
 		],
 		queryFn: () => fetchPracticeCatalog(filters),
 		staleTime: 30_000,
-	});
-}
-
-/** POST /api/student/practice/:testId/attempts — 201 lượt mới / 200 resume. */
-export async function startPractice(
-	testId: string,
-): Promise<StartPracticeResponse> {
-	const headers = getStudentHeaders({
-		"Content-Type": "application/json",
-		Origin: window.location.origin,
-	});
-	const sentOrgId = headers["x-student-org-id"];
-	const res = await fetch(
-		`${getApiBaseUrl()}/api/student/practice/${encodeURIComponent(testId)}/attempts`,
-		{
-			method: "POST",
-			headers,
-			credentials: "include",
-			body: JSON.stringify({}),
-		},
-	);
-	if (!res.ok) {
-		await throwStudentHttpError(res, sentOrgId);
-	}
-	const data = (await res.json()) as unknown;
-	return startPracticeResponseSchema.parse(data);
-}
-
-export function useStartPractice() {
-	const queryClient = useQueryClient();
-	return useMutation({
-		mutationFn: startPractice,
-		onSuccess: (_data, testId) => {
-			void queryClient.invalidateQueries({
-				queryKey: ["student", "quiz", "practice", testId],
-			});
-		},
 	});
 }
 
