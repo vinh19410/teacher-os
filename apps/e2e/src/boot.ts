@@ -414,6 +414,142 @@ app.post("/__e2e/teacher-emails", async (c) => {
 	return c.json({ ok: true, teacherEmails: [...runtimeTeacherEmails] });
 });
 
+function isLoopbackHostHeader(hostHeader: string | undefined): boolean {
+	if (!hostHeader) return false;
+	try {
+		const hostname = new URL(
+			`http://${hostHeader.trim()}`,
+		).hostname.toLowerCase();
+		return (
+			hostname === "localhost" ||
+			hostname === "127.0.0.1" ||
+			hostname === "[::1]"
+		);
+	} catch {
+		return false;
+	}
+}
+
+function isLoopbackRemoteAddress(remoteAddress: string | undefined): boolean {
+	return (
+		remoteAddress === "127.0.0.1" ||
+		remoteAddress === "::1" ||
+		remoteAddress === "::ffff:127.0.0.1"
+	);
+}
+
+// E2E-only helper: tạo/cập nhật idempotent tài khoản credential (admin/teacher/student)
+// mà không mở bất kỳ cờ bypass nào trong `@teacher-os/auth` (giữ 100% parity bảo mật
+// với production khi POST /api/auth/sign-up/email chặn email thuộc ADMIN_EMAILS/TEACHER_EMAILS).
+app.post("/__e2e/seed-user", async (c) => {
+	const env = c.env as
+		| { incoming?: { socket?: { remoteAddress?: string } } }
+		| undefined;
+	if (
+		!isLoopbackHostHeader(c.req.header("host")) ||
+		!isLoopbackRemoteAddress(env?.incoming?.socket?.remoteAddress)
+	) {
+		return c.json({ error: "forbidden" }, 403);
+	}
+	const raw: unknown = await c.req.json().catch(() => null);
+	if (!raw || typeof raw !== "object") {
+		return c.json({ error: "invalid-body" }, 400);
+	}
+	const record = raw as Record<string, unknown>;
+	const email =
+		typeof record.email === "string" ? record.email.trim().toLowerCase() : "";
+	const password = typeof record.password === "string" ? record.password : "";
+	const name =
+		typeof record.name === "string" && record.name.trim().length > 0
+			? record.name.trim()
+			: "E2E User";
+	const role =
+		record.role === undefined
+			? "student"
+			: record.role === "admin" ||
+					record.role === "teacher" ||
+					record.role === "student"
+				? record.role
+				: null;
+	const emailVerified =
+		record.emailVerified === undefined
+			? true
+			: typeof record.emailVerified === "boolean"
+				? record.emailVerified
+				: null;
+	if (!email || !password || role === null || emailVerified === null) {
+		return c.json({ error: "invalid-fields" }, 400);
+	}
+
+	const authCtx = await auth.$context;
+	const passwordHash = await authCtx.password.hash(password);
+	const emailVerifiedInt = emailVerified ? 1 : 0;
+	const now = Date.now();
+
+	const existing = await client.execute({
+		sql: "SELECT id FROM user WHERE lower(email) = lower(?) LIMIT 1",
+		args: [email],
+	});
+	let userId = existing.rows[0]?.id ? String(existing.rows[0].id) : "";
+
+	if (!userId) {
+		const candidateId = crypto.randomUUID();
+		try {
+			await client.batch(
+				[
+					{
+						sql: `INSERT INTO user (id, name, email, email_verified, role, created_at, updated_at)
+							VALUES (?, ?, ?, ?, ?, ?, ?)`,
+						args: [candidateId, name, email, emailVerifiedInt, role, now, now],
+					},
+					{
+						sql: `INSERT INTO account (id, account_id, provider_id, user_id, password, created_at, updated_at)
+							VALUES (?, ?, 'credential', ?, ?, ?, ?)`,
+						args: [
+							crypto.randomUUID(),
+							candidateId,
+							candidateId,
+							passwordHash,
+							now,
+							now,
+						],
+					},
+				],
+				"write",
+			);
+			return c.json({ ok: true, id: candidateId, email, role, emailVerified });
+		} catch (err) {
+			// Concurrent seed race on user.email -> fall through to update path.
+			const retryRow = await client.execute({
+				sql: "SELECT id FROM user WHERE lower(email) = lower(?) LIMIT 1",
+				args: [email],
+			});
+			if (!retryRow.rows[0]?.id) {
+				throw err;
+			}
+			userId = String(retryRow.rows[0].id);
+		}
+	}
+
+	await client.execute({
+		sql: "UPDATE user SET name = ?, role = ?, email_verified = ?, updated_at = ? WHERE id = ?",
+		args: [name, role, emailVerifiedInt, now, userId],
+	});
+	const updatedAccount = await client.execute({
+		sql: "UPDATE account SET password = ?, updated_at = ? WHERE user_id = ? AND provider_id = 'credential'",
+		args: [passwordHash, now, userId],
+	});
+	if (Number(updatedAccount.rowsAffected) === 0) {
+		await client.execute({
+			sql: `INSERT INTO account (id, account_id, provider_id, user_id, password, created_at, updated_at)
+				VALUES (?, ?, 'credential', ?, ?, ?, ?)`,
+			args: [crypto.randomUUID(), userId, userId, passwordHash, now, now],
+		});
+	}
+
+	return c.json({ ok: true, id: userId, email, role, emailVerified });
+});
+
 app.post("/__e2e/zoom-recording", async (c) => {
 	const raw: unknown = await c.req.json().catch(() => null);
 	const ready = Boolean(
@@ -466,8 +602,8 @@ app.post("/__e2e/clock", async (c) => {
 // the web app sees the API origin, exactly like the real hosted link.
 const server = serve(
 	{
-		fetch: (request) =>
-			fakeBankHub.handleFakePage(request) ?? app.fetch(request),
+		fetch: (request, env) =>
+			fakeBankHub.handleFakePage(request) ?? app.fetch(request, env),
 		port: PORT,
 		hostname: HOSTNAME,
 	},

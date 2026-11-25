@@ -36,6 +36,7 @@ async function openDb() {
 		url: `file:${LOCAL_DB_PATH}`,
 	});
 	await client.execute("PRAGMA busy_timeout = 5000;");
+	await client.execute("PRAGMA foreign_keys = ON;");
 	return client;
 }
 
@@ -277,7 +278,7 @@ test.describe("Unified LMS Domain E2E", () => {
 			expect(await readUserRole(studentEmail)).toBe("student");
 		});
 
-		test("email trong TEACHER_EMAILS đăng ký tại /login được gán role teacher và vào /teacher/dashboard", async ({
+		test("email trong TEACHER_EMAILS đăng ký tại /login bị chặn 403 và không tạo tài khoản", async ({
 			page,
 			request,
 		}) => {
@@ -288,18 +289,30 @@ test.describe("Unified LMS Domain E2E", () => {
 				await page.locator("#signup-name").fill("GV Allowlist");
 				await page.locator("#signup-email").fill(teacherEmail);
 				await page.locator("#signup-password").fill(DEFAULT_PASSWORD);
-				await page.locator("#panel-signup button[type='submit']").click();
 
-				await expect(page).toHaveURL(/\/teacher\/dashboard/, {
-					timeout: 30_000,
-				});
-				expect(await readUserRole(teacherEmail)).toBe("teacher");
+				const [signUpRes] = await Promise.all([
+					page.waitForResponse((r) =>
+						r.url().includes("/api/auth/sign-up/email"),
+					),
+					page.locator("#panel-signup button[type='submit']").click(),
+				]);
+				expect(signUpRes.status()).toBe(403);
+				const body = (await signUpRes.json()) as { code?: string };
+				expect(body.code).toBe("ROLE_SIGNUP_FORBIDDEN");
+
+				await expect(page).toHaveURL(/\/login/);
+				await expect(
+					page
+						.getByText("Email này không thể tự đăng ký bằng mật khẩu")
+						.first(),
+				).toBeVisible();
+				expect(await readUserRole(teacherEmail)).toBeNull();
 			} finally {
 				await setRuntimeTeacherEmails(request, []);
 			}
 		});
 
-		test("email trong ADMIN_EMAILS đăng ký tại /login được gán role admin", async ({
+		test("email trong ADMIN_EMAILS đăng ký tại /login bị chặn 403 và không tạo tài khoản", async ({
 			page,
 			request,
 		}) => {
@@ -316,16 +329,17 @@ test.describe("Unified LMS Domain E2E", () => {
 					),
 					page.locator("#panel-signup button[type='submit']").click(),
 				]);
-				expect(signUpRes.status()).toBe(200);
-				expect(await readUserRole(ADMIN_EMAIL)).toBe("admin");
+				expect(signUpRes.status()).toBe(403);
+				const body = (await signUpRes.json()) as { code?: string };
+				expect(body.code).toBe("ROLE_SIGNUP_FORBIDDEN");
 
-				// Email admin mới chưa verify nên cổng /admin chặn anti-loop về /login?blocked=1
-				// (TanStack Router có thể chuẩn hóa string "1" thành blocked=%221%22 sau hydrate).
-				await expect(page).toHaveURL(
-					/\/login\?blocked=(?:1|%221%22)&error=NOT_ADMIN/,
-					{ timeout: 30_000 },
-				);
-				await expect(page.getByRole("alert")).toBeVisible();
+				await expect(page).toHaveURL(/\/login/);
+				await expect(
+					page
+						.getByText("Email này không thể tự đăng ký bằng mật khẩu")
+						.first(),
+				).toBeVisible();
+				expect(await readUserRole(ADMIN_EMAIL)).toBeNull();
 			} finally {
 				await ensureAdminAccount(request);
 			}

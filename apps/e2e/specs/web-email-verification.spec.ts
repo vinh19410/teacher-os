@@ -1,14 +1,15 @@
 import { createClient } from "@libsql/client";
 import { expect, test } from "@playwright/test";
-import { readVerificationEmails, signUpViaUi } from "./helpers";
+import { readVerificationEmails, seedUserViaE2e } from "./helpers";
 import { API_ORIGIN, LMS_ORIGIN, TEACHER_BASE_URL } from "./origins";
 
 test.describe("Web Email Verification", () => {
-	test("happy-path: teacher sign-up -> mail link -> confirmation page -> CTA vào workspace, DB email_verified = 1", async ({
+	test("happy-path: unverified teacher -> AccountBlockedView resend -> mail link -> confirmation page -> CTA vào workspace, DB email_verified = 1", async ({
 		page,
 		request,
 	}) => {
 		const teacherEmail = `e2e-web-verify-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.local`;
+		const password = "password-8chars";
 		const allowRes = await request.post(`${API_ORIGIN}/__e2e/teacher-emails`, {
 			headers: { "Content-Type": "application/json" },
 			data: { emails: [teacherEmail] },
@@ -16,18 +17,41 @@ test.describe("Web Email Verification", () => {
 		expect(allowRes.status()).toBe(200);
 
 		try {
-			const email = await signUpViaUi(page, {
+			await seedUserViaE2e(request, {
 				email: teacherEmail,
-				expectedUrl: /\/teacher\/dashboard/,
+				name: "E2E Teacher Verify",
+				password,
+				role: "teacher",
+				emailVerified: false,
 			});
-			// Sign-up soft mode: đã vào workspace — verify email không chặn đăng nhập.
+
+			await page.goto(`${LMS_ORIGIN}/login`);
+			await page.locator("#signin-email").fill(teacherEmail);
+			await page.locator("#signin-password").fill(password);
+			await page.locator("#panel-signin button[type='submit']").click();
+
+			// Teacher chưa verify vào /teacher/dashboard và gặp AccountBlockedView tại chỗ.
+			await expect(page).toHaveURL(/\/teacher\/dashboard/, { timeout: 30_000 });
+			await expect(page.getByText("chưa được xác thực")).toBeVisible({
+				timeout: 20_000,
+			});
+
+			const resendBtn = page.getByRole("button", {
+				name: "Gửi lại email xác thực",
+			});
+			await expect(resendBtn).toBeVisible();
+			await resendBtn.click();
+			await expect(page.getByText("Đã gửi lại email xác thực")).toBeVisible({
+				timeout: 20_000,
+			});
 
 			// Mail link phải mang callbackURL về trang xác nhận tại LMS origin.
 			let verifyUrl: string | undefined;
 			for (let i = 0; i < 20; i++) {
 				const emails = await readVerificationEmails();
 				const entry = emails.find(
-					(e) => e.to.trim().toLowerCase() === email.trim().toLowerCase(),
+					(e) =>
+						e.to.trim().toLowerCase() === teacherEmail.trim().toLowerCase(),
 				);
 				if (entry?.url) {
 					verifyUrl = entry.url;
@@ -61,7 +85,7 @@ test.describe("Web Email Verification", () => {
 			try {
 				const res = await client.execute({
 					sql: "SELECT email_verified FROM user WHERE lower(trim(email)) = lower(?)",
-					args: [email],
+					args: [teacherEmail],
 				});
 				const verified = Number(res.rows[0]?.email_verified ?? 0);
 				expect(verified).toBe(1);

@@ -290,7 +290,7 @@ export const classConfirmOpeningSchema = z
 			.string()
 			.trim()
 			.max(CLASS_OPENING_NOTE_MAX_LENGTH, "Lời nhắn tối đa 1.000 ký tự")
-			.default(""),
+			.optional(),
 		expectedVersion: z.number().int().min(0),
 	})
 	.strict();

@@ -18,6 +18,7 @@ import type { Db, KernelCtx } from "../app";
 import {
 	ensureDefaultCourseCatalog,
 	isSqliteForeignKeyError,
+	isSqliteUniqueError,
 	loadCourseCatalog,
 	toCourseCategoryDto,
 	toCourseItemDto,
@@ -32,6 +33,28 @@ export interface CourseRouteDeps {
 
 function forbidden(c: CourseContext) {
 	return c.json({ error: "COURSE_FORBIDDEN", code: "COURSE_FORBIDDEN" }, 403);
+}
+
+function categoryDuplicateResponse(c: CourseContext) {
+	return c.json(
+		{
+			error: "COURSE_CATEGORY_DUPLICATE",
+			code: "COURSE_CATEGORY_DUPLICATE",
+			message: "Tên nhóm khóa học đã tồn tại.",
+		},
+		409,
+	);
+}
+
+function courseDuplicateResponse(c: CourseContext) {
+	return c.json(
+		{
+			error: "COURSE_DUPLICATE",
+			code: "COURSE_DUPLICATE",
+			message: "Tên khóa học đã tồn tại trong nhóm này.",
+		},
+		409,
+	);
 }
 
 async function readJsonBody<S extends z.ZodType>(
@@ -167,14 +190,7 @@ export function courseRoutes(deps: CourseRouteDeps) {
 
 		const nameKey = normalizeCourseNameKey(body.data.name);
 		if (existing.some((row) => normalizeCourseNameKey(row.name) === nameKey)) {
-			return c.json(
-				{
-					error: "COURSE_CATEGORY_DUPLICATE",
-					code: "COURSE_CATEGORY_DUPLICATE",
-					message: "Tên nhóm khóa học đã tồn tại.",
-				},
-				409,
-			);
+			return categoryDuplicateResponse(c);
 		}
 
 		const nextSortOrder =
@@ -182,18 +198,27 @@ export function courseRoutes(deps: CourseRouteDeps) {
 				? Math.max(...existing.map((row) => row.sortOrder)) + 1
 				: 0;
 		const now = new Date();
-		const [created] = await db
-			.insert(courseCategory)
-			.values({
-				id: crypto.randomUUID(),
-				orgId: ctx.orgId,
-				name: body.data.name,
-				sortOrder: nextSortOrder,
-				isActive: true,
-				createdAt: now,
-				updatedAt: now,
-			})
-			.returning();
+		let created: typeof courseCategory.$inferSelect | undefined;
+		try {
+			const rows = await db
+				.insert(courseCategory)
+				.values({
+					id: crypto.randomUUID(),
+					orgId: ctx.orgId,
+					name: body.data.name,
+					sortOrder: nextSortOrder,
+					isActive: true,
+					createdAt: now,
+					updatedAt: now,
+				})
+				.returning();
+			created = rows[0];
+		} catch (err: unknown) {
+			if (isSqliteUniqueError(err)) {
+				return categoryDuplicateResponse(c);
+			}
+			throw err;
+		}
 
 		if (!created) {
 			return c.json({ error: "create failed" }, 500);
@@ -237,31 +262,33 @@ export function courseRoutes(deps: CourseRouteDeps) {
 					normalizeCourseNameKey(row.name) === nameKey,
 			);
 			if (duplicate) {
-				return c.json(
-					{
-						error: "COURSE_CATEGORY_DUPLICATE",
-						code: "COURSE_CATEGORY_DUPLICATE",
-						message: "Tên nhóm khóa học đã tồn tại.",
-					},
-					409,
-				);
+				return categoryDuplicateResponse(c);
 			}
 		}
 
-		const [updated] = await db
-			.update(courseCategory)
-			.set({
-				name: body.data.name ?? existing.name,
-				isActive: body.data.isActive ?? existing.isActive,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(courseCategory.id, existing.id),
-					eq(courseCategory.orgId, ctx.orgId),
-				),
-			)
-			.returning();
+		let updated: typeof courseCategory.$inferSelect | undefined;
+		try {
+			const rows = await db
+				.update(courseCategory)
+				.set({
+					name: body.data.name ?? existing.name,
+					isActive: body.data.isActive ?? existing.isActive,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(courseCategory.id, existing.id),
+						eq(courseCategory.orgId, ctx.orgId),
+					),
+				)
+				.returning();
+			updated = rows[0];
+		} catch (err: unknown) {
+			if (isSqliteUniqueError(err)) {
+				return categoryDuplicateResponse(c);
+			}
+			throw err;
+		}
 
 		if (!updated) {
 			return c.json(
@@ -498,14 +525,7 @@ export function courseRoutes(deps: CourseRouteDeps) {
 
 		const nameKey = normalizeCourseNameKey(body.data.name);
 		if (siblings.some((row) => normalizeCourseNameKey(row.name) === nameKey)) {
-			return c.json(
-				{
-					error: "COURSE_DUPLICATE",
-					code: "COURSE_DUPLICATE",
-					message: "Tên khóa học đã tồn tại trong nhóm này.",
-				},
-				409,
-			);
+			return courseDuplicateResponse(c);
 		}
 
 		const nextSortOrder =
@@ -513,19 +533,28 @@ export function courseRoutes(deps: CourseRouteDeps) {
 				? Math.max(...siblings.map((row) => row.sortOrder)) + 1
 				: 0;
 		const now = new Date();
-		const [created] = await db
-			.insert(course)
-			.values({
-				id: crypto.randomUUID(),
-				orgId: ctx.orgId,
-				categoryId: body.data.categoryId,
-				name: body.data.name,
-				sortOrder: nextSortOrder,
-				isActive: true,
-				createdAt: now,
-				updatedAt: now,
-			})
-			.returning();
+		let created: typeof course.$inferSelect | undefined;
+		try {
+			const rows = await db
+				.insert(course)
+				.values({
+					id: crypto.randomUUID(),
+					orgId: ctx.orgId,
+					categoryId: body.data.categoryId,
+					name: body.data.name,
+					sortOrder: nextSortOrder,
+					isActive: true,
+					createdAt: now,
+					updatedAt: now,
+				})
+				.returning();
+			created = rows[0];
+		} catch (err: unknown) {
+			if (isSqliteUniqueError(err)) {
+				return courseDuplicateResponse(c);
+			}
+			throw err;
+		}
 
 		if (!created) {
 			return c.json({ error: "create failed" }, 500);
@@ -586,35 +615,34 @@ export function courseRoutes(deps: CourseRouteDeps) {
 			}
 		}
 
-		const siblings = await db
-			.select({
-				id: course.id,
-				name: course.name,
-				sortOrder: course.sortOrder,
-			})
-			.from(course)
-			.where(
-				and(
-					eq(course.orgId, ctx.orgId),
-					eq(course.categoryId, targetCategoryId),
-				),
-			);
-
 		const effectiveName = body.data.name ?? existing.name;
-		const nameKey = normalizeCourseNameKey(effectiveName);
-		const duplicate = siblings.some(
-			(row) =>
-				row.id !== existing.id && normalizeCourseNameKey(row.name) === nameKey,
-		);
-		if (duplicate) {
-			return c.json(
-				{
-					error: "COURSE_DUPLICATE",
-					code: "COURSE_DUPLICATE",
-					message: "Tên khóa học đã tồn tại trong nhóm này.",
-				},
-				409,
+		const shouldLoadSiblings = body.data.name !== undefined || categoryChanged;
+		const siblings = shouldLoadSiblings
+			? await db
+					.select({
+						id: course.id,
+						name: course.name,
+						sortOrder: course.sortOrder,
+					})
+					.from(course)
+					.where(
+						and(
+							eq(course.orgId, ctx.orgId),
+							eq(course.categoryId, targetCategoryId),
+						),
+					)
+			: [];
+
+		if (shouldLoadSiblings) {
+			const nameKey = normalizeCourseNameKey(effectiveName);
+			const duplicate = siblings.some(
+				(row) =>
+					row.id !== existing.id &&
+					normalizeCourseNameKey(row.name) === nameKey,
 			);
+			if (duplicate) {
+				return courseDuplicateResponse(c);
+			}
 		}
 
 		const nextSortOrder = categoryChanged
@@ -623,17 +651,26 @@ export function courseRoutes(deps: CourseRouteDeps) {
 				: 0
 			: existing.sortOrder;
 
-		const [updated] = await db
-			.update(course)
-			.set({
-				categoryId: targetCategoryId,
-				name: effectiveName,
-				sortOrder: nextSortOrder,
-				isActive: body.data.isActive ?? existing.isActive,
-				updatedAt: new Date(),
-			})
-			.where(and(eq(course.id, existing.id), eq(course.orgId, ctx.orgId)))
-			.returning();
+		let updated: typeof course.$inferSelect | undefined;
+		try {
+			const rows = await db
+				.update(course)
+				.set({
+					categoryId: targetCategoryId,
+					name: effectiveName,
+					sortOrder: nextSortOrder,
+					isActive: body.data.isActive ?? existing.isActive,
+					updatedAt: new Date(),
+				})
+				.where(and(eq(course.id, existing.id), eq(course.orgId, ctx.orgId)))
+				.returning();
+			updated = rows[0];
+		} catch (err: unknown) {
+			if (isSqliteUniqueError(err)) {
+				return courseDuplicateResponse(c);
+			}
+			throw err;
+		}
 
 		if (!updated) {
 			return c.json(

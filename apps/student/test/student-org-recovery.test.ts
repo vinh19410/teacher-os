@@ -13,6 +13,7 @@ import {
 	createStudentQueryClient,
 	HttpError,
 	reauth,
+	resetRedirectGuardsForTests,
 	resetStudentSessionUserForTests,
 	studentQueryClient,
 	syncStudentSessionUser,
@@ -115,12 +116,14 @@ describe("Student Portal stale org self-healing & isolation (#675)", () => {
 
 	beforeEach(() => {
 		localStorage.clear();
+		resetRedirectGuardsForTests();
 		URL.createObjectURL = vi.fn(() => "blob:http://localhost:8003/mock-media");
 	});
 
 	afterEach(() => {
 		globalThis.fetch = originalFetch;
 		URL.createObjectURL = originalCreateObjectURL;
+		resetRedirectGuardsForTests();
 		vi.restoreAllMocks();
 		vi.unstubAllGlobals();
 		localStorage.clear();
@@ -299,7 +302,7 @@ describe("Student Portal stale org self-healing & isolation (#675)", () => {
 		expect(seenOrgHeaders).toEqual(["org-stale", "org-stale"]);
 	});
 
-	it("R1: reauth() clears active_student_org_id and user key before redirecting to /login", () => {
+	it("R1: reauth() clears active_student_org_id and user key before redirecting to /login", async () => {
 		const assignSpy = vi.fn();
 		vi.stubGlobal("location", {
 			pathname: "/student/classes",
@@ -313,7 +316,9 @@ describe("Student Portal stale org self-healing & isolation (#675)", () => {
 		reauth();
 		expect(getActiveStudentOrgId()).toBeNull();
 		expect(localStorage.getItem(ACTIVE_STUDENT_USER_KEY)).toBeNull();
-		expect(assignSpy).toHaveBeenCalledTimes(1);
+		await vi.waitFor(() => {
+			expect(assignSpy).toHaveBeenCalledTimes(1);
+		});
 		expect(assignSpy).toHaveBeenCalledWith(
 			`/login?returnUrl=${encodeURIComponent("/student/classes")}`,
 		);
