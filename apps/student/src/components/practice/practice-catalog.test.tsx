@@ -1,13 +1,7 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { PracticeCatalogItem } from "@teacher-os/api/contracts";
-import {
-	act,
-	cleanup,
-	fireEvent,
-	render,
-	screen,
-} from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { HistoryButton } from "@/components/practice/history-button";
 import { Pager } from "@/components/practice/pager";
@@ -17,10 +11,7 @@ import {
 	PracticeSelect,
 	parsePracticeSearch,
 } from "@/components/practice/practice-filters";
-import {
-	SkillCatalog,
-	usePracticeOpenLock,
-} from "@/components/practice/skill-catalog";
+import { SkillCatalog } from "@/components/practice/skill-catalog";
 import * as repos from "@/lib/repos/student";
 
 const ITEM: PracticeCatalogItem = {
@@ -169,105 +160,6 @@ describe("SkillCatalog", () => {
 		);
 		expect(screen.getByText("Lần gần nhất")).toBeTruthy();
 		expect(screen.getByText("Đã nộp — Đang chờ giáo viên chấm")).toBeTruthy();
-	});
-
-	it("khoá các card khi openingTestId đang mở để tránh double-click tạo nhiều request", () => {
-		vi.spyOn(repos, "usePracticeCatalog").mockReturnValue({
-			isLoading: false,
-			isError: false,
-			data: { items: [ITEM], page: 1, pages: 1, total: 1 },
-		} as never);
-		const onOpen = vi.fn();
-		renderWithClient(
-			<SkillCatalog
-				skill="reading"
-				collection=""
-				q=""
-				page={1}
-				openingTestId="test-1"
-				onFilterChange={vi.fn()}
-				onOpen={onOpen}
-			/>,
-		);
-		const card = screen.getByTestId("practice-test-card") as HTMLButtonElement;
-		expect(card.disabled).toBe(true);
-		fireEvent.click(card);
-		expect(onOpen).not.toHaveBeenCalled();
-	});
-
-	it("usePracticeOpenLock chặn double-click cùng tick, nhả khoá khi navigate resolve mà không unmount, và huỷ điều hướng cũ khi đổi skill", async () => {
-		let pendingSuccess: (() => void) | null = null;
-		let resolveNavigate: (() => void) | null = null;
-		const startAttempt = vi.fn(
-			(
-				_testId: string,
-				callbacks: { onSuccess: () => void; onError: (err: unknown) => void },
-			) => {
-				pendingSuccess = callbacks.onSuccess;
-			},
-		);
-		const navigateToTest = vi.fn(
-			() =>
-				new Promise<void>((resolve) => {
-					resolveNavigate = resolve;
-				}),
-		);
-		const onError = vi.fn();
-
-		function Harness({ skill }: { skill: "reading" | "listening" }) {
-			const { openingTestId, handleOpen } = usePracticeOpenLock({
-				skill,
-				startAttempt,
-				navigateToTest,
-				onError,
-			});
-			return (
-				<button
-					type="button"
-					data-testid="open-trigger"
-					data-opening={openingTestId ?? ""}
-					onClick={() => {
-						// Mô phỏng 2 click đồng bộ trong cùng tick trước khi React re-render.
-						handleOpen(ITEM);
-						handleOpen(ITEM);
-					}}
-				>
-					Open
-				</button>
-			);
-		}
-
-		const { rerender } = render(<Harness skill="reading" />);
-		const trigger = screen.getByTestId("open-trigger");
-		fireEvent.click(trigger);
-		expect(startAttempt).toHaveBeenCalledTimes(1);
-		expect(trigger.getAttribute("data-opening")).toBe("test-1");
-
-		// Hoàn tất POST → đang chờ navigate; click thêm vẫn bị chặn.
-		act(() => {
-			pendingSuccess?.();
-		});
-		expect(navigateToTest).toHaveBeenCalledTimes(1);
-		fireEvent.click(trigger);
-		expect(startAttempt).toHaveBeenCalledTimes(1);
-
-		// navigate resolve mà component không unmount (ví dụ bị supersede/hủy) → khoá PHẢI tự nhả.
-		await act(async () => {
-			resolveNavigate?.();
-			await Promise.resolve();
-		});
-		expect(trigger.getAttribute("data-opening")).toBe("");
-
-		// Mở lại rồi đổi tab skill trước khi POST xong → onSuccess cũ KHÔNG gọi navigate và khoá đã nhả.
-		fireEvent.click(trigger);
-		expect(startAttempt).toHaveBeenCalledTimes(2);
-		rerender(<Harness skill="listening" />);
-		expect(trigger.getAttribute("data-opening")).toBe("");
-		act(() => {
-			pendingSuccess?.();
-		});
-		expect(navigateToTest).toHaveBeenCalledTimes(1);
-		expect(onError).not.toHaveBeenCalled();
 	});
 });
 

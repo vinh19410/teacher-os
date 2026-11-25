@@ -67,8 +67,12 @@ function invalidParam(c: Context<StudentEnv>, message: string) {
 
 /** Chuẩn hoá thời lượng đề tự luyện: chỉ chấp nhận số nguyên dương (giây),
  * còn null hoặc dữ liệu cũ <= 0 được coi như không giới hạn thời gian. */
-function normalizeTimeLimitSeconds(raw: number | null): number | null {
-	return raw !== null && Number.isInteger(raw) && raw > 0 ? raw : null;
+function normalizeTimeLimitSeconds(
+	raw: number | null | undefined,
+): number | null {
+	return typeof raw === "number" && Number.isInteger(raw) && raw > 0
+		? raw
+		: null;
 }
 
 /** Fast-path + nested CASE JSON1: luôn trả mảng JSON hợp lệ (hoặc '[]'),
@@ -301,7 +305,11 @@ function toPracticeQuizDetail(
 		// Practice không có hạn nộp.
 		due: "",
 		dueAt: null,
-		...(timeLimitSeconds !== null ? { timeLimitSeconds } : {}),
+		timeLimitSeconds,
+		partsCount: loaded.parts.length,
+		collection: loaded.test.collection ?? null,
+		testGroup: loaded.test.testGroup ?? null,
+		description: loaded.test.description ?? null,
 		skill: loaded.test.skill,
 		part: loaded.parts[0]?.part ?? "",
 		...effectiveDefaults,
@@ -618,7 +626,9 @@ export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 				collection: row.collection ?? null,
 				testGroup: row.testGroup ?? null,
 				durationMin:
-					normalizedLimit === null ? null : Math.round(normalizedLimit / 60),
+					normalizedLimit === null
+						? null
+						: Math.max(1, Math.round(normalizedLimit / 60)),
 				lastAttempt: lastAttempt
 					? {
 							submittedAt: lastAttempt.submittedAt

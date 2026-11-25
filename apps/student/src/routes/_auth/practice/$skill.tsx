@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { toast } from "sonner";
+import type { PracticeCatalogItem } from "@teacher-os/api/contracts";
 import { StudentPageGate } from "@/components/layout/student-page-gate";
 import { HistoryButton } from "@/components/practice/history-button";
 import {
@@ -10,9 +10,8 @@ import {
 	PRACTICE_SKILL_LABELS,
 	type PracticeFilterState,
 	SkillCatalog,
-	usePracticeOpenLock,
 } from "@/components/practice/skill-catalog";
-import { useHistoryList, useStartPractice } from "@/lib/repos/student";
+import { useHistoryList } from "@/lib/repos/student";
 
 export { parsePracticeSearch };
 
@@ -55,25 +54,6 @@ function PracticeSkillPage() {
 	const skill = parseSkill(rawSkill) as SkillSlug;
 	const search = Route.useSearch();
 	const navigate = useNavigate();
-	const startPractice = useStartPractice();
-	const { openingTestId, handleOpen } = usePracticeOpenLock({
-		skill,
-		startAttempt: (testId, callbacks) =>
-			startPractice.mutate(testId, callbacks),
-		navigateToTest: (testId) =>
-			navigate({
-				to: "/learn/quizzes/practice/$testId",
-				params: { testId },
-			}),
-		onError: (error) => {
-			toast.error("Không bắt đầu được bài luyện tập", {
-				description:
-					error instanceof Error && error.message
-						? error.message
-						: "Vui lòng thử lại.",
-			});
-		},
-	});
 
 	// HistoryButton (phase 11): đếm thật từ total của list lọc skill.
 	const historyCount = useHistoryList(
@@ -100,6 +80,13 @@ function PracticeSkillPage() {
 				page: next.page > 1 ? next.page : undefined,
 			},
 			replace: options?.replace,
+		});
+	};
+
+	const handleOpen = (item: PracticeCatalogItem) => {
+		void navigate({
+			to: "/learn/quizzes/practice/$testId",
+			params: { testId: item.testId },
 		});
 	};
 
@@ -135,7 +122,6 @@ function PracticeSkillPage() {
 						band={search.band ?? ""}
 						q={search.q ?? ""}
 						page={search.page ?? 1}
-						openingTestId={openingTestId}
 						onFilterChange={handleFilterChange}
 						onOpen={handleOpen}
 					/>

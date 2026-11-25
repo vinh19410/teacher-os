@@ -1060,6 +1060,78 @@ describe("notifications service (#454 phase 2)", () => {
 		expect(sleepDelays).toEqual([550, 550]);
 	});
 
+	test("emitNotifications spaces consecutive background emails by 550ms and honors explicit sendIntervalMs override", async () => {
+		await seedOrg("org-emit-pace", "Emit Pace Academy");
+		const makeEvents = async (prefix: string) => {
+			const events = [];
+			for (let i = 1; i <= 3; i += 1) {
+				const studentId = `${prefix}-stu-${i}`;
+				await seedStudent(
+					"org-emit-pace",
+					studentId,
+					`${prefix}${i}@example.com`,
+				);
+				events.push({
+					studentId,
+					eventType: "class_enrolled" as const,
+					idempotencyKey: `class_enrolled:${prefix}:${i}`,
+					title: `Notice ${i}`,
+					body: `Body ${i}`,
+					linkPath: "/classes",
+					refType: "enrollment",
+					refId: `${prefix}-${i}`,
+				});
+			}
+			return events;
+		};
+
+		const sleepDelays: number[] = [];
+		const timeoutSpy = vi.spyOn(globalThis, "setTimeout").mockImplementation(((
+			fn: unknown,
+			ms?: number,
+		) => {
+			sleepDelays.push(ms ?? 0);
+			if (typeof fn === "function") (fn as () => void)();
+			return 0 as unknown as ReturnType<typeof setTimeout>;
+		}) as typeof setTimeout);
+
+		try {
+			let bgPromise: Promise<unknown> | undefined;
+			await emitNotifications(
+				{
+					db,
+					mailer: fakeMailer(),
+					runInBackground: (promise) => {
+						bgPromise = promise;
+					},
+				},
+				"org-emit-pace",
+				await makeEvents("bg-default"),
+			);
+			await bgPromise;
+			expect(sleepDelays).toEqual([550, 550]);
+
+			sleepDelays.length = 0;
+			let bgOverridePromise: Promise<unknown> | undefined;
+			await emitNotifications(
+				{
+					db,
+					mailer: fakeMailer(),
+					sendIntervalMs: 0,
+					runInBackground: (promise) => {
+						bgOverridePromise = promise;
+					},
+				},
+				"org-emit-pace",
+				await makeEvents("bg-zero"),
+			);
+			await bgOverridePromise;
+			expect(sleepDelays).toEqual([]);
+		} finally {
+			timeoutSpy.mockRestore();
+		}
+	});
+
 	test("daily_deadline_reminder requeue resend preserves channels=email and digest HTML/text", async () => {
 		await seedOrg("org-digest", "Digest Academy");
 		await seedOwner("org-digest", "owner-digest", "owner@digest.vn");

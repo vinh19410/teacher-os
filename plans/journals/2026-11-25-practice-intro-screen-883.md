@@ -1,0 +1,21 @@
+# Journal: Màn hình giới thiệu trước khi bắt đầu bài tự luyện (#883)
+
+- **Date:** 2026-11-25
+- **Issue:** #883
+- **Branch:** `vinh19410/feat-practice-b-m-th-l-v-o-l-m-b-i-ngay-kh-ng-c` (target: `develop`)
+
+## Bối cảnh
+- Khi học viên bấm thẻ đề tự luyện trên `/practice/$skill` (`apps/student`), luồng cũ bắn thẳng `POST /api/student/practice/:testId/attempts` và nhảy luôn vào giấy làm bài, bỏ qua bước xem tổng quan (số câu hỏi, thời lượng, hướng dẫn chung và nút Bắt đầu). Chỉ một cú bấm nhầm thẻ đề đã lập tức tạo bản ghi lượt làm và bắt đầu tính giờ trước khi học viên sẵn sàng.
+
+## Thay đổi & Quyết định kỹ thuật
+- **Mở rộng `studentQuizDetailSchema` (giữ `.strict()`) và chuẩn hoá thời lượng trên `toPracticeQuizDetail`:** Bổ sung 5 trường optional (`timeLimitSeconds`, `partsCount`, `collection`, `testGroup`, `description`) vào `studentQuizDetailSchema` (`packages/api/src/contracts.ts`) và điền dữ liệu từ `toPracticeQuizDetail` (`apps/server/src/routes/student-practice.ts`). Endpoint practice `/quiz` luôn phát `timeLimitSeconds: number | null` để tách bạch đề không giới hạn thời gian (`null`) với luồng assignment/legacy không phát trường (`undefined`), đồng thời làm sạch giá trị `<= 0` hoặc không nguyên về `null` và đồng bộ công thức `durationMin` của catalog (`Math.max(1, Math.round(...))`).
+- **Gỡ `POST /attempts` nóng khỏi thẻ đề và dọn mã thừa sau merge #880:** Bấm thẻ trên `/practice/$skill` nay điều hướng trực tiếp tới `/learn/quizzes/practice/$testId` mà chưa tạo lượt làm bài; xoá các helper/hook chết `startPractice`, `useStartPractice` (`apps/student/src/lib/repos/student.ts`) và `usePracticeOpenLock` / `openingTestId` sau khi hợp nhất #880 (`58fbd502`).
+- **Tách `practice-skill-labels.ts` thuần và dựng `PracticeIntroScreen` inline cho cả 4 kỹ năng:** Tách `apps/student/src/components/practice/practice-skill-labels.ts` nhằm tránh kéo `@teacher-os/env/web` gây side-effect trong test jsdom. `QuizTakeView` render inline `PracticeIntroScreen` (`apps/student/src/components/quiz/practice-intro-screen.tsx`) khi `source.kind === "practice" && attempt === null` cho đủ 4 kỹ năng (`reading`, `listening`, `writing`, `speaking`), dùng `RichTextBody` kèm `hasVisibleRichText` dựa trên DOMPurify, ẩn hoàn toàn `Band`, giữ chưa stream audio và chưa mount `QuizTimerBadge` trước khi bấm Bắt đầu; luồng assignment vẫn giữ nguyên `QuizStartDialog` (`role="alertdialog"`) và đường thoát `"/"`.
+- **Chặn lệch trạng thái khi Start, làm tươi loader và hydration một lần bằng `gateLifecycleRef`:** `useStartQuizAttempt.onSuccess` (`apps/student/src/lib/repos/quiz.ts`) trả về promise `queryClient.invalidateQueries(...)` để nút Bắt đầu/Quay lại chờ `GET /quiz` hoàn tất; loader `apps/student/src/routes/_auth/learn/quizzes/practice/$testId.tsx` gọi `fetchQuery({ ...quizDetailQueryOptions(source), staleTime: 0 })` tránh cache cũ, còn `<QuizTakeView>` gắn `key` theo `testId`/`assignmentId` tránh rò ref giữa các đề. Cơ chế `gateLifecycleRef` chụp baseline hydration đúng một lần khi chuyển từ `null -> in_progress` (hỗ trợ tab khác đã bắt đầu sẵn, giữ ổn định store autosave qua refetch giữa bài, và reset sạch chu kỳ `in_progress -> null -> retake` không rò `serverAnswers` cũ), đồng thời xử lý tường minh lỗi `403 STUDENT_ORG_MISMATCH`, `404` và `attempt === null && quizQuery.isError`.
+- **Đối chiếu sạch với `origin/develop` (#880 `58fbd502`):** Hợp nhất đồng bộ với đồng hồ đếm ngược tự luyện của #880 và migration `0090_concerned_mach_iv.sql` (giải quyết race TOCTOU đa tab ở DB), đảm bảo đồng hồ chỉ kích hoạt sau khi học viên bấm Bắt đầu rời `PracticeIntroScreen`.
+
+## Xác minh
+- Lint & kiểu: `pnpm exec biome check .` (0 errors; 22 file chạm trong nhánh có 0 warnings), `pnpm run check-types` (pass trên toàn bộ packages).
+- Unit/integration tests: `@teacher-os/api` 40/40 (566 passed, 1 skipped), `apps/student` 68/68 (683 passed), `apps/server` 134/134 (1789 passed, 1 expected fail).
+- Targeted E2E (cổng `8100–8105`, theo quy ước `AGENTS.md` không chạy full E2E local): `student-practice.spec.ts`, `student-history.spec.ts`, `teacher-grade-submission.spec.ts` — 11/11 passed.
+- Ảnh POT: 4 ảnh `plans/reports/883-practice-intro-{desktop-light,desktop-dark,tablet,mobile}.png` đã kiểm tra trực quan, kèm assertion zero-overflow trên 4 viewport (`1440/768/375/320`).

@@ -12,11 +12,50 @@ Quy ước khi cập nhật:
 
 ## 2026-11-25
 
+### Added
+- **Tab "Tài liệu chung" cho lớp ở cả giáo viên và học viên (`packages/db`, `packages/api`, `apps/server`, `apps/web`, `apps/student`):** giáo viên gắn/gỡ tài liệu dùng chung theo lớp, học viên đang `active` trong lớp xem và mở tài liệu qua endpoint riêng không lộ `objectKey`; `href` luôn đi qua `isSafeMaterialUrl` (#914, #918).
+- **Tự cuộn tab đang chọn vào vùng nhìn thấy trong `Tabs` cuộn ngang (`packages/ui`) (#920).**
+- **Màn hình giới thiệu inline trước khi bắt đầu làm bài tự luyện (`packages/api`, `apps/server`, `apps/student`, `apps/e2e`):**
+  - Mở rộng `studentQuizDetailSchema` (giữ `.strict()`) và `GET /api/student/practice/:testId/quiz` với metadata đề tự luyện (`timeLimitSeconds` chuẩn hoá `null` khi không giới hạn hoặc `<= 0`, `partsCount`, `collection`, `testGroup`, `description`), đồng bộ `durationMin` tối thiểu 1 phút trên catalog.
+  - Bấm thẻ đề ở `/practice/$skill` (Reading/Listening/Writing/Speaking) điều hướng thẳng sang `/learn/quizzes/practice/$testId` thay vì gọi `POST /attempts` ngay; hiển thị `PracticeIntroScreen` (số câu/định dạng bài, số phần, thời lượng, bộ sưu tập, mô tả rich-text qua `RichTextBody`, hướng dẫn chung theo kỹ năng, nút `Bắt đầu làm bài` và `Quay lại danh sách`), không hiển thị `Band` và không tải audio hay bắt đầu đồng hồ đếm ngược trước khi bấm bắt đầu.
+  - Giữ trạng thái pending trên `useStartQuizAttempt` đến khi `GET /quiz` tải xong, lấy dữ liệu mới (`staleTime: 0`) ở loader, gắn `key` cho `<QuizTakeView>`, hydrate đáp án một lần an toàn khi chuyển `attempt: null → in_progress` (kể cả retake/multi-tab) mà không làm gián đoạn autosave store và giữ nguyên `QuizStartDialog` cho bài tập lớp (#883).
+
 ### Fixed
+- **Cứng hoá luồng upload Speaking của bài kiểm tra đầu vào và thêm luồng khôi phục cho học viên (`apps/server`, `apps/student`, `apps/web`):** upload có token riêng, CAS theo trạng thái `pending_upload`/`pending_grading`, trả 409 khi bài đã chốt; hỗ trợ đuôi `.aac` cho `audioFilename` (#924, #928).
+- **Phát audio nghe cho học viên bằng HTTP Range + ETag, có khôi phục lỗi phát (`apps/server`, `apps/student`) (#878).**
+- **Cô lập ngân hàng đáp án theo nhóm và xử lý hướng dẫn hoàn thành xung đột trong bài Reading/Listening/Matching (`packages/db`, `packages/ui`, `apps/student`):** backfill prompt group, tách hướng dẫn nghe riêng, sửa câu trống Q5 "history of bikes" (#875, #876, #877, #879).
+- **Chống lộ ngăn sidebar khi thu gọn và gia cố drawer mobile (`packages/ui`, `apps/web`, `apps/student`) (#919).**
 - **Bổ sung đồng hồ đếm ngược đồng bộ giờ server trên trang làm bài tự luyện và bảo toàn tổng thời lượng sau khi tải lại (`packages/api`, `packages/db`, `apps/server`, `apps/student`, `apps/e2e`):**
   - Mở rộng `studentQuizDetailSchema` với `timeLimitSeconds` (chỉ phát ở đề tự luyện có thời lượng dương, hỗ trợ đến 4 giờ) và `attempt.startedAt`; đồng bộ độ lệch đồng hồ qua CORS-exposed header `X-Server-Now` để không thêm khóa JSON top-level mới trên `/assignments/:id/quiz` trong cửa sổ rolling deploy.
   - Thêm migration `0090_concerned_mach_iv.sql` gom trùng các lượt `in_progress` tự luyện theo độ giàu nội dung (`media_key`, số đáp án thực không rỗng an toàn JSON1, độ dài bài viết `essay`, `rowid DESC`), giữ `MIN(started_at)` trên nhóm đang làm và tạo partial unique index `quiz_attempt_practice_in_progress_uq`; chuyển sắp xếp sang `asc(startedAt), asc(id)`, khôi phục xung đột unique ở `POST /practice/:testId/attempts` và dùng chung `deps.now` trên các route quiz.
   - Xây dựng leaf component `<QuizTimerBadge>` (`role="timer"`, dừng interval tại `00:00`, cảnh báo ngưỡng `min(300s, 20%)`, banner hết giờ mềm không tự nộp bài và không re-render `QuizPaper` mỗi giây), khóa double-click `usePracticeOpenLock`, `fetchQuery` ở loader trang làm bài để chờ dữ liệu mới sau invalidation, khóa chiều cao `100svh` cho split-pane Reading và tối ưu header `320px` (#880).
+
+## 2026-11-24
+
+### Added
+- **Hợp nhất cổng LMS trên một domain duy nhất `lms.<domain>` (`apps/lms`, `packages/auth`, `packages/infra`, `apps/web`, `apps/student`, `apps/admin`, `apps/server`, `apps/profile`):**
+  - Hợp nhất 3 Worker cũ (`web`, `student`, `admin`) vào một Worker `lms` dùng `assets.runWorkerFirst: true` phục vụ `/login`, `/teacher/*`, `/student/*`, `/admin/*`, `/pay/:token`, tự phân loại vai trò theo allowlist (`ADMIN_EMAILS > TEACHER_EMAILS > student`) kèm điều hướng chéo vai trò và redirect 301 từ domain cũ `app./student./admin.<domain>` (giữ nguyên stub `/sw.js` và `/registerSW.js`).
+  - Bổ sung script idempotent `packages/infra/scripts/detach-legacy-worker-domains.ts` trong `deploy.yml` / `deploy-staging.yml` và sửa chuyển tiếp `define` Vite env vào build sub-portal + smoke check bundle live (#867, #868, #869).
+- **Gửi email nhắc bài tập về nhà và tự học lúc 06:00 sáng (giờ Việt Nam) mỗi ngày (`packages/api`, `packages/infra`, `apps/server`, `apps/web`):** bổ sung cron `0 23 * * *`, sự kiện `daily_deadline_reminder` (kênh email-only, digest HTML + text, giãn nhịp 550ms/email cho giới hạn 2 req/s của Resend) và nhãn lọc trong nhật ký thông báo (#901, #907).
+- **Chốt thời gian khai giảng lớp và gửi email HTML thông báo cho học viên (`packages/db`, `packages/api`, `apps/server`, `apps/web`):** migration `0086_class_opening_email.sql` (cột xác nhận khai giảng trên `class`, `html_body`/`text_body` trên `notification_record`), modal xác nhận khai giảng kèm xem trước email HTML trong `<iframe sandbox="">`, chế độ `all`/`new_only` và giãn nhịp 550ms khi gửi nền qua `emitNotifications` (#874, #900).
+- **Ô nhập đáp án trực tiếp (inline inputs) và chọn từ ngân hàng đáp án trong `QuizPaper` (`packages/ui`, `apps/student`):** phân tích và làm sạch hai lớp (DOMPurify + AST allowlist) để render ô điền từ và select inline bằng React JSX ở cả màn hình làm bài lẫn xem lại (#873, #903).
+- **Mở rộng bài luyện nghe IELTS & công cụ import staging (`packages/db`, `packages/api`, `apps/server`, `apps/admin`, `apps/student`, `docs/listening_ielts`):** migration `0085_assignment_prompt_groups.sql`, bổ sung bộ dữ liệu luyện nghe IELTS, hỗ trợ đầy đủ dạng câu nghe + nhóm lựa chọn, endpoint `/public/library-images/:filename` (chặn `.svg`, `CSP sandbox`), CLI import idempotent và workflow `import-listening-staging.yml` (#872).
+- **Xuất PDF kết quả bài kiểm tra đầu vào phía client & đồng bộ tiêu chí chấm IELTS (`packages/db`, `packages/api`, `apps/web`, `apps/student`, `apps/profile`):**
+  - Migration `0083`–`0084` bổ sung danh mục khóa học 2 cấp (`course_catalog_seed`, `course_category`, `course`) và dropdown chọn khóa học gợi ý bắt buộc khi chấm đầu vào (#851, #858).
+  - Xuất PDF kết quả bằng `pdfmake` + font `Be Vietnam Pro` tự host, thay thế khối chia sẻ link công khai trong panel chấm bài giáo viên (#853, #862).
+  - Đồng bộ danh mục lỗi theo kỹ năng, thang màu slider IELTS và nhận xét từng tiêu chí trên Web, Student Portal, Profile và PDF (#863, #865).
+- **Phân trang phía server cho trang thư viện đề quản trị (`/admin/library/tests`) (`packages/api`, `apps/server`, `apps/admin`)** (#850).
+- **CLI và workflow promote bộ từ vựng từ staging sang production (`packages/db`, `.github/workflows/promote-vocab-prod.yml`):** tự định giải org giáo viên đang hoạt động qua `TEACHER_EMAILS` và hỗ trợ di chuyển org an toàn (#855, #856, #859, #860).
+
+### Changed
+- **Ẩn menu "Luyện tập" và "Lịch sử" của học viên trên production, bật sẵn trên staging (`apps/student`, `packages/infra`, `.github/workflows/deploy*.yml`):** gắn cờ `VITE_STUDENT_PRACTICE_ENABLED` fail-closed trên `PROD_APP_DOMAIN`, bật trên staging qua `STUDENT_PRACTICE_ENABLED="true"`, kèm xác thực hậu-build và smoke check live (#852, #854, #857, #870, #871).
+- **Gỡ hiển thị nhãn độ khó (band) trên thẻ đề và màn hình làm bài học viên (`packages/ui`, `apps/student`, `apps/web`)** (#849).
+
+### Fixed
+- Chuyển `UserFooter` sang dùng `ShellLinkContext` (`useShellLink`) để liên kết avatar hồ sơ trong sidebar giáo viên đi đúng `/teacher/profile` trên unified LMS thay vì 404 `/profile` (`packages/ui`, `apps/web`, `apps/student`).
+- Bổ sung header `Cross-Origin-Resource-Policy: same-site` và `Referrer-Policy: no-referrer` cho endpoint `/api/student/practice/:testId/audio` (`apps/server`).
+- Giãn nhịp gửi email nền (`sendIntervalMs: 550`) trong `emitNotifications` khi chạy qua `runInBackground` để tránh lỗi HTTP 429 burst của Resend khi gửi thông báo cho lớp đông (`apps/server`).
+- Dùng ngày tương lai theo giờ Việt Nam trong test `holiday-modal` để tránh fail theo mốc thời gian (`apps/web`).
 
 ## 2026-11-20
 
