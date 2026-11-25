@@ -1,7 +1,7 @@
 ---
 title: "Reading Highlight & Note Tools (#881)"
 description: "Bổ sung công cụ tô sáng (highlight) và gắn ghi chú trên bài đọc IELTS Reading chuẩn computer-delivered test cho màn làm bài, màn xem lại và xem trước đề."
-status: in-progress
+status: completed
 priority: P1
 effort: "1d"
 tags: [reading, student, ui, ielts, issue-881]
@@ -53,20 +53,20 @@ Biên giao tiếp giữa UI và tầng lưu trữ đi qua prop `annotations?: Re
 
 | # | Phase | Status |
 |---|---|---|
-| 1 | [Phase 1: Core Reading Annotation Engine & Design Tokens](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: AnnotatableReadingPassage UI & QuizReadingSplitLayout Integration](./phase-02-annotatable-passage-ui-and-layout.md) | Pending |
-| 3 | [Phase 3: Student Persistence Store & App Wiring](./phase-03-student-persistence-and-app-wiring.md) | Pending |
-| 4 | [Phase 4: E2E Verification, Visual/Contrast QA & POT](./phase-04-e2e-verification-and-ui-qa.md) | Pending |
+| 1 | [Phase 1: Core Reading Annotation Engine & Design Tokens](./phase-01-start.md) | Completed |
+| 2 | [Phase 2: AnnotatableReadingPassage UI & QuizReadingSplitLayout Integration](./phase-02-annotatable-passage-ui-and-layout.md) | Completed |
+| 3 | [Phase 3: Student Persistence Store & App Wiring](./phase-03-student-persistence-and-app-wiring.md) | Completed |
+| 4 | [Phase 4: E2E Verification, Visual/Contrast QA & POT](./phase-04-e2e-verification-and-ui-qa.md) | Completed |
 
 ## Success Criteria
 
-- [ ] Học viên bôi đen văn bản trong bài đọc (1 đoạn, xuyên `<strong>/<em>`, xuyên `</p><p>`, trong `<li>`/`<td>`, hoặc plain text) có thể bấm **Tô sáng**, **Ghi chú**, hoặc **Bỏ tô sáng** từ cả **floating selection toolbar** lẫn **right-click context menu** (cả desktop lẫn mobile touch có `pointercancel`).
-- [ ] Click (khi selection collapsed) hoặc bấm Enter/Space vào đoạn đã tô sáng hoặc icon ghi chú mở popover xem/sửa/xoá ghi chú hoặc bỏ tô sáng; không điều hướng nhầm nếu nằm trong `<a>`; `Escape` đóng popover trước mà không đóng nhầm `TestPreviewOverlay` hay cướp `Escape` của `QuizDialog`.
-- [ ] Header pane "Bài đọc" có nút mở danh sách "Ghi chú" (badge đếm `aria-hidden="true"`, mặc định đóng, click mục nhảy tới đúng `<mark>` không dùng CSS selector interpolation) và nút "Xoá tất cả" có bước xác nhận khi có ≥ 1 mục.
-- [ ] Highlight + ghi chú tồn tại sau reload trong lúc làm bài (không giật mất ở `QuizResumeDialog`), sống sót sau khi nộp bài để xem read-only ở `$attemptId.detail.tsx` (cùng trình duyệt), tự bỏ qua khi `passageHash` đổi, có LRU cap 25 bài + evict khi `QuotaExceededError`, và tự dọn khi đăng xuất/đổi tài khoản.
-- [ ] `TestPreviewOverlay` cho phép thử highlight/ghi chú theo từng tab (`key={tab.part}`) trong RAM với 0 network write request, giữ nguyên focus trap modal và reset khi đóng overlay.
-- [ ] Đạt tương phản WCAG AA ≥ 4.5:1 ở Light & Dark mode (kể cả trong `<blockquote>`), `--reading-highlight-border` ≥ 3.0:1; không tràn ngang ở 1440×900, 768×1024, 375×812 (và 320px reflow).
-- [ ] Toàn bộ gates cục bộ pass: `pnpm check`, `pnpm check-types`, unit tests (`@teacher-os/ui`, `student`, `admin`, `web` cho `RichTextBody`), và E2E reading spec liên quan.
+- [x] Học viên bôi đen văn bản trong bài đọc (1 đoạn, xuyên `<strong>/<em>`, xuyên `</p><p>`, trong `<li>`/`<td>`, hoặc plain text) có thể bấm **Tô sáng**, **Ghi chú**, hoặc **Bỏ tô sáng** từ cả **floating selection toolbar** lẫn **right-click context menu** (cả desktop lẫn mobile touch có `pointercancel`).
+- [x] Click (khi selection collapsed) hoặc bấm Enter/Space vào đoạn đã tô sáng hoặc icon ghi chú mở popover xem/sửa/xoá ghi chú hoặc bỏ tô sáng; không điều hướng nhầm nếu nằm trong `<a>`; `Escape` đóng popover trước mà không đóng nhầm `TestPreviewOverlay` hay cướp `Escape` của `QuizDialog`.
+- [x] Header pane "Bài đọc" có nút mở danh sách "Ghi chú" (badge đếm `aria-hidden="true"`, mặc định đóng, click mục nhảy tới đúng `<mark>` không dùng CSS selector interpolation) và nút "Xoá tất cả" có bước xác nhận khi có ≥ 1 mục.
+- [x] Highlight + ghi chú tồn tại sau reload trong lúc làm bài (không giật mất ở `QuizResumeDialog`), sống sót sau khi nộp bài để xem read-only ở `$attemptId.detail.tsx` (cùng trình duyệt), tự bỏ qua khi `passageHash` đổi, có LRU cap 25 bài + evict khi `QuotaExceededError`, và tự dọn khi đăng xuất/đổi tài khoản.
+- [x] `TestPreviewOverlay` cho phép thử highlight/ghi chú theo từng tab (`key={tab.part}`) trong RAM với 0 network write request, giữ nguyên focus trap modal và reset khi đóng overlay.
+- [x] Đạt tương phản WCAG AA ≥ 4.5:1 ở Light & Dark mode (kể cả trong `<blockquote>`), `--reading-highlight-border` ≥ 3.0:1; không tràn ngang ở 1440×900, 768×1024, 375×812 (và 320px reflow).
+- [x] Toàn bộ gates cục bộ pass: `pnpm check`, `pnpm check-types`, unit tests (`@teacher-os/ui`, `student`, `admin`, `web` cho `RichTextBody`), và E2E reading spec liên quan.
 
 ## Red Team Review
 

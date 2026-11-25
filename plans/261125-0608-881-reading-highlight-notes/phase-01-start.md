@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: Core Reading Annotation Engine & Design Tokens"
-status: pending
+status: completed
 priority: P1
 effort: "2h"
 dependencies: []

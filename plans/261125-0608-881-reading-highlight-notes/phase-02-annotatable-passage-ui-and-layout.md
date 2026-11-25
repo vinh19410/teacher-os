@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: AnnotatableReadingPassage UI & QuizReadingSplitLayout Integration"
-status: pending
+status: completed
 priority: P1
 effort: "3h"
 dependencies: [1]
