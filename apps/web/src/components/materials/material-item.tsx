@@ -1,4 +1,5 @@
 import {
+	isSafeMaterialUrl,
 	MATERIAL_MIME,
 	type MaterialKind,
 	type MaterialView,
@@ -67,7 +68,7 @@ export function materialMeta(item: MaterialRowItem): string {
 export function MaterialOpenActions({ item }: { item: MaterialRowItem }) {
 	const linkCls = buttonVariants({ variant: "ghost", size: "sm" });
 	if (item.kind === "link") {
-		return item.url ? (
+		return item.url && isSafeMaterialUrl(item.url) ? (
 			<a
 				href={item.url}
 				target="_blank"
