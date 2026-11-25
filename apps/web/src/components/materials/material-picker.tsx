@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { MATERIAL_LINKS_MAX } from "@teacher-os/api/contracts";
 import {
 	MATERIAL_FOLDER_MAX_DEPTH,
@@ -11,12 +11,16 @@ import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { UPLOAD_HELP } from "@/components/materials/material-dialogs";
 import { MaterialItem } from "@/components/materials/material-item";
+import {
+	MATERIAL_FILE_ACCEPT,
+	MaterialUploadQueueList,
+	useMaterialUploadQueue,
+} from "@/components/materials/material-upload-queue";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
-import { isHttpError } from "@/lib/kernel-load-state";
 import { flattenFolderTree } from "@/lib/material-folders";
-import { reauth } from "@/lib/reauth";
+import { mergeUploadQueueFiles } from "@/lib/material-upload-queue";
 import {
 	fetchMaterialFolders,
 	fetchMaterials,
@@ -24,8 +28,6 @@ import {
 	materialErrorMessage,
 	materialFoldersQueryKey,
 	materialListQueryKey,
-	materialsAllQueryKey,
-	prepareMaterialUpload,
 	uploadMaterialFile,
 	useCanWriteMaterials,
 } from "@/lib/repos/materials";
@@ -198,11 +200,20 @@ export function MaterialBankBrowser({
 	);
 }
 
+function slotCapError(needed: number, currentCount: number): string | null {
+	const remaining = Math.max(0, MATERIAL_LINKS_MAX - currentCount);
+	if (needed <= remaining) return null;
+	if (remaining === 0) {
+		return `Tối đa ${MATERIAL_LINKS_MAX} tài liệu cho một buổi/bài — gỡ bớt để chọn thêm.`;
+	}
+	return `Chỉ gắn thêm được tối đa ${remaining} tài liệu nữa (đang có ${currentCount}/${MATERIAL_LINKS_MAX}). Hãy chọn ít file hơn hoặc gỡ bớt tài liệu đã chọn.`;
+}
+
 /**
- * Chọn tài liệu ngân hàng ngay trong form (tạo buổi học, thêm/sửa bài học —
- * #655): chips đã chọn (× để gỡ), "+ Chọn từ ngân hàng" mở modal duyệt,
- * "+ Tải file lên" đẩy file lên NGÂN HÀNG (đường `/materials/files`, luôn về
- * thư mục gốc — không phải đường theo buổi) rồi chọn luôn file vừa tạo.
+ * Chọn tài liệu ngân hàng ngay trong form (tạo buổi học, thêm/sửa bài học):
+ * chips đã chọn (× để gỡ), "+ Chọn từ ngân hàng" mở modal duyệt, "+ Tải file lên"
+ * đẩy một hoặc nhiều file lên NGÂN HÀNG (đường `/materials/files`, luôn về
+ * thư mục gốc — không phải đường theo buổi) rồi chọn luôn các file vừa tạo.
  * Controlled: cha giữ `selected` qua `onPick`/`onRemove`.
  */
 export function MaterialPicker({
@@ -216,52 +227,104 @@ export function MaterialPicker({
 	onRemove: (id: string) => void;
 	disabled?: boolean;
 }) {
-	const queryClient = useQueryClient();
 	const canWrite = useCanWriteMaterials();
 	const [browsing, setBrowsing] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const fileInput = useRef<HTMLInputElement>(null);
+	const selectedLengthRef = useRef(selected.length);
+	selectedLengthRef.current = selected.length;
+	const nextPositionRef = useRef(selected.length);
+	const clearUploadQueueRef = useRef<() => void>(() => undefined);
 
 	// Trần contract (`materialIds` max MATERIAL_LINKS_MAX) — chặn trước ở
-	// picker thay để server 422 với thông báo chung (#655 review N3).
+	// picker thay vì để server trả 422 với thông báo chung.
 	const atCap = selected.length >= MATERIAL_LINKS_MAX;
 
-	const handleError = (err: unknown) => {
-		if (isHttpError(err) && err.status === 401) {
-			reauth();
-			return;
-		}
-		setError(materialErrorMessage(err));
-	};
-
-	const upload = useMutation({
-		mutationFn: (input: { file: File; mimeType: string }) =>
+	const uploadQueue = useMaterialUploadQueue({
+		upload: (input) =>
 			// Đường upload NGÂN HÀNG (như trang Tài liệu): file luôn về thư mục gốc.
 			uploadMaterialFile({ ...input, folderId: null }),
-		onMutate: () => setError(null),
-		onSuccess: async (material) => {
-			toast.success("Đã tải lên ngân hàng tài liệu.");
-			// Duyệt ngân hàng sau này phải thấy file vừa tạo.
-			await queryClient.invalidateQueries({ queryKey: materialsAllQueryKey });
-			onPick(bankMaterialRef(material, selected.length));
+		onFileUploaded: (material) => {
+			const pos = nextPositionRef.current;
+			nextPositionRef.current += 1;
+			onPick(bankMaterialRef(material, pos));
 		},
-		onError: handleError,
+		onBatchSettled: ({ run, summary }) => {
+			if (run.succeeded.length === 0) return;
+			if (
+				summary.total === 1 &&
+				summary.done === 1 &&
+				summary.error === 0 &&
+				summary.invalid === 0
+			) {
+				toast.success("Đã tải lên ngân hàng tài liệu.");
+				clearUploadQueueRef.current();
+				return;
+			}
+			if (summary.done > 1 && summary.error === 0 && summary.invalid === 0) {
+				toast.success(
+					`Đã tải lên ${summary.done} file vào ngân hàng tài liệu.`,
+				);
+				return;
+			}
+			toast.success(
+				run.succeeded.length === 1
+					? "Đã tải lên 1 file vào ngân hàng tài liệu."
+					: `Đã tải lên ${run.succeeded.length} file vào ngân hàng tài liệu.`,
+			);
+		},
 	});
+	const clearUploadQueue = uploadQueue.clear;
+	clearUploadQueueRef.current = clearUploadQueue;
 
-	function pickFile(file: File | undefined) {
+	useEffect(() => {
+		if (!canWrite) {
+			setError(null);
+			clearUploadQueue();
+		}
+	}, [canWrite, clearUploadQueue]);
+
+	function pickFiles(files: FileList | null) {
+		const picked = files ? Array.from(files) : [];
 		if (fileInput.current) fileInput.current.value = "";
-		if (!file) return;
-		const prep = prepareMaterialUpload(file);
-		if (!prep.ok) {
-			setError(prep.message);
+		if (picked.length === 0 || disabled || uploadQueue.isUploading) return;
+		const precheck = mergeUploadQueueFiles([], picked);
+		const validCount = precheck.items.filter(
+			(item) => item.status === "pending",
+		).length;
+		const capErr = slotCapError(validCount, selectedLengthRef.current);
+		if (capErr) {
+			uploadQueue.clear();
+			setError(capErr);
 			return;
 		}
-		upload.mutate({ file, mimeType: prep.mimeType });
+		setError(null);
+		nextPositionRef.current = selectedLengthRef.current;
+		void uploadQueue.uploadFilesNow(picked);
+	}
+
+	function handleRetryFailed() {
+		if (disabled || uploadQueue.isUploading) return;
+		const capErr = slotCapError(
+			uploadQueue.summary.error,
+			selectedLengthRef.current,
+		);
+		if (capErr) {
+			setError(capErr);
+			return;
+		}
+		setError(null);
+		nextPositionRef.current = selectedLengthRef.current;
+		void uploadQueue.retryFailed();
 	}
 
 	return (
 		// biome-ignore lint/a11y/useSemanticElements: role="group" + aria-label đặt tên nhóm chips/nút theo pattern ChipFilter cho SR/e2e
-		<div role="group" aria-label="Tài liệu ngân hàng" className="grid gap-2">
+		<div
+			role="group"
+			aria-label="Tài liệu ngân hàng"
+			className="grid min-w-0 gap-2"
+		>
 			{selected.length > 0 && (
 				<ul aria-label="Tài liệu đã chọn" className="flex flex-wrap gap-1.5">
 					{selected.map((item) => (
@@ -286,7 +349,7 @@ export function MaterialPicker({
 				<Button
 					variant="outline"
 					size="sm"
-					disabled={disabled}
+					disabled={disabled || uploadQueue.isUploading}
 					onClick={() => {
 						setError(null);
 						setBrowsing(true);
@@ -300,21 +363,26 @@ export function MaterialPicker({
 						<Button
 							variant="outline"
 							size="sm"
-							disabled={disabled || atCap}
-							aria-busy={upload.isPending}
+							disabled={disabled || atCap || uploadQueue.isUploading}
+							aria-busy={uploadQueue.isUploading}
 							onClick={() => fileInput.current?.click()}
 						>
 							<Upload aria-hidden="true" />
-							{upload.isPending ? "Đang tải lên…" : "Tải file lên"}
+							{uploadQueue.isUploading
+								? uploadQueue.summary.validTotal > 1
+									? `Đang tải lên (${uploadQueue.summary.completedValid}/${uploadQueue.summary.validTotal})…`
+									: "Đang tải lên…"
+								: "Tải file lên"}
 						</Button>
 						<input
 							ref={fileInput}
 							type="file"
+							multiple
 							className="sr-only"
 							tabIndex={-1}
 							aria-label="Chọn file tải lên ngân hàng tài liệu"
-							accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.pptx,.xlsx,.mp3,.m4a,.mp4"
-							onChange={(e) => pickFile(e.target.files?.[0])}
+							accept={MATERIAL_FILE_ACCEPT}
+							onChange={(e) => pickFiles(e.target.files)}
 						/>
 					</>
 				)}
@@ -328,6 +396,16 @@ export function MaterialPicker({
 						? `${canWrite ? " " : ""}Tối đa ${MATERIAL_LINKS_MAX} tài liệu cho một buổi/bài — gỡ bớt để chọn thêm.`
 						: ""}
 				</p>
+			)}
+			{canWrite && uploadQueue.items.length > 0 && (
+				<MaterialUploadQueueList
+					compact
+					items={uploadQueue.items}
+					summary={uploadQueue.summary}
+					suppressAlert={Boolean(error)}
+					onRetryFailed={handleRetryFailed}
+					onDismiss={uploadQueue.clear}
+				/>
 			)}
 			{error && (
 				<p role="alert" className="text-destructive text-sm">
@@ -352,7 +430,7 @@ export function MaterialPicker({
 					<MaterialBankBrowser
 						selectedIds={new Set(selected.map((m) => m.id))}
 						pendingId={undefined}
-						disabled={disabled || upload.isPending}
+						disabled={disabled || uploadQueue.isUploading}
 						maxSelected={MATERIAL_LINKS_MAX}
 						onPick={onPick}
 					/>
