@@ -1,3 +1,7 @@
+import {
+	createTabsSignature,
+	useScrollActiveTab,
+} from "@teacher-os/ui/hooks/use-scroll-active-tab";
 import { cn } from "@/lib/cn";
 
 export interface TabsProps {
@@ -10,8 +14,14 @@ export interface TabsProps {
 /** Tabs segmented v2 (design `Tabs`): track bg-muted, item active nổi
  * bg-background + shadow-sm. Giữ role tablist/tab + aria-selected. */
 export function Tabs({ tabs, active, onChange, className }: TabsProps) {
+	const { tablistRef, activeTabRef } = useScrollActiveTab(
+		active,
+		createTabsSignature(tabs),
+	);
+
 	return (
 		<div
+			ref={tablistRef}
 			role="tablist"
 			className={cn(
 				"no-scrollbar mb-6 inline-flex h-9 max-w-full items-center overflow-x-auto rounded-lg bg-muted p-[3px] text-muted-foreground",
@@ -23,6 +33,7 @@ export function Tabs({ tabs, active, onChange, className }: TabsProps) {
 					type="button"
 					role="tab"
 					key={t.id}
+					ref={t.id === active ? activeTabRef : undefined}
 					aria-selected={t.id === active}
 					onClick={() => onChange(t.id)}
 					className={cn(
