@@ -358,7 +358,31 @@ describe("computeActiveTabScrollLeft", () => {
 		mockElementMetrics(tab, { rect: { left: 170, width: 80 } });
 		expect(computeActiveTabScrollLeft(container, tab)).toBe(88);
 	});
+
+	it("returns null when clientWidth is 0 even if rect width > 0", () => {
+		const { container, tab } = createContainerAndTab();
+		mockElementMetrics(container, {
+			scrollWidth: 600,
+			clientWidth: 0,
+			scrollLeft: 0,
+			rect: { left: 0, width: 4 },
+		});
+		mockElementMetrics(tab, { rect: { left: 100, width: 80 } });
+		expect(computeActiveTabScrollLeft(container, tab)).toBeNull();
+	});
 });
+
+function dispatchPointerDown(
+	target: HTMLElement,
+	pointerType: "mouse" | "touch" | "pen",
+): void {
+	const event = new Event("pointerdown", { bubbles: true, cancelable: true });
+	Object.defineProperty(event, "pointerType", {
+		configurable: true,
+		value: pointerType,
+	});
+	target.dispatchEvent(event);
+}
 
 interface HarnessTab {
 	id: string;
@@ -947,21 +971,6 @@ describe("useScrollActiveTab", () => {
 		expect(scrollToCalls).toEqual([{ left: 260, behavior: "instant" }]);
 	});
 
-	it("returns null from computeActiveTabScrollLeft when clientWidth is 0 even if rect width > 0", () => {
-		const container = document.createElement("div");
-		const tab = document.createElement("button");
-		container.appendChild(tab);
-		document.body.appendChild(container);
-		mockElementMetrics(container, {
-			scrollWidth: 600,
-			clientWidth: 0,
-			scrollLeft: 0,
-			rect: { left: 0, width: 4 },
-		});
-		mockElementMetrics(tab, { rect: { left: 100, width: 80 } });
-		expect(computeActiveTabScrollLeft(container, tab)).toBeNull();
-	});
-
 	it("preserves smooth-scroll cancellation across mouse pointerdown on a child tab button", () => {
 		vi.useFakeTimers();
 		stubReducedMotion(false);
@@ -982,16 +991,77 @@ describe("useScrollActiveTab", () => {
 		// Start smooth scroll toward 0
 		rerender(<TabsHarness tabs={DEFAULT_TABS} active="t1" />);
 		expect(scrollToCalls).toEqual([{ left: 0, behavior: "smooth" }]);
+		expect(vi.getTimerCount()).toBe(1);
 
-		// Mid-flight at scrollLeft = 180, user mouse-clicks visible tab t4
+		// Mid-flight at scrollLeft = 180, mouse pointerdown on child tab must keep smooth tracking
 		model.scrollLeft = 180;
-		fireEvent.pointerDown(getByText("Tab 4"), { pointerType: "mouse" });
-		rerender(<TabsHarness tabs={DEFAULT_TABS} active="t4" />);
+		dispatchPointerDown(getByText("Tab 4"), "mouse");
+		expect(vi.getTimerCount()).toBe(1);
 
+		rerender(<TabsHarness tabs={DEFAULT_TABS} active="t4" />);
 		expect(scrollToCalls).toEqual([
 			{ left: 0, behavior: "smooth" },
 			{ left: 180, behavior: "instant" },
 		]);
+		expect(vi.getTimerCount()).toBe(0);
+	});
+
+	it("clears smooth tracking on touch pointerdown on a child tab button", () => {
+		vi.useFakeTimers();
+		stubReducedMotion(false);
+		const model: LayoutModel = {
+			clientWidth: 340,
+			scrollWidth: 600,
+			containerLeft: 0,
+			tabWidth: 100,
+			scrollLeft: 260,
+			updateScrollLeftOnScrollTo: false,
+		};
+		const { scrollToCalls } = installPrototypeLayoutMock(model);
+
+		const { rerender, getByText } = render(
+			<TabsHarness tabs={DEFAULT_TABS} active="t6" />,
+		);
+
+		rerender(<TabsHarness tabs={DEFAULT_TABS} active="t1" />);
+		expect(scrollToCalls).toEqual([{ left: 0, behavior: "smooth" }]);
+		expect(vi.getTimerCount()).toBe(1);
+
+		model.scrollLeft = 180;
+		dispatchPointerDown(getByText("Tab 4"), "touch");
+		expect(vi.getTimerCount()).toBe(0);
+
+		rerender(<TabsHarness tabs={DEFAULT_TABS} active="t4" />);
+		expect(scrollToCalls).toHaveLength(1);
+	});
+
+	it("clears smooth tracking on mouse pointerdown directly on the tablist container", () => {
+		vi.useFakeTimers();
+		stubReducedMotion(false);
+		const model: LayoutModel = {
+			clientWidth: 340,
+			scrollWidth: 600,
+			containerLeft: 0,
+			tabWidth: 100,
+			scrollLeft: 260,
+			updateScrollLeftOnScrollTo: false,
+		};
+		const { scrollToCalls } = installPrototypeLayoutMock(model);
+
+		const { rerender, getByRole } = render(
+			<TabsHarness tabs={DEFAULT_TABS} active="t6" />,
+		);
+
+		rerender(<TabsHarness tabs={DEFAULT_TABS} active="t1" />);
+		expect(scrollToCalls).toEqual([{ left: 0, behavior: "smooth" }]);
+		expect(vi.getTimerCount()).toBe(1);
+
+		model.scrollLeft = 180;
+		dispatchPointerDown(getByRole("tablist"), "mouse");
+		expect(vi.getTimerCount()).toBe(0);
+
+		rerender(<TabsHarness tabs={DEFAULT_TABS} active="t4" />);
+		expect(scrollToCalls).toHaveLength(1);
 	});
 
 	it("ignores stale scrollend before target and clears smooth tracking once target is reached", () => {
@@ -1015,9 +1085,11 @@ describe("useScrollActiveTab", () => {
 		// Start smooth scroll toward 0 while scrollLeft is still at previous 260
 		rerender(<TabsHarness tabs={DEFAULT_TABS} active="t1" />);
 		expect(scrollToCalls).toEqual([{ left: 0, behavior: "smooth" }]);
+		expect(vi.getTimerCount()).toBe(1);
 
 		// Queued scrollend from previous scroll arrives at 260 (not target 0) -> must NOT clear tracking
 		tablist.dispatchEvent(new Event("scrollend"));
+		expect(vi.getTimerCount()).toBe(1);
 
 		// Mid-flight at 180, switch to visible t4 -> still cancels old smooth animation
 		model.scrollLeft = 180;
@@ -1026,13 +1098,20 @@ describe("useScrollActiveTab", () => {
 			{ left: 0, behavior: "smooth" },
 			{ left: 180, behavior: "instant" },
 		]);
+		expect(vi.getTimerCount()).toBe(0);
 
 		// Start a second smooth scroll to 0, then settle at 0 and dispatch scrollend at target
 		rerender(<TabsHarness tabs={DEFAULT_TABS} active="t1" />);
+		expect(scrollToCalls).toHaveLength(3);
+		expect(vi.getTimerCount()).toBe(1);
+
 		model.scrollLeft = 0;
 		tablist.dispatchEvent(new Event("scrollend"));
+		expect(vi.getTimerCount()).toBe(0);
 
-		// Switching to already-visible t2 after target scrollend must NOT emit redundant instant cancel
+		// Shift scrollLeft away from target (|40 - 0| >= 1) while keeping t2 visible ([60..160]):
+		// if onScrollEnd failed to clear smoothState.target, switching to t2 would emit { left: 40, behavior: "instant" }.
+		model.scrollLeft = 40;
 		const callsBefore = scrollToCalls.length;
 		rerender(<TabsHarness tabs={DEFAULT_TABS} active="t2" />);
 		expect(scrollToCalls).toHaveLength(callsBefore);
