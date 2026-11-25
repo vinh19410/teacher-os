@@ -54,6 +54,7 @@ export {
 	MediaSizeMismatchError,
 	type MediaStore,
 	type StoredMedia,
+	type StoredMediaMeta,
 } from "./lib/media-store";
 
 export interface KernelCtx {
@@ -350,6 +351,7 @@ export function buildApp(deps: AppDeps) {
 		"/api/student/vocab/audio/:wordId",
 		"/api/kernel/vocab/words/:wordId/audio",
 		"/api/materials/:id/file",
+		"/api/student/classes/:classId/materials/:materialId/file",
 		"/api/student/classes/:classId/sessions/:date/materials/:materialId/file",
 		"/api/study-packs/exercises/:id/audio",
 		"/api/study-packs/:packId/items/:itemId/audio",
@@ -405,11 +407,20 @@ export function buildApp(deps: AppDeps) {
 		allowHeaders: [
 			"Content-Type",
 			"Authorization",
+			"Range",
+			"If-None-Match",
 			"x-student-org-id",
 			"X-File-Name",
 			"X-Upload-Token",
 			"X-Media-Filename",
 			"X-Speaking-Duration",
+		],
+		exposeHeaders: [
+			"Accept-Ranges",
+			"Content-Range",
+			"Content-Length",
+			"ETag",
+			"X-Server-Now",
 		],
 		credentials: true,
 	});

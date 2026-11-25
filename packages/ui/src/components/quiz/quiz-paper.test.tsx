@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 
-import type { QuizPart } from "@teacher-os/api/lib/quiz-parts";
+import { gradeQuiz } from "@teacher-os/api/lib/grade-quiz";
+import {
+	buildQuizParts,
+	buildQuizPartsFromGroups,
+	type QuizPart,
+} from "@teacher-os/api/lib/quiz-parts";
+import * as quizInstructionModule from "@teacher-os/ui/lib/quiz-instruction";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import { useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -8,6 +14,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { QuizPaper, type QuizPaperDetail } from "./quiz-paper";
 import { questionChoiceRows } from "./quiz-question-item";
 import type { QuizReviewInfo } from "./quiz-review-item";
+
+vi.mock("@teacher-os/ui/lib/quiz-instruction", { spy: true });
 
 afterEach(cleanup);
 
@@ -1327,5 +1335,1803 @@ describe("QuizPaper — inline answer inputs", () => {
 		// Skipped <select> shows "—" instead of "— Chọn —".
 		const select4 = getByLabelText("Chọn đáp án câu 4") as HTMLSelectElement;
 		expect(select4.options[0]?.textContent).toBe("—");
+	});
+
+	describe("QuizPaper — Issue #875: Neanderthal Technology reading summary input & group scoping", () => {
+		it("cô lập optionBank của part nhóm: nhóm summary không có optionBank render ô nhập văn bản, không render nút A–K", () => {
+			const onAnswer = vi.fn();
+			const headingsPart: QuizPart = {
+				id: "group-1",
+				label: "Questions 1–6",
+				qStart: 1,
+				typeId: "headings",
+				source: "group",
+				instructionHtml:
+					"<p>Choose the correct heading for each section from the list of headings below.</p>",
+				optionBank: [
+					"Heading i: Origins",
+					"Heading ii: Tool types",
+					"Heading iii: Hunting techniques",
+					"Heading iv: Fire usage",
+					"Heading v: Shelters",
+					"Heading vi: Language",
+				],
+				questions: [1, 2, 3, 4, 5, 6].map((num, i) => ({
+					q: i,
+					number: num,
+					stem: `Section ${String.fromCharCode(65 + i)}`,
+					opts: null,
+					pin: null,
+					type: "headings",
+				})),
+			};
+
+			const infoPart: QuizPart = {
+				id: "group-2",
+				label: "Questions 7–10",
+				qStart: 7,
+				typeId: "info",
+				source: "group",
+				instructionHtml:
+					"<p>Which section contains the following information?</p>",
+				optionBank: ["A", "B", "C", "D", "E"],
+				questions: [7, 8, 9, 10].map((num, i) => ({
+					q: 6 + i,
+					number: num,
+					stem: `Information item ${num}`,
+					opts: null,
+					pin: null,
+					type: "info",
+				})),
+			};
+
+			const summaryPart: QuizPart = {
+				id: "group-3",
+				label: "Questions 11–13",
+				qStart: 11,
+				typeId: "summary",
+				source: "group",
+				instructionHtml: "", // Không có instruction riêng trên nhóm, phụ thuộc vào intro
+				optionBank: [], // Summary completion từ passage, không có Word Bank
+				questions: [
+					{
+						q: 10,
+						number: 11,
+						stem: "Neanderthals lived in a (11) __________ environment.",
+						opts: null,
+						pin: null,
+						type: "summary",
+					},
+					{
+						q: 11,
+						number: 12,
+						stem: "Their bodies were adapted to be (12) __________ and strong.",
+						opts: null,
+						pin: null,
+						type: "summary",
+					},
+					{
+						q: 12,
+						number: 13,
+						stem: "They were skilled hunters of large (13) __________.",
+						opts: null,
+						pin: null,
+						type: "summary",
+					},
+				],
+			};
+
+			const mcqPart: QuizPart = {
+				id: "group-4",
+				label: "Questions 14",
+				qStart: 14,
+				typeId: "mcq",
+				source: "group",
+				instructionHtml: "<p>Choose the correct letter, A, B, C or D.</p>",
+				optionBank: [],
+				questions: [
+					{
+						q: 13,
+						number: 14,
+						stem: "What is the main idea?",
+						opts: ["Option A", "Option B", "Option C", "Option D"],
+						pin: null,
+						type: "mcq",
+					},
+				],
+			};
+
+			const combinedOptionBank = [
+				"Heading i: Origins",
+				"Heading ii: Tool types",
+				"Heading iii: Hunting techniques",
+				"Heading iv: Fire usage",
+				"Heading v: Shelters",
+				"Heading vi: Language",
+				"A",
+				"B",
+				"C",
+				"D",
+				"E",
+			];
+
+			const detail = baseDetail({
+				skill: "reading",
+				type: "reading",
+				intro: `
+					<p>Questions 1–6: Choose the correct heading for each section from the list of headings below.</p>
+					<p>Questions 7–10: Which section contains the following information?</p>
+					<p>Questions 11–13: Complete the summary below. Choose NO MORE THAN TWO WORDS from the passage for each answer.</p>
+					<p>Questions 14: Choose the correct letter, A, B, C or D.</p>
+				`,
+				optionBank: combinedOptionBank,
+			});
+
+			const { container, getByLabelText } = render(
+				<QuizPaper
+					detail={detail}
+					parts={[headingsPart, infoPart, summaryPart, mcqPart]}
+					answers={{}}
+					onAnswer={onAnswer}
+					currentQuestion={10}
+					mode="take"
+				/>,
+			);
+
+			// 1. Không hiển thị option bank 11 mục ở đầu đề (showDetailBank = false vì hasGroupSource = true)
+			const topBank = container.querySelector(
+				"article > [data-testid='option-bank-list']",
+			);
+			expect(topBank).toBeNull();
+
+			// 2. Nhóm summary hiển thị đúng hướng dẫn "NO MORE THAN TWO WORDS", KHÔNG hiển thị fallback "ONE WORD ONLY"
+			expect(container.textContent).toContain("NO MORE THAN TWO WORDS");
+			expect(container.textContent).not.toContain("ONE WORD ONLY");
+
+			// 3. Preamble đầu trang không bị lặp lại dòng Questions 11-13 vì đã bị tiêu thụ
+			const preamble = container.querySelector(
+				"article > div.text-muted-foreground",
+			);
+			expect(preamble?.textContent ?? "").not.toContain(
+				"Questions 11–13: Complete the summary below",
+			);
+
+			// 4. Các câu hỏi Q11, Q12, Q13 render input text, KHÔNG render button radio A–K
+			const input11 = getByLabelText("Điền đáp án câu 11") as HTMLInputElement;
+			const input12 = getByLabelText("Điền đáp án câu 12") as HTMLInputElement;
+			const input13 = getByLabelText("Điền đáp án câu 13") as HTMLInputElement;
+
+			expect(input11).not.toBeNull();
+			expect(input12).not.toBeNull();
+			expect(input13).not.toBeNull();
+
+			// Không có nút radio lựa chọn A-K cho câu 11–13
+			const radiosInSummary = container.querySelectorAll(
+				"input[type='radio'][name='quiz-q-10']",
+			);
+			expect(radiosInSummary).toHaveLength(0);
+
+			// Học viên có thể gõ cụm từ (ví dụ predatory animals có 2 từ)
+			fireEvent.change(input13, { target: { value: "predatory animals" } });
+			expect(onAnswer).toHaveBeenCalledWith(12, "predatory animals");
+		});
+
+		it("đề không nhóm trộn dạng (summary + matching có required bank): summary không mượn bank nhầm", () => {
+			const onAnswer = vi.fn();
+			const matchingPart: QuizPart = {
+				id: "part-1",
+				label: "Questions 1–2",
+				qStart: 1,
+				typeId: "matching",
+				questions: [
+					{
+						q: 0,
+						number: 1,
+						stem: "Match 1",
+						opts: null,
+						pin: null,
+						type: "matching",
+					},
+					{
+						q: 1,
+						number: 2,
+						stem: "Match 2",
+						opts: null,
+						pin: null,
+						type: "matching",
+					},
+				],
+			};
+			const summaryPart: QuizPart = {
+				id: "part-2",
+				label: "Questions 3–4",
+				qStart: 3,
+				typeId: "summary",
+				questions: [
+					{
+						q: 2,
+						number: 3,
+						stem: "Summary 3",
+						opts: null,
+						pin: null,
+						type: "summary",
+					},
+					{
+						q: 3,
+						number: 4,
+						stem: "Summary 4",
+						opts: null,
+						pin: null,
+						type: "summary",
+					},
+				],
+			};
+
+			const detail = baseDetail({
+				skill: "reading",
+				type: "reading",
+				optionBank: ["Item A", "Item B", "Item C"],
+			});
+
+			const { getByLabelText, container } = render(
+				<QuizPaper
+					detail={detail}
+					parts={[matchingPart, summaryPart]}
+					answers={{}}
+					onAnswer={onAnswer}
+					currentQuestion={2}
+					mode="take"
+				/>,
+			);
+
+			// Matching part có radio pills chọn từ Item A, B, C (3 options A, B, C)
+			const radios1 = container.querySelectorAll(
+				"input[type='radio'][name='quiz-q-1']",
+			);
+			expect(radios1).toHaveLength(3);
+
+			// Summary part render input text, không bị biến thành letter options A–C
+			const input3 = getByLabelText("Điền đáp án câu 3") as HTMLInputElement;
+			expect(input3).not.toBeNull();
+			const radios = container.querySelectorAll(
+				"input[type='radio'][name='quiz-q-2']",
+			);
+			expect(radios).toHaveLength(0);
+
+			// Summary part không dùng hướng dẫn chọn từ list của word bank
+			expect(container.textContent).not.toContain(
+				"Complete the summary using the list of words below",
+			);
+		});
+	});
+
+	describe("QuizPaper — Issue #876: The History of Tea instruction consistency & review detail", () => {
+		const teaQuestions = [
+			...Array.from({ length: 7 }, (_, i) => ({
+				stem:
+					i === 2
+						? "It was ____ (3) from Japan who brought tea to their native country from China."
+						: `Tea sentence ${i + 1} ____.`,
+				opts: null,
+				pin: null,
+				type: "sent",
+			})),
+			...Array.from({ length: 6 }, (_, i) => ({
+				stem: `Tea statement ${i + 8}.`,
+				opts: null,
+				pin: null,
+				type: "tfng",
+			})),
+		];
+
+		const teaSentInstruction =
+			"Complete the sentences below with words taken from Reading Passage 1. Use ONE WORD for each answer.";
+		const teaTfngInstruction = [
+			"Do the following statements agree with the information given in Reading Passage 1?",
+			"Write",
+			"TRUE if the statement agrees with the information",
+			"FALSE if the statement contradicts the information",
+			"NOT GIVEN if there is no information on this",
+		].join("\n");
+		const teaFlattenedIntro = `${teaSentInstruction}\n${teaTfngInstruction}`;
+
+		const teaReview: Record<number, QuizReviewInfo> = Object.fromEntries(
+			teaQuestions.map((_, idx) => [
+				idx,
+				{
+					verdict: idx === 2 ? ("wrong" as const) : ("correct" as const),
+					key: idx === 2 ? "monks" : idx < 7 ? "word" : "TRUE",
+					alts: "",
+					answer: idx === 2 ? "Buddhist monks" : idx < 7 ? "word" : "TRUE",
+					note: "",
+				},
+			]),
+		);
+
+		it("pre-0085 fallback (không groups) ở cả mode take và review tách sạch hướng dẫn Q1–7 (Use ONE WORD) và Q8–13 (TFNG), không còn NO MORE THAN THREE WORDS hay preamble lẫn", () => {
+			const parts = buildQuizParts(teaQuestions, "sent", teaFlattenedIntro);
+			const detail = baseDetail({
+				skill: "reading",
+				type: "sent",
+				intro: teaFlattenedIntro,
+			});
+
+			for (const mode of ["take", "review"] as const) {
+				const { container, unmount } = render(
+					<QuizPaper
+						detail={detail}
+						parts={parts}
+						answers={mode === "review" ? { 2: "Buddhist monks" } : {}}
+						onAnswer={vi.fn()}
+						currentQuestion={null}
+						mode={mode}
+						review={mode === "review" ? teaReview : undefined}
+					/>,
+				);
+
+				// Không còn preamble lẫn ở đầu <article>
+				const topPreamble = container.querySelector(
+					"article > div.text-muted-foreground",
+				);
+				expect(topPreamble).toBeNull();
+
+				// Tuyệt đối không còn fallback sai NO MORE THAN THREE WORDS
+				expect(container.textContent).not.toContain("NO MORE THAN THREE WORDS");
+
+				const sections = container.querySelectorAll("article section");
+				expect(sections).toHaveLength(2);
+
+				const section1 = sections[0]?.textContent ?? "";
+				const section2 = sections[1]?.textContent ?? "";
+
+				expect(section1).toContain("Use ONE WORD for each answer.");
+				expect(section1).not.toContain("TRUE if the statement");
+				expect(section2).toContain("Do the following statements agree");
+				expect(section2).toContain("TRUE if the statement");
+				expect(section2).not.toContain("Use ONE WORD");
+
+				unmount();
+			}
+		});
+
+		it("post-0087 có groups (kèm bảng inline ở Group 1 + plain-text TFNG ở Group 2) ở mode review không lặp preamble và hiển thị đúng hướng dẫn từng nhóm", () => {
+			const group1Html = `<p>${teaSentInstruction}</p><table><tbody><tr><td><ul><li>Containers in [1].</li><li>Lu Yu wrote a [2].</li><li>It was [3] from Japan.</li><li>Carried by the [4].</li><li>Crime of [5].</li><li>Planted in [6].</li><li>Used [7] for the race.</li></ul></td></tr></tbody></table>`;
+			const parts = buildQuizPartsFromGroups(
+				teaQuestions,
+				[
+					{
+						id: "grp-1",
+						type: "sent",
+						instruction: group1Html,
+						startIndex: 0,
+						count: 7,
+						optionBank: [],
+					},
+					{
+						id: "grp-2",
+						type: "tfng",
+						instruction: teaTfngInstruction,
+						startIndex: 7,
+						count: 6,
+						optionBank: [],
+					},
+				],
+				"sent",
+				`${group1Html}\n${teaTfngInstruction}`,
+			);
+			const detail = baseDetail({
+				skill: "reading",
+				type: "sent",
+				intro: `${group1Html}\n${teaTfngInstruction}`,
+			});
+
+			const { container } = render(
+				<QuizPaper
+					detail={detail}
+					parts={parts}
+					answers={{ 2: "Buddhist monks" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={teaReview}
+				/>,
+			);
+
+			const topPreamble = container.querySelector(
+				"article > div.text-muted-foreground",
+			);
+			expect(topPreamble).toBeNull();
+			expect(container.textContent).not.toContain("NO MORE THAN THREE WORDS");
+
+			const sections = container.querySelectorAll("article section");
+			expect(sections).toHaveLength(2);
+			expect(sections[0]?.textContent).toContain(
+				"Use ONE WORD for each answer.",
+			);
+			expect(sections[0]?.textContent).not.toContain("TRUE if the statement");
+			expect(sections[1]?.textContent).toContain("TRUE if the statement");
+			expect(sections[1]?.textContent).not.toContain("Use ONE WORD");
+		});
+
+		it("pre-0085 fallback (không groups) với bảng inline trong detail.intro bật QuizInlineInstruction qua hasMatchedInstruction ở cả take và review", () => {
+			const inlineIntro = `<p>${teaSentInstruction}</p><table><tbody><tr><td><ul><li>Containers in [1].</li><li>Lu Yu wrote a [2].</li><li>It was [3] from Japan.</li><li>Carried by the [4].</li><li>Crime of [5].</li><li>Planted in [6].</li><li>Used [7] for the race.</li></ul></td></tr></tbody></table>\n${teaTfngInstruction}`;
+			const parts = buildQuizParts(teaQuestions, "sent", inlineIntro);
+			const detail = baseDetail({
+				skill: "reading",
+				type: "sent",
+				intro: inlineIntro,
+			});
+
+			for (const mode of ["take", "review"] as const) {
+				const { container, getAllByTestId, unmount } = render(
+					<QuizPaper
+						detail={detail}
+						parts={parts}
+						answers={mode === "review" ? { 2: "Buddhist monks" } : {}}
+						onAnswer={vi.fn()}
+						currentQuestion={null}
+						mode={mode}
+						review={mode === "review" ? teaReview : undefined}
+					/>,
+				);
+
+				expect(
+					container.querySelector("article > div.text-muted-foreground"),
+				).toBeNull();
+				expect(getAllByTestId("quiz-inline-instruction")).toHaveLength(1);
+				expect(getAllByTestId("quiz-inline-slot")).toHaveLength(7);
+				expect(container.textContent).not.toContain("NO MORE THAN THREE WORDS");
+				unmount();
+			}
+		});
+
+		it("không làm rò rỉ word limit qua contextIntro khi đề có >= 2 nhóm completion", () => {
+			// Case 3a: Part 1 (sent) đã tiêu thụ Use ONE WORD, Part 2 (notes) không có instruction riêng
+			const partsA = buildQuizParts(
+				[
+					{ stem: "Sent 1 ____", opts: null, pin: null, type: "sent" },
+					{ stem: "Note 2 ____", opts: null, pin: null, type: "notes" },
+				],
+				"sent",
+				teaSentInstruction,
+			);
+			const { container: containerA, unmount: unmountA } = render(
+				<QuizPaper
+					detail={baseDetail({
+						skill: "reading",
+						type: "sent",
+						intro: teaSentInstruction,
+					})}
+					parts={partsA}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+				/>,
+			);
+			const sectionsA = containerA.querySelectorAll("article section");
+			expect(sectionsA[0]?.textContent).toContain(
+				"Use ONE WORD for each answer.",
+			);
+			expect(sectionsA[1]?.textContent).toContain("NO MORE THAN THREE WORDS");
+			expect(sectionsA[1]?.textContent).not.toContain("Choose ONE WORD");
+			unmountA();
+
+			// Case 3b: 2 nhóm completion (shortans + summary) cùng không khớp keyword -> intro còn lại không được lây từ Part 1 sang Part 2
+			const unmatchedIntro = [
+				"Choose ONE WORD ONLY from the passage for each answer.",
+				"Complete the table below. Choose ONE WORD AND/OR A NUMBER from the passage for each answer.",
+			].join("\n");
+			const partsB = buildQuizParts(
+				[
+					{ stem: "Q1 ____", opts: null, pin: null, type: "shortans" },
+					{ stem: "Q2 ____", opts: null, pin: null, type: "summary" },
+				],
+				"shortans",
+				unmatchedIntro,
+			);
+			const { container: containerB } = render(
+				<QuizPaper
+					detail={baseDetail({
+						skill: "reading",
+						type: "shortans",
+						intro: unmatchedIntro,
+					})}
+					parts={partsB}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+				/>,
+			);
+			const sectionsB = containerB.querySelectorAll("article section");
+			// Part 1 (shortans) không bị lây ONE WORD ONLY sai từ intro chung nhiều nhóm
+			expect(sectionsB[0]?.textContent).toContain(
+				"NO MORE THAN THREE WORDS AND/OR A NUMBER",
+			);
+		});
+	});
+
+	describe("QuizPaper — Issue #877: Neanderthal Technology & Bovids matching instructions and option banks", () => {
+		function hasTopLevelOptionBank(container: HTMLElement): boolean {
+			const directDivs = Array.from(
+				container.querySelectorAll("article > div"),
+			).filter((el) => el.querySelector("section") === null);
+			return directDivs.some(
+				(el) =>
+					(el.textContent ?? "").includes("Ngân hàng lựa chọn") ||
+					el.querySelector("ol") !== null,
+			);
+		}
+
+		function sectionBankItems(section: Element | undefined): string[] {
+			if (!section) return [];
+			return Array.from(section.querySelectorAll("ol > li")).map((li) =>
+				(li.textContent ?? "").replace(/\s+/g, " ").trim(),
+			);
+		}
+
+		const neanderthalHeadings = [
+			"Evidence of outdoor dwellings",
+			"Learning to make fire",
+			"A perfect place to live",
+			"Examining the cave contents",
+			"Contrasting two types of home",
+			"A vital source of power",
+		];
+		const neanderthalPlaces = [
+			"The Périgord region",
+			"Moldova",
+			"The Grotte du Lazaret",
+			"The cave of Baume-Bonne",
+			"Krapina",
+		];
+		const neanderthalCombinedBank = [
+			...neanderthalHeadings,
+			...neanderthalPlaces,
+		];
+		const neanderthalQuestions = [
+			...[
+				"Paragraph A",
+				"Paragraph B",
+				"Paragraph C",
+				"Paragraph D",
+				"Paragraph E",
+			].map((stem) => ({ stem, opts: null, pin: null, type: "headings" })),
+			...[
+				"a burnt piece of wood",
+				"evidence of efforts to prevent pools of water forming",
+				"the remains of sea creatures",
+				"a circular arrangement of animal bones",
+				"evidence suggesting the use of animal fur for warmth",
+			].map((stem) => ({ stem, opts: null, pin: null, type: "info" })),
+			...[
+				"Neanderthalers could not have survived without fire because the conditions they lived in were ____ (11).",
+				"Most evidence suggests that the fires lasted a ____ (12) time.",
+				"Fires protected occupants from dangerous ____ (13).",
+			].map((stem) => ({ stem, opts: null, pin: null, type: "summary" })),
+			{
+				stem: "The purpose of the writer of this article is",
+				opts: [
+					"argue that Neanderthal homes were bigger.",
+					"explain why Neanderthal people migrated.",
+					"discuss what is known about Neanderthal settlements.",
+					"track the progress of early Neanderthal development.",
+				],
+				pin: null,
+				type: "mcq",
+			},
+		];
+		const neanderthalHeadingsInstruction =
+			"Reading Passage 3 has five sections. Choose the correct heading for each section from the list of headings below.\nChoose the correct number, i-vi, in boxes 27-31.";
+		const neanderthalInfoInstruction =
+			"Look at the following findings and the list of places below. Match each finding with the correct place A-E.\nNB: You may use any letter more than once.";
+		const neanderthalSummaryInstruction =
+			"Complete the summary below. Write NO MORE THAN TWO WORDS from the passage for each answer.";
+		const neanderthalMcqInstruction =
+			"Choose the correct answer, A, B, C or D.";
+		const neanderthalPlainIntro = [
+			neanderthalHeadingsInstruction,
+			neanderthalInfoInstruction,
+			neanderthalSummaryInstruction,
+			neanderthalMcqInstruction,
+		].join("\n");
+		const neanderthalInlineIntro = [
+			`<p>${neanderthalHeadingsInstruction}</p>`,
+			`<p>${neanderthalInfoInstruction}</p>`,
+			"<p>6. a burnt piece of wood → [6]</p><p>7. evidence of efforts to prevent pools of water forming → [7]</p><p>8. the remains of sea creatures → [8]</p><p>9. a circular arrangement of animal bones → [9]</p><p>10. evidence suggesting the use of animal fur for warmth → [10]</p>",
+			`<p>${neanderthalSummaryInstruction}</p>`,
+			"<table><tbody><tr><td><h2><strong>The use of fire</strong></h2></td></tr><tr><td><ul><li>Conditions were [11]. Fires lasted a [12] time and protected against [13].</li></ul></td></tr></tbody></table>",
+			`<p>${neanderthalMcqInstruction}</p>`,
+		].join("\n");
+		const neanderthalReview: Record<number, QuizReviewInfo> =
+			Object.fromEntries(
+				neanderthalQuestions.map((_, idx) => [
+					idx,
+					{
+						verdict: "correct" as const,
+						key: idx < 5 ? "i" : idx < 10 ? "E" : idx < 13 ? "short" : "C",
+						alts: "",
+						answer: idx < 5 ? "i" : idx < 10 ? "E" : idx < 13 ? "short" : "C",
+						note: "",
+					},
+				]),
+			);
+
+		const bovidsSubFamilies = [
+			"Antelope",
+			"Bovinae",
+			"Caprinae",
+			"Cephalophinae",
+		];
+		const bovidsQuestions = [
+			...[
+				"In which region is the biggest range of bovids to be found?",
+				"Most bovids have a preference for living in",
+				"Which of the following features do all bovids have in common?",
+			].map((stem) => ({
+				stem,
+				opts: ["Option A", "Option B", "Option C", "Option D"],
+				pin: null,
+				type: "mcq",
+			})),
+			...[
+				"can endure very harsh environments",
+				"includes the ox and the cow",
+				"may supplement its diet with meat",
+				"can usually move at speed",
+				"does not defend a particular area of land",
+			].map((stem) => ({ stem, opts: null, pin: null, type: "info" })),
+			...[
+				"What is the smallest species of Bovid called?",
+				"Which species of Bovinae has now died out?",
+				"What facilitates the movement of the sitatunga over wetland?",
+				"What sort of terrain do barbary sheep live in?",
+				"What is the only living member of the Antilocapridae sub-family?",
+			].map((stem) => ({ stem, opts: null, pin: null, type: "fill_blank" })),
+		];
+		const bovidsMcqInstruction = "Choose the correct letter, A, B, C or D.";
+		const bovidsInfoInstruction =
+			"Look at the following characteristics and the list of sub-families below.\nMatch each characteristic with the correct sub-family, A, B, C or D.\nNB You may use any letter more than once";
+		const bovidsFillInstruction =
+			"Answer the questions below.\nChoose NO MORE THAN THREE WORDS from the passage for each answer.\nWrite your answers in boxes 9-13 on your answer sheet.";
+		const bovidsPlainIntro = [
+			bovidsMcqInstruction,
+			bovidsInfoInstruction,
+			bovidsFillInstruction,
+		].join("\n");
+		const bovidsReview: Record<number, QuizReviewInfo> = Object.fromEntries(
+			bovidsQuestions.map((_, idx) => [
+				idx,
+				{
+					verdict: "correct" as const,
+					key: idx < 3 ? "D" : idx < 8 ? "B" : "auroch",
+					alts: "",
+					answer: idx < 3 ? "D" : idx < 8 ? "B" : "auroch",
+					note: "",
+				},
+			]),
+		);
+
+		it("Case 1 — Neanderthal Technology (!hasGroupSource, plain & inline body_html, mode take & review) tách đúng bank 6 headings (i–vi) + 5 places (A–E) và tách sạch hướng dẫn từng phần", () => {
+			for (const variant of [
+				{ name: "plain", intro: neanderthalPlainIntro, inline: false },
+				{ name: "inline", intro: neanderthalInlineIntro, inline: true },
+			]) {
+				const parts = buildQuizParts(
+					neanderthalQuestions,
+					"headings",
+					variant.intro,
+				);
+				const detail = baseDetail({
+					skill: "reading",
+					type: "headings",
+					intro: variant.intro,
+					optionBank: neanderthalCombinedBank,
+				});
+
+				for (const mode of ["take", "review"] as const) {
+					const { container, getByLabelText, unmount } = render(
+						<QuizPaper
+							detail={detail}
+							parts={parts}
+							answers={
+								mode === "review"
+									? { 0: "i", 5: "E", 11: "short", 13: "C" }
+									: {}
+							}
+							onAnswer={vi.fn()}
+							currentQuestion={null}
+							mode={mode}
+							review={mode === "review" ? neanderthalReview : undefined}
+						/>,
+					);
+
+					// Không còn top-level OptionBankList trộn 11 mục hay preamble lẫn
+					expect(hasTopLevelOptionBank(container)).toBe(false);
+					expect(
+						container.querySelector("article > div.text-muted-foreground"),
+					).toBeNull();
+
+					const sections = container.querySelectorAll("article section");
+					expect(sections).toHaveLength(4);
+
+					// Section 1: Q1–5 headings -> đúng 6 headings i–vi, KHÔNG chứa địa danh hay i–viii
+					const sec1 = sections[0];
+					const sec1Items = sectionBankItems(sec1);
+					expect(sec1Items).toHaveLength(6);
+					expect(sec1Items[0]).toContain("i Evidence of outdoor dwellings");
+					expect(sec1Items[5]).toContain("vi A vital source of power");
+					expect(sec1?.textContent).not.toContain("The Périgord region");
+					expect(sec1?.textContent).not.toContain("Krapina");
+					expect(sec1?.textContent).toContain("i-vi");
+					expect(sec1?.textContent).not.toContain("i–viii");
+					const q1Radios = sec1?.querySelectorAll(
+						"input[type='radio'][name='quiz-q-0']",
+					);
+					expect(q1Radios).toHaveLength(6);
+
+					// Section 2: Q6–10 info -> đúng 5 địa danh A–E, KHÔNG chứa "Which section" hay "A–H"
+					const sec2 = sections[1];
+					const sec2Items = sectionBankItems(sec2);
+					expect(sec2Items).toHaveLength(5);
+					expect(sec2Items[0]).toContain("A The Périgord region");
+					expect(sec2Items[4]).toContain("E Krapina");
+					expect(sec2?.textContent).toContain("A-E");
+					expect(sec2?.textContent).not.toContain("Which section");
+					expect(sec2?.textContent).not.toContain("A–H");
+					if (variant.inline) {
+						const select6 = getByLabelText(
+							"Chọn đáp án câu 6",
+						) as HTMLSelectElement;
+						const optionValues = Array.from(select6.options)
+							.map((opt) => opt.value)
+							.filter(Boolean);
+						expect(optionValues).toEqual(["A", "B", "C", "D", "E"]);
+					} else {
+						const q6Radios = Array.from(
+							sec2?.querySelectorAll("input[type='radio'][name='quiz-q-5']") ??
+								[],
+						).map((el) => (el as HTMLInputElement).value);
+						expect(q6Radios).toEqual(["A", "B", "C", "D", "E"]);
+					}
+
+					// Section 3: Q11–13 summary -> text input (không radio A–K), NO MORE THAN TWO WORDS
+					const sec3 = sections[2];
+					expect(sec3?.textContent).toContain("NO MORE THAN TWO WORDS");
+					expect(sec3?.textContent).not.toContain("ONE WORD ONLY");
+					expect(sectionBankItems(sec3)).toHaveLength(0);
+					expect(
+						sec3?.querySelectorAll("input[type='radio'][name='quiz-q-10']"),
+					).toHaveLength(0);
+					expect(getByLabelText("Điền đáp án câu 11")).not.toBeNull();
+
+					// Section 4: Q14 mcq -> giữ đủ 4 lựa chọn A–D
+					const sec4 = sections[3];
+					expect(
+						sec4?.querySelectorAll("input[type='radio'][name='quiz-q-13']"),
+					).toHaveLength(4);
+
+					unmount();
+				}
+			}
+		});
+
+		it("Case 2 — Neanderthal Technology (hasGroupSource === true kể cả khi instructionHtml trống) dùng fallback động i–vi và A–E theo đúng bank từng nhóm", () => {
+			const parts = buildQuizPartsFromGroups(
+				neanderthalQuestions,
+				[
+					{
+						id: "grp-1",
+						type: "headings",
+						instruction: "",
+						startIndex: 0,
+						count: 5,
+						optionBank: neanderthalHeadings,
+					},
+					{
+						id: "grp-2",
+						type: "info",
+						instruction: "",
+						startIndex: 5,
+						count: 5,
+						optionBank: neanderthalPlaces,
+					},
+					{
+						id: "grp-3",
+						type: "summary",
+						instruction: neanderthalSummaryInstruction,
+						startIndex: 10,
+						count: 3,
+						optionBank: [],
+					},
+					{
+						id: "grp-4",
+						type: "mcq",
+						instruction: neanderthalMcqInstruction,
+						startIndex: 13,
+						count: 1,
+						optionBank: [],
+					},
+				],
+				"headings",
+				"",
+			);
+
+			const { container } = render(
+				<QuizPaper
+					detail={baseDetail({
+						skill: "reading",
+						type: "headings",
+						intro: "",
+						optionBank: neanderthalCombinedBank,
+					})}
+					parts={parts}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="take"
+				/>,
+			);
+
+			expect(hasTopLevelOptionBank(container)).toBe(false);
+			const sections = container.querySelectorAll("article section");
+			expect(sections).toHaveLength(4);
+
+			expect(sectionBankItems(sections[0])).toHaveLength(6);
+			expect(sections[0]?.textContent).toContain("i–vi");
+			expect(sections[0]?.textContent).not.toContain("i–viii");
+
+			expect(sectionBankItems(sections[1])).toHaveLength(5);
+			expect(sections[1]?.textContent).toContain("A–E");
+			expect(sections[1]?.textContent).not.toContain("Which section");
+			expect(sections[1]?.textContent).not.toContain("A–H");
+		});
+
+		it("Case 3 — Bovids (cả hasGroupSource có/trống instructionHtml lẫn !hasGroupSource, take & review) gắn bank 4 sub-families A–D đúng trong Questions 4–8 và không còn 'Which section… A–H'", () => {
+			const groupedWithInstr = buildQuizPartsFromGroups(
+				bovidsQuestions,
+				[
+					{
+						id: "g1",
+						type: "mcq",
+						instruction: bovidsMcqInstruction,
+						startIndex: 0,
+						count: 3,
+						optionBank: [],
+					},
+					{
+						id: "g2",
+						type: "info",
+						instruction: bovidsInfoInstruction,
+						startIndex: 3,
+						count: 5,
+						optionBank: bovidsSubFamilies,
+					},
+					{
+						id: "g3",
+						type: "fill_blank",
+						instruction: bovidsFillInstruction,
+						startIndex: 8,
+						count: 5,
+						optionBank: [],
+					},
+				],
+				"mcq",
+				bovidsPlainIntro,
+			);
+			const groupedEmptyInstr = buildQuizPartsFromGroups(
+				bovidsQuestions,
+				[
+					{
+						id: "g1",
+						type: "mcq",
+						instruction: "",
+						startIndex: 0,
+						count: 3,
+						optionBank: [],
+					},
+					{
+						id: "g2",
+						type: "info",
+						instruction: "",
+						startIndex: 3,
+						count: 5,
+						optionBank: bovidsSubFamilies,
+					},
+					{
+						id: "g3",
+						type: "fill_blank",
+						instruction: bovidsFillInstruction,
+						startIndex: 8,
+						count: 5,
+						optionBank: [],
+					},
+				],
+				"mcq",
+				"",
+			);
+			const ungrouped = buildQuizParts(
+				bovidsQuestions,
+				"mcq",
+				bovidsPlainIntro,
+			);
+
+			const cases = [
+				{
+					parts: groupedWithInstr,
+					intro: bovidsPlainIntro,
+					expectMatchedFill: true,
+				},
+				{
+					parts: groupedEmptyInstr,
+					intro: "",
+					expectMatchedFill: true,
+				},
+				{
+					parts: ungrouped,
+					intro: bovidsPlainIntro,
+					expectMatchedFill: true,
+				},
+			];
+
+			for (const entry of cases) {
+				for (const mode of ["take", "review"] as const) {
+					const { container, unmount } = render(
+						<QuizPaper
+							detail={baseDetail({
+								skill: "reading",
+								type: "mcq",
+								intro: entry.intro,
+								optionBank: bovidsSubFamilies,
+							})}
+							parts={entry.parts}
+							answers={mode === "review" ? { 0: "D", 4: "B", 9: "auroch" } : {}}
+							onAnswer={vi.fn()}
+							currentQuestion={null}
+							mode={mode}
+							review={mode === "review" ? bovidsReview : undefined}
+						/>,
+					);
+
+					// Không đặt OptionBankList ở đầu bài trước Questions 1–3
+					expect(hasTopLevelOptionBank(container)).toBe(false);
+					expect(
+						container.querySelector("article > div.text-muted-foreground"),
+					).toBeNull();
+
+					const sections = container.querySelectorAll("article section");
+					expect(sections).toHaveLength(3);
+
+					// Section 1: MCQ không có bank list
+					expect(sectionBankItems(sections[0])).toHaveLength(0);
+
+					// Section 2: Questions 4–8 (info) có đúng 4 sub-families A–D, không "Which section" hay "A–H"
+					const sec2 = sections[1];
+					const sec2Items = sectionBankItems(sec2);
+					expect(sec2Items).toEqual([
+						"A Antelope",
+						"B Bovinae",
+						"C Caprinae",
+						"D Cephalophinae",
+					]);
+					expect(sec2?.textContent).not.toContain("Which section");
+					expect(sec2?.textContent).not.toContain("A–H");
+					const q4Radios = Array.from(
+						sec2?.querySelectorAll("input[type='radio'][name='quiz-q-3']") ??
+							[],
+					).map((el) => (el as HTMLInputElement).value);
+					expect(q4Radios).toEqual(["A", "B", "C", "D"]);
+
+					// Section 3: fill_blank giữ nguyên "Answer the questions below." + "NO MORE THAN THREE WORDS"
+					if (entry.expectMatchedFill) {
+						expect(sections[2]?.textContent).toContain(
+							"Answer the questions below.",
+						);
+						expect(sections[2]?.textContent).toContain(
+							"NO MORE THAN THREE WORDS",
+						);
+					}
+
+					unmount();
+				}
+			}
+		});
+
+		it("Case 4 — Fail-closed khi multi-bank thiếu range, positional 'Paragraph A..D' ẩn hộp thừa + fallback A–D, và bảo toàn guard #875 trên part source:'intro' trộn dạng", () => {
+			// 4a: Unpartitionable multi-bank (!hasGroupSource, headings + match_names không có range trong intro)
+			const unpartitionableParts = buildQuizParts(
+				[
+					{ stem: "Paragraph A", opts: null, pin: null, type: "headings" },
+					{ stem: "Statement 2", opts: null, pin: null, type: "match_names" },
+				],
+				"headings",
+				"",
+			);
+			const { container: c4a, unmount: u4a } = render(
+				<QuizPaper
+					detail={baseDetail({
+						skill: "reading",
+						type: "headings",
+						intro: "",
+						optionBank: [
+							"Heading 1",
+							"Heading 2",
+							"Heading 3",
+							"Dr. Alpha",
+							"Dr. Beta",
+						],
+					})}
+					parts={unpartitionableParts}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+				/>,
+			);
+			expect(hasTopLevelOptionBank(c4a)).toBe(true);
+			const sec4a = c4a.querySelectorAll("article section");
+			expect(sec4a[0]?.textContent).not.toContain("i–viii");
+			expect(sec4a[0]?.textContent).not.toContain("i–v");
+			expect(sec4a[1]?.textContent).not.toContain("A–H");
+			expect(sec4a[1]?.textContent).not.toContain("A–E");
+			u4a();
+
+			// 4b: Positional "Paragraph A..D" ẩn hộp OptionBankList thừa + fallback "Which section… A–D"
+			const positionalParts = buildQuizPartsFromGroups(
+				[{ stem: "Find this info", opts: null, pin: null, type: "info" }],
+				[
+					{
+						id: "pos-1",
+						type: "info",
+						instruction: "",
+						startIndex: 0,
+						count: 1,
+						optionBank: [
+							"Paragraph A",
+							"Paragraph B",
+							"Paragraph C",
+							"Paragraph D",
+						],
+					},
+				],
+				"info",
+				"",
+			);
+			const { container: c4b, unmount: u4b } = render(
+				<QuizPaper
+					detail={baseDetail({
+						skill: "reading",
+						type: "info",
+						intro: "",
+						optionBank: [
+							"Paragraph A",
+							"Paragraph B",
+							"Paragraph C",
+							"Paragraph D",
+						],
+					})}
+					parts={positionalParts}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+				/>,
+			);
+			expect(hasTopLevelOptionBank(c4b)).toBe(false);
+			expect(c4b.textContent).not.toContain("Ngân hàng lựa chọn");
+			expect(c4b.textContent).toContain(
+				"Which section contains the following information? Write the correct letter A–D.",
+			);
+			u4b();
+
+			// 4c: Part source:'intro' trộn headings + summary ở section 1, mcq ở section 2 -> summary vẫn là ô nhập chữ (#875 guard)
+			const mixedIntroParts: QuizPart[] = [
+				{
+					id: "intro-part-1",
+					label: "Questions 1–2",
+					qStart: 1,
+					typeId: "headings",
+					source: "intro",
+					instructionHtml: "<p>Choose the correct heading, i-iii.</p>",
+					questions: [
+						{
+							q: 0,
+							number: 1,
+							stem: "Paragraph A",
+							opts: null,
+							pin: null,
+							type: "headings",
+						},
+						{
+							q: 1,
+							number: 2,
+							stem: "The process took ____ (2).",
+							opts: null,
+							pin: null,
+							type: "summary",
+						},
+					],
+				},
+				{
+					id: "intro-part-2",
+					label: "Questions 3",
+					qStart: 3,
+					typeId: "mcq",
+					source: "intro",
+					instructionHtml: "<p>Choose the correct letter, A, B, C or D.</p>",
+					questions: [
+						{
+							q: 2,
+							number: 3,
+							stem: "Main point?",
+							opts: ["A1", "B1", "C1", "D1"],
+							pin: null,
+							type: "mcq",
+						},
+					],
+				},
+			];
+			const {
+				container: c4c,
+				getByLabelText: get4c,
+				unmount: u4c,
+			} = render(
+				<QuizPaper
+					detail={baseDetail({
+						skill: "reading",
+						type: "headings",
+						intro: "",
+						optionBank: ["Heading 1", "Heading 2", "Heading 3"],
+					})}
+					parts={mixedIntroParts}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+				/>,
+			);
+			expect(get4c("Điền đáp án câu 2")).not.toBeNull();
+			expect(
+				c4c.querySelectorAll("input[type='radio'][name='quiz-q-1']"),
+			).toHaveLength(0);
+			u4c();
+		});
+
+		it("Case 5 — Memoization theo keystroke: rerender 3 lần khi answers & currentQuestion thay đổi chỉ gọi scopeFlattenedOptionBank và deduplicateGroupIntroPreamble đúng 1 lần", () => {
+			const parts = buildQuizParts(
+				neanderthalQuestions,
+				"headings",
+				neanderthalPlainIntro,
+			);
+			const detail = baseDetail({
+				skill: "reading",
+				type: "headings",
+				intro: neanderthalPlainIntro,
+				optionBank: neanderthalCombinedBank,
+			});
+
+			vi.clearAllMocks();
+			const onAnswer = vi.fn();
+			const { rerender } = render(
+				<QuizPaper
+					detail={detail}
+					parts={parts}
+					answers={{}}
+					onAnswer={onAnswer}
+					currentQuestion={0}
+					mode="take"
+				/>,
+			);
+
+			rerender(
+				<QuizPaper
+					detail={detail}
+					parts={parts}
+					answers={{ 0: "v" }}
+					onAnswer={onAnswer}
+					currentQuestion={1}
+					mode="take"
+				/>,
+			);
+			rerender(
+				<QuizPaper
+					detail={detail}
+					parts={parts}
+					answers={{ 0: "v", 5: "E" }}
+					onAnswer={onAnswer}
+					currentQuestion={6}
+					mode="take"
+				/>,
+			);
+			rerender(
+				<QuizPaper
+					detail={detail}
+					parts={parts}
+					answers={{ 0: "v", 5: "E", 10: "sub-arctic" }}
+					onAnswer={onAnswer}
+					currentQuestion={10}
+					mode="take"
+				/>,
+			);
+
+			expect(
+				quizInstructionModule.scopeFlattenedOptionBank,
+			).toHaveBeenCalledTimes(1);
+			expect(
+				quizInstructionModule.deduplicateGroupIntroPreamble,
+			).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe("QuizPaper — direct streaming listening audio & retry", () => {
+		it("renders <audio> with crossOrigin and invokes onAudioError on media error", () => {
+			const onAudioError = vi.fn();
+			const { container } = render(
+				<QuizPaper
+					detail={baseDetail({
+						skill: "listening",
+						type: "form",
+						hasAudio: true,
+						audioName: "city-health-services.mp3",
+					})}
+					parts={buildQuizParts(
+						[{ stem: "Q1 ____", opts: null, pin: null, type: "form" }],
+						"form",
+						"",
+					)}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					audioSrc="https://api.example.com/api/student/practice/t1/audio"
+					audioCrossOrigin="use-credentials"
+					onAudioError={onAudioError}
+				/>,
+			);
+			const audio = container.querySelector(
+				'audio[data-testid="quiz-audio-player"]',
+			) as HTMLAudioElement | null;
+			expect(audio).not.toBeNull();
+			expect(audio?.getAttribute("src")).toBe(
+				"https://api.example.com/api/student/practice/t1/audio",
+			);
+			expect(audio?.getAttribute("crossorigin")).toBe("use-credentials");
+			expect(container.textContent).not.toContain("Đang tải file nghe…");
+
+			if (audio) fireEvent.error(audio);
+			expect(onAudioError).toHaveBeenCalledTimes(1);
+		});
+
+		it("shows error alert with retry button even when audioSrc is still present and calls onAudioRetry on click", () => {
+			const onAudioRetry = vi.fn();
+			const { container } = render(
+				<QuizPaper
+					detail={baseDetail({
+						skill: "listening",
+						type: "form",
+						hasAudio: true,
+						audioName: "city-health-services.mp3",
+					})}
+					parts={buildQuizParts(
+						[{ stem: "Q1 ____", opts: null, pin: null, type: "form" }],
+						"form",
+						"",
+					)}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					audioSrc="https://api.example.com/api/student/practice/t1/audio"
+					audioError={true}
+					onAudioRetry={onAudioRetry}
+				/>,
+			);
+			expect(
+				container.querySelector('audio[data-testid="quiz-audio-player"]'),
+			).toBeNull();
+			const alert = container.querySelector('[role="alert"]');
+			expect(alert?.textContent).toContain("Không tải được file nghe.");
+			const retryBtn = container.querySelector("button");
+			expect(retryBtn?.textContent).toBe("Thử lại");
+			if (retryBtn) fireEvent.click(retryBtn);
+			expect(onAudioRetry).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe("QuizPaper — Talking about the history of bikes Q5 & City Health Services listening isolation", () => {
+		it("renders Bikes Q5 'easier; ride' inline input matching key 'more smoothly' and isolates Q8-10 mcq_many across take/review and grouped/ungrouped", () => {
+			const bikesTableInstruction =
+				"<p>Complete the table below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.</p>" +
+				"<h3><strong>Talking about the history of bikes</strong></h3>" +
+				"<table><tbody>" +
+				"<tr><td><p><strong>Years/Time</strong></p></td><td><p><strong>Feature</strong></p></td><td><p><strong>Advantage</strong></p></td><td><p><strong>Disadvantage</strong></p></td></tr>" +
+				"<tr><td><p>1830s</p></td><td><p>wooden wheels covered with metal</p></td><td><p>need <strong>(1)</strong> than walking</p></td><td><p>quite <strong>(2)</strong></p></td></tr>" +
+				"<tr><td><p><strong>(3)</strong></p></td><td><p>Chain and sprocket are <strong>(4)</strong></p></td><td><p>easier; ride <strong>(5)</strong></p></td><td><p>harder to balance</p></td></tr>" +
+				"<tr><td><p>1880s</p></td><td><p>use <strong>(6)</strong></p></td><td><p>more comfortable</p></td><td><p>The faster you go, the more you feel every bump.</p></td></tr>" +
+				"<tr><td><p>1890s</p></td><td><p>equal-sized wheels</p></td><td><p><strong>(7)</strong></p></td><td><p>dangerous before brakes appeared</p></td></tr>" +
+				"</tbody></table>";
+			const bikesMcqManyInstruction =
+				"<p>Choose THREE letters, A-F, and write them next to questions 8-10. The invention of different gears on a bicycle affected which THREE of the following?</p>";
+			const flattenedIntro = `${bikesTableInstruction}\n${bikesMcqManyInstruction}`;
+
+			const bikesGradedQuestions = [
+				{
+					stem: "need ____ than walking",
+					opts: null,
+					answer: "less effort",
+					alts: "",
+					type: "tablecomp",
+					pin: null,
+				},
+				{
+					stem: "quite ____",
+					opts: null,
+					answer: "uncomfortable",
+					alts: "",
+					type: "tablecomp",
+					pin: null,
+				},
+				{
+					stem: "____",
+					opts: null,
+					answer: "1860s",
+					alts: "",
+					type: "tablecomp",
+					pin: null,
+				},
+				{
+					stem: "Chain and sprocket are ____",
+					opts: null,
+					answer: "connected",
+					alts: "",
+					type: "tablecomp",
+					pin: null,
+				},
+				{
+					stem: "easier; ride ____",
+					opts: null,
+					answer: "more smoothly",
+					alts: "",
+					type: "tablecomp",
+					pin: null,
+				},
+				{
+					stem: "use ____",
+					opts: null,
+					answer: "rubber wheels",
+					alts: "",
+					type: "tablecomp",
+					pin: null,
+				},
+				{
+					stem: "____",
+					opts: null,
+					answer: "safer",
+					alts: "",
+					type: "tablecomp",
+					pin: null,
+				},
+				{
+					stem: "Choose THREE letters, A-F, and write them next to questions 8-10. The invention of different gears on a bicycle affected which THREE of the following?",
+					opts: [
+						"Wheel size",
+						"Balance",
+						"Rate of speed",
+						"The back wheel",
+						"Safety",
+						"Downhill travel",
+					],
+					answer: "C",
+					alts: "",
+					type: "mcq_many",
+					pin: null,
+					answerSet: "set-2",
+				},
+				{
+					stem: "Choose THREE letters, A-F, and write them next to questions 8-10. The invention of different gears on a bicycle affected which THREE of the following?",
+					opts: [
+						"Wheel size",
+						"Balance",
+						"Rate of speed",
+						"The back wheel",
+						"Safety",
+						"Downhill travel",
+					],
+					answer: "D",
+					alts: "",
+					type: "mcq_many",
+					pin: null,
+					answerSet: "set-2",
+				},
+				{
+					stem: "Choose THREE letters, A-F, and write them next to questions 8-10. The invention of different gears on a bicycle affected which THREE of the following?",
+					opts: [
+						"Wheel size",
+						"Balance",
+						"Rate of speed",
+						"The back wheel",
+						"Safety",
+						"Downhill travel",
+					],
+					answer: "F",
+					alts: "",
+					type: "mcq_many",
+					pin: null,
+					answerSet: "set-2",
+				},
+			];
+
+			const gradedCorrect = gradeQuiz(bikesGradedQuestions, {
+				"4": "more smoothly",
+			});
+			expect(gradedCorrect.verdicts[4]).toBe("correct");
+
+			const gradedWrong = gradeQuiz(bikesGradedQuestions, { "4": "smoother" });
+			expect(gradedWrong.verdicts[4]).toBe("wrong");
+
+			const studentQuestions = bikesGradedQuestions.map(
+				({ answer: _a, alts: _al, ...q }) => q,
+			);
+			const groups = [
+				{
+					id: "g1",
+					type: "tablecomp",
+					instruction: bikesTableInstruction,
+					startIndex: 0,
+					count: 7,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+				{
+					id: "g2",
+					type: "mcq_many",
+					instruction: bikesMcqManyInstruction,
+					startIndex: 7,
+					count: 3,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+			];
+
+			const partVariants = [
+				{
+					label: "grouped",
+					parts: buildQuizPartsFromGroups(
+						studentQuestions,
+						groups,
+						"tablecomp",
+						flattenedIntro,
+					),
+				},
+				{
+					label: "ungrouped",
+					parts: buildQuizParts(studentQuestions, "tablecomp", flattenedIntro),
+				},
+			];
+
+			const reviewCorrect: Record<number, QuizReviewInfo> = {
+				4: {
+					verdict: "correct",
+					key: "more smoothly",
+					alts: "",
+					answer: "more smoothly",
+					note: "",
+				},
+			};
+			const reviewWrong: Record<number, QuizReviewInfo> = {
+				4: {
+					verdict: "wrong",
+					key: "more smoothly",
+					alts: "",
+					answer: "smoother",
+					note: "",
+				},
+			};
+
+			for (const variant of partVariants) {
+				for (const mode of ["take", "review"] as const) {
+					cleanup();
+					const { container } = render(
+						<QuizPaper
+							detail={baseDetail({
+								skill: "listening",
+								type: "tablecomp",
+								passage: "",
+								intro: flattenedIntro,
+								hasAudio: true,
+								audioName: "unknown-s4-talking-about-the-history-of-bikes.mp3",
+							})}
+							parts={variant.parts}
+							answers={mode === "review" ? { 4: "more smoothly" } : {}}
+							onAnswer={vi.fn()}
+							currentQuestion={null}
+							mode={mode}
+							review={mode === "review" ? reviewCorrect : undefined}
+						/>,
+					);
+
+					const sections = Array.from(container.querySelectorAll("section"));
+					expect(sections, `${variant.label}/${mode}`).toHaveLength(2);
+					const tableSection = sections[0];
+					const mcqSection = sections[1];
+					expect(tableSection?.textContent).toContain("easier; ride");
+					expect(tableSection?.textContent).not.toContain("easier and");
+					expect(tableSection?.textContent).not.toContain(
+						"Choose THREE letters",
+					);
+
+					const q5Input = tableSection?.querySelector(
+						'input[aria-label="Điền đáp án câu 5"]',
+					) as HTMLInputElement | null;
+					expect(q5Input, `${variant.label}/${mode} q5 input`).not.toBeNull();
+					expect(q5Input?.closest("td")?.textContent).toContain("easier; ride");
+					if (mode === "review") {
+						const q5Slot = tableSection?.querySelector(
+							'[data-testid="quiz-inline-slot"][data-question="4"]',
+						);
+						expect(q5Slot?.getAttribute("data-verdict")).toBe("correct");
+					}
+
+					// Q8-10 mcq_many instruction stays inside Questions 8-10 and never leaks to introPreamble
+					expect(mcqSection?.textContent).toContain(
+						"Choose THREE letters, A-F, and write them next to questions 8-10.",
+					);
+					const fullText = container.textContent ?? "";
+					const mcqText = mcqSection?.textContent ?? "";
+					const totalMatches =
+						fullText.match(/Choose THREE letters, A-F/g)?.length ?? 0;
+					const insideMcqMatches =
+						mcqText.match(/Choose THREE letters, A-F/g)?.length ?? 0;
+					expect(totalMatches).toBeGreaterThanOrEqual(1);
+					expect(totalMatches - insideMcqMatches).toBe(0);
+				}
+
+				// Review wrong answer displays inline key -> more smoothly beside Q5 slot
+				cleanup();
+				const { container: wrongContainer } = render(
+					<QuizPaper
+						detail={baseDetail({
+							skill: "listening",
+							type: "tablecomp",
+							passage: "",
+							intro: flattenedIntro,
+						})}
+						parts={variant.parts}
+						answers={{ 4: "smoother" }}
+						onAnswer={vi.fn()}
+						currentQuestion={null}
+						mode="review"
+						review={reviewWrong}
+					/>,
+				);
+				const q5WrongSlot = wrongContainer.querySelector(
+					'[data-testid="quiz-inline-slot"][data-question="4"]',
+				);
+				expect(q5WrongSlot?.getAttribute("data-verdict")).toBe("wrong");
+				expect(
+					q5WrongSlot?.querySelector('[data-testid="quiz-inline-key"]')
+						?.textContent,
+				).toContain("more smoothly");
+			}
+		});
+
+		it("isolates City Health Services 'Choose the correct answer.' strictly inside Questions 5-7 across take/review and grouped/ungrouped", () => {
+			const formInstruction =
+				"<p>Complete the form below. Write NO MORE THAN TWO WORDS for each answer.</p>" +
+				"<h3><strong>HOUSE SERVICE INFORMATION</strong></h3>" +
+				'<table><tbody><tr><td colspan="1" rowspan="1"><ul>' +
+				"<li>Name: Barbara Hill</li>" +
+				"<li>Location: <strong>(1)</strong> London</li>" +
+				"<li>Postcode: SW105</li>" +
+				"<li>Rooms: two <strong>(2)</strong> bedrooms</li>" +
+				"<li>The other room used as: an <strong>(3)</strong></li>" +
+				"<li>Downstairs: kitchen-diner, conservatory, and <strong>(4)</strong></li>" +
+				"</ul></td></tr></tbody></table>";
+			const mcqInstruction = "<p>Choose the correct answer.</p>";
+			const sentInstruction =
+				"<p>Complete the sentences below. Write ONE WORD AND/OR A NUMBER for each answer.</p>" +
+				'<table><tbody><tr><td colspan="1" rowspan="1"><ul>' +
+				"<li>The agent's address is 12 <strong>(8)</strong> Road.</li>" +
+				"<li>Her house will get cleaned next <strong>(9)</strong></li>" +
+				"<li>The maximum time of cleaning service is <strong>(10)</strong> hours</li>" +
+				"</ul></td></tr></tbody></table>";
+			const flattenedIntro = [
+				formInstruction,
+				mcqInstruction,
+				sentInstruction,
+			].join("\n");
+
+			const cityQuestions = [
+				{
+					stem: "Location: ____ London",
+					opts: null,
+					pin: null,
+					type: "form",
+				},
+				{
+					stem: "Rooms: two ____ bedrooms",
+					opts: null,
+					pin: null,
+					type: "form",
+				},
+				{
+					stem: "The other room used as: an ____",
+					opts: null,
+					pin: null,
+					type: "form",
+				},
+				{
+					stem: "Downstairs: kitchen-diner, conservatory, and ____",
+					opts: null,
+					pin: null,
+					type: "form",
+				},
+				{
+					stem: "Which of these extra services does the customer agree to do?",
+					opts: [
+						"Change the bed linen",
+						"Do some gardening work",
+						"Clean the glass",
+					],
+					pin: null,
+					type: "mcq1",
+				},
+				{
+					stem: "What does the customer want cleaned every three months?",
+					opts: ["Curtains", "Carpets", "Mats"],
+					pin: null,
+					type: "mcq1",
+				},
+				{
+					stem: "What does the customer want done with clothes?",
+					opts: [
+						"Wash and iron the clothes",
+						"Iron the clothes",
+						"Clean and dry the clothes",
+					],
+					pin: null,
+					type: "mcq1",
+				},
+				{
+					stem: "The agent's address is 12 ____ Road.",
+					opts: null,
+					pin: null,
+					type: "sent4",
+				},
+				{
+					stem: "Her house will get cleaned next ____",
+					opts: null,
+					pin: null,
+					type: "sent4",
+				},
+				{
+					stem: "The maximum time of cleaning service is ____ hours",
+					opts: null,
+					pin: null,
+					type: "sent4",
+				},
+			];
+			const groups = [
+				{
+					id: "g1",
+					type: "form",
+					instruction: formInstruction,
+					startIndex: 0,
+					count: 4,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+				{
+					id: "g2",
+					type: "mcq1",
+					instruction: mcqInstruction,
+					startIndex: 4,
+					count: 3,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+				{
+					id: "g3",
+					type: "sent4",
+					instruction: sentInstruction,
+					startIndex: 7,
+					count: 3,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+			];
+
+			const partVariants = [
+				{
+					label: "grouped",
+					parts: buildQuizPartsFromGroups(
+						cityQuestions,
+						groups,
+						"form",
+						flattenedIntro,
+					),
+				},
+				{
+					label: "ungrouped",
+					parts: buildQuizParts(cityQuestions, "form", flattenedIntro),
+				},
+			];
+
+			for (const variant of partVariants) {
+				for (const mode of ["take", "review"] as const) {
+					cleanup();
+					const { container } = render(
+						<QuizPaper
+							detail={baseDetail({
+								skill: "listening",
+								type: "form",
+								passage: "",
+								intro: flattenedIntro,
+								hasAudio: true,
+								audioName: "actual-test-s1-city-health-services.mp3",
+							})}
+							parts={variant.parts}
+							answers={{}}
+							onAnswer={vi.fn()}
+							currentQuestion={null}
+							mode={mode}
+							review={
+								mode === "review"
+									? {
+											0: {
+												verdict: "skipped",
+												key: "Southwest",
+												alts: "South-west / South West",
+												answer: "",
+												note: "",
+											},
+										}
+									: undefined
+							}
+						/>,
+					);
+
+					const sections = Array.from(container.querySelectorAll("section"));
+					expect(sections, `${variant.label}/${mode}`).toHaveLength(3);
+					const formSection = sections[0];
+					const mcqSection = sections[1];
+					const sentSection = sections[2];
+
+					expect(formSection?.textContent).toContain(
+						"Complete the form below. Write NO MORE THAN TWO WORDS for each answer.",
+					);
+					expect(formSection?.textContent).not.toContain(
+						"Choose the correct answer.",
+					);
+					expect(
+						formSection?.querySelector('input[aria-label="Điền đáp án câu 1"]'),
+					).not.toBeNull();
+
+					expect(mcqSection?.textContent).toContain(
+						"Choose the correct answer.",
+					);
+
+					expect(sentSection?.textContent).toContain(
+						"Complete the sentences below. Write ONE WORD AND/OR A NUMBER for each answer.",
+					);
+					expect(sentSection?.textContent).not.toContain(
+						"Choose the correct answer.",
+					);
+					expect(
+						sentSection?.querySelector('input[aria-label="Điền đáp án câu 8"]'),
+					).not.toBeNull();
+
+					// Must appear exactly once in the entire rendered paper (inside Questions 5-7 only)
+					const occurrences =
+						(container.textContent ?? "").match(/Choose the correct answer\./g)
+							?.length ?? 0;
+					expect(occurrences, `${variant.label}/${mode}`).toBe(1);
+				}
+			}
+		});
 	});
 });

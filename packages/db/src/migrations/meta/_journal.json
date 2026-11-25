@@ -610,6 +610,34 @@
       "when": 1795502906998,
       "tag": "0086_class_opening_email",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "6",
+      "when": 1795522529083,
+      "tag": "0087_backfill_assignment_prompt_groups",
+      "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "6",
+      "when": 1795538532220,
+      "tag": "0088_nostalgic_arachne",
+      "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "6",
+      "when": 1795553780817,
+      "tag": "0089_fix_listening_bikes_q5_blank",
+      "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "6",
+      "when": 1795583597884,
+      "tag": "0090_concerned_mach_iv",
+      "breakpoints": true
     }
   ]
 }

@@ -165,6 +165,20 @@ function stripMarker(block: string): string {
 	return (wrapper[1] ?? "") + inner + (wrapper[4] ?? "");
 }
 
+/** Tách một chuỗi intro thành các block top-level độc lập (HTML block hoặc dòng text thuần). */
+export function splitIntroBlocks(text: string): string[] {
+	const trimmed = text.trim();
+	if (!trimmed) return [];
+	const isHtml = TAG_RE.test(trimmed);
+	if (isHtml) {
+		return splitHtmlBlocks(trimmed).flatMap(splitParagraphBlocks);
+	}
+	return trimmed
+		.split("\n")
+		.map((line) => line.trim())
+		.filter(Boolean);
+}
+
 export function splitQuizIntro(
 	intro: string,
 	questionCount: number,

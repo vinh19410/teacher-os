@@ -706,30 +706,213 @@ export function canReplaySpeakingPrompt(session) {
 	);
 }
 
-export function resolveSpeakingUploadMeta(blobType) {
-	const base = String(blobType ?? "")
-		.split(";")[0]
-		.trim()
-		.toLowerCase();
+const BANNED_IMAGE_FTYP_BRANDS = new Set([
+	"heic",
+	"heix",
+	"hevc",
+	"hevx",
+	"mif1",
+	"msf1",
+	"avif",
+	"avis",
+	"jp2 ",
+	"qt  ",
+]);
+
+const IN_APP_BROWSER_RE =
+	/zalo|fban|fbav|fb_iab|messenger|instagram|line\/|bytedancewebview|musical_ly|tiktok/i;
+
+function toUint8Array(input) {
+	if (!input) return null;
+	if (input instanceof Uint8Array) return input;
+	if (input instanceof ArrayBuffer) return new Uint8Array(input);
+	if (ArrayBuffer.isView(input)) {
+		return new Uint8Array(input.buffer, input.byteOffset, input.byteLength);
+	}
+	return null;
+}
+
+function hasBytesAt(buf, offset, expected) {
+	if (buf.byteLength < offset + expected.length) return false;
+	for (let i = 0; i < expected.length; i += 1) {
+		if (buf[offset + i] !== expected[i]) return false;
+	}
+	return true;
+}
+
+function readFourCcAlnumSpace(buf, offset) {
+	if (buf.byteLength < offset + 4) return null;
+	let out = "";
+	for (let i = 0; i < 4; i += 1) {
+		const b = buf[offset + i] ?? 0;
+		const valid =
+			b === 0x20 ||
+			(b >= 0x30 && b <= 0x39) ||
+			(b >= 0x41 && b <= 0x5a) ||
+			(b >= 0x61 && b <= 0x7a);
+		if (!valid) return null;
+		out += String.fromCharCode(b);
+	}
+	return out;
+}
+
+/**
+ * Inspects leading bytes of recorded speaking audio to identify its canonical
+ * MIME type, matching the server's magic-byte signatures.
+ */
+export function detectSpeakingAudioMimeFromBytes(headBytes) {
+	const bytes = toUint8Array(headBytes);
+	if (!bytes || bytes.byteLength < 3) return null;
+
+	// WAV: RIFF....WAVE or RF64....WAVE
+	if (
+		bytes.byteLength >= 12 &&
+		(hasBytesAt(bytes, 0, [0x52, 0x49, 0x46, 0x46]) ||
+			hasBytesAt(bytes, 0, [0x52, 0x46, 0x36, 0x34])) &&
+		hasBytesAt(bytes, 8, [0x57, 0x41, 0x56, 0x45])
+	) {
+		return "audio/wav";
+	}
+
+	// ISO BMFF / MP4 / M4A: ....ftyp with valid box size & non-image/non-QuickTime 4CC major brand
+	if (
+		bytes.byteLength >= 16 &&
+		hasBytesAt(bytes, 4, [0x66, 0x74, 0x79, 0x70])
+	) {
+		const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+		const rawSize = view.getUint32(0, false);
+		let effectiveSize = rawSize;
+		let brandOffset = 8;
+		let sizeValid = true;
+		if (rawSize === 1) {
+			if (bytes.byteLength < 24 || view.getUint32(8, false) !== 0) {
+				sizeValid = false;
+			} else {
+				effectiveSize = view.getUint32(12, false);
+				if (effectiveSize < 24) sizeValid = false;
+				brandOffset = 16;
+			}
+		} else if (rawSize < 16) {
+			sizeValid = false;
+		}
+		if (sizeValid && effectiveSize <= 4096 && effectiveSize % 4 === 0) {
+			const brand = readFourCcAlnumSpace(bytes, brandOffset);
+			if (brand !== null && !BANNED_IMAGE_FTYP_BRANDS.has(brand)) {
+				return "audio/mp4";
+			}
+		}
+		return null;
+	}
+
+	// WebM / Matroska EBML header
+	if (hasBytesAt(bytes, 0, [0x1a, 0x45, 0xdf, 0xa3])) {
+		return "audio/webm";
+	}
+
+	// Ogg container ("OggS")
+	if (hasBytesAt(bytes, 0, [0x4f, 0x67, 0x67, 0x53])) {
+		return "audio/ogg";
+	}
+
+	// MP3: ID3v2 header or MPEG Audio Layer 3 frame sync
+	if (hasBytesAt(bytes, 0, [0x49, 0x44, 0x33])) {
+		return "audio/mpeg";
+	}
+	const b0 = bytes[0];
+	const b1 = bytes[1];
+	const b2 = bytes[2];
+	if (
+		b0 === 0xff &&
+		(b1 & 0xe0) === 0xe0 &&
+		(b1 & 0x18) !== 0x08 &&
+		(b1 & 0x06) === 0x02 &&
+		(b2 & 0xf0) !== 0x00 &&
+		(b2 & 0xf0) !== 0xf0 &&
+		(b2 & 0x0c) !== 0x0c
+	) {
+		return "audio/mpeg";
+	}
+
+	// AAC: ADTS frame sync
+	if (b0 === 0xff && (b1 & 0xf6) === 0xf0 && ((b2 >> 2) & 0x0f) < 13) {
+		return "audio/aac";
+	}
+
+	return null;
+}
+
+export function resolveSpeakingUploadMeta(blobType, headBytes = null) {
+	const detected = headBytes
+		? detectSpeakingAudioMimeFromBytes(headBytes)
+		: null;
+	const base =
+		detected ||
+		String(blobType ?? "")
+			.split(";")[0]
+			.trim()
+			.toLowerCase();
 	switch (base) {
 		case "video/webm":
 		case "audio/webm":
 			return { contentType: "audio/webm", filename: "speaking.webm" };
 		case "audio/mp4":
+		case "video/mp4":
+		case "audio/x-m4a":
+		case "audio/m4a":
+		case "audio/mp4a-latm":
 			return { contentType: "audio/mp4", filename: "speaking.m4a" };
 		case "audio/ogg":
+		case "audio/opus":
+		case "audio/x-opus+ogg":
+		case "audio/x-vorbis+ogg":
+		case "video/ogg":
+		case "application/ogg":
 			return { contentType: "audio/ogg", filename: "speaking.ogg" };
 		case "audio/mpeg":
 		case "audio/mp3":
+		case "audio/x-mp3":
+		case "audio/x-mpeg":
+		case "audio/mpeg3":
+		case "audio/x-mpeg-3":
 			return { contentType: "audio/mpeg", filename: "speaking.mp3" };
 		case "audio/wav":
 		case "audio/x-wav":
+		case "audio/wave":
+		case "audio/vnd.wave":
 			return { contentType: "audio/wav", filename: "speaking.wav" };
 		case "audio/aac":
+		case "audio/x-aac":
+		case "audio/aacp":
+		case "audio/vnd.dlna.adts":
+		case "audio/adts":
+		case "audio/x-hx-aac-adts":
 			return { contentType: "audio/aac", filename: "speaking.aac" };
 		default:
 			return { contentType: "audio/webm", filename: "speaking.webm" };
 	}
+}
+
+/**
+ * Detects common mobile in-app WebViews where microphone or MediaRecorder
+ * access frequently fails compared to Safari or Chrome.
+ */
+export function isLikelyInAppBrowser(userAgent = "") {
+	return IN_APP_BROWSER_RE.test(String(userAgent ?? ""));
+}
+
+/**
+ * Classifies whether a Speaking media upload failure is transient and safe to
+ * retry automatically (network error / timeout / rate limit / 5xx).
+ */
+export function isRetryableSpeakingUploadError(status) {
+	if (status === 0 || status === null || status === undefined) {
+		return true;
+	}
+	const code = Number(status);
+	if (!Number.isFinite(code)) {
+		return true;
+	}
+	return code === 0 || code === 408 || code === 429 || code >= 500;
 }
 
 export const SPEAKING_RECORDER_MIME_CANDIDATES = [

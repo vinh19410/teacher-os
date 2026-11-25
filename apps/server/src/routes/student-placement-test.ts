@@ -15,11 +15,13 @@ import {
 	PLACEMENT_SPEAKING_MEDIA_MAX_BYTES,
 	PLACEMENT_UPLOAD_TOKEN_TTL_MS,
 	type PlacementObjectiveResult,
+	type PlacementPublishedSpeakingTask,
 	type PlacementSnapshot,
 	parseStoredSpeakingCriterionComments,
 	parseStoredSpeakingRubric,
 	parseStoredWritingCriterionComments,
 	parseStoredWritingRubric,
+	type StudentPlacementSpeakingTokenResponse,
 	type StudentPlacementStatus,
 	type StudentPlacementStatusResponse,
 	type StudentPlacementSubmissionView,
@@ -100,6 +102,64 @@ function rewriteStudentAudioSrc(src: string): string {
 		return `${STUDENT_AUDIO_SRC_PREFIX}${id}`;
 	}
 	return src;
+}
+
+/**
+ * Trích danh sách câu hỏi Speaking đã sanitize từ snapshot của bài nộp đang
+ * chờ tải lên audio (chỉ giữ trường đề Speaking và chuyển URL audio sang proxy
+ * học viên, tuyệt đối không trả đáp án hay các phần khác của đề).
+ */
+function extractSanitizedSpeakingTasks(
+	snapshotJson: string,
+): PlacementPublishedSpeakingTask[] | null {
+	const parsed = parseJsonOr<Partial<PlacementSnapshot>>(snapshotJson, {});
+	const parts = Array.isArray(parsed.parts) ? parsed.parts : [];
+	const speakingPart =
+		parts.find(
+			(
+				part,
+			): part is {
+				id: "speaking";
+				title: string;
+				tasks: PlacementPublishedSpeakingTask[];
+			} => part?.id === "speaking",
+		) ?? parts[4];
+	if (
+		!speakingPart ||
+		typeof speakingPart !== "object" ||
+		!("tasks" in speakingPart) ||
+		!Array.isArray(speakingPart.tasks)
+	) {
+		return null;
+	}
+	const tasks: PlacementPublishedSpeakingTask[] = [];
+	for (const raw of speakingPart.tasks) {
+		if (!raw || typeof raw !== "object") continue;
+		const task = raw as Partial<PlacementPublishedSpeakingTask>;
+		if (typeof task.id !== "string" || typeof task.prompt !== "string") {
+			continue;
+		}
+		tasks.push({
+			id: task.id,
+			partLabel: typeof task.partLabel === "string" ? task.partLabel : "",
+			level: typeof task.level === "string" ? task.level : "",
+			prompt: task.prompt,
+			prepSeconds:
+				typeof task.prepSeconds === "number" &&
+				Number.isFinite(task.prepSeconds)
+					? task.prepSeconds
+					: 0,
+			answerSeconds:
+				typeof task.answerSeconds === "number" &&
+				Number.isFinite(task.answerSeconds)
+					? task.answerSeconds
+					: 0,
+			...(typeof task.src === "string"
+				? { src: task.src ? rewriteStudentAudioSrc(task.src) : "" }
+				: {}),
+		});
+	}
+	return tasks.length > 0 ? tasks : null;
 }
 
 /**
@@ -377,6 +437,12 @@ export function studentPlacementTestRoutes(
 		}
 
 		const statusFields = buildStudentPlacementStatus(s, sub, loadedTest);
+		const speakingTasks =
+			sub &&
+			sub.status === "pending_grading" &&
+			sub.speakingStatus === "pending_upload"
+				? extractSanitizedSpeakingTasks(sub.snapshotJson)
+				: null;
 		const response: StudentPlacementViewResponse = {
 			...statusFields,
 			snapshot:
@@ -384,6 +450,7 @@ export function studentPlacementTestRoutes(
 					? sanitizeStudentSnapshot(loadedTest.snapshot)
 					: null,
 			submission: sub ? toStudentPlacementSubmissionView(sub) : null,
+			speakingTasks,
 		};
 
 		return c.json(response);
@@ -727,6 +794,88 @@ export function studentPlacementTestRoutes(
 		return c.json(response, 201);
 	});
 
+	router.post(
+		"/placement-test/submissions/:id/speaking-upload-token",
+		async (c) => {
+			c.header("Cache-Control", "no-store");
+			const submissionId = c.req.param("id") ?? "";
+			if (!submissionId) {
+				return c.json({ error: "not found" }, 404);
+			}
+
+			const { student: s, orgId } = c.get("studentCtx");
+			const db = deps.getDb();
+
+			const [sub] = await db
+				.select()
+				.from(placementTestSubmission)
+				.where(
+					and(
+						eq(placementTestSubmission.id, submissionId),
+						eq(placementTestSubmission.orgId, orgId),
+						eq(placementTestSubmission.studentId, s.id),
+					),
+				)
+				.limit(1);
+
+			if (!sub) {
+				return c.json({ error: "not found" }, 404);
+			}
+
+			if (
+				sub.status !== "pending_grading" ||
+				sub.speakingStatus !== "pending_upload"
+			) {
+				return c.json(
+					{
+						error: "SPEAKING_UPLOAD_NOT_PENDING",
+						code: "SPEAKING_UPLOAD_NOT_PENDING",
+					},
+					409,
+				);
+			}
+
+			const uploadToken = randomTokenHex(32);
+			const uploadTokenHash = await sha256Hex(uploadToken);
+			const nowMs = Date.now();
+			const uploadTokenExpiresAtMs = nowMs + PLACEMENT_UPLOAD_TOKEN_TTL_MS;
+
+			const updated = await db
+				.update(placementTestSubmission)
+				.set({
+					uploadTokenHash,
+					uploadTokenExpiresAt: new Date(uploadTokenExpiresAtMs),
+					updatedAt: new Date(nowMs),
+				})
+				.where(
+					and(
+						eq(placementTestSubmission.id, sub.id),
+						eq(placementTestSubmission.orgId, orgId),
+						eq(placementTestSubmission.studentId, s.id),
+						eq(placementTestSubmission.status, "pending_grading"),
+						eq(placementTestSubmission.speakingStatus, "pending_upload"),
+					),
+				)
+				.returning({ id: placementTestSubmission.id });
+
+			if (updated.length === 0) {
+				return c.json(
+					{
+						error: "SPEAKING_UPLOAD_NOT_PENDING",
+						code: "SPEAKING_UPLOAD_NOT_PENDING",
+					},
+					409,
+				);
+			}
+
+			const response: StudentPlacementSpeakingTokenResponse = {
+				uploadToken,
+				uploadTokenExpiresAt: new Date(uploadTokenExpiresAtMs).toISOString(),
+			};
+			return c.json(response);
+		},
+	);
+
 	router.put("/placement-test/submissions/:id/speaking", async (c) => {
 		c.header("Cache-Control", "no-store");
 		const store = deps.getMediaStore?.();
@@ -780,6 +929,19 @@ export function studentPlacementTestRoutes(
 		const providedHash = await sha256Hex(uploadToken);
 		if (!constantTimeEqualHex(providedHash, sub.uploadTokenHash)) {
 			return c.json({ error: "UPLOAD_TOKEN_INVALID" }, 401);
+		}
+
+		if (
+			sub.status !== "pending_grading" ||
+			sub.speakingStatus !== "pending_upload"
+		) {
+			return c.json(
+				{
+					error: "SPEAKING_UPLOAD_NOT_PENDING",
+					code: "SPEAKING_UPLOAD_NOT_PENDING",
+				},
+				409,
+			);
 		}
 
 		const rawFileName = c.req.header("X-Media-Filename") ?? "speaking.webm";
@@ -873,6 +1035,8 @@ export function studentPlacementTestRoutes(
 						eq(placementTestSubmission.id, sub.id),
 						eq(placementTestSubmission.orgId, orgId),
 						eq(placementTestSubmission.studentId, s.id),
+						eq(placementTestSubmission.status, "pending_grading"),
+						eq(placementTestSubmission.speakingStatus, "pending_upload"),
 						eq(placementTestSubmission.uploadTokenHash, sub.uploadTokenHash),
 					),
 				)
@@ -887,7 +1051,10 @@ export function studentPlacementTestRoutes(
 			return c.json({ error: "UPLOAD_CONFLICT" }, 409);
 		}
 
-		schedulePlacementAiTask(deps, runPlacementAiGrading(deps, sub.id));
+		schedulePlacementAiTask(
+			deps,
+			runPlacementAiGrading(deps, sub.id, { allowRedraftForSpeaking: true }),
+		);
 
 		return c.json({
 			ok: true,

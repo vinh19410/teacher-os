@@ -10,7 +10,7 @@ import { LMS_ORIGIN, STUDENT_BASE_URL } from "./origins";
 
 /**
  * Tab "Bạn cùng lớp" trên trang chi tiết lớp học viên đang được ẩn khỏi UI:
- * thanh tab chỉ còn 3 mục ("Hành trình học", "Bài tập", "Giáo trình"), không
+ * thanh tab còn 4 mục ("Hành trình học", "Bài tập", "Giáo trình", "Tài liệu chung"), không
  * hiển thị danh sách/tên học viên cùng lớp và không gọi API /classmates.
  * Kernel rows seeded direct-DB (precedent seedStudent); auth học viên là thật
  * (portal signup + mail-log verification) làm một lần trong beforeAll.
@@ -126,8 +126,13 @@ test.describe("Student classmates tab", () => {
 		).toBeVisible();
 
 		const tabs = page.getByRole("tab");
-		await expect(tabs).toHaveCount(3);
-		await expect(tabs).toHaveText(["Hành trình học", "Bài tập", "Giáo trình"]);
+		await expect(tabs).toHaveCount(4);
+		await expect(tabs).toHaveText([
+			"Hành trình học",
+			"Bài tập",
+			"Giáo trình",
+			"Tài liệu chung",
+		]);
 		await expect(page.getByRole("tab", { name: "Bạn cùng lớp" })).toHaveCount(
 			0,
 		);

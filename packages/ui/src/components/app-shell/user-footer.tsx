@@ -43,6 +43,10 @@ function InitialsAvatar({ initials }: { initials: string }) {
  * để giữ hàng khi tên/email dài. Ở rail thu gọn (desktop) xếp
  * dọc: avatar rồi trailing — email giữ sr-only để SR/e2e vẫn đọc được.
  */
+/** Selector nhận diện dialog/modal đang mở (gồm cả Base UI DialogPopup dùng data-open). */
+const OPEN_DIALOG_SELECTOR =
+	'[role="dialog"][aria-modal="true"], [role="dialog"][data-open], [role="alertdialog"][aria-modal="true"], [role="alertdialog"][data-open]';
+
 export function UserFooter({
 	user,
 	collapsed = false,
@@ -52,12 +56,21 @@ export function UserFooter({
 }) {
 	const [open, setOpen] = useState(false);
 	const wrapRef = useRef<HTMLDivElement>(null);
-	const hasMenu = user.menu !== undefined;
+	const triggerRef = useRef<HTMLButtonElement>(null);
+	const hasMenu = Boolean(user.menu);
 
 	useEffect(() => {
 		if (!open) return;
 		const onKeyDown = (event: KeyboardEvent) => {
-			if (event.key === "Escape") setOpen(false);
+			if (
+				event.key === "Escape" &&
+				!event.defaultPrevented &&
+				!document.querySelector(OPEN_DIALOG_SELECTOR)
+			) {
+				event.preventDefault();
+				setOpen(false);
+				triggerRef.current?.focus();
+			}
 		};
 		const onPointerDown = (event: PointerEvent) => {
 			if (!wrapRef.current?.contains(event.target as Node)) setOpen(false);
@@ -88,9 +101,13 @@ export function UserFooter({
 			</Link>
 		) : (
 			<button
+				ref={triggerRef}
 				type="button"
 				onClick={() => {
-					if (hasMenu) setOpen((prev) => !prev);
+					if (hasMenu) {
+						setOpen((prev) => !prev);
+						return;
+					}
 					user.onClick?.();
 				}}
 				aria-label={user.label}
@@ -134,14 +151,14 @@ function TextBlock({
 }) {
 	return (
 		<>
-			<span className="grid min-w-0 flex-1 leading-tight">
+			<span className="grid min-w-0 flex-1 grid-cols-1 leading-tight">
 				<span
 					className={cn(
-						"flex items-center font-medium",
+						"flex min-w-0 items-center font-medium",
 						collapsed && "lg:hidden",
 					)}
 				>
-					<span className="truncate" title={user.name}>
+					<span className="min-w-0 truncate" title={user.name}>
 						{user.name}
 					</span>
 					{user.badge}

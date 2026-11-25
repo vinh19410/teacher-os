@@ -6,6 +6,7 @@ import {
 	PLACEMENT_WRITING_TEXT_MAX,
 	type PlacementSnapshot,
 	type StudentPlacementSubmissionView,
+	type StudentPlacementViewResponse,
 	stripInlineCefrLabel,
 } from "@teacher-os/api/placement-test-contracts";
 import { Button } from "@teacher-os/ui/components/button";
@@ -22,6 +23,7 @@ import {
 	ArrowRight,
 	BookOpen,
 	Clock,
+	Loader2,
 	Mic,
 	Send,
 } from "lucide-react";
@@ -34,6 +36,10 @@ import {
 	type RecordedSpeakingAudio,
 } from "@/components/placement/placement-speaking-step";
 import { cn } from "@/lib/cn";
+import {
+	deleteStudentSpeakingBackup,
+	saveStudentSpeakingBackup,
+} from "@/lib/placement-speaking-backup";
 import {
 	buildQuestionNumberMap,
 	clearPlacementDraft,
@@ -49,28 +55,36 @@ import {
 	sanitizeSubmissionAnswers,
 	savePlacementDraft,
 } from "@/lib/placement-test-helpers";
+import { isHttpError } from "@/lib/query-client";
 import {
+	getStudentPlacementViewQueryKey,
+	isSameStudentOrgContext,
 	studentPlacementStatusQueryKey,
 	studentPlacementViewQueryKey,
 	uploadStudentPlacementSpeaking,
 	useSubmitStudentPlacement,
 } from "@/lib/repos/placement-test";
+import { getActiveStudentOrgId } from "@/lib/student-org-storage";
 
 export interface PendingSpeakingRetry {
 	submissionId: string;
-	uploadToken: string;
+	uploadToken: string | null;
 	blob: Blob;
 	mimeType: string;
 	durationSec: number;
 	errorMessage: string;
 }
 
+type PlacementSubmitStage = "idle" | "submitting" | "uploading_speaking";
+
 export function PlacementTestRunner({
 	studentId,
+	orgId,
 	snapshot,
 	onSubmitted,
 }: {
 	studentId: string;
+	orgId?: string;
 	snapshot: PlacementSnapshot;
 	onSubmitted: (
 		submission: StudentPlacementSubmissionView,
@@ -78,7 +92,8 @@ export function PlacementTestRunner({
 	) => void;
 }) {
 	const queryClient = useQueryClient();
-	const submitMutation = useSubmitStudentPlacement();
+	const viewQueryKey = getStudentPlacementViewQueryKey(orgId ?? studentId);
+	const submitMutation = useSubmitStudentPlacement(orgId);
 
 	const [draft, setDraft] = useState<PlacementDraftState>(() =>
 		loadPlacementDraft(studentId, snapshot.version),
@@ -88,13 +103,37 @@ export function PlacementTestRunner({
 	const [isSpeakingBusy, setIsSpeakingBusy] = useState(false);
 	const [submitError, setSubmitError] = useState("");
 	const [stepSwitchError, setStepSwitchError] = useState("");
-	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [submitStage, setSubmitStage] = useState<PlacementSubmitStage>("idle");
+	const submitStageRef = useRef<PlacementSubmitStage>("idle");
+	const unmountedRef = useRef(false);
+	const isSubmitting = submitStage !== "idle";
 	const [confirmUnanswered, setConfirmUnanswered] = useState<{
 		unansweredObjective: number;
 		writingEmpty: boolean;
 		resolvedSpeakingMode: "upload" | "none";
 	} | null>(null);
 	const [nowMs, setNowMs] = useState(() => Date.now());
+
+	const updateSubmitStage = useCallback((next: PlacementSubmitStage) => {
+		submitStageRef.current = next;
+		if (!unmountedRef.current) {
+			setSubmitStage(next);
+		}
+	}, []);
+
+	useEffect(() => {
+		if (submitStage !== "uploading_speaking" || typeof window === "undefined") {
+			return;
+		}
+		const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+			event.preventDefault();
+			event.returnValue = "";
+		};
+		window.addEventListener("beforeunload", handleBeforeUnload);
+		return () => {
+			window.removeEventListener("beforeunload", handleBeforeUnload);
+		};
+	}, [submitStage]);
 
 	const recordedUrlRef = useRef<string | null>(null);
 	useEffect(() => {
@@ -111,7 +150,9 @@ export function PlacementTestRunner({
 	}, [recordedAudio]);
 
 	useEffect(() => {
+		unmountedRef.current = false;
 		return () => {
+			unmountedRef.current = true;
 			if (recordedUrlRef.current) {
 				try {
 					URL.revokeObjectURL(recordedUrlRef.current);
@@ -162,6 +203,7 @@ export function PlacementTestRunner({
 
 	const goToStep = useCallback(
 		(nextStep: PlacementRunnerStep) => {
+			if (submitStageRef.current !== "idle") return;
 			if (isSpeakingBusy) {
 				setStepSwitchError(
 					"Vui lòng hoàn thành hoặc bấm Kết thúc phần Speaking trước khi chuyển phần khác.",
@@ -190,8 +232,12 @@ export function PlacementTestRunner({
 	);
 
 	const executeSubmission = async (finalSpeakingMode: "upload" | "none") => {
-		if (isSubmitting) return;
-		setIsSubmitting(true);
+		if (submitStageRef.current !== "idle") return;
+		const submitOrgId = orgId ?? getActiveStudentOrgId();
+		const isSameOrg = () => isSameStudentOrgContext(submitOrgId);
+		const isActiveUi = () => !unmountedRef.current && isSameOrg();
+		setConfirmUnanswered(null);
+		updateSubmitStage("submitting");
 		setSubmitError("");
 
 		try {
@@ -216,45 +262,63 @@ export function PlacementTestRunner({
 				finalSpeakingMode === "upload" ? "pending_upload" : "none";
 			let pendingRetry: PendingSpeakingRetry | null = null;
 
-			if (
-				finalSpeakingMode === "upload" &&
-				recordedAudio &&
-				res.uploadToken &&
-				res.submissionId
-			) {
-				try {
-					await uploadStudentPlacementSpeaking(
-						res.submissionId,
-						res.uploadToken,
-						recordedAudio.blob,
-						recordedAudio.mimeType,
-						recordedAudio.durationSec,
-					);
-					speakingStatus = "uploaded";
-				} catch (uploadErr) {
+			if (finalSpeakingMode === "upload" && recordedAudio && res.submissionId) {
+				await saveStudentSpeakingBackup({
+					studentId,
+					submissionId: res.submissionId,
+					blob: recordedAudio.blob,
+					mimeType: recordedAudio.mimeType,
+					durationSec: recordedAudio.durationSec,
+				});
+
+				if (res.uploadToken && isSameOrg()) {
+					updateSubmitStage("uploading_speaking");
+					try {
+						await uploadStudentPlacementSpeaking(
+							res.submissionId,
+							res.uploadToken,
+							recordedAudio.blob,
+							recordedAudio.mimeType,
+							recordedAudio.durationSec,
+							{ orgId },
+						);
+						speakingStatus = "uploaded";
+						await deleteStudentSpeakingBackup(studentId, res.submissionId);
+					} catch (uploadErr) {
+						speakingStatus = "pending_upload";
+						const isUnauthorized =
+							isHttpError(uploadErr) && uploadErr.status === 401;
+						pendingRetry = {
+							submissionId: res.submissionId,
+							uploadToken: isUnauthorized ? null : res.uploadToken,
+							blob: recordedAudio.blob,
+							mimeType: recordedAudio.mimeType,
+							durationSec: recordedAudio.durationSec,
+							errorMessage:
+								uploadErr instanceof Error && uploadErr.message
+									? uploadErr.message
+									: "Không thể tải file Speaking lên máy chủ.",
+						};
+					}
+				} else if (!res.uploadToken) {
 					speakingStatus = "pending_upload";
 					pendingRetry = {
 						submissionId: res.submissionId,
-						uploadToken: res.uploadToken,
+						uploadToken: null,
 						blob: recordedAudio.blob,
 						mimeType: recordedAudio.mimeType,
 						durationSec: recordedAudio.durationSec,
 						errorMessage:
-							uploadErr instanceof Error
-								? uploadErr.message
-								: "Không thể tải file Speaking lên máy chủ.",
+							"Chưa nhận được mã tải lên bản ghi Speaking. Vui lòng bấm thử tải lại.",
 					};
 				}
 			}
 
 			clearPlacementDraft(studentId, snapshot.version);
-			void queryClient.invalidateQueries({
-				queryKey: studentPlacementStatusQueryKey,
-			});
-			void queryClient.invalidateQueries({
-				queryKey: studentPlacementViewQueryKey,
-			});
-			void queryClient.invalidateQueries({ queryKey: ["student", "inbox"] });
+
+			if (!isSameOrg()) {
+				return;
+			}
 
 			const optimisticView: StudentPlacementSubmissionView = {
 				id: res.submissionId,
@@ -283,15 +347,43 @@ export function PlacementTestRunner({
 				teacherFeedback: "",
 			};
 
-			onSubmitted(optimisticView, pendingRetry);
-		} catch (err) {
-			setSubmitError(
-				err instanceof Error && err.message
-					? err.message
-					: "Không thể nộp bài kiểm tra. Vui lòng kiểm tra kết nối và thử lại.",
+			if (!unmountedRef.current) {
+				onSubmitted(optimisticView, pendingRetry);
+			}
+
+			queryClient.setQueryData<StudentPlacementViewResponse>(
+				viewQueryKey,
+				(prev) =>
+					prev
+						? {
+								...prev,
+								status: "pending_grading",
+								submissionId: res.submissionId,
+								submission: optimisticView,
+								speakingTasks:
+									speakingStatus === "pending_upload"
+										? (snapshot.parts[4]?.tasks ?? null)
+										: null,
+							}
+						: prev,
 			);
+			void queryClient.invalidateQueries({
+				queryKey: studentPlacementStatusQueryKey,
+			});
+			void queryClient.invalidateQueries({
+				queryKey: studentPlacementViewQueryKey,
+			});
+			void queryClient.invalidateQueries({ queryKey: ["student", "inbox"] });
+		} catch (err) {
+			if (isActiveUi()) {
+				setSubmitError(
+					err instanceof Error && err.message
+						? err.message
+						: "Không thể nộp bài kiểm tra. Vui lòng kiểm tra kết nối và thử lại.",
+				);
+			}
 		} finally {
-			setIsSubmitting(false);
+			updateSubmitStage("idle");
 		}
 	};
 
@@ -582,12 +674,13 @@ export function PlacementTestRunner({
 								type="button"
 								role="tab"
 								aria-selected={isActive}
+								disabled={isSubmitting}
 								data-testid={`placement-tab-${skill.id}`}
 								onClick={() => {
 									if (skill.id !== draft.step) goToStep(skill.id);
 								}}
 								className={cn(
-									"inline-flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded-md px-3 font-medium text-xs transition-[color,box-shadow] sm:text-sm",
+									"inline-flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded-md px-3 font-medium text-xs outline-none transition-[color,box-shadow] focus-visible:shadow-[var(--focus-ring)] disabled:pointer-events-none disabled:opacity-50 sm:text-sm",
 									isActive
 										? "bg-background text-foreground shadow-xs"
 										: "hover:text-foreground",
@@ -866,6 +959,29 @@ export function PlacementTestRunner({
 						onBusyChange={setIsSpeakingBusy}
 					/>
 
+					{submitStage === "uploading_speaking" ? (
+						<div
+							role="status"
+							aria-live="polite"
+							data-testid="speaking-upload-progress-banner"
+							className="flex items-start gap-2.5 rounded-lg border border-warn/40 bg-warn-soft p-3.5 text-foreground text-sm"
+						>
+							<Loader2
+								aria-hidden="true"
+								className="mt-0.5 size-4 shrink-0 animate-spin text-warn"
+							/>
+							<div className="space-y-0.5">
+								<p className="font-medium">
+									Đang tải bản ghi Speaking lên máy chủ...
+								</p>
+								<p className="text-muted-foreground text-xs leading-relaxed">
+									Bài làm 4 kỹ năng còn lại đã được lưu. Vui lòng không đóng
+									hoặc rời khỏi trang này cho đến khi tải xong.
+								</p>
+							</div>
+						</div>
+					) : null}
+
 					{submitError ? (
 						<div
 							role="alert"
@@ -907,6 +1023,7 @@ export function PlacementTestRunner({
 									type="button"
 									variant="outline"
 									size="sm"
+									disabled={isSubmitting}
 									onClick={() => setConfirmUnanswered(null)}
 								>
 									Quay lại kiểm tra
@@ -931,6 +1048,7 @@ export function PlacementTestRunner({
 						<Button
 							type="button"
 							variant="outline"
+							disabled={isSubmitting}
 							onClick={() => goToStep("writing")}
 						>
 							<ArrowLeft aria-hidden="true" className="size-4" />
@@ -944,11 +1062,17 @@ export function PlacementTestRunner({
 							disabled={isSubmitting || isSpeakingBusy}
 							onClick={handleRequestSubmit}
 						>
-							<Send aria-hidden="true" className="size-4" />
+							{submitStage === "uploading_speaking" ? (
+								<Loader2 aria-hidden="true" className="size-4 animate-spin" />
+							) : (
+								<Send aria-hidden="true" className="size-4" />
+							)}
 							<span>
-								{isSubmitting
-									? "Đang nộp bài..."
-									: "Hoàn thành & Nộp bài 5 kỹ năng"}
+								{submitStage === "uploading_speaking"
+									? "Đang tải bài nói Speaking..."
+									: isSubmitting
+										? "Đang nộp bài..."
+										: "Hoàn thành & Nộp bài 5 kỹ năng"}
 							</span>
 						</Button>
 					</div>

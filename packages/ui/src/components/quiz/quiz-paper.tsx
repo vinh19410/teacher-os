@@ -43,8 +43,16 @@ import {
 	type ParsedInlineInstruction,
 	parseInlineInstruction,
 } from "@teacher-os/ui/lib/inline-instruction";
+import {
+	COMPLETION_TYPE_REGEX,
+	deduplicateGroupIntroPreamble,
+	isEffectivelyEmptyInstruction,
+	isPositionalSectionBank,
+	resolvePartInstruction,
+	scopeFlattenedOptionBank,
+} from "@teacher-os/ui/lib/quiz-instruction";
 import { cn } from "@teacher-os/ui/lib/utils";
-import { useMemo } from "react";
+import { type SyntheticEvent, useMemo } from "react";
 
 /** Các field đề cần để render paper (subset của StudentQuizDetail). */
 export type QuizPaperDetail = Pick<
@@ -65,33 +73,17 @@ export type QuizPaperDetail = Pick<
 	| "note"
 >;
 
-function resolvePartInstruction(
-	typeId: string,
-	questions: ReadonlyArray<{
-		type?: string | null;
-		opts?: readonly string[] | null;
-	}>,
-	fallback: string,
-): string {
-	if (typeId !== "mcq") return fallback;
-	const mcqQuestions = questions.filter((q) => (q.type ?? typeId) === "mcq");
-	if (mcqQuestions.length === 0) return fallback;
-	const counts = new Set(
-		mcqQuestions.map((q) => (q.opts?.length ? Math.min(q.opts.length, 4) : 4)),
-	);
-	if (counts.size === 1) {
-		if (counts.has(2)) return "Choose the correct letter A or B.";
-		if (counts.has(3)) return "Choose the correct letter A, B or C.";
-		return fallback;
-	}
-	return "Choose the correct letter.";
-}
-
 function isPositionalOnlyBank(
 	bank: readonly string[],
 	kind: keyof typeof ASSIGNMENT_ANSWER_CHOICES,
 ): boolean {
-	if (bank.length === 0 || (kind !== "letter" && kind !== "roman")) {
+	if (bank.length === 0) {
+		return false;
+	}
+	if (kind === "letter") {
+		return isPositionalSectionBank(bank);
+	}
+	if (kind !== "roman") {
 		return false;
 	}
 	const alphabet = extendedAnswerChoices(kind);
@@ -120,6 +112,20 @@ const NON_INLINE_QUESTION_TYPES = new Set([
 	"tfng",
 	"ynng",
 ]);
+
+const REQUIRED_BANK_QUESTION_TYPES = new Set([
+	"headings",
+	"info",
+	"features",
+	"match_names",
+	"matching",
+	"sentend",
+	"map",
+	"match2",
+	"match",
+]);
+
+const EMPTY_MATCHED_INSTRUCTIONS: ReadonlyMap<string, string> = new Map();
 
 type PartRenderUnit =
 	| { kind: "single"; question: QuizPartQuestion; effectiveType: string }
@@ -475,8 +481,11 @@ export function QuizPaper({
 	essay,
 	onEssayChange,
 	audioSrc,
+	audioCrossOrigin,
 	audioLoading = false,
 	audioError = false,
+	onAudioError,
+	onAudioRetry,
 	transcript,
 }: {
 	detail: QuizPaperDetail;
@@ -496,10 +505,13 @@ export function QuizPaper({
 	writingSection?: { part: string; type: string; prompt: string } | null;
 	essay?: string;
 	onEssayChange?: (value: string) => void;
-	/** Blob URL proxy cho bài nghe Listening (#702). */
+	/** URL phát bài nghe Listening (stream trực tiếp hoặc blob URL). */
 	audioSrc?: string | null;
+	audioCrossOrigin?: "anonymous" | "use-credentials";
 	audioLoading?: boolean;
 	audioError?: boolean;
+	onAudioError?: (event: SyntheticEvent<HTMLAudioElement>) => void;
+	onAudioRetry?: () => void;
 	/** Transcript bài nghe — chỉ truyền sau khi nộp bài (reviewMode). */
 	transcript?: string;
 }) {
@@ -534,14 +546,44 @@ export function QuizPaper({
 	const introSplit = parts.some((part) => part.source === "intro")
 		? splitQuizIntro(detail.intro, questions.length)
 		: null;
-	const introPreamble = introSplit ? introSplit.preamble : detail.intro;
+	const hasIntroSplit = introSplit !== null;
+	const rawIntroPreamble = introSplit ? introSplit.preamble : detail.intro;
 	const hasGroupSource = parts.some((part) => part.source === "group");
+	const { cleanedPreamble: introPreamble, matchedInstructionsByPartId } =
+		useMemo(() => {
+			if (!hasGroupSource && (hasIntroSplit || parts.length <= 1)) {
+				return {
+					cleanedPreamble: rawIntroPreamble,
+					matchedInstructionsByPartId: EMPTY_MATCHED_INSTRUCTIONS,
+				};
+			}
+			return deduplicateGroupIntroPreamble(rawIntroPreamble, parts);
+		}, [hasGroupSource, hasIntroSplit, rawIntroPreamble, parts]);
+	const scopedBankResult = useMemo(() => {
+		if (hasGroupSource) {
+			return { partitioned: null, isBankScoped: true };
+		}
+		return scopeFlattenedOptionBank(
+			parts,
+			detail.optionBank,
+			matchedInstructionsByPartId,
+			{ skill, introPreamble },
+		);
+	}, [
+		hasGroupSource,
+		parts,
+		detail.optionBank,
+		matchedInstructionsByPartId,
+		skill,
+		introPreamble,
+	]);
+	const partitionedBanks = scopedBankResult.partitioned;
+	const hasPartitionedBanks = partitionedBanks !== null;
+	const isBankScoped = scopedBankResult.isBankScoped;
 	// Bank vẫn prompt-level nhưng hiện khi type đề HOẶC bất kỳ câu bankable
 	// (đề trộn dạng) — cụm bankable phải có list để học viên chọn (#286 H2).
-	// Part nhóm (#433) bank nằm trên từng part: KHÔNG render bank cấp đề khi
-	// rỗng — schema cấm bank part-level khi có nhóm nên bank rỗng ở đây là
-	// hợp lệ, không phải dữ liệu hỏng (red-team RT2 — alert "Thiếu ngân hàng
-	// lựa chọn" chỉ dành cho đề không nhóm).
+	// Part nhóm (#433) hoặc đã tách bank theo part (#877) render per-part qua
+	// showPartBank.
 	const bankKind = libraryOptionBankKindFor(
 		skill,
 		typeId,
@@ -549,8 +591,9 @@ export function QuizPaper({
 		detail.optionBank,
 	);
 	const showDetailBank =
+		!hasGroupSource &&
+		!hasPartitionedBanks &&
 		bankKind !== undefined &&
-		(!hasGroupSource || detail.optionBank.length > 0) &&
 		!isPositionalOnlyBank(detail.optionBank, bankKind);
 	const hasPins = questions.some((question) => question.pin != null);
 	// PinOverlay chỉ khả dụng khi ảnh đề hợp lệ — thiếu ảnh thì câu pin fallback
@@ -581,13 +624,18 @@ export function QuizPaper({
 			parts.length === 1 && !isEmptyRichText(introPreamble);
 
 		for (const part of parts) {
-			const hasOwnInstruction =
-				part.instructionHtml !== undefined &&
-				!isEmptyRichText(part.instructionHtml ?? "");
+			const hasOwnInstruction = !isEffectivelyEmptyInstruction(
+				part.instructionHtml,
+			);
+			const matchedInstruction = matchedInstructionsByPartId.get(part.id);
+			const hasMatchedInstruction =
+				!isEffectivelyEmptyInstruction(matchedInstruction);
 			let candidateHtml = "";
 			let usesIntro = false;
 			if (hasOwnInstruction) {
 				candidateHtml = part.instructionHtml ?? "";
+			} else if (hasMatchedInstruction) {
+				candidateHtml = matchedInstruction ?? "";
 			} else if (hasIntroCandidate) {
 				candidateHtml = introPreamble;
 				usesIntro = true;
@@ -620,16 +668,48 @@ export function QuizPaper({
 			parsedInlineByPartId: byPartId,
 			introConsumedByInline: introConsumed,
 		};
-	}, [isAuto, parts, introPreamble, typeId, usePinOverlay]);
+	}, [
+		isAuto,
+		parts,
+		introPreamble,
+		matchedInstructionsByPartId,
+		typeId,
+		usePinOverlay,
+	]);
+	const completionPartCount = parts.filter(
+		(part) => part.typeId in COMPLETION_TYPE_REGEX,
+	).length;
 	// Bank riêng của part (nhóm) ưu tiên bank cấp đề — câu trong part nhóm
-	// chọn từ bank của nhóm mình (red-team R5).
+	// chọn từ bank của nhóm mình (red-team R5). Part nhóm không bank tuyệt
+	// đối không mượn detail.optionBank (#875).
+	const hasRequiredBankQuestion = questions.some((q) =>
+		REQUIRED_BANK_QUESTION_TYPES.has(q.type ?? typeId),
+	);
 	const choiceRowsByQ = new Map<number, QuizChoiceRow[]>();
 	const optionBankByQ = new Map<number, readonly string[]>();
 	for (const part of parts) {
-		const partBank = part.optionBank ?? detail.optionBank;
+		const partHasRequiredBankQuestion = part.questions.some((q) =>
+			REQUIRED_BANK_QUESTION_TYPES.has(
+				q.type ?? (part.source === "group" ? part.typeId : typeId),
+			),
+		);
 		for (const question of part.questions) {
 			const effectiveType =
 				question.type ?? (part.source === "group" ? part.typeId : typeId);
+			const isQOptionalBank =
+				effectiveType === "summary" || effectiveType === "flow";
+			const qBank =
+				part.source === "group"
+					? (part.optionBank ?? [])
+					: hasPartitionedBanks
+						? (part.optionBank ??
+							(isQOptionalBank && partHasRequiredBankQuestion
+								? []
+								: (partitionedBanks.get(part.id) ?? [])))
+						: (part.optionBank ??
+							(isQOptionalBank && hasRequiredBankQuestion
+								? []
+								: detail.optionBank));
 			// Câu có pin trả lời qua input trên ảnh (PinOverlay) — không nhân đôi
 			// widget bằng radio pills dưới list. Widget key theo type HIỆU DỤNG
 			// của câu (đề trộn dạng), fallback type đề.
@@ -637,18 +717,17 @@ export function QuizPaper({
 				question.q,
 				usePinOverlay && question.pin != null
 					? []
-					: questionChoiceRows(question, effectiveType, partBank),
+					: questionChoiceRows(question, effectiveType, qBank),
 			);
 			const bankKindForQ =
-				(effectiveType === "summary" || effectiveType === "flow") &&
-				partBank.length > 0
+				isQOptionalBank && qBank.length > 0
 					? "letter"
 					: answerKindByType[effectiveType];
 			if (
-				partBank.length > 0 &&
+				qBank.length > 0 &&
 				(bankKindForQ === "letter" || bankKindForQ === "roman")
 			) {
-				optionBankByQ.set(question.q, partBank);
+				optionBankByQ.set(question.q, qBank);
 			}
 		}
 	}
@@ -684,20 +763,34 @@ export function QuizPaper({
 
 			{skill === "listening" && (
 				<div className="flex flex-col gap-2 rounded-md border border-border bg-muted p-3 text-sm">
-					{audioSrc ? (
+					{audioError ? (
+						<div
+							role="alert"
+							className="flex flex-wrap items-center justify-between gap-2 text-danger text-sm"
+						>
+							<span>Không tải được file nghe.</span>
+							{onAudioRetry && (
+								<button
+									type="button"
+									onClick={onAudioRetry}
+									className="rounded-md border border-border bg-background px-2.5 py-1 font-medium text-foreground text-xs hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
+								>
+									Thử lại
+								</button>
+							)}
+						</div>
+					) : audioSrc ? (
 						// biome-ignore lint/a11y/useMediaCaption: Listening exam audio; transcript unlocks after submit (#702)
 						<audio
 							controls
 							preload="metadata"
+							crossOrigin={audioCrossOrigin}
 							src={audioSrc}
 							aria-label="Bài nghe"
 							className="w-full"
 							data-testid="quiz-audio-player"
+							onError={onAudioError}
 						/>
-					) : audioError ? (
-						<p role="alert" className="text-danger text-sm">
-							Không tải được file nghe.
-						</p>
 					) : audioLoading || detail.hasAudio ? (
 						<p className="text-muted-foreground text-sm">Đang tải file nghe…</p>
 					) : (
@@ -816,29 +909,77 @@ export function QuizPaper({
 					// viện #433) hiển thị instruction đó thay 2 dòng chuẩn; chỉ có
 					// marker fallback về chuẩn.
 					const display = quizTypeDisplay(part.typeId);
+					const matchedInstruction = matchedInstructionsByPartId.get(part.id);
+					const isPartOptionalBank =
+						part.typeId === "summary" ||
+						part.typeId === "flow" ||
+						part.typeId === "flowchart";
+					const partScopedBank = hasPartitionedBanks
+						? (partitionedBanks.get(part.id) ?? [])
+						: undefined;
+					const effectivePartBank =
+						part.source === "group"
+							? (part.optionBank ?? [])
+							: part.optionBank !== undefined
+								? part.optionBank
+								: partScopedBank !== undefined
+									? partScopedBank
+									: isPartOptionalBank && hasRequiredBankQuestion
+										? []
+										: detail.optionBank;
 					const displayInstruction = resolvePartInstruction(
 						part.typeId,
 						part.questions,
 						display.instruction,
+						{
+							partBank: effectivePartBank,
+							isBankScoped,
+							matchedInstruction,
+							contextIntro:
+								parts.length <= 1
+									? detail.intro
+									: hasIntroSplit || completionPartCount === 1
+										? introPreamble
+										: undefined,
+						},
 					);
+					const hasPartOwnInstruction = !isEffectivelyEmptyInstruction(
+						part.instructionHtml,
+					);
+					const hasMatchedInstruction =
+						!isEffectivelyEmptyInstruction(matchedInstruction);
 					const hasOwnInstruction =
-						part.instructionHtml !== undefined &&
-						!isEmptyRichText(part.instructionHtml ?? "");
+						hasPartOwnInstruction || hasMatchedInstruction;
+					const instructionToShow = hasPartOwnInstruction
+						? part.instructionHtml
+						: hasMatchedInstruction
+							? matchedInstruction
+							: undefined;
 					// Part nhóm (#433): header không kèm nhãn dạng bài khi có
 					// instruction riêng — cùng ngôn ngữ với section intro.
 					const fromOwnSource =
 						part.source === "intro" ||
 						(part.source === "group" && hasOwnInstruction);
-					// Option bank riêng của nhóm — render ngay dưới header nhóm
-					// (red-team RT2/R5); part thường không có bank riêng.
-					const partBankKind = part.optionBank?.length
-						? libraryOptionBankKindFor(
-								skill,
-								part.typeId,
-								part.questions.map((question) => question.type),
-								part.optionBank,
-							)
-						: undefined;
+					// Option bank riêng của nhóm hoặc đã tách theo part (#877) — render
+					// ngay dưới header nhóm; giữ guard .length > 0 để không hiện alert
+					// thiếu bank (RT2).
+					const partBankToRender: string[] | undefined =
+						part.source === "group"
+							? (part.optionBank ?? [])
+							: part.optionBank !== undefined
+								? part.optionBank
+								: partScopedBank !== undefined
+									? partScopedBank
+									: undefined;
+					const partBankKind =
+						partBankToRender && partBankToRender.length > 0
+							? libraryOptionBankKindFor(
+									skill,
+									part.typeId,
+									part.questions.map((question) => question.type),
+									partBankToRender,
+								)
+							: undefined;
 					const renderUnits = buildPartRenderUnits(part, typeId);
 					const parsedInline = parsedInlineByPartId.get(part.id) ?? null;
 					const remainingUnits = parsedInline
@@ -850,7 +991,9 @@ export function QuizPaper({
 						: renderUnits;
 					const showPartBank =
 						partBankKind !== undefined &&
-						!isPositionalOnlyBank(part.optionBank ?? [], partBankKind);
+						partBankToRender !== undefined &&
+						partBankToRender.length > 0 &&
+						!isPositionalOnlyBank(partBankToRender, partBankKind);
 					return (
 						<section
 							key={part.id}
@@ -863,7 +1006,7 @@ export function QuizPaper({
 									<h2 className="font-semibold">{part.label}</h2>
 									{parsedInline ? null : hasOwnInstruction ? (
 										<RichTextBody
-											text={part.instructionHtml ?? ""}
+											text={instructionToShow ?? ""}
 											className="text-muted-foreground text-sm"
 										/>
 									) : (
@@ -882,13 +1025,13 @@ export function QuizPaper({
 								(parsedInline ? (
 									<div className="mb-3">
 										<OptionBankList
-											bank={part.optionBank ?? []}
+											bank={partBankToRender ?? []}
 											kind={partBankKind}
 										/>
 									</div>
 								) : (
 									<OptionBankList
-										bank={part.optionBank ?? []}
+										bank={partBankToRender ?? []}
 										kind={partBankKind}
 									/>
 								))}

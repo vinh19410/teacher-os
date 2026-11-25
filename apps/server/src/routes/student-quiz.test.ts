@@ -410,9 +410,35 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 						headers: { "content-type": "audio/mpeg" },
 					});
 				}
-				return new Response(new Uint8Array([0x49, 0x44, 0x33, 0x03, 0, 0]), {
+				const payload = new Uint8Array([0x49, 0x44, 0x33, 0x03, 0, 0]);
+				const range = new Headers(init?.headers).get("range");
+				if (range === "bytes=0-2") {
+					return new Response(payload.subarray(0, 3), {
+						status: 206,
+						headers: {
+							"content-type": "audio/mpeg",
+							"content-length": "3",
+							"content-range": "bytes 0-2/6",
+							"accept-ranges": "bytes",
+						},
+					});
+				}
+				if (range === "bytes=100-200") {
+					return new Response(null, {
+						status: 416,
+						headers: {
+							"content-range": "bytes */6",
+							"accept-ranges": "bytes",
+						},
+					});
+				}
+				return new Response(payload, {
 					status: 200,
-					headers: { "content-type": "audio/mpeg" },
+					headers: {
+						"content-type": "audio/mpeg",
+						"content-length": String(payload.byteLength),
+						"accept-ranges": "bytes",
+					},
 				});
 			},
 		});
@@ -1699,6 +1725,26 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		);
 		expect(audioOk.status).toBe(200);
 		expect(audioOk.headers.get("content-type")).toBe("audio/mpeg");
+		expect(audioOk.headers.get("accept-ranges")).toBe("bytes");
+		expect(audioOk.headers.get("cache-control")).toBe("private, no-cache");
+
+		const audioPartial = await app.request(
+			"/api/student/assignments/ca-listen-702/audio",
+			{ headers: { ...OWNER, Range: "bytes=0-2" } },
+		);
+		expect(audioPartial.status).toBe(206);
+		expect(audioPartial.headers.get("content-range")).toBe("bytes 0-2/6");
+		expect(audioPartial.headers.get("content-length")).toBe("3");
+		expect(
+			Array.from(new Uint8Array(await audioPartial.arrayBuffer())),
+		).toEqual([0x49, 0x44, 0x33]);
+
+		const audioOutOfRange = await app.request(
+			"/api/student/assignments/ca-listen-702/audio",
+			{ headers: { ...OWNER, Range: "bytes=100-200" } },
+		);
+		expect(audioOutOfRange.status).toBe(416);
+		expect(audioOutOfRange.headers.get("content-range")).toBe("bytes */6");
 
 		const audioBad = await app.request(
 			"/api/student/assignments/ca-listen-bad-host/audio",
@@ -1729,5 +1775,42 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		const reviewBody = (await reviewRes.json()) as QuizAttemptDetail;
 		expect(reviewBody.hasAudio).toBe(true);
 		expect(reviewBody.transcript).toBe("Accidents happen every day at work.");
+	});
+
+	test("GET /assignments/:id/quiz emits X-Server-Now header and attempt.startedAt with zero new top-level keys", async () => {
+		// Tự seed lượt giao riêng để test chạy độc lập bằng `-t`, không phụ thuộc thứ tự test trước.
+		await libsql.insert(schema.classAssignment).values({
+			id: "ca-timing-880",
+			orgId: "org-1",
+			classId: "class-1",
+			promptId: "prompt-quiz",
+			title: "Assignment Timing Check",
+			due: "2099-01-10",
+		});
+		await libsql.insert(schema.classAssignmentTarget).values({
+			id: "cat-timing-880",
+			orgId: "org-1",
+			assignmentId: "ca-timing-880",
+			studentId: "student-1",
+			submittedAt: null,
+		});
+		await startAttempt("ca-timing-880");
+
+		const takeRes = await app.request(
+			"/api/student/assignments/ca-timing-880/quiz",
+			{ headers: OWNER },
+		);
+		expect(takeRes.status).toBe(200);
+		const serverNow = takeRes.headers.get("X-Server-Now");
+		expect(serverNow).toBeTruthy();
+		expect(Number.isNaN(Date.parse(serverNow ?? ""))).toBe(false);
+
+		const body = (await takeRes.json()) as Record<string, unknown> & {
+			attempt: { id: string; startedAt?: string } | null;
+		};
+		expect("timeLimitSeconds" in body).toBe(false);
+		expect("serverNow" in body).toBe(false);
+		expect(body.attempt?.startedAt).toBeTruthy();
+		expect(Number.isNaN(Date.parse(body.attempt?.startedAt ?? ""))).toBe(false);
 	});
 });

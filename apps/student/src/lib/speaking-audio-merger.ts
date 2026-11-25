@@ -1,3 +1,7 @@
+import {
+	readBlobHeadBytes,
+	SPEAKING_MAGIC_PEEK_BYTES,
+} from "@/lib/placement-speaking-backup";
 import { resolveSpeakingUploadMeta } from "@/lib/placement-test-helpers";
 
 export const SPEAKING_TARGET_SAMPLE_RATE = 16_000;
@@ -148,6 +152,42 @@ async function readBlobAsArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
 }
 
 /**
+ * Bọc `decodeAudioData` tương thích cả dạng Promise (trình duyệt hiện đại) lẫn
+ * dạng callback (iOS WebKit cũ) mà không phát sinh unhandled rejection.
+ */
+function decodeAudioBuffer(
+	ctx: AudioContext,
+	arrayBuffer: ArrayBuffer,
+): Promise<AudioBuffer> {
+	return new Promise<AudioBuffer>((resolve, reject) => {
+		let settled = false;
+		const settleResolve = (buf: AudioBuffer) => {
+			if (settled) return;
+			settled = true;
+			resolve(buf);
+		};
+		const settleReject = (err: unknown) => {
+			if (settled) return;
+			settled = true;
+			reject(err ?? new Error("Audio decode failed"));
+		};
+
+		try {
+			const maybePromise = ctx.decodeAudioData(
+				arrayBuffer,
+				settleResolve,
+				settleReject,
+			);
+			if (maybePromise && typeof maybePromise.then === "function") {
+				maybePromise.then(settleResolve, settleReject);
+			}
+		} catch (err) {
+			settleReject(err);
+		}
+	});
+}
+
+/**
  * Ghép các đoạn ghi âm từng câu theo đúng thứ tự thành 1 file WAV 16 kHz mono 16-bit PCM.
  * Nếu trình duyệt không hỗ trợ AudioContext hoặc decodeAudioData lỗi, fallback an toàn sang nối blob gốc.
  */
@@ -184,7 +224,7 @@ export async function mergeSpeakingAudioSegments(
 
 			for (const seg of valid) {
 				const arrayBuffer = await readBlobAsArrayBuffer(seg.blob);
-				const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+				const audioBuffer = await decodeAudioBuffer(ctx, arrayBuffer);
 				const mono = mixAudioBufferToMono(audioBuffer);
 				const resampled = resampleMono(
 					mono,
@@ -224,8 +264,13 @@ export async function mergeSpeakingAudioSegments(
 
 	const only = valid[0];
 	if (valid.length === 1 && only) {
+		const headBytes = await readBlobHeadBytes(
+			only.blob,
+			SPEAKING_MAGIC_PEEK_BYTES,
+		);
 		const mimeType = resolveSpeakingUploadMeta(
-			only.blob.type || "audio/webm",
+			only.blob.type || "",
+			headBytes,
 		).contentType;
 		return {
 			blob: only.blob,
@@ -234,8 +279,13 @@ export async function mergeSpeakingAudioSegments(
 		};
 	}
 
+	const firstBlob = valid[0]?.blob;
+	const headBytes = firstBlob
+		? await readBlobHeadBytes(firstBlob, SPEAKING_MAGIC_PEEK_BYTES)
+		: null;
 	const primaryMime = resolveSpeakingUploadMeta(
-		valid[0]?.blob.type || "audio/webm",
+		firstBlob?.type || "",
+		headBytes,
 	).contentType;
 	return {
 		blob: new Blob(

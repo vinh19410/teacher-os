@@ -9,6 +9,7 @@ import {
 	type PlacementContent,
 	type PlacementPublicResultView,
 	type PlacementSubmissionDetail,
+	type StudentPlacementSpeakingTokenResponse,
 	type StudentPlacementStatusResponse,
 	type StudentPlacementSubmitResponse,
 	type StudentPlacementViewResponse,
@@ -1629,5 +1630,389 @@ describe("student portal placement test routes (#748)", () => {
 		expect(view.submission?.speakingCriterionComments).toBeNull();
 		expect(view.submission?.writingErrors[0]?.category).toBe("lexical");
 		expect(view.submission?.speakingErrors[0]?.category).toBe("fluency");
+	});
+
+	test("GET /placement-test returns sanitized speakingTasks only while pending_grading + pending_upload and clears them after upload or grading", async () => {
+		const speakingAudioId = "44444444-4444-4444-8444-444444444444";
+		const content = makeSampleContent();
+		content.parts[4].tasks = [
+			{
+				id: "s-01",
+				partLabel: "Part 1",
+				level: "A1",
+				prompt: "Tell me about your hometown.",
+				prepSeconds: 5,
+				answerSeconds: 20,
+				audioId: speakingAudioId,
+			},
+		];
+		const snapshot = buildPlacementSnapshot(content, 1);
+		await db.insert(schema.placementTest).values({
+			orgId: "org-1",
+			draft: JSON.stringify(content),
+			published: JSON.stringify(snapshot),
+			revision: 1,
+			publishedRevision: 1,
+			publishedVersion: 1,
+			publishedAt: new Date(),
+			updatedAt: new Date(),
+		});
+
+		// Before submission (not_started): speakingTasks is null
+		const beforeRes = await app.request("/api/student/placement-test", {
+			headers: { "x-test-user": "hoa" },
+		});
+		expect(beforeRes.status).toBe(200);
+		const beforeView = (await beforeRes.json()) as StudentPlacementViewResponse;
+		expect(beforeView.speakingTasks).toBeNull();
+
+		// Submit with speakingMode = upload -> pending_grading + pending_upload
+		const submitRes = await app.request(
+			"/api/student/placement-test/submissions",
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "hoa",
+					origin: STUDENT_ORIGIN,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					answers: { listening: {}, vocabGrammar: {}, reading: {} },
+					writingText: "My essay draft.",
+					speakingMode: "upload",
+					speakingDurationSec: 25,
+				}),
+			},
+		);
+		expect(submitRes.status).toBe(201);
+		const submitted =
+			(await submitRes.json()) as StudentPlacementSubmitResponse;
+
+		// While pending_upload: returns sanitized speakingTasks with rewritten student audio src and no answers
+		const pendingRes = await app.request("/api/student/placement-test", {
+			headers: { "x-test-user": "hoa" },
+		});
+		expect(pendingRes.status).toBe(200);
+		const pendingView =
+			(await pendingRes.json()) as StudentPlacementViewResponse;
+		expect(pendingView.status).toBe("pending_grading");
+		expect(pendingView.snapshot).toBeNull();
+		expect(pendingView.speakingTasks).toEqual([
+			{
+				id: "s-01",
+				partLabel: "Part 1",
+				level: "A1",
+				prompt: "Tell me about your hometown.",
+				prepSeconds: 5,
+				answerSeconds: 20,
+				src: `/api/student/placement-test/audio/${speakingAudioId}`,
+			},
+		]);
+		expect(JSON.stringify(pendingView)).not.toContain('"answer"');
+		expect(JSON.stringify(pendingView)).not.toContain('"accept"');
+
+		// Once speaking is uploaded -> speakingTasks becomes null
+		const webm = validWebmBytes();
+		const uploadRes = await app.request(
+			`/api/student/placement-test/submissions/${submitted.submissionId}/speaking`,
+			{
+				method: "PUT",
+				headers: {
+					"x-test-user": "hoa",
+					origin: STUDENT_ORIGIN,
+					"x-upload-token": submitted.uploadToken ?? "",
+					"x-media-filename": "speaking.webm",
+					"content-type": "audio/webm",
+					"content-length": String(webm.byteLength),
+				},
+				body: webm,
+			},
+		);
+		expect(uploadRes.status).toBe(200);
+		await drainBackgroundTasks();
+
+		const uploadedRes = await app.request("/api/student/placement-test", {
+			headers: { "x-test-user": "hoa" },
+		});
+		expect(uploadedRes.status).toBe(200);
+		const uploadedView =
+			(await uploadedRes.json()) as StudentPlacementViewResponse;
+		expect(uploadedView.submission?.speakingStatus).toBe("uploaded");
+		expect(uploadedView.speakingTasks).toBeNull();
+
+		// Once graded -> speakingTasks remains null
+		const gradeRes = await app.request(
+			"/api/students/stu-hoa/placement-submission",
+			{
+				method: "PATCH",
+				headers: {
+					"x-test-user": "t1",
+					origin: TEACHER_ORIGIN,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					writingRubric: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+					writingScore: 6,
+					speakingRubric: {
+						fluency: 6,
+						lexical: 6,
+						grammar: 6,
+						pronunciation: 6,
+					},
+					speakingScore: 6,
+					courseId: "org-1:course:comm-level-2",
+					teacherFeedback: "Tốt.",
+					writingErrors: [],
+					speakingErrors: [],
+				}),
+			},
+		);
+		expect(gradeRes.status).toBe(200);
+
+		const gradedRes = await app.request("/api/student/placement-test", {
+			headers: { "x-test-user": "hoa" },
+		});
+		expect(gradedRes.status).toBe(200);
+		const gradedView = (await gradedRes.json()) as StudentPlacementViewResponse;
+		expect(gradedView.status).toBe("graded");
+		expect(gradedView.speakingTasks).toBeNull();
+	});
+
+	test("POST /placement-test/submissions/:id/speaking-upload-token enforces CSRF/ownership, rotates expired tokens, and rejects non-pending submissions", async () => {
+		await seedPublishedTest("org-1");
+
+		const submitRes = await app.request(
+			"/api/student/placement-test/submissions",
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "hoa",
+					origin: STUDENT_ORIGIN,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					answers: { listening: {}, vocabGrammar: {}, reading: {} },
+					writingText: "Essay text.",
+					speakingMode: "upload",
+					speakingDurationSec: 20,
+				}),
+			},
+		);
+		expect(submitRes.status).toBe(201);
+		const submitted =
+			(await submitRes.json()) as StudentPlacementSubmitResponse;
+		const originalToken = submitted.uploadToken ?? "";
+		expect(originalToken).toBeTruthy();
+
+		// Enforces Origin CSRF (403)
+		const badOrigin = await app.request(
+			`/api/student/placement-test/submissions/${submitted.submissionId}/speaking-upload-token`,
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "hoa",
+					origin: "https://evil.example",
+				},
+			},
+		);
+		expect(badOrigin.status).toBe(403);
+
+		// Another student cannot request token for hoa's submission (404)
+		const otherStudent = await app.request(
+			`/api/student/placement-test/submissions/${submitted.submissionId}/speaking-upload-token`,
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "minh",
+					origin: STUDENT_ORIGIN,
+				},
+			},
+		);
+		expect(otherStudent.status).toBe(404);
+
+		// Expire original token in DB, then mint a fresh token
+		await db
+			.update(schema.placementTestSubmission)
+			.set({ uploadTokenExpiresAt: new Date(Date.now() - 60_000) })
+			.where(eq(schema.placementTestSubmission.id, submitted.submissionId));
+
+		const tokenRes = await app.request(
+			`/api/student/placement-test/submissions/${submitted.submissionId}/speaking-upload-token`,
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "hoa",
+					origin: STUDENT_ORIGIN,
+				},
+			},
+		);
+		expect(tokenRes.status).toBe(200);
+		expect(tokenRes.headers.get("cache-control")).toBe("no-store");
+		const fresh =
+			(await tokenRes.json()) as StudentPlacementSpeakingTokenResponse;
+		expect(fresh.uploadToken).toMatch(/^[0-9a-f]{64}$/);
+		expect(fresh.uploadToken).not.toBe(originalToken);
+		expect(Date.parse(fresh.uploadTokenExpiresAt)).toBeGreaterThan(Date.now());
+
+		// Minting rotates previous token: old token is rejected with 401
+		const webm = validWebmBytes();
+		const staleTokenUpload = await app.request(
+			`/api/student/placement-test/submissions/${submitted.submissionId}/speaking`,
+			{
+				method: "PUT",
+				headers: {
+					"x-test-user": "hoa",
+					origin: STUDENT_ORIGIN,
+					"x-upload-token": originalToken,
+					"x-media-filename": "speaking.webm",
+					"content-type": "audio/webm",
+					"content-length": String(webm.byteLength),
+				},
+				body: webm,
+			},
+		);
+		expect(staleTokenUpload.status).toBe(401);
+
+		// Fresh token allows subsequent PUT .../speaking to succeed (with M4A / audio/mp4 payload)
+		const m4aBytes = new Uint8Array([
+			0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x41, 0x20,
+			0x00, 0x00, 0x00, 0x00, 0x4d, 0x34, 0x41, 0x20, 0x69, 0x73, 0x6f, 0x6d,
+		]);
+		const okUpload = await app.request(
+			`/api/student/placement-test/submissions/${submitted.submissionId}/speaking`,
+			{
+				method: "PUT",
+				headers: {
+					"x-test-user": "hoa",
+					origin: STUDENT_ORIGIN,
+					"x-upload-token": fresh.uploadToken,
+					"x-media-filename": "speaking.m4a",
+					"content-type": "audio/mp4",
+					"content-length": String(m4aBytes.byteLength),
+				},
+				body: m4aBytes,
+			},
+		);
+		expect(okUpload.status).toBe(200);
+		expect(await okUpload.json()).toMatchObject({
+			ok: true,
+			speakingStatus: "uploaded",
+			mime: "audio/mp4",
+		});
+		await drainBackgroundTasks();
+
+		// Once uploaded, requesting a new upload token returns 409 SPEAKING_UPLOAD_NOT_PENDING
+		const afterUploadToken = await app.request(
+			`/api/student/placement-test/submissions/${submitted.submissionId}/speaking-upload-token`,
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "hoa",
+					origin: STUDENT_ORIGIN,
+				},
+			},
+		);
+		expect(afterUploadToken.status).toBe(409);
+		expect(await afterUploadToken.json()).toEqual({
+			error: "SPEAKING_UPLOAD_NOT_PENDING",
+			code: "SPEAKING_UPLOAD_NOT_PENDING",
+		});
+	});
+
+	test("graded submission rejects both speaking upload token refresh and speaking upload", async () => {
+		await seedPublishedTest("org-1");
+
+		const submitRes = await app.request(
+			"/api/student/placement-test/submissions",
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "hoa",
+					origin: STUDENT_ORIGIN,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					answers: { listening: {}, vocabGrammar: {}, reading: {} },
+					writingText: "Essay before grading.",
+					speakingMode: "upload",
+					speakingDurationSec: 15,
+				}),
+			},
+		);
+		expect(submitRes.status).toBe(201);
+		const submitted =
+			(await submitRes.json()) as StudentPlacementSubmitResponse;
+
+		// Teacher grades submission while speakingStatus is still pending_upload
+		const gradeRes = await app.request(
+			"/api/students/stu-hoa/placement-submission",
+			{
+				method: "PATCH",
+				headers: {
+					"x-test-user": "t1",
+					origin: TEACHER_ORIGIN,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					writingRubric: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+					writingScore: 6,
+					speakingRubric: null,
+					speakingScore: null,
+					courseId: "org-1:course:comm-level-2",
+					teacherFeedback: "Đã chốt.",
+					writingErrors: [],
+					speakingErrors: [],
+				}),
+			},
+		);
+		expect(gradeRes.status).toBe(200);
+
+		// Token refresh returns 409 SPEAKING_UPLOAD_NOT_PENDING
+		const tokenRes = await app.request(
+			`/api/student/placement-test/submissions/${submitted.submissionId}/speaking-upload-token`,
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "hoa",
+					origin: STUDENT_ORIGIN,
+				},
+			},
+		);
+		expect(tokenRes.status).toBe(409);
+		expect(await tokenRes.json()).toEqual({
+			error: "SPEAKING_UPLOAD_NOT_PENDING",
+			code: "SPEAKING_UPLOAD_NOT_PENDING",
+		});
+
+		// Speaking upload with the previously issued valid token is rejected with 409
+		const webm = validWebmBytes();
+		const uploadRes = await app.request(
+			`/api/student/placement-test/submissions/${submitted.submissionId}/speaking`,
+			{
+				method: "PUT",
+				headers: {
+					"x-test-user": "hoa",
+					origin: STUDENT_ORIGIN,
+					"x-upload-token": submitted.uploadToken ?? "",
+					"x-media-filename": "speaking.webm",
+					"content-type": "audio/webm",
+					"content-length": String(webm.byteLength),
+				},
+				body: webm,
+			},
+		);
+		expect(uploadRes.status).toBe(409);
+		expect(await uploadRes.json()).toEqual({
+			error: "SPEAKING_UPLOAD_NOT_PENDING",
+			code: "SPEAKING_UPLOAD_NOT_PENDING",
+		});
+
+		const [row] = await db
+			.select()
+			.from(schema.placementTestSubmission)
+			.where(eq(schema.placementTestSubmission.id, submitted.submissionId));
+		expect(row?.status).toBe("graded");
+		expect(row?.speakingStatus).toBe("pending_upload");
+		expect(row?.speakingMediaKey).toBeNull();
 	});
 });

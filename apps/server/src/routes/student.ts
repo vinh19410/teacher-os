@@ -810,6 +810,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	// domain ở file khác (student-classmates.ts) tái dùng đúng một logic xác
 	// thực học viên + chọn org (x-student-org-id).
 	const requireStudent = createStudentGuard(deps);
+	const getNow = () => (deps.now ? deps.now() : new Date());
 
 	router.use("/me", requireStudent);
 	router.use("/overview", requireStudent);
@@ -1005,7 +1006,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		}
 		if (
 			!row.assignmentId ||
-			(row.availableAt !== null && row.availableAt.getTime() > Date.now())
+			(row.availableAt !== null &&
+				row.availableAt.getTime() > getNow().getTime())
 		) {
 			return undefined;
 		}
@@ -1762,7 +1764,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				and(
 					eq(classAssignment.id, assignmentId),
 					eq(classAssignment.orgId, orgId),
-					visibleAssignmentFilter(new Date()),
+					visibleAssignmentFilter(getNow()),
 				),
 			);
 		if (!row) {
@@ -1867,9 +1869,11 @@ export function studentRoutes(deps: StudentRouteDeps) {
 								? essayToPlain(attempt.essay).text
 								: attempt.essay,
 						media: toQuizAttemptMedia(attempt),
+						startedAt: attempt.startedAt.toISOString(),
 					}
 				: null,
 		};
+		c.header("X-Server-Now", getNow().toISOString());
 		return c.json(detail);
 	});
 
@@ -1903,7 +1907,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				and(
 					eq(classAssignment.id, assignmentId),
 					eq(classAssignment.orgId, orgId),
-					visibleAssignmentFilter(new Date()),
+					visibleAssignmentFilter(getNow()),
 				),
 			)
 			.limit(1);
@@ -1914,6 +1918,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			audioKey: row.audioKey,
 			audioUrl: row.audioUrl,
 			audioName: row.audioName,
+			rangeHeader: c.req.header("Range"),
+			ifNoneMatch: c.req.header("If-None-Match"),
+			cacheControl: "private, no-cache",
+			vary: "Cookie, x-student-org-id",
 			getLibraryAudioStore: deps.getLibraryAudioStore,
 			fetchExternalAudio: deps.fetchExternalAudio,
 		});
@@ -1955,7 +1963,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				and(
 					eq(classAssignment.id, assignmentId),
 					eq(classAssignment.orgId, orgId),
-					visibleAssignmentFilter(new Date()),
+					visibleAssignmentFilter(getNow()),
 				),
 			);
 		if (!target) {
@@ -1999,7 +2007,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					parseQuizQuestions(prompt.questions, target.promptId),
 				),
 				answers: "{}",
-				startedAt: new Date(),
+				startedAt: getNow(),
 			});
 			return c.json({ attemptId }, 201);
 		} catch (err) {
@@ -2268,7 +2276,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		}
 
 		const owner = ownedAttempt(attemptId, s.id, orgId);
-		const uploadedAt = new Date();
+		const uploadedAt = getNow();
 		let updated: { id: string }[];
 		try {
 			updated = await deps
@@ -2445,9 +2453,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			return c.json({ error: "attempt not found" }, 404);
 		}
 		const requiresMedia = header.skill === "speaking";
+		const submittedAt = getNow();
 		const flipped = await db
 			.update(quizAttempt)
-			.set({ status: "submitted", submittedAt: new Date() })
+			.set({ status: "submitted", submittedAt })
 			.where(
 				and(
 					owner,
@@ -2506,7 +2515,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			statements.push(
 				db
 					.update(classAssignmentTarget)
-					.set({ submittedAt: new Date().toISOString() })
+					.set({ submittedAt: submittedAt.toISOString() })
 					.where(
 						and(
 							eq(classAssignmentTarget.orgId, orgId),
@@ -2641,7 +2650,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 							// `?? ""` chỉ để thu hẹp kiểu.
 							eq(classAssignment.id, attempt.assignmentId ?? ""),
 							eq(classAssignment.orgId, orgId),
-							visibleAssignmentFilter(new Date()),
+							visibleAssignmentFilter(getNow()),
 						),
 					));
 		if (attempt.mode !== "practice" && header.length === 0) {

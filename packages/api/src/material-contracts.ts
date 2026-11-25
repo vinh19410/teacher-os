@@ -419,6 +419,24 @@ export type LessonMaterialAttachInput = z.infer<
 	typeof lessonMaterialAttachSchema
 >;
 
+export const classMaterialAttachSchema = z
+	.object({ materialId: idSchema })
+	.strict();
+export type ClassMaterialAttachInput = z.infer<
+	typeof classMaterialAttachSchema
+>;
+
+export const classMaterialLinkCreateSchema = z
+	.object({
+		title: materialTitleSchema,
+		description: materialDescriptionSchema.default(""),
+		url: materialUrlSchema,
+	})
+	.strict();
+export type ClassMaterialLinkCreateInput = z.infer<
+	typeof classMaterialLinkCreateSchema
+>;
+
 /** Bộ lọc danh sách: `folderId` vắng = mọi thư mục, `"root"` = chỉ gốc. */
 export const MATERIAL_ROOT_FOLDER = "root";
 export const MATERIAL_SEARCH_MAX = 100;
@@ -451,7 +469,10 @@ export interface MaterialFolderView {
 	createdAt: string;
 }
 
-/** Tài liệu trả cho app giáo viên. `usageCount` = số buổi đang gắn. */
+/**
+ * Tài liệu trả cho app giáo viên. `usageCount` = số buổi đang gắn,
+ * `classUsageCount` = số lớp đang gắn ở mục tài liệu chung.
+ */
 export interface MaterialView {
 	id: string;
 	folderId: string | null;
@@ -463,6 +484,7 @@ export interface MaterialView {
 	sizeBytes: number | null;
 	originalName: string | null;
 	usageCount: number;
+	classUsageCount?: number;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -473,11 +495,34 @@ export interface LessonMaterialView extends MaterialView {
 	attachedAt: string;
 }
 
+/** Tài liệu chung gắn ở cấp lớp học (app giáo viên). */
+export interface ClassMaterialView extends MaterialView {
+	position: number;
+	attachedAt: string;
+}
+
 /**
  * Tài liệu buổi học cho học viên — chỉ đọc, không có cột teacher-only
  * (object key, người tạo, thư mục, số buổi dùng).
  */
 export interface StudentLessonMaterialView {
+	id: string;
+	title: string;
+	description: string;
+	kind: MaterialKind;
+	url: string | null;
+	mimeType: string | null;
+	sizeBytes: number | null;
+	originalName: string | null;
+	position: number;
+}
+
+/**
+ * Tài liệu chung cấp lớp cho học viên — chỉ đọc, cùng projection an toàn
+ * như `StudentLessonMaterialView` (không có objectKey, createdBy, folderId,
+ * usageCount, classUsageCount).
+ */
+export interface StudentClassMaterialView {
 	id: string;
 	title: string;
 	description: string;
@@ -505,6 +550,12 @@ export interface MaterialListResponse {
 export interface LessonMaterialListResponse {
 	items: LessonMaterialView[];
 }
+export interface ClassMaterialListResponse {
+	items: ClassMaterialView[];
+}
 export interface StudentLessonMaterialListResponse {
 	items: StudentLessonMaterialView[];
+}
+export interface StudentClassMaterialListResponse {
+	items: StudentClassMaterialView[];
 }

@@ -1,3 +1,7 @@
+import {
+	createTabsSignature,
+	useScrollActiveTab,
+} from "@teacher-os/ui/hooks/use-scroll-active-tab";
 import { cn } from "@/lib/cn";
 
 export interface TabsProps {
@@ -21,8 +25,14 @@ export function Tabs({
 	testIdPrefix,
 	className,
 }: TabsProps) {
+	const { tablistRef, activeTabRef } = useScrollActiveTab(
+		active,
+		createTabsSignature(tabs),
+	);
+
 	return (
 		<div
+			ref={tablistRef}
 			role="tablist"
 			aria-label={ariaLabel}
 			className={cn(
@@ -35,6 +45,7 @@ export function Tabs({
 					type="button"
 					role="tab"
 					key={t.id}
+					ref={t.id === active ? activeTabRef : undefined}
 					aria-selected={t.id === active}
 					data-testid={testIdPrefix ? `${testIdPrefix}-${t.id}` : undefined}
 					onClick={() => onChange(t.id)}

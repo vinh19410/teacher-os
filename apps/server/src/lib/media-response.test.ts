@@ -136,6 +136,7 @@ describe("mediaObjectResponse security contract (#675)", () => {
 
 		for (const path of [
 			"/api/student/attempts/att-1/media",
+			"/api/student/assignments/ca-1/audio",
 			"/api/student/practice/test-1/audio",
 			"/api/grading/att-1/media",
 			"/api/placement-test/audio/aud-1",

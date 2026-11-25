@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, test, vi } from "vitest";
 import { parseImportListeningArgs } from "../../scripts/import-listening-library";
 import {
+	DEFAULT_LISTENING_DATA_DIR,
 	LISTENING_AUDIO_R2_PREFIX,
 	LISTENING_IMAGE_R2_PREFIX,
 	type RawListeningFile,
@@ -140,6 +143,29 @@ describe("listening-library transformer", () => {
 		expect(item.status).toBe("draft");
 		expect(item.draftReasons.some((r) => r.includes('answer "F"'))).toBe(true);
 		expect(item.part.note).toContain("nháp");
+	});
+
+	test("Talking about the history of bikes Q5 blank aligns grammatically with audio answer 'more smoothly'", () => {
+		const fileName = "Unknown-S4-talking-about-the-history-of-bikes.json";
+		const raw = JSON.parse(
+			readFileSync(join(DEFAULT_LISTENING_DATA_DIR, fileName), "utf8"),
+		) as RawListeningFile;
+		const item = transformListeningFile(raw, fileName);
+
+		expect(item.status).toBe("ready");
+		expect(item.testId).toBe("lib-listen-83a7d7c9-ff79-47c3-80a2-b8bd4250a6b3");
+		expect(item.partId).toBe(
+			"lib-listen-part-83a7d7c9-ff79-47c3-80a2-b8bd4250a6b3-s4",
+		);
+		expect(item.part.questions[4]?.stem).toBe("easier; ride ____");
+		expect(item.part.questions[4]?.answer).toBe("more smoothly");
+		expect(item.part.questions[4]?.alts).toBe("");
+		expect(item.part.groups[0]?.instruction).toContain(
+			"<td><p>easier; ride <strong>(5)</strong></p></td>",
+		);
+		expect(item.part.groups[0]?.instruction).not.toContain(
+			"easier and <strong>(5)</strong> ride",
+		);
 	});
 });
 

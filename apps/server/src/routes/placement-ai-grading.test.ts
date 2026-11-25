@@ -25,14 +25,17 @@ import {
 	FAKE_PLACEMENT_TRANSCRIPT,
 	type FakePlacementAiGraderOptions,
 } from "../lib/placement-ai/fake-grader";
-import type { PlacementAiGrader } from "../lib/placement-ai/grader";
+import type {
+	PlacementAiAudio,
+	PlacementAiGrader,
+} from "../lib/placement-ai/grader";
 import {
 	PLACEMENT_AI_HARD_TIMEOUT_MS,
 	PLACEMENT_AI_STALE_AFTER_MS,
 	runPlacementAiGrading,
 } from "../lib/placement-ai/run-placement-grading";
 import { resolvePlacementResultLink } from "../lib/placement-submission-service";
-import { webmBytes } from "../lib/test-media-fixtures";
+import { aacAdtsBytes, webmBytes } from "../lib/test-media-fixtures";
 
 const CORS_ORIGIN = "http://localhost:8001";
 const PROFILE_ORIGIN = "https://msmy.io.vn";
@@ -216,6 +219,7 @@ interface Harness {
 async function createHarness(
 	opts: {
 		grader?: "none" | FakePlacementAiGraderOptions;
+		onTranscribe?: (audio: PlacementAiAudio) => void;
 		mailer?: Mailer;
 		brokenMailer?: boolean;
 		studentOrigin?: string;
@@ -249,10 +253,20 @@ async function createHarness(
 	});
 
 	const calls = { transcribe: 0, writing: 0, speaking: 0, poll: 0 };
-	const grader: PlacementAiGrader | undefined =
+	const baseGrader: PlacementAiGrader | undefined =
 		opts.grader === "none"
 			? undefined
 			: createFakePlacementAiGrader({ ...(opts.grader ?? {}), calls });
+	const grader: PlacementAiGrader | undefined =
+		baseGrader && opts.onTranscribe
+			? {
+					...baseGrader,
+					transcribe(audio, signal) {
+						opts.onTranscribe?.(audio);
+						return baseGrader.transcribe(audio, signal);
+					},
+				}
+			: baseGrader;
 	const pending: Promise<unknown>[] = [];
 	const runInBackground = (p: Promise<unknown>) => {
 		pending.push(p);
@@ -515,6 +529,38 @@ describe("placement AI grading pipeline (#730)", () => {
 		const d = await h.detail(leadId);
 		expect(d.aiStatus).toBe("failed");
 		expect(d.aiErrorCode).toBe(PLACEMENT_AI_ERROR_CODES.TIMEOUT);
+	});
+
+	test("upload Speaking audio/aac gửi đúng filename speaking.aac cho grader.transcribe", async () => {
+		const transcribed: PlacementAiAudio[] = [];
+		const h = await createHarness({
+			onTranscribe: (audio) => {
+				transcribed.push(audio);
+			},
+		});
+		const created = await h.submit({ speakingMode: "upload" });
+		const bytes = aacAdtsBytes(16, 5);
+		const res = await h.app.request(
+			`/public/placement-test/submissions/${created.submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": created.uploadToken,
+					"x-media-filename": "speaking.aac",
+					"content-type": "audio/aac",
+					"content-length": String(bytes.byteLength),
+				},
+				body: bytes,
+			},
+		);
+		expect(res.status).toBe(200);
+
+		await h.flush();
+		expect(transcribed).toHaveLength(1);
+		expect(transcribed[0]?.mime).toBe("audio/aac");
+		expect(transcribed[0]?.filename).toBe("speaking.aac");
+		expect(transcribed[0]?.bytes.byteLength).toBe(bytes.byteLength);
 	});
 });
 
@@ -1440,7 +1486,7 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 		expect(h.calls.poll).toBe(0);
 	});
 
-	test("bài đã chốt trước khi upload: pipeline không ghi đè transcript", async () => {
+	test("bài đã chốt trước khi upload: từ chối upload Speaking (409) và pipeline không ghi đè transcript bài đã chốt", async () => {
 		const h = await createHarness();
 		const created = await h.submit({ speakingMode: "upload" });
 		const patch = await teacherPost(
@@ -1449,12 +1495,119 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 			finalGrade,
 		);
 		expect(patch.status).toBe(200);
-		await h.upload(created.submissionId, created.uploadToken);
+
+		const bytes = webmBytes();
+		const lateUpload = await h.app.request(
+			`/public/placement-test/submissions/${created.submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": created.uploadToken,
+					"x-media-filename": "speaking.webm",
+					"content-type": "audio/webm",
+					"content-length": String(bytes.byteLength),
+				},
+				body: bytes,
+			},
+		);
+		expect(lateUpload.status).toBe(409);
+		expect(await lateUpload.json()).toEqual({
+			error: "SPEAKING_UPLOAD_NOT_PENDING",
+			code: "SPEAKING_UPLOAD_NOT_PENDING",
+		});
 		await h.flush();
-		const d = await h.detail(created.leadId);
+		expect(h.calls.transcribe).toBe(0);
+
+		// Defense-in-depth: nếu audio đã upload trước khi giáo viên chốt, pipeline vẫn không ghi đè transcript bài đã chốt.
+		const uploadedBeforeGrade = await h.submitAndUpload();
+		await h.flush();
+		const patch2 = await teacherPost(
+			h.app,
+			`/api/leads/${uploadedBeforeGrade.leadId}/placement-submission`,
+			finalGrade,
+		);
+		expect(patch2.status).toBe(200);
+		await h.db
+			.update(schema.placementTestSubmission)
+			.set({ aiStatus: "none", speakingTranscript: "" })
+			.where(
+				eq(schema.placementTestSubmission.id, uploadedBeforeGrade.submissionId),
+			);
+		const prevTranscribe = h.calls.transcribe;
+		await runPlacementAiGrading(
+			h.pipelineDeps,
+			uploadedBeforeGrade.submissionId,
+		);
+		const d = await h.detail(uploadedBeforeGrade.leadId);
 		expect(d.status).toBe("graded");
 		expect(d.speakingTranscript).toBe("");
+		expect(h.calls.transcribe).toBe(prevTranscribe + 1);
+	});
+
+	test("allowRedraftForSpeaking: re-claims drafted Writing-only ungraded submission after late Speaking upload, skips graded submissions, and preserves Writing draft when grader is disabled", async () => {
+		const h = await createHarness();
+		const created = await h.submit({ speakingMode: "upload" });
+		await h.flush();
+
+		// Teacher triggers AI grading for Writing before Speaking arrives -> aiStatus becomes "drafted" with empty speakingTranscript
+		const retryWriting = await teacherPost(
+			h.app,
+			`/api/leads/${created.leadId}/placement-submission/ai-retry`,
+		);
+		expect(retryWriting.status).toBe(200);
+		await h.flush();
+		const writingOnly = await h.detail(created.leadId);
+		expect(writingOnly.aiStatus).toBe("drafted");
+		expect(writingOnly.aiWriting?.errors).toHaveLength(1);
+		expect(writingOnly.aiSpeaking).toBeNull();
+		expect(writingOnly.speakingTranscript).toBe("");
+		expect(h.calls.transcribe).toBe(0);
+
+		// Speaking arrives later via upload -> triggers allowRedraftForSpeaking: true -> re-claims from "drafted" and drafts Speaking
+		await h.upload(created.submissionId, created.uploadToken);
+		await h.flush();
+		const afterSpeaking = await h.detail(created.leadId);
+		expect(afterSpeaking.aiStatus).toBe("drafted");
+		expect(afterSpeaking.speakingTranscript).toBe(FAKE_PLACEMENT_TRANSCRIPT);
+		expect(afterSpeaking.aiWriting?.errors).toHaveLength(1);
+		expect(afterSpeaking.aiSpeaking?.errors).toHaveLength(1);
 		expect(h.calls.transcribe).toBe(1);
+		expect(h.calls.speaking).toBe(1);
+
+		// Calling allowRedraftForSpeaking again once transcript is present must NOT re-claim
+		await runPlacementAiGrading(h.pipelineDeps, created.submissionId, {
+			allowRedraftForSpeaking: true,
+		});
+		expect(h.calls.transcribe).toBe(1);
+
+		// When grader is disabled, allowRedraftForSpeaking must NOT overwrite an existing "drafted" Writing draft
+		await h.db
+			.update(schema.placementTestSubmission)
+			.set({ speakingTranscript: "" })
+			.where(eq(schema.placementTestSubmission.id, created.submissionId));
+		await runPlacementAiGrading(
+			{ ...h.pipelineDeps, getPlacementAiGrader: () => undefined },
+			created.submissionId,
+			{ allowRedraftForSpeaking: true },
+		);
+		const afterDisabled = await rowOf(h, created.submissionId);
+		expect(afterDisabled.aiStatus).toBe("drafted");
+		expect(afterDisabled.aiErrorCode).toBeNull();
+
+		// Already graded submission with drafted Writing + empty transcript must NOT be re-claimed
+		const patch = await teacherPost(
+			h.app,
+			`/api/leads/${created.leadId}/placement-submission`,
+			finalGrade,
+		);
+		expect(patch.status).toBe(200);
+		await runPlacementAiGrading(h.pipelineDeps, created.submissionId, {
+			allowRedraftForSpeaking: true,
+		});
+		expect(h.calls.transcribe).toBe(1);
+		expect(h.calls.speaking).toBe(1);
+		expect((await rowOf(h, created.submissionId)).speakingTranscript).toBe("");
 	});
 });
 
@@ -1693,5 +1846,30 @@ describe("chốt kết quả: token và email (#730)", () => {
 				},
 			],
 		});
+	});
+
+	test("allowRedraftForSpeaking finalizes a stale processing Writing-only job before re-claiming for late Speaking upload", async () => {
+		const h = await createHarness();
+		const created = await h.submit({ speakingMode: "upload" });
+		await h.flush();
+
+		// Simulate a stale Writing-only processing job (> 15 minutes old, no job IDs)
+		await h.db
+			.update(schema.placementTestSubmission)
+			.set({
+				aiStatus: "processing",
+				aiStartedAt: new Date(Date.now() - 20 * 60 * 1000),
+				aiWritingResponseId: null,
+				aiSpeakingResponseId: null,
+			})
+			.where(eq(schema.placementTestSubmission.id, created.submissionId));
+
+		await h.upload(created.submissionId, created.uploadToken);
+		await h.flush();
+		const detail = await h.detail(created.leadId);
+		expect(detail.aiStatus).toBe("drafted");
+		expect(detail.speakingTranscript).toBe(FAKE_PLACEMENT_TRANSCRIPT);
+		expect(h.calls.transcribe).toBe(1);
+		expect(h.calls.speaking).toBe(1);
 	});
 });

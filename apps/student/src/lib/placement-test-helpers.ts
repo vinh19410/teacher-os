@@ -1,5 +1,7 @@
 import { LEAD_COURSE_LABELS } from "@teacher-os/api/lead-contracts";
 import {
+	detectSpeakingAudioMimeFromBytes,
+	isLikelyInAppBrowser,
 	locatePlacementErrors,
 	normalizePlacementErrorCategory,
 	type PlacementError,
@@ -9,6 +11,7 @@ import {
 	type PlacementPublishedSpeakingTask,
 	type PlacementSnapshot,
 	placementErrorCategoriesForSkill,
+	resolvePlacementSpeakingUploadMeta,
 	type StudentPlacementSubmit,
 	stripInlineCefrLabel,
 } from "@teacher-os/api/placement-test-contracts";
@@ -545,33 +548,24 @@ export function pickSupportedRecorderMime(
 	);
 }
 
-export function resolveSpeakingUploadMeta(blobType: string): {
+export { detectSpeakingAudioMimeFromBytes, isLikelyInAppBrowser };
+
+export function resolveSpeakingUploadMeta(
+	blobType: string,
+	headBytes?: Uint8Array | null,
+): {
 	contentType: string;
 	filename: string;
 } {
-	const base = String(blobType ?? "")
-		.split(";")[0]
-		?.trim()
-		.toLowerCase();
-	switch (base) {
-		case "video/webm":
-		case "audio/webm":
-			return { contentType: "audio/webm", filename: "speaking.webm" };
-		case "audio/mp4":
-			return { contentType: "audio/mp4", filename: "speaking.m4a" };
-		case "audio/ogg":
-			return { contentType: "audio/ogg", filename: "speaking.ogg" };
-		case "audio/mpeg":
-		case "audio/mp3":
-			return { contentType: "audio/mpeg", filename: "speaking.mp3" };
-		case "audio/wav":
-		case "audio/x-wav":
-			return { contentType: "audio/wav", filename: "speaking.wav" };
-		case "audio/aac":
-			return { contentType: "audio/aac", filename: "speaking.aac" };
-		default:
-			return { contentType: "audio/webm", filename: "speaking.webm" };
-	}
+	return resolvePlacementSpeakingUploadMeta(blobType, headBytes);
+}
+
+/**
+ * Xác định mã trạng thái lỗi khi tải lên Speaking có nên tự động thử lại hay
+ * không (lỗi mạng `0`, `408`, `429`, hoặc lỗi máy chủ `5xx`).
+ */
+export function isRetryableSpeakingUploadStatus(status: number): boolean {
+	return status === 0 || status === 408 || status === 429 || status >= 500;
 }
 
 export interface PlacementErrorStyle {

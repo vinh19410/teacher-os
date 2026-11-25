@@ -33,6 +33,10 @@ function orgInitials(name: string): string {
  * Logo + tên app/org đầu sidebar (design TeamSwitcher): bấm mở menu đổi tổ
  * chức khi có ≥2 org; 1 org hoặc không có org thì chỉ hiển thị tĩnh.
  */
+/** Selector nhận diện dialog/modal đang mở (gồm cả Base UI DialogPopup dùng data-open). */
+const OPEN_DIALOG_SELECTOR =
+	'[role="dialog"][aria-modal="true"], [role="dialog"][data-open], [role="alertdialog"][aria-modal="true"], [role="alertdialog"][data-open]';
+
 export function TeamSwitcher({
 	team,
 	logo,
@@ -45,6 +49,7 @@ export function TeamSwitcher({
 }) {
 	const [open, setOpen] = useState(false);
 	const wrapRef = useRef<HTMLDivElement>(null);
+	const triggerRef = useRef<HTMLButtonElement>(null);
 	const orgs = team.orgs ?? [];
 	const switchable = orgs.length > 1;
 
@@ -52,7 +57,15 @@ export function TeamSwitcher({
 	useEffect(() => {
 		if (!open) return;
 		const onKeyDown = (event: KeyboardEvent) => {
-			if (event.key === "Escape") setOpen(false);
+			if (
+				event.key === "Escape" &&
+				!event.defaultPrevented &&
+				!document.querySelector(OPEN_DIALOG_SELECTOR)
+			) {
+				event.preventDefault();
+				setOpen(false);
+				triggerRef.current?.focus();
+			}
 		};
 		const onPointerDown = (event: PointerEvent) => {
 			if (!wrapRef.current?.contains(event.target as Node)) setOpen(false);
@@ -66,7 +79,7 @@ export function TeamSwitcher({
 	}, [open]);
 
 	const headerRow = (
-		<span className="grid min-w-0 flex-1 leading-tight">
+		<span className="grid min-w-0 flex-1 grid-cols-1 leading-tight">
 			<span className={cn("truncate font-medium", collapsed && "lg:hidden")}>
 				{team.name}
 			</span>
@@ -101,6 +114,7 @@ export function TeamSwitcher({
 	return (
 		<div ref={wrapRef} className="relative">
 			<button
+				ref={triggerRef}
 				type="button"
 				onClick={() => setOpen((prev) => !prev)}
 				aria-expanded={open}
@@ -113,7 +127,7 @@ export function TeamSwitcher({
 				<ChevronsUpDown
 					aria-hidden="true"
 					className={cn(
-						"size-4 text-muted-foreground",
+						"size-4 shrink-0 text-muted-foreground",
 						collapsed && "lg:hidden",
 					)}
 				/>
@@ -122,7 +136,7 @@ export function TeamSwitcher({
 				<div
 					role="menu"
 					data-testid={team.menuTestId ?? undefined}
-					className="absolute top-full right-2 left-2 z-20 mt-1 rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+					className="absolute top-full right-2 left-2 z-20 mt-1 max-h-[calc(100svh-5rem)] overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
 				>
 					<div className="px-2 py-1.5 text-muted-foreground text-xs">
 						{team.menuLabel ?? "Organizations"}
@@ -140,11 +154,13 @@ export function TeamSwitcher({
 								}}
 								className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
 							>
-								<span className="flex size-6 items-center justify-center rounded-md border font-medium text-[10px]">
+								<span className="flex size-6 shrink-0 items-center justify-center rounded-md border font-medium text-[10px]">
 									{orgInitials(org.name)}
 								</span>
 								<span className="flex-1 truncate text-left">{org.name}</span>
-								{selected && <Check aria-hidden="true" className="size-4" />}
+								{selected && (
+									<Check aria-hidden="true" className="size-4 shrink-0" />
+								)}
 							</button>
 						);
 					})}
