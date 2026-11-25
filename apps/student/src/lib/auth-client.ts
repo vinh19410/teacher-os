@@ -1,5 +1,12 @@
+import {
+	createSessionCache,
+	SESSION_CACHE_TTL_MS,
+} from "@teacher-os/auth/session-cache";
 import { env } from "@teacher-os/env/web";
 import { createAuthClient } from "better-auth/react";
+import { ACTIVE_STUDENT_USER_KEY } from "@/lib/student-org-storage";
+
+export { SESSION_CACHE_TTL_MS };
 
 function getProcessEnv(): Record<string, string | undefined> | undefined {
 	const globalScope = globalThis as typeof globalThis & {
@@ -39,13 +46,6 @@ export function getServerUrl(url: string) {
 	return `http://localhost:8000${normalized}`;
 }
 
-/**
- * `_auth.beforeLoad` chạy lại mỗi lần chuyển trang; gọi thẳng `getSession()`
- * khiến mỗi cú bấm sidebar chờ một round-trip get-session (truy vấn D1). Cache
- * ngắn hạn + gộp request đồng thời giống cổng giáo viên.
- */
-export const SESSION_CACHE_TTL_MS = 10_000;
-
 export const rawAuthClient = createAuthClient({
 	baseURL: new URL("/api/auth", getServerUrl(env.VITE_SERVER_URL)).toString(),
 });
@@ -71,77 +71,27 @@ export function isStudentSession(sessionData: SessionDataLike): boolean {
 	return getSessionUserRole(sessionData) === "student";
 }
 
-let cacheEpoch = 0;
-let cachedSession: { data: AuthSessionResult; expiresAt: number } | null = null;
-let lastKnownSession: AuthSessionResult | null = null;
-let inFlightSessionPromise: Promise<AuthSessionResult> | null = null;
+/**
+ * `_auth.beforeLoad` chạy lại mỗi lần chuyển trang; cache ngắn hạn + gộp
+ * request đồng thời + chịu lỗi tạm thời (429/5xx/timeout) dùng chung qua
+ * `@teacher-os/auth/session-cache`.
+ */
+const sessionCache = createSessionCache<AuthSessionResult>((signal) =>
+	rawAuthClient.getSession({
+		fetchOptions: { signal },
+	}),
+);
 
-export function clearSessionCache(): void {
-	cacheEpoch++;
-	cachedSession = null;
-	lastKnownSession = null;
-	inFlightSessionPromise = null;
-}
+export const getCachedSession = sessionCache.getCachedSession;
+export const clearSessionCache = sessionCache.clearSessionCache;
 
-export async function getCachedSession({
-	force = false,
-}: {
-	force?: boolean;
-} = {}): Promise<AuthSessionResult> {
-	const now = Date.now();
-	if (!force && cachedSession && now < cachedSession.expiresAt) {
-		return cachedSession.data;
-	}
-
-	if (inFlightSessionPromise) {
-		return inFlightSessionPromise;
-	}
-
-	const requestEpoch = cacheEpoch;
-	inFlightSessionPromise = (async () => {
-		try {
-			const res = await rawAuthClient.getSession({
-				fetchOptions: {
-					signal: AbortSignal.timeout(5_000),
-				},
-			});
-			if (requestEpoch !== cacheEpoch) {
-				return res;
-			}
-			if (res?.data) {
-				cachedSession = {
-					data: res,
-					expiresAt: Date.now() + SESSION_CACHE_TTL_MS,
-				};
-				lastKnownSession = res;
-			} else {
-				clearSessionCache();
-			}
-			return res;
-		} catch (err) {
-			if (requestEpoch === cacheEpoch && lastKnownSession?.data) {
-				console.warn(
-					"getSession failed; falling back to last known session",
-					err,
-				);
-				cachedSession = {
-					data: lastKnownSession,
-					expiresAt: Date.now() + 5_000,
-				};
-				return lastKnownSession;
-			}
-			if (requestEpoch === cacheEpoch) {
-				clearSessionCache();
-			}
-			throw err;
-		} finally {
-			if (requestEpoch === cacheEpoch) {
-				inFlightSessionPromise = null;
-			}
+// Vô hiệu hoá cache phiên ngay khi tab khác đăng xuất hoặc đổi tài khoản học viên.
+if (typeof window !== "undefined") {
+	window.addEventListener("storage", (event) => {
+		if (event.key === null || event.key === ACTIVE_STUDENT_USER_KEY) {
+			clearSessionCache();
 		}
-	})();
-
-	return inFlightSessionPromise;
+	});
 }
 
 const overrides = {
@@ -149,13 +99,27 @@ const overrides = {
 	clearSessionCache,
 	signOut: async (...args: Parameters<typeof rawAuthClient.signOut>) => {
 		clearSessionCache();
-		return rawAuthClient.signOut(...args);
+		try {
+			return await rawAuthClient.signOut(...args);
+		} finally {
+			clearSessionCache();
+		}
+	},
+	resetPassword: async (
+		...args: Parameters<typeof rawAuthClient.resetPassword>
+	) => {
+		clearSessionCache();
+		try {
+			return await rawAuthClient.resetPassword(...args);
+		} finally {
+			clearSessionCache();
+		}
 	},
 };
 
 export const authClient = new Proxy(rawAuthClient, {
 	get(target, prop, receiver) {
-		if (prop in overrides) {
+		if (Object.hasOwn(overrides, prop)) {
 			return overrides[prop as keyof typeof overrides];
 		}
 		return Reflect.get(target, prop, receiver);

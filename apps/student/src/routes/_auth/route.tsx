@@ -5,23 +5,29 @@ import {
 	getSessionUserRole,
 	isStudentSession,
 } from "@/lib/auth-client";
-import { syncStudentSessionUser } from "@/lib/query-client";
+import {
+	clearStudentQueryCacheIfUserChanged,
+	syncStudentSessionUser,
+} from "@/lib/query-client";
 import { toStudentReturnUrl } from "@/lib/validate-return-url";
 
 export { toStudentReturnUrl };
 
 export const Route = createFileRoute("/_auth")({
 	component: AuthLayout,
-	beforeLoad: async ({ location }) => {
+	beforeLoad: async ({ location, preload }) => {
+		const isPreload = Boolean(preload);
 		let session: Awaited<ReturnType<typeof authClient.getCachedSession>> | null;
 		try {
-			session = await authClient.getCachedSession();
+			session = await authClient.getCachedSession({ allowStale: isPreload });
 		} catch {
 			session = null;
 		}
 		if (!session?.data) {
-			syncStudentSessionUser(null);
-			authClient.clearSessionCache?.();
+			if (!isPreload) {
+				syncStudentSessionUser(null);
+				authClient.clearSessionCache?.();
+			}
 			throw redirect({
 				href: `/login?returnUrl=${encodeURIComponent(toStudentReturnUrl(location.href))}`,
 				reloadDocument: true,
@@ -29,15 +35,24 @@ export const Route = createFileRoute("/_auth")({
 		}
 		if (!isStudentSession(session.data)) {
 			const role = getSessionUserRole(session.data);
-			syncStudentSessionUser(null);
+			// Luôn xoá cache phiên sai vai trò (kể cả khi preload) để tránh giữ nhầm
+			// phiên giáo viên/admin trong cổng học viên; chỉ dọn QueryClient/storage
+			// cục bộ khi là điều hướng thật.
 			authClient.clearSessionCache?.();
+			if (!isPreload) {
+				syncStudentSessionUser(null);
+			}
 			throw redirect({
 				href: role ? roleHomePath(role) : "/login",
 				reloadDocument: true,
 			});
 		}
 		if (session.data.user?.id) {
-			syncStudentSessionUser(session.data.user.id);
+			if (isPreload) {
+				clearStudentQueryCacheIfUserChanged(session.data.user.id);
+			} else {
+				syncStudentSessionUser(session.data.user.id);
+			}
 		}
 		return { session };
 	},

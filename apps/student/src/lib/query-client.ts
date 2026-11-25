@@ -5,6 +5,7 @@ import {
 } from "@teacher-os/api/contracts";
 import { authClient } from "@/lib/auth-client";
 import {
+	ACTIVE_STUDENT_USER_KEY,
 	clearActiveStudentOrgId,
 	getActiveStudentOrgId,
 	syncActiveStudentUser,
@@ -87,6 +88,23 @@ export function syncStudentSessionUser(
 	lastAuthenticatedUserId = trimmed;
 }
 
+/**
+ * Dọn RAM `QueryClient` khi hover preload phát hiện phiên hiện tại đã chuyển
+ * sang học viên khác (ví dụ lỡ sự kiện `storage` sau bfcache), nhưng KHÔNG ghi
+ * đè `localStorage` để tránh preload phá dữ liệu tab khác.
+ */
+export function clearStudentQueryCacheIfUserChanged(
+	userId: string | null | undefined,
+	client: QueryClient = studentQueryClient,
+): void {
+	const trimmed = userId?.trim() || null;
+	if (!trimmed) return;
+	if (lastAuthenticatedUserId !== null && lastAuthenticatedUserId !== trimmed) {
+		client.clear();
+	}
+	lastAuthenticatedUserId = trimmed;
+}
+
 export function resetStudentSessionUserForTests(): void {
 	lastAuthenticatedUserId = null;
 }
@@ -101,6 +119,14 @@ if (typeof window !== "undefined") {
 		if (event.persisted) {
 			reauthing = false;
 			redirectingForWrongRole = false;
+		}
+	});
+	// Khi tab khác đăng xuất hoặc đổi học viên, xoá ngay RAM QueryClient
+	// (không ghi lại localStorage) để hover preload không đọc nhầm cache cũ.
+	window.addEventListener("storage", (event) => {
+		if (event.key === null || event.key === ACTIVE_STUDENT_USER_KEY) {
+			lastAuthenticatedUserId = null;
+			studentQueryClient.clear();
 		}
 	});
 }

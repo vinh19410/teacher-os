@@ -1,14 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockGetCachedSession, mockSignOut } = vi.hoisted(() => ({
-	mockGetCachedSession: vi.fn(),
-	mockSignOut: vi.fn(),
-}));
+const { mockGetCachedSession, mockClearSessionCache, mockSignOut } = vi.hoisted(
+	() => ({
+		mockGetCachedSession: vi.fn(),
+		mockClearSessionCache: vi.fn(),
+		mockSignOut: vi.fn(),
+	}),
+);
 
 vi.mock("@/lib/auth-client", () => ({
 	authClient: {
 		signOut: mockSignOut,
 		getCachedSession: mockGetCachedSession,
+		clearSessionCache: mockClearSessionCache,
 	},
 	getCachedSession: mockGetCachedSession,
 }));
@@ -93,6 +97,7 @@ describe("_auth route beforeLoad guard", () => {
 				reloadDocument: true,
 			},
 		});
+		expect(mockClearSessionCache).toHaveBeenCalledTimes(1);
 		expect(mockSignOut).not.toHaveBeenCalled();
 	});
 
@@ -141,6 +146,7 @@ describe("_auth route beforeLoad guard", () => {
 				reloadDocument: true,
 			},
 		});
+		expect(mockClearSessionCache).toHaveBeenCalledTimes(1);
 		expect(mockSignOut).not.toHaveBeenCalled();
 	});
 
@@ -169,6 +175,7 @@ describe("_auth route beforeLoad guard", () => {
 				reloadDocument: true,
 			},
 		});
+		expect(mockClearSessionCache).toHaveBeenCalledTimes(1);
 		expect(mockSignOut).not.toHaveBeenCalled();
 	});
 
@@ -197,6 +204,73 @@ describe("_auth route beforeLoad guard", () => {
 				reloadDocument: true,
 			},
 		});
+		expect(mockClearSessionCache).toHaveBeenCalledTimes(1);
 		expect(mockSignOut).not.toHaveBeenCalled();
+	});
+
+	it("forwards allowStale: true on preload and avoids clearing cache on preload failure", async () => {
+		mockGetCachedSession.mockResolvedValueOnce({ data: null });
+
+		await expect(
+			callBeforeLoad({
+				location: {
+					href: "/grading",
+				} as unknown as BeforeLoadContext["location"],
+				preload: true,
+			}),
+		).rejects.toMatchObject({
+			options: {
+				href: "/login?returnUrl=%2Fteacher%2Fgrading",
+				reloadDocument: true,
+			},
+		});
+		expect(mockGetCachedSession).toHaveBeenCalledWith({ allowStale: true });
+		expect(mockClearSessionCache).not.toHaveBeenCalled();
+
+		vi.clearAllMocks();
+		mockGetCachedSession.mockRejectedValueOnce(new Error("transient error"));
+		await expect(
+			callBeforeLoad({
+				location: {
+					href: "/grading",
+				} as unknown as BeforeLoadContext["location"],
+				preload: true,
+			}),
+		).rejects.toMatchObject({
+			options: {
+				href: "/login?returnUrl=%2Fteacher%2Fgrading",
+				reloadDocument: true,
+			},
+		});
+		expect(mockClearSessionCache).not.toHaveBeenCalled();
+	});
+
+	it("still clears wrong-role session cache on hover preload", async () => {
+		mockGetCachedSession.mockResolvedValueOnce({
+			data: {
+				user: {
+					id: "u-s1",
+					name: "Student A",
+					email: "s@test.local",
+					role: "student",
+				},
+				session: { id: "s-s1" },
+			},
+		});
+
+		await expect(
+			callBeforeLoad({
+				location: {
+					href: "/grading",
+				} as unknown as BeforeLoadContext["location"],
+				preload: true,
+			}),
+		).rejects.toMatchObject({
+			options: {
+				href: "/student",
+				reloadDocument: true,
+			},
+		});
+		expect(mockClearSessionCache).toHaveBeenCalledTimes(1);
 	});
 });

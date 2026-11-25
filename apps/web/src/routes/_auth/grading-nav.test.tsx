@@ -83,7 +83,13 @@ describe("isolated grading navigation with session caching", () => {
 		vi.unstubAllGlobals();
 	});
 
-	function buildTestRouter(initialEntry = "/teacher/dashboard") {
+	function buildTestRouter(
+		initialEntry = "/teacher/dashboard",
+		options?: {
+			defaultPreloadDelay?: number;
+			defaultPreloadStaleTime?: number;
+		},
+	) {
 		const rootRoute = createRootRoute({
 			component: RootLayout,
 		});
@@ -128,6 +134,12 @@ describe("isolated grading navigation with session caching", () => {
 			history,
 			defaultPreload: "intent",
 			defaultPendingMs: 200,
+			...(options?.defaultPreloadDelay !== undefined
+				? { defaultPreloadDelay: options.defaultPreloadDelay }
+				: {}),
+			...(options?.defaultPreloadStaleTime !== undefined
+				? { defaultPreloadStaleTime: options.defaultPreloadStaleTime }
+				: {}),
 		});
 	}
 
@@ -169,7 +181,7 @@ describe("isolated grading navigation with session caching", () => {
 			expect(screen.getByRole("heading", { name: "Chấm bài" })).toBeDefined();
 		});
 
-		// Calls to getSession should NOT duplicate (cached within 10s)
+		// Calls to getSession should NOT duplicate (cached within 15s)
 		expect(mockGetSession).toHaveBeenCalledTimes(1);
 	});
 
@@ -189,7 +201,7 @@ describe("isolated grading navigation with session caching", () => {
 			expect(router.state.status).toBe("idle");
 		});
 
-		// Simulate clock advancing past 10s TTL using Date.now spy so next navigation fetches
+		// Simulate clock advancing past 15s TTL using Date.now spy so next navigation fetches
 		const realNow = Date.now();
 		const dateSpy = vi
 			.spyOn(Date, "now")
@@ -212,6 +224,60 @@ describe("isolated grading navigation with session caching", () => {
 		});
 
 		expect(warnSpy).toHaveBeenCalled();
+		warnSpy.mockRestore();
+		dateSpy.mockRestore();
+	});
+
+	it("skips getSession on hover preload after TTL expiry and stays in-app when click hits resolved 500", async () => {
+		const sampleSession = {
+			data: {
+				user: { id: "u-1", name: "Cô Mỹ", email: "my@test.local" },
+				session: { id: "s-1" },
+			},
+			error: null,
+		};
+		mockGetSession.mockResolvedValueOnce(sampleSession);
+
+		const router = buildTestRouter("/teacher/dashboard", {
+			defaultPreloadDelay: 0,
+			defaultPreloadStaleTime: 0,
+		});
+		render(<RouterProvider router={router} />);
+
+		await waitFor(() => {
+			expect(router.state.status).toBe("idle");
+		});
+		expect(mockGetSession).toHaveBeenCalledTimes(1);
+
+		const realNow = Date.now();
+		const dateSpy = vi
+			.spyOn(Date, "now")
+			.mockReturnValue(realNow + SESSION_CACHE_TTL_MS + 1000);
+
+		// Hover triggers intent preload with 0ms delay -> allowStale reuses lastKnownSession (0 network calls)
+		const link = screen.getByTestId("grading-link");
+		fireEvent.mouseEnter(link);
+		await new Promise((resolve) => setTimeout(resolve, 25));
+		expect(mockGetSession).toHaveBeenCalledTimes(1);
+
+		// Actual click calls getSession -> resolved HTTP 500 falls back to lastKnownSession instead of kicking to /login
+		mockGetSession.mockResolvedValueOnce({
+			data: null,
+			error: { status: 500, message: "Failed to get session" },
+		});
+		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+		fireEvent.click(link);
+
+		await waitFor(() => {
+			expect(router.state.location.pathname).toBe("/grading");
+		});
+		await waitFor(() => {
+			expect(screen.getByRole("heading", { name: "Chấm bài" })).toBeDefined();
+		});
+		expect(mockGetSession).toHaveBeenCalledTimes(2);
+		expect(warnSpy).toHaveBeenCalledTimes(1);
+
 		warnSpy.mockRestore();
 		dateSpy.mockRestore();
 	});
