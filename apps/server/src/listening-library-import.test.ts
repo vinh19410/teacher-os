@@ -150,10 +150,12 @@ describe("IELTS Listening library dataset validation & full import end-to-end", 
 		expect(verify.actualReady).toBe(497);
 		expect(verify.actualDraft).toBe(1);
 		expect(verify.stepIeltsMatches).toBe(0);
+		expect(verify.unknownCollectionMatches).toBe(0);
+		expect(verify.unknownPartSourceMatches).toBe(0);
 
-		// Trigger student practice sync on listening catalog.
+		// Trigger student practice sync on listening catalog with facets.
 		const catalogRes = await app.request(
-			"/api/student/practice?skill=listening&page=1",
+			"/api/student/practice?skill=listening&page=1&facets=1",
 			{
 				headers: { "x-test-user": "minh", "x-student-org-id": "org-1" },
 			},
@@ -161,9 +163,40 @@ describe("IELTS Listening library dataset validation & full import end-to-end", 
 		expect(catalogRes.status).toBe(200);
 		const catalog = (await catalogRes.json()) as {
 			total: number;
-			items: Array<{ testId: string; title: string }>;
+			items: Array<{
+				testId: string;
+				title: string;
+				collection: string | null;
+				testGroup: string | null;
+			}>;
+			facets?: { collections: string[] };
 		};
 		expect(catalog.total).toBe(497);
+		expect(catalog.facets?.collections).toContain("Other sources");
+		expect(catalog.facets?.collections).not.toContain("Unknown");
+
+		// Bikes test appears once with consistent "Other sources" · "Section 4" metadata
+		const bikesRes = await app.request(
+			"/api/student/practice?skill=listening&q=Talking+about+the+history+of+bikes",
+			{
+				headers: { "x-test-user": "minh", "x-student-org-id": "org-1" },
+			},
+		);
+		expect(bikesRes.status).toBe(200);
+		const bikesCatalog = (await bikesRes.json()) as {
+			total: number;
+			items: Array<{
+				title: string;
+				collection: string | null;
+				testGroup: string | null;
+			}>;
+		};
+		expect(bikesCatalog.total).toBe(1);
+		expect(bikesCatalog.items[0]?.title).toBe(
+			"Talking about the history of bikes",
+		);
+		expect(bikesCatalog.items[0]?.collection).toBe("Other sources");
+		expect(bikesCatalog.items[0]?.testGroup).toBe("Section 4");
 
 		// Spot-check critical test shapes end-to-end through Student Practice API!
 		const spotlightFiles = [

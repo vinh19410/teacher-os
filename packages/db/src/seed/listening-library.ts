@@ -241,7 +241,9 @@ function normalizeCollectionAndGroup(
 	rawSource: string | undefined,
 	section: number,
 ): { collection: string; testGroup: string; partSource: string } {
-	const source = (rawSource ?? "Other sources").trim() || "Other sources";
+	const trimmed = (rawSource ?? "").trim();
+	const source =
+		!trimmed || /^unknown$/i.test(trimmed) ? "Other sources" : trimmed;
 	const cambridge = /^C(\d+)T(\d+)$/i.exec(source);
 	if (cambridge) {
 		const book = cambridge[1];
@@ -878,6 +880,8 @@ export interface ListeningLibraryVerifyResult {
 	actualParts: number;
 	partsWithAudio: number;
 	stepIeltsMatches: number;
+	unknownCollectionMatches: number;
+	unknownPartSourceMatches: number;
 }
 
 export async function verifyListeningLibraryInDb(
@@ -911,13 +915,25 @@ export async function verifyListeningLibraryInDb(
 	);
 	const stepIeltsMatches = Number(stepRows[0]?.n ?? 0);
 
+	const unknownColRows = await runner.queryRows(
+		`SELECT COUNT(*) AS n FROM library_test WHERE SUBSTR(id, 1, ${LISTENING_TEST_ID_PREFIX.length}) = '${LISTENING_TEST_ID_PREFIX}' AND lower(trim(coalesce(collection, ''))) = 'unknown';`,
+	);
+	const unknownCollectionMatches = Number(unknownColRows[0]?.n ?? 0);
+
+	const unknownPartRows = await runner.queryRows(
+		`SELECT COUNT(*) AS n FROM library_test_part WHERE SUBSTR(id, 1, ${LISTENING_PART_ID_PREFIX.length}) = '${LISTENING_PART_ID_PREFIX}' AND (lower(trim(coalesce(source, ''))) = 'unknown' OR lower(substr(trim(coalesce(source, '')), 1, 10)) = 'unknown — ');`,
+	);
+	const unknownPartSourceMatches = Number(unknownPartRows[0]?.n ?? 0);
+
 	const ok =
 		actualTests === dataset.items.length &&
 		actualReady === dataset.readyCount &&
 		actualDraft === dataset.draftCount &&
 		actualParts === dataset.items.length &&
 		partsWithAudio === dataset.items.length &&
-		stepIeltsMatches === 0;
+		stepIeltsMatches === 0 &&
+		unknownCollectionMatches === 0 &&
+		unknownPartSourceMatches === 0;
 
 	return {
 		ok,
@@ -931,6 +947,8 @@ export async function verifyListeningLibraryInDb(
 		actualParts,
 		partsWithAudio,
 		stepIeltsMatches,
+		unknownCollectionMatches,
+		unknownPartSourceMatches,
 	};
 }
 
