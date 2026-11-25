@@ -919,7 +919,11 @@ export function quizTypeDisplay(type: string): {
 	label: string;
 	instruction: string;
 } {
-	return QUIZ_TYPE_DISPLAY[type] ?? { label: type, instruction: "" };
+	return (
+		(Object.hasOwn(QUIZ_TYPE_DISPLAY, type)
+			? QUIZ_TYPE_DISPLAY[type]
+			: undefined) ?? { label: type, instruction: "" }
+	);
 }
 
 /**
@@ -2602,6 +2606,28 @@ export type ClassmatesResponse = z.infer<typeof classmatesResponseSchema>;
 /** Số đề mỗi trang catalog (design-v2 SkillCatalog PER=12). */
 export const PRACTICE_CATALOG_PAGE_SIZE = 12;
 
+/** Trần độ dài mỗi tham số filter/query của catalog tự luyện. */
+export const PRACTICE_FILTER_MAX_LENGTH = 200;
+
+/** Trần số trang hợp lệ cho catalog tự luyện — chặn tràn int64 OFFSET. */
+export const PRACTICE_CATALOG_MAX_PAGE = 100_000;
+
+/**
+ * Parse tham số `page` của catalog tự luyện thành số nguyên dương trong
+ * `1..PRACTICE_CATALOG_MAX_PAGE`. Trả về `null` khi vắng, sai định dạng,
+ * có số 0 ở đầu, hoặc vượt ngưỡng an toàn.
+ */
+export function parsePracticePageParam(raw: string | undefined): number | null {
+	if (raw === undefined || !/^[1-9]\d*$/.test(raw)) {
+		return null;
+	}
+	const parsed = Number(raw);
+	if (!Number.isSafeInteger(parsed) || parsed > PRACTICE_CATALOG_MAX_PAGE) {
+		return null;
+	}
+	return parsed;
+}
+
 /** Kết quả gần nhất của CHÍNH học viên này với một đề luyện tập. `score`
  * là chuỗi hiển thị sẵn ("8/13" tự chấm, "Band 6.5" đã chấm Writing/
  * Speaking), null khi đề tự chấm mà server không derive được. */
@@ -2637,13 +2663,25 @@ export const practiceCatalogItemSchema = z
 	.strict();
 export type PracticeCatalogItem = z.infer<typeof practiceCatalogItemSchema>;
 
-/** GET /api/student/practice?skill=&collection=&q=&page= — phân trang 12. */
+/** Bộ facet toàn catalog (độc lập trang và bộ lọc đang chọn) — opt-in qua `?facets=1`. */
+export const practiceCatalogFacetsSchema = z
+	.object({
+		collections: z.array(z.string()),
+		types: z.array(z.string()),
+		parts: z.array(z.string()),
+		bands: z.array(z.string()),
+	})
+	.strict();
+export type PracticeCatalogFacets = z.infer<typeof practiceCatalogFacetsSchema>;
+
+/** GET /api/student/practice?skill=&collection=&part=&type=&band=&q=&page=&facets=1 — phân trang 12. */
 export const practiceCatalogResponseSchema = z
 	.object({
 		items: z.array(practiceCatalogItemSchema),
 		page: z.number().int().min(1),
 		pages: z.number().int().min(1),
 		total: z.number().int().min(0),
+		facets: practiceCatalogFacetsSchema.optional(),
 	})
 	.strict();
 export type PracticeCatalogResponse = z.infer<

@@ -3,10 +3,17 @@ import type { PracticeCatalogItem } from "@teacher-os/api/contracts";
 import { StudentPageGate } from "@/components/layout/student-page-gate";
 import { HistoryButton } from "@/components/practice/history-button";
 import {
+	type PracticeSearchParams,
+	parsePracticeSearch,
+} from "@/components/practice/practice-filters";
+import {
 	PRACTICE_SKILL_LABELS,
+	type PracticeFilterState,
 	SkillCatalog,
 } from "@/components/practice/skill-catalog";
 import { useHistoryList } from "@/lib/repos/student";
+
+export { parsePracticeSearch };
 
 const SKILL_SLUGS = ["reading", "listening", "writing", "speaking"] as const;
 type SkillSlug = (typeof SKILL_SLUGS)[number];
@@ -18,16 +25,8 @@ function parseSkill(raw: string | undefined): SkillSlug | null {
 }
 
 export const Route = createFileRoute("/_auth/practice/$skill")({
-	validateSearch: (
-		search: Record<string, unknown>,
-	): { collection?: string; q?: string; page?: number } => {
-		const collection =
-			typeof search.collection === "string" ? search.collection : undefined;
-		const q = typeof search.q === "string" ? search.q : undefined;
-		const pageRaw = Number.parseInt(String(search.page ?? "1"), 10);
-		const page = Number.isInteger(pageRaw) && pageRaw > 0 ? pageRaw : undefined;
-		return { collection, q, page };
-	},
+	validateSearch: (search: Record<string, unknown>): PracticeSearchParams =>
+		parsePracticeSearch(search),
 	beforeLoad: ({ params }) => {
 		if (parseSkill(params.skill) === null) {
 			throw redirect({
@@ -65,19 +64,22 @@ function PracticeSkillPage() {
 		true,
 	);
 
-	const handleFilterChange = (next: {
-		collection: string;
-		q: string;
-		page: number;
-	}) => {
+	const handleFilterChange = (
+		next: PracticeFilterState,
+		options?: { replace?: boolean },
+	) => {
 		void navigate({
 			to: "/practice/$skill",
 			params: { skill },
 			search: {
 				collection: next.collection || undefined,
+				part: next.part || undefined,
+				type: next.type || undefined,
+				band: next.band || undefined,
 				q: next.q || undefined,
 				page: next.page > 1 ? next.page : undefined,
 			},
+			replace: options?.replace,
 		});
 	};
 
@@ -115,6 +117,9 @@ function PracticeSkillPage() {
 					<SkillCatalog
 						skill={skill}
 						collection={search.collection ?? ""}
+						part={search.part ?? ""}
+						type={search.type ?? ""}
+						band={search.band ?? ""}
 						q={search.q ?? ""}
 						page={search.page ?? 1}
 						onFilterChange={handleFilterChange}
