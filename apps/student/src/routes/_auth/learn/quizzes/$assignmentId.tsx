@@ -4,7 +4,7 @@ import {
 	QuizTakeError,
 	QuizTakeView,
 } from "@/components/quiz/quiz-take-view";
-import { isHttpError, studentQueryClient } from "@/lib/query-client";
+import { studentQueryClient } from "@/lib/query-client";
 import {
 	quizAttemptEssayMirrorKey,
 	quizAttemptMirrorKey,
@@ -15,9 +15,10 @@ import { quizDetailQueryOptions } from "@/lib/repos/quiz";
 export const Route = createFileRoute("/_auth/learn/quizzes/$assignmentId")({
 	loader: async ({ params: { assignmentId } }) => {
 		const source: QuizTakeSource = { kind: "assignment", id: assignmentId };
-		const detail = await studentQueryClient.ensureQueryData(
-			quizDetailQueryOptions(source),
-		);
+		const detail = await studentQueryClient.ensureQueryData({
+			...quizDetailQueryOptions(source),
+			revalidateIfStale: true,
+		});
 		// Đã nộp (tab khác / lượt vào trước) → thẳng summary, không vào take.
 		if (detail.attempt?.status === "submitted") {
 			// Mirror của attempt đã đóng là rác — xoá ngay kẻo tích tụ

@@ -1,11 +1,11 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import type { PracticeCatalogItem } from "@teacher-os/api/contracts";
 import { toast } from "sonner";
 import { StudentPageGate } from "@/components/layout/student-page-gate";
 import { HistoryButton } from "@/components/practice/history-button";
 import {
 	PRACTICE_SKILL_LABELS,
 	SkillCatalog,
+	usePracticeOpenLock,
 } from "@/components/practice/skill-catalog";
 import { useHistoryList, useStartPractice } from "@/lib/repos/student";
 
@@ -57,6 +57,24 @@ function PracticeSkillPage() {
 	const search = Route.useSearch();
 	const navigate = useNavigate();
 	const startPractice = useStartPractice();
+	const { openingTestId, handleOpen } = usePracticeOpenLock({
+		skill,
+		startAttempt: (testId, callbacks) =>
+			startPractice.mutate(testId, callbacks),
+		navigateToTest: (testId) =>
+			navigate({
+				to: "/learn/quizzes/practice/$testId",
+				params: { testId },
+			}),
+		onError: (error) => {
+			toast.error("Không bắt đầu được bài luyện tập", {
+				description:
+					error instanceof Error && error.message
+						? error.message
+						: "Vui lòng thử lại.",
+			});
+		},
+	});
 
 	// HistoryButton (phase 11): đếm thật từ total của list lọc skill.
 	const historyCount = useHistoryList(
@@ -79,25 +97,6 @@ function PracticeSkillPage() {
 				collection: next.collection || undefined,
 				q: next.q || undefined,
 				page: next.page > 1 ? next.page : undefined,
-			},
-		});
-	};
-
-	const handleOpen = (item: PracticeCatalogItem) => {
-		startPractice.mutate(item.testId, {
-			onSuccess: () => {
-				void navigate({
-					to: "/learn/quizzes/practice/$testId",
-					params: { testId: item.testId },
-				});
-			},
-			onError: (error) => {
-				toast.error("Không bắt đầu được bài luyện tập", {
-					description:
-						error instanceof Error && error.message
-							? error.message
-							: "Vui lòng thử lại.",
-				});
 			},
 		});
 	};
@@ -131,6 +130,7 @@ function PracticeSkillPage() {
 						collection={search.collection ?? ""}
 						q={search.q ?? ""}
 						page={search.page ?? 1}
+						openingTestId={openingTestId}
 						onFilterChange={handleFilterChange}
 						onOpen={handleOpen}
 					/>

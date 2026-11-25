@@ -3152,6 +3152,8 @@ export const studentQuizDetailSchema = z
 		due: z.string(),
 		/** ISO datetime hạn nộp (UTC, tính từ giờ VN lúc giao); null/undefined trên dữ liệu cũ hoặc bài tự luyện (#572, #587). */
 		dueAt: z.string().nullable().optional(),
+		/** Thời lượng làm bài tính bằng giây cho đề tự luyện có giới hạn thời gian; null/undefined khi không giới hạn hoặc ở bài tập lớp. */
+		timeLimitSeconds: z.number().int().positive().nullable().optional(),
 		skill: z.string(),
 		part: z.string(),
 		type: z.string(),
@@ -3186,6 +3188,8 @@ export const studentQuizDetailSchema = z
 				/** File bài nói Speaking đã tải lên (#305) — optional cùng lý
 				 * do với `essay`. */
 				media: quizAttemptMediaSchema.nullable().optional(),
+				/** ISO datetime thời điểm bắt đầu lượt làm bài (server-authored) để neo đồng hồ đếm ngược. */
+				startedAt: z.string().optional(),
 			})
 			.nullable(),
 	})

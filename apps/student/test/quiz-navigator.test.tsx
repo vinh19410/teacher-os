@@ -253,6 +253,27 @@ describe("QuizRuntimeHeader — save-state element (RT#7)", () => {
 		expect(html).toContain("Thoát");
 		expect(html).toContain("Nộp bài");
 	});
+
+	it("giữ h-14 shrink-0 và render children (đồng hồ đếm ngược) trước nút Nộp bài", () => {
+		const html = renderToStaticMarkup(
+			<QuizRuntimeHeader
+				title="Reading Practice"
+				saveState="saving"
+				onSubmitClick={() => undefined}
+			>
+				<span data-testid="slot-timer">240:00</span>
+			</QuizRuntimeHeader>,
+		);
+		expect(html).toContain("h-14");
+		expect(html).toContain("shrink-0");
+		expect(html).toContain('data-testid="slot-timer"');
+		expect(html.indexOf('data-testid="save-state"')).toBeLessThan(
+			html.indexOf('data-testid="slot-timer"'),
+		);
+		expect(html.indexOf('data-testid="slot-timer"')).toBeLessThan(
+			html.indexOf("Nộp bài"),
+		);
+	});
 });
 
 describe("QuizLifecycleDialogs — copy vòng đời (Selfomy parity)", () => {

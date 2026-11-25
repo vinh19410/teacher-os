@@ -1,4 +1,8 @@
-import { QUIZ_MEDIA_MAX_BYTES } from "@teacher-os/api/contracts";
+import { QueryClient } from "@tanstack/react-query";
+import {
+	QUIZ_MEDIA_MAX_BYTES,
+	type StudentQuizDetail,
+} from "@teacher-os/api/contracts";
 import {
 	formatMediaSize,
 	isVideoMediaType,
@@ -6,7 +10,16 @@ import {
 	sanitizeMediaFileName,
 	validateQuizMediaFiles,
 } from "@teacher-os/api/lib/quiz-media";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+	getServerClockSkewMs,
+	resetServerClockForTests,
+} from "@/lib/attempt-format";
+import {
+	fetchStudentQuizDetail,
+	quizDetailQueryOptions,
+	setQuizDetailMedia,
+} from "@/lib/repos/quiz";
 
 function fileOfSize(name: string, type: string, size: number): File {
 	const file = new File(["x"], name, { type });
@@ -143,5 +156,114 @@ describe("validateQuizMediaFiles — validate dùng chung dropzone và Thay file
 			reason: "empty",
 			file: empty,
 		});
+	});
+});
+
+describe("repos/quiz — X-Server-Now sync & setQuizDetailMedia cache timestamp", () => {
+	afterEach(() => {
+		resetServerClockForTests();
+		vi.unstubAllGlobals();
+		vi.restoreAllMocks();
+	});
+
+	it("fetchStudentQuizDetail syncs server clock skew from X-Server-Now response header", async () => {
+		resetServerClockForTests();
+		const serverIso = "2026-11-24T10:00:00.000Z";
+		const clientNowMs = Date.parse(serverIso) + 180_000;
+		vi.spyOn(Date, "now").mockReturnValue(clientNowMs);
+
+		const detailPayload: StudentQuizDetail = {
+			assignmentId: "",
+			title: "Reading Timed",
+			due: "",
+			dueAt: null,
+			timeLimitSeconds: 1200,
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			band: "7.0",
+			intro: "",
+			prompt: "",
+			passage: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			optionBank: [],
+			questions: [],
+			attempt: {
+				id: "att-1",
+				status: "in_progress",
+				answers: {},
+				startedAt: "2026-11-24T09:57:00.000Z",
+			},
+		};
+
+		vi.stubGlobal(
+			"fetch",
+			vi.fn().mockResolvedValue(
+				new Response(JSON.stringify(detailPayload), {
+					status: 200,
+					headers: {
+						"Content-Type": "application/json",
+						"X-Server-Now": serverIso,
+					},
+				}),
+			),
+		);
+
+		const parsed = await fetchStudentQuizDetail({
+			kind: "practice",
+			testId: "test-1",
+		});
+		expect(parsed.timeLimitSeconds).toBe(1200);
+		expect(getServerClockSkewMs()).toBe(180_000);
+	});
+
+	it("setQuizDetailMedia preserves existing dataUpdatedAt so Speaking media updates never drift timer cache metadata", async () => {
+		const qc = new QueryClient();
+		const source = { kind: "practice" as const, testId: "speak-1" };
+		const { queryKey } = quizDetailQueryOptions(source);
+		const initialUpdatedAt = 1_700_000_000_000;
+		const initialDetail: StudentQuizDetail = {
+			assignmentId: "",
+			title: "Speaking Part 2",
+			due: "",
+			dueAt: null,
+			timeLimitSeconds: 600,
+			skill: "speaking",
+			part: "part2",
+			type: "cue",
+			band: "7.0",
+			intro: "",
+			prompt: "",
+			passage: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			optionBank: [],
+			questions: [],
+			attempt: {
+				id: "att-speak-1",
+				status: "in_progress",
+				answers: {},
+				media: null,
+				startedAt: "2026-11-24T10:00:00.000Z",
+			},
+		};
+		qc.setQueryData(queryKey, initialDetail, { updatedAt: initialUpdatedAt });
+
+		const uploadedMedia = {
+			name: "answer.webm",
+			type: "audio/webm",
+			size: 12_345,
+			uploadedAt: "2026-11-24T10:02:00.000Z",
+		};
+		await setQuizDetailMedia(qc, source, uploadedMedia);
+
+		const state = qc.getQueryState<StudentQuizDetail>(queryKey);
+		expect(state?.data?.attempt?.media).toEqual(uploadedMedia);
+		expect(state?.dataUpdatedAt).toBe(initialUpdatedAt);
 	});
 });

@@ -87,6 +87,14 @@ export const quizAttempt = sqliteTable(
 			table.assignmentId,
 			table.studentId,
 		),
+		// Mỗi học viên chỉ có tối đa 1 lượt tự luyện đang làm (in_progress) cho
+		// cùng một đề trong cùng org — chặn race double-click sinh bản ghi trùng
+		// làm hụt thời lượng sau tải lại, đồng thời vẫn cho phép làm lại sau khi nộp.
+		uniqueIndex("quiz_attempt_practice_in_progress_uq")
+			.on(table.orgId, table.studentId, table.testId)
+			.where(
+				sql`${table.mode} = 'practice' and ${table.status} = 'in_progress' and ${table.testId} is not null`,
+			),
 		index("quiz_attempt_org_idx").on(table.orgId),
 		// History phase 11: bài tự luyện của một học viên theo thời gian nộp.
 		index("quiz_attempt_student_mode_idx").on(
