@@ -25,14 +25,17 @@ import {
 	FAKE_PLACEMENT_TRANSCRIPT,
 	type FakePlacementAiGraderOptions,
 } from "../lib/placement-ai/fake-grader";
-import type { PlacementAiGrader } from "../lib/placement-ai/grader";
+import type {
+	PlacementAiAudio,
+	PlacementAiGrader,
+} from "../lib/placement-ai/grader";
 import {
 	PLACEMENT_AI_HARD_TIMEOUT_MS,
 	PLACEMENT_AI_STALE_AFTER_MS,
 	runPlacementAiGrading,
 } from "../lib/placement-ai/run-placement-grading";
 import { resolvePlacementResultLink } from "../lib/placement-submission-service";
-import { webmBytes } from "../lib/test-media-fixtures";
+import { aacAdtsBytes, webmBytes } from "../lib/test-media-fixtures";
 
 const CORS_ORIGIN = "http://localhost:8001";
 const PROFILE_ORIGIN = "https://msmy.io.vn";
@@ -216,6 +219,7 @@ interface Harness {
 async function createHarness(
 	opts: {
 		grader?: "none" | FakePlacementAiGraderOptions;
+		onTranscribe?: (audio: PlacementAiAudio) => void;
 		mailer?: Mailer;
 		brokenMailer?: boolean;
 		studentOrigin?: string;
@@ -249,10 +253,20 @@ async function createHarness(
 	});
 
 	const calls = { transcribe: 0, writing: 0, speaking: 0, poll: 0 };
-	const grader: PlacementAiGrader | undefined =
+	const baseGrader: PlacementAiGrader | undefined =
 		opts.grader === "none"
 			? undefined
 			: createFakePlacementAiGrader({ ...(opts.grader ?? {}), calls });
+	const grader: PlacementAiGrader | undefined =
+		baseGrader && opts.onTranscribe
+			? {
+					...baseGrader,
+					transcribe(audio, signal) {
+						opts.onTranscribe?.(audio);
+						return baseGrader.transcribe(audio, signal);
+					},
+				}
+			: baseGrader;
 	const pending: Promise<unknown>[] = [];
 	const runInBackground = (p: Promise<unknown>) => {
 		pending.push(p);
@@ -515,6 +529,38 @@ describe("placement AI grading pipeline (#730)", () => {
 		const d = await h.detail(leadId);
 		expect(d.aiStatus).toBe("failed");
 		expect(d.aiErrorCode).toBe(PLACEMENT_AI_ERROR_CODES.TIMEOUT);
+	});
+
+	test("upload Speaking audio/aac gửi đúng filename speaking.aac cho grader.transcribe", async () => {
+		const transcribed: PlacementAiAudio[] = [];
+		const h = await createHarness({
+			onTranscribe: (audio) => {
+				transcribed.push(audio);
+			},
+		});
+		const created = await h.submit({ speakingMode: "upload" });
+		const bytes = aacAdtsBytes(16, 5);
+		const res = await h.app.request(
+			`/public/placement-test/submissions/${created.submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": created.uploadToken,
+					"x-media-filename": "speaking.aac",
+					"content-type": "audio/aac",
+					"content-length": String(bytes.byteLength),
+				},
+				body: bytes,
+			},
+		);
+		expect(res.status).toBe(200);
+
+		await h.flush();
+		expect(transcribed).toHaveLength(1);
+		expect(transcribed[0]?.mime).toBe("audio/aac");
+		expect(transcribed[0]?.filename).toBe("speaking.aac");
+		expect(transcribed[0]?.bytes.byteLength).toBe(bytes.byteLength);
 	});
 });
 
