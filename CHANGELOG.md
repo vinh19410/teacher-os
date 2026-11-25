@@ -13,12 +13,18 @@ Quy ước khi cập nhật:
 ## 2026-11-25
 
 ### Added
+- **Tab "Tài liệu chung" cho lớp ở cả giáo viên và học viên (`packages/db`, `packages/api`, `apps/server`, `apps/web`, `apps/student`):** giáo viên gắn/gỡ tài liệu dùng chung theo lớp, học viên đang `active` trong lớp xem và mở tài liệu qua endpoint riêng không lộ `objectKey`; `href` luôn đi qua `isSafeMaterialUrl` (#914, #918).
+- **Tự cuộn tab đang chọn vào vùng nhìn thấy trong `Tabs` cuộn ngang (`packages/ui`) (#920).**
 - **Màn hình giới thiệu inline trước khi bắt đầu làm bài tự luyện (`packages/api`, `apps/server`, `apps/student`, `apps/e2e`):**
   - Mở rộng `studentQuizDetailSchema` (giữ `.strict()`) và `GET /api/student/practice/:testId/quiz` với metadata đề tự luyện (`timeLimitSeconds` chuẩn hoá `null` khi không giới hạn hoặc `<= 0`, `partsCount`, `collection`, `testGroup`, `description`), đồng bộ `durationMin` tối thiểu 1 phút trên catalog.
   - Bấm thẻ đề ở `/practice/$skill` (Reading/Listening/Writing/Speaking) điều hướng thẳng sang `/learn/quizzes/practice/$testId` thay vì gọi `POST /attempts` ngay; hiển thị `PracticeIntroScreen` (số câu/định dạng bài, số phần, thời lượng, bộ sưu tập, mô tả rich-text qua `RichTextBody`, hướng dẫn chung theo kỹ năng, nút `Bắt đầu làm bài` và `Quay lại danh sách`), không hiển thị `Band` và không tải audio hay bắt đầu đồng hồ đếm ngược trước khi bấm bắt đầu.
   - Giữ trạng thái pending trên `useStartQuizAttempt` đến khi `GET /quiz` tải xong, lấy dữ liệu mới (`staleTime: 0`) ở loader, gắn `key` cho `<QuizTakeView>`, hydrate đáp án một lần an toàn khi chuyển `attempt: null → in_progress` (kể cả retake/multi-tab) mà không làm gián đoạn autosave store và giữ nguyên `QuizStartDialog` cho bài tập lớp (#883).
 
 ### Fixed
+- **Cứng hoá luồng upload Speaking của bài kiểm tra đầu vào và thêm luồng khôi phục cho học viên (`apps/server`, `apps/student`, `apps/web`):** upload có token riêng, CAS theo trạng thái `pending_upload`/`pending_grading`, trả 409 khi bài đã chốt; hỗ trợ đuôi `.aac` cho `audioFilename` (#924, #928).
+- **Phát audio nghe cho học viên bằng HTTP Range + ETag, có khôi phục lỗi phát (`apps/server`, `apps/student`) (#878).**
+- **Cô lập ngân hàng đáp án theo nhóm và xử lý hướng dẫn hoàn thành xung đột trong bài Reading/Listening/Matching (`packages/db`, `packages/ui`, `apps/student`):** backfill prompt group, tách hướng dẫn nghe riêng, sửa câu trống Q5 "history of bikes" (#875, #876, #877, #879).
+- **Chống lộ ngăn sidebar khi thu gọn và gia cố drawer mobile (`packages/ui`, `apps/web`, `apps/student`) (#919).**
 - **Bổ sung đồng hồ đếm ngược đồng bộ giờ server trên trang làm bài tự luyện và bảo toàn tổng thời lượng sau khi tải lại (`packages/api`, `packages/db`, `apps/server`, `apps/student`, `apps/e2e`):**
   - Mở rộng `studentQuizDetailSchema` với `timeLimitSeconds` (chỉ phát ở đề tự luyện có thời lượng dương, hỗ trợ đến 4 giờ) và `attempt.startedAt`; đồng bộ độ lệch đồng hồ qua CORS-exposed header `X-Server-Now` để không thêm khóa JSON top-level mới trên `/assignments/:id/quiz` trong cửa sổ rolling deploy.
   - Thêm migration `0090_concerned_mach_iv.sql` gom trùng các lượt `in_progress` tự luyện theo độ giàu nội dung (`media_key`, số đáp án thực không rỗng an toàn JSON1, độ dài bài viết `essay`, `rowid DESC`), giữ `MIN(started_at)` trên nhóm đang làm và tạo partial unique index `quiz_attempt_practice_in_progress_uq`; chuyển sắp xếp sang `asc(startedAt), asc(id)`, khôi phục xung đột unique ở `POST /practice/:testId/attempts` và dùng chung `deps.now` trên các route quiz.
