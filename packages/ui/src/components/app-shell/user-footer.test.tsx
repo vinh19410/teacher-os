@@ -1,5 +1,11 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import {
+	act,
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+} from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { UserFooter } from "./user-footer";
 
 afterEach(() => {
@@ -121,5 +127,100 @@ describe("UserFooter", () => {
 		expect(wrapper.classList.contains("lg:flex-col")).toBe(true);
 		expect(link.className).toContain("lg:w-full");
 		expect(logout.closest("a")).toBeNull();
+	});
+
+	it("TextBlock khóa grid-cols-1 và min-w-0 để tên + badge + email dài không tràn ngang", () => {
+		const longName = "Trung tâm Tài Liệu Tiếng Anh 1795543335456";
+		const longEmail = "e2e-1795543335456-r4b383@test.local";
+		render(
+			<UserFooter
+				user={{
+					...baseUser,
+					name: longName,
+					email: longEmail,
+					href: "/profile",
+					emailTestId: "sidebar-user-email",
+					badge: <span data-testid="user-plan">PRO</span>,
+				}}
+			/>,
+		);
+
+		const nameSpan = screen.getByText(longName);
+		expect(nameSpan.classList.contains("min-w-0")).toBe(true);
+		expect(nameSpan.classList.contains("truncate")).toBe(true);
+
+		const nameRow = nameSpan.parentElement;
+		if (!nameRow) throw new Error("nameRow không tồn tại");
+		expect(nameRow.classList.contains("flex")).toBe(true);
+		expect(nameRow.classList.contains("min-w-0")).toBe(true);
+
+		const textBlock = nameRow.parentElement;
+		if (!textBlock) throw new Error("textBlock không tồn tại");
+		expect(textBlock.classList.contains("grid")).toBe(true);
+		expect(textBlock.classList.contains("min-w-0")).toBe(true);
+		expect(textBlock.classList.contains("flex-1")).toBe(true);
+		expect(textBlock.classList.contains("grid-cols-1")).toBe(true);
+
+		const emailSpan = screen.getByTestId("sidebar-user-email");
+		expect(emailSpan.classList.contains("truncate")).toBe(true);
+	});
+
+	it("control button có menu: bấm mở menu không gọi user.onClick và Escape gọi preventDefault() khi không có dialog", () => {
+		const onClick = vi.fn();
+		render(
+			<UserFooter
+				user={{
+					...baseUser,
+					onClick,
+					menu: <div>menu-học-viên</div>,
+				}}
+			/>,
+		);
+
+		const control = screen.getByRole("button", { name: baseUser.label });
+		fireEvent.click(control);
+		expect(control.getAttribute("aria-expanded")).toBe("true");
+		expect(screen.getByText("menu-học-viên")).toBeTruthy();
+		expect(onClick).not.toHaveBeenCalled();
+
+		// Khi có modal/dialog mở chồng lên (gồm cả Base UI DialogPopup dùng data-open không có aria-modal), Escape phải nhường cho dialog.
+		for (const setupAttrs of [
+			{ role: "dialog", "aria-modal": "true" },
+			{ role: "dialog", "data-open": "" },
+		] as const) {
+			const modal = document.createElement("div");
+			for (const [k, v] of Object.entries(setupAttrs)) {
+				modal.setAttribute(k, v);
+			}
+			document.body.appendChild(modal);
+			try {
+				const modalEsc = new KeyboardEvent("keydown", {
+					key: "Escape",
+					bubbles: true,
+					cancelable: true,
+				});
+				act(() => {
+					document.dispatchEvent(modalEsc);
+				});
+				expect(modalEsc.defaultPrevented).toBe(false);
+				expect(screen.getByText("menu-học-viên")).toBeTruthy();
+			} finally {
+				modal.remove();
+			}
+		}
+
+		// Khi không có dialog, Escape đóng menu, gọi preventDefault() để drawer không đóng theo và trả focus về trigger.
+		const esc = new KeyboardEvent("keydown", {
+			key: "Escape",
+			bubbles: true,
+			cancelable: true,
+		});
+		act(() => {
+			document.dispatchEvent(esc);
+		});
+		expect(esc.defaultPrevented).toBe(true);
+		expect(control.getAttribute("aria-expanded")).toBe("false");
+		expect(screen.queryByText("menu-học-viên")).toBeNull();
+		expect(document.activeElement).toBe(control);
 	});
 });

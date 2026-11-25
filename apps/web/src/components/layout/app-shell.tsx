@@ -10,6 +10,7 @@ import { GraduationCap, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { authClient } from "@/lib/auth-client";
+import { cn } from "@/lib/cn";
 import { DataProvider, useData } from "@/lib/data-store";
 import { initialsFromName } from "@/lib/initials";
 import { readCollapsedPref, writeCollapsedPref } from "@/lib/sidebar-prefs";
@@ -190,7 +191,7 @@ function AppShellFrame({
 				</span>
 			}
 			footerSlot={
-				<div className="px-2 pt-1">
+				<div className={cn("px-2 pt-1", collapsed && "lg:sr-only")}>
 					<VersionBadge />
 				</div>
 			}
