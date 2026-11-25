@@ -1440,7 +1440,7 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 		expect(h.calls.poll).toBe(0);
 	});
 
-	test("bài đã chốt trước khi upload: pipeline không ghi đè transcript", async () => {
+	test("bài đã chốt trước khi upload: từ chối upload Speaking (409) và pipeline không ghi đè transcript bài đã chốt", async () => {
 		const h = await createHarness();
 		const created = await h.submit({ speakingMode: "upload" });
 		const patch = await teacherPost(
@@ -1449,12 +1449,119 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 			finalGrade,
 		);
 		expect(patch.status).toBe(200);
-		await h.upload(created.submissionId, created.uploadToken);
+
+		const bytes = webmBytes();
+		const lateUpload = await h.app.request(
+			`/public/placement-test/submissions/${created.submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": created.uploadToken,
+					"x-media-filename": "speaking.webm",
+					"content-type": "audio/webm",
+					"content-length": String(bytes.byteLength),
+				},
+				body: bytes,
+			},
+		);
+		expect(lateUpload.status).toBe(409);
+		expect(await lateUpload.json()).toEqual({
+			error: "SPEAKING_UPLOAD_NOT_PENDING",
+			code: "SPEAKING_UPLOAD_NOT_PENDING",
+		});
 		await h.flush();
-		const d = await h.detail(created.leadId);
+		expect(h.calls.transcribe).toBe(0);
+
+		// Defense-in-depth: nếu audio đã upload trước khi giáo viên chốt, pipeline vẫn không ghi đè transcript bài đã chốt.
+		const uploadedBeforeGrade = await h.submitAndUpload();
+		await h.flush();
+		const patch2 = await teacherPost(
+			h.app,
+			`/api/leads/${uploadedBeforeGrade.leadId}/placement-submission`,
+			finalGrade,
+		);
+		expect(patch2.status).toBe(200);
+		await h.db
+			.update(schema.placementTestSubmission)
+			.set({ aiStatus: "none", speakingTranscript: "" })
+			.where(
+				eq(schema.placementTestSubmission.id, uploadedBeforeGrade.submissionId),
+			);
+		const prevTranscribe = h.calls.transcribe;
+		await runPlacementAiGrading(
+			h.pipelineDeps,
+			uploadedBeforeGrade.submissionId,
+		);
+		const d = await h.detail(uploadedBeforeGrade.leadId);
 		expect(d.status).toBe("graded");
 		expect(d.speakingTranscript).toBe("");
+		expect(h.calls.transcribe).toBe(prevTranscribe + 1);
+	});
+
+	test("allowRedraftForSpeaking: re-claims drafted Writing-only ungraded submission after late Speaking upload, skips graded submissions, and preserves Writing draft when grader is disabled", async () => {
+		const h = await createHarness();
+		const created = await h.submit({ speakingMode: "upload" });
+		await h.flush();
+
+		// Teacher triggers AI grading for Writing before Speaking arrives -> aiStatus becomes "drafted" with empty speakingTranscript
+		const retryWriting = await teacherPost(
+			h.app,
+			`/api/leads/${created.leadId}/placement-submission/ai-retry`,
+		);
+		expect(retryWriting.status).toBe(200);
+		await h.flush();
+		const writingOnly = await h.detail(created.leadId);
+		expect(writingOnly.aiStatus).toBe("drafted");
+		expect(writingOnly.aiWriting?.errors).toHaveLength(1);
+		expect(writingOnly.aiSpeaking).toBeNull();
+		expect(writingOnly.speakingTranscript).toBe("");
+		expect(h.calls.transcribe).toBe(0);
+
+		// Speaking arrives later via upload -> triggers allowRedraftForSpeaking: true -> re-claims from "drafted" and drafts Speaking
+		await h.upload(created.submissionId, created.uploadToken);
+		await h.flush();
+		const afterSpeaking = await h.detail(created.leadId);
+		expect(afterSpeaking.aiStatus).toBe("drafted");
+		expect(afterSpeaking.speakingTranscript).toBe(FAKE_PLACEMENT_TRANSCRIPT);
+		expect(afterSpeaking.aiWriting?.errors).toHaveLength(1);
+		expect(afterSpeaking.aiSpeaking?.errors).toHaveLength(1);
 		expect(h.calls.transcribe).toBe(1);
+		expect(h.calls.speaking).toBe(1);
+
+		// Calling allowRedraftForSpeaking again once transcript is present must NOT re-claim
+		await runPlacementAiGrading(h.pipelineDeps, created.submissionId, {
+			allowRedraftForSpeaking: true,
+		});
+		expect(h.calls.transcribe).toBe(1);
+
+		// When grader is disabled, allowRedraftForSpeaking must NOT overwrite an existing "drafted" Writing draft
+		await h.db
+			.update(schema.placementTestSubmission)
+			.set({ speakingTranscript: "" })
+			.where(eq(schema.placementTestSubmission.id, created.submissionId));
+		await runPlacementAiGrading(
+			{ ...h.pipelineDeps, getPlacementAiGrader: () => undefined },
+			created.submissionId,
+			{ allowRedraftForSpeaking: true },
+		);
+		const afterDisabled = await rowOf(h, created.submissionId);
+		expect(afterDisabled.aiStatus).toBe("drafted");
+		expect(afterDisabled.aiErrorCode).toBeNull();
+
+		// Already graded submission with drafted Writing + empty transcript must NOT be re-claimed
+		const patch = await teacherPost(
+			h.app,
+			`/api/leads/${created.leadId}/placement-submission`,
+			finalGrade,
+		);
+		expect(patch.status).toBe(200);
+		await runPlacementAiGrading(h.pipelineDeps, created.submissionId, {
+			allowRedraftForSpeaking: true,
+		});
+		expect(h.calls.transcribe).toBe(1);
+		expect(h.calls.speaking).toBe(1);
+		expect((await rowOf(h, created.submissionId)).speakingTranscript).toBe("");
 	});
 });
 

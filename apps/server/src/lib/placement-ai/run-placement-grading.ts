@@ -444,12 +444,15 @@ export async function finalizePlacementAiGrading(
 
 /**
  * Điểm vào sau nộp bài / upload Speaking: không có gì để chấm → giữ `none`;
- * grader vắng → `failed` DISABLED; còn lại CAS `none|failed` → `processing`
- * rồi chấm. Thua CAS (đang chạy/đã nháp) → bỏ qua, không chạy trùng.
+ * grader vắng → `failed` DISABLED (không ghi đè nháp Writing sẵn có); còn lại
+ * CAS sang `processing` rồi chấm. Khi `allowRedraftForSpeaking` bật trên bài
+ * chưa chốt mới có audio Speaking và chưa có transcript, cho phép claim lại từ
+ * `drafted` để chấm bổ sung Speaking. Thua CAS → bỏ qua, không chạy trùng.
  */
 export async function runPlacementAiGrading(
 	deps: PlacementAiPipelineDeps,
 	submissionId: string,
+	options?: { allowRedraftForSpeaking?: boolean },
 ): Promise<void> {
 	const db = deps.getDb();
 	const [sub] = await db
@@ -458,6 +461,13 @@ export async function runPlacementAiGrading(
 		.where(eq(placementTestSubmission.id, submissionId))
 		.limit(1);
 	if (!sub || !hasPlacementAiWork(sub)) return;
+
+	const allowRedraftForSpeaking =
+		options?.allowRedraftForSpeaking === true &&
+		sub.status !== "graded" &&
+		hasSpeaking(sub) &&
+		sub.speakingTranscript.trim().length === 0;
+
 	if (!deps.getPlacementAiGrader?.()) {
 		await db
 			.update(placementTestSubmission)
@@ -473,10 +483,16 @@ export async function runPlacementAiGrading(
 			);
 		return;
 	}
-	const startedAt = await claimPlacementAiGrading(db, submissionId, [
-		"none",
-		"failed",
-	]);
+	const from: PlacementAiStatus[] = allowRedraftForSpeaking
+		? ["none", "failed", "drafted"]
+		: ["none", "failed"];
+	const startedAt = await claimPlacementAiGrading(
+		db,
+		submissionId,
+		from,
+		new Date(),
+		allowRedraftForSpeaking ? { notGraded: true } : {},
+	);
 	if (!startedAt) return;
 	await runClaimedPlacementAiGrading(deps, submissionId, startedAt);
 }
