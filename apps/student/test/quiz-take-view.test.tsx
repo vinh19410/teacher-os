@@ -10,12 +10,24 @@ import {
 	waitFor,
 	within,
 } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	afterEach,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 
 const patchAnswerMock = vi.fn<(...args: unknown[]) => Promise<void>>(() =>
 	Promise.resolve(),
 );
 const patchEssayMock = vi.fn<(...args: unknown[]) => Promise<void>>(() =>
+	Promise.resolve(),
+);
+const deleteQuizMediaMock = vi.fn<(...args: unknown[]) => Promise<void>>(() =>
 	Promise.resolve(),
 );
 const submitMock = vi.fn<
@@ -49,7 +61,8 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("@/lib/query-client", () => ({
-	isHttpError: () => false,
+	isHttpError: (err: unknown) =>
+		typeof err === "object" && err !== null && "status" in err,
 	isStudentOrgMismatchError: () => false,
 	isTeacherOnStudentPortalError: () => false,
 	reauth: vi.fn(),
@@ -89,13 +102,20 @@ vi.mock("@/lib/repos/quiz", () => ({
 	patchQuizAnswer: (...args: unknown[]) => patchAnswerMock(...args),
 	patchQuizEssay: (...args: unknown[]) => patchEssayMock(...args),
 	submitQuizAttempt: (...args: unknown[]) => submitMock(...args),
+	deleteQuizMedia: (...args: unknown[]) => deleteQuizMediaMock(...args),
+	uploadQuizMedia: vi.fn(),
+	setQuizDetailMedia: vi.fn(),
+	quizDetailQueryOptions: vi.fn(),
 }));
 
 import { AttemptReviewError } from "@/components/quiz/attempt-review-error";
+import { QuizStartDialog } from "@/components/quiz/quiz-lifecycle-dialogs";
+import { QuizRuntimeHeader } from "@/components/quiz/quiz-runtime-header";
 import {
 	attemptSummaryHref,
 	QuizTakeError,
 	QuizTakeView,
+	resolveSubmitDisabledReason,
 } from "@/components/quiz/quiz-take-view";
 import {
 	resetServerClockForTests,
@@ -691,5 +711,389 @@ describe("QuizTakeView — practice countdown timer & split-pane height safety",
 			.parentElement?.parentElement;
 		expect(splitWrapper?.className).toContain("min-h-0");
 		expect(splitWrapper?.className).toContain("flex-1");
+	});
+});
+
+describe("QuizTakeView — submitDisabledReason & QuizResumeDialog explanation", () => {
+	const originalResizeObserver = globalThis.ResizeObserver;
+
+	beforeAll(() => {
+		globalThis.ResizeObserver = class {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		} as typeof ResizeObserver;
+	});
+
+	afterAll(() => {
+		globalThis.ResizeObserver = originalResizeObserver;
+	});
+
+	beforeEach(() => {
+		localStorage.clear();
+		patchAnswerMock.mockClear();
+		patchEssayMock.mockClear();
+		submitMock.mockClear();
+		mockDetail = {
+			assignmentId: "",
+			title: "Reading Practice Resume",
+			due: "",
+			dueAt: null,
+			timeLimitSeconds: 1200,
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			band: "7.0",
+			intro: "",
+			prompt: "",
+			passage: "<p>Paragraph one.</p>",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			optionBank: [],
+			questions: [
+				{
+					stem: "Question 1",
+					opts: null,
+					type: "tfng",
+					pin: null,
+				},
+			],
+			attempt: {
+				id: "att-resume-1",
+				status: "in_progress",
+				answers: { "0": "TRUE" },
+				essay: "",
+				media: null,
+				startedAt: "2026-11-24T10:00:00.000Z",
+			},
+		};
+	});
+
+	afterEach(() => {
+		cleanup();
+		vi.restoreAllMocks();
+	});
+
+	it("prioritizes every submit-disabled reason deterministically", () => {
+		const base = {
+			attemptStatus: "in_progress",
+			needsResumeDialog: false,
+			isSubmitting: false,
+			haltedReason: null as
+				| "auth"
+				| "submitted"
+				| "org_mismatch"
+				| "finalized"
+				| null,
+			isSpeaking: false,
+			hasMedia: false,
+			mediaUploading: false,
+			hasPrimaryStore: true,
+			hasHybridWriting: false,
+			hasEssayStore: false,
+		};
+
+		expect(resolveSubmitDisabledReason(base)).toBeNull();
+		expect(
+			resolveSubmitDisabledReason({ ...base, attemptStatus: "submitted" }),
+		).toBe("Bài làm không còn ở trạng thái đang làm.");
+		expect(
+			resolveSubmitDisabledReason({
+				...base,
+				needsResumeDialog: true,
+				hasPrimaryStore: false,
+			}),
+		).toBe('Hãy chọn "Tiếp tục" trong hộp thoại để mở khóa nút nộp bài.');
+		expect(resolveSubmitDisabledReason({ ...base, isSubmitting: true })).toBe(
+			"Đang nộp bài…",
+		);
+		expect(resolveSubmitDisabledReason({ ...base, haltedReason: "auth" })).toBe(
+			"Phiên đăng nhập đã hết hạn — vui lòng đăng nhập lại.",
+		);
+		expect(
+			resolveSubmitDisabledReason({ ...base, haltedReason: "org_mismatch" }),
+		).toBe("Tổ chức học tập vừa thay đổi — vui lòng tải lại trang.");
+		expect(
+			resolveSubmitDisabledReason({ ...base, haltedReason: "submitted" }),
+		).toBe("Bài làm không còn ở trạng thái đang làm.");
+		expect(
+			resolveSubmitDisabledReason({
+				...base,
+				isSpeaking: true,
+				hasMedia: false,
+				mediaUploading: true,
+			}),
+		).toBe("Đang tải file bài nói lên — vui lòng chờ hoàn tất.");
+		expect(
+			resolveSubmitDisabledReason({
+				...base,
+				isSpeaking: true,
+				hasMedia: false,
+				mediaUploading: false,
+			}),
+		).toBe("Bạn cần tải file bài nói lên trước khi nộp bài.");
+		expect(
+			resolveSubmitDisabledReason({ ...base, hasPrimaryStore: false }),
+		).toBe("Đang khôi phục dữ liệu bài làm…");
+		expect(
+			resolveSubmitDisabledReason({
+				...base,
+				hasHybridWriting: true,
+				hasEssayStore: false,
+			}),
+		).toBe("Đang khôi phục dữ liệu bài làm…");
+	});
+
+	it("explains locked submit inside QuizResumeDialog, traps Shift+Tab, and unlocks the same submit button on resume", () => {
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={qc}>
+				<QuizTakeView
+					source={{ kind: "practice", testId: "test-resume-1" }}
+					serverAnswers={{ "0": "TRUE" }}
+				/>
+			</QueryClientProvider>,
+		);
+
+		const dialog = screen.getByRole("alertdialog", {
+			name: "Tiếp tục bài làm",
+		});
+		expect(
+			within(dialog).getByText(
+				"Bạn có bài làm chưa hoàn thành. Bạn có muốn tiếp tục không?",
+			),
+		).toBeTruthy();
+		expect(within(dialog).getByTestId("quiz-dialog-helper").textContent).toBe(
+			'Hãy chọn "Tiếp tục" để khôi phục bài làm và mở khóa nút "Nộp bài".',
+		);
+
+		// Focus starts on dialog card; Shift+Tab wraps inside modal to the last enabled button.
+		expect(document.activeElement).toBe(dialog);
+		fireEvent.keyDown(dialog, { key: "Tab", shiftKey: true });
+		const resumeBtn = within(dialog).getByRole("button", { name: "Tiếp tục" });
+		expect(document.activeElement).toBe(resumeBtn);
+
+		const submitBtn = screen.getByRole("button", {
+			name: "Nộp bài",
+		}) as HTMLButtonElement;
+		expect(submitBtn.disabled).toBe(true);
+		const describedById = submitBtn.getAttribute("aria-describedby");
+		expect(describedById).toBeTruthy();
+		expect(document.getElementById(describedById ?? "")?.textContent).toBe(
+			'Hãy chọn "Tiếp tục" trong hộp thoại để mở khóa nút nộp bài.',
+		);
+
+		fireEvent.click(resumeBtn);
+
+		expect(
+			screen.queryByRole("alertdialog", { name: "Tiếp tục bài làm" }),
+		).toBeNull();
+		// Same DOM button node stays mounted across disabled -> enabled transition.
+		expect(submitBtn.isConnected).toBe(true);
+		expect(submitBtn.disabled).toBe(false);
+		expect(submitBtn.getAttribute("aria-describedby")).toBeNull();
+	});
+
+	it("reveals hover tooltip and aria-describedby on non-modal disabled submit button (Speaking without media)", async () => {
+		const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		mockDetail = {
+			...mockDetail,
+			assignmentId: "ca-speak-1",
+			skill: "speaking",
+			part: "part2",
+			type: "cue",
+			passage: "",
+			questions: [],
+			attempt: {
+				id: "att-speak-1",
+				status: "in_progress",
+				answers: {},
+				essay: "",
+				media: null,
+			},
+		};
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={qc}>
+				<QuizTakeView
+					source={{ kind: "assignment", id: "ca-speak-1" }}
+					serverAnswers={{}}
+				/>
+			</QueryClientProvider>,
+		);
+
+		const submitBtn = screen.getByRole("button", {
+			name: "Nộp bài",
+		}) as HTMLButtonElement;
+		expect(submitBtn.disabled).toBe(true);
+		const describedById = submitBtn.getAttribute("aria-describedby");
+		expect(describedById).toBeTruthy();
+		expect(document.getElementById(describedById ?? "")?.textContent).toBe(
+			"Bạn cần tải file bài nói lên trước khi nộp bài.",
+		);
+
+		// Tooltip portal must not exist before hover (guards against sr-only phantom pass).
+		expect(document.querySelector('[data-slot="tooltip-content"]')).toBeNull();
+
+		fireEvent.mouseEnter(screen.getByTestId("submit-disabled-trigger"));
+
+		await waitFor(() => {
+			expect(
+				document.querySelector('[data-slot="tooltip-content"]')?.textContent,
+			).toBe("Bạn cần tải file bài nói lên trước khi nộp bài.");
+		});
+		expect(errorSpy).not.toHaveBeenCalled();
+	});
+
+	it("closes tooltip cleanly and prevents stale reopening across disabled -> enabled -> disabled transitions", async () => {
+		const reasonA = "Lý do khóa ban đầu.";
+		const reasonB = "Lý do khóa mới.";
+		const { rerender } = render(
+			<QuizRuntimeHeader
+				title="Speaking Test"
+				saveState={null}
+				onSubmitClick={() => undefined}
+				submitDisabled
+				submitDisabledReason={reasonA}
+			/>,
+		);
+
+		fireEvent.mouseEnter(screen.getByTestId("submit-disabled-trigger"));
+		await waitFor(() => {
+			expect(
+				document.querySelector('[data-slot="tooltip-content"]')?.textContent,
+			).toBe(reasonA);
+		});
+
+		// Transition to enabled while hovered (without mouseLeave): tooltip must close and stay closed.
+		rerender(
+			<QuizRuntimeHeader
+				title="Speaking Test"
+				saveState="saved"
+				onSubmitClick={() => undefined}
+				submitDisabled={false}
+				submitDisabledReason={null}
+			/>,
+		);
+		await waitFor(() => {
+			const popup = document.querySelector('[data-slot="tooltip-content"]');
+			expect(popup === null || popup.className.includes("hidden")).toBe(true);
+		});
+
+		const enabledButton = screen.getByRole("button", { name: "Nộp bài" });
+		fireEvent.mouseLeave(enabledButton.parentElement as HTMLElement);
+		fireEvent.mouseEnter(enabledButton.parentElement as HTMLElement);
+		expect(document.querySelector('[data-slot="tooltip-content"]')).toBeNull();
+
+		// Transition back to disabled with a new reason: must NOT auto-open without a fresh hover.
+		rerender(
+			<QuizRuntimeHeader
+				title="Speaking Test"
+				saveState={null}
+				onSubmitClick={() => undefined}
+				submitDisabled
+				submitDisabledReason={reasonB}
+			/>,
+		);
+		expect(document.querySelector('[data-slot="tooltip-content"]')).toBeNull();
+
+		fireEvent.mouseLeave(screen.getByTestId("submit-disabled-trigger"));
+		fireEvent.mouseEnter(screen.getByTestId("submit-disabled-trigger"));
+		await waitFor(() => {
+			expect(
+				document.querySelector('[data-slot="tooltip-content"]')?.textContent,
+			).toBe(reasonB);
+		});
+	});
+
+	it("skips disabled confirm button in QuizDialog focus trap for Shift+Tab and Tab", () => {
+		render(
+			<QuizStartDialog
+				open
+				starting
+				onStart={() => undefined}
+				onCancel={() => undefined}
+			/>,
+		);
+		const dialog = screen.getByRole("alertdialog", {
+			name: "Bắt đầu làm bài",
+		});
+		const cancelBtn = within(dialog).getByRole("button", { name: "Quay lại" });
+		const startBtn = within(dialog).getByRole("button", {
+			name: "Bắt đầu",
+		}) as HTMLButtonElement;
+		expect(startBtn.disabled).toBe(true);
+		expect(document.activeElement).toBe(dialog);
+
+		fireEvent.keyDown(dialog, { key: "Tab", shiftKey: true });
+		expect(document.activeElement).toBe(cancelBtn);
+
+		fireEvent.keyDown(dialog, { key: "Tab", shiftKey: false });
+		expect(document.activeElement).toBe(cancelBtn);
+	});
+
+	it("halts primary store and disables submit with auth reason when Speaking media delete returns 401", async () => {
+		deleteQuizMediaMock.mockReset();
+		deleteQuizMediaMock.mockRejectedValueOnce({ status: 401 });
+		mockDetail = {
+			...mockDetail,
+			assignmentId: "ca-speak-auth",
+			skill: "speaking",
+			part: "part2",
+			type: "cue",
+			passage: "",
+			questions: [],
+			attempt: {
+				id: "att-speak-auth",
+				status: "in_progress",
+				answers: {},
+				essay: "",
+				media: {
+					name: "speaking.mp3",
+					type: "audio/mpeg",
+					size: 2048,
+					uploadedAt: "2026-11-24T10:00:00.000Z",
+				},
+			},
+		};
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={qc}>
+				<QuizTakeView
+					source={{ kind: "assignment", id: "ca-speak-auth" }}
+					serverAnswers={{}}
+				/>
+			</QueryClientProvider>,
+		);
+
+		const submitBtn = screen.getByRole("button", {
+			name: "Nộp bài",
+		}) as HTMLButtonElement;
+		expect(submitBtn.disabled).toBe(false);
+
+		// Open Speaking delete confirm dialog and confirm deletion → 401 triggers onAuthError.
+		fireEvent.click(screen.getByRole("button", { name: "Xoá" }));
+		const confirmDialog = screen.getByRole("alertdialog", {
+			name: "Xoá file bài nói?",
+		});
+		fireEvent.click(within(confirmDialog).getByRole("button", { name: "Xoá" }));
+
+		await waitFor(() => {
+			expect(screen.getByTestId("auth-error-banner")).toBeTruthy();
+		});
+		expect(submitBtn.disabled).toBe(true);
+		const describedById = submitBtn.getAttribute("aria-describedby");
+		expect(describedById).toBeTruthy();
+		expect(document.getElementById(describedById ?? "")?.textContent).toBe(
+			"Phiên đăng nhập đã hết hạn — vui lòng đăng nhập lại.",
+		);
 	});
 });

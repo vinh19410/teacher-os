@@ -274,6 +274,45 @@ describe("QuizRuntimeHeader — save-state element (RT#7)", () => {
 			html.indexOf("Nộp bài"),
 		);
 	});
+
+	it("gắn aria-describedby tới sr-only reason khi nút Nộp bài bị khóa có lý do và không tạo nested button", () => {
+		const reason =
+			'Hãy chọn "Tiếp tục" trong hộp thoại để mở khóa nút nộp bài.';
+		const disabledHtml = renderToStaticMarkup(
+			<QuizRuntimeHeader
+				title="Reading Practice"
+				saveState={null}
+				onSubmitClick={() => undefined}
+				submitDisabled
+				submitDisabledReason={reason}
+			/>,
+		);
+		expect(disabledHtml).not.toContain("text-bg");
+		expect((disabledHtml.match(/<button\b/g) ?? []).length).toBe(1);
+		expect(disabledHtml).toContain('data-testid="submit-disabled-trigger"');
+		expect(disabledHtml).toContain("cursor-not-allowed");
+		const describedByMatch = disabledHtml.match(/aria-describedby="([^"]+)"/);
+		expect(describedByMatch?.[1]).toBeTruthy();
+		const reasonId = describedByMatch?.[1] ?? "";
+		expect(disabledHtml).toContain(`id="${reasonId}"`);
+		expect(disabledHtml).toContain(
+			"Hãy chọn &quot;Tiếp tục&quot; trong hộp thoại để mở khóa nút nộp bài.",
+		);
+
+		const enabledHtml = renderToStaticMarkup(
+			<QuizRuntimeHeader
+				title="Reading Practice"
+				saveState="saved"
+				onSubmitClick={() => undefined}
+				submitDisabled={false}
+				submitDisabledReason={reason}
+			/>,
+		);
+		expect((enabledHtml.match(/<button\b/g) ?? []).length).toBe(1);
+		expect(enabledHtml).not.toContain("aria-describedby=");
+		expect(enabledHtml).not.toContain("cursor-not-allowed");
+		expect(enabledHtml).not.toContain('data-testid="submit-disabled-trigger"');
+	});
 });
 
 describe("QuizLifecycleDialogs — copy vòng đời (Selfomy parity)", () => {
@@ -305,6 +344,13 @@ describe("QuizLifecycleDialogs — copy vòng đời (Selfomy parity)", () => {
 			"Bạn có bài làm chưa hoàn thành. Bạn có muốn tiếp tục không?",
 		);
 		expect(html).toContain("Tiếp tục");
+		expect(html).toContain('data-testid="quiz-dialog-helper"');
+		expect(html).toContain(
+			"Hãy chọn &quot;Tiếp tục&quot; để khôi phục bài làm và mở khóa nút &quot;Nộp bài&quot;.",
+		);
+		expect(html).toContain("z-[60]");
+		const describedByMatch = html.match(/aria-describedby="([^"]+)"/);
+		expect((describedByMatch?.[1] ?? "").trim().split(/\s+/)).toHaveLength(2);
 	});
 
 	it("submit guard đếm câu chưa làm", () => {
