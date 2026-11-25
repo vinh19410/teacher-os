@@ -96,6 +96,7 @@ describe("student practice (#378 phase 10)", () => {
 				id: "test-read-1",
 				orgId: "org-1",
 				title: "The Falkirk Wheel",
+				description: "<p>Đọc kỹ đề.</p>",
 				skill: "reading",
 				timeLimitSeconds: 3600,
 				collection: "IELTS Trainer 2",
@@ -140,6 +141,28 @@ describe("student practice (#378 phase 10)", () => {
 				timeLimitSeconds: null,
 				collection: null,
 				testGroup: null,
+				status: "ready",
+			},
+			{
+				id: "test-listen-meta",
+				orgId: "org-1",
+				title: "Listening Full Meta",
+				description: "<p>Nghe kỹ băng.</p>",
+				skill: "listening",
+				timeLimitSeconds: 1800,
+				collection: "Cambridge 19",
+				testGroup: "TEST 2",
+				status: "ready",
+			},
+			{
+				id: "test-listen-zero",
+				orgId: "org-1",
+				title: "Listening Zero Limit",
+				description: null,
+				skill: "listening",
+				timeLimitSeconds: 0,
+				collection: null,
+				testGroup: "SECTION 1",
 				status: "ready",
 			},
 		]);
@@ -213,6 +236,32 @@ describe("student practice (#378 phase 10)", () => {
 				questions: JSON.stringify(READING_QUESTIONS_P1),
 				status: "ready",
 			},
+			{
+				id: "prompt-listen-s1",
+				orgId: "org-1",
+				task: "task1",
+				genre: "",
+				skill: "listening",
+				part: "s1",
+				type: "mcq",
+				title: "Section 1",
+				prompt: "",
+				questions: JSON.stringify(READING_QUESTIONS_P2),
+				status: "ready",
+			},
+			{
+				id: "prompt-listen-s2",
+				orgId: "org-1",
+				task: "task1",
+				genre: "",
+				skill: "listening",
+				part: "s2",
+				type: "tfng",
+				title: "Section 2",
+				prompt: "",
+				questions: JSON.stringify(READING_QUESTIONS_P1),
+				status: "ready",
+			},
 		]);
 		await libsql.insert(schema.assignmentTestPart).values([
 			{
@@ -255,6 +304,27 @@ describe("student practice (#378 phase 10)", () => {
 				testId: "test-read-org2",
 				promptId: "prompt-read-org2",
 				part: "p1",
+				position: 1,
+			},
+			{
+				id: "atp-7",
+				testId: "test-listen-meta",
+				promptId: "prompt-listen-s1",
+				part: "s1",
+				position: 1,
+			},
+			{
+				id: "atp-8",
+				testId: "test-listen-meta",
+				promptId: "prompt-listen-s2",
+				part: "s2",
+				position: 2,
+			},
+			{
+				id: "atp-9",
+				testId: "test-listen-zero",
+				promptId: "prompt-listen-s1",
+				part: "s1",
 				position: 1,
 			},
 		]);
@@ -543,6 +613,12 @@ describe("student practice (#378 phase 10)", () => {
 			expect(detail.dueAt).toBeNull();
 			expect(detail.skill).toBe("writing");
 			expect(detail.questions).toEqual([]);
+			expect(detail.attempt).toBeNull();
+			expect(detail.timeLimitSeconds).toBeNull();
+			expect(detail.partsCount).toBe(2);
+			expect(detail.collection).toBeNull();
+			expect(detail.testGroup).toBeNull();
+			expect(detail.description).toBeNull();
 
 			// Start rồi mới lấy take payload → có attempt + chrome part đầu.
 			await studentPost("/api/student/practice/test-writ-1/attempts");
@@ -558,6 +634,67 @@ describe("student practice (#378 phase 10)", () => {
 			expect(resumedDetail.prompt).toBe("<p>Describe the graph.</p>");
 			expect(resumedDetail.part).toBe("task1");
 			expect(resumedDetail.attempt?.status).toBe("in_progress");
+		});
+
+		test("trả đủ practice intro metadata trước start (fresh) và sau start (in_progress), chuẩn hoá timeLimitSeconds <= 0 (#883)", async () => {
+			const freshListen = await studentGet(
+				"/api/student/practice/test-listen-meta/quiz",
+			);
+			expect(freshListen.status).toBe(200);
+			const freshBody = (await freshListen.json()) as Record<string, unknown>;
+			expect(freshBody.attempt).toBeNull();
+			expect(freshBody.timeLimitSeconds).toBe(1800);
+			expect(freshBody.partsCount).toBe(2);
+			expect(freshBody.collection).toBe("Cambridge 19");
+			expect(freshBody.testGroup).toBe("TEST 2");
+			expect(freshBody.description).toBe("<p>Nghe kỹ băng.</p>");
+			expect(Array.isArray(freshBody.questions)).toBe(true);
+			expect((freshBody.questions as unknown[]).length).toBe(3);
+
+			// test-read-1 đã được POST /attempts ở block trên → kiểm metadata giữ nguyên ở trạng thái in_progress.
+			const inProgressRead = await studentGet(
+				"/api/student/practice/test-read-1/quiz",
+			);
+			expect(inProgressRead.status).toBe(200);
+			const readBody = (await inProgressRead.json()) as {
+				attempt: { status: string } | null;
+				timeLimitSeconds: number | null;
+				partsCount: number;
+				collection: string | null;
+				testGroup: string | null;
+				description: string | null;
+				questions: unknown[];
+			};
+			expect(readBody.attempt?.status).toBe("in_progress");
+			expect(readBody.timeLimitSeconds).toBe(3600);
+			expect(readBody.partsCount).toBe(2);
+			expect(readBody.collection).toBe("IELTS Trainer 2");
+			expect(readBody.testGroup).toBe("TEST 1");
+			expect(readBody.description).toBe("<p>Đọc kỹ đề.</p>");
+			expect(readBody.questions).toHaveLength(3);
+
+			// timeLimitSeconds <= 0 không gây 404 fail-closed mà chuẩn hoá về null ở cả /quiz lẫn catalog.
+			const zeroRes = await studentGet(
+				"/api/student/practice/test-listen-zero/quiz",
+			);
+			expect(zeroRes.status).toBe(200);
+			const zeroBody = (await zeroRes.json()) as Record<string, unknown>;
+			expect(zeroBody.timeLimitSeconds).toBeNull();
+			expect(zeroBody.partsCount).toBe(1);
+			expect(zeroBody.collection).toBeNull();
+			expect(zeroBody.testGroup).toBe("SECTION 1");
+
+			const catalogRes = await studentGet(
+				"/api/student/practice?skill=listening",
+			);
+			expect(catalogRes.status).toBe(200);
+			const catalogBody = (await catalogRes.json()) as {
+				items: Array<{ testId: string; durationMin: number | null }>;
+			};
+			const zeroCard = catalogBody.items.find(
+				(i) => i.testId === "test-listen-zero",
+			);
+			expect(zeroCard?.durationMin).toBeNull();
 		});
 
 		test("đề draft → 404", async () => {
@@ -962,7 +1099,7 @@ describe("practice timer, clock header, concurrency & cross-reload duration", ()
 			const res = await studentGet(`/api/student/practice/${id}/quiz`);
 			expect(res.status).toBe(200);
 			const body = (await res.json()) as Record<string, unknown>;
-			expect("timeLimitSeconds" in body).toBe(false);
+			expect(body.timeLimitSeconds).toBeNull();
 		}
 	});
 

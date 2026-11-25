@@ -38,6 +38,8 @@ export type ShellLinkProps = {
 	href: string;
 	className?: string;
 	"aria-current"?: "page" | undefined;
+	"aria-label"?: string;
+	title?: string;
 	onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
 	children: ReactNode;
 };
@@ -49,6 +51,8 @@ function DefaultShellLink({
 	href,
 	className,
 	"aria-current": ariaCurrent,
+	"aria-label": ariaLabel,
+	title,
 	onClick,
 	children,
 }: ShellLinkProps) {
@@ -57,6 +61,8 @@ function DefaultShellLink({
 			href={href}
 			className={className}
 			aria-current={ariaCurrent}
+			aria-label={ariaLabel}
+			title={title}
 			onClick={onClick}
 		>
 			{children}
@@ -65,6 +71,11 @@ function DefaultShellLink({
 }
 
 const ShellLinkContext = createContext<ShellLinkComponent>(DefaultShellLink);
+
+/** Lấy link component của shell (mặc định <a> thuần khi ngoài ShellLinkProvider). */
+export function useShellLink(): ShellLinkComponent {
+	return useContext(ShellLinkContext);
+}
 
 /** Cung cấp link component cho toàn bộ nav (web/student bọc router link). */
 export function ShellLinkProvider({

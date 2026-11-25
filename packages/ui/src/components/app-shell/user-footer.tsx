@@ -1,6 +1,7 @@
 import { cn } from "@teacher-os/ui/lib/utils";
 import { ChevronsUpDown } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useShellLink } from "./nav-group";
 
 export type ShellUser = {
 	name: string;
@@ -82,20 +83,22 @@ export function UserFooter({
 		};
 	}, [open]);
 
+	const Link = useShellLink();
 	const rowClass =
 		"flex min-w-0 flex-1 items-center gap-2 rounded-md p-2 text-left text-sm transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
 
 	const control =
 		user.href !== undefined ? (
-			<a
+			<Link
 				href={user.href}
 				aria-label={user.label}
 				title={user.title ?? user.label}
+				onClick={user.onClick ? () => user.onClick?.() : undefined}
 				className={cn(rowClass, collapsed && "lg:w-full")}
 			>
 				{user.avatar ?? <InitialsAvatar initials={user.initials} />}
 				<TextBlock user={user} collapsed={collapsed} />
-			</a>
+			</Link>
 		) : (
 			<button
 				ref={triggerRef}

@@ -199,11 +199,10 @@ export function useStartQuizAttempt(source: QuizTakeSource) {
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: () => startQuizAttempt(source),
-		onSuccess: () => {
-			void queryClient.invalidateQueries({
+		onSuccess: () =>
+			queryClient.invalidateQueries({
 				queryKey: quizDetailQueryKey(source),
-			});
-		},
+			}),
 	});
 }
 

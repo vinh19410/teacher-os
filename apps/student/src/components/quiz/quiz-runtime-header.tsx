@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import type { PracticeSkill } from "@teacher-os/api/contracts";
 import { Button, buttonVariants } from "@teacher-os/ui/components/button";
 import {
 	Tooltip,
@@ -9,6 +10,11 @@ import {
 import { type ReactNode, useId } from "react";
 import { cn } from "@/lib/cn";
 import type { QuizSaveState } from "@/lib/quiz-attempt-store";
+
+export type QuizRuntimeExitTarget =
+	| { to: "/" }
+	| { to: "/practice" }
+	| { to: "/practice/$skill"; params: { skill: PracticeSkill } };
 
 export const QUIZ_SAVE_STATE_LABELS: Record<QuizSaveState, string> = {
 	saving: "Đang lưu…",
@@ -36,6 +42,7 @@ export function QuizRuntimeHeader({
 	onSubmitClick,
 	submitDisabled,
 	submitDisabledReason,
+	exitTarget = { to: "/" },
 	children,
 }: {
 	title: string;
@@ -48,24 +55,37 @@ export function QuizRuntimeHeader({
 	submitDisabled?: boolean;
 	/** Lý do khóa nút Nộp bài để giải thích qua tooltip + aria-describedby. */
 	submitDisabledReason?: string | null;
+	/** Đích nút Thoát — mặc định "/" cho bài giao lớp; tự luyện trỏ về "/practice/$skill" (#883). */
+	exitTarget?: QuizRuntimeExitTarget;
 	children?: ReactNode;
 }) {
 	const submitReasonId = useId();
 	const disabledReason =
 		submitDisabled && submitDisabledReason ? submitDisabledReason : null;
-
+	const exitClassName = cn(
+		buttonVariants({ variant: "ghost" }),
+		"shrink-0 px-2 sm:px-3",
+	);
 	return (
 		<header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-1.5 border-border border-b bg-background/95 px-2 backdrop-blur sm:gap-3 sm:px-4">
 			<div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
-				<Link
-					to="/"
-					className={cn(
-						buttonVariants({ variant: "ghost" }),
-						"shrink-0 px-2 sm:px-3",
-					)}
-				>
-					Thoát
-				</Link>
+				{exitTarget.to === "/practice/$skill" ? (
+					<Link
+						to="/practice/$skill"
+						params={exitTarget.params}
+						className={exitClassName}
+					>
+						Thoát
+					</Link>
+				) : exitTarget.to === "/practice" ? (
+					<Link to="/practice" className={exitClassName}>
+						Thoát
+					</Link>
+				) : (
+					<Link to="/" className={exitClassName}>
+						Thoát
+					</Link>
+				)}
 				<div className="flex min-w-0 flex-col justify-center">
 					<h1 className="truncate font-semibold text-[15px] tracking-tight">
 						{title}

@@ -81,6 +81,7 @@ async function submitPracticeReading(page: Page): Promise<void> {
 		.filter({ hasText: practiceTestTitle });
 	await card.click();
 	await expect(page).toHaveURL(/\/learn\/quizzes\/practice\//);
+	await page.getByTestId("practice-start-btn").click();
 	await page
 		.locator('[data-question="0"] label', { hasText: "A" })
 		.first()

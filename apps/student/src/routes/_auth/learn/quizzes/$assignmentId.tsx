@@ -57,6 +57,7 @@ function TakeAssignmentPage() {
 	const { serverAnswers, serverEssay } = Route.useLoaderData();
 	return (
 		<QuizTakeView
+			key={assignmentId}
 			source={{ kind: "assignment", id: assignmentId }}
 			serverAnswers={serverAnswers}
 			serverEssay={serverEssay}
