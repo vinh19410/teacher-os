@@ -1203,3 +1203,717 @@ describe("practice timer, clock header, concurrency & cross-reload duration", ()
 		).toBe(284_000);
 	});
 });
+
+describe("GET /api/student/practice — facets & part/type/band filters (#884)", () => {
+	let app: ServerApp;
+	let libsql: Db;
+
+	beforeAll(async () => {
+		const client = createClient({ url: "file::memory:" });
+		const db = drizzle(client, { schema });
+		await migrate(db, { migrationsFolder: MIGRATIONS_DIR });
+		libsql = db as unknown as Db;
+
+		await libsql.insert(schema.organization).values([
+			{ id: "org-f1", name: "Facet Academy 1" },
+			{ id: "org-f2", name: "Facet Academy 2" },
+		]);
+		await libsql.insert(schema.student).values([
+			{ id: "st-f1", orgId: "org-f1", name: "Lan", email: "lan@facets.local" },
+			{ id: "st-f2", orgId: "org-f2", name: "Lan", email: "lan@facets.local" },
+		]);
+
+		// Prompts for org-f1 reading
+		await libsql.insert(schema.assignmentPrompt).values([
+			{
+				id: "pf-multi-group",
+				orgId: "org-f1",
+				task: "task1",
+				genre: "",
+				skill: "reading",
+				part: "p1",
+				type: "tfng",
+				band: "7.0",
+				title: "Multi-group P1",
+				prompt: "",
+				passage: "<p>Passage</p>",
+				groups: JSON.stringify([
+					{
+						id: "g1",
+						type: "tfng",
+						instruction: "",
+						startIndex: 0,
+						count: 1,
+						optionBank: [],
+						answersInline: false,
+						splitContent: false,
+						dragDrop: false,
+					},
+					{
+						id: "g2",
+						type: "fill_blank",
+						instruction: "",
+						startIndex: 1,
+						count: 1,
+						optionBank: [],
+						answersInline: false,
+						splitContent: false,
+						dragDrop: false,
+					},
+				]),
+				questions: JSON.stringify([
+					{ stem: "Q1", opts: null, answer: "TRUE", alts: "", type: "tfng" },
+					{
+						stem: "Q2 ____",
+						opts: null,
+						answer: "sun",
+						alts: "",
+						type: "fill_blank",
+					},
+				]),
+				status: "ready",
+			},
+			{
+				id: "pf-ungrouped",
+				orgId: "org-f1",
+				task: "task1",
+				genre: "",
+				skill: "reading",
+				part: "p2",
+				type: "sent",
+				band: "6.0",
+				title: "Ungrouped P2",
+				prompt: "",
+				passage: "<p>Passage</p>",
+				groups: "[]",
+				questions: JSON.stringify([
+					{ stem: "Q1 ____", opts: null, answer: "a", alts: "", type: "sent" },
+					{ stem: "Q2", opts: null, answer: "b", alts: "", type: "shortans" },
+				]),
+				status: "ready",
+			},
+			{
+				id: "pf-malformed-root",
+				orgId: "org-f1",
+				task: "task1",
+				genre: "",
+				skill: "reading",
+				part: "p3",
+				type: "ynng",
+				band: "7.5",
+				title: "Malformed Root JSON",
+				prompt: "",
+				passage: "<p>Passage</p>",
+				groups: "not-json",
+				questions: "{broken",
+				status: "ready",
+			},
+			{
+				id: "pf-scalar-elements",
+				orgId: "org-f1",
+				task: "task1",
+				genre: "",
+				skill: "reading",
+				part: "p1",
+				type: "tfng",
+				band: "7.0",
+				title: "Scalar Array Elements",
+				prompt: "",
+				passage: "<p>Passage</p>",
+				groups:
+					'["corrupt", {"type": ["nested"]}, {"type": 123}, null, {"type": "summary"}]',
+				questions: '["bad", {"type": "diagram"}]',
+				status: "ready",
+			},
+			{
+				id: "pf-scalar-questions-fallback",
+				orgId: "org-f1",
+				task: "task1",
+				genre: "",
+				skill: "reading",
+				part: "p2",
+				type: "note",
+				band: "7.0",
+				title: "Scalar Questions Fallback",
+				prompt: "",
+				passage: "<p>Passage</p>",
+				groups: "[]",
+				questions: '["bad", {"type": ["arr"]}, {"type": "diagram"}]',
+				status: "ready",
+			},
+			{
+				id: "pf-multipart-p1",
+				orgId: "org-f1",
+				task: "task1",
+				genre: "",
+				skill: "reading",
+				part: "p1",
+				type: "tfng",
+				band: "6.0",
+				title: "MultiPart P1",
+				prompt: "",
+				passage: "<p>P1</p>",
+				groups: "[]",
+				questions: JSON.stringify(READING_QUESTIONS_P1),
+				status: "ready",
+			},
+			{
+				id: "pf-multipart-p2",
+				orgId: "org-f1",
+				task: "task1",
+				genre: "",
+				skill: "reading",
+				part: "p2",
+				type: "headings",
+				band: "7.5",
+				title: "MultiPart P2",
+				prompt: "",
+				passage: "<p>P2</p>",
+				groups: "[]",
+				questions: JSON.stringify(READING_QUESTIONS_P2),
+				status: "ready",
+			},
+			// Listening prompts for org-f1 (alias collapsing: mcq1, mcq, mcq3 -> mcq)
+			{
+				id: "pf-l-s1",
+				orgId: "org-f1",
+				task: "task1",
+				genre: "",
+				skill: "listening",
+				part: "s1",
+				type: "mcq1",
+				band: "7.0",
+				title: "Listening S1",
+				prompt: "",
+				groups: "[]",
+				questions: JSON.stringify(READING_QUESTIONS_P2),
+				status: "ready",
+			},
+			{
+				id: "pf-l-s2",
+				orgId: "org-f1",
+				task: "task1",
+				genre: "",
+				skill: "listening",
+				part: "s2",
+				type: "mcq",
+				band: "7.0",
+				title: "Listening S2",
+				prompt: "",
+				groups: "[]",
+				questions: JSON.stringify(READING_QUESTIONS_P2),
+				status: "ready",
+			},
+			{
+				id: "pf-l-s3",
+				orgId: "org-f1",
+				task: "task1",
+				genre: "",
+				skill: "listening",
+				part: "s3",
+				type: "mcq3",
+				band: "7.0",
+				title: "Listening S3",
+				prompt: "",
+				groups: "[]",
+				questions: JSON.stringify(READING_QUESTIONS_P2),
+				status: "ready",
+			},
+			{
+				id: "pf-l-s4",
+				orgId: "org-f1",
+				task: "task1",
+				genre: "",
+				skill: "listening",
+				part: "s4",
+				type: "notes",
+				band: "7.0",
+				title: "Listening S4",
+				prompt: "",
+				groups: "[]",
+				questions: JSON.stringify(READING_QUESTIONS_P1),
+				status: "ready",
+			},
+			// Other org prompt
+			{
+				id: "pf-other-org",
+				orgId: "org-f2",
+				task: "task1",
+				genre: "",
+				skill: "reading",
+				part: "p1",
+				type: "tfng",
+				band: "8.0",
+				title: "Other Org P1",
+				prompt: "",
+				groups: "[]",
+				questions: JSON.stringify(READING_QUESTIONS_P1),
+				status: "ready",
+			},
+		]);
+
+		const baseMs = Date.parse("2026-11-24T12:00:00.000Z");
+		// 12 newest reading tests all have collection "Actual Test" (filling page 1 completely)
+		const page1ActualTests = Array.from({ length: 10 }, (_, idx) => ({
+			id: `tf-actual-${idx + 1}`,
+			orgId: "org-f1",
+			title: `Actual Reading ${idx + 1}`,
+			skill: "reading",
+			collection: "Actual Test",
+			status: "ready",
+			createdAt: new Date(baseMs - idx * 1000),
+		}));
+
+		await libsql.insert(schema.assignmentTest).values([
+			...page1ActualTests,
+			{
+				id: "tf-actual-multi-group",
+				orgId: "org-f1",
+				title: "Actual Multi-Group Reading",
+				skill: "reading",
+				collection: "  Actual Test  ",
+				status: "ready",
+				createdAt: new Date(baseMs - 10 * 1000),
+			},
+			{
+				id: "tf-actual-scalar",
+				orgId: "org-f1",
+				title: "Actual Scalar Array Reading",
+				skill: "reading",
+				collection: "Actual Test",
+				status: "ready",
+				createdAt: new Date(baseMs - 11 * 1000),
+			},
+			// Page 2 items (3 items) have completely different collections + blank collections
+			{
+				id: "tf-cam18-ungrouped",
+				orgId: "org-f1",
+				title: "Cambridge 18 Ungrouped",
+				skill: "reading",
+				collection: "Cambridge IELTS 18",
+				status: "ready",
+				createdAt: new Date(baseMs - 12 * 1000),
+			},
+			{
+				id: "tf-other-multipart",
+				orgId: "org-f1",
+				title: "Other Sources MultiPart",
+				skill: "reading",
+				collection: "Other sources",
+				status: "ready",
+				createdAt: new Date(baseMs - 13 * 1000),
+			},
+			{
+				id: "tf-blank-collection-1",
+				orgId: "org-f1",
+				title: "Blank Collection Reading",
+				skill: "reading",
+				collection: "",
+				status: "ready",
+				createdAt: new Date(baseMs - 14 * 1000),
+			},
+			{
+				id: "tf-whitespace-collection",
+				orgId: "org-f1",
+				title: "Whitespace Collection Reading",
+				skill: "reading",
+				collection: "   ",
+				status: "ready",
+				createdAt: new Date(baseMs - 15 * 1000),
+			},
+			// Draft & Other org tests (must NEVER leak into facets or results)
+			{
+				id: "tf-draft-secret",
+				orgId: "org-f1",
+				title: "Draft Secret Test",
+				skill: "reading",
+				collection: "Draft Secret Book",
+				status: "draft",
+				createdAt: new Date(baseMs + 5000),
+			},
+			{
+				id: "tf-org2-secret",
+				orgId: "org-f2",
+				title: "Other Org Test",
+				skill: "reading",
+				collection: "Other Org Book",
+				status: "ready",
+				createdAt: new Date(baseMs + 5000),
+			},
+			// Listening tests
+			{
+				id: "tf-listen-1",
+				orgId: "org-f1",
+				title: "Listen MCQ1",
+				skill: "listening",
+				collection: "Cambridge IELTS 17",
+				status: "ready",
+				createdAt: new Date(baseMs - 1000),
+			},
+			{
+				id: "tf-listen-2",
+				orgId: "org-f1",
+				title: "Listen MCQ4",
+				skill: "listening",
+				collection: "Actual Test",
+				status: "ready",
+				createdAt: new Date(baseMs - 2000),
+			},
+			{
+				id: "tf-listen-3",
+				orgId: "org-f1",
+				title: "Listen MCQ3",
+				skill: "listening",
+				collection: "Forecast Quý 2-2025",
+				status: "ready",
+				createdAt: new Date(baseMs - 3000),
+			},
+			{
+				id: "tf-listen-4",
+				orgId: "org-f1",
+				title: "Listen Notes S4",
+				skill: "listening",
+				collection: "Other sources",
+				status: "ready",
+				createdAt: new Date(baseMs - 4000),
+			},
+		]);
+
+		await libsql.insert(schema.assignmentTestPart).values([
+			...page1ActualTests.map((t, idx) => ({
+				id: `atpf-actual-${idx + 1}`,
+				testId: t.id,
+				promptId: "pf-multi-group",
+				part: "p1",
+				position: 0,
+			})),
+			{
+				id: "atpf-multi-group",
+				testId: "tf-actual-multi-group",
+				promptId: "pf-multi-group",
+				part: "p1",
+				position: 0,
+			},
+			{
+				id: "atpf-scalar",
+				testId: "tf-actual-scalar",
+				promptId: "pf-scalar-elements",
+				part: "p1",
+				position: 0,
+			},
+			{
+				id: "atpf-cam18",
+				testId: "tf-cam18-ungrouped",
+				promptId: "pf-ungrouped",
+				part: "p2",
+				position: 0,
+			},
+			{
+				id: "atpf-other-p1",
+				testId: "tf-other-multipart",
+				promptId: "pf-multipart-p1",
+				part: "p1",
+				position: 0,
+			},
+			{
+				id: "atpf-other-p2",
+				testId: "tf-other-multipart",
+				promptId: "pf-multipart-p2",
+				part: "p2",
+				position: 1,
+			},
+			{
+				id: "atpf-blank-1",
+				testId: "tf-blank-collection-1",
+				promptId: "pf-malformed-root",
+				part: "p3",
+				position: 0,
+			},
+			{
+				id: "atpf-whitespace-1",
+				testId: "tf-whitespace-collection",
+				promptId: "pf-scalar-questions-fallback",
+				part: "p2",
+				position: 0,
+			},
+			{
+				id: "atpf-draft-1",
+				testId: "tf-draft-secret",
+				promptId: "pf-multi-group",
+				part: "p1",
+				position: 0,
+			},
+			{
+				id: "atpf-org2-1",
+				testId: "tf-org2-secret",
+				promptId: "pf-other-org",
+				part: "p1",
+				position: 0,
+			},
+			{
+				id: "atpf-l1",
+				testId: "tf-listen-1",
+				promptId: "pf-l-s1",
+				part: "s1",
+				position: 0,
+			},
+			{
+				id: "atpf-l2",
+				testId: "tf-listen-2",
+				promptId: "pf-l-s2",
+				part: "s2",
+				position: 0,
+			},
+			{
+				id: "atpf-l3",
+				testId: "tf-listen-3",
+				promptId: "pf-l-s3",
+				part: "s3",
+				position: 0,
+			},
+			{
+				id: "atpf-l4",
+				testId: "tf-listen-4",
+				promptId: "pf-l-s4",
+				part: "s4",
+				position: 0,
+			},
+		]);
+
+		app = buildApp({
+			getDb: () => libsql as unknown as Db,
+			corsOrigin: CORS_ORIGINS,
+			getSessionUser: async (headers: Headers): Promise<SessionUser | null> => {
+				if (headers.get("x-test-user") === "lan") {
+					return {
+						userId: "u-lan",
+						userName: "Lan",
+						email: "lan@facets.local",
+						emailVerified: true,
+						role: "student",
+					};
+				}
+				return null;
+			},
+			authHandler: () => new Response("auth OK"),
+		});
+	});
+
+	async function facetGet(path: string, orgId = "org-f1"): Promise<Response> {
+		return app.request(path, {
+			method: "GET",
+			headers: { "x-test-user": "lan", "x-student-org-id": orgId },
+		});
+	}
+
+	test("omits facets without ?facets=1 (legacy .strict() compatibility) and sets private cache headers", async () => {
+		const res = await facetGet("/api/student/practice?skill=reading&page=1");
+		expect(res.status).toBe(200);
+		expect(res.headers.get("cache-control")).toBe("no-store");
+		expect(res.headers.get("vary")).toContain("Cookie");
+		expect(res.headers.get("vary")).toContain("x-student-org-id");
+		const body = (await res.json()) as Record<string, unknown>;
+		expect(Object.keys(body).sort()).toEqual([
+			"items",
+			"page",
+			"pages",
+			"total",
+		]);
+		expect("facets" in body).toBe(false);
+	});
+
+	test("returns identical catalog-wide facets across page 1, page 2, and active filters while excluding blanks/draft/other-org and surviving corrupt JSON arrays", async () => {
+		const expectedFacets = {
+			collections: ["Actual Test", "Cambridge IELTS 18", "Other sources"],
+			parts: ["p1", "p2", "p3"],
+			bands: ["6.0", "7.0", "7.5"],
+			types: [
+				"fill_blank",
+				"diagram",
+				"headings",
+				"notes",
+				"sent",
+				"shortans",
+				"summary",
+				"tfng",
+				"ynng",
+			],
+		};
+
+		const [p1Res, p2Res, filteredRes] = await Promise.all([
+			facetGet("/api/student/practice?skill=reading&page=1&facets=1"),
+			facetGet("/api/student/practice?skill=reading&page=2&facets=1"),
+			facetGet(
+				"/api/student/practice?skill=reading&collection=Cambridge%20IELTS%2018&part=p2&type=shortans&band=6.0&q=nonexistent&facets=1",
+			),
+		]);
+
+		expect(p1Res.status).toBe(200);
+		expect(p2Res.status).toBe(200);
+		expect(filteredRes.status).toBe(200);
+
+		const p1 = (await p1Res.json()) as {
+			items: Array<{ collection: string | null }>;
+			total: number;
+			pages: number;
+			facets: typeof expectedFacets;
+		};
+		const p2 = (await p2Res.json()) as {
+			facets: typeof expectedFacets;
+		};
+		const filtered = (await filteredRes.json()) as {
+			items: unknown[];
+			total: number;
+			facets: typeof expectedFacets;
+		};
+
+		// Page 1 items ONLY have "Actual Test", yet facets lists ALL 3 collections!
+		expect(new Set(p1.items.map((i) => i.collection?.trim()))).toEqual(
+			new Set(["Actual Test"]),
+		);
+		expect(p1.total).toBe(16);
+		expect(p1.pages).toBe(2);
+		expect(p1.facets).toEqual(expectedFacets);
+		expect(p2.facets).toEqual(expectedFacets);
+		expect(filtered.total).toBe(0);
+		expect(filtered.items).toEqual([]);
+		expect(filtered.facets).toEqual(expectedFacets);
+	});
+
+	test("filters by trimmed collection, secondary group type, ungrouped question type, and enforces same-part intersection on multi-part tests", async () => {
+		// Trimmed collection matches "  Actual Test  " as well as "Actual Test"
+		const byCol = await facetGet(
+			"/api/student/practice?skill=reading&collection=Actual%20Test&facets=1",
+		);
+		const colBody = (await byCol.json()) as { total: number };
+		expect(colBody.total).toBe(12);
+
+		// Secondary group type fill_blank (prompt.type is tfng, groups[1].type is fill_blank)
+		const bySecondaryGroup = await facetGet(
+			"/api/student/practice?skill=reading&type=fill_blank&facets=1",
+		);
+		const secBody = (await bySecondaryGroup.json()) as { total: number };
+		expect(secBody.total).toBe(11);
+
+		// Ungrouped per-question fallback type shortans (groups = "[]", questions[1].type = "shortans")
+		const byQuestionFallback = await facetGet(
+			"/api/student/practice?skill=reading&type=shortans&facets=1",
+		);
+		const qFallbackBody = (await byQuestionFallback.json()) as {
+			items: Array<{ testId: string }>;
+		};
+		expect(qFallbackBody.items.map((i) => i.testId)).toEqual([
+			"tf-cam18-ungrouped",
+		]);
+
+		// Scalar element fallback in questions (groups="[]", questions='["bad", ..., {"type":"diagram"}]')
+		const byDiagram = await facetGet(
+			"/api/student/practice?skill=reading&type=diagram&facets=1",
+		);
+		const diagBody = (await byDiagram.json()) as {
+			items: Array<{ testId: string }>;
+		};
+		expect(diagBody.items.map((i) => i.testId)).toEqual([
+			"tf-whitespace-collection",
+		]);
+
+		// Multi-part same-part intersection: p1 is tfng (6.0), p2 is headings (7.5)
+		const mismatch = await facetGet(
+			"/api/student/practice?skill=reading&part=p1&type=headings&facets=1",
+		);
+		expect(
+			((await mismatch.json()) as { items: unknown[] }).items,
+		).toHaveLength(0);
+
+		const exactMatch = await facetGet(
+			"/api/student/practice?skill=reading&part=p2&type=headings&band=7.5&facets=1",
+		);
+		expect(
+			(
+				(await exactMatch.json()) as { items: Array<{ testId: string }> }
+			).items.map((i) => i.testId),
+		).toEqual(["tf-other-multipart"]);
+	});
+
+	test("canonicalizes listening MCQ aliases (mcq/mcq1/mcq3) in facets and expands them when filtering", async () => {
+		const res = await facetGet(
+			"/api/student/practice?skill=listening&facets=1",
+		);
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as {
+			facets: { types: string[]; parts: string[]; bands: string[] };
+		};
+		expect(body.facets.types).toEqual(["mcq", "notes"]);
+		expect(body.facets.parts).toEqual(["s1", "s2", "s3", "s4"]);
+		expect(body.facets.bands).toEqual(["7.0"]);
+
+		for (const qType of ["mcq", "mcq1", "mcq3"]) {
+			const filtered = await facetGet(
+				`/api/student/practice?skill=listening&type=${qType}`,
+			);
+			const fBody = (await filtered.json()) as {
+				items: Array<{ testId: string }>;
+			};
+			expect(fBody.items.map((i) => i.testId).sort()).toEqual([
+				"tf-listen-1",
+				"tf-listen-2",
+				"tf-listen-3",
+			]);
+		}
+	});
+
+	test("returns 200 empty list for unknown filter values and 400 for oversized raw params or invalid/overflow page", async () => {
+		const unknownRes = await facetGet(
+			"/api/student/practice?skill=reading&collection=NoSuchBook&type=unknown_t&part=p9&band=9.0&facets=1",
+		);
+		expect(unknownRes.status).toBe(200);
+		const unknownBody = (await unknownRes.json()) as {
+			items: unknown[];
+			total: number;
+			facets: { collections: string[] };
+		};
+		expect(unknownBody.total).toBe(0);
+		expect(unknownBody.items).toEqual([]);
+		expect(unknownBody.facets.collections).toEqual([
+			"Actual Test",
+			"Cambridge IELTS 18",
+			"Other sources",
+		]);
+
+		for (const protoKey of [
+			"toString",
+			"constructor",
+			"valueOf",
+			"__proto__",
+		]) {
+			const protoRes = await facetGet(
+				`/api/student/practice?skill=reading&type=${encodeURIComponent(protoKey)}&facets=1`,
+			);
+			expect(protoRes.status, `expected 200 for type=${protoKey}`).toBe(200);
+			const protoBody = (await protoRes.json()) as {
+				items: unknown[];
+				total: number;
+			};
+			expect(protoBody.total).toBe(0);
+			expect(protoBody.items).toEqual([]);
+		}
+
+		const over200 = "a".repeat(201);
+		const spaces201 = " ".repeat(201);
+		for (const badPath of [
+			`/api/student/practice?skill=reading&collection=${over200}`,
+			`/api/student/practice?skill=reading&part=${over200}`,
+			`/api/student/practice?skill=reading&type=${over200}`,
+			`/api/student/practice?skill=reading&band=${over200}`,
+			`/api/student/practice?skill=reading&q=${encodeURIComponent(spaces201)}`,
+			"/api/student/practice?skill=reading&page=0",
+			"/api/student/practice?skill=reading&page=01",
+			"/api/student/practice?skill=reading&page=1abc",
+			"/api/student/practice?skill=reading&page=100001",
+			"/api/student/practice?skill=reading&page=999999999999999999999",
+		]) {
+			const badRes = await facetGet(badPath);
+			expect(badRes.status, `expected 400 for ${badPath}`).toBe(400);
+		}
+	});
+});

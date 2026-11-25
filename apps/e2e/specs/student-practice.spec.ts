@@ -582,3 +582,259 @@ test.describe("Student practice catalog (#378 phase 10, #880, #883)", () => {
 		await expect(page.getByTestId("vocab-overview-page")).toBeVisible();
 	});
 });
+
+test.describe("Student practice catalog filters & facets (#884)", () => {
+	let facetsFixture: QuizFixture;
+	let facetsEmail = "";
+
+	test.beforeAll(async ({ browser }) => {
+		const token = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+		facetsEmail = `practice.facets.${token}@test.local`;
+		facetsFixture = await seedQuizFixture({
+			orgName: `Practice Facets E2E ${token}`,
+			className: "IELTS Facets E2E",
+			studentName: "Minh Anh Facets",
+			studentEmail: facetsEmail,
+			prompts: [],
+		});
+
+		const db = createClient({
+			url: `file:${new URL("../local.db", import.meta.url).pathname}`,
+		});
+		await db.execute("PRAGMA busy_timeout = 5000;");
+		const now = Date.now();
+
+		const multiGroupGroups = JSON.stringify([
+			{
+				id: "g1",
+				type: "tfng",
+				instruction: "<p>True / False / Not Given</p>",
+				startIndex: 0,
+				count: 1,
+				optionBank: [],
+				answersInline: false,
+				splitContent: false,
+				dragDrop: false,
+			},
+			{
+				id: "g2",
+				type: "fill_blank",
+				instruction: "<p>Fill in the blank</p>",
+				startIndex: 1,
+				count: 1,
+				optionBank: [],
+				answersInline: false,
+				splitContent: false,
+				dragDrop: false,
+			},
+		]);
+
+		const specs = [
+			...Array.from({ length: 11 }, (_, idx) => ({
+				title: `Actual Reading Passage ${idx + 1}`,
+				collection: "Actual Test",
+				part: "p1",
+				type: "tfng",
+				groups: "[]",
+			})),
+			{
+				title: "Actual Multi-Group Passage 2",
+				collection: "Actual Test",
+				part: "p2",
+				type: "tfng",
+				groups: multiGroupGroups,
+			},
+			{
+				title: "Cambridge 18 Summary Passage 2",
+				collection: "Cambridge IELTS 18",
+				part: "p2",
+				type: "summary",
+				groups: "[]",
+			},
+			{
+				title: "Forecast Passage 3 YNNG",
+				collection: "Forecast Quý 2-2025",
+				part: "p3",
+				type: "ynng",
+				groups: "[]",
+			},
+			{
+				title: "Other Sources Passage 1 MCQ",
+				collection: "Other sources",
+				part: "p1",
+				type: "mcq",
+				groups: "[]",
+			},
+		];
+
+		for (const [idx, spec] of specs.entries()) {
+			const promptId = crypto.randomUUID();
+			const testId = crypto.randomUUID();
+			const createdAt = now - idx * 1000;
+			await db.execute({
+				sql: `INSERT INTO assignment_prompt (
+						id, org_id, task, genre, skill, part, type, band, title, prompt, passage, questions, groups, status, created_at
+					) VALUES (?,?, 'task1', '', 'reading', ?, ?, '7.0', ?, '', ?, ?, ?, 'ready', ?)`,
+				args: [
+					promptId,
+					facetsFixture.orgId,
+					spec.part,
+					spec.type,
+					spec.title,
+					PRACTICE_READING_PASSAGE,
+					JSON.stringify(PRACTICE_PROMPT_QUESTIONS),
+					spec.groups,
+					createdAt,
+				],
+			});
+			await db.execute({
+				sql: `INSERT INTO assignment_test (id, org_id, title, skill, time_limit_seconds, collection, test_group, status, created_at, updated_at)
+					VALUES (?,?,?, 'reading', 1200, ?, NULL, 'ready', ?, ?)`,
+				args: [
+					testId,
+					facetsFixture.orgId,
+					spec.title,
+					spec.collection,
+					createdAt,
+					createdAt,
+				],
+			});
+			await db.execute({
+				sql: `INSERT INTO assignment_test_part (id, test_id, prompt_id, part, position)
+					VALUES (?,?,?,?, 0)`,
+				args: [crypto.randomUUID(), testId, promptId, spec.part],
+			});
+		}
+		db.close();
+
+		const context = await browser.newContext();
+		const page = await context.newPage();
+		await page.goto(`${LMS_ORIGIN}/login`);
+		await page.locator("#tab-signup").click();
+		await page.locator("#signup-name").fill("Minh Anh Facets");
+		await page.locator("#signup-email").fill(facetsEmail);
+		await page.locator("#signup-password").fill(PASSWORD);
+		await page.locator("#panel-signup button[type='submit']").click();
+		await expect(page.getByText("Email chưa được xác thực")).toBeVisible({
+			timeout: 15_000,
+		});
+		await verifyStudentEmailFromMailLog(page, facetsEmail);
+		await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
+			timeout: 30_000,
+		});
+		await context.close();
+	});
+
+	test("bộ lọc Bộ đề giữ đủ nguồn toàn catalog qua các trang, lọc Phần thi + Dạng bài nhóm phụ, reload giữ URL, Xóa bộ lọc sạch và không tràn 4 viewport Light/Dark", async ({
+		page,
+	}) => {
+		await page.goto(`${LMS_ORIGIN}/login`);
+		await page.locator("#tab-signin").click();
+		await page.locator("#signin-email").fill(facetsEmail);
+		await page.locator("#signin-password").fill(PASSWORD);
+		await page.locator("#panel-signin button[type='submit']").click();
+		await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
+			timeout: 30_000,
+		});
+
+		await page.goto(`${STUDENT_BASE_URL}/practice/reading`);
+		await expect(page.getByText("15 đề — trang 1 / 2")).toBeVisible();
+
+		const expectedCollections = [
+			"",
+			"Actual Test",
+			"Cambridge IELTS 18",
+			"Forecast Quý 2-2025",
+			"Other sources",
+		];
+		const collectionSelect = page.getByLabel("Bộ đề");
+		const partSelect = page.getByLabel("Phần thi");
+		const typeSelect = page.getByLabel("Dạng bài");
+
+		// Trang 1 chỉ gồm 12 đề "Actual Test" nhưng dropdown Bộ đề vẫn liệt kê đủ cả 4 nguồn.
+		expect(
+			await collectionSelect
+				.locator("option")
+				.evaluateAll((opts) => opts.map((o) => (o as HTMLOptionElement).value)),
+		).toEqual(expectedCollections);
+		// Cả 15 đề đều mặc định band 7.0 -> không hiện dropdown Band chết 1 lựa chọn.
+		await expect(page.getByLabel("Band")).toHaveCount(0);
+
+		// Sang trang 2: dropdown Bộ đề giữ nguyên toàn bộ 4 nguồn.
+		await page.getByRole("button", { name: "Sau" }).click();
+		await expect(page).toHaveURL(/page=2/);
+		await expect(page.getByText("15 đề — trang 2 / 2")).toBeVisible();
+		expect(
+			await collectionSelect
+				.locator("option")
+				.evaluateAll((opts) => opts.map((o) => (o as HTMLOptionElement).value)),
+		).toEqual(expectedCollections);
+
+		// Lọc kết hợp Bộ đề + Phần thi (Passage 2) + Dạng bài nhóm phụ (Fill in the blank).
+		await collectionSelect.selectOption("Actual Test");
+		await expect(page).toHaveURL(/collection=Actual/);
+		await partSelect.selectOption("p2");
+		await expect(page).toHaveURL(/part=p2/);
+		await typeSelect.selectOption("fill_blank");
+		await expect(page).toHaveURL(/type=fill_blank/);
+		await expect(page.getByText("1 đề — trang 1 / 1")).toBeVisible();
+		await expect(page.getByTestId("practice-test-card")).toHaveCount(1);
+		await expect(page.getByTestId("practice-test-card")).toContainText(
+			"Actual Multi-Group Passage 2",
+		);
+
+		// Reload giữ nguyên filter và kết quả.
+		await page.reload();
+		await expect(collectionSelect).toHaveValue("Actual Test");
+		await expect(partSelect).toHaveValue("p2");
+		await expect(typeSelect).toHaveValue("fill_blank");
+		await expect(page.getByTestId("practice-test-card")).toHaveCount(1);
+
+		// Kiểm tra keyboard Tab focus đi qua các filter control.
+		await collectionSelect.focus();
+		await expect(collectionSelect).toBeFocused();
+		await page.keyboard.press("Tab");
+		await expect(partSelect).toBeFocused();
+		await page.keyboard.press("Tab");
+		await expect(typeSelect).toBeFocused();
+
+		// Tổ hợp không khớp -> empty state phân biệt + Xóa bộ lọc làm sạch URL & danh sách.
+		await partSelect.selectOption("p3");
+		await expect(
+			page.getByText("Không tìm thấy đề phù hợp với bộ lọc hiện tại."),
+		).toBeVisible();
+		await page.getByRole("button", { name: "Xóa bộ lọc" }).first().click();
+		await expect(page).toHaveURL(
+			new RegExp(`^${STUDENT_BASE_URL}/practice/reading$`),
+		);
+		await expect(page.getByText("15 đề — trang 1 / 2")).toBeVisible();
+
+		// 4 viewport (gồm 320px reflow) cả Light & Dark không tràn ngang.
+		for (const dark of [false, true]) {
+			await page.evaluate((isDark) => {
+				document.documentElement.classList.toggle("dark", isDark);
+			}, dark);
+			for (const vp of [
+				{ width: 1440, height: 900 },
+				{ width: 768, height: 1024 },
+				{ width: 375, height: 812 },
+				{ width: 320, height: 568 },
+			]) {
+				await page.setViewportSize(vp);
+				const hasOverflow = await page.evaluate(
+					() =>
+						document.documentElement.scrollWidth >
+						document.documentElement.clientWidth,
+				);
+				expect(
+					hasOverflow,
+					`practice catalog filters overflow at ${vp.width}x${vp.height} dark=${dark}`,
+				).toBe(false);
+			}
+		}
+		await page.evaluate(() => {
+			document.documentElement.classList.remove("dark");
+		});
+		await page.setViewportSize({ width: 1280, height: 720 });
+	});
+});
