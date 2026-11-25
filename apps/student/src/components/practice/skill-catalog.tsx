@@ -64,6 +64,10 @@ function TestCard({
 		(item.skill === "writing" || item.skill === "speaking") &&
 		item.lastAttempt?.status === "submitted" &&
 		score === null;
+	const collectionMeta = [item.collection, item.testGroup]
+		.map((value) => value?.trim())
+		.filter((value): value is string => Boolean(value))
+		.join(" · ");
 	return (
 		<button
 			type="button"
@@ -80,10 +84,13 @@ function TestCard({
 						<BookOpen className="size-6" />
 					)}
 				</span>
-				{item.collection && (
-					<span className="absolute bottom-2.5 left-2.5 rounded-md bg-background/95 px-2 py-0.5 font-medium text-foreground text-xs shadow-sm">
-						{item.collection}
-						{item.testGroup ? ` · ${item.testGroup}` : ""}
+				{collectionMeta && (
+					<span
+						data-testid="practice-card-source-badge"
+						title={collectionMeta}
+						className="absolute bottom-2.5 left-2.5 max-w-[calc(100%-1.25rem)] truncate rounded-md bg-background/95 px-2 py-0.5 font-medium text-foreground text-xs shadow-sm"
+					>
+						{collectionMeta}
 					</span>
 				)}
 			</div>

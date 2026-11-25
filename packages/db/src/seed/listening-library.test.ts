@@ -1,15 +1,32 @@
-import { readFileSync } from "node:fs";
+import {
+	copyFileSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
+import { createClient } from "@libsql/client";
 import { describe, expect, test, vi } from "vitest";
-import { parseImportListeningArgs } from "../../scripts/import-listening-library";
+import {
+	parseImportListeningArgs,
+	runImportListeningCli,
+} from "../../scripts/import-listening-library";
 import {
 	DEFAULT_LISTENING_DATA_DIR,
 	LISTENING_AUDIO_R2_PREFIX,
 	LISTENING_IMAGE_R2_PREFIX,
+	loadListeningLibraryDataset,
 	type RawListeningFile,
 	syncListeningMediaToR2,
 	transformListeningFile,
+	upsertListeningLibraryToDb,
+	verifyListeningLibraryInDb,
 } from "./listening-library";
+import { createLibsqlRunner } from "./vocab-library";
 
 function sampleRaw(
 	overrides: Partial<RawListeningFile> = {},
@@ -157,6 +174,9 @@ describe("listening-library transformer", () => {
 		expect(item.partId).toBe(
 			"lib-listen-part-83a7d7c9-ff79-47c3-80a2-b8bd4250a6b3-s4",
 		);
+		expect(item.collection).toBe("Other sources");
+		expect(item.testGroup).toBe("Section 4");
+		expect(item.part.source).toBe("Other sources — Section 4");
 		expect(item.part.questions[4]?.stem).toBe("easier; ride ____");
 		expect(item.part.questions[4]?.answer).toBe("more smoothly");
 		expect(item.part.questions[4]?.alts).toBe("");
@@ -166,6 +186,210 @@ describe("listening-library transformer", () => {
 		expect(item.part.groups[0]?.instruction).not.toContain(
 			"easier and <strong>(5)</strong> ride",
 		);
+	});
+
+	test("normalizes Unknown, blank, and missing raw source to Other sources while preserving named sources", () => {
+		for (const rawSource of ["Unknown", "  unknown  ", "", undefined]) {
+			const item = transformListeningFile(
+				sampleRaw({ source: rawSource }),
+				"Unknown-S2-sample.json",
+			);
+			expect(item.collection).toBe("Other sources");
+			expect(item.testGroup).toBe("Section 2");
+			expect(item.part.source).toBe("Other sources — Section 2");
+		}
+		const named = transformListeningFile(
+			sampleRaw({ source: "Actual Test" }),
+			"Actual-Test-S2-sample.json",
+		);
+		expect(named.collection).toBe("Actual Test");
+		expect(named.part.source).toBe("Actual Test — Section 2");
+	});
+});
+
+describe("verifyListeningLibraryInDb & import CLI warnings", () => {
+	async function createMinimalLibraryDb(
+		client: ReturnType<typeof createClient>,
+	) {
+		await client.executeMultiple(`
+			CREATE TABLE library_test (
+				id TEXT PRIMARY KEY,
+				title TEXT NOT NULL,
+				description TEXT,
+				skill TEXT NOT NULL,
+				time_limit_seconds INTEGER NOT NULL DEFAULT 3600,
+				collection TEXT,
+				test_group TEXT,
+				status TEXT NOT NULL DEFAULT 'draft',
+				created_by TEXT,
+				created_at INTEGER NOT NULL DEFAULT 0,
+				updated_at INTEGER NOT NULL DEFAULT 0
+			);
+			CREATE TABLE library_test_part (
+				id TEXT PRIMARY KEY,
+				test_id TEXT NOT NULL,
+				part TEXT NOT NULL,
+				type TEXT NOT NULL DEFAULT '',
+				title TEXT NOT NULL DEFAULT '',
+				band TEXT NOT NULL DEFAULT '7.0',
+				source TEXT NOT NULL DEFAULT '',
+				intro TEXT NOT NULL DEFAULT '',
+				passage TEXT NOT NULL DEFAULT '',
+				transcript TEXT NOT NULL DEFAULT '',
+				image_url TEXT NOT NULL DEFAULT '',
+				questions TEXT NOT NULL DEFAULT '[]',
+				option_bank TEXT NOT NULL DEFAULT '[]',
+				groups TEXT NOT NULL DEFAULT '[]',
+				note TEXT NOT NULL DEFAULT '',
+				audio_key TEXT,
+				audio_name TEXT,
+				audio_content_type TEXT,
+				audio_size INTEGER,
+				audio_uploaded_at INTEGER,
+				updated_at INTEGER NOT NULL DEFAULT 0,
+				UNIQUE(test_id, part)
+			);
+		`);
+	}
+
+	test("verifyListeningLibraryInDb detects Unknown values in both library_test.collection and library_test_part.source", async () => {
+		const tempDir = mkdtempSync(join(tmpdir(), "listen-verify-"));
+		try {
+			copyFileSync(
+				join(
+					DEFAULT_LISTENING_DATA_DIR,
+					"Unknown-S4-talking-about-the-history-of-bikes.json",
+				),
+				join(tempDir, "Unknown-S4-talking-about-the-history-of-bikes.json"),
+			);
+			const dataset = loadListeningLibraryDataset({ dataDir: tempDir });
+			const client = createClient({ url: "file::memory:" });
+			await createMinimalLibraryDb(client);
+			const runner = createLibsqlRunner(client);
+
+			await upsertListeningLibraryToDb(runner, dataset.items);
+			const clean = await verifyListeningLibraryInDb(runner, dataset);
+			expect(clean.unknownCollectionMatches).toBe(0);
+			expect(clean.unknownPartSourceMatches).toBe(0);
+			expect(clean.ok).toBe(true);
+
+			// Corrupt library_test.collection to Unknown -> must fail verify
+			await client.execute(
+				"UPDATE library_test SET collection = 'Unknown' WHERE id = 'lib-listen-83a7d7c9-ff79-47c3-80a2-b8bd4250a6b3'",
+			);
+			const badCol = await verifyListeningLibraryInDb(runner, dataset);
+			expect(badCol.unknownCollectionMatches).toBe(1);
+			expect(badCol.unknownPartSourceMatches).toBe(0);
+			expect(badCol.ok).toBe(false);
+
+			// Fix collection, corrupt library_test_part.source to 'Unknown — Section 4' -> must still fail verify
+			await client.execute(
+				"UPDATE library_test SET collection = 'Other sources' WHERE id = 'lib-listen-83a7d7c9-ff79-47c3-80a2-b8bd4250a6b3'",
+			);
+			await client.execute(
+				"UPDATE library_test_part SET source = 'Unknown — Section 4' WHERE id = 'lib-listen-part-83a7d7c9-ff79-47c3-80a2-b8bd4250a6b3-s4'",
+			);
+			const badPart = await verifyListeningLibraryInDb(runner, dataset);
+			expect(badPart.unknownCollectionMatches).toBe(0);
+			expect(badPart.unknownPartSourceMatches).toBe(1);
+			expect(badPart.ok).toBe(false);
+
+			client.close();
+		} finally {
+			rmSync(tempDir, { recursive: true, force: true });
+		}
+	});
+
+	test("runImportListeningCli logs non-fatal duplicate warning, sanitizes workflow-command injection, and suppresses IDs/titles under --public-logs", async () => {
+		const tempDir = mkdtempSync(join(tmpdir(), "listen-cli-warn-"));
+		const dbPath = join(tempDir, "test.sqlite");
+		const dataDir = join(tempDir, "data");
+		try {
+			mkdirSync(dataDir, { recursive: true });
+			copyFileSync(
+				join(
+					DEFAULT_LISTENING_DATA_DIR,
+					"Unknown-S4-talking-about-the-history-of-bikes.json",
+				),
+				join(dataDir, "Unknown-S4-talking-about-the-history-of-bikes.json"),
+			);
+			// Second fixture whose title carries a newline + workflow command to verify log sanitization
+			writeFileSync(
+				join(dataDir, "Inject-S2-test.json"),
+				JSON.stringify(
+					sampleRaw({
+						id: "inject-test-uuid-002",
+						title: "Inject Test\n::error::injected",
+						source: "Unknown",
+					}),
+				),
+				"utf8",
+			);
+
+			const client = createClient({ url: pathToFileURL(dbPath).toString() });
+			await createMinimalLibraryDb(client);
+			await client.execute({
+				sql: "INSERT INTO library_test (id, title, skill, status) VALUES (?, ?, 'listening', 'ready'), (?, ?, 'listening', 'ready')",
+				args: [
+					"manual-secret-uuid-999",
+					"Talking about the history of bikes",
+					"manual-inject-uuid-888",
+					"Inject Test\n::error::injected",
+				],
+			});
+			client.close();
+
+			// 1. Normal mode: non-fatal exit 0, sanitized warning without raw newline command injection, verify logs unknown counts
+			let normalOut = "";
+			const applyCode = await runImportListeningCli(
+				[
+					"--file",
+					dbPath,
+					"--data-dir",
+					dataDir,
+					"--mode",
+					"apply",
+					"--skip-media",
+					"--verify",
+				],
+				{ writeStdout: (chunk) => (normalOut += chunk) },
+			);
+			expect(applyCode).toBe(0);
+			expect(normalOut).toContain(
+				"WARNING: Found 2 pre-existing non-lib-listen",
+			);
+			expect(normalOut).toContain("manual-secret-uuid-999");
+			expect(normalOut).toContain("unknownCollectionMatches=0");
+			expect(normalOut).toContain("unknownPartSourceMatches=0");
+			// No line may start with raw GitHub Actions workflow command "::error::injected"
+			const lines = normalOut.split(/\r?\n/);
+			expect(lines.some((line) => line.startsWith("::error::"))).toBe(false);
+
+			// 2. --public-logs mode: prints count only, suppresses internal UUIDs & titles
+			let publicOut = "";
+			const auditCode = await runImportListeningCli(
+				[
+					"--file",
+					dbPath,
+					"--data-dir",
+					dataDir,
+					"--mode",
+					"audit",
+					"--public-logs",
+				],
+				{ writeStdout: (chunk) => (publicOut += chunk) },
+			);
+			expect(auditCode).toBe(0);
+			expect(publicOut).toContain(
+				"WARNING: Found 2 pre-existing non-lib-listen",
+			);
+			expect(publicOut).toContain("details suppressed under --public-logs");
+			expect(publicOut).not.toContain("manual-secret-uuid-999");
+			expect(publicOut).not.toContain("manual-inject-uuid-888");
+			expect(publicOut).not.toContain("Talking about the history of bikes");
+		} finally {
+			rmSync(tempDir, { recursive: true, force: true });
+		}
 	});
 });
 
