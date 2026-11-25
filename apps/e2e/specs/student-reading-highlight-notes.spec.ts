@@ -205,7 +205,7 @@ test.describe("Reading highlight & note tools (#881)", () => {
 		}, pt1);
 		const toolbar = page.getByRole("toolbar", { name: "Công cụ bài đọc" });
 		await expect(toolbar).toBeVisible();
-		await toolbar.getByRole("button", { name: "Tô sáng" }).click();
+		await toolbar.getByRole("button", { name: "Tô sáng", exact: true }).click();
 		await expect(toolbar).toHaveCount(0);
 		await expect(passageContent.locator("mark.reading-hl")).toHaveCount(2);
 
@@ -214,21 +214,26 @@ test.describe("Reading highlight & note tools (#881)", () => {
 		await page.mouse.click(pt2.x, pt2.y, { button: "right" });
 		const menu = page.getByRole("menu", { name: "Menu bài đọc" });
 		await expect(menu).toBeVisible();
-		await menu.getByRole("menuitem", { name: "Ghi chú" }).click();
+		await menu.getByRole("menuitem", { name: "Ghi chú", exact: true }).click();
 
 		const popover = page.getByRole("dialog", { name: "Ghi chú bài đọc" });
 		await expect(popover).toBeVisible();
 		await popover
 			.locator("textarea")
 			.fill("Ý chính đoạn 2: vai trò văn hoá của trà");
-		await popover.getByRole("button", { name: "Lưu ghi chú" }).click();
+		await popover
+			.getByRole("button", { name: "Lưu ghi chú", exact: true })
+			.click();
 		await expect(popover).toHaveCount(0);
 
 		// Verify note indicator icon has zero text nodes and header badge reads "2"
 		const noteTrigger = passageContent.locator("[data-note-trigger]").first();
 		await expect(noteTrigger).toBeVisible();
 		expect(await noteTrigger.textContent()).toBe("");
-		const notesToggle = passagePane.getByRole("button", { name: "Ghi chú" });
+		const notesToggle = passagePane.getByRole("button", {
+			name: "Ghi chú",
+			exact: true,
+		});
 		await expect(notesToggle.locator('span[aria-hidden="true"]')).toHaveText(
 			"2",
 		);
@@ -246,7 +251,9 @@ test.describe("Reading highlight & note tools (#881)", () => {
 		await popover
 			.locator("textarea")
 			.fill("Ý chính đoạn 2 (đã cập nhật): trà phổ biến toàn cầu");
-		await popover.getByRole("button", { name: "Lưu ghi chú" }).click();
+		await popover
+			.getByRole("button", { name: "Lưu ghi chú", exact: true })
+			.click();
 		await expect(popover).toHaveCount(0);
 
 		// Answer Q1 so resume dialog triggers on reload too
@@ -269,7 +276,7 @@ test.describe("Reading highlight & note tools (#881)", () => {
 		await resumeDialog.getByRole("button", { name: "Tiếp tục" }).click();
 		await expect(
 			passagePane
-				.getByRole("button", { name: "Ghi chú" })
+				.getByRole("button", { name: "Ghi chú", exact: true })
 				.locator('span[aria-hidden="true"]'),
 		).toHaveText("2");
 
@@ -284,7 +291,9 @@ test.describe("Reading highlight & note tools (#881)", () => {
 		}
 
 		// Open Notes Panel for desktop light & dark POT screenshots
-		await passagePane.getByRole("button", { name: "Ghi chú" }).click();
+		await passagePane
+			.getByRole("button", { name: "Ghi chú", exact: true })
+			.click();
 		await expect(page.getByTestId("reading-notes-panel")).toBeVisible();
 
 		const viewports: ReadonlyArray<{
@@ -336,7 +345,7 @@ test.describe("Reading highlight & note tools (#881)", () => {
 				}, pt320);
 				await expect(toolbar).toBeVisible();
 				await expect(
-					toolbar.getByRole("button", { name: "Bỏ tô sáng" }),
+					toolbar.getByRole("button", { name: "Bỏ tô sáng", exact: true }),
 				).toBeVisible();
 				const tbBox = await toolbar.boundingBox();
 				expect(tbBox).not.toBeNull();
@@ -401,7 +410,7 @@ test.describe("Reading highlight & note tools (#881)", () => {
 		await expect(page).toHaveURL(/\/detail$/);
 		await expect(passageContent.locator("mark.reading-hl")).toHaveCount(3);
 		await expect(
-			passagePane.getByRole("button", { name: "Xoá tất cả" }),
+			passagePane.getByRole("button", { name: "Xoá tất cả", exact: true }),
 		).toHaveCount(0);
 
 		await passageContent.locator("[data-note-trigger]").first().click();
@@ -412,7 +421,7 @@ test.describe("Reading highlight & note tools (#881)", () => {
 		);
 		await expect(roPopover.locator("textarea")).toHaveCount(0);
 		await expect(
-			roPopover.getByRole("button", { name: "Lưu ghi chú" }),
+			roPopover.getByRole("button", { name: "Lưu ghi chú", exact: true }),
 		).toHaveCount(0);
 	});
 });

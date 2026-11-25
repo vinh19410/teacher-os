@@ -458,9 +458,21 @@ describe("AnnotatableReadingPassage", () => {
 			const popover = screen.getByRole("dialog", { name: "Ghi chú bài đọc" });
 			expect(modal.contains(popover)).toBe(true);
 
-			// Tab inside popover stops propagation so TestPreviewOverlay trapTab doesn't hijack it
+			// Tab inside popover stops propagation AND wraps focus in both directions
+			const focusables = Array.from(
+				popover.querySelectorAll<HTMLElement>(
+					'button, textarea, [href], input, [tabindex]:not([tabindex="-1"])',
+				),
+			).filter((el) => !el.hasAttribute("disabled"));
+			const firstFocusable = focusables[0] as HTMLElement;
+			const lastFocusable = focusables[focusables.length - 1] as HTMLElement;
+			lastFocusable.focus();
 			fireEvent.keyDown(popover, { key: "Tab" });
 			expect(modalTabSpy).not.toHaveBeenCalled();
+			expect(document.activeElement).toBe(firstFocusable);
+			fireEvent.keyDown(popover, { key: "Tab", shiftKey: true });
+			expect(modalTabSpy).not.toHaveBeenCalled();
+			expect(document.activeElement).toBe(lastFocusable);
 
 			// Scroll on sibling does NOT close Note Popover; scroll on ancestor keeps Note Popover open
 			fireEvent.scroll(screen.getByTestId("sibling-scroller"));

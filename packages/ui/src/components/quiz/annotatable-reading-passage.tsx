@@ -345,7 +345,12 @@ export function AnnotatableReadingPassage({
 				return;
 			}
 
-			const targetEl = e.target instanceof Element ? e.target : null;
+			const targetEl =
+				e.target instanceof Element
+					? e.target
+					: e.target instanceof Node
+						? e.target.parentElement
+						: null;
 			const markEl = targetEl?.closest<HTMLElement>("mark[data-highlight-id]");
 			const highlightId = markEl?.dataset.highlightId;
 			if (!markEl || !highlightId || !passageRef.current?.contains(markEl)) {
