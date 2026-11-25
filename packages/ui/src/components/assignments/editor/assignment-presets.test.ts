@@ -6,6 +6,7 @@ import {
 	answerKindByType,
 	isOptionBankable,
 } from "@teacher-os/api/contracts";
+import { practiceTypeLabel } from "@teacher-os/api/lib/practice-type-catalog";
 import { describe, expect, test } from "vitest";
 
 import {
@@ -394,5 +395,16 @@ describe("assignment presets catalog (#218 v5)", () => {
 			alts: "",
 			pin: null,
 		});
+	});
+
+	test("practiceTypeLabel stays in sync with Writing and Speaking labels in SKILLS", () => {
+		for (const skill of SKILLS) {
+			if (skill.id !== "writing" && skill.id !== "speaking") continue;
+			for (const part of skill.parts) {
+				for (const type of part.types) {
+					expect(practiceTypeLabel(skill.id, type.id)).toBe(type.label);
+				}
+			}
+		}
 	});
 });
