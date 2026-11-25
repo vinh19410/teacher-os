@@ -12,11 +12,12 @@ function loginRedirectHref(locationHref: string): string {
 
 export const Route = createFileRoute("/_auth")({
 	component: AuthLayout,
-	beforeLoad: async ({ location }) => {
+	beforeLoad: async ({ location, preload }) => {
+		const isPreload = Boolean(preload);
 		let session: AuthSessionResult;
 		try {
 			session = await (typeof authClient.getCachedSession === "function"
-				? authClient.getCachedSession()
+				? authClient.getCachedSession({ allowStale: isPreload })
 				: authClient.getSession());
 		} catch (error) {
 			if (
@@ -27,6 +28,9 @@ export const Route = createFileRoute("/_auth")({
 			) {
 				throw error;
 			}
+			if (!isPreload) {
+				authClient.clearSessionCache?.();
+			}
 			throw redirect({
 				href: loginRedirectHref(location.href),
 				reloadDocument: true,
@@ -34,6 +38,9 @@ export const Route = createFileRoute("/_auth")({
 		}
 
 		if (!session?.data) {
+			if (!isPreload) {
+				authClient.clearSessionCache?.();
+			}
 			// Carry the current location with `/teacher` prefix so a re-auth on root
 			// `/login` lands the teacher back where they were. `location.href` is
 			// the full path incl. search + hash (no origin, stripped of basepath).
@@ -48,6 +55,7 @@ export const Route = createFileRoute("/_auth")({
 		const role = (session.data.user as { role?: string | null } | undefined)
 			?.role;
 		if (role && resolveUserRole(role) !== "teacher") {
+			authClient.clearSessionCache?.();
 			throw redirect({
 				href: roleHomePath(role),
 				reloadDocument: true,

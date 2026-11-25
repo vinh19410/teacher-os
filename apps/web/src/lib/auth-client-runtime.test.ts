@@ -12,5 +12,6 @@ describe("real authClient runtime proxy integrity", () => {
 		expect(typeof authClient.clearSessionCache).toBe("function");
 		expect(typeof authClient.signOut).toBe("function");
 		expect(typeof authClient.updateUser).toBe("function");
+		expect(typeof authClient.resetPassword).toBe("function");
 	});
 });

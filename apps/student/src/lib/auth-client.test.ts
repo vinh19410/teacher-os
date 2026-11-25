@@ -1,15 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock better-auth/react using vi.hoisted
-const { mockGetSession, mockSignOut } = vi.hoisted(() => ({
+const { mockGetSession, mockSignOut, mockResetPassword } = vi.hoisted(() => ({
 	mockGetSession: vi.fn(),
 	mockSignOut: vi.fn(),
+	mockResetPassword: vi.fn(),
 }));
 
 vi.mock("better-auth/react", () => ({
 	createAuthClient: () => ({
 		getSession: mockGetSession,
 		signOut: mockSignOut,
+		resetPassword: mockResetPassword,
 	}),
 }));
 
@@ -102,7 +104,7 @@ describe("auth-client session caching", () => {
 		expect(first).toEqual(session1);
 		expect(mockGetSession).toHaveBeenCalledTimes(1);
 
-		// Advance time past TTL (10s)
+		// Advance time past TTL (15s)
 		vi.advanceTimersByTime(SESSION_CACHE_TTL_MS + 500);
 
 		const second = await getCachedSession();
@@ -165,18 +167,42 @@ describe("auth-client session caching", () => {
 		expect(mockGetSession).toHaveBeenCalledTimes(2);
 	});
 
-	it("clears cache when authClient.signOut is called", async () => {
+	it("clears cache before and after authClient.signOut and authClient.resetPassword (even while getCachedSession is in-flight)", async () => {
 		const session = { data: { user: { id: "u-1" }, session: { id: "s-1" } } };
-		mockGetSession.mockResolvedValue(session);
-		mockSignOut.mockResolvedValue({ success: true });
-
+		mockGetSession.mockResolvedValueOnce(session);
 		await getCachedSession();
 		expect(mockGetSession).toHaveBeenCalledTimes(1);
 
-		await authClient.signOut();
+		let resolveSignOut!: (val: { data: { success: boolean } }) => void;
+		mockSignOut.mockReturnValueOnce(
+			new Promise<{ data: { success: boolean } }>((r) => {
+				resolveSignOut = r;
+			}),
+		);
+		mockGetSession.mockResolvedValueOnce(session);
 
+		const signOutPromise = authClient.signOut();
+		// A concurrent getCachedSession during in-flight signOut must be cleared when signOut settles
 		await getCachedSession();
 		expect(mockGetSession).toHaveBeenCalledTimes(2);
+		resolveSignOut({ data: { success: true } });
+		await signOutPromise;
+
+		mockGetSession.mockResolvedValueOnce(session);
+		await getCachedSession();
+		expect(mockGetSession).toHaveBeenCalledTimes(3);
+
+		mockResetPassword.mockResolvedValueOnce({
+			data: { status: true },
+			error: null,
+		});
+		await authClient.resetPassword({
+			newPassword: "Password123!",
+			token: "tok",
+		});
+		mockGetSession.mockResolvedValueOnce(session);
+		await getCachedSession();
+		expect(mockGetSession).toHaveBeenCalledTimes(4);
 	});
 
 	it("passes timeout signal to getSession", async () => {
@@ -191,6 +217,80 @@ describe("auth-client session caching", () => {
 				}),
 			}),
 		);
+	});
+
+	it("falls back to lastKnownSession on resolved 429 and 500 errors after TTL expiry without wiping cache", async () => {
+		vi.useFakeTimers();
+		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+		const sampleSession = {
+			data: {
+				user: { id: "u-1", name: "Student A", role: "student" },
+				session: { id: "s-1" },
+			},
+			error: null,
+		};
+		mockGetSession
+			.mockResolvedValueOnce(sampleSession)
+			.mockResolvedValueOnce({
+				data: null,
+				error: { status: 429, message: "Too many requests" },
+			})
+			.mockResolvedValueOnce({
+				data: null,
+				error: { status: 500, message: "Failed to get session" },
+			});
+
+		expect(await getCachedSession()).toEqual(sampleSession);
+
+		vi.advanceTimersByTime(SESSION_CACHE_TTL_MS + 500);
+		expect(await getCachedSession()).toEqual(sampleSession);
+
+		vi.advanceTimersByTime(5_500);
+		expect(await getCachedSession()).toEqual(sampleSession);
+		expect(mockGetSession).toHaveBeenCalledTimes(3);
+		expect(warnSpy).toHaveBeenCalledTimes(2);
+		warnSpy.mockRestore();
+	});
+
+	it("reuses lastKnownSession with 0 network calls when allowStale is true after TTL expiry", async () => {
+		vi.useFakeTimers();
+		const sampleSession = {
+			data: {
+				user: { id: "u-1", name: "Student A", role: "student" },
+				session: { id: "s-1" },
+			},
+			error: null,
+		};
+		mockGetSession.mockResolvedValueOnce(sampleSession);
+
+		expect(await getCachedSession()).toEqual(sampleSession);
+		vi.advanceTimersByTime(SESSION_CACHE_TTL_MS + 500);
+
+		expect(await getCachedSession({ allowStale: true })).toEqual(sampleSession);
+		expect(mockGetSession).toHaveBeenCalledTimes(1);
+	});
+
+	it("retries cold load on resolved 500 error and recovers on subsequent attempt", async () => {
+		vi.useFakeTimers();
+		const sampleSession = {
+			data: {
+				user: { id: "u-1", name: "Student A", role: "student" },
+				session: { id: "s-1" },
+			},
+			error: null,
+		};
+		mockGetSession
+			.mockResolvedValueOnce({
+				data: null,
+				error: { status: 500, message: "Failed to get session" },
+			})
+			.mockResolvedValueOnce(sampleSession);
+
+		const pending = getCachedSession();
+		await vi.advanceTimersByTimeAsync(400);
+
+		expect(await pending).toEqual(sampleSession);
+		expect(mockGetSession).toHaveBeenCalledTimes(2);
 	});
 });
 

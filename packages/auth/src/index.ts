@@ -93,6 +93,20 @@ export interface CreateAuthInput {
 	 * email có tài khoản hay không. Không có thì better-auth tự `await`.
 	 */
 	runInBackground?: (promise: Promise<unknown>) => void;
+	/**
+	 * Điều khiển tường minh Better-Auth in-memory rate limiter (Workers bật
+	 * `enabled: true` vì `NODE_ENV` không được gán trong bindings; local/E2E
+	 * bỏ trống theo mặc định Better-Auth).
+	 */
+	rateLimit?: {
+		enabled?: boolean;
+	};
+	/**
+	 * Danh sách header IP đáng tin cậy để tách bucket rate-limit theo client IP
+	 * (trên Cloudflare Worker chỉ truyền `["cf-connecting-ip"]`, không tin ở
+	 * runtime Node/E2E để tránh giả mạo header).
+	 */
+	trustedIpHeaders?: string[];
 }
 
 /** Tài khoản học viên không thể đăng nhập vào trang giáo viên (plan #260 D4). */
@@ -525,10 +539,30 @@ export function createAuth(input: CreateAuthInput) {
 				},
 			},
 		},
+		rateLimit: {
+			...(input.rateLimit?.enabled !== undefined && {
+				enabled: input.rateLimit.enabled,
+			}),
+			// Giữ nguyên các ngưỡng chặt mặc định cho /sign-in/* và /sign-up/* (3/10s),
+			// đồng thời cho phép /get-session đủ headroom cho nhiều học viên sau NAT
+			// mà vẫn chặn flood D1 từ một IP đơn lẻ.
+			customRules: {
+				"/get-session": {
+					window: 10,
+					max: 120,
+				},
+			},
+		},
 		advanced: {
 			...(input.runInBackground && {
 				backgroundTasks: { handler: input.runInBackground },
 			}),
+			...(input.trustedIpHeaders &&
+				input.trustedIpHeaders.length > 0 && {
+					ipAddress: {
+						ipAddressHeaders: input.trustedIpHeaders,
+					},
+				}),
 			defaultCookieAttributes: {
 				sameSite: "none",
 				secure: true,
