@@ -666,7 +666,17 @@ function openSpeakingBackupDb(overrideFactory) {
 					// Ignore schema upgrade errors
 				}
 			};
-			req.onsuccess = () => finish(req.result ?? null);
+			req.onsuccess = () => {
+				if (settled) {
+					try {
+						req.result?.close?.();
+					} catch {
+						// Ignore late close errors
+					}
+					return;
+				}
+				finish(req.result ?? null);
+			};
 			req.onerror = () => finish(null);
 			req.onblocked = () => finish(null);
 		} catch {
@@ -4295,11 +4305,13 @@ function createApp() {
 							recordedBlob,
 							state.speakingDurationSec ?? 0,
 						);
-						state.submission.speakingStatus = "uploaded";
-						state.submission.uploadToken = null;
-						speakingRetrySucceeded = true;
 						void deleteSpeakingBackup(submission.submissionId);
-						persist();
+						if (state.submission?.submissionId === submission.submissionId) {
+							state.submission.speakingStatus = "uploaded";
+							state.submission.uploadToken = null;
+							speakingRetrySucceeded = true;
+							persist();
+						}
 					} catch (err) {
 						speakingUploadError =
 							err instanceof Error
@@ -4429,12 +4441,14 @@ function createApp() {
 					type: "button",
 					id: "retryTestBtn",
 					className: "btn btn-ghost",
+					disabled: isUploadingSpeaking,
 				},
 				["Làm lại bài mới"],
 			),
 		]);
 
 		ctaRow.querySelector("#retryTestBtn")?.addEventListener("click", () => {
+			if (isUploadingSpeaking) return;
 			const previousSubmissionId = state.submission?.submissionId;
 			if (previousSubmissionId) {
 				void deleteSpeakingBackup(previousSubmissionId);

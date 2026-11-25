@@ -3756,4 +3756,146 @@ describe("Placement Speaking upload resilience, WebKit compatibility & recovery"
 		expect(await screen.findByTestId("placement-intro-card")).toBeTruthy();
 		expect(screen.queryByTestId("placement-pending-view")).toBeNull();
 	});
+
+	it("survives initial active_student_org_id hydration (null -> orgId) mid-recovery and isolates in-flight multi-org view caches", async () => {
+		const { clearActiveStudentOrgId, setActiveStudentOrgId } = await import(
+			"@/lib/student-org-storage"
+		);
+		const { saveStudentSpeakingBackup } = await import(
+			"@/lib/placement-speaking-backup"
+		);
+
+		const mockIdb = createInMemoryIdbFactory();
+		Object.defineProperty(globalThis, "indexedDB", {
+			configurable: true,
+			writable: true,
+			value: mockIdb.factory,
+		});
+
+		// Case A: fresh login (active_student_org_id starts null), hydrates to "org-a" mid-PUT -> must NOT abort finalization!
+		clearActiveStudentOrgId();
+		const hydrateSubId = "sub-hydrate-1";
+		await saveStudentSpeakingBackup({
+			studentId: "stu-org-a",
+			submissionId: hydrateSubId,
+			blob: new Blob([makeMp4FtypBytes()], { type: "audio/mp4" }),
+			mimeType: "audio/mp4",
+			durationSec: 12,
+		});
+
+		const sentOrgHeaders: Array<string | null> = [];
+		let putCount = 0;
+		globalThis.fetch = vi.fn(async (input, init) => {
+			const url = typeof input === "string" ? input : input.toString();
+			const headers = new Headers(init?.headers);
+			sentOrgHeaders.push(headers.get("x-student-org-id"));
+			if (url.endsWith("/api/student/placement-test")) {
+				const view: StudentPlacementViewResponse = {
+					status: "pending_grading",
+					hasEntryScore: false,
+					entryScore: null,
+					promptDismissedAt: null,
+					submissionId: hydrateSubId,
+					testAvailable: true,
+					testVersion: 3,
+					snapshot: null,
+					submission: createPendingSubmissionFixture({
+						id: hydrateSubId,
+						speakingStatus: putCount > 0 ? "uploaded" : "pending_upload",
+					}),
+					speakingTasks: putCount > 0 ? null : SAMPLE_SNAPSHOT.parts[4].tasks,
+				};
+				return makeJsonResponse(view);
+			}
+			if (
+				url.endsWith(
+					`/api/student/placement-test/submissions/${hydrateSubId}/speaking-upload-token`,
+				) &&
+				init?.method === "POST"
+			) {
+				// Simulate org-switcher hydrating localStorage from null -> "org-a" mid-flight!
+				setActiveStudentOrgId("org-a");
+				return makeJsonResponse({
+					uploadToken: "tok-hydrate-1",
+					uploadTokenExpiresAt: "2026-11-26T03:00:00Z",
+				});
+			}
+			if (
+				url.endsWith(
+					`/api/student/placement-test/submissions/${hydrateSubId}/speaking`,
+				) &&
+				init?.method === "PUT"
+			) {
+				putCount += 1;
+				return makeJsonResponse({ ok: true, speakingStatus: "uploaded" });
+			}
+			throw new Error(`Unexpected fetch: ${url}`);
+		});
+
+		const sharedQueryClient = createTestQueryClient();
+		const { rerender } = render(
+			<QueryClientProvider client={sharedQueryClient}>
+				<StudentPlacementTestContent
+					key="org-a:stu-org-a"
+					studentId="stu-org-a"
+					orgId="org-a"
+				/>
+			</QueryClientProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("pending-speaking-status").textContent).toBe(
+				"Đã gửi bài nói",
+			);
+		});
+		expect(putCount).toBe(1);
+		expect(
+			mockIdb.stores.get("recordings")?.has(`stu-org-a:${hydrateSubId}`),
+		).toBe(false);
+		expect(sentOrgHeaders.every((h) => h === "org-a")).toBe(true);
+
+		// Case B: switch to Org B while Org B's GET /placement-test is STILL IN-FLIGHT (without awaiting invalidate) -> must NOT render Org A's cached view!
+		setActiveStudentOrgId("org-b");
+		const orgBDeferred: { resolve?: (res: Response) => void } = {};
+		globalThis.fetch = vi.fn(async (input) => {
+			const url = typeof input === "string" ? input : input.toString();
+			if (url.endsWith("/api/student/placement-test")) {
+				return new Promise<Response>((resolve) => {
+					orgBDeferred.resolve = resolve;
+				});
+			}
+			throw new Error(`Unexpected fetch: ${url}`);
+		});
+
+		rerender(
+			<QueryClientProvider client={sharedQueryClient}>
+				<StudentPlacementTestContent
+					key="org-b:stu-org-b"
+					studentId="stu-org-b"
+					orgId="org-b"
+				/>
+			</QueryClientProvider>,
+		);
+
+		// While Org B fetch is pending, Org A's pending view must NOT leak onto screen
+		expect(screen.queryByTestId("placement-pending-view")).toBeNull();
+		expect(screen.queryByTestId("placement-intro-card")).toBeNull();
+
+		const orgBView: StudentPlacementViewResponse = {
+			status: "not_started",
+			hasEntryScore: false,
+			entryScore: null,
+			promptDismissedAt: null,
+			submissionId: null,
+			testAvailable: true,
+			testVersion: 3,
+			snapshot: SAMPLE_SNAPSHOT,
+			submission: null,
+			speakingTasks: null,
+		};
+		orgBDeferred.resolve?.(makeJsonResponse(orgBView));
+		expect(await screen.findByTestId("placement-intro-card")).toBeTruthy();
+		expect(screen.queryByTestId("placement-pending-view")).toBeNull();
+		clearActiveStudentOrgId();
+	});
 });

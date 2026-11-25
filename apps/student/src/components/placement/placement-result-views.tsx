@@ -325,7 +325,9 @@ export function PlacementPendingResultView({
 			recoveredAudio.blob.size > 0 &&
 			recoveredAudio.blob.size <= PLACEMENT_SPEAKING_MAX_BYTES &&
 			!isRecoverySpeakingBusy &&
-			!isUploadingRecovered,
+			!isUploadingRecovered &&
+			!isRetryingSpeakingUpload &&
+			!isAutoRecoveringSpeaking,
 	);
 
 	const handleUploadRecovered = async () => {
@@ -661,7 +663,12 @@ export function PlacementPendingResultView({
 											type="button"
 											variant="outline"
 											size="sm"
-											disabled={isRecoverySpeakingBusy || isUploadingRecovered}
+											disabled={
+												isRecoverySpeakingBusy ||
+												isUploadingRecovered ||
+												isRetryingSpeakingUpload ||
+												isAutoRecoveringSpeaking
+											}
 											onClick={() => {
 												setIsRecoveryPanelOpen(false);
 												setRecoveredAudio(null);

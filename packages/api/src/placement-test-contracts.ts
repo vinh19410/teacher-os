@@ -2959,6 +2959,7 @@ export function detectSpeakingAudioMimeFromBytes(
 				return "audio/mp4";
 			}
 		}
+		return null;
 	}
 
 	// EBML (WebM / Matroska)

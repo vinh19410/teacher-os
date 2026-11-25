@@ -57,6 +57,8 @@ import {
 } from "@/lib/placement-test-helpers";
 import { isHttpError } from "@/lib/query-client";
 import {
+	getStudentPlacementViewQueryKey,
+	isSameStudentOrgContext,
 	studentPlacementStatusQueryKey,
 	studentPlacementViewQueryKey,
 	uploadStudentPlacementSpeaking,
@@ -77,10 +79,12 @@ type PlacementSubmitStage = "idle" | "submitting" | "uploading_speaking";
 
 export function PlacementTestRunner({
 	studentId,
+	orgId,
 	snapshot,
 	onSubmitted,
 }: {
 	studentId: string;
+	orgId?: string;
 	snapshot: PlacementSnapshot;
 	onSubmitted: (
 		submission: StudentPlacementSubmissionView,
@@ -88,7 +92,8 @@ export function PlacementTestRunner({
 	) => void;
 }) {
 	const queryClient = useQueryClient();
-	const submitMutation = useSubmitStudentPlacement();
+	const viewQueryKey = getStudentPlacementViewQueryKey(orgId ?? studentId);
+	const submitMutation = useSubmitStudentPlacement(orgId);
 
 	const [draft, setDraft] = useState<PlacementDraftState>(() =>
 		loadPlacementDraft(studentId, snapshot.version),
@@ -228,9 +233,9 @@ export function PlacementTestRunner({
 
 	const executeSubmission = async (finalSpeakingMode: "upload" | "none") => {
 		if (submitStageRef.current !== "idle") return;
-		const submitOrgId = getActiveStudentOrgId();
-		const isSameSessionContext = () =>
-			!unmountedRef.current && getActiveStudentOrgId() === submitOrgId;
+		const submitOrgId = orgId ?? getActiveStudentOrgId();
+		const isSameOrg = () => isSameStudentOrgContext(submitOrgId);
+		const isActiveUi = () => !unmountedRef.current && isSameOrg();
 		setConfirmUnanswered(null);
 		updateSubmitStage("submitting");
 		setSubmitError("");
@@ -266,7 +271,7 @@ export function PlacementTestRunner({
 					durationSec: recordedAudio.durationSec,
 				});
 
-				if (res.uploadToken && isSameSessionContext()) {
+				if (res.uploadToken && isSameOrg()) {
 					updateSubmitStage("uploading_speaking");
 					try {
 						await uploadStudentPlacementSpeaking(
@@ -275,6 +280,7 @@ export function PlacementTestRunner({
 							recordedAudio.blob,
 							recordedAudio.mimeType,
 							recordedAudio.durationSec,
+							{ orgId },
 						);
 						speakingStatus = "uploaded";
 						await deleteStudentSpeakingBackup(studentId, res.submissionId);
@@ -310,7 +316,7 @@ export function PlacementTestRunner({
 
 			clearPlacementDraft(studentId, snapshot.version);
 
-			if (!isSameSessionContext()) {
+			if (!isSameOrg()) {
 				return;
 			}
 
@@ -341,10 +347,12 @@ export function PlacementTestRunner({
 				teacherFeedback: "",
 			};
 
-			onSubmitted(optimisticView, pendingRetry);
+			if (!unmountedRef.current) {
+				onSubmitted(optimisticView, pendingRetry);
+			}
 
 			queryClient.setQueryData<StudentPlacementViewResponse>(
-				studentPlacementViewQueryKey,
+				viewQueryKey,
 				(prev) =>
 					prev
 						? {
@@ -367,7 +375,7 @@ export function PlacementTestRunner({
 			});
 			void queryClient.invalidateQueries({ queryKey: ["student", "inbox"] });
 		} catch (err) {
-			if (isSameSessionContext()) {
+			if (isActiveUi()) {
 				setSubmitError(
 					err instanceof Error && err.message
 						? err.message

@@ -38,6 +38,26 @@ export const studentPlacementViewQueryKey = [
 	"view",
 ] as const;
 
+export function getStudentPlacementViewQueryKey(
+	scopeKey?: string | null,
+): readonly ["student", "placement-test", "view", string] {
+	return [...studentPlacementViewQueryKey, scopeKey || "default"] as const;
+}
+
+/**
+ * Kiểm tra ngữ cảnh org hiện tại có còn khớp org lúc khởi chạy thao tác hay
+ * không: chấp nhận bước hydrate ban đầu từ `null -> expectedOrgId` (khi vừa
+ * đăng nhập và `GET /api/student/orgs` mới hoàn tất), chỉ trả `false` khi
+ * người dùng thực sự chuyển sang một org khác.
+ */
+export function isSameStudentOrgContext(
+	expectedOrgId?: string | null,
+): boolean {
+	if (!expectedOrgId) return true;
+	const currentOrgId = getActiveStudentOrgId();
+	return currentOrgId === null || currentOrgId === expectedOrgId;
+}
+
 const PUBLIC_AUDIO_SRC_PREFIX = "/public/placement-test/audio/";
 
 async function throwPlacementHttpError(
@@ -95,8 +115,10 @@ export function useStudentPlacementStatus(enabled = true) {
 	});
 }
 
-export async function fetchStudentPlacementView(): Promise<StudentPlacementViewResponse> {
-	const headers = getStudentHeaders();
+export async function fetchStudentPlacementView(
+	explicitOrgId?: string | null,
+): Promise<StudentPlacementViewResponse> {
+	const headers = getStudentHeaders({}, explicitOrgId);
 	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(`${getApiBaseUrl()}/api/student/placement-test`, {
 		method: "GET",
@@ -128,10 +150,14 @@ export async function fetchStudentPlacementView(): Promise<StudentPlacementViewR
 	};
 }
 
-export function useStudentPlacementView() {
+export function useStudentPlacementView(
+	orgId?: string | null,
+	cacheScope?: string | null,
+) {
+	const scopeKey = orgId ?? cacheScope ?? null;
 	return useQuery({
-		queryKey: studentPlacementViewQueryKey,
-		queryFn: fetchStudentPlacementView,
+		queryKey: getStudentPlacementViewQueryKey(scopeKey),
+		queryFn: () => fetchStudentPlacementView(orgId),
 		staleTime: 30_000,
 	});
 }
@@ -188,9 +214,13 @@ export function useDismissPlacementPrompt() {
 
 export async function submitStudentPlacement(
 	payload: StudentPlacementSubmit,
+	explicitOrgId?: string | null,
 ): Promise<StudentPlacementSubmitResponse> {
 	const validated = studentPlacementSubmitSchema.parse(payload);
-	const headers = getStudentHeaders({ "Content-Type": "application/json" });
+	const headers = getStudentHeaders(
+		{ "Content-Type": "application/json" },
+		explicitOrgId,
+	);
 	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(
 		`${getApiBaseUrl()}/api/student/placement-test/submissions`,
@@ -212,16 +242,18 @@ export async function submitStudentPlacement(
  * giữ nguyên `PlacementTestRunner` đang tải file Speaking; runner sẽ tự cập
  * nhật và invalidate cache sau khi quá trình tải Speaking hoàn tất hoặc thất bại.
  */
-export function useSubmitStudentPlacement() {
+export function useSubmitStudentPlacement(orgId?: string | null) {
 	return useMutation({
-		mutationFn: submitStudentPlacement,
+		mutationFn: (payload: StudentPlacementSubmit) =>
+			submitStudentPlacement(payload, orgId),
 	});
 }
 
 export async function requestStudentPlacementSpeakingUploadToken(
 	submissionId: string,
+	explicitOrgId?: string | null,
 ): Promise<StudentPlacementSpeakingTokenResponse> {
-	const headers = getStudentHeaders();
+	const headers = getStudentHeaders({}, explicitOrgId);
 	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(
 		`${getApiBaseUrl()}/api/student/placement-test/submissions/${encodeURIComponent(submissionId)}/speaking-upload-token`,
@@ -255,6 +287,7 @@ export async function requestStudentPlacementSpeakingUploadToken(
 export interface UploadStudentPlacementSpeakingOptions {
 	retryDelaysMs?: readonly number[];
 	sleepImpl?: (ms: number) => Promise<void>;
+	orgId?: string | null;
 }
 
 const DEFAULT_SPEAKING_UPLOAD_RETRY_DELAYS_MS: readonly number[] = [800, 2000];
@@ -287,12 +320,15 @@ export async function uploadStudentPlacementSpeaking(
 ): Promise<{ ok: boolean; speakingStatus?: string }> {
 	const headBytes = await readBlobHeadBytes(blob);
 	const meta = resolveSpeakingUploadMeta(mimeType || blob.type, headBytes);
-	const headers = getStudentHeaders({
-		"X-Upload-Token": uploadToken,
-		"X-Media-Filename": meta.filename,
-		"X-Speaking-Duration": String(Math.max(0, Math.round(durationSec))),
-		"Content-Type": meta.contentType,
-	});
+	const headers = getStudentHeaders(
+		{
+			"X-Upload-Token": uploadToken,
+			"X-Media-Filename": meta.filename,
+			"X-Speaking-Duration": String(Math.max(0, Math.round(durationSec))),
+			"Content-Type": meta.contentType,
+		},
+		opts?.orgId,
+	);
 	const sentOrgId = headers["x-student-org-id"];
 	const url = `${getApiBaseUrl()}/api/student/placement-test/submissions/${encodeURIComponent(submissionId)}/speaking`;
 	const retryDelaysMs =

@@ -34,6 +34,8 @@ import {
 } from "@/lib/placement-speaking-backup";
 import { isHttpError } from "@/lib/query-client";
 import {
+	getStudentPlacementViewQueryKey,
+	isSameStudentOrgContext,
 	requestStudentPlacementSpeakingUploadToken,
 	studentPlacementStatusQueryKey,
 	studentPlacementViewQueryKey,
@@ -80,11 +82,13 @@ function isSpeakingUploadTokenAuthError(err: unknown): boolean {
 async function uploadSpeakingWithTokenRefresh(
 	target: SpeakingUploadTarget,
 	onTokenRefreshed?: (token: string) => void,
+	explicitOrgId?: string | null,
 ): Promise<SpeakingUploadOutcome> {
 	const mintFreshToken = async (): Promise<string | null> => {
 		try {
 			const minted = await requestStudentPlacementSpeakingUploadToken(
 				target.submissionId,
+				explicitOrgId,
 			);
 			onTokenRefreshed?.(minted.uploadToken);
 			return minted.uploadToken;
@@ -111,6 +115,7 @@ async function uploadSpeakingWithTokenRefresh(
 			target.blob,
 			target.mimeType,
 			target.durationSec,
+			{ orgId: explicitOrgId },
 		);
 		return "uploaded";
 	} catch (err) {
@@ -129,6 +134,7 @@ async function uploadSpeakingWithTokenRefresh(
 					target.blob,
 					target.mimeType,
 					target.durationSec,
+					{ orgId: explicitOrgId },
 				);
 				return "uploaded";
 			} catch (retryErr) {
@@ -150,8 +156,9 @@ function StudentPlacementTestRoute() {
 		<StudentPageGate sessionEmail={sessionEmail}>
 			{(me) => (
 				<StudentPlacementTestContent
-					key={me.student.id}
+					key={`${me.student.orgId}:${me.student.id}`}
 					studentId={me.student.id}
+					orgId={me.student.orgId}
 				/>
 			)}
 		</StudentPageGate>
@@ -160,11 +167,14 @@ function StudentPlacementTestRoute() {
 
 export function StudentPlacementTestContent({
 	studentId,
+	orgId,
 }: {
 	studentId: string;
+	orgId?: string;
 }) {
 	const queryClient = useQueryClient();
-	const viewQuery = useStudentPlacementView();
+	const viewQueryKey = getStudentPlacementViewQueryKey(orgId ?? studentId);
+	const viewQuery = useStudentPlacementView(orgId, studentId);
 	const [startedFromExempt, setStartedFromExempt] = useState(false);
 	const [justSubmitted, setJustSubmitted] =
 		useState<StudentPlacementSubmissionView | null>(null);
@@ -229,21 +239,25 @@ export function StudentPlacementTestContent({
 			expectedOrgId: string | null,
 		) => {
 			await deleteStudentSpeakingBackup(studentId, submission.id);
-			if (unmountedRef.current || getActiveStudentOrgId() !== expectedOrgId) {
+			if (!isSameStudentOrgContext(expectedOrgId)) {
 				return;
 			}
 
-			pendingRetryRef.current = null;
-			setPendingRetry(null);
+			if (!unmountedRef.current) {
+				pendingRetryRef.current = null;
+				setPendingRetry(null);
+			}
 
 			if (outcome === "uploaded") {
-				setSpeakingUploadSuccessMessage(SPEAKING_UPLOAD_SUCCESS_MESSAGE);
-				setJustSubmitted({
-					...submission,
-					speakingStatus: "uploaded",
-				});
+				if (!unmountedRef.current) {
+					setSpeakingUploadSuccessMessage(SPEAKING_UPLOAD_SUCCESS_MESSAGE);
+					setJustSubmitted({
+						...submission,
+						speakingStatus: "uploaded",
+					});
+				}
 				queryClient.setQueryData<StudentPlacementViewResponse>(
-					studentPlacementViewQueryKey,
+					viewQueryKey,
 					(prev) =>
 						prev
 							? {
@@ -268,7 +282,7 @@ export function StudentPlacementTestContent({
 			});
 			void queryClient.invalidateQueries({ queryKey: ["student", "inbox"] });
 		},
-		[queryClient, studentId],
+		[queryClient, studentId, viewQueryKey],
 	);
 
 	const autoRecoveryKey =
@@ -307,7 +321,7 @@ export function StudentPlacementTestContent({
 
 		autoRecoveryAttemptedRef.current.add(autoRecoveryKey);
 		setIsAutoRecoveringSpeaking(true);
-		const capturedOrgId = getActiveStudentOrgId();
+		const capturedOrgId = orgId ?? getActiveStudentOrgId();
 
 		void (async () => {
 			try {
@@ -315,7 +329,7 @@ export function StudentPlacementTestContent({
 					studentId,
 					submission.id,
 				);
-				if (unmountedRef.current || getActiveStudentOrgId() !== capturedOrgId) {
+				if (unmountedRef.current || !isSameStudentOrgContext(capturedOrgId)) {
 					return;
 				}
 				if (!backup) return;
@@ -341,18 +355,16 @@ export function StudentPlacementTestContent({
 							refreshedToken = token;
 							if (
 								!unmountedRef.current &&
-								getActiveStudentOrgId() === capturedOrgId
+								isSameStudentOrgContext(capturedOrgId)
 							) {
 								setPendingRetry((prev) =>
 									prev ? { ...prev, uploadToken: token } : prev,
 								);
 							}
 						},
+						orgId,
 					);
-					if (
-						unmountedRef.current ||
-						getActiveStudentOrgId() !== capturedOrgId
-					) {
+					if (!isSameStudentOrgContext(capturedOrgId)) {
 						return;
 					}
 					await finalizeSpeakingUploadSuccess(
@@ -361,10 +373,7 @@ export function StudentPlacementTestContent({
 						capturedOrgId,
 					);
 				} catch (err) {
-					if (
-						unmountedRef.current ||
-						getActiveStudentOrgId() !== capturedOrgId
-					) {
+					if (unmountedRef.current || !isSameStudentOrgContext(capturedOrgId)) {
 						return;
 					}
 					const msg =
@@ -390,7 +399,7 @@ export function StudentPlacementTestContent({
 				}
 			}
 		})();
-	}, [autoRecoveryKey, finalizeSpeakingUploadSuccess, studentId]);
+	}, [autoRecoveryKey, finalizeSpeakingUploadSuccess, orgId, studentId]);
 
 	if (viewQuery.isLoading) {
 		return <Loader />;
@@ -445,26 +454,27 @@ export function StudentPlacementTestContent({
 		isUploadingSpeakingRef.current = true;
 		setIsRetryingUpload(true);
 		setSpeakingUploadSuccessMessage("");
-		const capturedOrgId = getActiveStudentOrgId();
+		const capturedOrgId = orgId ?? getActiveStudentOrgId();
 		let latestToken: string | null = target.uploadToken;
 		try {
-			const outcome = await uploadSpeakingWithTokenRefresh(target, (token) => {
-				latestToken = token;
-				if (
-					!unmountedRef.current &&
-					getActiveStudentOrgId() === capturedOrgId
-				) {
-					setPendingRetry((prev) =>
-						prev ? { ...prev, uploadToken: token } : prev,
-					);
-				}
-			});
-			if (unmountedRef.current || getActiveStudentOrgId() !== capturedOrgId) {
+			const outcome = await uploadSpeakingWithTokenRefresh(
+				target,
+				(token) => {
+					latestToken = token;
+					if (!unmountedRef.current && isSameStudentOrgContext(capturedOrgId)) {
+						setPendingRetry((prev) =>
+							prev ? { ...prev, uploadToken: token } : prev,
+						);
+					}
+				},
+				orgId,
+			);
+			if (!isSameStudentOrgContext(capturedOrgId)) {
 				return;
 			}
 			await finalizeSpeakingUploadSuccess(submission, outcome, capturedOrgId);
 		} catch (err) {
-			if (unmountedRef.current || getActiveStudentOrgId() !== capturedOrgId) {
+			if (unmountedRef.current || !isSameStudentOrgContext(capturedOrgId)) {
 				return;
 			}
 			const msg =
@@ -497,7 +507,7 @@ export function StudentPlacementTestContent({
 
 		isUploadingSpeakingRef.current = true;
 		setSpeakingUploadSuccessMessage("");
-		const capturedOrgId = getActiveStudentOrgId();
+		const capturedOrgId = orgId ?? getActiveStudentOrgId();
 		let refreshedToken: string | null = null;
 		try {
 			await saveStudentSpeakingBackup({
@@ -519,8 +529,9 @@ export function StudentPlacementTestContent({
 				(token) => {
 					refreshedToken = token;
 				},
+				orgId,
 			);
-			if (unmountedRef.current || getActiveStudentOrgId() !== capturedOrgId) {
+			if (!isSameStudentOrgContext(capturedOrgId)) {
 				return { ok: true };
 			}
 			await finalizeSpeakingUploadSuccess(submission, outcome, capturedOrgId);
@@ -530,7 +541,7 @@ export function StudentPlacementTestContent({
 				err instanceof Error && err.message
 					? err.message
 					: "Không thể tải lên bản ghi Speaking. Vui lòng thử lại.";
-			if (!unmountedRef.current && getActiveStudentOrgId() === capturedOrgId) {
+			if (!unmountedRef.current && isSameStudentOrgContext(capturedOrgId)) {
 				const retryInfo: PendingSpeakingRetry = {
 					submissionId: submission.id,
 					uploadToken:
@@ -602,6 +613,7 @@ export function StudentPlacementTestContent({
 	return (
 		<PlacementTestRunner
 			studentId={studentId}
+			orgId={orgId}
 			snapshot={view.snapshot}
 			onSubmitted={(submission, retryInfo) => {
 				pendingRetryRef.current = retryInfo;
