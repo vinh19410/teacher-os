@@ -341,7 +341,34 @@ test.describe("Student practice catalog (#378 phase 10, #880, #883)", () => {
 		await backdateActivePracticeAttempt(readingPracticeTestId, 180_000);
 		await page.reload();
 
-		await expect(page.getByText("Tiếp tục bài làm")).toBeVisible();
+		const resumeDialog = page.getByRole("alertdialog", {
+			name: "Tiếp tục bài làm",
+		});
+		await expect(resumeDialog).toBeVisible();
+		await expect(resumeDialog.getByTestId("quiz-dialog-helper")).toHaveText(
+			'Hãy chọn "Tiếp tục" để khôi phục bài làm và mở khóa nút "Nộp bài".',
+		);
+		const submitBtn = page.getByRole("button", { name: "Nộp bài" });
+		await expect(submitBtn).toBeDisabled();
+		const describedBy = await submitBtn.getAttribute("aria-describedby");
+		expect(describedBy).toBeTruthy();
+		const describedText = await page.evaluate(
+			(ids) =>
+				ids
+					.map((id) => document.getElementById(id)?.textContent?.trim() ?? "")
+					.filter(Boolean)
+					.join(" "),
+			(describedBy ?? "").trim().split(/\s+/).filter(Boolean),
+		);
+		expect(describedText).toBe(
+			'Hãy chọn "Tiếp tục" trong hộp thoại để mở khóa nút nộp bài.',
+		);
+		const dialogOverflow = await page.evaluate(
+			() =>
+				document.documentElement.scrollWidth >
+				document.documentElement.clientWidth,
+		);
+		expect(dialogOverflow).toBe(false);
 		await expect(timerBadge).toBeVisible();
 		const resumedSec = parseClockSeconds(await timerBadge.innerText());
 		expect(resumedSec).toBeGreaterThanOrEqual(900);
@@ -349,6 +376,9 @@ test.describe("Student practice catalog (#378 phase 10, #880, #883)", () => {
 		expect(initialSec - resumedSec).toBeGreaterThanOrEqual(170);
 
 		await page.getByRole("button", { name: "Tiếp tục" }).click();
+		await expect(resumeDialog).toBeHidden();
+		await expect(submitBtn).toBeEnabled();
+		await expect(submitBtn).not.toHaveAttribute("aria-describedby");
 		await page
 			.locator('[data-question="1"] label', { hasText: "B" })
 			.first()

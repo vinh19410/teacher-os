@@ -9,6 +9,7 @@ export function QuizDialog({
 	open,
 	title,
 	description,
+	helperText,
 	confirmLabel,
 	cancelLabel,
 	onConfirm,
@@ -19,6 +20,7 @@ export function QuizDialog({
 	open: boolean;
 	title: string;
 	description: string;
+	helperText?: string;
 	confirmLabel: string;
 	cancelLabel: string;
 	onConfirm: () => void;
@@ -28,6 +30,7 @@ export function QuizDialog({
 }) {
 	const titleId = useId();
 	const descriptionId = useId();
+	const helperId = useId();
 	const cardRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -44,29 +47,42 @@ export function QuizDialog({
 			return;
 		}
 		if (event.key !== "Tab" || cardRef.current === null) return;
-		const focusables = cardRef.current.querySelectorAll<HTMLElement>(
-			"button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])",
+		const focusables = Array.from(
+			cardRef.current.querySelectorAll<HTMLElement>(
+				"button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])",
+			),
+		).filter(
+			(el) =>
+				!el.hasAttribute("disabled") &&
+				el.getAttribute("aria-disabled") !== "true",
 		);
 		if (focusables.length === 0) return;
 		const first = focusables[0];
 		const last = focusables[focusables.length - 1];
-		if (event.shiftKey && document.activeElement === first) {
+		const active = document.activeElement;
+		const outsideCard = active === null || !cardRef.current.contains(active);
+		if (
+			event.shiftKey &&
+			(active === cardRef.current || active === first || outsideCard)
+		) {
 			event.preventDefault();
 			last.focus();
-		} else if (!event.shiftKey && document.activeElement === last) {
+		} else if (!event.shiftKey && (active === last || outsideCard)) {
 			event.preventDefault();
 			first.focus();
 		}
 	};
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/40 p-4">
+		<div className="fixed inset-0 z-[60] flex items-center justify-center bg-primary/40 p-4">
 			<div
 				ref={cardRef}
 				role="alertdialog"
 				aria-modal="true"
 				aria-labelledby={titleId}
-				aria-describedby={descriptionId}
+				aria-describedby={
+					helperText ? `${descriptionId} ${helperId}` : descriptionId
+				}
 				tabIndex={-1}
 				onKeyDown={handleKeyDown}
 				className="w-full max-w-sm rounded-[var(--radius-lg)] border border-border bg-background p-5 shadow-lg focus-visible:outline-2 focus-visible:outline-hot"
@@ -80,6 +96,15 @@ export function QuizDialog({
 				>
 					{description}
 				</p>
+				{helperText && (
+					<p
+						id={helperId}
+						data-testid="quiz-dialog-helper"
+						className="mt-3 rounded-md border border-border bg-muted/50 px-3 py-2 text-muted-foreground text-xs leading-relaxed"
+					>
+						{helperText}
+					</p>
+				)}
 				<div className="mt-5 flex justify-end gap-2">
 					<Button variant="ghost" onClick={onCancel}>
 						{cancelLabel}
@@ -138,6 +163,7 @@ export function QuizResumeDialog({
 			open={open}
 			title="Tiếp tục bài làm"
 			description="Bạn có bài làm chưa hoàn thành. Bạn có muốn tiếp tục không?"
+			helperText='Hãy chọn "Tiếp tục" để khôi phục bài làm và mở khóa nút "Nộp bài".'
 			confirmLabel="Tiếp tục"
 			cancelLabel="Quay lại"
 			onConfirm={onResume}
