@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+	type StudentPlacementSpeakingTokenResponse,
 	type StudentPlacementStatusResponse,
 	type StudentPlacementSubmit,
 	type StudentPlacementSubmitResponse,
@@ -8,9 +9,14 @@ import {
 	studentPlacementSubmitSchema,
 } from "@teacher-os/api/placement-test-contracts";
 import { useSyncExternalStore } from "react";
-import { resolveSpeakingUploadMeta } from "@/lib/placement-test-helpers";
+import { readBlobHeadBytes } from "@/lib/placement-speaking-backup";
+import {
+	isRetryableSpeakingUploadStatus,
+	resolveSpeakingUploadMeta,
+} from "@/lib/placement-test-helpers";
 import {
 	HttpError,
+	isHttpError,
 	isTeacherOnStudentPortalError,
 	redirectToLoginForWrongRole,
 } from "@/lib/query-client";
@@ -116,6 +122,9 @@ export async function fetchStudentPlacementView(): Promise<StudentPlacementViewR
 			record.submission && typeof record.submission === "object"
 				? (record.submission as StudentPlacementViewResponse["submission"])
 				: null,
+		speakingTasks: Array.isArray(record.speakingTasks)
+			? (record.speakingTasks as StudentPlacementViewResponse["speakingTasks"])
+			: null,
 	};
 }
 
@@ -198,19 +207,73 @@ export async function submitStudentPlacement(
 	return (await res.json()) as StudentPlacementSubmitResponse;
 }
 
+/**
+ * Nộp bài kiểm tra đầu vào. Cố ý không invalidate cache trong `onSuccess` để
+ * giữ nguyên `PlacementTestRunner` đang tải file Speaking; runner sẽ tự cập
+ * nhật và invalidate cache sau khi quá trình tải Speaking hoàn tất hoặc thất bại.
+ */
 export function useSubmitStudentPlacement() {
-	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: submitStudentPlacement,
-		onSuccess: () => {
-			void queryClient.invalidateQueries({
-				queryKey: studentPlacementStatusQueryKey,
-			});
-			void queryClient.invalidateQueries({
-				queryKey: studentPlacementViewQueryKey,
-			});
-			void queryClient.invalidateQueries({ queryKey: ["student", "inbox"] });
+	});
+}
+
+export async function requestStudentPlacementSpeakingUploadToken(
+	submissionId: string,
+): Promise<StudentPlacementSpeakingTokenResponse> {
+	const headers = getStudentHeaders();
+	const sentOrgId = headers["x-student-org-id"];
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/placement-test/submissions/${encodeURIComponent(submissionId)}/speaking-upload-token`,
+		{
+			method: "POST",
+			headers,
+			credentials: "include",
 		},
+	);
+	if (!res.ok) {
+		await throwPlacementHttpError(res, sentOrgId);
+	}
+	const body =
+		(await res.json()) as Partial<StudentPlacementSpeakingTokenResponse>;
+	if (
+		!body ||
+		typeof body.uploadToken !== "string" ||
+		body.uploadToken.trim().length === 0
+	) {
+		throw new Error("Máy chủ không trả về mã tải lên bản ghi Speaking hợp lệ.");
+	}
+	return {
+		uploadToken: body.uploadToken,
+		uploadTokenExpiresAt:
+			typeof body.uploadTokenExpiresAt === "string"
+				? body.uploadTokenExpiresAt
+				: "",
+	};
+}
+
+export interface UploadStudentPlacementSpeakingOptions {
+	retryDelaysMs?: readonly number[];
+	sleepImpl?: (ms: number) => Promise<void>;
+}
+
+const DEFAULT_SPEAKING_UPLOAD_RETRY_DELAYS_MS: readonly number[] = [800, 2000];
+
+const SPEAKING_UPLOAD_NETWORK_ERROR_MESSAGE =
+	"Không thể kết nối máy chủ để tải file Speaking. Bài làm 4 kỹ năng còn lại đã được lưu an toàn — bạn có thể bấm thử tải lại.";
+
+function isAbortError(error: unknown): boolean {
+	return (
+		(typeof DOMException !== "undefined" &&
+			error instanceof DOMException &&
+			error.name === "AbortError") ||
+		(error instanceof Error && error.name === "AbortError")
+	);
+}
+
+function defaultSleep(ms: number): Promise<void> {
+	return new Promise<void>((resolve) => {
+		setTimeout(resolve, ms);
 	});
 }
 
@@ -220,8 +283,10 @@ export async function uploadStudentPlacementSpeaking(
 	blob: Blob,
 	mimeType: string,
 	durationSec: number,
+	opts?: UploadStudentPlacementSpeakingOptions,
 ): Promise<{ ok: boolean; speakingStatus?: string }> {
-	const meta = resolveSpeakingUploadMeta(mimeType || blob.type);
+	const headBytes = await readBlobHeadBytes(blob);
+	const meta = resolveSpeakingUploadMeta(mimeType || blob.type, headBytes);
 	const headers = getStudentHeaders({
 		"X-Upload-Token": uploadToken,
 		"X-Media-Filename": meta.filename,
@@ -229,19 +294,51 @@ export async function uploadStudentPlacementSpeaking(
 		"Content-Type": meta.contentType,
 	});
 	const sentOrgId = headers["x-student-org-id"];
-	const res = await fetch(
-		`${getApiBaseUrl()}/api/student/placement-test/submissions/${encodeURIComponent(submissionId)}/speaking`,
-		{
-			method: "PUT",
-			headers,
-			credentials: "include",
-			body: blob,
-		},
-	);
-	if (!res.ok) {
-		await throwPlacementHttpError(res, sentOrgId);
+	const url = `${getApiBaseUrl()}/api/student/placement-test/submissions/${encodeURIComponent(submissionId)}/speaking`;
+	const retryDelaysMs =
+		opts?.retryDelaysMs ?? DEFAULT_SPEAKING_UPLOAD_RETRY_DELAYS_MS;
+	const sleep = opts?.sleepImpl ?? defaultSleep;
+
+	for (let attempt = 0; attempt <= retryDelaysMs.length; attempt += 1) {
+		let res: Response;
+		try {
+			res = await fetch(url, {
+				method: "PUT",
+				headers,
+				credentials: "include",
+				body: blob,
+			});
+		} catch (fetchErr) {
+			if (isAbortError(fetchErr)) {
+				throw fetchErr;
+			}
+			if (attempt < retryDelaysMs.length) {
+				await sleep(retryDelaysMs[attempt] ?? 0);
+				continue;
+			}
+			throw new HttpError(0, SPEAKING_UPLOAD_NETWORK_ERROR_MESSAGE);
+		}
+
+		if (res.ok) {
+			return (await res.json()) as { ok: boolean; speakingStatus?: string };
+		}
+
+		try {
+			await throwPlacementHttpError(res, sentOrgId);
+		} catch (httpErr) {
+			if (
+				isHttpError(httpErr) &&
+				isRetryableSpeakingUploadStatus(httpErr.status) &&
+				attempt < retryDelaysMs.length
+			) {
+				await sleep(retryDelaysMs[attempt] ?? 0);
+				continue;
+			}
+			throw httpErr;
+		}
 	}
-	return (await res.json()) as { ok: boolean; speakingStatus?: string };
+
+	throw new HttpError(0, SPEAKING_UPLOAD_NETWORK_ERROR_MESSAGE);
 }
 
 export function useActiveStudentOrgId(): string | null {

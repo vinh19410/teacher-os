@@ -2271,3 +2271,1333 @@ describe("Placement Speaking state machine, audio merger & UI (#780)", () => {
 		}
 	});
 });
+
+function makeMp4FtypBytes(): Uint8Array<ArrayBuffer> {
+	return new Uint8Array([
+		0x00,
+		0x00,
+		0x00,
+		0x18, // box size = 24
+		0x66,
+		0x74,
+		0x79,
+		0x70, // "ftyp"
+		0x4d,
+		0x34,
+		0x41,
+		0x20, // major brand "M4A "
+		0x00,
+		0x00,
+		0x00,
+		0x00, // minor version
+		0x4d,
+		0x34,
+		0x41,
+		0x20, // compatible brand "M4A "
+		0x69,
+		0x73,
+		0x6f,
+		0x6d, // compatible brand "isom"
+	]);
+}
+
+function createInMemoryIdbFactory() {
+	const stores = new Map<string, Map<string, unknown>>();
+
+	const factory = {
+		open: (_name: string, _version?: number) => {
+			const req: Record<string, unknown> = {
+				result: null,
+				error: null,
+				onupgradeneeded: null,
+				onsuccess: null,
+				onerror: null,
+				onblocked: null,
+			};
+
+			const db = {
+				objectStoreNames: {
+					contains: (storeName: string) => stores.has(storeName),
+				},
+				createObjectStore: (storeName: string) => {
+					if (!stores.has(storeName)) {
+						stores.set(storeName, new Map());
+					}
+					return {};
+				},
+				close: vi.fn(),
+				transaction: (_storeName: string, _mode?: IDBTransactionMode) => {
+					const tx: Record<string, unknown> = {
+						error: null,
+						oncomplete: null,
+						onerror: null,
+						onabort: null,
+						objectStore: (name: string) => {
+							const map = stores.get(name) ?? new Map<string, unknown>();
+							stores.set(name, map);
+							return {
+								put: (value: { key: string }) => {
+									const opReq: Record<string, unknown> = {
+										result: value.key,
+										error: null,
+										onsuccess: null,
+										onerror: null,
+									};
+									queueMicrotask(() => {
+										map.set(value.key, value);
+										(opReq.onsuccess as (() => void) | null)?.();
+										(tx.oncomplete as (() => void) | null)?.();
+									});
+									return opReq;
+								},
+								get: (key: string) => {
+									const opReq: Record<string, unknown> = {
+										result: undefined,
+										error: null,
+										onsuccess: null,
+										onerror: null,
+									};
+									queueMicrotask(() => {
+										opReq.result = map.get(key);
+										(opReq.onsuccess as (() => void) | null)?.();
+										(tx.oncomplete as (() => void) | null)?.();
+									});
+									return opReq;
+								},
+								delete: (key: string) => {
+									const opReq: Record<string, unknown> = {
+										result: undefined,
+										error: null,
+										onsuccess: null,
+										onerror: null,
+									};
+									queueMicrotask(() => {
+										map.delete(key);
+										(opReq.onsuccess as (() => void) | null)?.();
+										(tx.oncomplete as (() => void) | null)?.();
+									});
+									return opReq;
+								},
+							};
+						},
+					};
+					return tx;
+				},
+			};
+
+			req.result = db;
+			queueMicrotask(() => {
+				(req.onupgradeneeded as (() => void) | null)?.();
+				(req.onsuccess as (() => void) | null)?.();
+			});
+
+			return req as unknown as IDBOpenDBRequest;
+		},
+	};
+
+	return {
+		factory: factory as unknown as IDBFactory,
+		stores,
+	};
+}
+
+function createPendingSubmissionFixture(
+	overrides?: Partial<StudentPlacementSubmissionView>,
+): StudentPlacementSubmissionView {
+	return {
+		id: "sub-pending-speaking",
+		testVersion: 3,
+		status: "pending_grading",
+		submittedAt: "2026-11-20T10:00:00Z",
+		gradedAt: null,
+		objective: {
+			listening: { correct: 2, total: 2, pct: 100 },
+			vocabGrammar: { correct: 1, total: 1, pct: 100 },
+			reading: { correct: 2, total: 2, pct: 100 },
+		},
+		writingText: "My sample writing response for placement test.",
+		writingWordCount: 8,
+		writingRubric: null,
+		writingScore: null,
+		writingCriterionComments: null,
+		writingErrors: [],
+		speakingStatus: "pending_upload",
+		speakingTranscript: "",
+		speakingRubric: null,
+		speakingScore: null,
+		speakingCriterionComments: null,
+		speakingErrors: [],
+		finalBandLevel: null,
+		finalDisplayCourse: null,
+		finalScorePct: null,
+		finalNote: "",
+		bandAdvice: "",
+		teacherFeedback: "",
+		...overrides,
+	};
+}
+
+describe("Placement Speaking upload resilience, WebKit compatibility & recovery", () => {
+	const originalFetch = globalThis.fetch;
+	const originalMediaDevices = navigator.mediaDevices;
+	const originalMediaRecorder = window.MediaRecorder;
+	const originalAudioContext = window.AudioContext;
+	const originalCreateObjectURL = URL.createObjectURL;
+	const originalIndexedDb = globalThis.indexedDB;
+	const originalUserAgentDescriptor = Object.getOwnPropertyDescriptor(
+		window.navigator,
+		"userAgent",
+	);
+
+	function installMockRecorder(options?: {
+		recorderMimeType?: string;
+		supportedMime?: string;
+		chunkBytes?: Uint8Array<ArrayBuffer>;
+		chunkType?: string;
+	}) {
+		const fakeStream = {
+			getTracks: () => [{ stop: vi.fn() }],
+			getAudioTracks: () => [{ addEventListener: vi.fn(), stop: vi.fn() }],
+		} as unknown as MediaStream;
+		Object.defineProperty(navigator, "mediaDevices", {
+			configurable: true,
+			value: { getUserMedia: vi.fn().mockResolvedValue(fakeStream) },
+		});
+		const recorderMimeType = options?.recorderMimeType ?? "audio/webm";
+		const supportedMime = options?.supportedMime ?? "audio/webm";
+		const chunkBytes =
+			options?.chunkBytes ?? new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1, 2]);
+		const chunkType = options?.chunkType ?? recorderMimeType;
+
+		class ConfigurableMockRecorder {
+			static isTypeSupported(mime: string) {
+				return Boolean(supportedMime) && mime === supportedMime;
+			}
+			state: RecordingState = "inactive";
+			mimeType = recorderMimeType;
+			private listeners = new Map<string, Set<(evt: unknown) => void>>();
+			addEventListener(type: string, cb: (evt: unknown) => void) {
+				if (!this.listeners.has(type)) this.listeners.set(type, new Set());
+				this.listeners.get(type)?.add(cb);
+			}
+			private emit(type: string, evt: unknown) {
+				for (const cb of this.listeners.get(type) ?? []) cb(evt);
+			}
+			start() {
+				this.state = "recording";
+			}
+			stop() {
+				this.state = "inactive";
+				this.emit("dataavailable", {
+					data: chunkType
+						? new Blob([chunkBytes], { type: chunkType })
+						: new Blob([chunkBytes]),
+				});
+				this.emit("stop", {});
+			}
+		}
+
+		Object.defineProperty(window, "MediaRecorder", {
+			configurable: true,
+			writable: true,
+			value: ConfigurableMockRecorder,
+		});
+		Object.defineProperty(window, "AudioContext", {
+			configurable: true,
+			writable: true,
+			value: undefined,
+		});
+		URL.createObjectURL = vi.fn(() => "blob:mock-speaking-resilience");
+	}
+
+	async function completeSingleSpeakingTaskRecording() {
+		fireEvent.click(
+			screen.getByRole("button", { name: /Bắt đầu làm bài Speaking/i }),
+		);
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "Chuẩn bị ngay →" }),
+			).toBeTruthy();
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Chuẩn bị ngay →" }));
+		fireEvent.click(screen.getByRole("button", { name: /Trả lời ngay/i }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Dừng ghi âm câu hiện tại" }),
+		);
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "Hoàn thành phần Speaking" }),
+			).toBeTruthy();
+		});
+		fireEvent.click(
+			screen.getByRole("button", { name: "Hoàn thành phần Speaking" }),
+		);
+		await waitFor(() => {
+			expect(screen.getByTestId("speaking-review-box")).toBeTruthy();
+		});
+	}
+
+	beforeEach(() => {
+		mockNavigate.mockReset();
+		window.localStorage.clear();
+		window.scrollTo = vi.fn();
+		Object.defineProperty(globalThis, "indexedDB", {
+			configurable: true,
+			writable: true,
+			value: undefined,
+		});
+	});
+
+	afterEach(() => {
+		cleanup();
+		globalThis.fetch = originalFetch;
+		Object.defineProperty(navigator, "mediaDevices", {
+			configurable: true,
+			value: originalMediaDevices,
+		});
+		Object.defineProperty(window, "MediaRecorder", {
+			configurable: true,
+			writable: true,
+			value: originalMediaRecorder,
+		});
+		Object.defineProperty(window, "AudioContext", {
+			configurable: true,
+			writable: true,
+			value: originalAudioContext,
+		});
+		URL.createObjectURL = originalCreateObjectURL;
+		Object.defineProperty(globalThis, "indexedDB", {
+			configurable: true,
+			writable: true,
+			value: originalIndexedDb,
+		});
+		if (originalUserAgentDescriptor) {
+			Object.defineProperty(
+				window.navigator,
+				"userAgent",
+				originalUserAgentDescriptor,
+			);
+		}
+		vi.restoreAllMocks();
+	});
+
+	it("keeps PlacementTestRunner mounted while Speaking PUT is in-flight, delays view refetch until upload settles, and prevents stale pending_upload cache from overwriting uploaded status", async () => {
+		installMockRecorder();
+
+		let resolveSpeakingPut!: (res: Response) => void;
+		const speakingPutPromise = new Promise<Response>((resolve) => {
+			resolveSpeakingPut = resolve;
+		});
+
+		let viewFetchCount = 0;
+		let submitted = false;
+		const submissionId = "sub-race-1";
+
+		globalThis.fetch = vi.fn(async (input, init) => {
+			const url = typeof input === "string" ? input : input.toString();
+			if (url.endsWith("/api/student/placement-test")) {
+				viewFetchCount += 1;
+				if (!submitted) {
+					const notStarted: StudentPlacementViewResponse = {
+						status: "not_started",
+						hasEntryScore: false,
+						entryScore: null,
+						promptDismissedAt: null,
+						submissionId: null,
+						testAvailable: true,
+						testVersion: 3,
+						snapshot: SAMPLE_SNAPSHOT,
+						submission: null,
+					};
+					return makeJsonResponse(notStarted);
+				}
+				// Intentionally return stale `pending_upload` on refetch after upload completes
+				const stalePending: StudentPlacementViewResponse = {
+					status: "pending_grading",
+					hasEntryScore: false,
+					entryScore: null,
+					promptDismissedAt: null,
+					submissionId,
+					testAvailable: true,
+					testVersion: 3,
+					snapshot: null,
+					submission: createPendingSubmissionFixture({
+						id: submissionId,
+						speakingStatus: "pending_upload",
+					}),
+					speakingTasks: SAMPLE_SNAPSHOT.parts[4].tasks,
+				};
+				return makeJsonResponse(stalePending);
+			}
+			if (
+				url.endsWith("/api/student/placement-test/submissions") &&
+				init?.method === "POST"
+			) {
+				submitted = true;
+				return makeJsonResponse(
+					{
+						submissionId,
+						uploadToken: "tok-race-1",
+						uploadTokenExpiresAt: "2026-11-26T00:00:00Z",
+						objective: {
+							listening: { correct: 2, total: 2, pct: 100 },
+							vocabGrammar: { correct: 1, total: 1, pct: 100 },
+							reading: { correct: 2, total: 2, pct: 100 },
+						},
+					},
+					201,
+				);
+			}
+			if (
+				url.endsWith(
+					`/api/student/placement-test/submissions/${submissionId}/speaking`,
+				) &&
+				init?.method === "PUT"
+			) {
+				return speakingPutPromise;
+			}
+			throw new Error(`Unexpected fetch: ${url}`);
+		});
+
+		const queryClient = createTestQueryClient();
+		render(
+			<QueryClientProvider client={queryClient}>
+				<StudentPlacementTestContent studentId="stu-1" />
+			</QueryClientProvider>,
+		);
+
+		await screen.findByTestId("placement-intro-card");
+		expect(viewFetchCount).toBe(1);
+
+		fireEvent.click(screen.getByTestId("start-placement-test-btn"));
+		fireEvent.click(screen.getByTestId("placement-tab-writing"));
+		fireEvent.change(screen.getByTestId("placement-writing-textarea"), {
+			target: { value: "This is a complete writing answer for placement." },
+		});
+		fireEvent.click(screen.getByTestId("placement-tab-speaking"));
+		await completeSingleSpeakingTaskRecording();
+
+		// Submit -> confirm unanswered objective -> POST resolves immediately while PUT stays pending
+		await waitFor(() => {
+			expect(
+				(screen.getByTestId("submit-placement-test-btn") as HTMLButtonElement)
+					.disabled,
+			).toBe(false);
+		});
+		fireEvent.click(screen.getByTestId("submit-placement-test-btn"));
+		const confirmBox = await screen.findByTestId(
+			"placement-unanswered-confirm",
+		);
+		fireEvent.click(
+			within(confirmBox).getByRole("button", { name: "Vẫn nộp bài ngay" }),
+		);
+
+		// Runner stays mounted with uploading banner, disabled tabs, and ZERO premature view refetch
+		const progressBanner = await screen.findByTestId(
+			"speaking-upload-progress-banner",
+		);
+		expect(progressBanner.textContent).toContain("Đang tải bản ghi Speaking");
+		expect(screen.getByTestId("placement-runner")).toBeTruthy();
+		expect(screen.queryByTestId("placement-pending-view")).toBeNull();
+		expect(
+			(screen.getByTestId("placement-tab-writing") as HTMLButtonElement)
+				.disabled,
+		).toBe(true);
+		expect(
+			screen.getByTestId("submit-placement-test-btn").textContent,
+		).toContain("Đang tải bài nói Speaking...");
+		expect(viewFetchCount).toBe(1);
+
+		// beforeunload listener is active while uploading Speaking
+		const unloadEvent = new Event("beforeunload", { cancelable: true });
+		window.dispatchEvent(unloadEvent);
+		expect(unloadEvent.defaultPrevented).toBe(true);
+
+		// Now finish Speaking PUT -> view transitions to pending result and refetches
+		resolveSpeakingPut(
+			makeJsonResponse({ ok: true, speakingStatus: "uploaded" }),
+		);
+
+		await screen.findByTestId("placement-pending-view");
+		await waitFor(() => {
+			expect(viewFetchCount).toBeGreaterThanOrEqual(2);
+		});
+		// Even though the refetched view returned stale `pending_upload`, UI preserves confirmed `uploaded`
+		expect(screen.getByTestId("pending-speaking-status").textContent).toBe(
+			"Đã gửi bài nói",
+		);
+	});
+
+	it("resolves Speaking upload Content-Type and filename from MP4 ftyp magic bytes regardless of declared MIME type", async () => {
+		const { uploadStudentPlacementSpeaking } = await import(
+			"@/lib/repos/placement-test"
+		);
+		const mp4Bytes = makeMp4FtypBytes();
+		const capturedHeaders: Array<{ contentType: string; filename: string }> =
+			[];
+
+		globalThis.fetch = vi.fn(async (_input, init) => {
+			const headers = (init?.headers ?? {}) as Record<string, string>;
+			capturedHeaders.push({
+				contentType: headers["Content-Type"] ?? "",
+				filename: headers["X-Media-Filename"] ?? "",
+			});
+			return makeJsonResponse({ ok: true, speakingStatus: "uploaded" });
+		});
+
+		for (const declaredMime of ["video/mp4", "", "audio/webm"]) {
+			const blob = declaredMime
+				? new Blob([mp4Bytes], { type: declaredMime })
+				: new Blob([mp4Bytes]);
+			await uploadStudentPlacementSpeaking(
+				"sub-magic",
+				"tok-magic",
+				blob,
+				declaredMime,
+				12,
+				{ retryDelaysMs: [] },
+			);
+		}
+
+		expect(capturedHeaders).toEqual([
+			{ contentType: "audio/mp4", filename: "speaking.m4a" },
+			{ contentType: "audio/mp4", filename: "speaking.m4a" },
+			{ contentType: "audio/mp4", filename: "speaking.m4a" },
+		]);
+	});
+
+	it("retries Speaking upload on transient 503 and network errors up to 2 times, but fails immediately on 415", async () => {
+		const { uploadStudentPlacementSpeaking } = await import(
+			"@/lib/repos/placement-test"
+		);
+		const { HttpError } = await import("@/lib/query-client");
+		const blob = new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3])], {
+			type: "audio/webm",
+		});
+
+		// 1. 503 twice then 200
+		const sleepDelays503: number[] = [];
+		let attempts503 = 0;
+		globalThis.fetch = vi.fn(async () => {
+			attempts503 += 1;
+			if (attempts503 <= 2) {
+				return makeJsonResponse({ error: "TEMPORARY_UNAVAILABLE" }, 503);
+			}
+			return makeJsonResponse({ ok: true, speakingStatus: "uploaded" });
+		});
+		const res503 = await uploadStudentPlacementSpeaking(
+			"sub-retry-503",
+			"tok-1",
+			blob,
+			"audio/webm",
+			10,
+			{
+				retryDelaysMs: [50, 100],
+				sleepImpl: async (ms) => {
+					sleepDelays503.push(ms);
+				},
+			},
+		);
+		expect(res503.ok).toBe(true);
+		expect(attempts503).toBe(3);
+		expect(sleepDelays503).toEqual([50, 100]);
+
+		// 2. Network error twice then 200
+		let attemptsNet = 0;
+		globalThis.fetch = vi.fn(async () => {
+			attemptsNet += 1;
+			if (attemptsNet <= 2) {
+				throw new TypeError("Failed to fetch");
+			}
+			return makeJsonResponse({ ok: true, speakingStatus: "uploaded" });
+		});
+		const resNet = await uploadStudentPlacementSpeaking(
+			"sub-retry-net",
+			"tok-2",
+			blob,
+			"audio/webm",
+			10,
+			{ retryDelaysMs: [10, 20], sleepImpl: async () => {} },
+		);
+		expect(resNet.ok).toBe(true);
+		expect(attemptsNet).toBe(3);
+
+		// 3. Persistent network failure throws HttpError(0, ...)
+		let attemptsNetFail = 0;
+		globalThis.fetch = vi.fn(async () => {
+			attemptsNetFail += 1;
+			throw new TypeError("Network offline");
+		});
+		await expect(
+			uploadStudentPlacementSpeaking(
+				"sub-retry-net-fail",
+				"tok-3",
+				blob,
+				"audio/webm",
+				10,
+				{ retryDelaysMs: [10, 20], sleepImpl: async () => {} },
+			),
+		).rejects.toSatisfy(
+			(err: unknown) =>
+				err instanceof HttpError &&
+				err.status === 0 &&
+				err.message.includes("Không thể kết nối máy chủ"),
+		);
+		expect(attemptsNetFail).toBe(3);
+
+		// 4. 415 Unsupported Media Type fails immediately with ZERO retries
+		let attempts415 = 0;
+		const sleep415 = vi.fn(async () => {});
+		globalThis.fetch = vi.fn(async () => {
+			attempts415 += 1;
+			return makeJsonResponse({ error: "UNSUPPORTED_AUDIO_FORMAT" }, 415);
+		});
+		await expect(
+			uploadStudentPlacementSpeaking(
+				"sub-no-retry-415",
+				"tok-4",
+				blob,
+				"audio/webm",
+				10,
+				{ retryDelaysMs: [50, 100], sleepImpl: sleep415 },
+			),
+		).rejects.toSatisfy(
+			(err: unknown) => err instanceof HttpError && err.status === 415,
+		);
+		expect(attempts415).toBe(1);
+		expect(sleep415).not.toHaveBeenCalled();
+	});
+
+	it("transparently mints a fresh upload token when manual retry receives 401 UPLOAD_TOKEN_EXPIRED", async () => {
+		installMockRecorder();
+
+		const submissionId = "sub-token-refresh";
+		let currentStatus: StudentPlacementViewResponse["status"] = "not_started";
+		let currentSpeakingStatus: StudentPlacementSubmissionView["speakingStatus"] =
+			"pending_upload";
+		let putAttempt = 0;
+		let tokenMintCalls = 0;
+		const seenTokens: string[] = [];
+
+		globalThis.fetch = vi.fn(async (input, init) => {
+			const url = typeof input === "string" ? input : input.toString();
+			if (url.endsWith("/api/student/placement-test")) {
+				const view: StudentPlacementViewResponse = {
+					status: currentStatus,
+					hasEntryScore: false,
+					entryScore: null,
+					promptDismissedAt: null,
+					submissionId: currentStatus === "not_started" ? null : submissionId,
+					testAvailable: true,
+					testVersion: 3,
+					snapshot: currentStatus === "not_started" ? SAMPLE_SNAPSHOT : null,
+					submission:
+						currentStatus === "not_started"
+							? null
+							: createPendingSubmissionFixture({
+									id: submissionId,
+									speakingStatus: currentSpeakingStatus,
+								}),
+					speakingTasks:
+						currentSpeakingStatus === "pending_upload"
+							? SAMPLE_SNAPSHOT.parts[4].tasks
+							: null,
+				};
+				return makeJsonResponse(view);
+			}
+			if (
+				url.endsWith("/api/student/placement-test/submissions") &&
+				init?.method === "POST"
+			) {
+				currentStatus = "pending_grading";
+				return makeJsonResponse(
+					{
+						submissionId,
+						uploadToken: "tok-expired-1",
+						uploadTokenExpiresAt: "2026-11-26T00:00:00Z",
+						objective: {
+							listening: { correct: 2, total: 2, pct: 100 },
+							vocabGrammar: { correct: 1, total: 1, pct: 100 },
+							reading: { correct: 2, total: 2, pct: 100 },
+						},
+					},
+					201,
+				);
+			}
+			if (
+				url.endsWith(
+					`/api/student/placement-test/submissions/${submissionId}/speaking-upload-token`,
+				) &&
+				init?.method === "POST"
+			) {
+				tokenMintCalls += 1;
+				return makeJsonResponse({
+					uploadToken: "tok-fresh-2",
+					uploadTokenExpiresAt: "2026-11-26T01:00:00Z",
+				});
+			}
+			if (
+				url.endsWith(
+					`/api/student/placement-test/submissions/${submissionId}/speaking`,
+				) &&
+				init?.method === "PUT"
+			) {
+				putAttempt += 1;
+				const headers = (init.headers ?? {}) as Record<string, string>;
+				const sentToken = headers["X-Upload-Token"] ?? "";
+				seenTokens.push(sentToken);
+				if (putAttempt === 1) {
+					// Initial submit fails with non-retryable 400 so pendingRetry retains tok-expired-1
+					return makeJsonResponse({ message: "Tải tạm thất bại" }, 400);
+				}
+				if (sentToken === "tok-expired-1") {
+					return makeJsonResponse(
+						{ error: "UPLOAD_TOKEN_EXPIRED", code: "UPLOAD_TOKEN_EXPIRED" },
+						401,
+					);
+				}
+				currentSpeakingStatus = "uploaded";
+				return makeJsonResponse({ ok: true, speakingStatus: "uploaded" });
+			}
+			throw new Error(`Unexpected fetch: ${url}`);
+		});
+
+		const queryClient = createTestQueryClient();
+		render(
+			<QueryClientProvider client={queryClient}>
+				<StudentPlacementTestContent studentId="stu-1" />
+			</QueryClientProvider>,
+		);
+
+		await screen.findByTestId("placement-intro-card");
+		fireEvent.click(screen.getByTestId("start-placement-test-btn"));
+		fireEvent.click(screen.getByTestId("placement-tab-writing"));
+		fireEvent.change(screen.getByTestId("placement-writing-textarea"), {
+			target: { value: "Writing text before speaking upload retry." },
+		});
+		fireEvent.click(screen.getByTestId("placement-tab-speaking"));
+		await completeSingleSpeakingTaskRecording();
+
+		await waitFor(() => {
+			expect(
+				(screen.getByTestId("submit-placement-test-btn") as HTMLButtonElement)
+					.disabled,
+			).toBe(false);
+		});
+		fireEvent.click(screen.getByTestId("submit-placement-test-btn"));
+		const confirmBox = await screen.findByTestId(
+			"placement-unanswered-confirm",
+		);
+		fireEvent.click(
+			within(confirmBox).getByRole("button", { name: "Vẫn nộp bài ngay" }),
+		);
+
+		const retryBtn = await screen.findByTestId("retry-speaking-upload-btn");
+		expect(screen.getByTestId("pending-speaking-status").textContent).toBe(
+			"Chưa tải lên được bài nói",
+		);
+
+		// Click manual retry -> PUT returns 401 -> mints fresh token -> PUT succeeds
+		fireEvent.click(retryBtn);
+
+		const successBanner = await screen.findByTestId(
+			"speaking-upload-success-banner",
+		);
+		expect(successBanner.textContent).toContain(
+			"Đã tải lên thành công bản ghi Speaking.",
+		);
+		expect(screen.getByTestId("pending-speaking-status").textContent).toBe(
+			"Đã gửi bài nói",
+		);
+		expect(tokenMintCalls).toBe(1);
+		expect(seenTokens).toEqual([
+			"tok-expired-1",
+			"tok-expired-1",
+			"tok-fresh-2",
+		]);
+	});
+
+	it("saves, loads, auto-expires, and fail-opens IndexedDB speaking backups, and auto-recovers pending_upload on reload", async () => {
+		const {
+			SPEAKING_BACKUP_TTL_MS,
+			deleteStudentSpeakingBackup,
+			loadStudentSpeakingBackup,
+			saveStudentSpeakingBackup,
+		} = await import("@/lib/placement-speaking-backup");
+
+		// Fail-open when IndexedDB is unavailable
+		const sampleBlob = new Blob([makeMp4FtypBytes()], { type: "audio/mp4" });
+		expect(
+			await saveStudentSpeakingBackup(
+				{
+					studentId: "stu-1",
+					submissionId: "sub-none",
+					blob: sampleBlob,
+					mimeType: "audio/mp4",
+					durationSec: 8,
+				},
+				{ idbFactory: null },
+			),
+		).toBe(false);
+		expect(
+			await loadStudentSpeakingBackup("stu-1", "sub-none", {
+				idbFactory: null,
+			}),
+		).toBeNull();
+		expect(
+			await deleteStudentSpeakingBackup("stu-1", "sub-none", {
+				idbFactory: null,
+			}),
+		).toBe(false);
+
+		// TTL expiry auto-deletes expired records
+		const mockIdb = createInMemoryIdbFactory();
+		const baseNow = 1_700_000_000_000;
+		expect(
+			await saveStudentSpeakingBackup(
+				{
+					studentId: "stu-1",
+					submissionId: "sub-exp",
+					blob: sampleBlob,
+					mimeType: "audio/mp4",
+					durationSec: 15,
+				},
+				{ now: baseNow, idbFactory: mockIdb.factory },
+			),
+		).toBe(true);
+		const loadedFresh = await loadStudentSpeakingBackup("stu-1", "sub-exp", {
+			now: baseNow + 1000,
+			idbFactory: mockIdb.factory,
+		});
+		expect(loadedFresh?.durationSec).toBe(15);
+		expect(
+			await loadStudentSpeakingBackup("stu-1", "sub-exp", {
+				now: baseNow + SPEAKING_BACKUP_TTL_MS + 1,
+				idbFactory: mockIdb.factory,
+			}),
+		).toBeNull();
+		expect(mockIdb.stores.get("recordings")?.has("stu-1:sub-exp")).toBe(false);
+
+		// Auto-recovery on reload when IndexedDB has a valid backup
+		Object.defineProperty(globalThis, "indexedDB", {
+			configurable: true,
+			writable: true,
+			value: mockIdb.factory,
+		});
+		const submissionId = "sub-reload-recover";
+		await saveStudentSpeakingBackup({
+			studentId: "stu-1",
+			submissionId,
+			blob: sampleBlob,
+			mimeType: "audio/mp4",
+			durationSec: 18,
+		});
+		expect(mockIdb.stores.get("recordings")?.has(`stu-1:${submissionId}`)).toBe(
+			true,
+		);
+
+		let speakingStatus: StudentPlacementSubmissionView["speakingStatus"] =
+			"pending_upload";
+		let tokenMintCalls = 0;
+		let speakingPutCalls = 0;
+
+		globalThis.fetch = vi.fn(async (input, init) => {
+			const url = typeof input === "string" ? input : input.toString();
+			if (url.endsWith("/api/student/placement-test")) {
+				const view: StudentPlacementViewResponse = {
+					status: "pending_grading",
+					hasEntryScore: false,
+					entryScore: null,
+					promptDismissedAt: null,
+					submissionId,
+					testAvailable: true,
+					testVersion: 3,
+					snapshot: null,
+					submission: createPendingSubmissionFixture({
+						id: submissionId,
+						speakingStatus,
+					}),
+					speakingTasks:
+						speakingStatus === "pending_upload"
+							? SAMPLE_SNAPSHOT.parts[4].tasks
+							: null,
+				};
+				return makeJsonResponse(view);
+			}
+			if (
+				url.endsWith(
+					`/api/student/placement-test/submissions/${submissionId}/speaking-upload-token`,
+				) &&
+				init?.method === "POST"
+			) {
+				tokenMintCalls += 1;
+				return makeJsonResponse({
+					uploadToken: "tok-auto-recover",
+					uploadTokenExpiresAt: "2026-11-26T02:00:00Z",
+				});
+			}
+			if (
+				url.endsWith(
+					`/api/student/placement-test/submissions/${submissionId}/speaking`,
+				) &&
+				init?.method === "PUT"
+			) {
+				speakingPutCalls += 1;
+				const headers = (init.headers ?? {}) as Record<string, string>;
+				expect(headers["X-Upload-Token"]).toBe("tok-auto-recover");
+				expect(headers["Content-Type"]).toBe("audio/mp4");
+				expect(headers["X-Media-Filename"]).toBe("speaking.m4a");
+				speakingStatus = "uploaded";
+				return makeJsonResponse({ ok: true, speakingStatus: "uploaded" });
+			}
+			throw new Error(`Unexpected fetch: ${url}`);
+		});
+
+		render(
+			<QueryClientProvider client={createTestQueryClient()}>
+				<StudentPlacementTestContent studentId="stu-1" />
+			</QueryClientProvider>,
+		);
+
+		const successBanner = await screen.findByTestId(
+			"speaking-upload-success-banner",
+		);
+		expect(successBanner.textContent).toContain(
+			"Đã tải lên thành công bản ghi Speaking.",
+		);
+		expect(screen.getByTestId("pending-speaking-status").textContent).toBe(
+			"Đã gửi bài nói",
+		);
+		expect(tokenMintCalls).toBe(1);
+		expect(speakingPutCalls).toBe(1);
+		// Backup deleted from IndexedDB after successful recovery upload
+		await waitFor(() => {
+			expect(
+				mockIdb.stores.get("recordings")?.has(`stu-1:${submissionId}`),
+			).toBe(false);
+		});
+	});
+
+	it("allows re-recording Speaking inline when backup blob is lost without exposing any file upload input", async () => {
+		installMockRecorder();
+
+		const submissionId = "sub-lost-blob";
+		let speakingStatus: StudentPlacementSubmissionView["speakingStatus"] =
+			"pending_upload";
+		let tokenMintCalls = 0;
+		let speakingPutCalls = 0;
+
+		globalThis.fetch = vi.fn(async (input, init) => {
+			const url = typeof input === "string" ? input : input.toString();
+			if (url.endsWith("/api/student/placement-test")) {
+				const view: StudentPlacementViewResponse = {
+					status: "pending_grading",
+					hasEntryScore: false,
+					entryScore: null,
+					promptDismissedAt: null,
+					submissionId,
+					testAvailable: true,
+					testVersion: 3,
+					snapshot: null,
+					submission: createPendingSubmissionFixture({
+						id: submissionId,
+						speakingStatus,
+					}),
+					speakingTasks:
+						speakingStatus === "pending_upload"
+							? SAMPLE_SNAPSHOT.parts[4].tasks
+							: null,
+				};
+				return makeJsonResponse(view);
+			}
+			if (
+				url.endsWith(
+					`/api/student/placement-test/submissions/${submissionId}/speaking-upload-token`,
+				) &&
+				init?.method === "POST"
+			) {
+				tokenMintCalls += 1;
+				return makeJsonResponse({
+					uploadToken: "tok-rerecord-1",
+					uploadTokenExpiresAt: "2026-11-26T03:00:00Z",
+				});
+			}
+			if (
+				url.endsWith(
+					`/api/student/placement-test/submissions/${submissionId}/speaking`,
+				) &&
+				init?.method === "PUT"
+			) {
+				speakingPutCalls += 1;
+				speakingStatus = "uploaded";
+				return makeJsonResponse({ ok: true, speakingStatus: "uploaded" });
+			}
+			throw new Error(`Unexpected fetch: ${url}`);
+		});
+
+		const { container } = render(
+			<QueryClientProvider client={createTestQueryClient()}>
+				<StudentPlacementTestContent studentId="stu-1" />
+			</QueryClientProvider>,
+		);
+
+		const rerecordBtn = await screen.findByTestId("rerecord-speaking-btn");
+		expect(container.querySelector('input[type="file"]')).toBeNull();
+		expect(container.textContent).not.toContain(
+			"nếu bản ghi vẫn còn trong phiên làm việc",
+		);
+
+		// Open inline recovery panel without repeated Phần 5 / 5 header and with zero file inputs
+		fireEvent.click(rerecordBtn);
+		const recoveryPanel = await screen.findByTestId("speaking-recovery-panel");
+		expect(recoveryPanel.textContent).not.toContain("Phần 5 / 5");
+		expect(container.querySelector('input[type="file"]')).toBeNull();
+
+		const uploadRecoveredBtn = screen.getByTestId(
+			"upload-recovered-speaking-btn",
+		) as HTMLButtonElement;
+		expect(uploadRecoveredBtn.disabled).toBe(true);
+
+		await completeSingleSpeakingTaskRecording();
+		await waitFor(() => {
+			expect(
+				(
+					screen.getByTestId(
+						"upload-recovered-speaking-btn",
+					) as HTMLButtonElement
+				).disabled,
+			).toBe(false);
+		});
+
+		fireEvent.click(screen.getByTestId("upload-recovered-speaking-btn"));
+
+		const successBanner = await screen.findByTestId(
+			"speaking-upload-success-banner",
+		);
+		expect(successBanner.textContent).toContain(
+			"Đã tải lên thành công bản ghi Speaking.",
+		);
+		expect(screen.getByTestId("pending-speaking-status").textContent).toBe(
+			"Đã gửi bài nói",
+		);
+		expect(screen.queryByTestId("speaking-recovery-panel")).toBeNull();
+		expect(tokenMintCalls).toBe(1);
+		expect(speakingPutCalls).toBe(1);
+	});
+
+	it("renders in-app browser guidance when navigator.userAgent indicates Zalo or Facebook WebView", async () => {
+		const { PlacementSpeakingStep } = await import(
+			"@/components/placement/placement-speaking-step"
+		);
+		const { PlacementPendingResultView } = await import(
+			"@/components/placement/placement-result-views"
+		);
+
+		Object.defineProperty(window.navigator, "userAgent", {
+			configurable: true,
+			value:
+				"Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Zalo/24.04",
+		});
+
+		render(
+			<PlacementSpeakingStep
+				tasks={SAMPLE_SNAPSHOT.parts[4].tasks}
+				recordedAudio={null}
+				onRecordedAudioChange={vi.fn()}
+				onBusyChange={vi.fn()}
+			/>,
+		);
+		expect(
+			screen.getByTestId("speaking-in-app-browser-hint").textContent,
+		).toContain("Safari / Chrome");
+
+		cleanup();
+
+		Object.defineProperty(window.navigator, "userAgent", {
+			configurable: true,
+			value:
+				"Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) Mobile/15E148 [FBAN/FBIOS;FBAV/450.0]",
+		});
+
+		render(
+			<PlacementPendingResultView
+				submission={createPendingSubmissionFixture({
+					speakingStatus: "pending_upload",
+				})}
+				recoverySpeakingTasks={SAMPLE_SNAPSHOT.parts[4].tasks}
+				onUploadRecoveredSpeaking={vi.fn(async () => ({ ok: true }))}
+			/>,
+		);
+		expect(
+			screen.getByTestId("speaking-in-app-browser-hint").textContent,
+		).toContain("Safari / Chrome");
+	});
+
+	it("supports WebKit callback-based decodeAudioData and detects MP4 magic bytes during audio merger fallback", async () => {
+		const { mergeSpeakingAudioSegments } = await import(
+			"@/lib/speaking-audio-merger"
+		);
+
+		// 1. Legacy WebKit callback-only decodeAudioData (returns undefined)
+		class WebKitCallbackAudioContext {
+			decodeAudioData(
+				_buf: ArrayBuffer,
+				onSuccess: (decoded: AudioBuffer) => void,
+			) {
+				queueMicrotask(() => {
+					onSuccess({
+						sampleRate: 16_000,
+						numberOfChannels: 1,
+						length: 16_000,
+						getChannelData: () => new Float32Array(16_000).fill(0.1),
+					} as unknown as AudioBuffer);
+				});
+			}
+			async close() {}
+		}
+		Object.defineProperty(window, "AudioContext", {
+			configurable: true,
+			writable: true,
+			value: WebKitCallbackAudioContext,
+		});
+
+		const mp4RawBlob = new Blob([makeMp4FtypBytes()]);
+		const decodedWav = await mergeSpeakingAudioSegments([
+			{ blob: mp4RawBlob, durationMs: 1_000 },
+		]);
+		expect(decodedWav.mimeType).toBe("audio/wav");
+		expect(decodedWav.blob.size).toBe(44 + 16_000 * 2);
+
+		// 2. Fallback when decodeAudioData fails via callback -> detects audio/mp4 from ftyp bytes even with empty or wrong blob.type
+		class WebKitFailingCallbackAudioContext {
+			decodeAudioData(
+				_buf: ArrayBuffer,
+				_onSuccess: (decoded: AudioBuffer) => void,
+				onError?: (err: unknown) => void,
+			) {
+				queueMicrotask(() => {
+					onError?.(new Error("WebKit decode error"));
+				});
+			}
+			async close() {}
+		}
+		Object.defineProperty(window, "AudioContext", {
+			configurable: true,
+			writable: true,
+			value: WebKitFailingCallbackAudioContext,
+		});
+
+		const singleMp4Fallback = await mergeSpeakingAudioSegments([
+			{ blob: new Blob([makeMp4FtypBytes()]), durationMs: 2_000 },
+		]);
+		expect(singleMp4Fallback.mimeType).toBe("audio/mp4");
+
+		const mislabelledMp4Fallback = await mergeSpeakingAudioSegments([
+			{
+				blob: new Blob([makeMp4FtypBytes()], { type: "audio/webm" }),
+				durationMs: 2_000,
+			},
+			{
+				blob: new Blob([makeMp4FtypBytes()], { type: "audio/webm" }),
+				durationMs: 3_000,
+			},
+		]);
+		expect(mislabelledMp4Fallback.mimeType).toBe("audio/mp4");
+		expect(mislabelledMp4Fallback.blob.type).toBe("audio/mp4");
+	});
+
+	it("preserves empty recorder MIME until magic-byte sniffing resolves audio/mp4 on iOS WebKit", async () => {
+		const { PlacementSpeakingStep } = await import(
+			"@/components/placement/placement-speaking-step"
+		);
+		installMockRecorder({
+			recorderMimeType: "",
+			supportedMime: "",
+			chunkBytes: makeMp4FtypBytes(),
+			chunkType: "",
+		});
+
+		const onRecordedAudioChange = vi.fn();
+		render(
+			<PlacementSpeakingStep
+				tasks={SAMPLE_SNAPSHOT.parts[4].tasks}
+				recordedAudio={null}
+				onRecordedAudioChange={onRecordedAudioChange}
+				onBusyChange={vi.fn()}
+			/>,
+		);
+
+		fireEvent.click(
+			screen.getByRole("button", { name: /Bắt đầu làm bài Speaking/i }),
+		);
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "Chuẩn bị ngay →" }),
+			).toBeTruthy();
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Chuẩn bị ngay →" }));
+		fireEvent.click(screen.getByRole("button", { name: /Trả lời ngay/i }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Dừng ghi âm câu hiện tại" }),
+		);
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "Hoàn thành phần Speaking" }),
+			).toBeTruthy();
+		});
+		fireEvent.click(
+			screen.getByRole("button", { name: "Hoàn thành phần Speaking" }),
+		);
+
+		await waitFor(() => {
+			expect(onRecordedAudioChange).toHaveBeenCalledTimes(1);
+		});
+		const recorded = onRecordedAudioChange.mock.calls[0]?.[0];
+		expect(recorded?.mimeType).toBe("audio/mp4");
+	});
+
+	it("keeps manual retry and re-record options visible if IndexedDB auto-recovery fails and clears backup cleanly on 409 already settled", async () => {
+		const { saveStudentSpeakingBackup } = await import(
+			"@/lib/placement-speaking-backup"
+		);
+
+		const mockIdb = createInMemoryIdbFactory();
+		Object.defineProperty(globalThis, "indexedDB", {
+			configurable: true,
+			writable: true,
+			value: mockIdb.factory,
+		});
+
+		// Case 1: auto-recovery fails with 415 -> keeps retry + re-record buttons visible
+		const failSubId = "sub-auto-fail";
+		await saveStudentSpeakingBackup({
+			studentId: "stu-1",
+			submissionId: failSubId,
+			blob: new Blob([makeMp4FtypBytes()], { type: "audio/mp4" }),
+			mimeType: "audio/mp4",
+			durationSec: 11,
+		});
+
+		globalThis.fetch = vi.fn(async (input, init) => {
+			const url = typeof input === "string" ? input : input.toString();
+			if (url.endsWith("/api/student/placement-test")) {
+				const view: StudentPlacementViewResponse = {
+					status: "pending_grading",
+					hasEntryScore: false,
+					entryScore: null,
+					promptDismissedAt: null,
+					submissionId: failSubId,
+					testAvailable: true,
+					testVersion: 3,
+					snapshot: null,
+					submission: createPendingSubmissionFixture({
+						id: failSubId,
+						speakingStatus: "pending_upload",
+					}),
+					speakingTasks: SAMPLE_SNAPSHOT.parts[4].tasks,
+				};
+				return makeJsonResponse(view);
+			}
+			if (
+				url.endsWith(
+					`/api/student/placement-test/submissions/${failSubId}/speaking-upload-token`,
+				) &&
+				init?.method === "POST"
+			) {
+				return makeJsonResponse({
+					uploadToken: "tok-fail-1",
+					uploadTokenExpiresAt: "2026-11-26T03:00:00Z",
+				});
+			}
+			if (
+				url.endsWith(
+					`/api/student/placement-test/submissions/${failSubId}/speaking`,
+				) &&
+				init?.method === "PUT"
+			) {
+				return makeJsonResponse(
+					{ message: "Định dạng âm thanh không hợp lệ" },
+					415,
+				);
+			}
+			throw new Error(`Unexpected fetch: ${url}`);
+		});
+
+		render(
+			<QueryClientProvider client={createTestQueryClient()}>
+				<StudentPlacementTestContent studentId="stu-1" />
+			</QueryClientProvider>,
+		);
+
+		expect(await screen.findByTestId("retry-speaking-upload-btn")).toBeTruthy();
+		expect(screen.getByTestId("rerecord-speaking-btn")).toBeTruthy();
+		expect(screen.getByText(/Định dạng âm thanh không hợp lệ/)).toBeTruthy();
+
+		cleanup();
+
+		// Case 2: token mint returns 409 SPEAKING_UPLOAD_NOT_PENDING -> clears backup and refreshes cleanly
+		const settledSubId = "sub-already-settled";
+		await saveStudentSpeakingBackup({
+			studentId: "stu-1",
+			submissionId: settledSubId,
+			blob: new Blob([makeMp4FtypBytes()], { type: "audio/mp4" }),
+			mimeType: "audio/mp4",
+			durationSec: 9,
+		});
+
+		let viewCalls = 0;
+		globalThis.fetch = vi.fn(async (input, init) => {
+			const url = typeof input === "string" ? input : input.toString();
+			if (url.endsWith("/api/student/placement-test")) {
+				viewCalls += 1;
+				const view: StudentPlacementViewResponse = {
+					status: "pending_grading",
+					hasEntryScore: false,
+					entryScore: null,
+					promptDismissedAt: null,
+					submissionId: settledSubId,
+					testAvailable: true,
+					testVersion: 3,
+					snapshot: null,
+					submission: createPendingSubmissionFixture({
+						id: settledSubId,
+						speakingStatus: viewCalls === 1 ? "pending_upload" : "uploaded",
+					}),
+					speakingTasks:
+						viewCalls === 1 ? SAMPLE_SNAPSHOT.parts[4].tasks : null,
+				};
+				return makeJsonResponse(view);
+			}
+			if (
+				url.endsWith(
+					`/api/student/placement-test/submissions/${settledSubId}/speaking-upload-token`,
+				) &&
+				init?.method === "POST"
+			) {
+				return makeJsonResponse(
+					{
+						error: "SPEAKING_UPLOAD_NOT_PENDING",
+						code: "SPEAKING_UPLOAD_NOT_PENDING",
+					},
+					409,
+				);
+			}
+			throw new Error(`Unexpected fetch: ${url}`);
+		});
+
+		render(
+			<QueryClientProvider client={createTestQueryClient()}>
+				<StudentPlacementTestContent studentId="stu-1" />
+			</QueryClientProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("pending-speaking-status").textContent).toBe(
+				"Đã gửi bài nói",
+			);
+		});
+		expect(mockIdb.stores.get("recordings")?.has(`stu-1:${settledSubId}`)).toBe(
+			false,
+		);
+	});
+});

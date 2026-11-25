@@ -10,6 +10,7 @@ import {
 	PLACEMENT_WRITING_RUBRIC,
 	type PlacementErrorSkill,
 	type PlacementPublishedBand,
+	type PlacementPublishedSpeakingTask,
 	type PlacementSectionScore,
 	type StudentPlacementSubmissionView,
 } from "@teacher-os/api/placement-test-contracts";
@@ -28,15 +29,24 @@ import {
 	CheckCircle2,
 	Clock,
 	FileQuestion,
+	Loader2,
 	Mic,
 	PenLine,
 	RefreshCw,
+	Send,
 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { PlacementAnnotatedText } from "@/components/placement/placement-error-highlights";
+import {
+	PlacementSpeakingStep,
+	type RecordedSpeakingAudio,
+} from "@/components/placement/placement-speaking-step";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
 import {
 	DEFAULT_PLACEMENT_BANDS,
+	isLikelyInAppBrowser,
+	PLACEMENT_SPEAKING_MAX_BYTES,
 	resolvePlacementErrorStyle,
 } from "@/lib/placement-test-helpers";
 
@@ -216,18 +226,123 @@ export function PlacementPendingResultView({
 	bands,
 	canRetrySpeakingUpload = false,
 	isRetryingSpeakingUpload = false,
+	isAutoRecoveringSpeaking = false,
 	speakingUploadError = "",
+	speakingUploadSuccessMessage = "",
 	onRetrySpeakingUpload,
+	recoverySpeakingTasks = null,
+	onUploadRecoveredSpeaking,
 }: {
 	submission: StudentPlacementSubmissionView;
 	bands?: readonly PlacementPublishedBand[];
 	canRetrySpeakingUpload?: boolean;
 	isRetryingSpeakingUpload?: boolean;
+	isAutoRecoveringSpeaking?: boolean;
 	speakingUploadError?: string;
+	speakingUploadSuccessMessage?: string;
 	onRetrySpeakingUpload?: () => void;
+	recoverySpeakingTasks?: readonly PlacementPublishedSpeakingTask[] | null;
+	onUploadRecoveredSpeaking?: (
+		audio: RecordedSpeakingAudio,
+	) => Promise<{ ok: boolean; errorMessage?: string }>;
 }) {
 	const effectiveBands =
 		bands && bands.length > 0 ? bands : DEFAULT_PLACEMENT_BANDS;
+	const [isRecoveryPanelOpen, setIsRecoveryPanelOpen] = useState(false);
+	const [recoveredAudio, setRecoveredAudio] =
+		useState<RecordedSpeakingAudio | null>(null);
+	const [isRecoverySpeakingBusy, setIsRecoverySpeakingBusy] = useState(false);
+	const [isUploadingRecovered, setIsUploadingRecovered] = useState(false);
+	const [recoveryUploadError, setRecoveryUploadError] = useState("");
+	const recoveredUrlRef = useRef<string | null>(null);
+
+	useEffect(() => {
+		const prev = recoveredUrlRef.current;
+		const next = recoveredAudio?.url ?? null;
+		if (prev && prev !== next) {
+			try {
+				URL.revokeObjectURL(prev);
+			} catch {
+				// Ignore revoke errors
+			}
+		}
+		recoveredUrlRef.current = next;
+	}, [recoveredAudio]);
+
+	useEffect(() => {
+		return () => {
+			if (recoveredUrlRef.current) {
+				try {
+					URL.revokeObjectURL(recoveredUrlRef.current);
+				} catch {
+					// Ignore unmount revoke errors
+				}
+			}
+		};
+	}, []);
+
+	useEffect(() => {
+		if (!isUploadingRecovered || typeof window === "undefined") {
+			return;
+		}
+		const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+			event.preventDefault();
+			event.returnValue = "";
+		};
+		window.addEventListener("beforeunload", handleBeforeUnload);
+		return () => {
+			window.removeEventListener("beforeunload", handleBeforeUnload);
+		};
+	}, [isUploadingRecovered]);
+
+	useEffect(() => {
+		if (submission.speakingStatus !== "pending_upload") {
+			setIsRecoveryPanelOpen(false);
+			setRecoveredAudio(null);
+			setRecoveryUploadError("");
+		}
+	}, [submission.speakingStatus]);
+
+	const hasRecoveryTasks = Boolean(
+		recoverySpeakingTasks &&
+			recoverySpeakingTasks.length > 0 &&
+			onUploadRecoveredSpeaking,
+	);
+	const inAppBrowser = isLikelyInAppBrowser(
+		typeof navigator !== "undefined" ? navigator.userAgent : "",
+	);
+	const canUploadRecovered = Boolean(
+		recoveredAudio &&
+			recoveredAudio.blob.size > 0 &&
+			recoveredAudio.blob.size <= PLACEMENT_SPEAKING_MAX_BYTES &&
+			!isRecoverySpeakingBusy &&
+			!isUploadingRecovered,
+	);
+
+	const handleUploadRecovered = async () => {
+		if (!recoveredAudio || !onUploadRecoveredSpeaking || isUploadingRecovered) {
+			return;
+		}
+		setIsUploadingRecovered(true);
+		setRecoveryUploadError("");
+		try {
+			const res = await onUploadRecoveredSpeaking(recoveredAudio);
+			if (!res.ok) {
+				setRecoveryUploadError(
+					res.errorMessage ||
+						"Không thể tải lên bản ghi Speaking. Vui lòng thử lại.",
+				);
+			}
+		} catch (err) {
+			setRecoveryUploadError(
+				err instanceof Error && err.message
+					? err.message
+					: "Không thể tải lên bản ghi Speaking. Vui lòng thử lại.",
+			);
+		} finally {
+			setIsUploadingRecovered(false);
+		}
+	};
 
 	return (
 		<div
@@ -288,7 +403,7 @@ export function PlacementPendingResultView({
 								aria-hidden="true"
 								className="mt-0.5 size-4 shrink-0 text-muted-foreground"
 							/>
-							<div>
+							<div className="min-w-0">
 								<div className="font-medium text-foreground text-sm">
 									Phần Writing
 								</div>
@@ -306,7 +421,7 @@ export function PlacementPendingResultView({
 								aria-hidden="true"
 								className="mt-0.5 size-4 shrink-0 text-muted-foreground"
 							/>
-							<div>
+							<div className="min-w-0">
 								<div className="font-medium text-foreground text-sm">
 									Phần Speaking
 								</div>
@@ -320,37 +435,242 @@ export function PlacementPendingResultView({
 						</div>
 					</div>
 
-					{submission.speakingStatus === "pending_upload" ? (
+					{speakingUploadSuccessMessage &&
+					submission.speakingStatus === "uploaded" ? (
 						<div
-							role="alert"
-							className="space-y-3 rounded-lg border border-warn/40 bg-warn-soft p-4 text-sm"
+							role="status"
+							aria-live="polite"
+							data-testid="speaking-upload-success-banner"
+							className="flex items-start gap-2.5 rounded-lg border border-success/40 bg-success-soft p-3.5 text-sm"
 						>
+							<CheckCircle2
+								aria-hidden="true"
+								className="mt-0.5 size-4 shrink-0 text-success"
+							/>
 							<p className="font-medium text-foreground">
-								File ghi âm Speaking chưa tải lên hoàn tất
+								{speakingUploadSuccessMessage}
 							</p>
-							<p className="text-muted-foreground text-xs leading-relaxed">
-								{speakingUploadError ||
-									"Bài làm 4 kỹ năng còn lại đã được lưu an toàn. Bạn có thể bấm thử tải lại file Speaking nếu bản ghi vẫn còn trong phiên làm việc."}
-							</p>
-							{canRetrySpeakingUpload && onRetrySpeakingUpload ? (
-								<Button
-									type="button"
-									size="sm"
-									onClick={onRetrySpeakingUpload}
-									disabled={isRetryingSpeakingUpload}
+						</div>
+					) : null}
+
+					{submission.speakingStatus === "pending_upload" ? (
+						<div className="space-y-4">
+							{isAutoRecoveringSpeaking ? (
+								<div
+									role="status"
+									aria-live="polite"
+									data-testid="speaking-auto-recover-status"
+									className="flex items-start gap-2.5 rounded-lg border border-warn/40 bg-warn-soft p-4 text-sm"
 								>
-									<RefreshCw
+									<Loader2
 										aria-hidden="true"
-										className={
-											isRetryingSpeakingUpload ? "animate-spin" : undefined
-										}
+										className="mt-0.5 size-4 shrink-0 animate-spin text-warn"
 									/>
-									<span>
-										{isRetryingSpeakingUpload
-											? "Đang tải lại..."
-											: "Thử tải lại file Speaking"}
-									</span>
-								</Button>
+									<div className="space-y-1">
+										<p className="font-medium text-foreground">
+											Đang khôi phục và tự động tải lại bản ghi Speaking...
+										</p>
+										<p className="text-muted-foreground text-xs leading-relaxed">
+											Vui lòng giữ nguyên trang này trong giây lát để hệ thống
+											hoàn tất gửi bài nói của bạn.
+										</p>
+									</div>
+								</div>
+							) : canRetrySpeakingUpload && onRetrySpeakingUpload ? (
+								<div
+									role="alert"
+									className="space-y-3 rounded-lg border border-warn/40 bg-warn-soft p-4 text-sm"
+								>
+									<p className="font-medium text-foreground">
+										Bản ghi Speaking chưa tải lên hoàn tất
+									</p>
+									<p className="text-muted-foreground text-xs leading-relaxed">
+										{speakingUploadError ||
+											"Bài làm 4 kỹ năng còn lại đã được lưu an toàn. Bản ghi Speaking vẫn còn trên thiết bị này — hãy bấm nút bên dưới để tải lại."}
+									</p>
+									<div className="flex flex-wrap items-center gap-2">
+										<Button
+											type="button"
+											size="sm"
+											data-testid="retry-speaking-upload-btn"
+											onClick={onRetrySpeakingUpload}
+											disabled={
+												isRetryingSpeakingUpload || isUploadingRecovered
+											}
+										>
+											<RefreshCw
+												aria-hidden="true"
+												className={
+													isRetryingSpeakingUpload ? "animate-spin" : undefined
+												}
+											/>
+											<span>
+												{isRetryingSpeakingUpload
+													? "Đang tải lại..."
+													: "Thử tải lại bản ghi Speaking"}
+											</span>
+										</Button>
+										{hasRecoveryTasks && !isRecoveryPanelOpen ? (
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												data-testid="rerecord-speaking-btn"
+												disabled={
+													isRetryingSpeakingUpload || isUploadingRecovered
+												}
+												onClick={() => {
+													setRecoveryUploadError("");
+													setRecoveredAudio(null);
+													setIsRecoveryPanelOpen(true);
+												}}
+											>
+												<Mic aria-hidden="true" className="size-4" />
+												<span>Ghi âm lại từ đầu</span>
+											</Button>
+										) : null}
+									</div>
+								</div>
+							) : (
+								<div
+									role="alert"
+									className="space-y-3 rounded-lg border border-warn/40 bg-warn-soft p-4 text-sm"
+								>
+									<p className="font-medium text-foreground">
+										Bản ghi Speaking chưa tải lên hoàn tất
+									</p>
+									<p className="text-muted-foreground text-xs leading-relaxed">
+										Bài làm 4 kỹ năng còn lại đã được lưu an toàn. Bản ghi
+										Speaking trước đó không còn trên thiết bị này — bạn có thể
+										ghi âm lại phần Speaking ngay bên dưới để gửi cho giáo viên
+										chấm.
+									</p>
+									{inAppBrowser && !isRecoveryPanelOpen ? (
+										<div
+											data-testid="speaking-in-app-browser-hint"
+											className="rounded-md border border-warn/40 bg-muted/40 p-2.5 text-foreground text-xs leading-relaxed"
+										>
+											Bạn đang mở trong trình duyệt tích hợp (Zalo, Facebook
+											hoặc Messenger). Nếu không bật được Micro hoặc tải lên
+											thất bại, hãy chọn{" "}
+											<strong className="font-semibold">
+												Mở bằng Safari / Chrome
+											</strong>{" "}
+											rồi ghi âm lại.
+										</div>
+									) : null}
+									{hasRecoveryTasks && !isRecoveryPanelOpen ? (
+										<div className="flex flex-wrap items-center gap-2">
+											<Button
+												type="button"
+												size="sm"
+												data-testid="rerecord-speaking-btn"
+												onClick={() => {
+													setRecoveryUploadError("");
+													setRecoveredAudio(null);
+													setIsRecoveryPanelOpen(true);
+												}}
+											>
+												<Mic aria-hidden="true" className="size-4" />
+												<span>Ghi âm lại phần Speaking</span>
+											</Button>
+										</div>
+									) : null}
+								</div>
+							)}
+
+							{isRecoveryPanelOpen &&
+							hasRecoveryTasks &&
+							recoverySpeakingTasks ? (
+								<div
+									data-testid="speaking-recovery-panel"
+									className="space-y-4 rounded-xl border bg-muted/40 p-4"
+								>
+									<div className="space-y-1">
+										<h3 className="font-semibold text-base text-foreground">
+											Ghi âm lại phần Speaking
+										</h3>
+										<p className="text-muted-foreground text-xs leading-relaxed">
+											Hoàn thành ghi âm rồi bấm tải lên để bổ sung phần Speaking
+											vào bài làm đã nộp.
+										</p>
+									</div>
+
+									<PlacementSpeakingStep
+										hideIntroHeader
+										tasks={recoverySpeakingTasks}
+										recordedAudio={recoveredAudio}
+										onRecordedAudioChange={(next) => {
+											setRecoveredAudio(next);
+											setRecoveryUploadError("");
+										}}
+										onBusyChange={setIsRecoverySpeakingBusy}
+									/>
+
+									{recoveryUploadError ? (
+										<div
+											role="alert"
+											className="rounded-lg border border-destructive/40 bg-destructive-soft p-3 text-destructive text-sm"
+										>
+											{recoveryUploadError}
+										</div>
+									) : null}
+
+									{isUploadingRecovered ? (
+										<div
+											role="status"
+											aria-live="polite"
+											className="flex items-start gap-2 rounded-lg border border-warn/40 bg-warn-soft p-3 text-foreground text-xs"
+										>
+											<Loader2
+												aria-hidden="true"
+												className="mt-0.5 size-4 shrink-0 animate-spin text-warn"
+											/>
+											<span>
+												Đang tải bản ghi Speaking lên máy chủ. Vui lòng không
+												đóng trang này cho đến khi hoàn tất.
+											</span>
+										</div>
+									) : null}
+
+									<div className="flex flex-wrap items-center justify-between gap-3">
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											disabled={isRecoverySpeakingBusy || isUploadingRecovered}
+											onClick={() => {
+												setIsRecoveryPanelOpen(false);
+												setRecoveredAudio(null);
+												setRecoveryUploadError("");
+											}}
+										>
+											Đóng
+										</Button>
+
+										<Button
+											type="button"
+											size="sm"
+											data-testid="upload-recovered-speaking-btn"
+											disabled={!canUploadRecovered}
+											onClick={() => void handleUploadRecovered()}
+										>
+											{isUploadingRecovered ? (
+												<Loader2
+													aria-hidden="true"
+													className="size-4 animate-spin"
+												/>
+											) : (
+												<Send aria-hidden="true" className="size-4" />
+											)}
+											<span>
+												{isUploadingRecovered
+													? "Đang tải bản ghi Speaking..."
+													: "Tải lên bản ghi Speaking"}
+											</span>
+										</Button>
+									</div>
+								</div>
 							) : null}
 						</div>
 					) : null}
@@ -358,7 +678,7 @@ export function PlacementPendingResultView({
 					<div className="pt-1">
 						<Link
 							to="/"
-							className="inline-flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-4 font-medium text-foreground text-sm shadow-xs transition-colors hover:bg-accent"
+							className="inline-flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-4 font-medium text-foreground text-sm shadow-xs outline-none transition-colors hover:bg-accent focus-visible:shadow-[var(--focus-ring)]"
 						>
 							<ArrowLeft aria-hidden="true" className="size-4" />
 							<span>Về trang chủ</span>
