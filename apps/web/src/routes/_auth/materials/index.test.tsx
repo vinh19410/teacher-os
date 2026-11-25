@@ -893,4 +893,67 @@ describe("/materials writes", () => {
 			encodeURIComponent("hop-le.pdf"),
 		);
 	});
+
+	it("falls back to root folder when retrying after the selected folder returns 404 and disappears on refetch", async () => {
+		mockSearch.current = { folderId: "f-1" };
+		let activeFolders = [...FOLDERS];
+		let putCalls = 0;
+
+		renderRoute([], (method, url) => {
+			if (method === "GET" && url.pathname === "/api/materials/folders") {
+				return { status: 200, body: { folders: activeFolders } };
+			}
+			if (method === "PUT" && url.pathname === "/api/materials/files") {
+				putCalls += 1;
+				if (url.searchParams.get("folderId") === "f-1") {
+					// Thư mục đã bị xóa trước đó → refetch thư mục sẽ không còn f-1.
+					activeFolders = [];
+					return {
+						status: 404,
+						body: { error: "FOLDER_NOT_FOUND", code: "FOLDER_NOT_FOUND" },
+					};
+				}
+				return {
+					status: 201,
+					body: {
+						material: material({ id: "m-root-retry", folderId: null }),
+					},
+				};
+			}
+			return null;
+		});
+
+		await screen.findByTestId("materials-empty");
+		fireEvent.click(screen.getAllByRole("button", { name: "Tải file lên" })[0]);
+		const dialog = await screen.findByRole("dialog", { name: "Tải file lên" });
+
+		fireEvent.change(within(dialog).getByLabelText("File"), {
+			target: {
+				files: [
+					new File(["%PDF"], "bi-xoa-thu-muc.pdf", {
+						type: "application/pdf",
+						lastModified: 1000,
+					}),
+				],
+			},
+		});
+		fireEvent.click(within(dialog).getByRole("button", { name: "Tải lên" }));
+
+		const retryButton = await within(dialog).findByRole("button", {
+			name: "Thử lại 1 file lỗi",
+		});
+		expect(putCalls).toBe(1);
+
+		fireEvent.click(retryButton);
+		await waitFor(() =>
+			expect(toastMock.success).toHaveBeenCalledWith("Đã tải file lên."),
+		);
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog", { name: "Tải file lên" })).toBeNull(),
+		);
+		expect(putCalls).toBe(2);
+		const retryUrl = new URL(String(writes()[1]?.[0]));
+		expect(retryUrl.pathname).toBe("/api/materials/files");
+		expect(retryUrl.searchParams.get("folderId")).toBeNull();
+	});
 });

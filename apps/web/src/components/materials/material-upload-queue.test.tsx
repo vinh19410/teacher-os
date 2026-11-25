@@ -484,4 +484,80 @@ describe("useMaterialUploadQueue + MaterialUploadQueueList", () => {
 			screen.getByRole("button", { name: "Ẩn tiến độ tải lên" }),
 		).toBeTruthy();
 	});
+
+	it("keeps queue locked while invalidateQueries is pending and skips invalidateQueries on 401", async () => {
+		const queryClient = new QueryClient();
+		const invalidateDeferred = createDeferred<void>();
+		const invalidateSpy = vi
+			.spyOn(queryClient, "invalidateQueries")
+			.mockReturnValueOnce(invalidateDeferred.promise);
+		const onBatchSettled = vi.fn();
+		const upload = vi.fn(async () => "mat-1");
+		const controlsRef: { current: HarnessControls | null } = { current: null };
+
+		render(
+			<QueueHarness
+				upload={upload}
+				onBatchSettled={onBatchSettled}
+				controlsRef={controlsRef}
+			/>,
+			{ wrapper: createWrapper(queryClient) },
+		);
+
+		let uploadPromise: Promise<unknown> | undefined;
+		await act(async () => {
+			uploadPromise = controlsRef.current?.uploadFilesNow([
+				makeFile("slow-refetch.pdf", { size: 512 }),
+			]);
+			await Promise.resolve();
+			await Promise.resolve();
+		});
+
+		// Dù PUT đã xong, hàng đợi vẫn phải khóa trong lúc invalidateQueries chưa resolve.
+		expect(invalidateSpy).toHaveBeenCalledTimes(1);
+		expect(onBatchSettled).not.toHaveBeenCalled();
+		expect(
+			screen.queryByRole("button", { name: "Ẩn tiến độ tải lên" }),
+		).toBeNull();
+		act(() => {
+			controlsRef.current?.addFiles([makeFile("blocked.pdf", { size: 128 })]);
+			controlsRef.current?.clear();
+		});
+		expect(screen.getByText("slow-refetch.pdf")).toBeTruthy();
+		expect(screen.queryByText("blocked.pdf")).toBeNull();
+
+		await act(async () => {
+			invalidateDeferred.resolve(undefined);
+			await uploadPromise;
+		});
+		expect(onBatchSettled).toHaveBeenCalledTimes(1);
+
+		// Khi lô gặp 401 sau một file 201: gọi reauth và không bắn invalidateQueries thừa.
+		invalidateSpy.mockClear();
+		vi.mocked(reauth).mockClear();
+		const mixedUpload = vi
+			.fn()
+			.mockResolvedValueOnce("mat-ok")
+			.mockRejectedValueOnce(new HttpError(401, "unauthorized"));
+		cleanup();
+		const controls401Ref: { current: HarnessControls | null } = {
+			current: null,
+		};
+		render(
+			<QueueHarness
+				upload={mixedUpload}
+				onBatchSettled={onBatchSettled}
+				controlsRef={controls401Ref}
+			/>,
+			{ wrapper: createWrapper(queryClient) },
+		);
+		await act(async () => {
+			await controls401Ref.current?.uploadFilesNow([
+				makeFile("ok-first.pdf", { size: 256, lastModified: 1 }),
+				makeFile("unauth-second.pdf", { size: 256, lastModified: 2 }),
+			]);
+		});
+		expect(reauth).toHaveBeenCalledTimes(1);
+		expect(invalidateSpy).not.toHaveBeenCalled();
+	});
 });

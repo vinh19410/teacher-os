@@ -208,6 +208,11 @@ export function useMaterialUploadQueue<TResult>(
 						reauth();
 					},
 				});
+				if (run.shouldInvalidate && !run.unauthorized) {
+					await queryClient.invalidateQueries({
+						queryKey: materialsAllQueryKey,
+					});
+				}
 			} finally {
 				runningRef.current = false;
 				if (mountedRef.current) {
@@ -215,9 +220,6 @@ export function useMaterialUploadQueue<TResult>(
 				}
 			}
 
-			if (run.shouldInvalidate) {
-				await queryClient.invalidateQueries({ queryKey: materialsAllQueryKey });
-			}
 			if (!run.unauthorized && mountedRef.current) {
 				await onBatchSettledRef.current?.({
 					run,
@@ -368,6 +370,7 @@ export interface MaterialUploadQueueListProps {
 	summary: MaterialUploadBatchSummary;
 	compact?: boolean;
 	allowRemove?: boolean;
+	disabled?: boolean;
 	onRemove?: (id: string) => void;
 	onRetryFailed?: () => void;
 	onDismiss?: () => void;
@@ -386,6 +389,7 @@ export function MaterialUploadQueueList({
 	summary,
 	compact = false,
 	allowRemove = false,
+	disabled = false,
 	onRemove,
 	onRetryFailed,
 	onDismiss,
@@ -521,6 +525,7 @@ export function MaterialUploadQueueList({
 							type="button"
 							variant="outline"
 							size="sm"
+							disabled={disabled}
 							className="focus-visible:shadow-[var(--focus-ring)]"
 							onClick={onRetryFailed}
 						>
@@ -532,6 +537,7 @@ export function MaterialUploadQueueList({
 							type="button"
 							variant="ghost"
 							size="sm"
+							disabled={disabled}
 							className="focus-visible:shadow-[var(--focus-ring)]"
 							aria-label="Ẩn tiến độ tải lên"
 							onClick={onDismiss}

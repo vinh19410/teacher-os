@@ -402,6 +402,7 @@ export function MaterialPicker({
 					compact
 					items={uploadQueue.items}
 					summary={uploadQueue.summary}
+					disabled={disabled}
 					suppressAlert={Boolean(error)}
 					onRetryFailed={handleRetryFailed}
 					onDismiss={uploadQueue.clear}

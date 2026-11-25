@@ -393,15 +393,21 @@ export function UploadDialog({
 	const fileInputId = useId();
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [folderId, setFolderId] = useState(defaultFolderId);
+	const effectiveFolderId =
+		folderId !== null && folders.some((f) => f.id === folderId)
+			? folderId
+			: null;
 	const [dragOver, setDragOver] = useState(false);
 	const [formError, setFormError] = useState<string | null>(null);
 	const [duplicateNotice, setDuplicateNotice] = useState<string | null>(null);
 
 	const queue = useMaterialUploadQueue({
-		upload: (input) => uploadMaterialFile({ ...input, folderId }),
+		upload: (input) =>
+			uploadMaterialFile({ ...input, folderId: effectiveFolderId }),
 		onBatchSettled: ({ run, summary }) => {
 			if (
 				run.succeeded.length > 0 &&
+				summary.uploading === 0 &&
 				summary.error === 0 &&
 				summary.invalid === 0 &&
 				summary.pending === 0
@@ -511,6 +517,7 @@ export function UploadDialog({
 					<button
 						type="button"
 						disabled={queue.isUploading}
+						aria-describedby={`${fileInputId}-help`}
 						onClick={() => fileInputRef.current?.click()}
 						onDragEnter={(e) => {
 							e.preventDefault();
@@ -569,7 +576,7 @@ export function UploadDialog({
 				<Field label="Thư mục">
 					<FolderSelect
 						folders={folders}
-						value={folderId}
+						value={effectiveFolderId}
 						onChange={setFolderId}
 						rootLabel={ROOT_LABEL}
 						disabled={queue.isUploading}

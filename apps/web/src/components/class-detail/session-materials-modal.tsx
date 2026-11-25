@@ -251,8 +251,10 @@ export function SessionMaterialsModal({
 									compact
 									items={uploadQueue.items}
 									summary={uploadQueue.summary}
+									disabled={busy}
 									suppressAlert={Boolean(error)}
 									onRetryFailed={() => {
+										if (busy) return;
 										setError(null);
 										void uploadQueue.retryFailed();
 									}}

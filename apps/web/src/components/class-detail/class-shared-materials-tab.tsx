@@ -348,8 +348,10 @@ export function ClassSharedMaterialsTab({ classId }: { classId: string }) {
 								compact
 								items={uploadQueue.items}
 								summary={uploadQueue.summary}
+								disabled={busy}
 								suppressAlert={Boolean(error)}
 								onRetryFailed={() => {
+									if (busy) return;
 									setError(null);
 									void uploadQueue.retryFailed();
 								}}

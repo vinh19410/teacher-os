@@ -34,6 +34,45 @@ const VIEWPORTS = [
 	{ name: "375x812", width: 375, height: 812 },
 ] as const;
 
+async function runAndExpectPuts(
+	page: Page,
+	urlMatcher: (url: string) => boolean,
+	expectedCount: number,
+	action: () => Promise<void>,
+): Promise<void> {
+	let matched = 0;
+	let resolveAll!: () => void;
+	let rejectAll!: (err: Error) => void;
+	const done = new Promise<void>((resolve, reject) => {
+		resolveAll = resolve;
+		rejectAll = reject;
+	});
+	const onResponse = (res: {
+		url(): string;
+		status(): number;
+		request(): { method(): string };
+	}) => {
+		if (res.request().method() !== "PUT" || !urlMatcher(res.url())) return;
+		if (res.status() !== 201) {
+			rejectAll(
+				new Error(`Expected 201 for PUT ${res.url()}, got ${res.status()}`),
+			);
+			return;
+		}
+		matched += 1;
+		if (matched === expectedCount) {
+			resolveAll();
+		}
+	};
+	page.on("response", onResponse);
+	try {
+		await action();
+		await done;
+	} finally {
+		page.off("response", onResponse);
+	}
+}
+
 async function verifyResponsiveAndCapture(
 	page: Page,
 	slug: string,
@@ -143,32 +182,15 @@ test("tải nhiều file cùng lúc tại Ngân hàng tài liệu, Tài liệu c
 	// Kiểm chứng responsive + light/dark ngay khi UploadDialog có hàng đợi nhiều file.
 	await verifyResponsiveAndCapture(page, "938-upload-dialog");
 
-	let bankPutCount = 0;
-	const waitTwoBankPuts = new Promise<void>((resolveAll) => {
-		const onResponse = (res: {
-			url(): string;
-			status(): number;
-			request(): { method(): string };
-		}) => {
-			if (
-				res.request().method() === "PUT" &&
-				res.url().includes("/api/materials/files") &&
-				res.status() === 201
-			) {
-				bankPutCount += 1;
-				if (bankPutCount === 2) {
-					page.off("response", onResponse);
-					resolveAll();
-				}
-			}
-		};
-		page.on("response", onResponse);
-	});
-
-	await uploadDialog
-		.getByRole("button", { name: "Tải lên 2 file", exact: true })
-		.click();
-	await waitTwoBankPuts;
+	await runAndExpectPuts(
+		page,
+		(url) => url.includes("/api/materials/files"),
+		2,
+		() =>
+			uploadDialog
+				.getByRole("button", { name: "Tải lên 2 file", exact: true })
+				.click(),
+	);
 
 	// Có file không hợp lệ → modal giữ mở để giáo viên thấy kết quả; sau đó đóng.
 	await expect(uploadDialog.getByText(/Đã tải 2\/2 file/)).toBeVisible();
@@ -230,51 +252,35 @@ test("tải nhiều file cùng lúc tại Ngân hàng tài liệu, Tài liệu c
 	await page.goto(`/teacher/classes/${classId}?tab=materials`);
 	await expect(page.getByTestId("class-shared-materials-empty")).toBeVisible();
 
-	let sharedPutCount = 0;
-	const waitTwoSharedPuts = new Promise<void>((resolveAll) => {
-		const onResponse = (res: {
-			url(): string;
-			status(): number;
-			request(): { method(): string };
-		}) => {
-			if (
-				res.request().method() === "PUT" &&
-				res.url().includes(`/api/classes/${classId}/materials/files`) &&
-				res.status() === 201
-			) {
-				sharedPutCount += 1;
-				if (sharedPutCount === 2) {
-					page.off("response", onResponse);
-					resolveAll();
-				}
-			}
-		};
-		page.on("response", onResponse);
-	});
-
-	await page.getByLabel("Chọn file tải lên cho lớp học").setInputFiles([
-		{
-			name: sharedPdf,
-			mimeType: "application/pdf",
-			buffer: PDF_SAMPLE,
-		},
-		{
-			name: sharedMp3,
-			mimeType: "audio/mpeg",
-			buffer: MP3_SAMPLE,
-		},
-	]);
-	await waitTwoSharedPuts;
+	await runAndExpectPuts(
+		page,
+		(url) => url.includes(`/api/classes/${classId}/materials/files`),
+		2,
+		() =>
+			page.getByLabel("Chọn file tải lên cho lớp học").setInputFiles([
+				{
+					name: sharedPdf,
+					mimeType: "application/pdf",
+					buffer: PDF_SAMPLE,
+				},
+				{
+					name: sharedMp3,
+					mimeType: "audio/mpeg",
+					buffer: MP3_SAMPLE,
+				},
+			]),
+	);
 
 	await expect(page.getByText("Đã tải xong 2/2 file.")).toBeVisible();
-	await expect(
-		page.getByTestId("material-item").filter({ hasText: sharedPdf }),
-	).toBeVisible();
+	const sharedPdfItem = page
+		.getByTestId("material-item")
+		.filter({ hasText: sharedPdf });
+	await expect(sharedPdfItem).toBeVisible();
 	await expect(
 		page.getByTestId("material-item").filter({ hasText: sharedMp3 }),
 	).toBeVisible();
 
-	await page.waitForTimeout(500);
+	await expect(sharedPdfItem.locator("canvas")).toBeVisible();
 	await verifyResponsiveAndCapture(page, "938-class-shared-multi-upload", {
 		captureTablet: false,
 		fullPage: true,
@@ -298,44 +304,26 @@ test("tải nhiều file cùng lúc tại Ngân hàng tài liệu, Tài liệu c
 	const sessionDialog = page.getByRole("dialog", { name: /^Tài liệu buổi/ });
 	await expect(sessionDialog).toBeVisible();
 
-	let sessionPutCount = 0;
-	const waitTwoSessionPuts = new Promise<void>((resolveAll) => {
-		const onResponse = (res: {
-			url(): string;
-			status(): number;
-			request(): { method(): string };
-		}) => {
-			if (
-				res.request().method() === "PUT" &&
-				res.url().includes(`/api/classes/${classId}/sessions/`) &&
-				res.url().includes("/materials/files") &&
-				res.status() === 201
-			) {
-				sessionPutCount += 1;
-				if (sessionPutCount === 2) {
-					page.off("response", onResponse);
-					resolveAll();
-				}
-			}
-		};
-		page.on("response", onResponse);
-	});
-
-	await sessionDialog
-		.getByLabel("Chọn file tải lên cho buổi học")
-		.setInputFiles([
-			{
-				name: sessionPdf,
-				mimeType: "application/pdf",
-				buffer: PDF_SAMPLE,
-			},
-			{
-				name: sessionMp3,
-				mimeType: "audio/mpeg",
-				buffer: MP3_SAMPLE,
-			},
-		]);
-	await waitTwoSessionPuts;
+	await runAndExpectPuts(
+		page,
+		(url) =>
+			url.includes(`/api/classes/${classId}/sessions/`) &&
+			url.includes("/materials/files"),
+		2,
+		() =>
+			sessionDialog.getByLabel("Chọn file tải lên cho buổi học").setInputFiles([
+				{
+					name: sessionPdf,
+					mimeType: "application/pdf",
+					buffer: PDF_SAMPLE,
+				},
+				{
+					name: sessionMp3,
+					mimeType: "audio/mpeg",
+					buffer: MP3_SAMPLE,
+				},
+			]),
+	);
 
 	await expect(sessionDialog.getByText("Đã tải xong 2/2 file.")).toBeVisible();
 	await expect(
