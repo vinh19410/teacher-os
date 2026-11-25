@@ -1,3 +1,5 @@
+import { clearAllReadingAnnotationsStorage } from "@/lib/reading-annotations-store";
+
 export const ACTIVE_STUDENT_ORG_KEY = "active_student_org_id";
 export const ACTIVE_STUDENT_USER_KEY = "active_student_user_id";
 
@@ -84,12 +86,14 @@ export function syncActiveStudentUser(userId: string | null | undefined): void {
 			// Ignore storage errors
 		}
 		clearActiveStudentOrgId();
+		clearAllReadingAnnotationsStorage();
 		return;
 	}
 	try {
 		const prevUser = localStorage.getItem(ACTIVE_STUDENT_USER_KEY)?.trim();
 		if (prevUser && prevUser !== trimmedUser) {
 			clearActiveStudentOrgId();
+			clearAllReadingAnnotationsStorage();
 		}
 		if (prevUser !== trimmedUser) {
 			localStorage.setItem(ACTIVE_STUDENT_USER_KEY, trimmedUser);

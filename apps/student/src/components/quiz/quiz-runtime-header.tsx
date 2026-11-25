@@ -1,7 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import type { PracticeSkill } from "@teacher-os/api/contracts";
 import { Button, buttonVariants } from "@teacher-os/ui/components/button";
-import type { ReactNode } from "react";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@teacher-os/ui/components/tooltip";
+import { type ReactNode, useId } from "react";
 import { cn } from "@/lib/cn";
 import type { QuizSaveState } from "@/lib/quiz-attempt-store";
 
@@ -25,8 +31,9 @@ const SAVE_STATE_CLASSES: Record<QuizSaveState, string> = {
 /**
  * Header runtime của take screen (Selfomy parity): thoát về overview + tiêu
  * đề đề + trạng thái autosave + nút Nộp bài. `onSubmitClick === null` giấu
- * nút (màn start gate chưa có attempt); nút disable khi đang drain/submit
- * hoặc autosave đã halt.
+ * nút (màn start gate chưa có attempt); khi `submitDisabled` kèm
+ * `submitDisabledReason`, nút giữ nguyên DOM node ổn định, nối `aria-describedby`
+ * tới `sr-only` thường trực và hiện tooltip giải thích khi hover.
  */
 export function QuizRuntimeHeader({
 	title,
@@ -34,6 +41,7 @@ export function QuizRuntimeHeader({
 	saveState,
 	onSubmitClick,
 	submitDisabled,
+	submitDisabledReason,
 	exitTarget = { to: "/" },
 	children,
 }: {
@@ -45,10 +53,15 @@ export function QuizRuntimeHeader({
 	/** null = giấu nút Nộp bài. */
 	onSubmitClick: (() => void) | null;
 	submitDisabled?: boolean;
+	/** Lý do khóa nút Nộp bài để giải thích qua tooltip + aria-describedby. */
+	submitDisabledReason?: string | null;
 	/** Đích nút Thoát — mặc định "/" cho bài giao lớp; tự luyện trỏ về "/practice/$skill" (#883). */
 	exitTarget?: QuizRuntimeExitTarget;
 	children?: ReactNode;
 }) {
+	const submitReasonId = useId();
+	const disabledReason =
+		submitDisabled && submitDisabledReason ? submitDisabledReason : null;
 	const exitClassName = cn(
 		buttonVariants({ variant: "ghost" }),
 		"shrink-0 px-2 sm:px-3",
@@ -104,13 +117,49 @@ export function QuizRuntimeHeader({
 				)}
 				{children}
 				{onSubmitClick !== null && (
-					<Button
-						onClick={onSubmitClick}
-						disabled={submitDisabled}
-						className="shrink-0 rounded-lg px-2.5 sm:px-4"
-					>
-						Nộp bài
-					</Button>
+					<TooltipProvider delay={0}>
+						<Tooltip disabled={disabledReason === null}>
+							<TooltipTrigger
+								render={
+									<span
+										data-testid={
+											disabledReason !== null
+												? "submit-disabled-trigger"
+												: undefined
+										}
+										className={cn(
+											"inline-flex shrink-0",
+											disabledReason !== null && "cursor-not-allowed",
+										)}
+									/>
+								}
+							>
+								<Button
+									onClick={onSubmitClick}
+									disabled={submitDisabled}
+									aria-describedby={disabledReason ? submitReasonId : undefined}
+									className="shrink-0 rounded-lg px-2.5 sm:px-4"
+								>
+									Nộp bài
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent
+								side="bottom"
+								align="end"
+								className={cn(
+									"max-w-[calc(100vw-16px)] rounded-md text-center",
+									disabledReason === null && "hidden",
+								)}
+							>
+								{disabledReason}
+							</TooltipContent>
+						</Tooltip>
+						{disabledReason !== null && (
+							<span id={submitReasonId} className="sr-only">
+								{disabledReason}
+							</span>
+						)}
+					</TooltipProvider>
 				)}
 			</div>
 		</header>

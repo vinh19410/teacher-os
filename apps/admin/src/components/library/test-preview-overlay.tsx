@@ -6,6 +6,7 @@ import {
 	QuizReadingSplitLayout,
 } from "@teacher-os/ui/components/quiz/quiz-reading-layout";
 import { buttonVariants } from "@teacher-os/ui/components/web-kit/button";
+import type { ReadingAnnotation } from "@teacher-os/ui/lib/reading-annotations";
 import { X } from "lucide-react";
 import {
 	type KeyboardEvent as ReactKeyboardEvent,
@@ -60,6 +61,9 @@ export function TestPreviewOverlay({
 	const [currentQuestion, setCurrentQuestion] = useState<number | null>(null);
 	const [answersByTab, setAnswersByTab] = useState<
 		Record<string, Record<number, string>>
+	>({});
+	const [readingAnnotationsByTab, setReadingAnnotationsByTab] = useState<
+		Record<string, ReadingAnnotation[]>
 	>({});
 	const closeRef = useRef<HTMLButtonElement>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -280,9 +284,19 @@ export function TestPreviewOverlay({
 					</div>
 				) : splitPane && navigator ? (
 					<QuizReadingSplitLayout
+						key={tab.part}
 						passage={view.detail.passage}
 						navigator={navigator}
 						fillParent
+						annotations={{
+							mode: "edit",
+							items: readingAnnotationsByTab[tab.part] ?? [],
+							onChange: (next) =>
+								setReadingAnnotationsByTab((previous) => ({
+									...previous,
+									[tab.part]: next,
+								})),
+						}}
 					>
 						<div className="mx-auto w-full max-w-[720px]">
 							<QuizPaper

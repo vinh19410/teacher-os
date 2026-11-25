@@ -412,4 +412,113 @@ describe("TestPreviewOverlay (#433)", () => {
 			await render7.unmount();
 		}
 	});
+
+	it("cô lập highlight/ghi chú bài đọc Reading theo từng tab trong RAM, 0 fetch và reset khi đóng (#881)", async () => {
+		const fetchSpy = vi.fn();
+		vi.stubGlobal("fetch", fetchSpy);
+		const p1 = tab(1);
+		const p2Base = tab(2);
+		const p2: PreviewTab = {
+			...p2Base,
+			view: p2Base.view
+				? {
+						...p2Base.view,
+						detail: {
+							...p2Base.view.detail,
+							passage: "<p>Đoạn đọc P2 khác hẳn</p>",
+						},
+					}
+				: null,
+		};
+
+		try {
+			const render8 = await setup([p1, p2], "p1");
+			try {
+				const content1 = render8.container.querySelector<HTMLElement>(
+					'[data-testid="reading-passage-content"]',
+				);
+				const textNode1 = content1?.querySelector("p")?.firstChild;
+				if (!content1 || !textNode1) {
+					throw new Error("không tìm thấy nội dung bài đọc P1");
+				}
+				const range = document.createRange();
+				range.setStart(textNode1, 0);
+				range.setEnd(textNode1, 4);
+				range.getBoundingClientRect = () =>
+					({
+						top: 200,
+						bottom: 220,
+						left: 120,
+						right: 180,
+						width: 60,
+						height: 20,
+						x: 120,
+						y: 200,
+						toJSON: () => ({}),
+					}) as DOMRect;
+				const sel = window.getSelection();
+				sel?.removeAllRanges();
+				sel?.addRange(range);
+
+				await act(async () => {
+					content1.dispatchEvent(
+						new MouseEvent("contextmenu", {
+							bubbles: true,
+							cancelable: true,
+							clientX: 140,
+							clientY: 210,
+						}),
+					);
+				});
+				const highlightItem =
+					render8.container.querySelector<HTMLButtonElement>(
+						'[role="menu"] [role="menuitem"]',
+					);
+				expect(highlightItem?.textContent).toContain("Tô sáng");
+				await act(async () => {
+					highlightItem?.click();
+				});
+				expect(
+					render8.container.querySelectorAll("mark.reading-hl").length,
+				).toBe(1);
+
+				// Chuyển sang Passage 2 -> không lẫn mark của Passage 1
+				const tabButtons = [
+					...render8.container.querySelectorAll<HTMLButtonElement>(
+						'[role="tab"]',
+					),
+				];
+				await act(async () => {
+					tabButtons[1]?.click();
+				});
+				expect(
+					render8.container.querySelectorAll("mark.reading-hl").length,
+				).toBe(0);
+
+				// Quay lại Passage 1 -> giữ nguyên mark trong RAM và 0 fetch
+				await act(async () => {
+					tabButtons[0]?.click();
+				});
+				expect(
+					render8.container.querySelectorAll("mark.reading-hl").length,
+				).toBe(1);
+				expect(fetchSpy).not.toHaveBeenCalled();
+			} finally {
+				window.getSelection()?.removeAllRanges();
+				await render8.unmount();
+			}
+
+			// Mở lại overlay -> state RAM đã reset hoàn toàn
+			const render8Reopened = await setup([p1, p2], "p1");
+			try {
+				expect(
+					render8Reopened.container.querySelectorAll("mark.reading-hl").length,
+				).toBe(0);
+			} finally {
+				await render8Reopened.unmount();
+			}
+		} finally {
+			vi.unstubAllGlobals();
+		}
+	});
 });
