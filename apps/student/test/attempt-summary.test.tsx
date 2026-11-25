@@ -36,7 +36,6 @@ import { AttemptCompactList } from "@teacher-os/ui/components/quiz/attempt-compa
 import { AttemptScoreCard } from "@teacher-os/ui/components/quiz/attempt-score-card";
 import { AttemptGradeCard } from "@/components/quiz/attempt-grade-card";
 import {
-	computeQuizClockSkewMs,
 	computeQuizTimerState,
 	formatAttemptDuration,
 	formatQuizClock,
@@ -132,19 +131,7 @@ describe("quiz countdown timer & server clock skew helpers", () => {
 		expect(formatQuizClock(Number.NaN)).toBe("00:00");
 	});
 
-	it("computeQuizClockSkewMs computes receivedAt - serverNow and defaults to 0 on invalid input", () => {
-		const serverIso = "2026-11-24T10:00:00.000Z";
-		const serverMs = Date.parse(serverIso);
-		expect(computeQuizClockSkewMs(serverIso, serverMs + 300_000)).toBe(300_000);
-		expect(computeQuizClockSkewMs(serverIso, serverMs - 300_000)).toBe(
-			-300_000,
-		);
-		expect(computeQuizClockSkewMs(null, serverMs)).toBe(0);
-		expect(computeQuizClockSkewMs(undefined, serverMs)).toBe(0);
-		expect(computeQuizClockSkewMs("not-a-date", serverMs)).toBe(0);
-	});
-
-	it("syncServerClock stores valid skew, ignores invalid values, and resets cleanly", () => {
+	it("syncServerClock records positive/negative skew, ignores invalid values, and resets cleanly", () => {
 		resetServerClockForTests();
 		expect(getServerClockSkewMs()).toBe(0);
 
@@ -155,8 +142,13 @@ describe("quiz countdown timer & server clock skew helpers", () => {
 
 		// Invalid inputs preserve prior recorded skew
 		syncServerClock(null, serverMs);
+		syncServerClock(undefined, serverMs);
 		syncServerClock("invalid", serverMs);
 		expect(getServerClockSkewMs()).toBe(120_000);
+
+		// Negative skew (client behind server) overwrites previous skew
+		syncServerClock(serverIso, serverMs - 90_000);
+		expect(getServerClockSkewMs()).toBe(-90_000);
 
 		resetServerClockForTests();
 		expect(getServerClockSkewMs()).toBe(0);

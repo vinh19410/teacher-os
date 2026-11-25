@@ -12,10 +12,9 @@ export const Route = createFileRoute("/_auth/learn/quizzes/practice/$testId")({
 	loader: async ({ params: { testId } }) => {
 		// Cùng luồng với route giao bài — chỉ nguồn đề khác (practice #378).
 		const source: QuizTakeSource = { kind: "practice", testId };
-		const detail = await studentQueryClient.ensureQueryData({
-			...quizDetailQueryOptions(source),
-			revalidateIfStale: true,
-		});
+		const detail = await studentQueryClient.fetchQuery(
+			quizDetailQueryOptions(source),
+		);
 		// Lượt đang làm đã nộp ở tab khác → thẳng summary. Practice làm lại
 		// được nên KHÔNG redirect khi chưa có lượt in_progress (attempt null).
 		if (detail.attempt?.status === "submitted") {

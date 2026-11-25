@@ -266,4 +266,76 @@ describe("repos/quiz — X-Server-Now sync & setQuizDetailMedia cache timestamp"
 		expect(state?.data?.attempt?.media).toEqual(uploadedMedia);
 		expect(state?.dataUpdatedAt).toBe(initialUpdatedAt);
 	});
+
+	it("fetchQuery awaits fresh serverAnswers after invalidateQueries instead of returning stale cache", async () => {
+		const qc = new QueryClient();
+		const source = { kind: "practice" as const, testId: "test-stale-1" };
+		const baseDetail: StudentQuizDetail = {
+			assignmentId: "",
+			title: "Reading SPA Return",
+			due: "",
+			dueAt: null,
+			timeLimitSeconds: 1200,
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			band: "7.0",
+			intro: "",
+			prompt: "",
+			passage: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			optionBank: [],
+			questions: [],
+			attempt: {
+				id: "att-spa-1",
+				status: "in_progress",
+				answers: {},
+				startedAt: "2026-11-24T10:00:00.000Z",
+			},
+		};
+		const updatedDetail: StudentQuizDetail = {
+			...baseDetail,
+			attempt: {
+				id: "att-spa-1",
+				status: "in_progress",
+				answers: { "0": "TRUE" },
+				startedAt: "2026-11-24T10:00:00.000Z",
+			},
+		};
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce(
+				new Response(JSON.stringify(baseDetail), {
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				}),
+			)
+			.mockResolvedValueOnce(
+				new Response(JSON.stringify(updatedDetail), {
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				}),
+			);
+		vi.stubGlobal("fetch", fetchMock);
+
+		const first = await qc.fetchQuery(quizDetailQueryOptions(source));
+		expect(first.attempt?.answers).toEqual({});
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+
+		// While still fresh (staleTime 60s), fetchQuery serves cache without extra network call
+		const cached = await qc.fetchQuery(quizDetailQueryOptions(source));
+		expect(cached.attempt?.answers).toEqual({});
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+
+		// After QuizTakeView unmount invalidates the query, loader fetchQuery awaits updated answers
+		await qc.invalidateQueries({
+			queryKey: quizDetailQueryOptions(source).queryKey,
+		});
+		const refreshed = await qc.fetchQuery(quizDetailQueryOptions(source));
+		expect(refreshed.attempt?.answers).toEqual({ "0": "TRUE" });
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+	});
 });

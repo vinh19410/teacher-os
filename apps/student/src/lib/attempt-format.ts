@@ -68,26 +68,13 @@ export function formatQuizClock(totalSeconds: number): string {
 	return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-/**
- * Độ lệch đồng hồ máy học viên so với server (`receivedAtMs - serverNowMs`).
- * Thiếu hoặc ISO không hợp lệ → 0 để fallback an toàn sang đồng hồ client.
- */
-export function computeQuizClockSkewMs(
-	serverNowIso: string | null | undefined,
-	receivedAtMs: number,
-): number {
-	if (!serverNowIso || !Number.isFinite(receivedAtMs)) return 0;
-	const serverMs = Date.parse(serverNowIso);
-	if (!Number.isFinite(serverMs)) return 0;
-	return receivedAtMs - serverMs;
-}
-
 let serverClockSkewMs = 0;
 
 /**
- * Ghi nhận độ lệch giờ máy học viên từ header `X-Server-Now` ngay lúc nhận
- * response HTTP — tách khỏi React Query `dataUpdatedAt` nên mutation cập nhật
- * cache (như `setQuizDetailMedia`) không làm trôi đồng hồ.
+ * Ghi nhận độ lệch giờ máy học viên (`receivedAtMs - serverNowMs`) từ header
+ * `X-Server-Now` ngay lúc nhận response HTTP — tách khỏi React Query
+ * `dataUpdatedAt` nên mutation cập nhật cache (như `setQuizDetailMedia`) không
+ * làm trôi đồng hồ.
  */
 export function syncServerClock(
 	serverNowIso: string | null | undefined,
