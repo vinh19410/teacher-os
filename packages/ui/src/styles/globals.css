@@ -79,6 +79,9 @@
 	--verdict-correct: #166534;
 	--verdict-wrong: #b91c1c;
 	--verdict-on: #ffffff;
+	/* Reading passage highlight & note underline: fg/bg >= 4.5:1 (AA), border >= 3.0:1 (1.4.11). */
+	--reading-highlight: oklch(0.93 0.11 95);
+	--reading-highlight-border: oklch(0.56 0.15 78);
 
 	/* Màu lớp (TOS-14, D2): 8 hue phân tách, hash class.id → --class-1..8.
 	   Dùng làm border-left/chấm (non-text ≥3:1 trên background); chữ trong
@@ -166,6 +169,8 @@
 	--verdict-correct: #4ade80;
 	--verdict-wrong: #f87171;
 	--verdict-on: oklch(0.145 0 0);
+	--reading-highlight: oklch(0.37 0.08 86);
+	--reading-highlight-border: oklch(0.78 0.14 86);
 
 	/* Màu lớp dark: cùng hue, sáng hơn để giữ ≥3:1 trên nền dark. */
 	--class-1: oklch(0.72 0.14 255);
@@ -252,6 +257,8 @@
 	--color-verdict-on: var(--verdict-on);
 	--color-verdict-correct-soft: var(--verdict-correct-soft);
 	--color-verdict-wrong-soft: var(--verdict-wrong-soft);
+	--color-reading-highlight: var(--reading-highlight);
+	--color-reading-highlight-border: var(--reading-highlight-border);
 
 	/* radius v2 — derive từ --radius; 2xl+ giữ pill cho chip/tag legacy
 	   (markup mới dùng rounded-full; dọn ở phase 12). */
@@ -308,6 +315,16 @@
 		color: inherit;
 		border-radius: 2px;
 		padding: 0 1px;
+	}
+	mark.reading-hl {
+		background: var(--reading-highlight);
+		color: var(--foreground);
+		border-radius: 2px;
+		box-decoration-break: clone;
+		-webkit-box-decoration-break: clone;
+	}
+	mark.reading-hl[data-has-note="true"] {
+		border-bottom: 2px solid var(--reading-highlight-border);
 	}
 }
 

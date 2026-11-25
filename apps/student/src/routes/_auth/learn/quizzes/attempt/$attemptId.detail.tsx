@@ -19,6 +19,7 @@ import { AttemptGradeCard } from "@/components/quiz/attempt-grade-card";
 import { AttemptReviewError } from "@/components/quiz/attempt-review-error";
 import { cn } from "@/lib/cn";
 import { isHttpError, studentQueryClient } from "@/lib/query-client";
+import { useReadingAnnotationsStorage } from "@/lib/reading-annotations-store";
 import {
 	attemptDetailQueryOptions,
 	type QuizTakeSource,
@@ -169,6 +170,11 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 		[attempt.questions],
 	);
 
+	const [readingAnnotations] = useReadingAnnotationsStorage(
+		quizQuery.data ? attempt.id : null,
+		quizQuery.data?.passage ?? "",
+	);
+
 	if (quizQuery.isPending || !quizQuery.data) {
 		return <Loader />;
 	}
@@ -268,6 +274,7 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 				<QuizReadingSplitLayout
 					passage={quizQuery.data.passage}
 					navigator={navigator}
+					annotations={{ mode: "readonly", items: readingAnnotations }}
 				>
 					<div className="mx-auto w-full max-w-[720px]">
 						<QuizPaper
