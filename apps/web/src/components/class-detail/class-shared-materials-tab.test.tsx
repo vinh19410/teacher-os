@@ -683,4 +683,322 @@ describe("ClassSharedMaterialsTab", () => {
 		);
 		await waitFor(() => expect(reauthMock).toHaveBeenCalledTimes(1));
 	});
+
+	it("uploads multiple valid files in one selection, shows progress, and lets teacher dismiss summary", async () => {
+		const currentItems: ClassMaterialView[] = [];
+		const resolvers = new Map<string, (res: Response) => void>();
+
+		renderTab({
+			handler: (method, url, init) => {
+				if (
+					method === "GET" &&
+					url.pathname === "/api/classes/cl-1/materials"
+				) {
+					return { status: 200, body: { items: [...currentItems] } };
+				}
+				if (
+					method === "PUT" &&
+					url.pathname === "/api/classes/cl-1/materials/files"
+				) {
+					const headers = (init?.headers ?? {}) as Record<string, string>;
+					const fileName = decodeURIComponent(headers["X-File-Name"] ?? "");
+					return new Promise<Response>((resolve) => {
+						resolvers.set(fileName, resolve);
+					});
+				}
+				return null;
+			},
+		});
+
+		await screen.findByTestId("class-shared-materials-empty");
+		const fileInput = screen.getByLabelText(
+			"Chọn file tải lên cho lớp học",
+		) as HTMLInputElement;
+		expect(fileInput.multiple).toBe(true);
+
+		const pdf1 = new File(["%PDF-1"], "de-cuong-1.pdf", {
+			type: "application/pdf",
+		});
+		const pdf2 = new File(["%PDF-2"], "de-cuong-2.pdf", {
+			type: "application/pdf",
+		});
+		fireEvent.change(fileInput, { target: { files: [pdf1, pdf2] } });
+
+		await waitFor(() => expect(resolvers.size).toBe(2));
+		const uploadingBtn = screen.getByRole("button", {
+			name: "Đang tải lên (0/2)…",
+		}) as HTMLButtonElement;
+		expect(uploadingBtn.disabled).toBe(true);
+		expect(uploadingBtn.getAttribute("aria-busy")).toBe("true");
+
+		const created1 = classMaterial({
+			id: "m-up-1",
+			title: "Đề cương 1",
+			originalName: "de-cuong-1.pdf",
+			position: 0,
+		});
+		currentItems.push(created1);
+		resolvers.get("de-cuong-1.pdf")?.(
+			new Response(JSON.stringify({ item: created1 }), {
+				status: 201,
+				headers: { "content-type": "application/json" },
+			}),
+		);
+		expect(
+			await screen.findByRole("button", { name: "Đang tải lên (1/2)…" }),
+		).toBeTruthy();
+
+		const created2 = classMaterial({
+			id: "m-up-2",
+			title: "Đề cương 2",
+			originalName: "de-cuong-2.pdf",
+			position: 1,
+		});
+		currentItems.push(created2);
+		resolvers.get("de-cuong-2.pdf")?.(
+			new Response(JSON.stringify({ item: created2 }), {
+				status: 201,
+				headers: { "content-type": "application/json" },
+			}),
+		);
+
+		await waitFor(() =>
+			expect(toastMock.success).toHaveBeenCalledWith(
+				"Đã tải lên 2 file vào tài liệu chung.",
+			),
+		);
+		const puts = writeCalls();
+		expect(puts).toHaveLength(2);
+		for (const [reqUrl, reqInit] of puts) {
+			expect(String(reqUrl)).toMatch(/\/api\/classes\/cl-1\/materials\/files$/);
+			expect((reqInit as RequestInit).method).toBe("PUT");
+		}
+
+		const queueList = screen.getByRole("list", {
+			name: "Danh sách file tải lên",
+		});
+		expect(within(queueList).getByText("de-cuong-1.pdf")).toBeTruthy();
+		expect(within(queueList).getByText("de-cuong-2.pdf")).toBeTruthy();
+		expect(screen.getByText("Đã tải xong 2/2 file.")).toBeTruthy();
+
+		const sharedList = await screen.findByRole("list", {
+			name: "Tài liệu chung của lớp",
+		});
+		expect(within(sharedList).getByText("Đề cương 1")).toBeTruthy();
+		expect(within(sharedList).getByText("Đề cương 2")).toBeTruthy();
+
+		const dismissBtn = screen.getByRole("button", {
+			name: "Ẩn tiến độ tải lên",
+		});
+		expect(dismissBtn.textContent).toBe("Ẩn");
+		fireEvent.click(dismissBtn);
+		expect(
+			screen.queryByRole("list", { name: "Danh sách file tải lên" }),
+		).toBeNull();
+	});
+
+	it("uploads only valid files in a mixed batch and reports unsupported files inline", async () => {
+		const currentItems: ClassMaterialView[] = [];
+		renderTab({
+			handler: (method, url, init) => {
+				if (
+					method === "GET" &&
+					url.pathname === "/api/classes/cl-1/materials"
+				) {
+					return { status: 200, body: { items: [...currentItems] } };
+				}
+				if (
+					method === "PUT" &&
+					url.pathname === "/api/classes/cl-1/materials/files"
+				) {
+					const headers = (init?.headers ?? {}) as Record<string, string>;
+					const fileName = decodeURIComponent(headers["X-File-Name"] ?? "");
+					const created = classMaterial({
+						id: "m-valid-1",
+						title: "Bài đọc tuần 1",
+						originalName: fileName,
+					});
+					currentItems.push(created);
+					return { status: 201, body: { item: created } };
+				}
+				return null;
+			},
+		});
+
+		await screen.findByTestId("class-shared-materials-empty");
+		const fileInput = screen.getByLabelText(
+			"Chọn file tải lên cho lớp học",
+		) as HTMLInputElement;
+
+		const validPdf = new File(["%PDF-1.4"], "bai-doc.pdf", {
+			type: "application/pdf",
+		});
+		const badHtml = new File(["<html>"], "khong-ho-tro.html", {
+			type: "text/html",
+		});
+		fireEvent.change(fileInput, { target: { files: [validPdf, badHtml] } });
+
+		await waitFor(() =>
+			expect(toastMock.success).toHaveBeenCalledWith(
+				"Đã tải lên 1 file vào tài liệu chung.",
+			),
+		);
+		const puts = writeCalls();
+		expect(puts).toHaveLength(1);
+		const [, firstInit] = puts[0] ?? [];
+		expect((firstInit as RequestInit | undefined)?.headers).toEqual({
+			"Content-Type": "application/pdf",
+			"X-File-Name": encodeURIComponent("bai-doc.pdf"),
+		});
+
+		const queueList = screen.getByRole("list", {
+			name: "Danh sách file tải lên",
+		});
+		expect(within(queueList).getByText("bai-doc.pdf")).toBeTruthy();
+		expect(within(queueList).getByText("khong-ho-tro.html")).toBeTruthy();
+		expect(within(queueList).getByText("Đã tải")).toBeTruthy();
+		expect(within(queueList).getByText("Không hợp lệ")).toBeTruthy();
+		expect(screen.getByRole("alert").textContent).toMatch(
+			/Định dạng chưa hỗ trợ/,
+		);
+		expect(await screen.findByText("Bài đọc tuần 1")).toBeTruthy();
+	});
+
+	it("retries only the failed file after a partial server failure", async () => {
+		const currentItems: ClassMaterialView[] = [];
+		const uploadedNames: string[] = [];
+		let shouldFailSecond = true;
+
+		renderTab({
+			handler: (method, url, init) => {
+				if (
+					method === "GET" &&
+					url.pathname === "/api/classes/cl-1/materials"
+				) {
+					return { status: 200, body: { items: [...currentItems] } };
+				}
+				if (
+					method === "PUT" &&
+					url.pathname === "/api/classes/cl-1/materials/files"
+				) {
+					const headers = (init?.headers ?? {}) as Record<string, string>;
+					const fileName = decodeURIComponent(headers["X-File-Name"] ?? "");
+					uploadedNames.push(fileName);
+					if (fileName === "file-loi.pdf" && shouldFailSecond) {
+						return { status: 500, body: {} };
+					}
+					const created = classMaterial({
+						id: `m-${uploadedNames.length}`,
+						title:
+							fileName === "file-ok.pdf"
+								? "Tài liệu thành công"
+								: "Tài liệu thử lại",
+						originalName: fileName,
+						position: currentItems.length,
+					});
+					currentItems.push(created);
+					return { status: 201, body: { item: created } };
+				}
+				return null;
+			},
+		});
+
+		await screen.findByTestId("class-shared-materials-empty");
+		const fileInput = screen.getByLabelText(
+			"Chọn file tải lên cho lớp học",
+		) as HTMLInputElement;
+
+		fireEvent.change(fileInput, {
+			target: {
+				files: [
+					new File(["%PDF-1"], "file-ok.pdf", { type: "application/pdf" }),
+					new File(["%PDF-2"], "file-loi.pdf", { type: "application/pdf" }),
+				],
+			},
+		});
+
+		await waitFor(() =>
+			expect(toastMock.success).toHaveBeenCalledWith(
+				"Đã tải lên 1 file vào tài liệu chung.",
+			),
+		);
+		expect(uploadedNames).toHaveLength(2);
+		expect(screen.getByRole("alert").textContent).toMatch(/Không lưu được/);
+
+		const retryBtn = screen.getByRole("button", { name: "Thử lại 1 file lỗi" });
+		shouldFailSecond = false;
+		toastMock.success.mockClear();
+		fireEvent.click(retryBtn);
+
+		await waitFor(() =>
+			expect(toastMock.success).toHaveBeenCalledWith(
+				"Đã tải lên 2 file vào tài liệu chung.",
+			),
+		);
+		expect(uploadedNames).toHaveLength(3);
+		expect(uploadedNames[2]).toBe("file-loi.pdf");
+		expect(screen.queryByRole("button", { name: /Thử lại/ })).toBeNull();
+		expect(screen.queryByRole("alert")).toBeNull();
+		expect(screen.getByText("Đã tải xong 2/2 file.")).toBeTruthy();
+
+		const sharedList = await screen.findByRole("list", {
+			name: "Tài liệu chung của lớp",
+		});
+		expect(within(sharedList).getByText("Tài liệu thành công")).toBeTruthy();
+		expect(within(sharedList).getByText("Tài liệu thử lại")).toBeTruthy();
+	});
+
+	it("calls reauth once and stops pending files on HTTP 401 during a multi-file batch", async () => {
+		const attempted: string[] = [];
+		renderTab({
+			handler: (method, url, init) => {
+				if (
+					method === "GET" &&
+					url.pathname === "/api/classes/cl-1/materials"
+				) {
+					return { status: 200, body: { items: [] } };
+				}
+				if (
+					method === "PUT" &&
+					url.pathname === "/api/classes/cl-1/materials/files"
+				) {
+					const headers = (init?.headers ?? {}) as Record<string, string>;
+					attempted.push(decodeURIComponent(headers["X-File-Name"] ?? ""));
+					return { status: 401, body: { error: "unauthorized" } };
+				}
+				return null;
+			},
+		});
+
+		await screen.findByTestId("class-shared-materials-empty");
+		const fileInput = screen.getByLabelText(
+			"Chọn file tải lên cho lớp học",
+		) as HTMLInputElement;
+
+		const files = Array.from(
+			{ length: 5 },
+			(_, idx) =>
+				new File([`%PDF-${idx + 1}`], `doc-${idx + 1}.pdf`, {
+					type: "application/pdf",
+				}),
+		);
+		fireEvent.change(fileInput, { target: { files } });
+
+		await waitFor(() => {
+			expect(reauthMock).toHaveBeenCalledTimes(1);
+			const btn = screen.getByRole("button", { name: "Tải file lên" });
+			expect(btn.getAttribute("aria-busy")).toBe("false");
+		});
+
+		expect(attempted.length).toBeGreaterThanOrEqual(1);
+		expect(attempted.length).toBeLessThan(files.length);
+		expect(attempted).not.toContain("doc-4.pdf");
+		expect(attempted).not.toContain("doc-5.pdf");
+		expect(toastMock.success).not.toHaveBeenCalled();
+
+		const queueList = screen.getByRole("list", {
+			name: "Danh sách file tải lên",
+		});
+		expect(within(queueList).getAllByText("Chờ tải").length).toBeGreaterThan(0);
+	});
 });
