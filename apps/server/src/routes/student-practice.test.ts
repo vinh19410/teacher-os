@@ -10,6 +10,7 @@ import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test } from "vitest";
 import { buildApp, type Db, type ServerApp } from "../app";
+import type { MediaStore } from "../lib/media-store";
 import type { SessionUser } from "../session";
 
 const CORS_ORIGINS = ["http://localhost:8003"];
@@ -2432,5 +2433,234 @@ describe("student practice multi-part & overlong answerSet isolation", () => {
 			1: "A",
 		});
 		expect(swapped.submitted.correctCount).toBe(0);
+	});
+});
+
+describe("student practice — historical review access on demoted draft tests (#887)", () => {
+	test("allows /quiz and /audio for a student with a submitted attempt on a draft test, while blocking POST /attempts and non-submitters with 404", async () => {
+		const client = createClient({ url: "file::memory:" });
+		const db = drizzle(client, { schema });
+		await migrate(db, { migrationsFolder: MIGRATIONS_DIR });
+		const libsql = db as unknown as Db;
+
+		await libsql.insert(schema.organization).values({
+			id: "org-hist",
+			name: "History Org",
+		});
+		await libsql.insert(schema.student).values([
+			{
+				id: "stu-owner",
+				orgId: "org-hist",
+				name: "Submitted Student",
+				email: "owner@test.local",
+			},
+			{
+				id: "stu-other",
+				orgId: "org-hist",
+				name: "Other Student",
+				email: "other@test.local",
+			},
+			{
+				id: "stu-inprog",
+				orgId: "org-hist",
+				name: "In Progress Student",
+				email: "inprog@test.local",
+			},
+		]);
+
+		const audioKey = "library/demoted-bikes/s4/audio.mp3";
+		await libsql.insert(schema.assignmentPrompt).values({
+			id: "prompt-demoted",
+			orgId: "org-hist",
+			task: "task2",
+			genre: "",
+			skill: "listening",
+			part: "s4",
+			type: "tablecomp",
+			title: "Section 4: Talking about the history of bikes",
+			prompt: "",
+			questions: JSON.stringify(READING_QUESTIONS_P1),
+			audioKey,
+			audioName: "bikes.mp3",
+			status: "ready",
+		});
+		await libsql.insert(schema.assignmentTest).values({
+			id: "test-demoted-draft",
+			orgId: "org-hist",
+			title: "Talking about the history of bikes",
+			skill: "listening",
+			status: "draft",
+		});
+		await libsql.insert(schema.assignmentTestPart).values({
+			id: "atp-demoted",
+			testId: "test-demoted-draft",
+			promptId: "prompt-demoted",
+			part: "s4",
+			position: 0,
+		});
+		await libsql.insert(schema.quizAttempt).values([
+			{
+				id: "att-submitted",
+				orgId: "org-hist",
+				assignmentId: null,
+				studentId: "stu-owner",
+				testId: "test-demoted-draft",
+				mode: "practice",
+				status: "submitted",
+				questionsSnapshot: JSON.stringify(READING_QUESTIONS_P1),
+				correctCount: 1,
+				submittedAt: new Date(1700000000000),
+			},
+			{
+				id: "att-owner-stale-in-progress",
+				orgId: "org-hist",
+				assignmentId: null,
+				studentId: "stu-owner",
+				testId: "test-demoted-draft",
+				mode: "practice",
+				status: "in_progress",
+				questionsSnapshot: "corrupt-snapshot-must-not-be-loaded-for-draft",
+			},
+			{
+				id: "att-in-progress-only",
+				orgId: "org-hist",
+				assignmentId: null,
+				studentId: "stu-inprog",
+				testId: "test-demoted-draft",
+				mode: "practice",
+				status: "in_progress",
+				questionsSnapshot: JSON.stringify(READING_QUESTIONS_P1),
+			},
+		]);
+
+		const sampleMp3 = new Uint8Array([0x49, 0x44, 0x33, 0x03, 0x00, 0x00]);
+		const store: MediaStore = {
+			async put() {},
+			async get(key) {
+				if (key === audioKey) {
+					return {
+						body: new Response(sampleMp3).body as ReadableStream,
+						contentType: "audio/mpeg",
+						size: sampleMp3.byteLength,
+						etag: '"demoted-audio"',
+					};
+				}
+				return null;
+			},
+			async delete() {},
+		};
+		const app = buildApp({
+			getDb: () => libsql,
+			corsOrigin: CORS_ORIGINS,
+			getLibraryAudioStore: () => store,
+			getSessionUser: async (headers: Headers): Promise<SessionUser | null> => {
+				const tag = headers.get("x-test-user");
+				if (tag === "owner") {
+					return {
+						userId: "u-owner",
+						userName: "Owner",
+						email: "owner@test.local",
+						emailVerified: true,
+						role: "student",
+					};
+				}
+				if (tag === "other") {
+					return {
+						userId: "u-other",
+						userName: "Other",
+						email: "other@test.local",
+						emailVerified: true,
+						role: "student",
+					};
+				}
+				if (tag === "inprog") {
+					return {
+						userId: "u-inprog",
+						userName: "InProg",
+						email: "inprog@test.local",
+						emailVerified: true,
+						role: "student",
+					};
+				}
+				return null;
+			},
+			authHandler: () => new Response("ok"),
+		});
+
+		// Owner with submitted + stale in_progress attempts: /quiz returns 200 with attempt=null (cannot resume draft or break detail review), /audio returns 200, POST /attempts returns 404.
+		const ownerHeaders = {
+			"x-test-user": "owner",
+			"x-student-org-id": "org-hist",
+		};
+		const ownerQuiz = await app.request(
+			"/api/student/practice/test-demoted-draft/quiz",
+			{ headers: ownerHeaders },
+		);
+		expect(ownerQuiz.status).toBe(200);
+		const ownerQuizBody = (await ownerQuiz.json()) as {
+			attempt: unknown;
+			questions: unknown[];
+		};
+		expect(ownerQuizBody.attempt).toBeNull();
+		expect(ownerQuizBody.questions.length).toBeGreaterThan(0);
+		const ownerAudio = await app.request(
+			"/api/student/practice/test-demoted-draft/audio",
+			{ headers: ownerHeaders },
+		);
+		expect(ownerAudio.status).toBe(200);
+		const ownerRetake = await app.request(
+			"/api/student/practice/test-demoted-draft/attempts",
+			{
+				method: "POST",
+				headers: {
+					...ownerHeaders,
+					Origin: STUDENT_ORIGIN,
+					"Content-Type": "application/json",
+				},
+				body: "{}",
+			},
+		);
+		expect(ownerRetake.status).toBe(404);
+
+		// Other student (no submitted attempt) and in-progress-only student: 404 on /quiz, /audio, and POST /attempts.
+		for (const userTag of ["other", "inprog"] as const) {
+			const headers = {
+				"x-test-user": userTag,
+				"x-student-org-id": "org-hist",
+			};
+			expect(
+				(
+					await app.request("/api/student/practice/test-demoted-draft/quiz", {
+						headers,
+					})
+				).status,
+				`${userTag} /quiz`,
+			).toBe(404);
+			expect(
+				(
+					await app.request("/api/student/practice/test-demoted-draft/audio", {
+						headers,
+					})
+				).status,
+				`${userTag} /audio`,
+			).toBe(404);
+			expect(
+				(
+					await app.request(
+						"/api/student/practice/test-demoted-draft/attempts",
+						{
+							method: "POST",
+							headers: {
+								...headers,
+								Origin: STUDENT_ORIGIN,
+								"Content-Type": "application/json",
+							},
+							body: "{}",
+						},
+					)
+				).status,
+				`${userTag} POST /attempts`,
+			).toBe(404);
+		}
 	});
 });
