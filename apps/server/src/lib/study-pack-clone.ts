@@ -71,6 +71,7 @@ export type MaterializePromptsResult =
 	| {
 			ok: true;
 			promptIdBySourceKey: Map<string, string>;
+			promptPartBySourceKey: Map<string, string>;
 			metadataByKey: Map<string, ResolvedStudyPackItemMeta>;
 			items: Array<
 				ResolvedStudyPackItemMeta & {
@@ -693,12 +694,15 @@ export async function materializePrompts(
 	if (!validated.ok) return validated;
 
 	const promptIdBySourceKey = new Map<string, string>();
+	const promptPartBySourceKey = new Map<string, string>();
 	for (const item of items) {
 		if (item.sourceKind === "org_prompt") {
-			promptIdBySourceKey.set(
-				studyPackSourceKey("org_prompt", item.sourceId),
-				item.sourceId,
-			);
+			const key = studyPackSourceKey("org_prompt", item.sourceId);
+			promptIdBySourceKey.set(key, item.sourceId);
+			const meta = validated.metadataByKey.get(key);
+			if (meta) {
+				promptPartBySourceKey.set(key, meta.part);
+			}
 		}
 	}
 
@@ -824,6 +828,7 @@ export async function materializePrompts(
 				.select({
 					id: assignmentPrompt.id,
 					libraryRef: assignmentPrompt.libraryRef,
+					part: assignmentPrompt.part,
 				})
 				.from(assignmentPrompt)
 				.where(
@@ -835,6 +840,7 @@ export async function materializePrompts(
 			for (const row of persisted) {
 				if (row.libraryRef) {
 					promptIdBySourceKey.set(row.libraryRef, row.id);
+					promptPartBySourceKey.set(row.libraryRef, row.part);
 				}
 			}
 		}
@@ -863,6 +869,7 @@ export async function materializePrompts(
 	return {
 		ok: true,
 		promptIdBySourceKey,
+		promptPartBySourceKey,
 		metadataByKey: validated.metadataByKey,
 		items: materializedItems,
 	};
