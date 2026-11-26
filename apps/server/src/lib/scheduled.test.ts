@@ -6,6 +6,7 @@ import {
 	type runDailyDeadlineReminderCron,
 	ZOOM_RECORDING_SYNC_CRON,
 } from "./notifications/daily-deadline-reminder";
+import type { RecordingStore } from "./recording-store";
 import {
 	dispatchScheduledCron,
 	isDailyDeadlineReminderWindow,
@@ -14,16 +15,21 @@ import type { runRecordingSyncCron } from "./zoom/session-zoom-service";
 
 const fakeDb = {} as Db;
 const fakeZoom = { accountId: "acc", clientId: "cid", clientSecret: "sec" };
+const emptySyncResult = {
+	checked: 0,
+	updated: 0,
+	failed: 0,
+	expired: 0,
+	trashed: 0,
+};
 
 describe("dispatchScheduledCron", () => {
 	test("routes daily deadline reminder cron exclusively to runDailyReminder with resolved mailer and scheduledTime", async () => {
 		const mailer: Mailer = { send: vi.fn(async () => {}) };
 		const getMailer = vi.fn(() => mailer);
-		const runZoomSync = vi.fn<typeof runRecordingSyncCron>(async () => ({
-			checked: 0,
-			updated: 0,
-			failed: 0,
-		}));
+		const runZoomSync = vi.fn<typeof runRecordingSyncCron>(
+			async () => emptySyncResult,
+		);
 		const runDailyReminder = vi.fn<typeof runDailyDeadlineReminderCron>(
 			async () => ({
 				dateISO: "2026-05-15",
@@ -100,10 +106,13 @@ describe("dispatchScheduledCron", () => {
 
 	test("routes Zoom sync cron exclusively to runZoomSync without touching mailer or daily reminder", async () => {
 		const getMailer = vi.fn(() => undefined);
+		const fakeRecordingStore = {} as RecordingStore;
 		const runZoomSync = vi.fn<typeof runRecordingSyncCron>(async () => ({
 			checked: 2,
 			updated: 1,
 			failed: 0,
+			expired: 1,
+			trashed: 1,
 		}));
 		const runDailyReminder = vi.fn<typeof runDailyDeadlineReminderCron>(
 			async () => ({
@@ -122,6 +131,7 @@ describe("dispatchScheduledCron", () => {
 			{
 				db: fakeDb,
 				zoom: fakeZoom,
+				getRecordingStore: () => fakeRecordingStore,
 				getMailer,
 				now: nowFn,
 				runZoomSync,
@@ -133,6 +143,7 @@ describe("dispatchScheduledCron", () => {
 		expect(runZoomSync).toHaveBeenCalledWith({
 			db: fakeDb,
 			zoom: fakeZoom,
+			recordingStore: fakeRecordingStore,
 			now: nowFn,
 		});
 		expect(runDailyReminder).not.toHaveBeenCalled();
@@ -141,11 +152,9 @@ describe("dispatchScheduledCron", () => {
 
 	test("logs a warning and skips execution for unrecognized cron expressions", async () => {
 		const getMailer = vi.fn(() => undefined);
-		const runZoomSync = vi.fn<typeof runRecordingSyncCron>(async () => ({
-			checked: 0,
-			updated: 0,
-			failed: 0,
-		}));
+		const runZoomSync = vi.fn<typeof runRecordingSyncCron>(
+			async () => emptySyncResult,
+		);
 		const runDailyReminder = vi.fn<typeof runDailyDeadlineReminderCron>(
 			async () => ({
 				dateISO: "2026-05-15",
@@ -184,11 +193,9 @@ describe("dispatchScheduledCron", () => {
 	test("multiplexes daily deadline reminder on the 23:00 UTC (06:00 VN) tick of */10 * * * *", async () => {
 		const mailer: Mailer = { send: vi.fn(async () => {}) };
 		const getMailer = vi.fn(() => mailer);
-		const runZoomSync = vi.fn<typeof runRecordingSyncCron>(async () => ({
-			checked: 0,
-			updated: 0,
-			failed: 0,
-		}));
+		const runZoomSync = vi.fn<typeof runRecordingSyncCron>(
+			async () => emptySyncResult,
+		);
 		const runDailyReminder = vi.fn<typeof runDailyDeadlineReminderCron>(
 			async () => ({
 				dateISO: "2026-05-15",

@@ -2,6 +2,7 @@ import {
 	type ClassStatus,
 	type EnrollmentStatus,
 	RECORDING_STATUSES,
+	type RecordingSource,
 	type RecordingStatus,
 	type StudentAssignment,
 	type StudentClass,
@@ -330,14 +331,18 @@ export interface ClassSessionMeetingProjection {
 	recordingUrl: string;
 	recordingPassword: string | null;
 	recordingStatus: string;
+	recordingStorageKey?: string | null;
+	recordingExpiresAt?: Date | null;
 }
 
 const VALID_RECORDING_STATUSES = new Set<string>(RECORDING_STATUSES);
 
 /**
  * Gắn `hasZoom` (kiểm tra `lesson.zoom`, fallback `class_session_meeting.joinUrl` —
- * không bao giờ trả raw `joinUrl` trên payload danh sách/chi tiết) và
- * `recordingUrl` / `recordingPassword` / `recordingStatus` vào item buổi học của học viên.
+ * không bao giờ trả raw `joinUrl` trên payload danh sách/chi tiết) và metadata
+ * recording (nguồn R2 hoặc link ngoài, hạn 90 ngày, trạng thái hết hạn) vào item
+ * buổi học của học viên — tuyệt đối không lộ `recordingStorageKey`,
+ * `recordingError` hay `recordingZoomTrashStatus`.
  * Buổi đã `cancelled` hoặc `holiday`, hoặc buổi legacy chưa gắn ngày (`date == null`),
  * không đánh dấu `hasZoom`.
  */
@@ -353,28 +358,50 @@ export function toStudentClassLessonWithMeeting(
 		zoom?: string;
 	},
 	meeting?: ClassSessionMeetingProjection,
+	now: Date = new Date(),
 ): StudentClassLesson {
 	const isInactive = row.status === "cancelled" || row.status === "holiday";
 	const rawJoinUrl = !isInactive
 		? row.zoom?.trim() || meeting?.joinUrl?.trim() || ""
 		: "";
 	const hasZoom = row.date != null && isValidZoomJoinUrl(rawJoinUrl);
-	const rawRecordingUrl = !isInactive
-		? meeting?.recordingUrl?.trim() || ""
-		: "";
-	const recordingUrl =
-		rawRecordingUrl && isSafeMaterialUrl(rawRecordingUrl)
-			? rawRecordingUrl
-			: "";
-	const recordingPassword =
-		recordingUrl && meeting?.recordingPassword ? meeting.recordingPassword : "";
-	const rawRecStatus = meeting?.recordingStatus;
+
+	const isExpiredKey = Boolean(
+		meeting?.recordingStorageKey &&
+			meeting.recordingExpiresAt &&
+			meeting.recordingExpiresAt.getTime() <= now.getTime(),
+	);
+	const hasRecordingVideo =
+		!isInactive && Boolean(meeting?.recordingStorageKey) && !isExpiredKey;
+	const rawRecStatus = isExpiredKey ? "expired" : meeting?.recordingStatus;
 	const recordingStatus =
 		!isInactive &&
 		rawRecStatus &&
 		rawRecStatus !== "none" &&
 		VALID_RECORDING_STATUSES.has(rawRecStatus)
 			? (rawRecStatus as RecordingStatus)
+			: undefined;
+	const isExpired = recordingStatus === "expired" || isExpiredKey;
+	const rawRecordingUrl =
+		!isInactive && !hasRecordingVideo && !isExpired
+			? meeting?.recordingUrl?.trim() || ""
+			: "";
+	const recordingUrl =
+		rawRecordingUrl && isSafeMaterialUrl(rawRecordingUrl)
+			? rawRecordingUrl
+			: "";
+	const recordingPassword =
+		recordingUrl && meeting?.recordingPassword ? meeting.recordingPassword : "";
+	const recordingSource: RecordingSource | undefined = hasRecordingVideo
+		? "r2"
+		: recordingUrl
+			? "external"
+			: undefined;
+	const recordingExpiresAt =
+		!isInactive &&
+		(hasRecordingVideo || recordingStatus === "expired") &&
+		meeting?.recordingExpiresAt
+			? meeting.recordingExpiresAt.toISOString()
 			: undefined;
 
 	return {
@@ -389,5 +416,8 @@ export function toStudentClassLessonWithMeeting(
 		...(recordingUrl ? { recordingUrl } : {}),
 		...(recordingPassword ? { recordingPassword } : {}),
 		...(recordingStatus ? { recordingStatus } : {}),
+		...(recordingSource ? { recordingSource } : {}),
+		...(recordingExpiresAt ? { recordingExpiresAt } : {}),
+		...(hasRecordingVideo ? { hasRecordingVideo: true } : {}),
 	};
 }

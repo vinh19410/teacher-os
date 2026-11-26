@@ -1,17 +1,23 @@
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
-import { ZOOM_ERROR_CODES } from "@teacher-os/api/contracts";
+import {
+	RECORDING_ERROR_CODES,
+	ZOOM_ERROR_CODES,
+} from "@teacher-os/api/contracts";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import * as schema from "@teacher-os/db/schema/index";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeEach, describe, expect, test } from "vitest";
-import { buildApp, type Db, type ServerApp } from "../app";
+import { buildApp, type Db, type RecordingStore, type ServerApp } from "../app";
+import { INLINE_MEDIA_CSP } from "../lib/material-file-response";
 import { createFakeZoom } from "../lib/zoom/fake-zoom-client";
 import {
 	ensureSessionMeeting,
+	runRecordingExpiryCron,
 	runRecordingSyncCron,
+	syncRecordingForOccurrence,
 } from "../lib/zoom/session-zoom-service";
 import { type ZoomClient, ZoomIntegrationError } from "../lib/zoom/zoom-client";
 
@@ -76,7 +82,84 @@ beforeEach(async () => {
 	});
 });
 
-function createApp(zoomClient?: ZoomClient) {
+interface MemoryRecordingStore extends RecordingStore {
+	objects: Map<string, { bytes: Uint8Array; contentType: string }>;
+	deletedKeys: string[];
+	setDeleteError(message: string | null): void;
+}
+
+function createMemoryRecordingStore(): MemoryRecordingStore {
+	const objects = new Map<string, { bytes: Uint8Array; contentType: string }>();
+	const deletedKeys: string[] = [];
+	let deleteError: string | null = null;
+
+	return {
+		objects,
+		deletedKeys,
+		setDeleteError(message) {
+			deleteError = message;
+		},
+		async putStream(key, body, { contentType }) {
+			const buf = new Uint8Array(await new Response(body).arrayBuffer());
+			if (buf.byteLength === 0) {
+				throw new Error("File recording rỗng (0 byte).");
+			}
+			objects.set(key, { bytes: buf, contentType });
+			return { sizeBytes: buf.byteLength };
+		},
+		async head(key) {
+			const item = objects.get(key);
+			if (!item) return null;
+			return {
+				contentType: item.contentType,
+				size: item.bytes.byteLength,
+				etag: `"${item.bytes.byteLength}"`,
+			};
+		},
+		async get(key, range) {
+			const item = objects.get(key);
+			if (!item) return null;
+			const clamped =
+				range && range.offset >= 0 && range.offset < item.bytes.byteLength
+					? {
+							offset: range.offset,
+							length: Math.min(
+								range.length,
+								item.bytes.byteLength - range.offset,
+							),
+						}
+					: undefined;
+			const slice = clamped
+				? item.bytes.subarray(clamped.offset, clamped.offset + clamped.length)
+				: item.bytes;
+			const body = new ReadableStream<Uint8Array>({
+				start(controller) {
+					controller.enqueue(new Uint8Array(slice));
+					controller.close();
+				},
+			});
+			return {
+				body,
+				contentType: item.contentType,
+				size: item.bytes.byteLength,
+				etag: `"${item.bytes.byteLength}"`,
+				...(clamped ? { range: clamped } : {}),
+			};
+		},
+		async delete(key) {
+			if (deleteError) {
+				throw new Error(deleteError);
+			}
+			deletedKeys.push(key);
+			objects.delete(key);
+		},
+	};
+}
+
+function createApp(
+	zoomClient?: ZoomClient,
+	opts?: { recordingStore?: RecordingStore; now?: () => Date },
+) {
 	return buildApp({
 		getDb: () => db,
 		corsOrigin: [CORS_ORIGIN, STUDENT_ORIGIN],
@@ -91,6 +174,15 @@ function createApp(zoomClient?: ZoomClient) {
 					role: "teacher",
 				};
 			}
+			if (k === "teacher-2") {
+				return {
+					userId: "t-2",
+					userName: "Thầy Nam",
+					email: "teacher2@workspace.edu.vn",
+					emailVerified: true,
+					role: "teacher",
+				};
+			}
 			if (k === "student-1") {
 				return {
 					userId: "u-s1",
@@ -100,10 +192,23 @@ function createApp(zoomClient?: ZoomClient) {
 					role: "student",
 				};
 			}
+			if (k === "student-2") {
+				return {
+					userId: "u-s2",
+					userName: "Bảo Châu",
+					email: "baochau@example.com",
+					emailVerified: true,
+					role: "student",
+				};
+			}
 			return null;
 		},
 		authHandler: async () => new Response(null, { status: 404 }),
 		...(zoomClient ? { getZoomClient: () => zoomClient } : {}),
+		...(opts?.recordingStore
+			? { getRecordingStore: () => opts.recordingStore }
+			: {}),
+		...(opts?.now ? { now: opts.now } : {}),
 	});
 }
 
@@ -190,6 +295,8 @@ describe("Zoom chưa cấu hình", () => {
 			checked: 0,
 			updated: 0,
 			failed: 0,
+			expired: 0,
+			trashed: 0,
 		});
 	});
 });
@@ -647,9 +754,10 @@ describe("Đồng bộ Zoom khi sửa, dời và huỷ buổi", () => {
 });
 
 describe("Recording và cron", () => {
-	test("đồng bộ tay: pending khi chưa sẵn sàng, ready kèm share URL và mật khẩu", async () => {
+	test("đồng bộ tay với R2: pending khi chưa sẵn sàng, reup lên R2 và đưa bản gốc Zoom vào Trash khi sẵn sàng", async () => {
 		const fake = createFakeZoom();
-		const app = createApp(fake.client);
+		const store = createMemoryRecordingStore();
+		const app = createApp(fake.client, { recordingStore: store });
 		const classId = await createManualOnlineClass(app, "Recording Zoom");
 		const date = futureDate(5);
 		await addManualSession(app, classId, date, "");
@@ -663,7 +771,10 @@ describe("Recording và cron", () => {
 			body: "{}",
 		});
 		expect(pending.status).toBe(200);
-		expect(await pending.json()).toMatchObject({ status: "pending" });
+		expect(await pending.json()).toMatchObject({
+			status: "pending",
+			hasRecordingVideo: false,
+		});
 
 		fake.setRecordingReady(true);
 		const ready = await app.request(syncPath, {
@@ -674,22 +785,193 @@ describe("Recording và cron", () => {
 		expect(ready.status).toBe(200);
 		expect(await ready.json()).toMatchObject({
 			status: "ready",
-			recordingUrl: `https://zoom.us/rec/share/fake-${meeting?.zoomMeetingId}`,
-			recordingPassword: "rec123",
+			recordingUrl: "",
+			recordingPassword: null,
+			recordingSource: "r2",
+			hasRecordingVideo: true,
+			recordingZoomTrashStatus: "trashed",
 		});
+
 		const row = await meetingRow(classId, date);
 		expect(row?.recordingStatus).toBe("ready");
-		expect(row?.recordingPassword).toBe("rec123");
+		expect(row?.recordingUrl).toBe("");
+		expect(row?.recordingPassword).toBeNull();
+		expect(row?.recordingStorageKey).toMatch(
+			new RegExp(`^org-1/${classId}/${date}/.+\\.mp4$`),
+		);
+		expect(row?.recordingSizeBytes).toBeGreaterThan(0);
+		expect(row?.recordingExpiresAt).toBeInstanceOf(Date);
+		expect(row?.recordingZoomTrashStatus).toBe("trashed");
+		expect(store.objects.size).toBe(1);
+		expect(fake.calls).toContainEqual({
+			method: "trash",
+			meetingId: meeting?.zoomMeetingId,
+		});
 	});
 
-	test("cron chỉ quét buổi trong cửa sổ ngày và gán recording khi sẵn sàng", async () => {
+	test("thiếu recordingStore hoặc lỗi tải từ Zoom: giữ fallback link Zoom và tuyệt đối không gọi Trash", async () => {
+		const fakeNoStore = createFakeZoom();
+		fakeNoStore.setRecordingReady(true);
+		const appNoStore = createApp(fakeNoStore.client);
+		const classId = await createManualOnlineClass(appNoStore, "Fallback Zoom");
+		const date1 = futureDate(5);
+		await addManualSession(appNoStore, classId, date1, "");
+		const m1 = await meetingRow(classId, date1);
+
+		const res1 = await appNoStore.request(
+			`/api/classes/${classId}/sessions/${date1}/recording/sync`,
+			{ method: "POST", headers: TEACHER_HEADERS, body: "{}" },
+		);
+		expect(res1.status).toBe(200);
+		expect(await res1.json()).toMatchObject({
+			status: "failed",
+			recordingUrl: `https://zoom.us/rec/share/fake-${m1?.zoomMeetingId}`,
+			recordingPassword: "rec123",
+			recordingSource: "external",
+			hasRecordingVideo: false,
+			recordingZoomTrashStatus: "none",
+		});
+		expect(fakeNoStore.calls.filter((c) => c.method === "trash")).toHaveLength(
+			0,
+		);
+
+		const fakeErr = createFakeZoom();
+		fakeErr.setRecordingReady(true);
+		fakeErr.setDownloadError("Zoom download 502");
+		const store = createMemoryRecordingStore();
+		const appErr = createApp(fakeErr.client, { recordingStore: store });
+		const date2 = futureDate(6);
+		await addManualSession(appErr, classId, date2, "");
+		const m2 = await meetingRow(classId, date2);
+
+		const res2 = await appErr.request(
+			`/api/classes/${classId}/sessions/${date2}/recording/sync`,
+			{ method: "POST", headers: TEACHER_HEADERS, body: "{}" },
+		);
+		expect(res2.status).toBe(200);
+		expect(await res2.json()).toMatchObject({
+			status: "failed",
+			recordingUrl: `https://zoom.us/rec/share/fake-${m2?.zoomMeetingId}`,
+			recordingPassword: "rec123",
+			recordingSource: "external",
+			hasRecordingVideo: false,
+			recordingZoomTrashStatus: "none",
+			message: "Zoom download 502",
+		});
+		expect(store.objects.size).toBe(0);
+		expect(fakeErr.calls.filter((c) => c.method === "trash")).toHaveLength(0);
+	});
+
+	test("lỗi Zoom Trash không làm hỏng recording R2 và cron/sync sau thử lại thành công", async () => {
 		const fake = createFakeZoom();
 		fake.setRecordingReady(true);
-		const app = createApp(fake.client);
+		fake.setTrashError("Missing recording:write:admin scope");
+		const store = createMemoryRecordingStore();
+		const t0 = new Date("2026-11-18T05:00:00Z");
+		const app = createApp(fake.client, {
+			recordingStore: store,
+			now: () => t0,
+		});
+		const classId = await createManualOnlineClass(app, "Trash Retry");
+		const date = "2026-11-18";
+		await addManualSession(app, classId, date, "", "10:00", 60);
+
+		const first = await app.request(
+			`/api/classes/${classId}/sessions/${date}/recording/sync`,
+			{ method: "POST", headers: TEACHER_HEADERS, body: "{}" },
+		);
+		expect(first.status).toBe(200);
+		expect(await first.json()).toMatchObject({
+			status: "ready",
+			recordingSource: "r2",
+			hasRecordingVideo: true,
+			recordingZoomTrashStatus: "failed",
+		});
+		const afterFail = await meetingRow(classId, date);
+		expect(afterFail?.recordingStatus).toBe("ready");
+		expect(afterFail?.recordingError).toBeNull();
+		expect(afterFail?.recordingZoomTrashStatus).toBe("failed");
+
+		// Sau 30 phút (chưa hết cooldown 1 giờ) cron không retry trash.
+		fake.setTrashError(null);
+		const tooSoon = await runRecordingSyncCron({
+			db,
+			getZoomClient: () => fake.client,
+			recordingStore: store,
+			now: () => new Date("2026-11-18T05:30:00Z"),
+		});
+		expect(tooSoon.trashed).toBe(0);
+
+		// Sau 2 giờ cron retry trash thành công.
+		const retried = await runRecordingSyncCron({
+			db,
+			getZoomClient: () => fake.client,
+			recordingStore: store,
+			now: () => new Date("2026-11-18T07:00:00Z"),
+		});
+		expect(retried.trashed).toBe(1);
+		expect((await meetingRow(classId, date))?.recordingZoomTrashStatus).toBe(
+			"trashed",
+		);
+	});
+
+	test("hai lệnh đồng bộ recording đồng thời: lượt thua race xoá bản R2 dư và chỉ giữ 1 object", async () => {
+		const fake = createFakeZoom();
+		fake.setRecordingReady(true);
+		const store = createMemoryRecordingStore();
+		const app = createApp(fake.client, { recordingStore: store });
+		const classId = await createManualOnlineClass(app, "Race Sync");
+		const date = futureDate(5);
+		await addManualSession(app, classId, date, "");
+
+		let arrived = 0;
+		let release: (() => void) | null = null;
+		const barrier = new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		const raceClient: ZoomClient = {
+			...fake.client,
+			async downloadRecordingFile(url) {
+				arrived += 1;
+				if (arrived === 2) {
+					release?.();
+				} else {
+					await barrier;
+				}
+				return fake.client.downloadRecordingFile(url);
+			},
+		};
+
+		const [r1, r2] = await Promise.all([
+			syncRecordingForOccurrence(
+				{ db, getZoomClient: () => raceClient, recordingStore: store },
+				{ orgId: "org-1", classId, dateISO: date },
+			),
+			syncRecordingForOccurrence(
+				{ db, getZoomClient: () => raceClient, recordingStore: store },
+				{ orgId: "org-1", classId, dateISO: date },
+			),
+		]);
+
+		expect(r1.status).toBe("ready");
+		expect(r2.status).toBe("ready");
+		expect(r1.hasRecordingVideo).toBe(true);
+		expect(r2.hasRecordingVideo).toBe(true);
+		expect(store.objects.size).toBe(1);
+		expect(store.deletedKeys).toHaveLength(1);
+		expect(fake.calls.filter((c) => c.method === "trash")).toHaveLength(1);
+	});
+
+	test("cron chỉ quét buổi trong cửa sổ ngày, giới hạn tối đa 2 reup/tick và không tự backfill dòng legacy ready", async () => {
+		const fake = createFakeZoom();
+		fake.setRecordingReady(true);
+		const store = createMemoryRecordingStore();
+		const app = createApp(fake.client, { recordingStore: store });
 		const classId = await createManualOnlineClass(app, "Window Class");
 
 		for (const date of [
 			"2026-11-08",
+			"2026-11-16",
 			"2026-11-17",
 			"2026-11-18",
 			"2026-11-28",
@@ -713,18 +995,90 @@ describe("Recording và cron", () => {
 				recordingStatus: "pending",
 			});
 		}
+		// Dòng legacy đã có link Zoom cũ (`ready`, không có `recordingStorageKey`) — cron KHÔNG được tự backfill.
+		await addManualSession(
+			app,
+			classId,
+			"2026-11-15",
+			"https://example.com/2026-11-15",
+			"10:00",
+			60,
+		);
+		await db.insert(schema.classSessionMeeting).values({
+			id: "m-legacy",
+			orgId: "org-1",
+			classId,
+			date: "2026-11-15",
+			joinUrl: `${ZOOM_JOIN_PREFIX}20261115`,
+			zoomMeetingId: "20261115",
+			recordingUrl: "https://zoom.us/rec/share/legacy",
+			recordingStatus: "ready",
+		});
 
-		const res = await runRecordingSyncCron({
+		// Tick 1: có 3 buổi đến hạn (16, 17, 18) nhưng giới hạn tối đa 2 reup/tick, ưu tiên mới nhất (18, 17).
+		const tick1 = await runRecordingSyncCron({
 			db,
 			getZoomClient: () => fake.client,
+			recordingStore: store,
 			now: () => new Date("2026-11-18T05:00:00Z"),
 		});
-		expect(res).toEqual({ checked: 2, updated: 2, failed: 0 });
+		expect(tick1).toEqual({
+			checked: 2,
+			updated: 2,
+			failed: 0,
+			expired: 0,
+			trashed: 2,
+		});
+		expect(
+			(await meetingRow(classId, "2026-11-18"))?.recordingStorageKey,
+		).toBeTruthy();
+		expect(
+			(await meetingRow(classId, "2026-11-17"))?.recordingStorageKey,
+		).toBeTruthy();
+		expect(
+			(await meetingRow(classId, "2026-11-16"))?.recordingStorageKey,
+		).toBeNull();
+
+		// Tick 2: kéo nốt buổi 16/11; buổi legacy 15/11 vẫn giữ nguyên không bị backfill.
+		const tick2 = await runRecordingSyncCron({
+			db,
+			getZoomClient: () => fake.client,
+			recordingStore: store,
+			now: () => new Date("2026-11-18T05:10:00Z"),
+		});
+		expect(tick2).toEqual({
+			checked: 1,
+			updated: 1,
+			failed: 0,
+			expired: 0,
+			trashed: 1,
+		});
+		expect(
+			(await meetingRow(classId, "2026-11-16"))?.recordingStorageKey,
+		).toBeTruthy();
+		const legacyAfterCron = await meetingRow(classId, "2026-11-15");
+		expect(legacyAfterCron?.recordingStorageKey).toBeNull();
+		expect(legacyAfterCron?.recordingUrl).toBe(
+			"https://zoom.us/rec/share/legacy",
+		);
+
+		// Nút Đồng bộ thủ công vẫn kéo được dòng legacy lên R2.
+		const manualPull = await app.request(
+			`/api/classes/${classId}/sessions/2026-11-15/recording/sync`,
+			{ method: "POST", headers: TEACHER_HEADERS, body: "{}" },
+		);
+		expect(manualPull.status).toBe(200);
+		expect(await manualPull.json()).toMatchObject({
+			status: "ready",
+			recordingSource: "r2",
+			hasRecordingVideo: true,
+		});
 	});
 
 	test("cron chuyển failed kèm recordingError khi quá 72 giờ vẫn chưa có recording", async () => {
 		const fake = createFakeZoom();
-		const app = createApp(fake.client);
+		const store = createMemoryRecordingStore();
+		const app = createApp(fake.client, { recordingStore: store });
 		const classId = await createManualOnlineClass(app, "Timeout Class");
 		const date = "2026-11-17";
 		await addManualSession(app, classId, date, `https://example.com/${date}`);
@@ -743,39 +1097,242 @@ describe("Recording và cron", () => {
 		const res = await runRecordingSyncCron({
 			db,
 			getZoomClient: () => fake.client,
+			recordingStore: store,
 			now: () => new Date("2026-11-21T05:00:00Z"),
 		});
-		expect(res).toEqual({ checked: 1, updated: 0, failed: 1 });
+		expect(res).toEqual({
+			checked: 1,
+			updated: 0,
+			failed: 1,
+			expired: 0,
+			trashed: 0,
+		});
 		const row = await meetingRow(classId, date);
 		expect(row?.recordingStatus).toBe("failed");
 		expect(row?.recordingError).toContain("72 giờ");
 		expect(fake.calls.filter((c) => c.method === "recording")).toHaveLength(0);
 	});
+
+	test("cron dọn hết hạn 90 ngày xoá object R2 và chuyển trạng thái sang expired (chạy cả khi chưa cấu hình Zoom)", async () => {
+		const store = createMemoryRecordingStore();
+		const app = createApp(undefined, { recordingStore: store });
+		const classId = await createManualOnlineClass(app, "Expiry Class");
+		const oldKey = `org-1/${classId}/2026-08-01/old.mp4`;
+		const freshKey = `org-1/${classId}/2026-11-10/fresh.mp4`;
+		await store.putStream(
+			oldKey,
+			new ReadableStream({
+				start(c) {
+					c.enqueue(new Uint8Array([1, 2, 3, 4]));
+					c.close();
+				},
+			}),
+			{ contentType: "video/mp4" },
+		);
+		await store.putStream(
+			freshKey,
+			new ReadableStream({
+				start(c) {
+					c.enqueue(new Uint8Array([5, 6, 7, 8]));
+					c.close();
+				},
+			}),
+			{ contentType: "video/mp4" },
+		);
+
+		await db.insert(schema.classSessionMeeting).values([
+			{
+				id: "m-expired",
+				orgId: "org-1",
+				classId,
+				date: "2026-08-01",
+				joinUrl: `${ZOOM_JOIN_PREFIX}1`,
+				zoomMeetingId: "1",
+				recordingStatus: "ready",
+				recordingStorageKey: oldKey,
+				recordingSizeBytes: 4,
+				recordingMimeType: "video/mp4",
+				recordingUploadedAt: new Date("2026-08-01T15:00:00Z"),
+				recordingExpiresAt: new Date("2026-10-30T15:00:00Z"),
+				recordingZoomTrashStatus: "trashed",
+			},
+			{
+				id: "m-fresh",
+				orgId: "org-1",
+				classId,
+				date: "2026-11-10",
+				joinUrl: `${ZOOM_JOIN_PREFIX}2`,
+				zoomMeetingId: "2",
+				recordingStatus: "ready",
+				recordingStorageKey: freshKey,
+				recordingSizeBytes: 4,
+				recordingMimeType: "video/mp4",
+				recordingUploadedAt: new Date("2026-11-10T15:00:00Z"),
+				recordingExpiresAt: new Date("2027-02-08T15:00:00Z"),
+				recordingZoomTrashStatus: "trashed",
+			},
+		]);
+
+		// Nếu store.delete lỗi, giữ nguyên DB để tick sau thử lại.
+		store.setDeleteError("R2 transient error");
+		const failedSweep = await runRecordingExpiryCron({
+			db,
+			recordingStore: store,
+			now: () => new Date("2026-11-26T00:00:00Z"),
+		});
+		expect(failedSweep).toEqual({ expired: 0, failed: 1 });
+		expect((await meetingRow(classId, "2026-08-01"))?.recordingStorageKey).toBe(
+			oldKey,
+		);
+
+		// Xoá lỗi và chạy runRecordingSyncCron KHÔNG cấu hình Zoom — vẫn phải dọn hết hạn.
+		store.setDeleteError(null);
+		const cronRes = await runRecordingSyncCron({
+			db,
+			recordingStore: store,
+			now: () => new Date("2026-11-26T00:00:00Z"),
+		});
+		expect(cronRes).toEqual({
+			checked: 0,
+			updated: 0,
+			failed: 0,
+			expired: 1,
+			trashed: 0,
+		});
+		expect(store.objects.has(oldKey)).toBe(false);
+		expect(store.objects.has(freshKey)).toBe(true);
+
+		const expiredRow = await meetingRow(classId, "2026-08-01");
+		expect(expiredRow?.recordingStatus).toBe("expired");
+		expect(expiredRow?.recordingStorageKey).toBeNull();
+		expect(expiredRow?.recordingSizeBytes).toBeNull();
+		expect(expiredRow?.recordingMimeType).toBeNull();
+		expect(expiredRow?.recordingExpiresAt).toBeInstanceOf(Date);
+	});
+
+	test("gán link tay (PUT /recording) và xoá buổi xoá object R2 cũ", async () => {
+		const fake = createFakeZoom();
+		fake.setRecordingReady(true);
+		const store = createMemoryRecordingStore();
+		const app = createApp(fake.client, { recordingStore: store });
+		const classId = await createManualOnlineClass(app, "Cleanup R2");
+		const d1 = futureDate(5);
+		const d2 = futureDate(6);
+		await addManualSession(app, classId, d1, "");
+		await addManualSession(app, classId, d2, "");
+
+		await app.request(`/api/classes/${classId}/sessions/${d1}/recording/sync`, {
+			method: "POST",
+			headers: TEACHER_HEADERS,
+			body: "{}",
+		});
+		await app.request(`/api/classes/${classId}/sessions/${d2}/recording/sync`, {
+			method: "POST",
+			headers: TEACHER_HEADERS,
+			body: "{}",
+		});
+		const k1 = (await meetingRow(classId, d1))?.recordingStorageKey;
+		const k2 = (await meetingRow(classId, d2))?.recordingStorageKey;
+		expect(k1).toBeTruthy();
+		expect(k2).toBeTruthy();
+		expect(store.objects.size).toBe(2);
+
+		// Gán link tay trên d1 → xoá object k1 và chuyển sang external.
+		const override = await app.request(
+			`/api/classes/${classId}/sessions/${d1}/recording`,
+			{
+				method: "PUT",
+				headers: TEACHER_HEADERS,
+				body: JSON.stringify({
+					recordingUrl: "https://drive.google.com/file/d/custom",
+				}),
+			},
+		);
+		expect(override.status).toBe(200);
+		expect(store.objects.has(k1 ?? "")).toBe(false);
+		const m1After = await meetingRow(classId, d1);
+		expect(m1After?.recordingStorageKey).toBeNull();
+		expect(m1After?.recordingUrl).toBe(
+			"https://drive.google.com/file/d/custom",
+		);
+		expect(m1After?.recordingZoomTrashStatus).toBe("none");
+
+		// Xoá buổi d2 → xoá object k2.
+		const delRes = await app.request(`/api/classes/${classId}/sessions/${d2}`, {
+			method: "DELETE",
+			headers: TEACHER_HEADERS,
+		});
+		expect(delRes.status).toBe(200);
+		expect(store.objects.has(k2 ?? "")).toBe(false);
+
+		// Dời buổi đè lên ngày đích đang có object R2 → xoá object R2 của ngày bị đè.
+		const d3 = futureDate(7);
+		const d4 = futureDate(8);
+		await addManualSession(app, classId, d3, "");
+		await store.putStream(
+			`org-1/${classId}/${d4}/overwritten.mp4`,
+			new ReadableStream({
+				start(c) {
+					c.enqueue(new Uint8Array([9, 8, 7, 6]));
+					c.close();
+				},
+			}),
+			{ contentType: "video/mp4" },
+		);
+		await db.insert(schema.classSessionMeeting).values({
+			id: "m-overwritten-r2",
+			orgId: "org-1",
+			classId,
+			date: d4,
+			joinUrl: `${ZOOM_JOIN_PREFIX}888`,
+			zoomMeetingId: "888",
+			recordingStatus: "ready",
+			recordingStorageKey: `org-1/${classId}/${d4}/overwritten.mp4`,
+			recordingSizeBytes: 4,
+			recordingMimeType: "video/mp4",
+		});
+		const moveRes = await app.request(
+			`/api/classes/${classId}/sessions/${d3}/edit`,
+			{
+				method: "POST",
+				headers: TEACHER_HEADERS,
+				body: JSON.stringify({ moveDate: d4 }),
+			},
+		);
+		expect(moveRes.status).toBe(200);
+		expect(store.objects.has(`org-1/${classId}/${d4}/overwritten.mp4`)).toBe(
+			false,
+		);
+	});
 });
 
 describe("Cron không bị dòng failed hết hạn chiếm chỗ", () => {
-	test("bỏ qua dòng failed quá cửa sổ 72 giờ và thử lại dòng failed đã qua 1 giờ", async () => {
+	test("bỏ qua dòng failed quá cửa sổ 72 giờ và thử lại dòng failed (kể cả fallback có link Zoom) đã qua 1 giờ", async () => {
 		const fake = createFakeZoom();
 		fake.setRecordingReady(true);
-		const app = createApp(fake.client);
+		const store = createMemoryRecordingStore();
+		const app = createApp(fake.client, { recordingStore: store });
 		const classId = await createManualOnlineClass(app, "Failed Window");
 		const rows = [
 			{
 				date: "2026-11-14",
 				status: "failed",
 				syncedAt: "2026-11-14T20:00:00Z",
+				url: "",
 			},
 			{
 				date: "2026-11-16",
 				status: "failed",
 				syncedAt: "2026-11-17T01:00:00Z",
+				url: "https://zoom.us/rec/share/fallback-16",
 			},
 			{
 				date: "2026-11-17",
 				status: "failed",
 				syncedAt: "2026-11-18T04:30:00Z",
+				url: "",
 			},
-			{ date: "2026-11-18", status: "pending", syncedAt: null },
+			{ date: "2026-11-18", status: "pending", syncedAt: null, url: "" },
 		] as const;
 		for (const r of rows) {
 			await addManualSession(
@@ -793,7 +1350,7 @@ describe("Cron không bị dòng failed hết hạn chiếm chỗ", () => {
 				date: r.date,
 				joinUrl: `${ZOOM_JOIN_PREFIX}${r.date.replaceAll("-", "")}`,
 				zoomMeetingId: r.date.replaceAll("-", ""),
-				recordingUrl: "",
+				recordingUrl: r.url,
 				recordingStatus: r.status,
 				recordingSyncedAt: r.syncedAt ? new Date(r.syncedAt) : null,
 			});
@@ -802,23 +1359,291 @@ describe("Cron không bị dòng failed hết hạn chiếm chỗ", () => {
 		const res = await runRecordingSyncCron({
 			db,
 			getZoomClient: () => fake.client,
+			recordingStore: store,
 			now: () => new Date("2026-11-18T05:00:00Z"),
 		});
 		const polled = fake.calls
 			.filter((c) => c.method === "recording")
 			.map((c) => c.meetingId)
 			.sort();
-		// 14/11 quá cửa sổ, 17/11 mới thử cách đây 30 phút: chỉ 16/11 và 18/11.
+		// 14/11 quá cửa sổ, 17/11 mới thử cách đây 30 phút: chỉ 16/11 (fallback) và 18/11.
 		expect(polled).toEqual(["20261116", "20261118"]);
-		expect(res).toEqual({ checked: 2, updated: 2, failed: 0 });
+		expect(res).toEqual({
+			checked: 2,
+			updated: 2,
+			failed: 0,
+			expired: 0,
+			trashed: 2,
+		});
 	});
 });
 
-describe("Học viên thấy link Zoom và recording", () => {
-	test("ẩn raw joinUrl, trả hasZoom + recordingUrl + recordingPassword trong chi tiết lớp và lịch học", async () => {
+describe("Học viên & giáo viên xem metadata và stream video recording (Range 206 + IDOR + 410)", () => {
+	test("R2 recording: snapshot & student DTO không lộ storageKey/password, stream 200/206 + header bảo mật + chặn IDOR + 410 hết hạn", async () => {
 		const fake = createFakeZoom();
 		fake.setRecordingReady(true);
-		const app = createApp(fake.client);
+		const store = createMemoryRecordingStore();
+		let currentNow = new Date("2026-11-26T10:00:00Z");
+		const app = createApp(fake.client, {
+			recordingStore: store,
+			now: () => currentNow,
+		});
+
+		await db.insert(schema.organization).values({ id: "org-2", name: "Org 2" });
+		await db.insert(schema.user).values([
+			{
+				id: "t-2",
+				name: "Thầy Nam",
+				email: "teacher2@workspace.edu.vn",
+				emailVerified: true,
+				role: "teacher",
+			},
+			{
+				id: "u-s2",
+				name: "Bảo Châu",
+				email: "baochau@example.com",
+				emailVerified: true,
+				role: "student",
+			},
+		]);
+		await db.insert(schema.membership).values({
+			id: "mem-2",
+			orgId: "org-2",
+			userId: "t-2",
+			role: "teacher",
+		});
+		await db.insert(schema.student).values({
+			id: "s-2",
+			orgId: "org-1",
+			name: "Bảo Châu",
+			email: "baochau@example.com",
+		});
+
+		const classId = await createManualOnlineClass(app, "Stream Class");
+		const date = futureDate(5);
+		await addManualSession(app, classId, date, "");
+		const enr = await app.request(`/api/classes/${classId}/enroll`, {
+			method: "POST",
+			headers: TEACHER_HEADERS,
+			body: JSON.stringify({ studentId: "s-1", activateNow: true }),
+		});
+		expect(enr.status).toBe(201);
+
+		const sync = await app.request(
+			`/api/classes/${classId}/sessions/${date}/recording/sync`,
+			{ method: "POST", headers: TEACHER_HEADERS, body: "{}" },
+		);
+		expect(sync.status).toBe(200);
+		const storedRow = await meetingRow(classId, date);
+		const storageKey = storedRow?.recordingStorageKey ?? "";
+		expect(storageKey).toBeTruthy();
+
+		// 1. Snapshot giáo viên không bao giờ lộ recordingStorageKey
+		const snapRes = await app.request("/api/kernel", {
+			headers: TEACHER_HEADERS,
+		});
+		expect(snapRes.status).toBe(200);
+		const snapRaw = await snapRes.text();
+		expect(snapRaw).not.toContain(storageKey);
+		expect(snapRaw).not.toContain("recordingStorageKey");
+		const snap = JSON.parse(snapRaw) as {
+			sessionMeetings: Array<{
+				classId: string;
+				date: string;
+				recordingSource: string | null;
+				hasRecordingVideo: boolean;
+				recordingUrl: string;
+				recordingPassword: string | null;
+				recordingZoomTrashStatus: string;
+			}>;
+		};
+		const snapMeeting = snap.sessionMeetings.find(
+			(m) => m.classId === classId && m.date === date,
+		);
+		expect(snapMeeting).toMatchObject({
+			recordingSource: "r2",
+			hasRecordingVideo: true,
+			recordingUrl: "",
+			recordingPassword: null,
+			recordingZoomTrashStatus: "trashed",
+		});
+
+		// 2. Student detail & schedule không lộ storageKey, recordingError, recordingZoomTrashStatus hay password Zoom
+		const detailRes = await app.request(`/api/student/classes/${classId}`, {
+			headers: STUDENT_HEADERS,
+		});
+		const detailRaw = await detailRes.text();
+		expect(detailRaw).not.toContain(storageKey);
+		expect(detailRaw).not.toContain("recordingStorageKey");
+		expect(detailRaw).not.toContain("recordingZoomTrashStatus");
+		expect(detailRaw).not.toContain("recordingError");
+		const detail = JSON.parse(detailRaw) as {
+			lessons: Array<{
+				hasZoom?: boolean;
+				hasRecordingVideo?: boolean;
+				recordingSource?: string;
+				recordingUrl?: string;
+				recordingPassword?: string;
+				recordingExpiresAt?: string;
+			}>;
+		};
+		expect(detail.lessons[0]).toMatchObject({
+			hasZoom: true,
+			hasRecordingVideo: true,
+			recordingSource: "r2",
+		});
+		expect(detail.lessons[0]?.recordingUrl).toBeUndefined();
+		expect(detail.lessons[0]?.recordingPassword).toBeUndefined();
+		expect(detail.lessons[0]?.recordingExpiresAt).toBeTruthy();
+
+		const scheduleRes = await app.request("/api/student/schedule", {
+			headers: STUDENT_HEADERS,
+		});
+		const schedule = (await scheduleRes.json()) as {
+			lessons: Array<{
+				hasRecordingVideo?: boolean;
+				recordingSource?: string;
+				recordingPassword?: string;
+			}>;
+		};
+		expect(schedule.lessons[0]).toMatchObject({
+			hasRecordingVideo: true,
+			recordingSource: "r2",
+		});
+		expect(schedule.lessons[0]?.recordingPassword).toBeUndefined();
+
+		// 3. Teacher stream full 200 + Range 206 + security headers
+		const teacherVideoPath = `/api/classes/${classId}/sessions/${date}/recording/video`;
+		const tFull = await app.request(teacherVideoPath, {
+			headers: { "x-test-user": "teacher-1" },
+		});
+		expect(tFull.status).toBe(200);
+		expect(tFull.headers.get("content-type")).toBe("video/mp4");
+		expect(tFull.headers.get("accept-ranges")).toBe("bytes");
+		expect(tFull.headers.get("content-disposition")).toContain("inline;");
+		expect(tFull.headers.get("cross-origin-resource-policy")).toBe("same-site");
+		expect(tFull.headers.get("referrer-policy")).toBe("no-referrer");
+		expect(tFull.headers.get("content-security-policy")).toBe(INLINE_MEDIA_CSP);
+		expect(tFull.headers.get("cache-control")).toBe("private, no-store");
+		const fullBytes = new Uint8Array(await tFull.arrayBuffer());
+		expect(fullBytes.byteLength).toBeGreaterThan(32);
+
+		const tRange = await app.request(teacherVideoPath, {
+			headers: { "x-test-user": "teacher-1", Range: "bytes=0-15" },
+		});
+		expect(tRange.status).toBe(206);
+		expect(tRange.headers.get("content-range")).toBe(
+			`bytes 0-15/${fullBytes.byteLength}`,
+		);
+		expect(tRange.headers.get("content-length")).toBe("16");
+		const rangeBytes = new Uint8Array(await tRange.arrayBuffer());
+		expect(rangeBytes).toEqual(fullBytes.subarray(0, 16));
+
+		const tBadRange = await app.request(teacherVideoPath, {
+			headers: { "x-test-user": "teacher-1", Range: "bytes=999999-1000000" },
+		});
+		expect(tBadRange.status).toBe(416);
+
+		// 4. Student stream Range 206 + security headers
+		const studentVideoPath = `/api/student/classes/${classId}/sessions/${date}/recording/video`;
+		const sRange = await app.request(studentVideoPath, {
+			headers: { "x-test-user": "student-1", Range: "bytes=4-19" },
+		});
+		expect(sRange.status).toBe(206);
+		expect(sRange.headers.get("content-range")).toBe(
+			`bytes 4-19/${fullBytes.byteLength}`,
+		);
+		expect(sRange.headers.get("cross-origin-resource-policy")).toBe(
+			"same-site",
+		);
+		expect(sRange.headers.get("referrer-policy")).toBe("no-referrer");
+		expect(sRange.headers.get("content-security-policy")).toBe(
+			INLINE_MEDIA_CSP,
+		);
+		expect(new Uint8Array(await sRange.arrayBuffer())).toEqual(
+			fullBytes.subarray(4, 20),
+		);
+
+		// 5. IDOR & auth guards
+		expect((await app.request(teacherVideoPath)).status).toBe(401);
+		expect((await app.request(studentVideoPath)).status).toBe(401);
+		expect(
+			(
+				await app.request(teacherVideoPath, {
+					headers: { "x-test-user": "teacher-2" },
+				})
+			).status,
+		).toBe(404);
+		expect(
+			(
+				await app.request(teacherVideoPath, {
+					headers: { "x-test-user": "student-1" },
+				})
+			).status,
+		).toBe(403);
+		expect(
+			(
+				await app.request(studentVideoPath, {
+					headers: { "x-test-user": "teacher-1" },
+				})
+			).status,
+		).toBe(403);
+		expect(
+			(
+				await app.request(studentVideoPath, {
+					headers: { "x-test-user": "student-2" },
+				})
+			).status,
+		).toBe(404);
+		expect(
+			(
+				await app.request(
+					`/api/student/classes/${classId}/sessions/not-a-date/recording/video`,
+					{ headers: { "x-test-user": "student-1" } },
+				)
+			).status,
+		).toBe(400);
+
+		// 6. Quá 90 ngày → trả 410 RECORDING_EXPIRED cả trước khi cron sweep
+		currentNow = new Date("2027-03-10T00:00:00Z");
+		const tExpired = await app.request(teacherVideoPath, {
+			headers: { "x-test-user": "teacher-1" },
+		});
+		expect(tExpired.status).toBe(410);
+		expect(await tExpired.json()).toMatchObject({
+			code: RECORDING_ERROR_CODES.EXPIRED,
+		});
+
+		const sExpired = await app.request(studentVideoPath, {
+			headers: { "x-test-user": "student-1" },
+		});
+		expect(sExpired.status).toBe(410);
+		expect(await sExpired.json()).toMatchObject({
+			code: RECORDING_ERROR_CODES.EXPIRED,
+		});
+
+		// 7. Chưa cấu hình recordingStore → trả 503 RECORDINGS_DISABLED
+		const appNoStore = createApp(fake.client);
+		const tDisabled = await appNoStore.request(teacherVideoPath, {
+			headers: { "x-test-user": "teacher-1" },
+		});
+		expect(tDisabled.status).toBe(503);
+		expect(await tDisabled.json()).toMatchObject({
+			code: RECORDING_ERROR_CODES.DISABLED,
+		});
+		const sDisabled = await appNoStore.request(studentVideoPath, {
+			headers: { "x-test-user": "student-1" },
+		});
+		expect(sDisabled.status).toBe(503);
+		expect(await sDisabled.json()).toMatchObject({
+			code: RECORDING_ERROR_CODES.DISABLED,
+		});
+	});
+
+	test("fallback link Zoom: học viên vẫn thấy recordingUrl + recordingPassword và recordingSource external", async () => {
+		const fake = createFakeZoom();
+		fake.setRecordingReady(true);
+		const app = createApp(fake.client); // Không có recordingStore → fallback Zoom
 		const classId = await createManualOnlineClass(app, "Student View");
 		const date = futureDate(5);
 		await addManualSession(app, classId, date, "");
@@ -853,6 +1678,7 @@ describe("Học viên thấy link Zoom và recording", () => {
 				joinUrl?: string;
 				recordingUrl?: string;
 				recordingPassword?: string;
+				recordingSource?: string;
 			}>;
 		};
 		expect(detail.class.nextSession?.hasZoom).toBe(true);
@@ -862,6 +1688,7 @@ describe("Học viên thấy link Zoom và recording", () => {
 			hasZoom: true,
 			recordingUrl: `https://zoom.us/rec/share/fake-${meeting?.zoomMeetingId}`,
 			recordingPassword: "rec123",
+			recordingSource: "external",
 		});
 		expect(detail.lessons[0]?.joinUrl).toBeUndefined();
 
@@ -872,13 +1699,79 @@ describe("Học viên thấy link Zoom và recording", () => {
 				hasZoom?: boolean;
 				joinUrl?: string;
 				recordingPassword?: string;
+				recordingSource?: string;
 			}>;
 		};
 		expect(schedule.lessons[0]).toMatchObject({
 			hasZoom: true,
 			recordingPassword: "rec123",
+			recordingSource: "external",
 		});
 		expect(schedule.lessons[0]?.joinUrl).toBeUndefined();
+	});
+
+	test("học viên có buổi cancelled hoặc enrollment invited bị chặn 404 khi gọi stream video", async () => {
+		const fake = createFakeZoom();
+		fake.setRecordingReady(true);
+		const store = createMemoryRecordingStore();
+		const app = createApp(fake.client, { recordingStore: store });
+		const classId = await createManualOnlineClass(app, "Cancelled Video");
+		const date = futureDate(5);
+		await addManualSession(app, classId, date, "");
+
+		const enrRes = await app.request(`/api/classes/${classId}/enroll`, {
+			method: "POST",
+			headers: TEACHER_HEADERS,
+			body: JSON.stringify({ studentId: "s-1", activateNow: false }),
+		});
+		expect(enrRes.status).toBe(201);
+		const enrBody = (await enrRes.json()) as { id: string };
+
+		await app.request(
+			`/api/classes/${classId}/sessions/${date}/recording/sync`,
+			{ method: "POST", headers: TEACHER_HEADERS, body: "{}" },
+		);
+
+		const videoPath = `/api/student/classes/${classId}/sessions/${date}/recording/video`;
+		// Enrollment còn invited → 404
+		expect(
+			(
+				await app.request(videoPath, {
+					headers: { "x-test-user": "student-1" },
+				})
+			).status,
+		).toBe(404);
+
+		// Accept rồi cancel riêng buổi của học viên → 404
+		await app.request(`/api/enrollments/${enrBody.id}/accept`, {
+			method: "POST",
+			headers: TEACHER_HEADERS,
+			body: "{}",
+		});
+		const [s1Lesson] = await db
+			.select({ id: schema.lesson.id })
+			.from(schema.lesson)
+			.where(
+				and(
+					eq(schema.lesson.enrollmentId, enrBody.id),
+					eq(schema.lesson.date, date),
+				),
+			);
+		expect(s1Lesson?.id).toBeTruthy();
+		if (s1Lesson) {
+			await app.request(`/api/lessons/${s1Lesson.id}/cancel`, {
+				method: "POST",
+				headers: TEACHER_HEADERS,
+				body: "{}",
+			});
+		}
+		expect(
+			(
+				await app.request(videoPath, {
+					headers: { "x-test-user": "student-1" },
+				})
+			).status,
+		).toBe(404);
 	});
 });
 
@@ -1082,5 +1975,182 @@ describe("Bảo vệ route Zoom", () => {
 		};
 		expect(s1Detail.class.nextSession?.hasZoom).toBeUndefined();
 		expect(s1Detail.class.nextSession?.joinUrl).toBeUndefined();
+	});
+
+	test("race condition: luồng lỗi download muộn sau khi luồng thắng đã commit R2 + Trash Zoom KHÔNG ghi đè mất recordingStorageKey", async () => {
+		const store = createMemoryRecordingStore();
+		let downloadCallCount = 0;
+		let notifySlowReachedDownload!: () => void;
+		const slowReachedDownload = new Promise<void>((resolve) => {
+			notifySlowReachedDownload = resolve;
+		});
+		let releaseSlowFailure!: () => void;
+		const slowFailureGate = new Promise<void>((resolve) => {
+			releaseSlowFailure = resolve;
+		});
+
+		const baseFake = createFakeZoom();
+		baseFake.setRecordingReady(true);
+
+		const racingClient: ZoomClient = {
+			...baseFake.client,
+			async getRecording(meetingId) {
+				return baseFake.client.getRecording(meetingId);
+			},
+			async downloadRecordingFile(downloadUrl) {
+				downloadCallCount += 1;
+				if (downloadCallCount === 1) {
+					// Luồng chậm T2: báo đã vào download, chờ sau khi T1 commit R2 + Trash Zoom rồi mới lỗi 404.
+					notifySlowReachedDownload();
+					await slowFailureGate;
+					throw new ZoomIntegrationError(
+						ZOOM_ERROR_CODES.API_ERROR,
+						"Tải recording từ Zoom lỗi 404: Recording trashed",
+						502,
+					);
+				}
+				return baseFake.client.downloadRecordingFile(downloadUrl);
+			},
+			async trashRecording(meetingId) {
+				await baseFake.client.trashRecording(meetingId);
+			},
+		};
+
+		const app = createApp(racingClient, { recordingStore: store });
+		const classId = await createManualOnlineClass(app, "Race Protection Class");
+		const date = futureDate(4);
+		await addManualSession(app, classId, date, "");
+
+		const syncPath = `/api/classes/${classId}/sessions/${date}/recording/sync`;
+		// Bắt đầu T2 và đợi T2 thực sự chạm vào bước download trước khi chạy T1.
+		const slowSyncPromise = app.request(syncPath, {
+			method: "POST",
+			headers: TEACHER_HEADERS,
+			body: "{}",
+		});
+		await slowReachedDownload;
+
+		// Chạy T1 (nhanh, thành công commit R2 + Trash Zoom)
+		const fastRes = await app.request(syncPath, {
+			method: "POST",
+			headers: TEACHER_HEADERS,
+			body: "{}",
+		});
+		expect(fastRes.status).toBe(200);
+		const fastBody = (await fastRes.json()) as {
+			status: string;
+			hasRecordingVideo: boolean;
+			recordingZoomTrashStatus: string;
+		};
+		expect(fastBody.status).toBe("ready");
+		expect(fastBody.hasRecordingVideo).toBe(true);
+		expect(fastBody.recordingZoomTrashStatus).toBe("trashed");
+
+		const rowAfterFast = await meetingRow(classId, date);
+		expect(rowAfterFast?.recordingStorageKey).toBeTruthy();
+
+		// Giải phóng T2 để rơi vào nhánh saveZoomFallback
+		releaseSlowFailure();
+		const slowRes = await slowSyncPromise;
+		expect(slowRes.status).toBe(200);
+		const slowBody = (await slowRes.json()) as {
+			status: string;
+			hasRecordingVideo: boolean;
+			recordingSource: string | null;
+		};
+		// T2 phải trả về trạng thái thắng cuộc (R2 ready), KHÔNG ghi đè D1 sang failed/null!
+		expect(slowBody.status).toBe("ready");
+		expect(slowBody.hasRecordingVideo).toBe(true);
+		expect(slowBody.recordingSource).toBe("r2");
+
+		const rowFinal = await meetingRow(classId, date);
+		expect(rowFinal?.recordingStorageKey).toBe(
+			rowAfterFast?.recordingStorageKey,
+		);
+		expect(rowFinal?.recordingStatus).toBe("ready");
+		expect(rowFinal?.recordingZoomTrashStatus).toBe("trashed");
+	});
+
+	test("race condition: giáo viên gán link tay (PUT /recording) trong lúc sync R2 đang tải không bị ghi đè, object R2 dư bị xoá và Zoom không bị Trash", async () => {
+		const store = createMemoryRecordingStore();
+		let notifyReachedDownload!: () => void;
+		const reachedDownload = new Promise<void>((resolve) => {
+			notifyReachedDownload = resolve;
+		});
+		let releaseDownload!: () => void;
+		const downloadGate = new Promise<void>((resolve) => {
+			releaseDownload = resolve;
+		});
+
+		const baseFake = createFakeZoom();
+		baseFake.setRecordingReady(true);
+
+		const slowClient: ZoomClient = {
+			...baseFake.client,
+			async getRecording(meetingId) {
+				return baseFake.client.getRecording(meetingId);
+			},
+			async downloadRecordingFile(downloadUrl) {
+				notifyReachedDownload();
+				await downloadGate;
+				return baseFake.client.downloadRecordingFile(downloadUrl);
+			},
+			async trashRecording(meetingId) {
+				await baseFake.client.trashRecording(meetingId);
+			},
+		};
+
+		const app = createApp(slowClient, { recordingStore: store });
+		const classId = await createManualOnlineClass(
+			app,
+			"Manual Override Race Class",
+		);
+		const date = futureDate(5);
+		await addManualSession(app, classId, date, "");
+
+		const syncPromise = app.request(
+			`/api/classes/${classId}/sessions/${date}/recording/sync`,
+			{
+				method: "POST",
+				headers: TEACHER_HEADERS,
+				body: "{}",
+			},
+		);
+		await reachedDownload;
+
+		// Giáo viên gán link ngoài thủ công trong lúc sync R2 đang tải.
+		const manualUrl = "https://drive.google.com/file/d/manual-override/view";
+		const manualRes = await app.request(
+			`/api/classes/${classId}/sessions/${date}/recording`,
+			{
+				method: "PUT",
+				headers: TEACHER_HEADERS,
+				body: JSON.stringify({ recordingUrl: manualUrl }),
+			},
+		);
+		expect(manualRes.status).toBe(200);
+
+		releaseDownload();
+		const syncRes = await syncPromise;
+		expect(syncRes.status).toBe(200);
+		const syncBody = (await syncRes.json()) as {
+			status: string;
+			recordingUrl: string;
+			recordingSource: string | null;
+			hasRecordingVideo: boolean;
+		};
+		// Sync thua CAS → giữ nguyên link tay của giáo viên, xoá object R2 dư, KHÔNG gọi Zoom Trash.
+		expect(syncBody.status).toBe("ready");
+		expect(syncBody.recordingUrl).toBe(manualUrl);
+		expect(syncBody.recordingSource).toBe("external");
+		expect(syncBody.hasRecordingVideo).toBe(false);
+
+		const rowFinal = await meetingRow(classId, date);
+		expect(rowFinal?.recordingStorageKey).toBeNull();
+		expect(rowFinal?.recordingUrl).toBe(manualUrl);
+		expect(rowFinal?.recordingStatus).toBe("ready");
+		expect(store.objects.size).toBe(0);
+		expect(store.deletedKeys).toHaveLength(1);
+		expect(baseFake.calls.filter((c) => c.method === "trash")).toHaveLength(0);
 	});
 });

@@ -6,6 +6,7 @@ import {
 	ZOOM_RECORDING_SYNC_CRON,
 } from "./notifications/daily-deadline-reminder";
 import { resolveMailer } from "./notifications/emit";
+import type { RecordingStore } from "./recording-store";
 import { runRecordingSyncCron } from "./zoom/session-zoom-service";
 import type { ZoomConfig } from "./zoom/zoom-client";
 
@@ -17,6 +18,7 @@ export interface ScheduledControllerLike {
 export interface ScheduledDispatchDeps {
 	db: Db;
 	zoom: ZoomConfig;
+	getRecordingStore?: () => RecordingStore | undefined;
 	getMailer: () => Mailer | undefined;
 	studentOrigin?: string;
 	now?: () => Date;
@@ -80,11 +82,13 @@ export async function dispatchScheduledCron(
 		const now =
 			deps.now ?? (() => new Date(controller.scheduledTime ?? Date.now()));
 		const runZoomSync = deps.runZoomSync ?? runRecordingSyncCron;
+		const recordingStore = deps.getRecordingStore?.();
 		let zoomError: unknown;
 		try {
 			await runZoomSync({
 				db: deps.db,
 				zoom: deps.zoom,
+				...(recordingStore ? { recordingStore } : {}),
 				...(deps.now ? { now: deps.now } : {}),
 			});
 		} catch (error) {

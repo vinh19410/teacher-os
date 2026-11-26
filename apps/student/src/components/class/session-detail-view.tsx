@@ -1,7 +1,14 @@
 import { Link } from "@tanstack/react-router";
-import type { StudentSessionDetailResponse } from "@teacher-os/api/contracts";
+import {
+	RECORDING_RETENTION_DAYS,
+	type StudentSessionDetailResponse,
+} from "@teacher-os/api/contracts";
 import { isSafeMaterialUrl } from "@teacher-os/api/material-contracts";
 import { buttonVariants } from "@teacher-os/ui/components/button";
+import {
+	formatRecordingExpiryVN,
+	RecordingPlayerModal,
+} from "@teacher-os/ui/components/recording-player-modal";
 import {
 	ArrowLeft,
 	ArrowRight,
@@ -12,6 +19,7 @@ import {
 	PlayCircle,
 	Target,
 } from "lucide-react";
+import { useState, useSyncExternalStore } from "react";
 import { ClassAssignmentTable } from "@/components/class/class-assignment-table";
 import {
 	isLessonEnded,
@@ -22,6 +30,11 @@ import { RecordingPassword } from "@/components/class/recording-password";
 import { ZoomJoinButton } from "@/components/class/zoom-join-button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
+import {
+	getActiveStudentOrgId,
+	studentSessionRecordingVideoUrl,
+} from "@/lib/repos/student";
+import { subscribeActiveStudentOrg } from "@/lib/student-org-storage";
 import { formatVietnamDateFromISO } from "@/lib/vietnam-display-date";
 
 export function SessionDetailView({
@@ -35,6 +48,13 @@ export function SessionDetailView({
 	now: Date;
 	zoomNowMs?: number;
 }) {
+	useSyncExternalStore(
+		subscribeActiveStudentOrg,
+		getActiveStudentOrgId,
+		getActiveStudentOrgId,
+	);
+	const [recordingOpen, setRecordingOpen] = useState(false);
+
 	const {
 		class: cls,
 		session,
@@ -61,16 +81,33 @@ export function SessionDetailView({
 	const showZoom = displayStatus === "upcoming" && Boolean(session.hasZoom);
 	const canShowRecording =
 		session.status !== "cancelled" && session.status !== "holiday";
+	const hasR2Video =
+		canShowRecording &&
+		Boolean(sessionDate) &&
+		Boolean(session.hasRecordingVideo) &&
+		session.recordingStatus !== "expired";
 	const safeRecordingUrl =
 		canShowRecording &&
+		!hasR2Video &&
+		session.recordingStatus !== "expired" &&
 		session.recordingUrl &&
 		isSafeMaterialUrl(session.recordingUrl)
 			? session.recordingUrl
 			: null;
-	const showPendingRecording =
+	const showExpiredRecording =
+		canShowRecording &&
+		!hasR2Video &&
 		!safeRecordingUrl &&
+		session.recordingStatus === "expired";
+	const showPendingRecording =
+		!hasR2Video &&
+		!safeRecordingUrl &&
+		!showExpiredRecording &&
 		session.recordingStatus === "pending" &&
 		(isEnded || session.status === "completed" || session.status === "absent");
+	const recordingExpiryLabel = hasR2Video
+		? formatRecordingExpiryVN(session.recordingExpiresAt)
+		: null;
 
 	const formattedDate = sessionDate
 		? formatVietnamDateFromISO(sessionDate)
@@ -168,7 +205,11 @@ export function SessionDetailView({
 					</span>
 				</div>
 
-				{(showZoom || safeRecordingUrl || showPendingRecording) && (
+				{(showZoom ||
+					hasR2Video ||
+					safeRecordingUrl ||
+					showExpiredRecording ||
+					showPendingRecording) && (
 					<div className="mt-4 flex flex-wrap items-center gap-2">
 						{showZoom && (
 							<ZoomJoinButton
@@ -180,6 +221,24 @@ export function SessionDetailView({
 								size="sm"
 								nowMs={zoomNowMs}
 							/>
+						)}
+						{hasR2Video && (
+							<button
+								type="button"
+								onClick={() => setRecordingOpen(true)}
+								className={cn(
+									buttonVariants({ variant: "outline", size: "sm" }),
+									"focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-0",
+								)}
+							>
+								<PlayCircle aria-hidden="true" className="size-3.5" />
+								Xem recording
+							</button>
+						)}
+						{hasR2Video && recordingExpiryLabel && (
+							<span className="text-muted-foreground text-xs tabular-nums">
+								Lưu đến {recordingExpiryLabel}
+							</span>
 						)}
 						{safeRecordingUrl && (
 							<a
@@ -197,6 +256,11 @@ export function SessionDetailView({
 						)}
 						{safeRecordingUrl && session.recordingPassword && (
 							<RecordingPassword password={session.recordingPassword} />
+						)}
+						{showExpiredRecording && (
+							<Badge variant="outline" className="text-muted-foreground">
+								Recording đã hết hạn ({RECORDING_RETENTION_DAYS} ngày)
+							</Badge>
 						)}
 						{showPendingRecording && (
 							<Badge variant="outline" className="text-muted-foreground">
@@ -382,6 +446,17 @@ export function SessionDetailView({
 						</Link>
 					)}
 				</nav>
+			)}
+
+			{hasR2Video && recordingOpen && (
+				<RecordingPlayerModal
+					open={true}
+					onClose={() => setRecordingOpen(false)}
+					title={`Recording — ${headingTitle}`}
+					subtitle={`${formattedDate} · ${session.time}`}
+					videoUrl={studentSessionRecordingVideoUrl(cls.id, sessionDate)}
+					expiresAt={session.recordingExpiresAt ?? null}
+				/>
 			)}
 		</div>
 	);

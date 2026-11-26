@@ -561,6 +561,20 @@ export function classMaterialFileUrl(
 	);
 }
 
+/** URL stream video recording của một buổi học (chỉ phát inline, không gắn download). */
+export function studentSessionRecordingVideoUrl(
+	classId: string,
+	date: string,
+): string {
+	const baseUrl = `${getApiBaseUrl()}/api/student/classes/${encodeURIComponent(classId)}/sessions/${encodeURIComponent(date)}/recording/video`;
+	// Thẻ <video> không gửi được header x-student-org-id nên truyền org qua query.
+	const orgId = getActiveStudentOrgId();
+	if (!orgId) return baseUrl;
+	const params = new URLSearchParams();
+	params.set("org", orgId);
+	return `${baseUrl}?${params.toString()}`;
+}
+
 /**
  * Tải file tài liệu về `blob:` URL để xem trước inline trong app (server trả
  * `attachment` + CSP khoá cứng). Xử lý 401 `reauth()`, 403

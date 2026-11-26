@@ -1,9 +1,19 @@
 // @vitest-environment jsdom
 
 import type { StudentSessionDetailResponse } from "@teacher-os/api/contracts";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	within,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+	clearActiveStudentOrgId,
+	setActiveStudentOrgId,
+} from "@/lib/student-org-storage";
 import { SessionDetailView, SessionNotFound } from "./session-detail-view";
 
 vi.mock("@tanstack/react-router", () => ({
@@ -240,5 +250,62 @@ describe("SessionDetailView", () => {
 				.getByRole("link", { name: "Quay lại lớp học" })
 				.getAttribute("href"),
 		).toBe("/classes/cls-9");
+	});
+
+	it("opens in-app RecordingPlayerModal with expiry label for R2 video without download link or password", () => {
+		setActiveStudentOrgId("org-demo");
+		try {
+			const r2Detail = makeSessionDetail({
+				session: {
+					...makeSessionDetail().session,
+					recordingUrl: null,
+					recordingPassword: null,
+					recordingStatus: "ready",
+					recordingSource: "r2",
+					hasRecordingVideo: true,
+					recordingExpiresAt: "2027-02-14T12:00:00.000Z",
+				},
+			});
+			render(
+				<SessionDetailView detail={r2Detail} todayISO={TODAY} now={NOW} />,
+			);
+
+			expect(screen.getByText("Lưu đến 14/02/2027")).toBeTruthy();
+			const watchBtn = screen.getByRole("button", { name: "Xem recording" });
+			expect(screen.queryByRole("link", { name: "Xem recording" })).toBeNull();
+
+			fireEvent.click(watchBtn);
+			const dialog = screen.getByRole("dialog");
+			const video = dialog.querySelector("video");
+			expect(video?.getAttribute("src")).toContain(
+				"/api/student/classes/cls-1/sessions/2026-11-16/recording/video",
+			);
+			expect(video?.getAttribute("src")).toContain("org=org-demo");
+			expect(video?.getAttribute("controlslist")).toBe("nodownload");
+			expect(dialog.querySelector("a[download]")).toBeNull();
+		} finally {
+			clearActiveStudentOrgId();
+		}
+	});
+
+	it("shows expired 90-day badge when R2 recording has expired", () => {
+		const expiredDetail = makeSessionDetail({
+			session: {
+				...makeSessionDetail().session,
+				recordingUrl: null,
+				recordingPassword: null,
+				recordingStatus: "expired",
+				recordingSource: undefined,
+				hasRecordingVideo: false,
+				recordingExpiresAt: "2026-10-01T12:00:00.000Z",
+			},
+		});
+		render(
+			<SessionDetailView detail={expiredDetail} todayISO={TODAY} now={NOW} />,
+		);
+
+		expect(screen.getByText("Recording đã hết hạn (90 ngày)")).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Xem recording" })).toBeNull();
+		expect(screen.queryByRole("link", { name: "Xem recording" })).toBeNull();
 	});
 });

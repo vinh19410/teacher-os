@@ -1,11 +1,16 @@
 import { Link } from "@tanstack/react-router";
-import type {
-	StudentClassLesson,
-	StudentClassSyllabusSummary,
+import {
+	RECORDING_RETENTION_DAYS,
+	type StudentClassLesson,
+	type StudentClassSyllabusSummary,
 } from "@teacher-os/api/contracts";
 import { isSafeMaterialUrl } from "@teacher-os/api/material-contracts";
 import { vietnamSessionEndMs } from "@teacher-os/api/vietnam-date";
 import { buttonVariants } from "@teacher-os/ui/components/button";
+import {
+	formatRecordingExpiryVN,
+	RecordingPlayerModal,
+} from "@teacher-os/ui/components/recording-player-modal";
 import {
 	BookOpen,
 	Check,
@@ -16,11 +21,17 @@ import {
 	PlayCircle,
 	X,
 } from "lucide-react";
+import { useState, useSyncExternalStore } from "react";
 import { RecordingPassword } from "@/components/class/recording-password";
 import { ZoomJoinButton } from "@/components/class/zoom-join-button";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
+import {
+	getActiveStudentOrgId,
+	studentSessionRecordingVideoUrl,
+} from "@/lib/repos/student";
+import { subscribeActiveStudentOrg } from "@/lib/student-org-storage";
 import {
 	formatVietnamDateFromISO,
 	VI_DAY_NAMES,
@@ -215,6 +226,13 @@ function groupLessonsByModules(
 	return groups;
 }
 
+interface ActiveRecording {
+	date: string;
+	title: string;
+	subtitle: string;
+	expiresAt: string | null;
+}
+
 function LessonRow({
 	classId,
 	entry,
@@ -224,6 +242,7 @@ function LessonRow({
 	todayISO,
 	now,
 	zoomNowMs,
+	onOpenRecording,
 }: {
 	classId: string;
 	entry: IndexedLesson;
@@ -233,6 +252,7 @@ function LessonRow({
 	todayISO: string;
 	now: Date;
 	zoomNowMs?: number;
+	onOpenRecording: (recording: ActiveRecording) => void;
 }) {
 	const { lesson, teachingIndex } = entry;
 	const isNext = lesson.id === nextId;
@@ -247,18 +267,40 @@ function LessonRow({
 		displayStatus === "upcoming" && Boolean(lesson.hasZoom ?? lesson.joinUrl);
 	const canShowRecording =
 		lesson.status !== "cancelled" && lesson.status !== "holiday";
+	const hasR2Video =
+		canShowRecording &&
+		lesson.date != null &&
+		Boolean(lesson.hasRecordingVideo) &&
+		lesson.recordingStatus !== "expired";
 	const safeRecordingUrl =
 		canShowRecording &&
+		!hasR2Video &&
+		lesson.recordingStatus !== "expired" &&
 		lesson.recordingUrl &&
 		isSafeMaterialUrl(lesson.recordingUrl)
 			? lesson.recordingUrl
 			: null;
 	const showRecordingLink = safeRecordingUrl !== null;
-	const showPendingRecording =
+	const showExpiredRecording =
+		canShowRecording &&
+		!hasR2Video &&
 		!safeRecordingUrl &&
+		lesson.recordingStatus === "expired";
+	const showPendingRecording =
+		!hasR2Video &&
+		!safeRecordingUrl &&
+		!showExpiredRecording &&
 		lesson.recordingStatus === "pending" &&
 		(isEnded || lesson.status === "completed" || lesson.status === "absent");
-	const hasActions = showZoomLink || showRecordingLink || showPendingRecording;
+	const recordingExpiryLabel = hasR2Video
+		? formatRecordingExpiryVN(lesson.recordingExpiresAt)
+		: null;
+	const hasActions =
+		showZoomLink ||
+		hasR2Video ||
+		showRecordingLink ||
+		showExpiredRecording ||
+		showPendingRecording;
 	const future =
 		nextId !== null &&
 		displayStatus === "upcoming" &&
@@ -447,6 +489,41 @@ function LessonRow({
 								nowMs={zoomNowMs}
 							/>
 						)}
+						{hasR2Video && lesson.date && (
+							<button
+								type="button"
+								onClick={() => {
+									if (!lesson.date) return;
+									const sessionLabel =
+										teachingIndex !== null
+											? `Buổi ${teachingIndex}`
+											: "Buổi học";
+									onOpenRecording({
+										date: lesson.date,
+										title: primaryTitle
+											? `Recording — ${primaryTitle}`
+											: `Recording ${sessionLabel.toLowerCase()}`,
+										subtitle: `${sessionLabel} · ${lessonDayLabel(lesson)} · ${lesson.time}`,
+										expiresAt: lesson.recordingExpiresAt ?? null,
+									});
+								}}
+								className={cn(
+									buttonVariants({
+										variant: "outline",
+										size: "sm",
+									}),
+									"max-w-full whitespace-normal text-center focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-0",
+								)}
+							>
+								<PlayCircle aria-hidden="true" className="size-3.5" />
+								Xem recording
+							</button>
+						)}
+						{hasR2Video && recordingExpiryLabel && (
+							<span className="text-muted-foreground text-xs tabular-nums">
+								Lưu đến {recordingExpiryLabel}
+							</span>
+						)}
 						{showRecordingLink && safeRecordingUrl && (
 							<a
 								href={safeRecordingUrl}
@@ -469,6 +546,11 @@ function LessonRow({
 							lesson.recordingPassword && (
 								<RecordingPassword password={lesson.recordingPassword} />
 							)}
+						{showExpiredRecording && (
+							<Badge variant="outline" className="text-muted-foreground">
+								Recording đã hết hạn ({RECORDING_RETENTION_DAYS} ngày)
+							</Badge>
+						)}
 						{showPendingRecording && (
 							<Badge variant="outline" className="text-muted-foreground">
 								<Clock aria-hidden="true" className="size-3" />
@@ -500,6 +582,24 @@ export function ClassLessonList({
 	/** Chỉ dùng trong unit test để cố định đồng hồ cục bộ cho ZoomJoinButton. */
 	zoomNowMs?: number;
 }) {
+	useSyncExternalStore(
+		subscribeActiveStudentOrg,
+		getActiveStudentOrgId,
+		getActiveStudentOrgId,
+	);
+	const [activeRecording, setActiveRecording] =
+		useState<ActiveRecording | null>(null);
+	const recordingModal = activeRecording !== null && (
+		<RecordingPlayerModal
+			open={true}
+			onClose={() => setActiveRecording(null)}
+			title={activeRecording.title}
+			subtitle={activeRecording.subtitle}
+			videoUrl={studentSessionRecordingVideoUrl(classId, activeRecording.date)}
+			expiresAt={activeRecording.expiresAt}
+		/>
+	);
+
 	if (lessons.length === 0) {
 		return (
 			<OverviewEmptyState
@@ -614,12 +714,14 @@ export function ClassLessonList({
 										todayISO={todayISO}
 										now={now}
 										zoomNowMs={zoomNowMs}
+										onOpenRecording={setActiveRecording}
 									/>
 								))}
 							</ol>
 						</section>
 					);
 				})}
+				{recordingModal}
 			</div>
 		);
 	}
@@ -640,9 +742,11 @@ export function ClassLessonList({
 						todayISO={todayISO}
 						now={now}
 						zoomNowMs={zoomNowMs}
+						onOpenRecording={setActiveRecording}
 					/>
 				))}
 			</ol>
+			{recordingModal}
 		</div>
 	);
 }

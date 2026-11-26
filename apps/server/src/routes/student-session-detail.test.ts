@@ -1096,4 +1096,70 @@ describe("session lecture/homework materials, assignment sessionDate & student s
 			.where(eq(schema.classAssignment.id, caManualId));
 		expect(afterDelete?.sessionDate).toBeNull();
 	});
+
+	test("student session detail projects R2 recording fields without leaking storageKey/password and respects dynamic expiry", async () => {
+		const expiresAt = new Date("2027-02-14T12:00:00.000Z");
+		await db.insert(schema.classSessionMeeting).values({
+			id: "csm-r2-detail",
+			orgId: ORG_1,
+			classId: CLASS_1,
+			date: "2026-11-16",
+			zoomMeetingId: "zm-r2-detail",
+			joinUrl: "https://zoom.us/j/r2-detail",
+			recordingUrl: "",
+			recordingPassword: "secret-should-not-leak",
+			recordingStatus: "ready",
+			recordingStorageKey: `recordings/${ORG_1}/${CLASS_1}/2026-11-16/video.mp4`,
+			recordingMimeType: "video/mp4",
+			recordingSizeBytes: 2048,
+			recordingExpiresAt: expiresAt,
+			recordingZoomTrashStatus: "trashed",
+		});
+
+		const activeRes = await app.request(
+			`/api/student/classes/${CLASS_1}/sessions/2026-11-16`,
+			{
+				headers: {
+					origin: STUDENT_ORIGIN,
+					"x-test-user": "student-1",
+				},
+			},
+		);
+		expect(activeRes.status).toBe(200);
+		const activeJson = await activeRes.json();
+		const parsedActive = studentSessionDetailResponseSchema.parse(activeJson);
+		expect(parsedActive.session.hasRecordingVideo).toBe(true);
+		expect(parsedActive.session.recordingSource).toBe("r2");
+		expect(parsedActive.session.recordingStatus).toBe("ready");
+		expect(parsedActive.session.recordingExpiresAt).toBe(
+			expiresAt.toISOString(),
+		);
+		expect(parsedActive.session.recordingUrl).toBeUndefined();
+		expect(parsedActive.session.recordingPassword).toBeUndefined();
+		expect(JSON.stringify(activeJson)).not.toContain("recordingStorageKey");
+		expect(JSON.stringify(activeJson)).not.toContain("secret-should-not-leak");
+
+		// Quá mốc hết hạn 90 ngày theo đồng hồ now → API chi tiết buổi tự chuyển sang expired
+		fixedNow = new Date("2027-02-15T00:00:00.000Z");
+		const expiredRes = await app.request(
+			`/api/student/classes/${CLASS_1}/sessions/2026-11-16`,
+			{
+				headers: {
+					origin: STUDENT_ORIGIN,
+					"x-test-user": "student-1",
+				},
+			},
+		);
+		expect(expiredRes.status).toBe(200);
+		const parsedExpired = studentSessionDetailResponseSchema.parse(
+			await expiredRes.json(),
+		);
+		expect(parsedExpired.session.recordingStatus).toBe("expired");
+		expect(parsedExpired.session.hasRecordingVideo).toBeUndefined();
+		expect(parsedExpired.session.recordingSource).toBeUndefined();
+		expect(parsedExpired.session.recordingUrl).toBeUndefined();
+		expect(parsedExpired.session.recordingExpiresAt).toBe(
+			expiresAt.toISOString(),
+		);
+	});
 });

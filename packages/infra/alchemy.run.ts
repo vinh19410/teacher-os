@@ -198,15 +198,43 @@ export const libraryAudio = Cloudflare.R2.Bucket("library-audio", {});
 // /api/materials và /api/student/.../materials (kiểm enrollment).
 export const materials = Cloudflare.R2.Bucket("materials", {});
 
+// Kho video recording buổi học Zoom reup lên R2 (#994) — bucket riêng hoàn toàn
+// với media/materials để rule tự xóa 90 ngày không bao giờ chạm dữ liệu vĩnh viễn.
+// Private (không public domain), KHÔNG forceDestroy; R2 tự xóa object quá 90 ngày
+// (7_776_000s) và tự hủy multipart upload dở quá 1 ngày (86_400s).
+const RECORDING_RETENTION_SECONDS = 90 * 86_400;
+const RECORDING_MULTIPART_ABORT_SECONDS = 86_400;
+
+export const recordings = Cloudflare.R2.Bucket("recordings", {
+	lifecycleRules: [
+		{
+			id: "expire-recordings-90d",
+			enabled: true,
+			prefix: "",
+			deleteObjectsTransition: {
+				condition: {
+					type: "Age",
+					maxAge: RECORDING_RETENTION_SECONDS,
+				},
+			},
+			abortMultipartUploadsTransition: {
+				condition: {
+					type: "Age",
+					maxAge: RECORDING_MULTIPART_ABORT_SECONDS,
+				},
+			},
+		},
+	],
+});
+
 export const server = Cloudflare.Worker("server", {
 	main: "../../apps/server/src/index.ts",
 	compatibility: {
 		date: WORKER_COMPATIBILITY_DATE,
 		flags: ["nodejs_compat"],
 	},
-	// Single 10-minute cron trigger to stay within Cloudflare Workers Free's 5-cron/account limit.
-	// `apps/server/src/lib/scheduled.ts` runs Zoom recording sync on every tick and daily deadline
-	// reminder emails during the 23:00–23:09 UTC (06:00 Asia/Ho_Chi_Minh) window.
+	// Single 10-minute cron trigger running Zoom recording sync/reup/expiry on every tick
+	// and daily deadline reminder emails during 23:00–23:09 UTC (06:00 Asia/Ho_Chi_Minh).
 	crons: ["*/10 * * * *"],
 	...(topology && { domain: topology.apiHost, workersDev: false }),
 	env: {
@@ -214,6 +242,7 @@ export const server = Cloudflare.Worker("server", {
 		MEDIA: media,
 		LIBRARY_AUDIO: libraryAudio,
 		MATERIALS: materials,
+		RECORDINGS: recordings,
 		// TOS-24 (#470): Workers AI cho bóc tách đề — binding `ai` không cần
 		// cấu hình thêm; dev local đi qua proxy Cloudflare của alchemy, e2e
 		// không dùng workerd nên inject fake extractor qua boot.ts.

@@ -7,7 +7,7 @@ import {
 } from "@teacher-os/auth/mail/mailer";
 import { createDb } from "@teacher-os/db";
 import { env } from "@teacher-os/env/server";
-import { buildApp, type Db, type MediaStore } from "./app";
+import { buildApp, type Db, type MediaStore, type RecordingStore } from "./app";
 import { createAiProviders } from "./lib/ai-gate";
 import {
 	type BankHubContext,
@@ -16,6 +16,7 @@ import {
 import type { PlacementAiGrader } from "./lib/placement-ai/grader";
 import { createPlacementAiGrader } from "./lib/placement-ai/openai-grader";
 import { createR2MediaStore } from "./lib/r2-media-store";
+import { createR2RecordingStore } from "./lib/r2-recording-store";
 import { dispatchScheduledCron } from "./lib/scheduled";
 import { getSessionUser } from "./session";
 
@@ -43,7 +44,14 @@ let auth: Auth | undefined;
 let mediaStore: MediaStore | undefined;
 let libraryAudioStore: MediaStore | undefined;
 let materialsStore: MediaStore | undefined;
+let recordingStore: RecordingStore | undefined;
 let bankHub: BankHubContext | undefined;
+
+const getRecordingStore = (): RecordingStore | undefined => {
+	if (!env.RECORDINGS) return undefined;
+	recordingStore ??= createR2RecordingStore(env.RECORDINGS);
+	return recordingStore;
+};
 // TOS-24 (#470): kho file đề nhập AI dùng chung bucket MEDIA — memoized
 // riêng để không tạo adapter mới mỗi request (same pattern mediaStore).
 let examImportStore: MediaStore | undefined;
@@ -161,6 +169,8 @@ const app = buildApp({
 		materialsStore ??= createR2MediaStore(env.MATERIALS);
 		return materialsStore;
 	},
+	// Video recording buổi học Zoom (bucket R2 private `recordings`, vòng đời 90 ngày).
+	getRecordingStore,
 	// TOS-24 (#470): file đề gốc nhập AI dùng chung bucket MEDIA (prefix
 	// `exam-imports/<orgId>/` do route tự ghép). Binding MEDIA thiếu →
 	// undefined → route /api/exam-imports trả 503 EXAM_IMPORT_DISABLED.
@@ -227,6 +237,7 @@ export default {
 			dispatchScheduledCron(controller, {
 				db,
 				zoom: zoomConfig,
+				getRecordingStore,
 				getMailer,
 				studentOrigin,
 			}).catch((err) => {

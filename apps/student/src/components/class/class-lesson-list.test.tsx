@@ -4,6 +4,7 @@ import type { StudentClassLesson } from "@teacher-os/api/contracts";
 import { vietnamSessionEndMs } from "@teacher-os/api/vietnam-date";
 import { ZOOM_JOIN_ERROR_CODES } from "@teacher-os/api/zoom-window";
 import {
+	act,
 	cleanup,
 	fireEvent,
 	render,
@@ -15,6 +16,10 @@ import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { requestStudentZoomJoin } from "@/lib/repos/student";
+import {
+	clearActiveStudentOrgId,
+	setActiveStudentOrgId,
+} from "@/lib/student-org-storage";
 import { ClassLessonList } from "./class-lesson-list";
 
 vi.mock("@tanstack/react-router", () => ({
@@ -519,6 +524,147 @@ describe("ClassLessonList — Zoom & Recording (#816)", () => {
 				name: "Sao chép mật khẩu recording",
 			}),
 		).toBeTruthy();
+	});
+
+	test("mở modal xem video in-app cho R2 recording (kèm org query, hạn lưu 90 ngày, không hiện mật khẩu) và cập nhật khi đổi org", () => {
+		setActiveStudentOrgId("org-alpha");
+		try {
+			render(
+				<ClassLessonList
+					classId="c1"
+					lessons={[
+						lesson({
+							id: "l-r2",
+							status: "completed",
+							date: "2026-11-10",
+							topic: "Speaking Part 2",
+							recordingUrl: "",
+							recordingPassword: "HiddenPass",
+							recordingStatus: "ready",
+							recordingSource: "r2",
+							hasRecordingVideo: true,
+							recordingExpiresAt: "2027-02-08T18:30:00Z",
+						}),
+					]}
+					todayISO={TODAY}
+					now={NOW}
+				/>,
+			);
+
+			const item = screen
+				.getByText("Speaking Part 2")
+				.closest("li") as HTMLElement;
+			expect(within(item).getByText("Lưu đến 09/02/2027")).toBeTruthy();
+			expect(within(item).queryByText("HiddenPass")).toBeNull();
+			expect(
+				within(item).queryByRole("link", { name: "Xem recording" }),
+			).toBeNull();
+
+			fireEvent.click(
+				within(item).getByRole("button", { name: "Xem recording" }),
+			);
+
+			const dialog = screen.getByRole("dialog", {
+				name: "Recording — Speaking Part 2",
+			});
+			const video = dialog.querySelector("video") as HTMLVideoElement | null;
+			expect(video).not.toBeNull();
+			expect(video?.getAttribute("controlslist")).toBe("nodownload");
+			expect(video?.getAttribute("src")).toContain(
+				"/api/student/classes/c1/sessions/2026-11-10/recording/video?org=org-alpha",
+			);
+			expect(video?.getAttribute("src")).not.toContain("download=");
+			expect(
+				within(dialog).getByText(
+					"Lưu trữ đến 09/02/2027 (tự động xóa sau 90 ngày)",
+				),
+			).toBeTruthy();
+
+			// Đổi org đang hoạt động -> URL video tự cập nhật theo org mới
+			act(() => {
+				setActiveStudentOrgId("org-beta");
+			});
+			expect(dialog.querySelector("video")?.getAttribute("src")).toContain(
+				"/api/student/classes/c1/sessions/2026-11-10/recording/video?org=org-beta",
+			);
+
+			fireEvent.keyDown(document, { key: "Escape" });
+			expect(screen.queryByRole("dialog")).toBeNull();
+		} finally {
+			clearActiveStudentOrgId();
+		}
+	});
+
+	test("hiển thị badge 'Recording đã hết hạn (90 ngày)' khi hết hạn và giữ link ngoài + mật khẩu khi fallback", () => {
+		render(
+			<ClassLessonList
+				classId="c1"
+				lessons={[
+					lesson({
+						id: "l-expired",
+						status: "completed",
+						date: "2026-08-01",
+						topic: "Expired recording session",
+						recordingUrl: "",
+						recordingStatus: "expired",
+						hasRecordingVideo: false,
+						recordingExpiresAt: "2026-10-30T14:00:00Z",
+					}),
+					lesson({
+						id: "l-expired-cancelled",
+						status: "cancelled",
+						date: "2026-08-02",
+						topic: "Cancelled expired session",
+						recordingUrl: "",
+						recordingStatus: "expired",
+						hasRecordingVideo: false,
+					}),
+					lesson({
+						id: "l-fallback",
+						status: "completed",
+						date: "2026-11-11",
+						topic: "Fallback Zoom recording",
+						recordingUrl: "https://zoom.us/rec/share/fallback-cls",
+						recordingPassword: "ZoomPass1",
+						recordingStatus: "failed",
+						hasRecordingVideo: false,
+					}),
+				]}
+				todayISO={TODAY}
+				now={NOW}
+			/>,
+		);
+
+		const expiredItem = screen
+			.getByText("Expired recording session")
+			.closest("li") as HTMLElement;
+		expect(
+			within(expiredItem).getByText("Recording đã hết hạn (90 ngày)"),
+		).toBeTruthy();
+		expect(
+			within(expiredItem).queryByRole("button", { name: "Xem recording" }),
+		).toBeNull();
+		expect(
+			within(expiredItem).queryByRole("link", { name: "Xem recording" }),
+		).toBeNull();
+
+		const cancelledItem = screen
+			.getByText("Cancelled expired session")
+			.closest("li") as HTMLElement;
+		expect(
+			within(cancelledItem).queryByText("Recording đã hết hạn (90 ngày)"),
+		).toBeNull();
+
+		const fallbackItem = screen
+			.getByText("Fallback Zoom recording")
+			.closest("li") as HTMLElement;
+		const fallbackLink = within(fallbackItem).getByRole("link", {
+			name: "Xem recording",
+		});
+		expect(fallbackLink.getAttribute("href")).toBe(
+			"https://zoom.us/rec/share/fallback-cls",
+		);
+		expect(within(fallbackItem).getByText("ZoomPass1")).toBeTruthy();
 	});
 });
 

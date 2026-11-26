@@ -1,7 +1,9 @@
-import type {
-	KernelHolidayShiftRow,
-	KernelSessionMeetingRow,
+import {
+	type KernelHolidayShiftRow,
+	type KernelSessionMeetingRow,
+	RECORDING_RETENTION_DAYS,
 } from "@teacher-os/api/contracts";
+import { RecordingPlayerModal } from "@teacher-os/ui/components/recording-player-modal";
 import {
 	ChevronDown,
 	ChevronRight,
@@ -56,7 +58,10 @@ import type {
 import { makeupDateForShift } from "@/lib/repos/holidays";
 import type { KernelCommandResult } from "@/lib/repos/kernel";
 import { useCanWriteMaterials } from "@/lib/repos/materials";
-import { createClassZoomBulk } from "@/lib/repos/zoom-meeting";
+import {
+	createClassZoomBulk,
+	sessionRecordingVideoUrl,
+} from "@/lib/repos/zoom-meeting";
 import { todayISOVietnam } from "@/lib/week-grid";
 
 /** Space/Enter must not bubble past a CTA (parity with the roster modal). */
@@ -138,6 +143,12 @@ export function ClassSessionsSection({
 	// moveDate reorders the chronology under an open dialog.
 	const [actionsDateISO, setActionsDateISO] = useState<string | null>(null);
 	const [materialsDateISO, setMaterialsDateISO] = useState<string | null>(null);
+	const [recordingPlayer, setRecordingPlayer] = useState<{
+		dateISO: string;
+		title: string;
+		subtitle: string;
+		expiresAt: string | null;
+	} | null>(null);
 	const [bulkSliceOpen, setBulkSliceOpen] = useState(false);
 
 	// Issue #649 & #697: dùng chung helper resolveClassSessions với modal
@@ -423,14 +434,23 @@ export function ClassSessionsSection({
 							s.rows.length === 0 &&
 							makeupDateForShift({ holidayShifts }, cls.id, s.dateISO) !== null;
 						const meeting = meetingByDate.get(s.dateISO);
-						const rowJoinUrl =
-							status !== "cancelled" && status !== "holiday" && !shiftedAway
-								? s.zoom || s.rows[0]?.zoom || meeting?.joinUrl || ""
-								: "";
-						const rowRecordingUrl =
-							status !== "cancelled" && status !== "holiday" && !shiftedAway
-								? meeting?.recordingUrl || ""
-								: "";
+						const rowActive =
+							status !== "cancelled" && status !== "holiday" && !shiftedAway;
+						const rowJoinUrl = rowActive
+							? s.zoom || s.rows[0]?.zoom || meeting?.joinUrl || ""
+							: "";
+						const rowRecordingUrl = rowActive
+							? meeting?.recordingUrl || ""
+							: "";
+						const rowHasR2Video =
+							rowActive &&
+							Boolean(meeting?.hasRecordingVideo) &&
+							meeting?.recordingStatus !== "expired";
+						const rowRecordingExpired =
+							rowActive &&
+							meeting?.recordingStatus === "expired" &&
+							!rowHasR2Video &&
+							!rowRecordingUrl;
 
 						return (
 							<li
@@ -531,7 +551,10 @@ export function ClassSessionsSection({
 												</button>
 											)
 									}
-									{(rowJoinUrl || rowRecordingUrl) && (
+									{(rowJoinUrl ||
+										rowHasR2Video ||
+										rowRecordingUrl ||
+										rowRecordingExpired) && (
 										<div className="mt-1 flex flex-wrap items-center gap-2.5">
 											{rowJoinUrl && (
 												<a
@@ -545,7 +568,26 @@ export function ClassSessionsSection({
 													<ExternalLink aria-hidden="true" className="size-3" />
 												</a>
 											)}
-											{rowRecordingUrl && (
+											{rowHasR2Video ? (
+												<button
+													type="button"
+													onClick={() =>
+														setRecordingPlayer({
+															dateISO: s.dateISO,
+															title: info.title
+																? `Recording — ${info.title}`
+																: `Recording buổi ${formatSessionDate(s.dateISO)}`,
+															subtitle: `${formatSessionDate(s.dateISO)} · ${sessionTimeRange(s)}`,
+															expiresAt: meeting?.recordingExpiresAt ?? null,
+														})
+													}
+													onKeyDown={stopActionKeyPropagation}
+													className="inline-flex items-center gap-1 whitespace-nowrap rounded-sm font-medium text-foreground text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+												>
+													<Film aria-hidden="true" className="size-3.5" />
+													Xem recording
+												</button>
+											) : rowRecordingUrl ? (
 												<a
 													href={rowRecordingUrl}
 													target="_blank"
@@ -556,7 +598,11 @@ export function ClassSessionsSection({
 													Xem recording
 													<ExternalLink aria-hidden="true" className="size-3" />
 												</a>
-											)}
+											) : rowRecordingExpired ? (
+												<span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
+													Recording đã hết hạn ({RECORDING_RETENTION_DAYS} ngày)
+												</span>
+											) : null}
 										</div>
 									)}
 								</div>
@@ -704,6 +750,16 @@ export function ClassSessionsSection({
 					classId={cls.id}
 					sessions={sliceableSessions}
 					onClose={() => setBulkSliceOpen(false)}
+				/>
+			)}
+			{recordingPlayer !== null && (
+				<RecordingPlayerModal
+					open={true}
+					onClose={() => setRecordingPlayer(null)}
+					title={recordingPlayer.title}
+					subtitle={recordingPlayer.subtitle}
+					videoUrl={sessionRecordingVideoUrl(cls.id, recordingPlayer.dateISO)}
+					expiresAt={recordingPlayer.expiresAt}
 				/>
 			)}
 		</>

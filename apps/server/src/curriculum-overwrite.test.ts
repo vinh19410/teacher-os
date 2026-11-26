@@ -1515,4 +1515,195 @@ describe("Force-overwrite manual sessions on curriculum import", () => {
 		expect(resG.status).toBe(404);
 		expect(await resG.json()).toEqual({ error: "syllabus not found" });
 	});
+
+	test("preserves R2-backed and expired recordings on overwrite and blocks concurrent R2 commit race via CAS", async () => {
+		const zoom = createMockZoom();
+		const t = await setupOverwriteTestApp({ zoom });
+		const startMonday = futureMondayISO();
+		const otherTue = addDaysISO(startMonday, 1);
+		const otherWed = addDaysISO(startMonday, 2);
+		const otherThu = addDaysISO(startMonday, 3);
+		const { templateId } = await t.seedTemplate("Template R2 Preserve", 2);
+
+		const classId = await t.createManualClass({
+			name: "Lớp Bảo Toàn R2",
+			startDate: startMonday,
+			schedule: { days: [0], start: "19:00", end: "20:30" },
+			mode: "Online",
+		});
+
+		await t.libsql.insert(schema.classSession).values([
+			{
+				id: "cs-r2-ready",
+				orgId: t.orgId,
+				classId,
+				date: otherTue,
+				time: "19:00",
+				dur: 90,
+				topic: "Buổi có video R2",
+				zoom: "https://zoom.us/j/r2-ready",
+			},
+			{
+				id: "cs-r2-expired",
+				orgId: t.orgId,
+				classId,
+				date: otherWed,
+				time: "19:00",
+				dur: 90,
+				topic: "Buổi video R2 đã hết hạn",
+				zoom: "https://zoom.us/j/r2-expired",
+			},
+			{
+				id: "cs-empty-meeting",
+				orgId: t.orgId,
+				classId,
+				date: otherThu,
+				time: "19:00",
+				dur: 90,
+				topic: "Buổi chưa có recording",
+				zoom: "https://zoom.us/j/no-rec",
+			},
+		]);
+
+		const futureExpiry = new Date(Date.now() + 30 * 86_400_000);
+		const pastExpiry = new Date(Date.now() - 86_400_000);
+		const r2Key = `recordings/${t.orgId}/${classId}/${otherTue}/video.mp4`;
+		await t.libsql.insert(schema.classSessionMeeting).values([
+			{
+				id: "csm-r2-ready",
+				orgId: t.orgId,
+				classId,
+				date: otherTue,
+				zoomMeetingId: "zm-r2-ready",
+				joinUrl: "https://zoom.us/j/r2-ready",
+				recordingUrl: "",
+				recordingStatus: "ready",
+				recordingStorageKey: r2Key,
+				recordingMimeType: "video/mp4",
+				recordingSizeBytes: 1024,
+				recordingExpiresAt: futureExpiry,
+				recordingZoomTrashStatus: "trashed",
+			},
+			{
+				id: "csm-r2-expired",
+				orgId: t.orgId,
+				classId,
+				date: otherWed,
+				zoomMeetingId: "zm-r2-expired",
+				joinUrl: "https://zoom.us/j/r2-expired",
+				recordingUrl: "",
+				recordingStatus: "expired",
+				recordingStorageKey: null,
+				recordingExpiresAt: pastExpiry,
+				recordingZoomTrashStatus: "trashed",
+			},
+			{
+				id: "csm-no-rec",
+				orgId: t.orgId,
+				classId,
+				date: otherThu,
+				zoomMeetingId: "zm-no-rec",
+				joinUrl: "https://zoom.us/j/no-rec",
+				recordingUrl: "",
+				recordingStatus: "pending",
+				recordingStorageKey: null,
+			},
+		]);
+
+		const preview = (await (
+			await t.call(t.teacher.key, `/api/classes/${classId}/curriculum/import`, {
+				body: { templateId },
+			})
+		).json()) as { overwriteHash: string };
+
+		const overwriteRes = await t.call(
+			t.teacher.key,
+			`/api/classes/${classId}/curriculum/import`,
+			{
+				body: {
+					templateId,
+					overwriteManualSessions: true,
+					overwriteHash: preview.overwriteHash,
+				},
+			},
+		);
+		expect(overwriteRes.status).toBe(201);
+
+		const meetings = await t.libsql
+			.select()
+			.from(schema.classSessionMeeting)
+			.where(eq(schema.classSessionMeeting.classId, classId));
+		const byDate = new Map(meetings.map((m) => [m.date, m]));
+		expect(byDate.get(otherTue)).toMatchObject({
+			zoomMeetingId: null,
+			joinUrl: "",
+			recordingUrl: "",
+			recordingStatus: "ready",
+			recordingStorageKey: r2Key,
+			recordingExpiresAt: futureExpiry,
+		});
+		expect(byDate.get(otherWed)).toMatchObject({
+			zoomMeetingId: null,
+			joinUrl: "",
+			recordingUrl: "",
+			recordingStatus: "expired",
+			recordingStorageKey: null,
+			recordingExpiresAt: pastExpiry,
+		});
+		expect(byDate.has(otherThu)).toBe(false);
+
+		// Race: sync R2 commit recordingStorageKey (recordingUrl vẫn rỗng) ngay trước batch overwrite → CAS chặn 409, bảo toàn dòng R2
+		const classRace = await t.createManualClass({
+			name: "Race R2 Commit",
+			startDate: startMonday,
+		});
+		await t.call(t.teacher.key, `/api/classes/${classRace}/sessions`, {
+			body: { date: otherTue, time: "19:00", dur: 90, topic: "Buổi race R2" },
+		});
+		const [existingRaceMeeting] = await t.libsql
+			.select({ id: schema.classSessionMeeting.id })
+			.from(schema.classSessionMeeting)
+			.where(eq(schema.classSessionMeeting.classId, classRace));
+		expect(existingRaceMeeting?.id).toBeTruthy();
+		const meetingRaceId = existingRaceMeeting?.id ?? "";
+		const previewRace = (await (
+			await t.call(
+				t.teacher.key,
+				`/api/classes/${classRace}/curriculum/import`,
+				{ body: { templateId } },
+			)
+		).json()) as { overwriteHash: string };
+		const raceKey = `recordings/${t.orgId}/${classRace}/${otherTue}/race.mp4`;
+		t.setNextBatchInterceptor(async () => {
+			await t.libsql
+				.update(schema.classSessionMeeting)
+				.set({
+					recordingUrl: "",
+					recordingStorageKey: raceKey,
+					recordingStatus: "ready",
+					recordingExpiresAt: futureExpiry,
+					recordingZoomTrashStatus: "trashed",
+				})
+				.where(eq(schema.classSessionMeeting.id, meetingRaceId));
+			return true;
+		});
+		const raceRes = await t.call(
+			t.teacher.key,
+			`/api/classes/${classRace}/curriculum/import`,
+			{
+				body: {
+					templateId,
+					overwriteManualSessions: true,
+					overwriteHash: previewRace.overwriteHash,
+				},
+			},
+		);
+		expect(raceRes.status).toBe(409);
+		const [meetingAfterRace] = await t.libsql
+			.select()
+			.from(schema.classSessionMeeting)
+			.where(eq(schema.classSessionMeeting.id, meetingRaceId));
+		expect(meetingAfterRace?.recordingStorageKey).toBe(raceKey);
+		expect(meetingAfterRace?.recordingStatus).toBe("ready");
+	});
 });

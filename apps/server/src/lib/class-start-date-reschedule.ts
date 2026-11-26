@@ -1189,7 +1189,7 @@ export async function applyClassStartDateChange(
 								.set({
 									zoomMeetingId: null,
 									joinUrl: "",
-									recordingStatus: sql`CASE WHEN ${classSessionMeeting.recordingUrl} != '' THEN 'ready' ELSE 'none' END`,
+									recordingStatus: sql`CASE WHEN ${classSessionMeeting.recordingStorageKey} IS NOT NULL OR ${classSessionMeeting.recordingStatus} = 'expired' THEN ${classSessionMeeting.recordingStatus} WHEN ${classSessionMeeting.recordingUrl} != '' THEN 'ready' ELSE 'none' END`,
 								})
 								.where(
 									and(

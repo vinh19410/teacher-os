@@ -141,6 +141,7 @@ import {
 	gradePlacementSubmissionResponse,
 	retryPlacementSubmissionAiResponse,
 } from "../lib/placement-submission-service";
+import type { RecordingStore } from "../lib/recording-store";
 import { requireFinanceRole } from "../lib/require-finance-role";
 import {
 	buildImportBatch,
@@ -195,6 +196,7 @@ export function kernelRoutes(deps: {
 	getMediaStore?(): MediaStore | undefined;
 	getLibraryAudioStore?(): MediaStore | undefined;
 	getMaterialsStore?(): MediaStore | undefined;
+	getRecordingStore?(): RecordingStore | undefined;
 	leadOrgId?: string;
 	teacherEmails?: string[];
 	corsOrigin?: string | string[];
@@ -549,7 +551,10 @@ export function kernelRoutes(deps: {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
 		return c.json(
-			await loadSnapshot(deps.getDb(), ctx.orgId, { role: ctx.role }),
+			await loadSnapshot(deps.getDb(), ctx.orgId, {
+				role: ctx.role,
+				...(deps.now ? { now: deps.now() } : {}),
+			}),
 		);
 	});
 

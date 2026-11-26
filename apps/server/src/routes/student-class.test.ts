@@ -90,6 +90,102 @@ describe("toStudentClassLessonWithMeeting", () => {
 		expect("joinUrl" in res).toBe(false);
 		expect(res.recordingUrl).toBe("https://zoom.us/rec/share/1");
 		expect(res.recordingPassword).toBe("pw");
+		expect(res.recordingSource).toBe("external");
+		expect(res.hasRecordingVideo).toBeUndefined();
+	});
+
+	test("recording nguồn R2: bật hasRecordingVideo + recordingSource r2, ẩn recordingUrl/password và không lộ storageKey", () => {
+		const now = new Date("2026-11-26T10:00:00.000Z");
+		const expiresAt = new Date("2027-02-24T10:00:00.000Z");
+		const res = toStudentClassLessonWithMeeting(
+			baseRow,
+			{
+				classId: "cls-1",
+				date: "2026-11-25",
+				joinUrl: "https://zoom.us/j/222",
+				recordingUrl: "https://zoom.us/rec/share/legacy-ignored",
+				recordingPassword: "secret",
+				recordingStatus: "ready",
+				recordingStorageKey: "org-1/cls-1/2026-11-25/abc.mp4",
+				recordingExpiresAt: expiresAt,
+			},
+			now,
+		);
+		expect(res.hasRecordingVideo).toBe(true);
+		expect(res.recordingSource).toBe("r2");
+		expect(res.recordingStatus).toBe("ready");
+		expect(res.recordingExpiresAt).toBe(expiresAt.toISOString());
+		expect(res.recordingUrl).toBeUndefined();
+		expect(res.recordingPassword).toBeUndefined();
+		expect("recordingStorageKey" in res).toBe(false);
+		expect("recordingError" in res).toBe(false);
+		expect("recordingZoomTrashStatus" in res).toBe(false);
+	});
+
+	test("recording R2 quá hạn 90 ngày (chưa kịp sweep hoặc đã sweep) map sang expired và ẩn video", () => {
+		const now = new Date("2027-03-01T10:00:00.000Z");
+		const expiresAt = new Date("2027-02-24T10:00:00.000Z");
+		const unswept = toStudentClassLessonWithMeeting(
+			baseRow,
+			{
+				classId: "cls-1",
+				date: "2026-11-25",
+				joinUrl: "https://zoom.us/j/222",
+				recordingUrl: "",
+				recordingPassword: null,
+				recordingStatus: "ready",
+				recordingStorageKey: "org-1/cls-1/2026-11-25/abc.mp4",
+				recordingExpiresAt: expiresAt,
+			},
+			now,
+		);
+		expect(unswept.recordingStatus).toBe("expired");
+		expect(unswept.recordingExpiresAt).toBe(expiresAt.toISOString());
+		expect(unswept.hasRecordingVideo).toBeUndefined();
+		expect(unswept.recordingSource).toBeUndefined();
+		expect(unswept.recordingUrl).toBeUndefined();
+
+		const swept = toStudentClassLessonWithMeeting(
+			baseRow,
+			{
+				classId: "cls-1",
+				date: "2026-11-25",
+				joinUrl: "https://zoom.us/j/222",
+				recordingUrl: "",
+				recordingPassword: null,
+				recordingStatus: "expired",
+				recordingStorageKey: null,
+				recordingExpiresAt: expiresAt,
+			},
+			now,
+		);
+		expect(swept.recordingStatus).toBe("expired");
+		expect(swept.recordingExpiresAt).toBe(expiresAt.toISOString());
+		expect(swept.hasRecordingVideo).toBeUndefined();
+		expect(swept.recordingSource).toBeUndefined();
+	});
+
+	test("buổi cancelled hoặc holiday ẩn toàn bộ metadata recording R2", () => {
+		const now = new Date("2026-11-26T10:00:00.000Z");
+		const expiresAt = new Date("2027-02-24T10:00:00.000Z");
+		const res = toStudentClassLessonWithMeeting(
+			{ ...baseRow, status: "cancelled" },
+			{
+				classId: "cls-1",
+				date: "2026-11-25",
+				joinUrl: "https://zoom.us/j/222",
+				recordingUrl: "",
+				recordingPassword: null,
+				recordingStatus: "ready",
+				recordingStorageKey: "org-1/cls-1/2026-11-25/abc.mp4",
+				recordingExpiresAt: expiresAt,
+			},
+			now,
+		);
+		expect(res.hasRecordingVideo).toBeUndefined();
+		expect(res.recordingSource).toBeUndefined();
+		expect(res.recordingStatus).toBeUndefined();
+		expect(res.recordingExpiresAt).toBeUndefined();
 	});
 
 	test("buổi legacy không có date hoặc buổi cancelled/holiday không gắn hasZoom", () => {

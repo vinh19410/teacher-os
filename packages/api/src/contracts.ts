@@ -2642,13 +2642,34 @@ export const studentOverviewSchema = z.object({
 });
 export type StudentOverview = z.infer<typeof studentOverviewSchema>;
 
+export const RECORDING_RETENTION_DAYS = 90;
+
 export const RECORDING_STATUSES = [
 	"none",
 	"pending",
 	"ready",
 	"failed",
+	"expired",
 ] as const;
 export type RecordingStatus = (typeof RECORDING_STATUSES)[number];
+
+export const RECORDING_SOURCES = ["r2", "external"] as const;
+export type RecordingSource = (typeof RECORDING_SOURCES)[number];
+
+export const RECORDING_ZOOM_TRASH_STATUSES = [
+	"none",
+	"pending",
+	"trashed",
+	"failed",
+] as const;
+export type RecordingZoomTrashStatus =
+	(typeof RECORDING_ZOOM_TRASH_STATUSES)[number];
+
+export const RECORDING_ERROR_CODES = {
+	DISABLED: "RECORDINGS_DISABLED",
+	EXPIRED: "RECORDING_EXPIRED",
+	NOT_FOUND: "RECORDING_NOT_FOUND",
+} as const;
 
 /** Buổi học của chính học viên trong lớp (GET /api/student/classes/:classId). */
 export const studentClassLessonSchema = z.object({
@@ -2666,6 +2687,9 @@ export const studentClassLessonSchema = z.object({
 	recordingUrl: z.string().nullable().optional(),
 	recordingPassword: z.string().nullable().optional(),
 	recordingStatus: z.enum(RECORDING_STATUSES).optional(),
+	recordingSource: z.enum(RECORDING_SOURCES).optional(),
+	recordingExpiresAt: z.string().nullable().optional(),
+	hasRecordingVideo: z.boolean().optional(),
 	/** Metadata giáo trình ánh xạ theo buổi N ↔ bài N (optional cho tương thích ngược). */
 	moduleId: z.string().nullable().optional(),
 	moduleTitle: z.string().nullable().optional(),
@@ -5719,6 +5743,12 @@ export interface KernelSessionMeetingRow {
 	recordingStatus: RecordingStatus | string;
 	recordingError: string | null;
 	recordingSyncedAt: string | null;
+	recordingSource?: RecordingSource | null;
+	hasRecordingVideo?: boolean;
+	recordingSizeBytes?: number | null;
+	recordingUploadedAt?: string | null;
+	recordingExpiresAt?: string | null;
+	recordingZoomTrashStatus?: RecordingZoomTrashStatus | string;
 }
 
 export const ZOOM_ERROR_CODES = {
@@ -5755,6 +5785,10 @@ export const sessionRecordingSyncResponseSchema = z.object({
 	status: z.enum(RECORDING_STATUSES),
 	recordingUrl: z.string(),
 	recordingPassword: z.string().nullable().optional(),
+	recordingSource: z.enum(RECORDING_SOURCES).nullable().optional(),
+	hasRecordingVideo: z.boolean().optional(),
+	recordingExpiresAt: z.string().nullable().optional(),
+	recordingZoomTrashStatus: z.enum(RECORDING_ZOOM_TRASH_STATUSES).optional(),
 	syncedAt: z.string().nullable(),
 	message: z.string().nullable().optional(),
 });

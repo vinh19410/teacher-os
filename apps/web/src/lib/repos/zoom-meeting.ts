@@ -84,3 +84,11 @@ export function updateSessionRecording(
 		},
 	);
 }
+
+/** URL stream video recording đã lưu trên R2 cho một buổi học (chỉ phát inline). */
+export function sessionRecordingVideoUrl(
+	classId: string,
+	dateISO: string,
+): string {
+	return `${apiBase()}/api/classes/${encodeURIComponent(classId)}/sessions/${encodeURIComponent(dateISO)}/recording/video`;
+}

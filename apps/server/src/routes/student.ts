@@ -17,6 +17,7 @@ import {
 	quizAnswerPatchSchema,
 	quizAttemptActionSchema,
 	quizEssayPatchSchema,
+	RECORDING_ERROR_CODES,
 	STORED_EXAM_INTERESTS,
 	STUDENT_ERROR_CODES,
 	STUDENT_INVITATION_ERROR_CODES,
@@ -112,6 +113,8 @@ import {
 	toPlainAnnotation,
 } from "../lib/quiz-annotation";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
+import type { RecordingStore } from "../lib/recording-store";
+import { recordingVideoResponse } from "../lib/recording-video-response";
 import { loadClassCurriculumSummary } from "../lib/session-curriculum-materials";
 import { serveStudyPackAudio } from "../lib/study-pack-audio";
 import type { SessionUser } from "../session";
@@ -144,6 +147,8 @@ export interface StudentRouteDeps {
 	fetchExternalAudio?: typeof fetch;
 	/** #814: kho audio R2 dùng chung cho study-pack prompts. */
 	getLibraryAudioStore?(): MediaStore | undefined;
+	/** Kho video recording buổi học Zoom (bucket R2 private `recordings`). */
+	getRecordingStore?(): RecordingStore | undefined;
 	/** Allowlist email giáo viên để định tuyến auto-join single-org (#716). */
 	teacherEmails?: string[];
 	/** Đồng hồ server có thể inject cho test/E2E (mặc định `() => new Date()`). */
@@ -835,6 +840,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	router.use("/classes/:classId", requireStudent);
 	router.use("/classes/:classId/sessions/:date", requireStudent);
 	router.use("/classes/:classId/sessions/:date/zoom-join", requireStudent);
+	router.use(
+		"/classes/:classId/sessions/:date/recording/video",
+		requireStudent,
+	);
 	router.use("/onboarding", requireStudent);
 	router.use("/enrollments/:enrollmentId/accept", requireStudent);
 
@@ -1247,6 +1256,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					recordingUrl: classSessionMeeting.recordingUrl,
 					recordingPassword: classSessionMeeting.recordingPassword,
 					recordingStatus: classSessionMeeting.recordingStatus,
+					recordingStorageKey: classSessionMeeting.recordingStorageKey,
+					recordingExpiresAt: classSessionMeeting.recordingExpiresAt,
 				})
 				.from(classSessionMeeting)
 				.where(
@@ -1303,6 +1314,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			const base = toStudentClassLessonWithMeeting(
 				l,
 				l.date ? meetingByDate.get(l.date) : undefined,
+				now,
 			);
 			const isInactive = l.status === "holiday" || l.status === "cancelled";
 			const curr =
@@ -1426,6 +1438,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					recordingUrl: classSessionMeeting.recordingUrl,
 					recordingPassword: classSessionMeeting.recordingPassword,
 					recordingStatus: classSessionMeeting.recordingStatus,
+					recordingStorageKey: classSessionMeeting.recordingStorageKey,
+					recordingExpiresAt: classSessionMeeting.recordingExpiresAt,
 				})
 				.from(classSessionMeeting)
 				.where(
@@ -1614,7 +1628,11 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				: null;
 
 		const meeting = meetingRows[0];
-		const baseLesson = toStudentClassLessonWithMeeting(primaryRow, meeting);
+		const baseLesson = toStudentClassLessonWithMeeting(
+			primaryRow,
+			meeting,
+			now,
+		);
 
 		const response: StudentSessionDetailResponse = {
 			class: {
@@ -1880,6 +1898,174 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	});
 
 	/**
+	 * GET /api/student/classes/:classId/sessions/:date/recording/video
+	 *
+	 * Phát stream video recording từ kho R2 (hỗ trợ `Range: bytes=` trả 206).
+	 * Chỉ cho phép học viên có enrollment `active` ở lớp đó và có buổi học
+	 * cùng ngày không bị `cancelled`/`holiday`. Trả 410 khi đã hết hạn 90 ngày.
+	 */
+	router.get("/classes/:classId/sessions/:date/recording/video", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const classId = c.req.param("classId") ?? "";
+		const date = parseStartDateStrict(c.req.param("date") ?? "");
+		if (!date) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{ error: "Ngày buổi học không hợp lệ.", reason: "invalid-date" },
+				400,
+			);
+		}
+
+		const store = deps.getRecordingStore?.();
+		if (!store) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Chưa cấu hình kho lưu trữ recording.",
+					code: RECORDING_ERROR_CODES.DISABLED,
+				},
+				503,
+			);
+		}
+
+		const db = deps.getDb();
+		const [enr] = await db
+			.select({ id: enrollment.id })
+			.from(enrollment)
+			.innerJoin(classTable, eq(enrollment.classId, classTable.id))
+			.where(
+				and(
+					eq(enrollment.orgId, orgId),
+					eq(classTable.orgId, orgId),
+					eq(enrollment.studentId, s.id),
+					eq(enrollment.classId, classId),
+					eq(enrollment.status, "active"),
+				),
+			)
+			.limit(1);
+
+		if (!enr) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Không tìm thấy recording.",
+					code: RECORDING_ERROR_CODES.NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		const lessonRows = await db
+			.select({ id: lesson.id, status: lesson.status })
+			.from(lesson)
+			.where(
+				and(
+					eq(lesson.orgId, orgId),
+					eq(lesson.enrollmentId, enr.id),
+					eq(lesson.classId, classId),
+					eq(lesson.date, date),
+				),
+			);
+
+		const hasActiveLesson = lessonRows.some(
+			(r) => r.status !== "cancelled" && r.status !== "holiday",
+		);
+		if (!hasActiveLesson) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Không tìm thấy recording.",
+					code: RECORDING_ERROR_CODES.NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		const [meeting] = await db
+			.select({
+				recordingStatus: classSessionMeeting.recordingStatus,
+				recordingStorageKey: classSessionMeeting.recordingStorageKey,
+				recordingMimeType: classSessionMeeting.recordingMimeType,
+				recordingSizeBytes: classSessionMeeting.recordingSizeBytes,
+				recordingExpiresAt: classSessionMeeting.recordingExpiresAt,
+			})
+			.from(classSessionMeeting)
+			.where(
+				and(
+					eq(classSessionMeeting.orgId, orgId),
+					eq(classSessionMeeting.classId, classId),
+					eq(classSessionMeeting.date, date),
+				),
+			)
+			.limit(1);
+
+		if (!meeting) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Không tìm thấy recording.",
+					code: RECORDING_ERROR_CODES.NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		const now = getNow();
+		const isExpired =
+			meeting.recordingStatus === "expired" ||
+			Boolean(
+				meeting.recordingStorageKey &&
+					meeting.recordingExpiresAt &&
+					meeting.recordingExpiresAt.getTime() <= now.getTime(),
+			);
+		if (isExpired) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Recording đã hết hạn lưu trữ (90 ngày).",
+					code: RECORDING_ERROR_CODES.EXPIRED,
+				},
+				410,
+			);
+		}
+
+		if (!meeting.recordingStorageKey) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Buổi học chưa có video recording lưu trữ.",
+					code: RECORDING_ERROR_CODES.NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		const response = await recordingVideoResponse(
+			store,
+			{
+				storageKey: meeting.recordingStorageKey,
+				mimeType: meeting.recordingMimeType,
+				sizeBytes: meeting.recordingSizeBytes,
+				fileName: `recording-${date}.mp4`,
+			},
+			{ rangeHeader: c.req.header("Range") },
+		);
+
+		if (!response) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Không tìm thấy file video recording trong kho lưu trữ.",
+					code: RECORDING_ERROR_CODES.NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		return response;
+	});
+
+	/**
 	 * GET /api/student/schedule (#584)
 	 *
 	 * Lịch học gộp của tất cả các lớp mà học viên đang tham gia (enrollment active)
@@ -1965,6 +2151,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					recordingUrl: classSessionMeeting.recordingUrl,
 					recordingPassword: classSessionMeeting.recordingPassword,
 					recordingStatus: classSessionMeeting.recordingStatus,
+					recordingStorageKey: classSessionMeeting.recordingStorageKey,
+					recordingExpiresAt: classSessionMeeting.recordingExpiresAt,
 				})
 				.from(classSessionMeeting)
 				.where(
@@ -2004,6 +2192,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					toStudentClassLessonWithMeeting(
 						l,
 						l.date ? meetingByKey.get(`${classRow.id}|${l.date}`) : undefined,
+						now,
 					),
 				),
 			);
