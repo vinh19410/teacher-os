@@ -1508,7 +1508,7 @@ export async function runRecordingExpiryCron(deps: {
 				continue;
 			}
 		}
-		await deps.db
+		const updated = await deps.db
 			.update(classSessionMeeting)
 			.set({
 				recordingStorageKey: null,
@@ -1524,8 +1524,11 @@ export async function runRecordingExpiryCron(deps: {
 					eq(classSessionMeeting.id, row.id),
 					eq(classSessionMeeting.recordingStorageKey, key),
 				),
-			);
-		expired += 1;
+			)
+			.returning({ id: classSessionMeeting.id });
+		if (updated.length > 0) {
+			expired += 1;
+		}
 	}
 
 	return { expired, failed };
