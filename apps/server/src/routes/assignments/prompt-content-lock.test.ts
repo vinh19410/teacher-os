@@ -578,4 +578,127 @@ describe("PATCH /api/assignments/prompts/:id — prompt content lock theo quiz_a
 			code: "WRITING_SECTION_LOCKED",
 		});
 	});
+
+	test("PATCH metadata trên prompt thư viện Reading p2/tfng và Study Pack p1/note → 200; đề tự soạn p2/tfng vẫn → 400 (#884)", async () => {
+		await db.insert(schema.assignmentPrompt).values([
+			{
+				id: "ap-lib-p2-tfng",
+				orgId: "org-1",
+				task: "task2",
+				genre: "",
+				skill: "reading",
+				part: "p2",
+				type: "tfng",
+				title: "The Falkirk Wheel",
+				band: "7.0",
+				prompt: "",
+				passage: "<p>Falkirk passage</p>",
+				questions: JSON.stringify([
+					{ stem: "S1", opts: null, answer: "TRUE", alts: "", type: "tfng" },
+				]),
+				status: "ready",
+				libraryRef: "library_test_part:ltp-falkirk-p2",
+			},
+			{
+				id: "ap-pack-p1-note",
+				orgId: "org-1",
+				task: "task2",
+				genre: "",
+				skill: "reading",
+				part: "p1",
+				type: "note",
+				title: "First Step Note Completion",
+				band: "7.0",
+				prompt: "",
+				passage: "<p>Study pack passage</p>",
+				questions: JSON.stringify([
+					{
+						stem: "Q1 ____",
+						opts: null,
+						answer: "water",
+						alts: "",
+						type: "note",
+					},
+				]),
+				status: "ready",
+				libraryRef: "library_exercise:sysex-first-step-note",
+			},
+			{
+				id: "ap-custom-p2-tfng",
+				orgId: "org-1",
+				task: "task2",
+				genre: "",
+				skill: "reading",
+				part: "p2",
+				type: "tfng",
+				title: "Custom P2 Invalid Type",
+				band: "7.0",
+				prompt: "",
+				passage: "<p>Custom passage</p>",
+				questions: JSON.stringify([
+					{ stem: "S1", opts: null, answer: "TRUE", alts: "", type: "tfng" },
+				]),
+				status: "ready",
+				libraryRef: null,
+			},
+			{
+				id: "ap-blank-ref-p2-tfng",
+				orgId: "org-1",
+				task: "task2",
+				genre: "",
+				skill: "reading",
+				part: "p2",
+				type: "tfng",
+				title: "Blank Ref P2 Invalid Type",
+				band: "7.0",
+				prompt: "",
+				passage: "<p>Blank ref passage</p>",
+				questions: JSON.stringify([
+					{ stem: "S1", opts: null, answer: "TRUE", alts: "", type: "tfng" },
+				]),
+				status: "ready",
+				libraryRef: "   ",
+			},
+		]);
+
+		const libRes = await teacherCall(
+			"/api/assignments/prompts/ap-lib-p2-tfng",
+			"PATCH",
+			{ title: "The Falkirk Wheel (Updated)" },
+		);
+		expect(libRes.status).toBe(200);
+		expect((await loadPromptRow("ap-lib-p2-tfng")).title).toBe(
+			"The Falkirk Wheel (Updated)",
+		);
+
+		const packRes = await teacherCall(
+			"/api/assignments/prompts/ap-pack-p1-note",
+			"PATCH",
+			{ title: "First Step Note (Updated)" },
+		);
+		expect(packRes.status).toBe(200);
+		expect((await loadPromptRow("ap-pack-p1-note")).title).toBe(
+			"First Step Note (Updated)",
+		);
+
+		const customRes = await teacherCall(
+			"/api/assignments/prompts/ap-custom-p2-tfng",
+			"PATCH",
+			{ title: "Should Be Rejected" },
+		);
+		expect(customRes.status).toBe(400);
+		await expect(customRes.json()).resolves.toMatchObject({
+			error: "invalid type",
+		});
+
+		const blankRefRes = await teacherCall(
+			"/api/assignments/prompts/ap-blank-ref-p2-tfng",
+			"PATCH",
+			{ title: "Should Also Be Rejected" },
+		);
+		expect(blankRefRes.status).toBe(400);
+		await expect(blankRefRes.json()).resolves.toMatchObject({
+			error: "invalid type",
+		});
+	});
 });

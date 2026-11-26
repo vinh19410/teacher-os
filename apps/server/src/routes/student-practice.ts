@@ -164,7 +164,7 @@ function buildPracticeFacets(
 		if (trimmed) collectionSet.add(trimmed);
 	}
 	const collections = [...collectionSet].sort((a, b) =>
-		a.localeCompare(b, "en", { sensitivity: "base" }),
+		a.localeCompare(b, "en", { sensitivity: "base", numeric: true }),
 	);
 
 	const parts: string[] = [];

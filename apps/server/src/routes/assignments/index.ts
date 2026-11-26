@@ -12,6 +12,10 @@ import {
 	mcqOptionsIssue,
 } from "@teacher-os/api/contracts";
 import { isAutoGradableSkill } from "@teacher-os/api/lib/ielts-band";
+import {
+	isLibrarySkill,
+	librarySkillTypes,
+} from "@teacher-os/api/library-contracts";
 import { assignment } from "@teacher-os/db/schema/assignment";
 import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
 import {
@@ -235,6 +239,7 @@ export function assignmentRoutes(deps: {
 				writingPart: assignmentPrompt.writingPart,
 				writingType: assignmentPrompt.writingType,
 				writingPrompt: assignmentPrompt.writingPrompt,
+				libraryRef: assignmentPrompt.libraryRef,
 			})
 			.from(assignmentPrompt)
 			.where(
@@ -247,9 +252,17 @@ export function assignmentRoutes(deps: {
 
 		// Rule phụ thuộc skill/part của ROW (contract không có context):
 		// type membership + questions chỉ hợp cho reading/listening.
-		const partTypes =
+		// Với prompt đồng bộ từ thư viện hoặc Study Pack (library_ref IS NOT NULL),
+		// hợp nhất thêm danh sách dạng bài của kỹ năng thư viện vì đề Reading p2/p3
+		// trong kho có thể mang dạng chéo slot (vd tfng ở p2) trong khi Study Pack
+		// dùng dạng riêng (vd note ở p1).
+		const slotTypes =
 			ASSIGNMENT_PART_TYPES[row.skill as AssignmentSkill]?.types[row.part] ??
 			[];
+		const partTypes =
+			(row.libraryRef ?? "").trim().length > 0 && isLibrarySkill(row.skill)
+				? [...new Set([...slotTypes, ...librarySkillTypes(row.skill)])]
+				: slotTypes;
 		const effectiveStatus = body.data.status ?? row.status;
 		const effectiveType =
 			body.data.type !== undefined ? body.data.type : row.type;

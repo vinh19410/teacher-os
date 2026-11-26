@@ -1917,6 +1917,83 @@ describe("GET /api/student/practice — facets & part/type/band filters (#884)",
 			expect(badRes.status, `expected 400 for ${badPath}`).toBe(400);
 		}
 	});
+
+	test("sorts collections with natural numeric ordering (Cambridge IELTS 7 before 10 and 20)", async () => {
+		await libsql
+			.insert(schema.organization)
+			.values({ id: "org-num-sort", name: "Numeric Sort Academy" });
+		await libsql.insert(schema.student).values({
+			id: "student-num-sort",
+			orgId: "org-num-sort",
+			name: "Lan",
+			email: "lan@facets.local",
+		});
+
+		const cols = [
+			{ id: "num-c20", collection: "Cambridge IELTS 20" },
+			{ id: "num-c7", collection: "Cambridge IELTS 7" },
+			{ id: "num-c10", collection: "Cambridge IELTS 10" },
+			{ id: "num-act", collection: "Actual Test" },
+		];
+		await libsql.insert(schema.assignmentTest).values(
+			cols.map((entry) => ({
+				id: entry.id,
+				orgId: "org-num-sort",
+				title: `Title ${entry.id}`,
+				skill: "reading",
+				collection: entry.collection,
+				status: "ready",
+			})),
+		);
+		await libsql.insert(schema.assignmentPrompt).values(
+			cols.map((entry) => ({
+				id: `p-${entry.id}`,
+				orgId: "org-num-sort",
+				task: "task2",
+				genre: "",
+				skill: "reading",
+				part: "p1",
+				type: "tfng",
+				title: `Prompt ${entry.id}`,
+				band: "7.0",
+				prompt: "",
+				passage: "<p>Passage</p>",
+				questions: JSON.stringify([
+					{
+						stem: "Q1",
+						opts: null,
+						answer: "TRUE",
+						alts: "",
+						type: "tfng",
+						pin: null,
+					},
+				]),
+				status: "ready",
+			})),
+		);
+		await libsql.insert(schema.assignmentTestPart).values(
+			cols.map((entry) => ({
+				id: `tp-${entry.id}`,
+				testId: entry.id,
+				promptId: `p-${entry.id}`,
+				part: "p1",
+				position: 0,
+			})),
+		);
+
+		const res = await facetGet(
+			"/api/student/practice?skill=reading&facets=1",
+			"org-num-sort",
+		);
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { facets: { collections: string[] } };
+		expect(body.facets.collections).toEqual([
+			"Actual Test",
+			"Cambridge IELTS 7",
+			"Cambridge IELTS 10",
+			"Cambridge IELTS 20",
+		]);
+	});
 });
 
 describe("student practice multi-part & overlong answerSet isolation", () => {

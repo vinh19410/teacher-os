@@ -242,7 +242,9 @@ export function SkillCatalog({
 				.filter((value) => value.length > 0);
 	const collections = Array.from(
 		new Set([...(collection ? [collection] : []), ...facetCollections]),
-	).sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
+	).sort((a, b) =>
+		a.localeCompare(b, "en", { sensitivity: "base", numeric: true }),
+	);
 
 	const rawParts = sortPracticeParts(skill, [
 		...(part ? [part] : []),

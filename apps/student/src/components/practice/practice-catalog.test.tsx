@@ -912,6 +912,56 @@ describe("Practice catalog facets, filters, URL coercion, and debounce races (#8
 			page: 1,
 		});
 	});
+
+	it("sorts Bộ đề options in natural numeric order (Cambridge IELTS 7 before 10 and 20)", () => {
+		vi.spyOn(repos, "usePracticeCatalog").mockReturnValue({
+			isLoading: false,
+			isError: false,
+			isPlaceholderData: false,
+			data: {
+				items: [ITEM],
+				page: 1,
+				pages: 1,
+				total: 1,
+				facets: {
+					collections: [
+						"Cambridge IELTS 20",
+						"Cambridge IELTS 7",
+						"Cambridge IELTS 10",
+						"Actual Test",
+					],
+					types: ["tfng", "fill_blank"],
+					parts: ["p1", "p2"],
+					bands: ["7.0"],
+				},
+			},
+		} as never);
+
+		renderWithClient(
+			<SkillCatalog
+				skill="reading"
+				collection=""
+				part=""
+				type=""
+				band=""
+				q=""
+				page={1}
+				onFilterChange={vi.fn()}
+				onOpen={vi.fn()}
+			/>,
+		);
+
+		const select = screen.getByLabelText("Bộ đề") as HTMLSelectElement;
+		const optionLabels = Array.from(select.options)
+			.slice(1)
+			.map((option) => option.value);
+		expect(optionLabels).toEqual([
+			"Actual Test",
+			"Cambridge IELTS 7",
+			"Cambridge IELTS 10",
+			"Cambridge IELTS 20",
+		]);
+	});
 });
 
 describe("fetchPracticeCatalog & usePracticeCatalog (#884)", () => {
