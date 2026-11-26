@@ -413,7 +413,7 @@ export interface UpcomingDayGroup {
 }
 
 /** So sánh giờ theo số phút (xử lý được cả `"9:00"` vs `"14:00"`), fallback `localeCompare`. */
-function compareLessonTime(a: string, b: string): number {
+export function compareLessonTime(a: string, b: string): number {
 	const minA = parseTimeToMinutes(a);
 	const minB = parseTimeToMinutes(b);
 	if (minA !== null && minB !== null) return minA - minB;
