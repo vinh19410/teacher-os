@@ -12,6 +12,12 @@ Quy ước khi cập nhật:
 
 ## 2026-11-26
 
+### Fixed
+- **Backfill Bộ đề (`collection`), Nhóm đề (`test_group`) và Phần thi (`p1`–`p3`) cho toàn bộ kho đề Reading tự luyện, bật sắp xếp số tự nhiên cho Bộ đề và gia cố đồng bộ / sửa prompt thư viện (`packages/db`, `apps/server`, `apps/student`):**
+  - Thêm module chuẩn hóa dùng chung `packages/db/src/seed/reading-library.ts` (khớp quy ước Listening, khử `"Step IELTS"` / `"Unknown"` → `"Other sources"`, đồng bộ chuẩn hóa homoglyph/whitespace 1-1 với SQLite, trích `passageClue` thuần ASCII cho 349/350 bài có đoạn đọc và tách loại trừ lẫn nhau 2 đề `"Coral reefs"`) cùng kiểm thử parity cơ học 1-1 với migration SQL trong `reading-library-dataset.test.ts`.
+  - Thêm Drizzle migration `0094_backfill_reading_library_collection_and_part.sql` (kèm `meta/0094_snapshot.json` nối `0093` và `meta/_journal.json` `idx: 94`) backfill idempotent, tương thích D1 (`< 10 KB`/lệnh, không dùng `TEMP TABLE`, `COALESCE` trên cột `NOT NULL`, `IS NOT` cho cột nullable, `SUBSTR` neo đầu/cuối cho auto-title) trên 5 bảng (`library_test`, `library_test_part`, `assignment_test`, `assignment_test_part`, `assignment_prompt`), bảo toàn INF-03 (kể cả đề `p1` và bản sao multi-part giáo viên tự mở rộng) và bất biến `assignment_test_part.part === assignment_prompt.part`.
+  - Bật sắp xếp số tự nhiên (`numeric: true`) cho dropdown **"Bộ đề"** ở `GET /api/student/practice` và `<SkillCatalog>` (`Cambridge IELTS 7` đứng trước `Cambridge IELTS 10`..`20`), cập nhật `materializePrompts` + `syncLibraryTestsToOrg` tôn trọng `existingPrompt.part` và slot đã chiếm để tránh lệch slot hay vòng lặp re-sync ghi thừa trên đề multi-part, và cho phép `PATCH /api/assignments/prompts/:id` chấp nhận phép hợp `slotTypes ∪ librarySkillTypes` cho prompt có `library_ref` khác rỗng (#884).
+
 ### Changed
 - **Dọn dẹp Dashboard giáo viên: bỏ ô KPI trùng, thêm thứ tự & nhãn chức năng 1–2–3, chuyển ngôn ngữ góc nhìn giáo viên và giới hạn bảng "Cần kiểm tra" (`apps/web`, `apps/e2e`):**
   - Bỏ ô KPI `"Buổi học hôm nay"` (trùng khối `"Lịch hôm nay"`), đổi `"Học viên"` thành `"Tổng học viên"` (phạm vi toàn org, bỏ dòng phụ) thống nhất với `"Bài tập chưa có điểm"` và `"Còn phải thu"`; đồng bộ ẩn fail-closed cả ô `"Còn phải thu"` lẫn Thẻ 3 `"Học phí"` khi `viewer.canAccessFinance !== true` và tách cache `remindersQueryKey` theo `viewerRole`.
