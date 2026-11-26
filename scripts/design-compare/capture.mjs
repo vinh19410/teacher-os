@@ -6,9 +6,13 @@
  *   node scripts/design-compare/capture.mjs [--screens all|id1,id2]
  *        [--side design|app|both] [--label old|new] [--keep-design] [--force]
  *
- * - Tự boot stack e2e trên free port mỗi run (#397 — không đụng worktree AI
- *   song song / dev stack; boot:api xoá local.db mỗi lần → luôn chạy seed
- *   mới), chạy apps/e2e/scripts/design-seed.ts để tạo dữ liệu.
+ * - Tự boot stack e2e trên 2 free port mỗi run (API_PORT + LMS_PORT, #397/#939 —
+ *   không đụng worktree AI song song / dev stack; giữ chỗ API_PORT qua
+ *   reserveFreePort trong khi build tuần tự apps/lms + apps/web + apps/student
+ *   vào thư mục cô lập .state/lms-dist rồi phục vụ qua startLmsServer từ
+ *   apps/lms/scripts/serve-lms.mjs, không bao giờ ghi đè apps/<portal>/dist dùng chung;
+ *   boot:api xoá local.db mỗi lần → luôn chạy seed mới), chạy
+ *   apps/e2e/scripts/design-seed.ts để tạo dữ liệu.
  * - Design v2 chạy qua scripts/design-compare/fetch-design.sh
  *   (DESIGN_PORT env; capture chọn free port sát lúc boot + retry khi port
  *   bận — #546). DESIGN_NO_REUSE=1: không bao giờ dùng ké server design của
@@ -22,6 +26,7 @@
  * - Ảnh trắng/rỗng bị pixel sanity check (pngjs) chặn + xoá ngay (#546);
  *   SIGTERM/timeout dọn sạch process group con (SIGTERM → SIGKILL) (#546).
  */
+
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises";
@@ -32,17 +37,24 @@ import { fileURLToPath } from "node:url";
 import {
 	assertNonBlankPngFile,
 	buildChildEnv,
+	buildServeLmsBootArgs,
+	buildStudentLandingRegex,
+	buildTeacherDashboardRegex,
 	createLogCollector,
 	ensurePrivateDir,
+	hasSessionTokenCookie,
 	killProcessGroup,
 	killProcessGroupSync,
 	loadPngJs,
 	parseCliArgs,
 	probeFreePort,
 	redactLog,
+	reserveFreePort,
+	resolveAppScreenUrl,
 	shouldCompose,
 	spawnAsync,
 	verifyDesignV2Server,
+	waitForUrlMatch,
 } from "./harness-lib.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -54,6 +66,8 @@ const { PNG } = loadPngJs(ROOT);
 const PLAN_DIR = path.join(ROOT, "plans/261020-1446-378-redesign-design-v2");
 const SHOTS = path.join(PLAN_DIR, "screenshots");
 const STATE = path.join(HERE, ".state");
+const LMS_DIST = path.join(STATE, "lms-dist");
+const SERVE_LMS_MODULE = path.join(ROOT, "apps/lms/scripts/serve-lms.mjs");
 const RAW = path.join(STATE, "raw");
 const SEED_FILE = path.join(STATE, "design-seed.json");
 const VERDICT = path.join(PLAN_DIR, "screenshots", "verdict.md");
@@ -71,9 +85,15 @@ try {
 }
 const fill = (tpl) =>
 	tpl.replace(/\{seed\.(\w+)\}/g, (_, k) => {
-		if (!seed || !(k in seed))
-			throw new Error(`seed.${k} thiếu trong ${SEED_FILE}`);
-		return String(seed[k]);
+		if (
+			!seed ||
+			!(k in seed) ||
+			seed[k] === undefined ||
+			seed[k] === null ||
+			String(seed[k]).length === 0
+		)
+			throw new Error(`seed.${k} thiếu hoặc rỗng trong ${SEED_FILE}`);
+		return encodeURIComponent(String(seed[k]));
 	});
 
 const wantAll = screensArg === "all";
@@ -102,6 +122,7 @@ let designPort = null;
 // shutdown/backstop luôn đọc được `.pid-$PORT` dù `designPort` chưa gán.
 const designAttemptPorts = new Set();
 let designFetched = false;
+let apiPortHold = null;
 let shuttingDown = null;
 
 // #397: log api chứa URL verify-email/reset mang ?token=… (#546: thêm
@@ -115,14 +136,13 @@ function dumpLogs() {
 function start(name, cmd, args, opts = {}) {
 	const child = spawn(cmd, args, {
 		cwd: ROOT,
-		// #397/#546: SIGTERM cho wrapper pnpm chỉ giết pnpm — node cháu (vite/
-		// boot:api) sống thành orphan. detached + kill cả process group đảm
+		// #397/#546: SIGTERM cho wrapper pnpm chỉ giết pnpm — node cháu (boot:api /
+		// serve-lms) sống thành orphan. detached + kill cả process group đảm
 		// bảo dọn sạch cả cây (shutdown → killProcessGroup).
 		detached: process.platform !== "win32",
 		env: buildChildEnv(process.env, {
 			apiPort: API_PORT,
-			webPort: WEB_PORT,
-			studentPort: STUDENT_PORT,
+			lmsPort: LMS_PORT,
 			extraEnv: opts.env,
 		}),
 		stdio: ["ignore", "pipe", "pipe"],
@@ -140,7 +160,10 @@ function start(name, cmd, args, opts = {}) {
 
 const childAlive = (c) => c.exitCode === null && c.signalCode === null;
 
-async function waitUrl(url, { timeoutMs = 150_000, name = url, child } = {}) {
+async function waitUrl(
+	url,
+	{ timeoutMs = 150_000, name = url, child, headers } = {},
+) {
 	const t0 = Date.now();
 	for (;;) {
 		// #546: child chết giữa lúc chờ (EADDRINUSE/crash) phải fail NGAY,
@@ -150,12 +173,32 @@ async function waitUrl(url, { timeoutMs = 150_000, name = url, child } = {}) {
 				`${name} đã chết giữa lúc chờ (exit=${child.exitCode} signal=${child.signalCode})\n--- log ---\n${dumpLogs()}`,
 			);
 		}
+		const remainingMs = timeoutMs - (Date.now() - t0);
+		if (remainingMs <= 0) {
+			throw new Error(
+				`timeout chờ ${name} (${url})\n--- log ---\n${dumpLogs()}`,
+			);
+		}
+		let ready = false;
 		try {
-			const res = await fetch(url);
-			if (res.ok || res.status === 304) return;
+			const res = await fetch(url, {
+				...(headers ? { headers } : {}),
+				redirect: "error",
+				signal: AbortSignal.timeout(
+					Math.min(5_000, Math.max(500, remainingMs)),
+				),
+			});
+			ready = res.ok || res.status === 304;
+			await res.body?.cancel().catch(() => {});
 		} catch {
 			/* not up yet */
 		}
+		if (child && !childAlive(child)) {
+			throw new Error(
+				`${name} đã chết giữa lúc chờ (exit=${child.exitCode} signal=${child.signalCode})\n--- log ---\n${dumpLogs()}`,
+			);
+		}
+		if (ready) return;
 		if (Date.now() - t0 > timeoutMs) {
 			throw new Error(
 				`timeout chờ ${name} (${url})\n--- log ---\n${dumpLogs()}`,
@@ -174,6 +217,7 @@ function syncBackstopCleanup() {
 		else c.kill("SIGKILL");
 	}
 	stopDesignSyncBackstop();
+	rmSync(LMS_DIST, { recursive: true, force: true });
 }
 
 // #546: chốt đồng bộ chống rò rỉ design-v2 khi thoát qua process.exit đồng bộ
@@ -232,7 +276,7 @@ function shutdown(exitCode) {
 	if (shuttingDown) return shuttingDown;
 	shuttingDown = (async () => {
 		stopChildWatchdog();
-		// children (api/web/student) + activeChildren (design-seed.ts,
+		// children (api/lms) + activeChildren (lms/web/student build, design-seed.ts,
 		// fetch-design.sh đang chạy) — cả hai đều kill theo process group.
 		const killChildren = Promise.allSettled(
 			[...children, ...activeChildren.values()]
@@ -268,10 +312,20 @@ function shutdown(exitCode) {
 						}
 					})()
 				: Promise.resolve();
+		const releasePortHold = apiPortHold
+			? apiPortHold.release().catch(() => {})
+			: Promise.resolve();
+		apiPortHold = null;
 		await Promise.race([
-			Promise.allSettled([killChildren, closeBrowser, stopDesign]),
+			Promise.allSettled([
+				killChildren,
+				closeBrowser,
+				stopDesign,
+				releasePortHold,
+			]),
 			new Promise((resolve) => setTimeout(resolve, 5_000)),
 		]);
+		rmSync(LMS_DIST, { recursive: true, force: true });
 		process.exit(exitCode);
 	})();
 	return shuttingDown;
@@ -481,10 +535,8 @@ ${imgs
 
 // ── main pipeline ────────────────────────────────────────────────────────
 let API_PORT;
-let WEB_PORT;
-let STUDENT_PORT;
-let WEB;
-let STUDENT;
+let LMS_PORT;
+let LMS;
 let API;
 let DESIGN;
 
@@ -501,14 +553,76 @@ async function main() {
 
 	const needApp = side === "app" || side === "both";
 	if (needApp) {
-		API_PORT = await probeFreePort();
-		WEB_PORT = await probeFreePort({ excludePorts: new Set([API_PORT]) });
-		STUDENT_PORT = await probeFreePort({
-			excludePorts: new Set([API_PORT, WEB_PORT]),
-		});
+		// #939: giữ chỗ API_PORT trong lúc build bundle để đóng cửa sổ TOCTOU;
+		// build tuần tự lms → web → student vào .state/lms-dist (không chạm
+		// apps/<portal>/dist), sau đó mới probe LMS_PORT và boot api + lms sát nhau.
+		apiPortHold = await reserveFreePort();
+		API_PORT = apiPortHold.port;
 		API = `http://localhost:${API_PORT}`;
-		WEB = `http://localhost:${WEB_PORT}`;
-		STUDENT = `http://localhost:${STUDENT_PORT}`;
+		rmSync(LMS_DIST, { recursive: true, force: true });
+		const buildSpecs = [
+			{
+				name: "lms-build",
+				pkg: "lms",
+				outDir: LMS_DIST,
+				extraEnv: { LMS_SKIP_PORTAL_ASSEMBLE: "1" },
+			},
+			{
+				name: "web-build",
+				pkg: "web",
+				outDir: path.join(LMS_DIST, "teacher"),
+			},
+			{
+				name: "student-build",
+				pkg: "student",
+				outDir: path.join(LMS_DIST, "student"),
+			},
+		];
+		for (const spec of buildSpecs) {
+			console.log(`[harness] build ${spec.pkg} (VITE_SERVER_URL=${API})…`);
+			let built;
+			try {
+				built = await spawnAsync(
+					"pnpm",
+					[
+						"--filter",
+						spec.pkg,
+						"exec",
+						"vite",
+						"build",
+						"--outDir",
+						spec.outDir,
+						"--emptyOutDir",
+					],
+					{
+						cwd: ROOT,
+						env: buildChildEnv(process.env, {
+							apiPort: API_PORT,
+							extraEnv: spec.extraEnv,
+						}),
+						timeoutMs: 120_000,
+						onChild: (c) => activeChildren.set(spec.name, c),
+					},
+				);
+			} finally {
+				activeChildren.delete(spec.name);
+			}
+			if (built.code !== 0) {
+				console.error(
+					`[harness] build ${spec.pkg} thất bại (code=${built.code} signal=${built.signal}):\n${redactLog(
+						built.log,
+					)}`,
+				);
+				return 1;
+			}
+		}
+
+		LMS_PORT = await probeFreePort({ excludePorts: new Set([API_PORT]) });
+		LMS = `http://localhost:${LMS_PORT}`;
+		const holdToRelease = apiPortHold;
+		apiPortHold = null;
+		await holdToRelease.release();
+
 		console.log("[harness] boot api…");
 		const apiChild = start(
 			"api",
@@ -518,74 +632,80 @@ async function main() {
 				env: { E2E_HOSTNAME: "127.0.0.1" },
 			},
 		);
-		await waitUrl(`${API}/readyz`, { name: "api", child: apiChild });
+		console.log("[harness] boot lms…");
+		const lmsChild = start(
+			"lms",
+			process.execPath,
+			buildServeLmsBootArgs({
+				modulePath: SERVE_LMS_MODULE,
+				distDir: LMS_DIST,
+				host: "127.0.0.1",
+				port: LMS_PORT,
+			}),
+		);
+		await waitUrl(`http://127.0.0.1:${API_PORT}/readyz`, {
+			name: "api",
+			child: apiChild,
+		});
 		startChildWatchdog();
+		await waitUrl(`http://127.0.0.1:${LMS_PORT}/login`, {
+			name: "lms",
+			child: lmsChild,
+			headers: { Accept: "text/html" },
+		});
+		await waitUrl(`http://127.0.0.1:${LMS_PORT}/teacher/dashboard`, {
+			timeoutMs: 15_000,
+			name: "lms/teacher",
+			child: lmsChild,
+			headers: { Accept: "text/html" },
+		});
+		await waitUrl(`http://127.0.0.1:${LMS_PORT}/student/`, {
+			timeoutMs: 15_000,
+			name: "lms/student",
+			child: lmsChild,
+			headers: { Accept: "text/html" },
+		});
 		// localhost phân giải ::1 trước 127.0.0.1 trên một số máy — listener
-		// lạ trên [::1]:API_PORT sẽ hijack cả auth flow (Happy-Eyeballs).
+		// lạ trên [::1] sẽ hijack cả auth flow (Happy-Eyeballs).
 		if (await ipv6LoopbackListening(API_PORT)) {
 			throw new Error(
 				`api :${API_PORT} cũng bị nghe trên [::1] (localhost dual-stack) — dừng để tránh hijack`,
 			);
 		}
-		console.log("[harness] boot web…");
-		const webChild = start("web", "pnpm", [
-			"--filter",
-			"web",
-			"exec",
-			"vite",
-			"--host",
-			"127.0.0.1",
-			"--port",
-			String(WEB_PORT),
-			"--strictPort",
-		]);
-		await waitUrl(`${WEB}/`, { name: "web", child: webChild });
-		startChildWatchdog();
-		console.log("[harness] boot student…");
-		const studentChild = start("student", "pnpm", [
-			"--filter",
-			"student",
-			"exec",
-			"vite",
-			"--host",
-			"127.0.0.1",
-			"--port",
-			String(STUDENT_PORT),
-			"--strictPort",
-		]);
-		await waitUrl(`${STUDENT}/login`, { name: "student", child: studentChild });
-		startChildWatchdog();
-		await warm(`${WEB}/login`, "#su-name");
-		// #397: chưa có session nên /dashboard redirect về /login?returnUrl —
-		// warm được shared graph (router, auth client, auth gate). Chunk riêng của
-		// dashboard vẫn lạnh; vòng kernel-wait của design-seed phủ phần đó.
-		await warm(`${WEB}/dashboard`, "#su-name");
-		await warm(`${STUDENT}/login`, "#tab-signup");
+		if (await ipv6LoopbackListening(LMS_PORT)) {
+			throw new Error(
+				`lms :${LMS_PORT} cũng bị nghe trên [::1] (localhost dual-stack) — dừng để tránh hijack`,
+			);
+		}
+		await warm(`${LMS}/login`, "#signin-email");
 
 		console.log("[harness] seed dữ liệu so sánh…");
-		const seeded = await spawnAsync(
-			"pnpm",
-			["--filter", "e2e", "exec", "tsx", "scripts/design-seed.ts"],
-			{
-				cwd: ROOT,
-				env: buildChildEnv(process.env, {
-					apiPort: API_PORT,
-					webPort: WEB_PORT,
-					studentPort: STUDENT_PORT,
-				}),
-				// #397/#652: giữ khoảng đệm 30s trên SEED_DEADLINE (390_000ms) của
-				// design-seed.ts để các bước điều hướng/xác thực của seed kịp fail-loud
-				// với timeline đã redact trước khi harness gửi SIGTERM ở 420_000ms.
-				timeoutMs: 420_000,
-				onChild: (c) => activeChildren.set("design-seed", c),
-			},
-		);
-		activeChildren.delete("design-seed");
+		let seeded;
+		try {
+			seeded = await spawnAsync(
+				"pnpm",
+				["--filter", "e2e", "exec", "tsx", "scripts/design-seed.ts"],
+				{
+					cwd: ROOT,
+					env: buildChildEnv(process.env, {
+						apiPort: API_PORT,
+						lmsPort: LMS_PORT,
+					}),
+					// #397/#652: giữ khoảng đệm 30s trên SEED_DEADLINE (390_000ms) của
+					// design-seed.ts để các bước điều hướng/xác thực của seed kịp fail-loud
+					// với timeline đã redact trước khi harness gửi SIGTERM ở 420_000ms.
+					timeoutMs: 420_000,
+					onChild: (c) => activeChildren.set("design-seed", c),
+				},
+			);
+		} finally {
+			activeChildren.delete("design-seed");
+		}
 		if (seeded.code !== 0) {
 			console.error(
 				`[harness] seed thất bại (code=${seeded.code} signal=${seeded.signal}):\n${redactLog(
 					seeded.log,
-				)}\n--- log stack (api/web/student) ---\n${dumpLogs()}`,
+				)}\n--- log stack (api/lms) ---\n${dumpLogs()}`,
 			);
 			return 1;
 		}
@@ -606,43 +726,64 @@ async function main() {
 
 	// ── app side ──
 	if (needApp) {
-		// Teacher: đăng nhập một lần (desktop/light) rồi dùng lại storageState.
+		// Đăng nhập một lần qua cổng hợp nhất /login rồi dùng lại storageState (#939).
+		// Dùng waitForUrlMatch chịu được double-redirect (location.assign + replace)
+		// rồi đợi load + xác minh URL + xác minh cookie session_token trước khi lưu.
+		const captureAuthStorageState = async ({
+			roleLabel,
+			email,
+			password,
+			targetRegex,
+			outPath,
+		}) => {
+			const { ctx, page } = await newPage(browser, {
+				url: `${LMS}/login`,
+				theme: "light",
+				viewport: cfg.viewports.desktop,
+			});
+			try {
+				await page.click("#tab-signin");
+				await page.fill("#signin-email", email);
+				await page.fill("#signin-password", password);
+				await page.locator("#panel-signin button[type='submit']").click();
+				await waitForUrlMatch(page, targetRegex, { timeoutMs: 30_000 });
+				await page
+					.waitForLoadState("load", { timeout: 15_000 })
+					.catch(() => {});
+				if (!targetRegex.test(page.url())) {
+					throw new Error(
+						`đăng nhập ${roleLabel} bị chuyển hướng khỏi đích sau load: ${redactLog(page.url())}`,
+					);
+				}
+				const cookies = await ctx.cookies(API);
+				if (!hasSessionTokenCookie(cookies)) {
+					throw new Error(
+						`đăng nhập ${roleLabel} không có cookie session_token hợp lệ trên ${API}`,
+					);
+				}
+				await ctx.storageState({ path: outPath });
+				await chmod(outPath, 0o600); // #546: cookie phiên sống — mode 0600
+			} finally {
+				await ctx.close();
+			}
+		};
+
 		const teacherAuth = path.join(STATE, "teacher.json");
-		{
-			const { ctx, page } = await newPage(browser, {
-				url: `${WEB}/login`,
-				theme: "light",
-				viewport: cfg.viewports.desktop,
-			});
-			await page.click("#tab-signin");
-			await page.fill("#si-email", seed.teacherEmail);
-			await page.fill("#si-password", seed.teacherPassword);
-			await page.getByRole("button", { name: "Sign in" }).click();
-			await page.waitForURL(/\/dashboard/, { timeout: 30_000 });
-			await ctx.storageState({ path: teacherAuth });
-			await chmod(teacherAuth, 0o600); // #546: cookie phiên sống — mode 0600
-			await ctx.close();
-		}
+		await captureAuthStorageState({
+			roleLabel: "teacher",
+			email: seed.teacherEmail,
+			password: seed.teacherPassword,
+			targetRegex: buildTeacherDashboardRegex(LMS),
+			outPath: teacherAuth,
+		});
 		const studentAuth = path.join(STATE, "student.json");
-		{
-			const { ctx, page } = await newPage(browser, {
-				url: `${STUDENT}/login`,
-				theme: "light",
-				viewport: cfg.viewports.desktop,
-			});
-			await page.click("#tab-signin");
-			await page.fill("#signin-email", seed.studentEmail);
-			await page.fill("#signin-password", seed.studentPassword);
-			await page
-				.getByRole("button", { name: "Đăng nhập", exact: true }) // #651: substring khớp thêm "Đăng nhập bằng mã email"
-				.click();
-			await page.waitForURL(new RegExp(`^${STUDENT}/(\\?.*)?$`), {
-				timeout: 30_000,
-			});
-			await ctx.storageState({ path: studentAuth });
-			await chmod(studentAuth, 0o600);
-			await ctx.close();
-		}
+		await captureAuthStorageState({
+			roleLabel: "student",
+			email: seed.studentEmail,
+			password: seed.studentPassword,
+			targetRegex: buildStudentLandingRegex(LMS),
+			outPath: studentAuth,
+		});
 
 		for (const [vpName, vp] of Object.entries(cfg.viewports)) {
 			for (const theme of cfg.themes) {
@@ -692,28 +833,15 @@ async function main() {
 					if (!force && existsSync(rawFile)) continue;
 					console.log(`[harness] app ${label} ${sc.id}/${vpName}-${theme}…`);
 					try {
-						if (sc.auth === "teacher") {
-							await tPage.goto(`${WEB}${fill(sc.app)}`, { waitUntil: "load" });
-						} else if (sc.auth === "student") {
-							await sPage.goto(`${STUDENT}${fill(sc.app)}`, {
-								waitUntil: "load",
-							});
-						} else {
-							await aPage.goto(`${WEB}${fill(sc.app)}`, { waitUntil: "load" });
-						}
-						await settle(
-							sc.auth === "student"
-								? sPage
-								: sc.auth === "teacher"
-									? tPage
-									: aPage,
-						);
+						const targetUrl = resolveAppScreenUrl(LMS, sc.auth, fill(sc.app));
 						const stepPage =
 							sc.auth === "student"
 								? sPage
 								: sc.auth === "teacher"
 									? tPage
 									: aPage;
+						await stepPage.goto(targetUrl, { waitUntil: "load" });
+						await settle(stepPage);
 						// #403: màn khai báo nonMutating phải zero POST check-in —
 						// đo bằng máy thay vì tin rằng không có click lạc (ràng buộc
 						// cốt lõi của issue: 6 viewport phải cùng trạng thái seed).

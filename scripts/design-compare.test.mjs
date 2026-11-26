@@ -10,6 +10,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { mkdtemp, writeFile } from "node:fs/promises";
+import http from "node:http";
 import net from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -25,9 +26,16 @@ const FETCH_DESIGN = join(here, "design-compare/fetch-design.sh");
 const {
 	parseCliArgs,
 	buildChildEnv,
+	buildServeLmsBootArgs,
 	redactLog,
 	isPortFreeOnLoopback,
 	probeFreePort,
+	reserveFreePort,
+	resolveAppScreenUrl,
+	buildTeacherDashboardRegex,
+	buildStudentLandingRegex,
+	hasSessionTokenCookie,
+	waitForUrlMatch,
 	isDesignV2Fingerprint,
 	verifyDesignV2Server,
 	loadPngJs,
@@ -231,28 +239,81 @@ test("parseCliArgs: --side sai, cờ lạ, thiếu giá trị, --label traversal
 });
 
 // ── buildChildEnv ────────────────────────────────────────────────────────
-test("buildChildEnv: luôn bật VITE_TEACHER_SIGNUP_ENABLED, giữ localhost origin, extraEnv ghi đè", () => {
+test("buildChildEnv: ánh xạ E2E_LMS_PORT/E2E_WEB_PORT, làm sạch env xung đột và validate port", () => {
 	const env = buildChildEnv(
-		{ PATH: "/usr/bin" },
-		{ apiPort: 8000, webPort: 8001, studentPort: 8003 },
+		{
+			PATH: "/usr/bin",
+			E2E_STUDENT_PORT: "8103",
+			LMS_SKIP_PORTAL_ASSEMBLE: "1",
+			LMS_REBUILD_PORTALS: "1",
+			E2E_TEACHER_EMAILS: "blocked@example.com",
+			E2E_ADMIN_EMAILS: "admin@example.com",
+			ALCHEMY_CLOUDFLARE_VITE_INJECTED: "1",
+			NODE_ENV: "production",
+		},
+		{ apiPort: 8000, lmsPort: 8001 },
 	);
 	assert.equal(env.VITE_TEACHER_SIGNUP_ENABLED, "true");
 	assert.equal(env.VITE_STUDENT_PRACTICE_ENABLED, "true");
 	assert.equal(env.VITE_SERVER_URL, "http://localhost:8000");
 	assert.equal(env.E2E_API_PORT, "8000");
+	assert.equal(env.E2E_LMS_PORT, "8001");
 	assert.equal(env.E2E_WEB_PORT, "8001");
-	assert.equal(env.E2E_STUDENT_PORT, "8003");
+	assert.equal(env.E2E_STUDENT_PORT, undefined);
+	assert.equal(env.LMS_SKIP_PORTAL_ASSEMBLE, undefined);
+	assert.equal(env.LMS_REBUILD_PORTALS, undefined);
+	assert.equal(env.E2E_TEACHER_EMAILS, undefined);
+	assert.equal(env.E2E_ADMIN_EMAILS, undefined);
+	assert.equal(env.ALCHEMY_CLOUDFLARE_VITE_INJECTED, undefined);
+	assert.equal(env.NODE_ENV, undefined);
 	assert.equal(env.PATH, "/usr/bin");
+
+	const fallback = buildChildEnv({}, { apiPort: 8000, webPort: 8002 });
+	assert.equal(fallback.E2E_LMS_PORT, "8002");
+	assert.equal(fallback.E2E_WEB_PORT, "8002");
+
+	const dirtyPorts = {
+		E2E_API_PORT: "9000",
+		E2E_LMS_PORT: "9001",
+		E2E_WEB_PORT: "9002",
+		VITE_SERVER_URL: "http://localhost:9000",
+	};
+	const apiOnly = buildChildEnv(dirtyPorts, { apiPort: 8000 });
+	assert.equal(apiOnly.E2E_API_PORT, "8000");
+	assert.equal(apiOnly.VITE_SERVER_URL, "http://localhost:8000");
+	assert.equal(apiOnly.E2E_LMS_PORT, undefined);
+	assert.equal(apiOnly.E2E_WEB_PORT, undefined);
+
+	const lmsOnly = buildChildEnv(dirtyPorts, { lmsPort: 8001 });
+	assert.equal(lmsOnly.E2E_LMS_PORT, "8001");
+	assert.equal(lmsOnly.E2E_WEB_PORT, "8001");
+	assert.equal(lmsOnly.E2E_API_PORT, undefined);
+	assert.equal(lmsOnly.VITE_SERVER_URL, undefined);
+
 	const overridden = buildChildEnv(
 		{},
 		{
 			apiPort: 8000,
-			webPort: 8001,
-			studentPort: 8003,
-			extraEnv: { VITE_TEACHER_SIGNUP_ENABLED: "false" },
+			lmsPort: 8001,
+			extraEnv: {
+				VITE_TEACHER_SIGNUP_ENABLED: "false",
+				LMS_SKIP_PORTAL_ASSEMBLE: "1",
+			},
 		},
 	);
 	assert.equal(overridden.VITE_TEACHER_SIGNUP_ENABLED, "false");
+	assert.equal(overridden.LMS_SKIP_PORTAL_ASSEMBLE, "1");
+
+	for (const bad of [0, -1, 70000, Number.NaN, "abc"]) {
+		assert.throws(
+			() => buildChildEnv({}, { apiPort: bad }),
+			/port không hợp lệ/,
+		);
+		assert.throws(
+			() => buildChildEnv({}, { lmsPort: bad }),
+			/port không hợp lệ/,
+		);
+	}
 });
 
 // ── redactLog ────────────────────────────────────────────────────────────
@@ -889,4 +950,466 @@ setInterval(() => {}, 10000);
 			});
 		}
 	});
+});
+
+// ── reserveFreePort / unified LMS URL & regex helpers (#939) ─────────────
+test("reserveFreePort: giữ cổng bận trên loopback tới khi release(), không deadlock khi có TCP client và idempotent", async () => {
+	const hold1 = await reserveFreePort();
+	let hold2 = null;
+	let probeSocket = null;
+	try {
+		assert.equal(typeof hold1.port, "number");
+		assert.ok(hold1.port >= 1 && hold1.port <= 65535);
+		assert.equal(await isPortFreeOnLoopback(hold1.port), false);
+
+		// Mở một TCP client tới cổng đang giữ chỗ và KHÔNG đóng trước khi release()
+		// để chứng minh không bị deadlock vì net.Server thiếu closeAllConnections.
+		probeSocket = net.connect({ host: "127.0.0.1", port: hold1.port });
+		probeSocket.on("error", () => {});
+		await new Promise((resolve) => setTimeout(resolve, 30));
+
+		hold2 = await reserveFreePort({ excludePorts: new Set([hold1.port]) });
+		assert.notEqual(hold2.port, hold1.port);
+		assert.equal(await isPortFreeOnLoopback(hold2.port), false);
+
+		const releaseResult = await Promise.race([
+			hold1.release().then(() => "released"),
+			new Promise((resolve) => setTimeout(() => resolve("timeout"), 1_000)),
+		]);
+		assert.equal(
+			releaseResult,
+			"released",
+			"release() không được treo khi có TCP client kết nối vào cổng giữ chỗ",
+		);
+		await hold1.release();
+		assert.equal(await isPortFreeOnLoopback(hold1.port), true);
+	} finally {
+		probeSocket?.destroy();
+		await hold1.release();
+		if (hold2) await hold2.release();
+	}
+});
+
+test("resolveAppScreenUrl: map đúng prefix /teacher, /student, root và fail-closed với auth/path/origin không hợp lệ", () => {
+	const origin = "http://localhost:8101";
+	assert.equal(
+		resolveAppScreenUrl(origin, null, "/login"),
+		"http://localhost:8101/login",
+	);
+	assert.equal(
+		resolveAppScreenUrl(`${origin}/`, null, "/pay/abc123"),
+		"http://localhost:8101/pay/abc123",
+	);
+	assert.equal(
+		resolveAppScreenUrl(origin, "teacher", "/dashboard"),
+		"http://localhost:8101/teacher/dashboard",
+	);
+	assert.equal(
+		resolveAppScreenUrl(origin, "teacher", "/teacher/classes/c1"),
+		"http://localhost:8101/teacher/classes/c1",
+	);
+	assert.equal(
+		resolveAppScreenUrl(origin, "teacher", "/classes/a..b"),
+		"http://localhost:8101/teacher/classes/a..b",
+	);
+	assert.equal(
+		resolveAppScreenUrl(origin, "student", "/"),
+		"http://localhost:8101/student/",
+	);
+	assert.equal(
+		resolveAppScreenUrl(origin, "student", "/practice/vocabulary"),
+		"http://localhost:8101/student/practice/vocabulary",
+	);
+	assert.equal(
+		resolveAppScreenUrl(origin, "student", "/student/history"),
+		"http://localhost:8101/student/history",
+	);
+
+	for (const badAuth of [undefined, "", "admin", "guest"]) {
+		assert.throws(
+			() => resolveAppScreenUrl(origin, badAuth, "/dashboard"),
+			/auth không hợp lệ/,
+		);
+	}
+	for (const badOrigin of [
+		"",
+		"http://user:pass@localhost:8101",
+		"http://localhost:8101/sub",
+		"http://localhost:8101?a=1",
+		"javascript:alert(1)",
+	]) {
+		assert.throws(
+			() => resolveAppScreenUrl(badOrigin, null, "/login"),
+			/origin không hợp lệ/,
+		);
+	}
+	for (const badPath of [
+		"dashboard",
+		"//evil.example/pwn",
+		"/\\evil.example",
+		"/../student/history",
+		"/classes/%2e%2e/%2e%2e/student/history",
+		"/classes/%252e%252e/student",
+		"/classes/%5cevil",
+		"/classes/%E0%A4%A",
+		"/dashboard\n",
+	]) {
+		assert.throws(
+			() => resolveAppScreenUrl(origin, "teacher", badPath),
+			/appPath không hợp lệ/,
+		);
+	}
+});
+
+test("buildTeacherDashboardRegex & buildStudentLandingRegex: neo chặt origin và path đích", () => {
+	const origin = "http://localhost:46291";
+	const teacherRe = buildTeacherDashboardRegex(origin);
+	assert.equal(teacherRe.test(`${origin}/teacher/dashboard`), true);
+	assert.equal(teacherRe.test(`${origin}/teacher/dashboard/`), true);
+	assert.equal(teacherRe.test(`${origin}/teacher/dashboard?x=1`), true);
+	assert.equal(teacherRe.test(`${origin}/teacher/dashboard#top`), true);
+	assert.equal(
+		teacherRe.test(`${origin}/login?returnUrl=/teacher/dashboard`),
+		false,
+	);
+	assert.equal(teacherRe.test(`${origin}/teacher/dashboard2`), false);
+	assert.equal(teacherRe.test("http://evil.local/teacher/dashboard"), false);
+
+	const studentRe = buildStudentLandingRegex(origin);
+	assert.equal(studentRe.test(`${origin}/student`), true);
+	assert.equal(studentRe.test(`${origin}/student/`), true);
+	assert.equal(studentRe.test(`${origin}/student?tab=1`), true);
+	assert.equal(studentRe.test(`${origin}/student/?tab=1`), true);
+	assert.equal(studentRe.test(`${origin}/`), false);
+	assert.equal(studentRe.test(`${origin}/student2`), false);
+	assert.equal(studentRe.test(`${origin}/student/classes`), false);
+	assert.equal(studentRe.test(`${origin}/teacher`), false);
+	assert.equal(studentRe.test("http://localhost:99999/student"), false);
+});
+
+function matchStudentRoutePattern(pattern, subPath) {
+	const norm = (p) => p.replace(/\/+$/, "") || "/";
+	const patSegs = norm(pattern).split("/").filter(Boolean);
+	const valSegs = norm(subPath).split("/").filter(Boolean);
+	for (let i = 0; i < patSegs.length; i += 1) {
+		const seg = patSegs[i];
+		if (seg === "$") return valSegs.length >= i;
+		if (i >= valSegs.length) return false;
+		if (seg.startsWith("$")) continue;
+		if (seg !== valSegs[i]) return false;
+	}
+	return valSegs.length === patSegs.length;
+}
+
+test("screens.json: toàn bộ màn khớp apps/lms/src/routes-matcher.ts và apps/student/src/routeTree.gen.ts", async () => {
+	const { isValidLmsRootRoute, isValidTeacherSubRoute } = await import(
+		pathToFileURL(join(root, "apps/lms/src/routes-matcher.ts")).href
+	);
+	const studentRouteTree = readFileSync(
+		join(root, "apps/student/src/routeTree.gen.ts"),
+		"utf8",
+	);
+	const blockMatch = studentRouteTree.match(
+		/export interface FileRoutesByTo \{([\s\S]*?)\n\}/,
+	);
+	assert.ok(blockMatch, "phải đọc được FileRoutesByTo trong apps/student");
+	const studentRoutes = [...blockMatch[1].matchAll(/^\s*'([^']+)':/gm)].map(
+		(m) => m[1],
+	);
+	assert.ok(
+		studentRoutes.length > 10,
+		`kỳ vọng >10 route trong apps/student, đọc được ${studentRoutes.length}`,
+	);
+	assert.equal(
+		matchStudentRoutePattern("/classes/$classId", "/classes/a/b"),
+		false,
+	);
+	assert.equal(matchStudentRoutePattern("/vocab/$", "/vocab/deck/1"), true);
+
+	const cfg = JSON.parse(
+		readFileSync(join(here, "design-compare/screens.json"), "utf8"),
+	);
+	assert.ok(cfg.screens.length > 0);
+	const origin = "http://localhost:8101";
+	for (const sc of cfg.screens) {
+		const filled = sc.app.replace(/\{seed\.(\w+)\}/g, "sample-id");
+		const resolved = resolveAppScreenUrl(origin, sc.auth, filled);
+		const pathname = new URL(resolved).pathname;
+		if (sc.auth === null) {
+			assert.equal(
+				isValidLmsRootRoute(pathname),
+				true,
+				`${sc.id}: root route ${pathname} không hợp lệ trong apps/lms/src/routes-matcher.ts`,
+			);
+		} else if (sc.auth === "teacher") {
+			assert.ok(
+				pathname.startsWith("/teacher/"),
+				`${sc.id}: teacher route phải bắt đầu bằng /teacher/ (nhận ${pathname})`,
+			);
+			const subPath = pathname.slice("/teacher".length) || "/";
+			assert.equal(
+				isValidTeacherSubRoute(subPath),
+				true,
+				`${sc.id}: teacher subPath ${subPath} không hợp lệ trong apps/lms/src/routes-matcher.ts`,
+			);
+		} else if (sc.auth === "student") {
+			assert.ok(
+				pathname === "/student" || pathname.startsWith("/student/"),
+				`${sc.id}: student route phải bắt đầu bằng /student (nhận ${pathname})`,
+			);
+			const subPath = pathname.slice("/student".length) || "/";
+			assert.ok(
+				studentRoutes.some((pat) => matchStudentRoutePattern(pat, subPath)),
+				`${sc.id}: student subPath ${subPath} không khớp route nào trong apps/student/src/routeTree.gen.ts`,
+			);
+		} else {
+			assert.fail(`${sc.id}: auth không hợp lệ ${JSON.stringify(sc.auth)}`);
+		}
+	}
+});
+
+// ── buildServeLmsBootArgs + serve-lms.mjs subprocess regression (#939) ───
+test("buildServeLmsBootArgs: đặt sentinel ở argv[1] tránh kích hoạt isDirectRun và validate tham số", () => {
+	const modulePath = join(root, "apps/lms/scripts/serve-lms.mjs");
+	const args = buildServeLmsBootArgs({
+		modulePath,
+		distDir: "/tmp/isolated-lms",
+		host: "127.0.0.1",
+		port: 45409,
+	});
+	const sep = args.indexOf("--");
+	assert.ok(sep > 0);
+	assert.equal(args[sep + 1], "design-compare-lms");
+	assert.notEqual(args[sep + 1], modulePath);
+	assert.deepEqual(args.slice(sep + 2), [
+		modulePath,
+		"/tmp/isolated-lms",
+		"127.0.0.1",
+		"45409",
+	]);
+
+	assert.throws(
+		() =>
+			buildServeLmsBootArgs({ modulePath: "", distDir: "/tmp", port: 8080 }),
+		/modulePath không hợp lệ/,
+	);
+	assert.throws(
+		() => buildServeLmsBootArgs({ modulePath, distDir: "   ", port: 8080 }),
+		/distDir không hợp lệ/,
+	);
+	assert.throws(
+		() =>
+			buildServeLmsBootArgs({
+				modulePath,
+				distDir: "/tmp",
+				host: "",
+				port: 8080,
+			}),
+		/host không hợp lệ/,
+	);
+	assert.throws(
+		() => buildServeLmsBootArgs({ modulePath, distDir: "/tmp", port: 0 }),
+		/port không hợp lệ/,
+	);
+});
+
+function httpGetClose(port, urlPath) {
+	return new Promise((resolve, reject) => {
+		const req = http.request(
+			{
+				hostname: "127.0.0.1",
+				port,
+				path: urlPath,
+				method: "GET",
+				agent: false,
+				headers: {
+					Accept: "text/html",
+					Connection: "close",
+				},
+			},
+			(res) => {
+				const chunks = [];
+				res.on("data", (c) => chunks.push(c));
+				res.on("end", () =>
+					resolve({
+						status: res.statusCode ?? 0,
+						body: Buffer.concat(chunks).toString("utf8"),
+					}),
+				);
+			},
+		);
+		req.setTimeout(2_000, () => req.destroy(new Error("timeout")));
+		req.on("error", reject);
+		req.end();
+	});
+}
+
+test("buildServeLmsBootArgs subprocess: nạp serve-lms.mjs đúng 1 lần với distDir cô lập dù E2E_LMS_PORT trùng port", async () => {
+	await withTempDir(async (tmpDist) => {
+		const marker = "<!-- isolated-lms-dist-marker -->";
+		await writeFile(
+			join(tmpDist, "index.html"),
+			`<!doctype html><html><body>${marker}</body></html>`,
+		);
+		const port = await probeFreePort();
+		const modulePath = join(root, "apps/lms/scripts/serve-lms.mjs");
+		const child = spawn(
+			process.execPath,
+			buildServeLmsBootArgs({
+				modulePath,
+				distDir: tmpDist,
+				host: "127.0.0.1",
+				port,
+			}),
+			{
+				cwd: root,
+				detached: process.platform !== "win32",
+				env: {
+					...process.env,
+					E2E_LMS_PORT: String(port),
+					E2E_WEB_PORT: String(port),
+					PORT: String(port),
+				},
+				stdio: ["ignore", "pipe", "pipe"],
+			},
+		);
+		let stderr = "";
+		child.stderr.on("data", (d) => {
+			stderr += String(d);
+		});
+		try {
+			const deadline = Date.now() + 10_000;
+			let res = null;
+			while (Date.now() < deadline) {
+				if (child.exitCode !== null || child.signalCode !== null) {
+					assert.fail(
+						`serve-lms thoát sớm (code=${child.exitCode} signal=${child.signalCode}): ${stderr}`,
+					);
+				}
+				try {
+					res = await httpGetClose(port, "/login");
+					if (res.status === 200) break;
+				} catch {
+					/* server đang khởi động */
+				}
+				await new Promise((r) => setTimeout(r, 100));
+			}
+			assert.ok(
+				res && res.status === 200,
+				`kỳ vọng HTTP 200, stderr=${stderr}`,
+			);
+			assert.match(res.body, /isolated-lms-dist-marker/);
+		} finally {
+			if (child.pid != null && process.platform !== "win32") {
+				await killProcessGroup(child.pid, { graceMs: 1_000 });
+			} else {
+				child.kill("SIGKILL");
+			}
+		}
+	});
+});
+
+// ── hasSessionTokenCookie & waitForUrlMatch (#939) ───────────────────────
+test("hasSessionTokenCookie: nhận diện đúng cookie session_token và chặn cookie rỗng", () => {
+	assert.equal(
+		hasSessionTokenCookie([
+			{ name: "better-auth.session_token", value: "tok1" },
+		]),
+		true,
+	);
+	assert.equal(
+		hasSessionTokenCookie([
+			{ name: "__Secure-better-auth.session_token", value: "tok2" },
+		]),
+		true,
+	);
+	assert.equal(
+		hasSessionTokenCookie([
+			{ name: "teacheros-staging.session_token", value: "tok3" },
+		]),
+		true,
+	);
+	assert.equal(
+		hasSessionTokenCookie([{ name: "better-auth.session_token", value: "" }]),
+		false,
+	);
+	assert.equal(
+		hasSessionTokenCookie([{ name: "other_cookie", value: "abc" }]),
+		false,
+	);
+	assert.equal(hasSessionTokenCookie([]), false);
+	assert.equal(hasSessionTokenCookie(null), false);
+});
+
+test("waitForUrlMatch: khớp ngay, khớp sau chuyển hướng trung gian, fail-fast khi page đóng và redact khi timeout", async () => {
+	const re = buildTeacherDashboardRegex("http://localhost:8101");
+
+	// Khớp ngay
+	const immediate = {
+		isClosed: () => false,
+		url: () => "http://localhost:8101/teacher/dashboard",
+	};
+	assert.equal(
+		await waitForUrlMatch(immediate, re, { timeoutMs: 200, pollMs: 10 }),
+		"http://localhost:8101/teacher/dashboard",
+	);
+
+	// Khớp sau các trạng thái trung gian (/login -> /teacher -> /teacher/dashboard)
+	const urls = [
+		"http://localhost:8101/login",
+		"http://localhost:8101/teacher",
+		"http://localhost:8101/teacher/dashboard",
+	];
+	let idx = 0;
+	const transitioning = {
+		isClosed: () => false,
+		url: () => urls[Math.min(idx++, urls.length - 1)],
+	};
+	assert.equal(
+		await waitForUrlMatch(transitioning, re, { timeoutMs: 500, pollMs: 10 }),
+		"http://localhost:8101/teacher/dashboard",
+	);
+
+	// Fail-fast khi page đã đóng
+	const closedPage = {
+		isClosed: () => true,
+		url: () => "http://localhost:8101/login",
+	};
+	await assert.rejects(
+		() => waitForUrlMatch(closedPage, re, { timeoutMs: 500, pollMs: 10 }),
+		/page đã đóng/,
+	);
+
+	// Timeout phải redact ?token=... trong URL cuối
+	const stuckPage = {
+		isClosed: () => false,
+		url: () => "http://localhost:8101/login?token=SECRET_NAV_TOK_999",
+	};
+	let caught;
+	try {
+		await waitForUrlMatch(stuckPage, re, { timeoutMs: 40, pollMs: 10 });
+	} catch (err) {
+		caught = err;
+	}
+	assert.ok(caught instanceof Error);
+	assert.equal(caught.message.includes("SECRET_NAV_TOK_999"), false);
+	assert.match(caught.message, /\?token=\[redacted\]/);
+
+	// Chặn RegExp có cờ g/y hoặc tham số không hợp lệ
+	await assert.rejects(
+		() => waitForUrlMatch(immediate, /dashboard/g),
+		/cờ g\/y/,
+	);
+	await assert.rejects(
+		() => waitForUrlMatch(immediate, /dashboard/y),
+		/cờ g\/y/,
+	);
+	await assert.rejects(
+		() => waitForUrlMatch(immediate, re, { timeoutMs: 0 }),
+		/timeoutMs không hợp lệ/,
+	);
+	await assert.rejects(
+		() => waitForUrlMatch(immediate, re, { pollMs: 0 }),
+		/pollMs không hợp lệ/,
+	);
 });
