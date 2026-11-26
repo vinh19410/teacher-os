@@ -287,6 +287,7 @@ export function zoomMeetingRoutes(deps: AppDeps) {
 				{
 					recordingStore: deps.getRecordingStore?.(),
 					runInBackground: deps.runInBackground,
+					now: deps.now,
 				},
 			);
 			return c.json({
@@ -295,7 +296,7 @@ export function zoomMeetingRoutes(deps: AppDeps) {
 				recordingSource: updated.recordingUrl ? "external" : null,
 				hasRecordingVideo: false,
 				recordingExpiresAt: null,
-				syncedAt: new Date().toISOString(),
+				syncedAt: updated.syncedAt,
 				message: null,
 			});
 		},

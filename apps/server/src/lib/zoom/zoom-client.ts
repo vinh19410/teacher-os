@@ -110,8 +110,10 @@ function isZoomHostname(hostname: string): boolean {
 
 function isDisallowedDownloadHost(url: URL): boolean {
 	if (url.username || url.password) return true;
+	// Trên HTTPS, WHATWG URL chuẩn hoá cổng mặc định :443 về chuỗi rỗng — từ chối cổng không chuẩn.
+	if (url.port !== "") return true;
 	const hostname = url.hostname.trim().toLowerCase().replace(/\.$/, "");
-	if (!hostname) return true;
+	if (!hostname.includes(".")) return true;
 	if (
 		hostname === "localhost" ||
 		hostname.endsWith(".localhost") ||

@@ -33,6 +33,7 @@ import {
 	isNotNull,
 	isNull,
 	lte,
+	ne,
 	or,
 } from "drizzle-orm";
 import type { Db } from "../../app";
@@ -125,6 +126,7 @@ async function tryTrashZoomRecording(
 	client: ZoomClient,
 	rowId: string,
 	zoomMeetingId: string,
+	expectedStorageKey: string,
 	now: Date,
 ): Promise<"trashed" | "failed"> {
 	if (!client.trashRecording) {
@@ -137,7 +139,8 @@ async function tryTrashZoomRecording(
 			.where(
 				and(
 					eq(classSessionMeeting.id, rowId),
-					isNotNull(classSessionMeeting.recordingStorageKey),
+					eq(classSessionMeeting.recordingStorageKey, expectedStorageKey),
+					ne(classSessionMeeting.recordingZoomTrashStatus, "trashed"),
 				),
 			);
 		return "failed";
@@ -153,7 +156,7 @@ async function tryTrashZoomRecording(
 			.where(
 				and(
 					eq(classSessionMeeting.id, rowId),
-					isNotNull(classSessionMeeting.recordingStorageKey),
+					eq(classSessionMeeting.recordingStorageKey, expectedStorageKey),
 				),
 			);
 		return "trashed";
@@ -172,7 +175,8 @@ async function tryTrashZoomRecording(
 			.where(
 				and(
 					eq(classSessionMeeting.id, rowId),
-					isNotNull(classSessionMeeting.recordingStorageKey),
+					eq(classSessionMeeting.recordingStorageKey, expectedStorageKey),
+					ne(classSessionMeeting.recordingZoomTrashStatus, "trashed"),
 				),
 			);
 		return "failed";
@@ -1182,6 +1186,7 @@ export async function syncRecordingForOccurrence(
 				client,
 				meeting.id,
 				meeting.zoomMeetingId,
+				meeting.recordingStorageKey,
 				now,
 			);
 		}
@@ -1200,17 +1205,28 @@ export async function syncRecordingForOccurrence(
 		};
 	}
 
+	// CAS lạc quan theo snapshot trạng thái recording đã đọc ở đầu lượt sync:
+	// ngăn mọi lệnh ghi đè bản ghi vừa bị sửa đồng thời bởi luồng sync khác hoặc PUT /recording (link tay).
+	const expectedRecordingState = and(
+		eq(classSessionMeeting.id, meeting.id),
+		meeting.recordingStorageKey === null
+			? isNull(classSessionMeeting.recordingStorageKey)
+			: eq(
+					classSessionMeeting.recordingStorageKey,
+					meeting.recordingStorageKey,
+				),
+		eq(classSessionMeeting.recordingStatus, meeting.recordingStatus),
+		eq(classSessionMeeting.recordingUrl, meeting.recordingUrl),
+		meeting.recordingSyncedAt === null
+			? isNull(classSessionMeeting.recordingSyncedAt)
+			: eq(classSessionMeeting.recordingSyncedAt, meeting.recordingSyncedAt),
+	);
+
 	const rec = await client.getRecording(meeting.zoomMeetingId);
 
 	if (rec.status !== "ready") {
 		if (oldKeyExpired && meeting.recordingStorageKey) {
-			await deleteRecordingObjectBestEffort(
-				deps.recordingStore,
-				meeting.recordingStorageKey,
-				{ id: meeting.id, reason: "sync-found-expired" },
-				deps.runInBackground,
-			);
-			await deps.db
+			const claimedExpired = await deps.db
 				.update(classSessionMeeting)
 				.set({
 					recordingStorageKey: null,
@@ -1222,7 +1238,17 @@ export async function syncRecordingForOccurrence(
 					recordingError: null,
 					recordingSyncedAt: now,
 				})
-				.where(eq(classSessionMeeting.id, meeting.id));
+				.where(expectedRecordingState)
+				.returning({ id: classSessionMeeting.id });
+			if (claimedExpired.length === 0) {
+				return readWinnerSyncResponse(deps.db, meeting.id, now);
+			}
+			await deleteRecordingObjectBestEffort(
+				deps.recordingStore,
+				meeting.recordingStorageKey,
+				{ id: meeting.id, reason: "sync-found-expired" },
+				deps.runInBackground,
+			);
 			return {
 				status: "expired",
 				recordingUrl: "",
@@ -1258,10 +1284,6 @@ export async function syncRecordingForOccurrence(
 			};
 		}
 
-		const unclaimedOrExpired = or(
-			isNull(classSessionMeeting.recordingStorageKey),
-			lte(classSessionMeeting.recordingExpiresAt, now),
-		);
 		const claimedPending = await deps.db
 			.update(classSessionMeeting)
 			.set({
@@ -1269,7 +1291,7 @@ export async function syncRecordingForOccurrence(
 				recordingError: null,
 				recordingSyncedAt: now,
 			})
-			.where(and(eq(classSessionMeeting.id, meeting.id), unclaimedOrExpired))
+			.where(expectedRecordingState)
 			.returning({ id: classSessionMeeting.id });
 		if (claimedPending.length === 0) {
 			return readWinnerSyncResponse(deps.db, meeting.id, now);
@@ -1291,13 +1313,8 @@ export async function syncRecordingForOccurrence(
 		};
 	}
 
-	const unclaimedOrExpired = or(
-		isNull(classSessionMeeting.recordingStorageKey),
-		lte(classSessionMeeting.recordingExpiresAt, now),
-	);
-
 	// Lưu link Zoom dự phòng khi không thể reup lên R2 — TUYỆT ĐỐI KHÔNG gọi Zoom Trash.
-	// CAS guard đảm bảo một luồng lỗi muộn không bao giờ ghi đè bản ghi R2 vừa commit ở luồng thắng.
+	// CAS guard lạc quan đảm bảo luồng lỗi muộn không bao giờ ghi đè bản ghi R2 hoặc link tay vừa commit.
 	const saveZoomFallback = async (
 		errMsg: string,
 	): Promise<SessionRecordingSyncResponse> => {
@@ -1317,7 +1334,7 @@ export async function syncRecordingForOccurrence(
 				recordingExpiresAt: null,
 				recordingZoomTrashStatus: "none",
 			})
-			.where(and(eq(classSessionMeeting.id, meeting.id), unclaimedOrExpired))
+			.where(expectedRecordingState)
 			.returning({ id: classSessionMeeting.id });
 
 		if (claimedFallback.length === 0) {
@@ -1402,15 +1419,7 @@ export async function syncRecordingForOccurrence(
 				recordingSyncedAt: now,
 				recordingZoomTrashStatus: "pending",
 			})
-			.where(
-				and(
-					eq(classSessionMeeting.id, meeting.id),
-					or(
-						isNull(classSessionMeeting.recordingStorageKey),
-						lte(classSessionMeeting.recordingExpiresAt, now),
-					),
-				),
-			)
+			.where(expectedRecordingState)
 			.returning({ id: classSessionMeeting.id });
 	} catch (err) {
 		await deps.recordingStore.delete(storageKey).catch(() => {});
@@ -1442,6 +1451,7 @@ export async function syncRecordingForOccurrence(
 		client,
 		meeting.id,
 		meeting.zoomMeetingId,
+		storageKey,
 		now,
 	);
 
@@ -1573,6 +1583,7 @@ export async function runRecordingSyncCron(
 		.select({
 			id: classSessionMeeting.id,
 			zoomMeetingId: classSessionMeeting.zoomMeetingId,
+			recordingStorageKey: classSessionMeeting.recordingStorageKey,
 			recordingZoomTrashStatus: classSessionMeeting.recordingZoomTrashStatus,
 			recordingSyncedAt: classSessionMeeting.recordingSyncedAt,
 		})
@@ -1599,6 +1610,7 @@ export async function runRecordingSyncCron(
 	const dueTrashCandidates = trashCandidates.filter(
 		(row) =>
 			Boolean(row.zoomMeetingId) &&
+			Boolean(row.recordingStorageKey) &&
 			!(
 				row.recordingZoomTrashStatus === "failed" &&
 				row.recordingSyncedAt &&
@@ -1610,12 +1622,13 @@ export async function runRecordingSyncCron(
 		const client = getClient();
 		if (client) {
 			for (const row of dueTrashCandidates) {
-				if (!row.zoomMeetingId) continue;
+				if (!row.zoomMeetingId || !row.recordingStorageKey) continue;
 				const status = await tryTrashZoomRecording(
 					deps.db,
 					client,
 					row.id,
 					row.zoomMeetingId,
+					row.recordingStorageKey,
 					now,
 				);
 				if (status === "trashed") trashed += 1;
@@ -1792,6 +1805,7 @@ export async function runRecordingSyncCron(
 					eq(classSessionMeeting.id, id),
 					isNull(classSessionMeeting.recordingStorageKey),
 					eq(classSessionMeeting.recordingStatus, "pending"),
+					eq(classSessionMeeting.recordingUrl, ""),
 				),
 			)
 			.returning({ id: classSessionMeeting.id });
@@ -1857,6 +1871,14 @@ export async function runRecordingSyncCron(
 					and(
 						eq(classSessionMeeting.id, row.id),
 						isNull(classSessionMeeting.recordingStorageKey),
+						eq(classSessionMeeting.recordingStatus, row.recordingStatus),
+						eq(classSessionMeeting.recordingUrl, row.recordingUrl),
+						row.recordingSyncedAt === null
+							? isNull(classSessionMeeting.recordingSyncedAt)
+							: eq(
+									classSessionMeeting.recordingSyncedAt,
+									row.recordingSyncedAt,
+								),
 					),
 				);
 		}
@@ -1882,11 +1904,16 @@ export async function updateSessionRecordingManual(
 	opts?: {
 		recordingStore?: RecordingStore;
 		runInBackground?: (promise: Promise<unknown>) => void;
+		now?: () => Date;
 	},
-): Promise<{ status: RecordingStatus; recordingUrl: string }> {
+): Promise<{
+	status: RecordingStatus;
+	recordingUrl: string;
+	syncedAt: string;
+}> {
 	const trimmed = input.recordingUrl.trim();
 	const nextStatus: RecordingStatus = trimmed ? "ready" : "none";
-	const now = new Date();
+	const now = opts?.now ? opts.now() : new Date();
 
 	const [existing] = await db
 		.select({
@@ -1946,5 +1973,9 @@ export async function updateSessionRecordingManual(
 		});
 	}
 
-	return { status: nextStatus, recordingUrl: trimmed };
+	return {
+		status: nextStatus,
+		recordingUrl: trimmed,
+		syncedAt: now.toISOString(),
+	};
 }

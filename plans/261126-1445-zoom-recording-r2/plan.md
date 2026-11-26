@@ -1,7 +1,7 @@
 ---
 title: "Reup Zoom Cloud Recording lên Cloudflare R2 và tự gỡ sau 90 ngày"
 description: "Tự động tải 1 file video MP4 chính của Zoom Cloud Recording sang bucket R2 private (lifecycle 90 ngày), đưa bản gốc trên Zoom vào Trash sau khi lưu R2 + D1 thành công, và phát video trực tiếp trong app Teacher OS."
-status: completed
+status: in_progress
 priority: P1
 issue: 994
 branch: vinh19410/Moved-Recording-Zoom-To-R2
@@ -31,4 +31,4 @@ Preview diagram: [advise-261126-1445-zoom-recording-r2-preview.html](../reports/
 - [x] Cron `*/10 * * * *` và nút Đồng bộ tải 1 file MP4 chính từ Zoom sang R2 theo streaming (zero-copy single put hoặc R2 multipart 8 MiB/part), commit D1 rồi mới gọi Zoom `DELETE ?action=trash`; lỗi tải giữ fallback link Zoom và không gọi Trash; buổi cũ không tự backfill nhưng kéo được bằng nút Đồng bộ.
 - [x] Route stream video xác thực cho giáo viên và học viên trả đúng 200/206 Range, chặn IDOR (403/404), trả 410 khi hết hạn, có header `CORP: same-site`, `Referrer-Policy: no-referrer`, `INLINE_MEDIA_CSP`, không có tham số tải attachment.
 - [x] Cron dọn bản ghi quá 90 ngày xóa object R2 và cập nhật DB sang `expired`; UI giáo viên & học viên mở modal `<video>` player (ẩn nút tải, không hiện mật khẩu Zoom khi nguồn R2, hiện hạn 90 ngày), hiện badge "Đã hết hạn lưu trữ" sau 90 ngày, giữ tương thích link Zoom fallback và "Gán link tay".
-- [x] Pass `pnpm exec biome check .`, `pnpm check-types`, `pnpm test`, `pnpm --filter e2e e2e zoom-meeting.spec.ts`, isolated review sạch, PR vào `develop` được merge và có comment POT trên #994.
+- [ ] Pass `pnpm exec biome check .`, `pnpm check-types`, `pnpm test`, `pnpm --filter e2e e2e zoom-meeting.spec.ts`, isolated review sạch, PR vào `develop` được merge và có comment POT trên #994.

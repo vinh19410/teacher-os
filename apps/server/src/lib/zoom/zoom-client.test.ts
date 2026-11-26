@@ -453,6 +453,8 @@ describe("createZoomClient", () => {
 			"https://127.0.0.1/secret",
 			"https://169.254.169.254/latest/meta-data",
 			"https://localhost/internal",
+			"https://metadata/computeMetadata",
+			"https://cdn.example.com:8443/video.mp4",
 			"https://[::1]/secret",
 			"https://user:pass@cdn.example.com/video.mp4",
 		]) {

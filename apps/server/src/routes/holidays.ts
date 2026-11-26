@@ -463,6 +463,7 @@ export function holidayRoutes(deps: {
 	zoom?: AppDeps["zoom"];
 	zoomFetch?: AppDeps["zoomFetch"];
 	getZoomClient?: AppDeps["getZoomClient"];
+	getRecordingStore?: AppDeps["getRecordingStore"];
 }) {
 	const holiday = new Hono<Env>();
 

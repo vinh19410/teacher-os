@@ -78,7 +78,6 @@ async function uploadViaMultipart(
 		}
 
 		if (totalBytes === 0) {
-			await upload.abort().catch(() => {});
 			throw new Error("File recording rỗng (0 byte).");
 		}
 

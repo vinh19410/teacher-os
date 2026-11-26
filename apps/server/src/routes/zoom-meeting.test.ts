@@ -1980,6 +1980,10 @@ describe("Bảo vệ route Zoom", () => {
 	test("race condition: luồng lỗi download muộn sau khi luồng thắng đã commit R2 + Trash Zoom KHÔNG ghi đè mất recordingStorageKey", async () => {
 		const store = createMemoryRecordingStore();
 		let downloadCallCount = 0;
+		let notifySlowReachedDownload!: () => void;
+		const slowReachedDownload = new Promise<void>((resolve) => {
+			notifySlowReachedDownload = resolve;
+		});
 		let releaseSlowFailure!: () => void;
 		const slowFailureGate = new Promise<void>((resolve) => {
 			releaseSlowFailure = resolve;
@@ -1996,7 +2000,8 @@ describe("Bảo vệ route Zoom", () => {
 			async downloadRecordingFile(downloadUrl) {
 				downloadCallCount += 1;
 				if (downloadCallCount === 1) {
-					// Luồng chậm T2: chờ cho tới sau khi T1 commit R2 + Trash Zoom rồi mới lỗi 404.
+					// Luồng chậm T2: báo đã vào download, chờ sau khi T1 commit R2 + Trash Zoom rồi mới lỗi 404.
+					notifySlowReachedDownload();
 					await slowFailureGate;
 					throw new ZoomIntegrationError(
 						ZOOM_ERROR_CODES.API_ERROR,
@@ -2017,12 +2022,13 @@ describe("Bảo vệ route Zoom", () => {
 		await addManualSession(app, classId, date, "");
 
 		const syncPath = `/api/classes/${classId}/sessions/${date}/recording/sync`;
-		// Bắt đầu T2 (chậm và sẽ lỗi sau khi Zoom bị trash)
+		// Bắt đầu T2 và đợi T2 thực sự chạm vào bước download trước khi chạy T1.
 		const slowSyncPromise = app.request(syncPath, {
 			method: "POST",
 			headers: TEACHER_HEADERS,
 			body: "{}",
 		});
+		await slowReachedDownload;
 
 		// Chạy T1 (nhanh, thành công commit R2 + Trash Zoom)
 		const fastRes = await app.request(syncPath, {
@@ -2063,5 +2069,88 @@ describe("Bảo vệ route Zoom", () => {
 		);
 		expect(rowFinal?.recordingStatus).toBe("ready");
 		expect(rowFinal?.recordingZoomTrashStatus).toBe("trashed");
+	});
+
+	test("race condition: giáo viên gán link tay (PUT /recording) trong lúc sync R2 đang tải không bị ghi đè, object R2 dư bị xoá và Zoom không bị Trash", async () => {
+		const store = createMemoryRecordingStore();
+		let notifyReachedDownload!: () => void;
+		const reachedDownload = new Promise<void>((resolve) => {
+			notifyReachedDownload = resolve;
+		});
+		let releaseDownload!: () => void;
+		const downloadGate = new Promise<void>((resolve) => {
+			releaseDownload = resolve;
+		});
+
+		const baseFake = createFakeZoom();
+		baseFake.setRecordingReady(true);
+
+		const slowClient: ZoomClient = {
+			...baseFake.client,
+			async getRecording(meetingId) {
+				return baseFake.client.getRecording(meetingId);
+			},
+			async downloadRecordingFile(downloadUrl) {
+				notifyReachedDownload();
+				await downloadGate;
+				return baseFake.client.downloadRecordingFile(downloadUrl);
+			},
+			async trashRecording(meetingId) {
+				await baseFake.client.trashRecording(meetingId);
+			},
+		};
+
+		const app = createApp(slowClient, { recordingStore: store });
+		const classId = await createManualOnlineClass(
+			app,
+			"Manual Override Race Class",
+		);
+		const date = futureDate(5);
+		await addManualSession(app, classId, date, "");
+
+		const syncPromise = app.request(
+			`/api/classes/${classId}/sessions/${date}/recording/sync`,
+			{
+				method: "POST",
+				headers: TEACHER_HEADERS,
+				body: "{}",
+			},
+		);
+		await reachedDownload;
+
+		// Giáo viên gán link ngoài thủ công trong lúc sync R2 đang tải.
+		const manualUrl = "https://drive.google.com/file/d/manual-override/view";
+		const manualRes = await app.request(
+			`/api/classes/${classId}/sessions/${date}/recording`,
+			{
+				method: "PUT",
+				headers: TEACHER_HEADERS,
+				body: JSON.stringify({ recordingUrl: manualUrl }),
+			},
+		);
+		expect(manualRes.status).toBe(200);
+
+		releaseDownload();
+		const syncRes = await syncPromise;
+		expect(syncRes.status).toBe(200);
+		const syncBody = (await syncRes.json()) as {
+			status: string;
+			recordingUrl: string;
+			recordingSource: string | null;
+			hasRecordingVideo: boolean;
+		};
+		// Sync thua CAS → giữ nguyên link tay của giáo viên, xoá object R2 dư, KHÔNG gọi Zoom Trash.
+		expect(syncBody.status).toBe("ready");
+		expect(syncBody.recordingUrl).toBe(manualUrl);
+		expect(syncBody.recordingSource).toBe("external");
+		expect(syncBody.hasRecordingVideo).toBe(false);
+
+		const rowFinal = await meetingRow(classId, date);
+		expect(rowFinal?.recordingStorageKey).toBeNull();
+		expect(rowFinal?.recordingUrl).toBe(manualUrl);
+		expect(rowFinal?.recordingStatus).toBe("ready");
+		expect(store.objects.size).toBe(0);
+		expect(store.deletedKeys).toHaveLength(1);
+		expect(baseFake.calls.filter((c) => c.method === "trash")).toHaveLength(0);
 	});
 });
