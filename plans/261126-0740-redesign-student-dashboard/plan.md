@@ -1,7 +1,7 @@
 ---
 title: "Redesign /student/ dashboard theo open-design/redesign-student-dashboard"
 description: "Tái thiết kế trang tổng quan học viên (/student/) theo open-design/redesign-student-dashboard với GreetingHeader gọn nhẹ, Top Grid 2 cột (NextTaskHero việc tiếp theo + TodayScheduleCard từ /api/student/schedule đồng bộ org), GoalProgressCard dữ liệu thật kèm thước IELTS trung thực & placement CTA, AssignmentList/ClassCard chuẩn design v2 và cặp thẻ dưới Từ vựng + Học phí — giữ nguyên StudentShell, 0 đổi server API/DB schema và bảo toàn 100% hợp đồng E2E/unit."
-status: in-progress
+status: completed
 priority: P1
 effort: "4h"
 issue: 975
@@ -55,18 +55,18 @@ Tái thiết kế nội dung trang tổng quan cổng học viên `/student/` (`
 
 | # | Phase | Status |
 |---|---|---|
-| 1 | [Phase 1: Pure Selectors, Time/Goal Helpers & Schedule Hook Option (TDD)](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: Redesign Student Dashboard Components & Route (TDD)](./phase-02-dashboard-ui-components-and-route.md) | Pending |
-| 3 | [Phase 3: E2E Verification, Design Compare & 3-Viewport Visual POT](./phase-03-verification-e2e-and-visual-pot.md) | Pending |
+| 1 | [Phase 1: Pure Selectors, Time/Goal Helpers & Schedule Hook Option (TDD)](./phase-01-start.md) | Done |
+| 2 | [Phase 2: Redesign Student Dashboard Components & Route (TDD)](./phase-02-dashboard-ui-components-and-route.md) | Done |
+| 3 | [Phase 3: E2E Verification, Design Compare & 3-Viewport Visual POT](./phase-03-verification-e2e-and-visual-pot.md) | Done |
 
 ## Success Criteria
 
-- [ ] `student-overview-selectors.ts` xử lý chính xác `source === "grading"` (loại khỏi NextTaskHero, vẫn đếm đồng bộ `overdueCount`/`dueSoonCount` như `AssignmentList`), sort hạn nộp đúng (`overdue` → `due-soon` → `not-submitted` → `dueAtMs`), allowlist lớp `active` từ snapshot `schedule.data.classes`, loại buổi `cancelled`/`holiday` và buổi đã kết thúc khỏi `upcomingFallback`, dùng đúng `ZOOM_EARLY_JOIN_MINUTES = 30`, xử lý `dur == null` (`endMs === null`) & khung `00:00–00:29 VN`, `parseIeltsBand` hỗ trợ `"6.5 IELTS"`/`"IELTS 6.5"`/`"8.0+"` không `NaN`, ưu tiên `entryScore` CEFR không vẽ chồng `currentRange`, clamp `[0, 100]` và `current >= target`, chuẩn hóa `invoice.type` (`"tuition"`/`"   "` → `"Học phí"`).
-- [ ] `StudentOverviewPage` tách `StudentOverviewContent` sau toàn bộ guard (loading / error / wrong-role / onboarding), chặn `ACCOUNT_TEACHER_ROLE` trên `scheduleQuery.error`, đồng bộ key org `me.student.orgId` (không double-fetch/nháy skeleton hay rò rỉ chéo org), và tự invalidate `overview` + `schedule` khi sang ngày VN mới qua nửa đêm.
-- [ ] Trang `/student/` hiển thị đầy đủ cấu trúc mới: `GreetingHeader`, Top Grid 2 cột (`NextTaskHero` có `vocabDueCount` thật + `TodayScheduleCard` truyền `nowMs` vào `ZoomJoinButton`), `GoalProgressCard` (có thước IELTS trung thực + `.goal-note` placement CTA hoặc standalone fallback), `AssignmentList` v2 mặc định `"all"` không bị `overflow-hidden` cắt focus ring, `ClassCard` v2 giữ `ClassProgress` `aria-hidden="true"`, và cặp thẻ đáy `StudentVocabEntrySection` + `TuitionSummaryCard`.
-- [ ] Không vi phạm strict-mode E2E nào: `<h2>Bài tập</h2>` duy nhất, `aria-label="Làm bài: ${title}"` / `"Xem lại kết quả: ${title}"` duy nhất trên `AssignmentRow`, `<h2>Học phí</h2>` + link chứa `"Học phí"` trỏ thẳng `/tuition/$invoiceId`, `data-testid="placement-highlight-banner"` & `placement-banner-cta`, `vocab-home-entry`, `class-card` + `teacher.email` + `"Tham gia lớp"` + `"Tạm dừng"` + `"Vào lớp (Zoom)"`.
-- [ ] `pnpm exec biome check .`, `pnpm check-types`, `pnpm --filter student test` (không còn `text-bg`), 11 spec E2E liên quan không sửa assertion và `pnpm design:compare --screens s-dashboard --side app --force` pass 100%.
-- [ ] Không tràn ngang tại `320px`, `375px`, `768px`, `1440px` ở cả Light & Dark mode; đủ 6 ảnh POT trong `plans/reports/`; không commit `open-design/` hay PNG lịch sử bị E2E ghi đè (`748-*`, `781-*`, `student-nav-*`).
+- [x] `student-overview-selectors.ts` xử lý chính xác `source === "grading"` (loại khỏi NextTaskHero, vẫn đếm đồng bộ `overdueCount`/`dueSoonCount` như `AssignmentList`), sort hạn nộp đúng (`overdue` → `due-soon` → `not-submitted` → `dueAtMs`), allowlist lớp `active` từ snapshot `schedule.data.classes`, loại buổi `cancelled`/`holiday` và buổi đã kết thúc khỏi `upcomingFallback`, dùng đúng `ZOOM_EARLY_JOIN_MINUTES = 30`, xử lý `dur == null` (`endMs === null`) & khung `00:00–00:29 VN`, `parseIeltsBand` hỗ trợ `"6.5 IELTS"`/`"IELTS 6.5"`/`"8.0+"` không `NaN`, ưu tiên `entryScore` CEFR không vẽ chồng `currentRange`, clamp `[0, 100]` và `current >= target`, chuẩn hóa `invoice.type` (`"tuition"`/`"   "` → `"Học phí"`).
+- [x] `StudentOverviewPage` tách `StudentOverviewContent` sau toàn bộ guard (loading / error / wrong-role / onboarding), chặn `ACCOUNT_TEACHER_ROLE` trên `scheduleQuery.error`, đồng bộ key org `me.student.orgId` (không double-fetch/nháy skeleton hay rò rỉ chéo org), và tự invalidate `overview` + `schedule` khi sang ngày VN mới qua nửa đêm.
+- [x] Trang `/student/` hiển thị đầy đủ cấu trúc mới: `GreetingHeader`, Top Grid 2 cột (`NextTaskHero` có `vocabDueCount` thật + `TodayScheduleCard` truyền `nowMs` vào `ZoomJoinButton`), `GoalProgressCard` (có thước IELTS trung thực + `.goal-note` placement CTA hoặc standalone fallback), `AssignmentList` v2 mặc định `"all"` không bị `overflow-hidden` cắt focus ring, `ClassCard` v2 giữ `ClassProgress` `aria-hidden="true"`, và cặp thẻ đáy `StudentVocabEntrySection` + `TuitionSummaryCard`.
+- [x] Không vi phạm strict-mode E2E nào: `<h2>Bài tập</h2>` duy nhất, `aria-label="Làm bài: ${title}"` / `"Xem lại kết quả: ${title}"` duy nhất trên `AssignmentRow`, `<h2>Học phí</h2>` + link chứa `"Học phí"` trỏ thẳng `/tuition/$invoiceId`, `data-testid="placement-highlight-banner"` & `placement-banner-cta`, `vocab-home-entry`, `class-card` + `teacher.email` + `"Tham gia lớp"` + `"Tạm dừng"` + `"Vào lớp (Zoom)"`.
+- [x] `pnpm exec biome check .`, `pnpm check-types`, `pnpm --filter student test` (không còn `text-bg`), 11 spec E2E liên quan không sửa assertion và `pnpm design:compare --screens s-dashboard --side app --force` pass 100%.
+- [x] Không tràn ngang tại `320px`, `375px`, `768px`, `1440px` ở cả Light & Dark mode; đủ 6 ảnh POT trong `plans/reports/`; không commit `open-design/` hay PNG lịch sử bị E2E ghi đè (`748-*`, `781-*`, `student-nav-*`).
 
 ## Handover Note (`--advice`)
 

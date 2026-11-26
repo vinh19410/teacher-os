@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: Pure Selectors, Time/Goal Helpers & Schedule Hook Option (TDD)"
-status: pending
+status: done
 priority: P1
 effort: "1.5h"
 dependencies: []

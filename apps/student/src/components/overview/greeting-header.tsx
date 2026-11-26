@@ -1,56 +1,92 @@
-import { StudentSpot } from "@teacher-os/ui/components/illustrations";
-import { useSyncExternalStore } from "react";
-import { getActiveStudentOrgId, useStudentOrgs } from "@/lib/repos/student";
-import { subscribeActiveStudentOrg } from "@/lib/student-org-storage";
-import { formatVietnamToday } from "@/lib/vietnam-display-date";
+import { formatVietnamLongDate } from "@/lib/student-overview-selectors";
+
+export interface GreetingHeaderProps {
+	studentName: string;
+	dueSoonCount: number;
+	overdueCount?: number;
+	remainingSessionsToday?: number;
+	totalSessionsToday?: number;
+	nowMs?: number;
+}
 
 export function GreetingHeader({
 	studentName,
 	dueSoonCount,
-}: {
-	studentName: string;
-	dueSoonCount: number;
-}) {
-	const todayVN = formatVietnamToday();
-	const { data: orgs } = useStudentOrgs();
+	overdueCount = 0,
+	remainingSessionsToday,
+	totalSessionsToday,
+	nowMs,
+}: GreetingHeaderProps) {
+	const dateLabel = formatVietnamLongDate(nowMs ?? Date.now());
 
-	// Extract first name (last word in VN name convention, or first word)
+	// Lấy tên gọi (từ cuối trong họ tên tiếng Việt).
 	const nameParts = studentName.trim().split(/\s+/);
 	const displayName = nameParts[nameParts.length - 1] || studentName;
 
-	const summaryText =
-		dueSoonCount > 0
-			? `${dueSoonCount} bài tập sắp đến hạn cần nộp.`
-			: "Bạn không có bài tập nào cần nộp gấp.";
+	const assignmentSummary =
+		overdueCount > 0 && dueSoonCount > 0 ? (
+			<>
+				Bạn có{" "}
+				<strong className="font-semibold text-foreground">
+					{overdueCount} bài quá hạn
+				</strong>{" "}
+				và{" "}
+				<strong className="font-semibold text-foreground">
+					{dueSoonCount} bài sắp đến hạn
+				</strong>
+			</>
+		) : overdueCount > 0 ? (
+			<>
+				Bạn có{" "}
+				<strong className="font-semibold text-foreground">
+					{overdueCount} bài quá hạn
+				</strong>
+			</>
+		) : dueSoonCount > 0 ? (
+			<>
+				Bạn có{" "}
+				<strong className="font-semibold text-foreground">
+					{dueSoonCount} bài sắp đến hạn
+				</strong>
+			</>
+		) : (
+			<>Bạn không còn bài nào sắp đến hạn</>
+		);
 
-	// Kicker = tên org đang hoạt động (cùng rule với OrgSwitcher).
-	const activeOrgId = useSyncExternalStore(
-		subscribeActiveStudentOrg,
-		getActiveStudentOrgId,
-		getActiveStudentOrgId,
-	);
-	const currentOrg =
-		orgs?.find((o) => o.id === activeOrgId) ??
-		orgs?.find((o) => o.isCurrent) ??
-		orgs?.[0];
+	let scheduleSummary: React.ReactNode = ".";
+	if (remainingSessionsToday !== undefined) {
+		if (remainingSessionsToday > 0) {
+			scheduleSummary = (
+				<>
+					; còn{" "}
+					<strong className="font-semibold text-foreground">
+						{remainingSessionsToday} buổi học
+					</strong>{" "}
+					hôm nay.
+				</>
+			);
+		} else if (totalSessionsToday === 0) {
+			scheduleSummary = "; hôm nay không có buổi học.";
+		} else {
+			scheduleSummary = "; đã xong lịch học hôm nay.";
+		}
+	}
 
 	return (
-		<section className="mb-10 flex flex-wrap items-end justify-between gap-x-8 gap-y-6 pb-2">
-			<div className="min-w-0">
-				{currentOrg?.name && (
-					<p className="font-mono text-[11px] text-primary uppercase tracking-[0.2em]">
-						{currentOrg.name}
-					</p>
-				)}
-				<h1 className="mt-1 font-extrabold text-[clamp(40px,6vw,72px)] leading-[0.95] tracking-[-0.045em]">
-					Chào {displayName}
-				</h1>
-				<p className="mt-3 text-muted-foreground text-sm leading-relaxed">
-					{todayVN} · {summaryText}
-				</p>
-			</div>
-			{/* Minh họa trang trí thuần — ẩn dưới md như design Home. */}
-			<StudentSpot decorative className="-mb-4 hidden w-40 md:block" />
-		</section>
+		<header className="mb-8 space-y-2">
+			{dateLabel ? (
+				<p className="text-muted-foreground text-sm">{dateLabel}</p>
+			) : null}
+			<h1 className="font-semibold text-2xl text-foreground tracking-tight md:text-3xl">
+				Chào {displayName}
+			</h1>
+			<p
+				aria-live="polite"
+				className="max-w-[62ch] text-base text-muted-foreground"
+			>
+				{assignmentSummary}
+				{scheduleSummary}
+			</p>
+		</header>
 	);
 }

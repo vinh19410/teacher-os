@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: Redesign Student Dashboard Components & Route (TDD)"
-status: pending
+status: done
 priority: P1
 effort: "2h"
 dependencies: [1]
