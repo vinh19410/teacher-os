@@ -1321,3 +1321,64 @@ test("import-vocab-prod.yml triggers only on manual workflow_dispatch, enforces 
 		"import-vocab-prod.yml may only reference the two Cloudflare environment secrets",
 	);
 });
+
+test("dedup-vocab-group-prod.yml triggers only on manual workflow_dispatch, enforces prod confirmation gate, and shares deploy concurrency", () => {
+	const raw = readFileSync(
+		join(repoRoot, ".github/workflows/dedup-vocab-group-prod.yml"),
+		"utf8",
+	);
+	const code = stripComments(raw);
+
+	assert.doesNotMatch(
+		code,
+		/\bpush:/,
+		"dedup-vocab-group-prod.yml must never trigger automatically on push",
+	);
+	assert.doesNotMatch(
+		code,
+		/\bpull_request:/,
+		"dedup-vocab-group-prod.yml must never trigger on pull_request",
+	);
+	assert.match(
+		code,
+		/\bworkflow_dispatch:/,
+		"dedup-vocab-group-prod.yml must trigger only on workflow_dispatch",
+	);
+	assertReadOnlyWorkflowPermissions(code, "dedup-vocab-group-prod.yml");
+	assert.match(
+		code,
+		/group:\s*deploy-\$\{\{\s*inputs\.stage\s*==\s*'staging'\s*&&\s*'staging'\s*\|\|\s*'production'\s*\}\}/,
+		"dedup-vocab-group-prod.yml must share deploy-staging/deploy-production concurrency group",
+	);
+	assert.match(
+		code,
+		/cancel-in-progress:\s*false/,
+		"dedup-vocab-group-prod.yml must never cancel in-progress runs",
+	);
+	assert.match(
+		code,
+		/environment:\s*\$\{\{\s*inputs\.stage\s*==\s*'staging'\s*&&\s*'staging'\s*\|\|\s*'production'\s*\}\}/,
+		"dedup-vocab-group-prod.yml must route staging to staging env and prod to production env",
+	);
+	assert.match(
+		code,
+		/--public-logs/,
+		"dedup-vocab-group-prod.yml must always pass --public-logs on this public repo",
+	);
+	assert.match(
+		code,
+		/--allow-prod\s+--confirm-prod\s+"\$CONFIRM_PROD"/,
+		"dedup-vocab-group-prod.yml must require explicit --allow-prod and --confirm-prod for prod apply mode",
+	);
+	assert.doesNotMatch(
+		code,
+		/actions\/upload-artifact/,
+		"dedup-vocab-group-prod.yml must never upload artifacts containing backup data",
+	);
+	const secretRefs = [...new Set(code.match(/secrets\.[A-Z_]+/g) ?? [])];
+	assert.deepEqual(
+		secretRefs.sort(),
+		["secrets.CLOUDFLARE_ACCOUNT_ID", "secrets.CLOUDFLARE_API_TOKEN"],
+		"dedup-vocab-group-prod.yml may only reference the two Cloudflare environment secrets",
+	);
+});
