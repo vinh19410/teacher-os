@@ -462,3 +462,183 @@ test("E: id bản copy không mở được như template — 404 branded", asyn
 	await page.goto(`/teacher/syllabus/${templateId}`);
 	await expect(page.getByText(`E2E 394 Guard ${stamp}`)).toBeVisible();
 });
+
+function futureMondayForE2E(): {
+	startMonday: string;
+	otherTuesday: string;
+	startMondayDMY: string;
+	otherTuesdayDMY: string;
+} {
+	const now = new Date();
+	const vn = new Date(now.getTime() + 7 * 3600 * 1000);
+	const base = new Date(
+		Date.UTC(vn.getUTCFullYear(), vn.getUTCMonth(), vn.getUTCDate() + 14),
+	);
+	const delta = (8 - base.getUTCDay()) % 7;
+	base.setUTCDate(base.getUTCDate() + delta);
+	const tue = new Date(base.getTime() + 86400 * 1000);
+	const fmtISO = (d: Date) => d.toISOString().slice(0, 10);
+	const fmtDMY = (d: Date) =>
+		`${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${d.getUTCFullYear()}`;
+	return {
+		startMonday: fmtISO(base),
+		otherTuesday: fmtISO(tue),
+		startMondayDMY: fmtDMY(base),
+		otherTuesdayDMY: fmtDMY(tue),
+	};
+}
+
+test("F: nhập giáo trình vào lớp có buổi thủ công trùng ngày — hiện cảnh báo, đồng ý ghi đè chuyển hẳn sang giáo trình (#995)", async ({
+	page,
+}) => {
+	const stamp = Date.now();
+	await signUpViaApi(page);
+	const templateName = `E2E 995 Template ${stamp}`;
+	await seedTemplate(page, templateName);
+	const { startMonday, otherTuesday, startMondayDMY, otherTuesdayDMY } =
+		futureMondayForE2E();
+
+	const cls = await apiPost(page, "/api/classes", {
+		name: `E2E 995 Lớp Manual ${stamp}`,
+		type: "ielts",
+		level: "Band 7.0",
+		skills: ["Writing"],
+		mode: "Online",
+		templateId: "",
+		schedulingMode: "manual",
+		schedule: { days: [0], start: "19:00", end: "20:30" },
+		sessionsTotal: 12,
+		startDate: startMonday,
+	});
+	const classId = cls.id ?? "";
+	expect(classId).not.toBe("");
+
+	await apiPost(page, `/api/classes/${classId}/sessions`, {
+		date: startMonday,
+		time: "14:00",
+		dur: 60,
+		topic: "Buổi thủ công trùng ngày",
+	});
+	await apiPost(page, `/api/classes/${classId}/sessions`, {
+		date: otherTuesday,
+		time: "15:00",
+		dur: 60,
+		topic: "Buổi thủ công ngày khác",
+	});
+
+	await page.goto(`/teacher/classes/${classId}`);
+	await expect(page.getByText("Buổi thủ công trùng ngày")).toBeVisible();
+	await expect(page.getByText("Buổi thủ công ngày khác")).toBeVisible();
+
+	// Chuyển sang tab "Giáo trình" và mở modal "Nhập từ template"
+	await page.getByRole("tab", { name: "Giáo trình", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Nhập từ template", exact: true })
+		.click();
+	const importDialog = page.getByRole("dialog", {
+		name: "Nhập giáo trình từ template",
+	});
+	await importDialog
+		.getByLabel("Template giáo trình")
+		.selectOption({ label: `${templateName} · 3 buổi` });
+	await importDialog
+		.getByRole("button", { name: "Nhập giáo trình", exact: true })
+		.click();
+
+	// Cảnh báo hiện rõ ngày trùng + ngày khác + nút Đồng ý ghi đè
+	const warning = importDialog.getByTestId("curriculum-overwrite-warning");
+	await expect(warning).toBeVisible();
+	await expect(warning).toContainText(startMondayDMY);
+	await expect(warning).toContainText(otherTuesdayDMY);
+
+	const confirmBtn = importDialog.getByRole("button", {
+		name: "Đồng ý ghi đè",
+		exact: true,
+	});
+	await expect(confirmBtn).toBeEnabled();
+	await confirmBtn.focus();
+	await expect(confirmBtn).toBeFocused();
+
+	const capturePot = process.env.CAPTURE_POT === "1";
+
+	// Kiểm tra 3 viewport Light/Dark + 320px reflow cho modal cảnh báo ghi đè
+	for (const vp of [
+		{ name: "desktop-1440x900", width: 1440, height: 900 },
+		{ name: "tablet-768x1024", width: 768, height: 1024 },
+		{ name: "mobile-375x812", width: 375, height: 812 },
+		{ name: null, width: 320, height: 812 },
+	]) {
+		await page.setViewportSize({ width: vp.width, height: vp.height });
+		await page.waitForTimeout(200);
+		await expect(warning).toBeVisible();
+		await expect(confirmBtn).toBeVisible();
+		const overflow = await page.evaluate(
+			() =>
+				document.documentElement.scrollWidth >
+				document.documentElement.clientWidth,
+		);
+		expect(overflow, `Overflow at ${vp.width}x${vp.height}`).toBe(false);
+		if (capturePot && vp.name) {
+			await page.screenshot({
+				path: resolve(REPORT_DIR, `995-overwrite-confirm-${vp.name}-light.png`),
+			});
+			await page.evaluate(() => document.documentElement.classList.add("dark"));
+			await page.screenshot({
+				path: resolve(REPORT_DIR, `995-overwrite-confirm-${vp.name}-dark.png`),
+			});
+			await page.evaluate(() =>
+				document.documentElement.classList.remove("dark"),
+			);
+		}
+	}
+	await page.setViewportSize({ width: 1440, height: 900 });
+
+	// Bấm Đồng ý ghi đè → modal đóng, lớp chuyển hẳn sang giáo trình 3 buổi
+	await confirmBtn.click();
+	await expect(importDialog).toBeHidden();
+	await expect(
+		page.getByRole("button", { name: "Gỡ giáo trình", exact: true }),
+	).toBeVisible();
+
+	await page
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
+		.click();
+	await expect(
+		page.getByRole("button", { name: "Sắp xếp buổi", exact: true }),
+	).toBeVisible();
+	await expect(page.getByTestId("session-row")).toHaveCount(3);
+	await expect(page.getByText("Buổi A1")).toBeVisible();
+	await expect(page.getByText("Thi giữa kỳ A")).toBeVisible();
+	await expect(page.getByText("Buổi B1")).toBeVisible();
+	await expect(page.getByText("Buổi thủ công trùng ngày")).toHaveCount(0);
+	await expect(page.getByText("Buổi thủ công ngày khác")).toHaveCount(0);
+
+	for (const vp of [
+		{ name: "desktop-1440x900", width: 1440, height: 900 },
+		{ name: "tablet-768x1024", width: 768, height: 1024 },
+		{ name: "mobile-375x812", width: 375, height: 812 },
+	]) {
+		await page.setViewportSize({ width: vp.width, height: vp.height });
+		await page.waitForTimeout(200);
+		const overflow = await page.evaluate(
+			() =>
+				document.documentElement.scrollWidth >
+				document.documentElement.clientWidth,
+		);
+		expect(overflow, `Result overflow at ${vp.width}x${vp.height}`).toBe(false);
+		if (capturePot) {
+			await page.screenshot({
+				path: resolve(REPORT_DIR, `995-overwrite-result-${vp.name}-light.png`),
+				fullPage: true,
+			});
+			await page.evaluate(() => document.documentElement.classList.add("dark"));
+			await page.screenshot({
+				path: resolve(REPORT_DIR, `995-overwrite-result-${vp.name}-dark.png`),
+				fullPage: true,
+			});
+			await page.evaluate(() =>
+				document.documentElement.classList.remove("dark"),
+			);
+		}
+	}
+});

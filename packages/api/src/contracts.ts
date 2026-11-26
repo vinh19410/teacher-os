@@ -164,10 +164,33 @@ export const classCreateSchema = z
 	.superRefine(refineClassFields);
 export type ClassCreate = z.infer<typeof classCreateSchema>;
 
+/**
+ * Mã lỗi trả về từ POST /api/classes/:id/curriculum/import để server và web
+ * dùng chung một nguồn chân lý.
+ */
+export const CURRICULUM_IMPORT_ERROR_CODES = {
+	MANUAL_SESSIONS_EXIST: "MANUAL_SESSIONS_EXIST",
+	MANUAL_SESSIONS_COMPLETED: "MANUAL_SESSIONS_COMPLETED",
+	CURRICULUM_EMPTY_TEMPLATE: "CURRICULUM_EMPTY_TEMPLATE",
+	CURRICULUM_TOO_MANY_LESSONS: "CURRICULUM_TOO_MANY_LESSONS",
+	CURRICULUM_TEMPLATE_TOO_LARGE: "CURRICULUM_TEMPLATE_TOO_LARGE",
+	CURRICULUM_ALREADY_EXISTS: "CURRICULUM_ALREADY_EXISTS",
+	CURRICULUM_MATERIAL_NOT_FOUND: "CURRICULUM_MATERIAL_NOT_FOUND",
+	CURRICULUM_INVALID_CLASS_SCHEDULE: "CURRICULUM_INVALID_CLASS_SCHEDULE",
+	CURRICULUM_HOLIDAY_SCAN_CAP: "CURRICULUM_HOLIDAY_SCAN_CAP",
+	CLASS_STATE_CHANGED: "CLASS_STATE_CHANGED",
+} as const;
+export type CurriculumImportErrorCode =
+	(typeof CURRICULUM_IMPORT_ERROR_CODES)[keyof typeof CURRICULUM_IMPORT_ERROR_CODES];
+
 /** Import a deep copy of a syllabus template into a class (issue #79). */
-export const importSyllabusSchema = z.object({
-	templateId: z.string().min(1),
-});
+export const importSyllabusSchema = z
+	.object({
+		templateId: z.string().min(1),
+		overwriteManualSessions: z.boolean().optional(),
+		overwriteHash: z.string().min(1).max(128).optional(),
+	})
+	.strict();
 export type ImportSyllabus = z.infer<typeof importSyllabusSchema>;
 
 /** Sync a class's curriculum copy from its linked template (or a replacement template when source was deleted). */
