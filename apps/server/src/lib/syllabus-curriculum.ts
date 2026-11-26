@@ -429,10 +429,12 @@ export async function selectTemplateTree(
 	return { modules, lessons, links };
 }
 
+const MATERIAL_ID_CHUNK = 50;
+
 /**
  * Id tài liệu ngân hàng tồn tại trong org, trong tập ids gửi lên (#655).
- * Caller tự trả 422 `material-not-found` với id đầu tiên thiếu — một câu
- * select duy nhất cho cả list, không query per-id.
+ * Caller tự trả 422 `material-not-found` với id đầu tiên thiếu — chunk theo lô
+ * 50 để luôn nằm dưới trần 100 bind parameters của Cloudflare D1.
  */
 export async function findExistingMaterialIds(
 	db: Db,
@@ -440,9 +442,17 @@ export async function findExistingMaterialIds(
 	ids: string[],
 ): Promise<Set<string>> {
 	if (ids.length === 0) return new Set();
-	const rows = await db
-		.select({ id: material.id })
-		.from(material)
-		.where(and(eq(material.orgId, orgId), inArray(material.id, ids)));
-	return new Set(rows.map((row) => row.id));
+	const uniqueIds = [...new Set(ids)];
+	const found = new Set<string>();
+	for (let i = 0; i < uniqueIds.length; i += MATERIAL_ID_CHUNK) {
+		const chunk = uniqueIds.slice(i, i + MATERIAL_ID_CHUNK);
+		const rows = await db
+			.select({ id: material.id })
+			.from(material)
+			.where(and(eq(material.orgId, orgId), inArray(material.id, chunk)));
+		for (const row of rows) {
+			found.add(row.id);
+		}
+	}
+	return found;
 }

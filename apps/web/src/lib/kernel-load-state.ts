@@ -17,6 +17,11 @@ export interface HttpErrorOptions {
 	existingStudentId?: string;
 	existingStudentName?: string;
 	portalLinked?: boolean;
+	conflictingDates?: string[];
+	otherManualDates?: string[];
+	manualSessionCount?: number;
+	overwriteHash?: string;
+	completedDates?: string[];
 }
 
 export class HttpError extends Error {
@@ -26,6 +31,11 @@ export class HttpError extends Error {
 	readonly existingStudentId?: string;
 	readonly existingStudentName?: string;
 	readonly portalLinked?: boolean;
+	readonly conflictingDates?: string[];
+	readonly otherManualDates?: string[];
+	readonly manualSessionCount?: number;
+	readonly overwriteHash?: string;
+	readonly completedDates?: string[];
 
 	constructor(status: number, message: string, options?: HttpErrorOptions) {
 		super(message);
@@ -36,6 +46,11 @@ export class HttpError extends Error {
 		this.existingStudentId = options?.existingStudentId;
 		this.existingStudentName = options?.existingStudentName;
 		this.portalLinked = options?.portalLinked;
+		this.conflictingDates = options?.conflictingDates;
+		this.otherManualDates = options?.otherManualDates;
+		this.manualSessionCount = options?.manualSessionCount;
+		this.overwriteHash = options?.overwriteHash;
+		this.completedDates = options?.completedDates;
 	}
 }
 

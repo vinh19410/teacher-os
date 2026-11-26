@@ -4,6 +4,7 @@
  */
 import {
 	classUpdateSchema,
+	importSyllabusSchema,
 	type KernelSnapshot,
 	reorderLessonsSchema,
 	reorderModulesSchema,
@@ -625,6 +626,26 @@ describe("kernelCommand", () => {
 		});
 		expect(imported.path).toBe("/api/classes/c1/curriculum/import");
 		expect(imported.body).toEqual({ templateId: "tpl1" });
+		expect(importSyllabusSchema.safeParse(imported.body).success).toBe(true);
+
+		const overwriteImported = kernelCommand({
+			type: "import-curriculum",
+			classId: "cl/special",
+			templateId: "tpl1",
+			overwriteManualSessions: true,
+			overwriteHash: "hash-abc",
+		});
+		expect(overwriteImported.path).toBe(
+			"/api/classes/cl%2Fspecial/curriculum/import",
+		);
+		expect(overwriteImported.body).toEqual({
+			templateId: "tpl1",
+			overwriteManualSessions: true,
+			overwriteHash: "hash-abc",
+		});
+		expect(importSyllabusSchema.safeParse(overwriteImported.body).success).toBe(
+			true,
+		);
 		const syncedLinked = kernelCommand({
 			type: "sync-curriculum",
 			classId: "c1",
@@ -651,6 +672,50 @@ describe("kernelCommand", () => {
 			kernelCommand({ type: "update-class-notes", classId: "c1", notes: "n" })
 				.path,
 		).toBe("/api/classes/c1/notes");
+	});
+
+	test("postKernelCommand preserves structured curriculum conflict metadata on HttpError", async () => {
+		const realFetch = globalThis.fetch;
+		globalThis.fetch = vi.fn(async () => {
+			return new Response(
+				JSON.stringify({
+					error: "Lớp đã có buổi học thủ công trùng ngày.",
+					reason: "has-manual-sessions",
+					code: "MANUAL_SESSIONS_EXIST",
+					conflictingDates: ["2026-11-10", 42],
+					otherManualDates: ["2026-11-11"],
+					manualSessionCount: 2,
+					overwriteHash: "hash-xyz",
+					completedDates: ["2026-11-05"],
+				}),
+				{
+					status: 409,
+					headers: { "content-type": "application/json" },
+				},
+			);
+		}) as typeof fetch;
+		try {
+			await expect(
+				postKernelCommand("http://localhost:8000", {
+					type: "import-curriculum",
+					classId: "c1",
+					templateId: "tpl1",
+				}),
+			).rejects.toSatisfy((err: unknown) => {
+				expect(err).toBeInstanceOf(HttpError);
+				const httpErr = err as HttpError;
+				expect(httpErr.status).toBe(409);
+				expect(httpErr.code).toBe("MANUAL_SESSIONS_EXIST");
+				expect(httpErr.conflictingDates).toEqual(["2026-11-10"]);
+				expect(httpErr.otherManualDates).toEqual(["2026-11-11"]);
+				expect(httpErr.manualSessionCount).toBe(2);
+				expect(httpErr.overwriteHash).toBe("hash-xyz");
+				expect(httpErr.completedDates).toEqual(["2026-11-05"]);
+				return true;
+			});
+		} finally {
+			globalThis.fetch = realFetch;
+		}
 	});
 
 	test("update-class-tuition-fee targets class subresource with single-field body", () => {
