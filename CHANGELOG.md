@@ -12,6 +12,11 @@ Quy ước khi cập nhật:
 
 ## 2026-11-26
 
+### Added
+- **Bổ sung widget Mini Calendar (`Lịch tháng`) dạng chỉ xem ở đầu cột phải trang Dashboard giáo viên (`/teacher/dashboard`, `apps/web`):**
+  - Thêm tầng selector thuần `dashboard-calendar.ts` (và export `compareLessonTime` từ `dashboard-from-kernel.ts`) lập chỉ mục buổi dạy thật bằng allowlist fail-closed `activeClassById` (loại hoàn toàn lớp `paused` kể cả lịch sử `completed`/`absent` và dòng mồ côi), lọc `cancelled`/`holiday`, hỗ trợ mô hình hybrid 1-pass cho lớp legacy không ngày (tách tập con lớp trộn dated+undated sang fallback thứ trong tuần), dedup/sắp xếp theo số phút và toán học lưới tháng UTC an toàn biên `1970-01`..`2099-12`.
+  - Thêm component `MonthCalendarSection` (`month-calendar-section.tsx`) đặt trên `Cần kiểm tra` và `Toàn trung tâm` trong `/teacher/dashboard`: lưới Thứ Hai → Chủ Nhật chấm ngày có buổi dạy, chọn ngày xem agenda read-only (`"buổi dạy"`, không dùng `"ca dạy"`), điều hướng `Tháng trước` / `Tháng sau` / `Hôm nay` (trả focus qua `todayBtnRef`), 1 vùng `aria-live="polite"` duy nhất, tự rollover nửa đêm giờ VN không cướp ngày đã chọn thủ công, đáp ứng reflow từ `320px` (cả `pointer: coarse`) đến `1440px` trên Light & Dark (#976).
+
 ### Fixed
 - **Backfill Bộ đề (`collection`), Nhóm đề (`test_group`) và Phần thi (`p1`–`p3`) cho toàn bộ kho đề Reading tự luyện, bật sắp xếp số tự nhiên cho Bộ đề và gia cố đồng bộ / sửa prompt thư viện (`packages/db`, `apps/server`, `apps/student`):**
   - Thêm module chuẩn hóa dùng chung `packages/db/src/seed/reading-library.ts` (khớp quy ước Listening, khử `"Step IELTS"` / `"Unknown"` → `"Other sources"`, đồng bộ chuẩn hóa homoglyph/whitespace 1-1 với SQLite, trích `passageClue` thuần ASCII cho 349/350 bài có đoạn đọc và tách loại trừ lẫn nhau 2 đề `"Coral reefs"`) cùng kiểm thử parity cơ học 1-1 với migration SQL trong `reading-library-dataset.test.ts`.
