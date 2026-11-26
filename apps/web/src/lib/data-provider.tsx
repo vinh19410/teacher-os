@@ -24,7 +24,7 @@ import type {
 	Syllabus,
 } from "./mock-data";
 import { reauth } from "./reauth";
-import { dailyAttendanceBaseQueryKey } from "./repos/daily-attendance";
+import { attendanceBaseQueryKey } from "./repos/daily-attendance";
 import {
 	createKernelCommandBus,
 	type KernelCommandBus,
@@ -117,9 +117,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 					{ throwOnError: true },
 				);
 				// Keep exact: true on kernelQueryKey so remindersQueryKey stays synced
-				// to kernelDataUpdatedAt, while marking cached daily attendance dates stale.
+				// to kernelDataUpdatedAt, while marking cached daily & overdue attendance stale.
 				await queryClient.invalidateQueries({
-					queryKey: dailyAttendanceBaseQueryKey,
+					queryKey: attendanceBaseQueryKey,
 				});
 			},
 			// A dead session mid-write/mid-refresh bounces to login (phase-4);

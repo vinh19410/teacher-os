@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { DailyAttendanceResponse } from "@teacher-os/api/contracts";
+import type {
+	DailyAttendanceResponse,
+	OverdueAttendanceResponse,
+} from "@teacher-os/api/contracts";
 import {
 	cleanup,
 	fireEvent,
@@ -25,6 +28,21 @@ import { AttendanceRoute, validateAttendanceSearch } from "./attendance";
 
 // Thứ Tư giữa sáng giờ máy (2026-10-07).
 const WEDNESDAY = new Date("2026-10-07T03:00:00Z");
+
+const EMPTY_OVERDUE: OverdueAttendanceResponse = {
+	today: "2026-10-07",
+	totalCount: 0,
+	hasMore: false,
+	sessions: [],
+};
+
+function isOverdueUrl(input: RequestInfo | URL): boolean {
+	return String(input).includes("/api/attendance/overdue");
+}
+
+function emptyOverdueResponse(): Response {
+	return new Response(JSON.stringify(EMPTY_OVERDUE), { status: 200 });
+}
 
 const SAMPLE_DAILY: DailyAttendanceResponse = {
 	date: "2026-10-07",
@@ -131,12 +149,15 @@ describe("validateAttendanceSearch", () => {
 		});
 	});
 
-	it("status nhận đúng 3 giá trị hợp đồng, giá trị lạ rơi về all", () => {
+	it("status nhận đúng 4 giá trị hợp đồng, giá trị lạ rơi về all", () => {
 		expect(validateAttendanceSearch({ status: "pending" })).toMatchObject({
 			status: "pending",
 		});
 		expect(validateAttendanceSearch({ status: "completed" })).toMatchObject({
 			status: "completed",
+		});
+		expect(validateAttendanceSearch({ status: "overdue" })).toMatchObject({
+			status: "overdue",
 		});
 		expect(validateAttendanceSearch({ status: "weird" })).toMatchObject({
 			status: "all",
@@ -155,16 +176,17 @@ describe("/attendance screen (TOS-7 Phase 3)", () => {
 		routerState.search = { date: "2026-10-07", status: "all" };
 		vi.stubGlobal(
 			"fetch",
-			vi.fn().mockResolvedValue(
-				new Response(
+			vi.fn(async (input: RequestInfo | URL) => {
+				if (isOverdueUrl(input)) return emptyOverdueResponse();
+				return new Response(
 					JSON.stringify({
 						date: "2026-10-07",
 						sessions: [],
 						counts: { all: 0, pending: 0, completed: 0 },
 					}),
 					{ status: 200 },
-				),
-			),
+				);
+			}),
 		);
 
 		renderAttendance();
@@ -185,6 +207,9 @@ describe("/attendance screen (TOS-7 Phase 3)", () => {
 					return new Response(JSON.stringify({ updated: 1, recorded: true }), {
 						status: 200,
 					});
+				}
+				if (url.includes("/api/attendance/overdue")) {
+					return emptyOverdueResponse();
 				}
 				if (url.includes("/api/attendance/daily")) {
 					return new Response(JSON.stringify(SAMPLE_DAILY), { status: 200 });
@@ -235,7 +260,7 @@ describe("/attendance screen (TOS-7 Phase 3)", () => {
 		routerState.search = { date: "2026-10-07", status: "pending" };
 		let getCalls = 0;
 		const fetchMock = vi.fn(
-			async (_input: RequestInfo | URL, init?: RequestInit) => {
+			async (input: RequestInfo | URL, init?: RequestInit) => {
 				if (init?.method === "PUT") {
 					return new Response(
 						JSON.stringify({
@@ -245,6 +270,7 @@ describe("/attendance screen (TOS-7 Phase 3)", () => {
 						{ status: 409 },
 					);
 				}
+				if (isOverdueUrl(input)) return emptyOverdueResponse();
 				getCalls += 1;
 				return new Response(JSON.stringify(SAMPLE_DAILY), { status: 200 });
 			},
@@ -273,11 +299,10 @@ describe("/attendance screen (TOS-7 Phase 3)", () => {
 		routerState.search = { date: "2026-10-07", status: "all" };
 		vi.stubGlobal(
 			"fetch",
-			vi
-				.fn()
-				.mockResolvedValue(
-					new Response(JSON.stringify(SAMPLE_DAILY), { status: 200 }),
-				),
+			vi.fn(async (input: RequestInfo | URL) => {
+				if (isOverdueUrl(input)) return emptyOverdueResponse();
+				return new Response(JSON.stringify(SAMPLE_DAILY), { status: 200 });
+			}),
 		);
 
 		renderAttendance();
@@ -406,7 +431,7 @@ describe("/attendance TOS-8 auto-advance", () => {
 		return {
 			getCalls: () => getCalls,
 			putCalls: () => putCalls,
-			mock: vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+			mock: vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
 				if (init?.method === "PUT") {
 					putCalls += 1;
 					if (putStatus !== 200) {
@@ -422,6 +447,7 @@ describe("/attendance TOS-8 auto-advance", () => {
 						status: 200,
 					});
 				}
+				if (isOverdueUrl(input)) return emptyOverdueResponse();
 				const body = getResponses[Math.min(getCalls, getResponses.length - 1)];
 				getCalls += 1;
 				return new Response(JSON.stringify(body), { status: 200 });
@@ -575,10 +601,11 @@ describe("/attendance TOS-8 auto-advance", () => {
 		const { promise: putPromise, resolve: resolvePut } =
 			Promise.withResolvers<Response>();
 		const fetchMock = vi.fn(
-			async (_input: RequestInfo | URL, init?: RequestInit) => {
+			async (input: RequestInfo | URL, init?: RequestInit) => {
 				if (init?.method === "PUT") {
 					return putPromise;
 				}
+				if (isOverdueUrl(input)) return emptyOverdueResponse();
 				return new Response(JSON.stringify(TWO_PENDING), { status: 200 });
 			},
 		);
@@ -609,7 +636,11 @@ describe("/attendance TOS-8 auto-advance", () => {
 			}),
 		);
 
-		await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(4));
+		await waitFor(() =>
+			expect(
+				fetchMock.mock.calls.filter((call) => !isOverdueUrl(call[0])).length,
+			).toBe(4),
+		);
 		expect(
 			screen.queryByRole("radiogroup", { name: /Trần Hoàng Nam/ }),
 		).toBeNull();
@@ -620,12 +651,13 @@ describe("/attendance TOS-8 auto-advance", () => {
 		routerState.search = { date: "2026-10-07", status: "all" };
 		let getCalls = 0;
 		const fetchMock = vi.fn(
-			async (_input: RequestInfo | URL, init?: RequestInit) => {
+			async (input: RequestInfo | URL, init?: RequestInit) => {
 				if (init?.method === "PUT") {
 					return new Response(JSON.stringify({ updated: 1, recorded: true }), {
 						status: 200,
 					});
 				}
+				if (isOverdueUrl(input)) return emptyOverdueResponse();
 				getCalls += 1;
 				if (getCalls === 1) {
 					return new Response(JSON.stringify(TWO_PENDING), { status: 200 });
@@ -649,8 +681,9 @@ describe("/attendance TOS-8 auto-advance", () => {
 		routerState.search = { date: "2026-10-07", status: "all" };
 		const { promise: putPromise } = Promise.withResolvers<Response>();
 		const fetchMock = vi.fn(
-			async (_input: RequestInfo | URL, init?: RequestInit) => {
+			async (input: RequestInfo | URL, init?: RequestInit) => {
 				if (init?.method === "PUT") return putPromise;
+				if (isOverdueUrl(input)) return emptyOverdueResponse();
 				return new Response(JSON.stringify(TWO_PENDING), { status: 200 });
 			},
 		);
@@ -742,8 +775,9 @@ describe("/attendance TOS-8 auto-advance", () => {
 		routerState.search = { date: "2026-10-07", status: "all" };
 		const { promise: putPromise } = Promise.withResolvers<Response>();
 		const fetchMock = vi.fn(
-			async (_input: RequestInfo | URL, init?: RequestInit) => {
+			async (input: RequestInfo | URL, init?: RequestInit) => {
 				if (init?.method === "PUT") return putPromise;
+				if (isOverdueUrl(input)) return emptyOverdueResponse();
 				return new Response(JSON.stringify(TWO_PENDING), { status: 200 });
 			},
 		);
@@ -787,10 +821,11 @@ describe("/attendance TOS-8 auto-advance", () => {
 		const { promise: putPromise, resolve: resolvePut } =
 			Promise.withResolvers<Response>();
 		const fetchMock = vi.fn(
-			async (_input: RequestInfo | URL, init?: RequestInit) => {
+			async (input: RequestInfo | URL, init?: RequestInit) => {
 				if (init?.method === "PUT") {
 					return putPromise;
 				}
+				if (isOverdueUrl(input)) return emptyOverdueResponse();
 				return new Response(JSON.stringify(TWO_PENDING), { status: 200 });
 			},
 		);
@@ -820,7 +855,11 @@ describe("/attendance TOS-8 auto-advance", () => {
 		);
 
 		// GET(07) + GET(08 sau đổi ngày) + PUT — KHÔNG refetch ngày cũ.
-		await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+		await waitFor(() =>
+			expect(
+				fetchMock.mock.calls.filter((call) => !isOverdueUrl(call[0])).length,
+			).toBe(3),
+		);
 		expect(toast.error).not.toHaveBeenCalled();
 	});
 
@@ -900,12 +939,10 @@ describe("/attendance paused class sessions (#694)", () => {
 		routerState.search = { date: "2026-10-07", status: "all" };
 		vi.stubGlobal(
 			"fetch",
-			vi
-				.fn()
-				.mockImplementation(
-					async () =>
-						new Response(JSON.stringify(PAUSED_AND_ACTIVE), { status: 200 }),
-				),
+			vi.fn(async (input: RequestInfo | URL) => {
+				if (isOverdueUrl(input)) return emptyOverdueResponse();
+				return new Response(JSON.stringify(PAUSED_AND_ACTIVE), { status: 200 });
+			}),
 		);
 
 		renderAttendance();
@@ -964,12 +1001,13 @@ describe("/attendance paused class sessions (#694)", () => {
 		let gets = 0;
 		vi.stubGlobal(
 			"fetch",
-			vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+			vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
 				if (init?.method === "PUT") {
 					return new Response(JSON.stringify({ updated: 1, recorded: true }), {
 						status: 200,
 					});
 				}
+				if (isOverdueUrl(input)) return emptyOverdueResponse();
 				const payload = gets === 0 ? PAUSED_AND_ACTIVE : savedActive;
 				gets += 1;
 				return new Response(JSON.stringify(payload), { status: 200 });
@@ -1009,13 +1047,14 @@ describe("/attendance paused class sessions (#694)", () => {
 		};
 		let getCalls = 0;
 		const fetchMock = vi.fn(
-			async (_input: RequestInfo | URL, init?: RequestInit) => {
+			async (input: RequestInfo | URL, init?: RequestInit) => {
 				if (init?.method === "PUT") {
 					return new Response(
 						JSON.stringify({ error: "paused", code: "CLASS_PAUSED" }),
 						{ status: 409 },
 					);
 				}
+				if (isOverdueUrl(input)) return emptyOverdueResponse();
 				const body = getCalls === 0 ? SAMPLE_DAILY : pausedDaily;
 				getCalls += 1;
 				return new Response(JSON.stringify(body), { status: 200 });
@@ -1042,5 +1081,458 @@ describe("/attendance paused class sessions (#694)", () => {
 		);
 		await waitFor(() => expect(getCalls).toBeGreaterThanOrEqual(2));
 		expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["kernel"] });
+	});
+});
+
+describe("/attendance overdue backlog (#959)", () => {
+	const makeOverdueSession = (
+		date: string,
+		lessonId: string,
+		studentName: string,
+	): OverdueAttendanceResponse["sessions"][number] => ({
+		date,
+		classId: "cls-found",
+		className: "IELTS Foundation 5.5",
+		time: "19:00",
+		dur: 90,
+		mode: "dated",
+		recorded: false,
+		students: [
+			{
+				lessonId,
+				studentId: `st-${lessonId}`,
+				studentName,
+				attendance: null,
+				note: "",
+			},
+		],
+	});
+
+	const THREE_OVERDUE: OverdueAttendanceResponse = {
+		today: "2026-10-07",
+		totalCount: 3,
+		hasMore: false,
+		sessions: [
+			makeOverdueSession("2026-10-05", "l-ov-1", "An Nguyễn"),
+			makeOverdueSession("2026-10-03", "l-ov-2", "Bình Trần"),
+			makeOverdueSession("2026-10-01", "l-ov-3", "Cường Lê"),
+		],
+	};
+
+	const EMPTY_DAILY: DailyAttendanceResponse = {
+		date: "2026-10-07",
+		sessions: [],
+		counts: { all: 0, pending: 0, completed: 0 },
+	};
+
+	it("tab ngày trống vẫn hiện chip Quá hạn + banner cảnh báo đỏ và bấm Xem ca quá hạn điều hướng sang status=overdue", async () => {
+		routerState.search = { date: "2026-10-07", status: "all" };
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (input: RequestInfo | URL) => {
+				if (isOverdueUrl(input)) {
+					return new Response(
+						JSON.stringify({
+							...THREE_OVERDUE,
+							totalCount: 2,
+							sessions: THREE_OVERDUE.sessions.slice(0, 2),
+						}),
+						{ status: 200 },
+					);
+				}
+				return new Response(JSON.stringify(EMPTY_DAILY), { status: 200 });
+			}),
+		);
+
+		renderAttendance();
+		expect(
+			await screen.findByText("Có 2 ca học từ các ngày trước chưa điểm danh."),
+		).toBeTruthy();
+		const chipGroup = screen.getByRole("group", {
+			name: "Lọc trạng thái điểm danh",
+		});
+		const overdueChip = within(chipGroup).getByRole("button", {
+			name: "Quá hạn",
+		});
+		expect(overdueChip.textContent).toContain("2");
+
+		fireEvent.click(screen.getByRole("button", { name: "Xem ca quá hạn" }));
+		expect(routerState.navigate).toHaveBeenCalledWith({
+			to: "/attendance",
+			search: { date: "2026-10-07", status: "overdue" },
+		});
+	});
+
+	it("tab overdue: 3 ca cùng classId không trùng key, lưu ca #2 gửi đúng session.date, auto-advance tới ca #3 (prevIndex), lưu hết báo hoàn tất", async () => {
+		routerState.search = { date: "2026-10-07", status: "overdue" };
+		const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		const afterSave2: OverdueAttendanceResponse = {
+			today: "2026-10-07",
+			totalCount: 2,
+			hasMore: false,
+			sessions: [THREE_OVERDUE.sessions[0]!, THREE_OVERDUE.sessions[2]!],
+		};
+		const afterSave3: OverdueAttendanceResponse = {
+			today: "2026-10-07",
+			totalCount: 0,
+			hasMore: false,
+			sessions: [],
+		};
+		let overdueGets = 0;
+		const putUrls: string[] = [];
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+				const url = String(input);
+				if (init?.method === "PUT") {
+					putUrls.push(url);
+					return new Response(JSON.stringify({ updated: 1, recorded: true }), {
+						status: 200,
+					});
+				}
+				if (isOverdueUrl(input)) {
+					const payload =
+						overdueGets === 0
+							? THREE_OVERDUE
+							: overdueGets === 1
+								? afterSave2
+								: afterSave3;
+					overdueGets += 1;
+					return new Response(JSON.stringify(payload), { status: 200 });
+				}
+				return new Response(JSON.stringify(EMPTY_DAILY), { status: 200 });
+			}),
+		);
+
+		renderAttendance();
+		// Ca đầu (05/10) tự mở sẵn.
+		expect(
+			await screen.findByRole("radiogroup", {
+				name: /Trạng thái điểm danh của An Nguyễn/,
+			}),
+		).toBeTruthy();
+
+		// Thu gọn ca #1, mở ca #2 (03/10) và lưu.
+		fireEvent.click(screen.getByRole("button", { name: /05\/10\/2026/ }));
+		fireEvent.click(screen.getByRole("button", { name: /03\/10\/2026/ }));
+		const group2 = screen.getByRole("radiogroup", {
+			name: /Trạng thái điểm danh của Bình Trần/,
+		});
+		fireEvent.click(within(group2).getByRole("radio", { name: "Có mặt" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Lưu điểm danh ca học" }),
+		);
+
+		await waitFor(() =>
+			expect(toast.success).toHaveBeenCalledWith("Đã lưu điểm danh"),
+		);
+		expect(putUrls[0]).toContain(
+			"/api/classes/cls-found/sessions/2026-10-03/attendance",
+		);
+
+		// Auto-advance theo prevIndex: tiến sang ca #3 (01/10 — Cường Lê), không nhảy ngược về ca #1.
+		const group3 = await screen.findByRole("radiogroup", {
+			name: /Trạng thái điểm danh của Cường Lê/,
+		});
+		await waitFor(() =>
+			expect(document.activeElement).toBe(
+				within(group3).getByRole("radio", { name: "Có mặt" }),
+			),
+		);
+
+		// Lưu ca cuối cùng (giả lập hết danh sách sau refetch) → live status + nút Quay lại hôm nay.
+		fireEvent.click(within(group3).getByRole("radio", { name: "Có mặt" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Lưu điểm danh ca học" }),
+		);
+		await waitFor(() =>
+			expect(
+				screen.getByTestId("attendance-live-status").textContent,
+			).toContain("Đã điểm danh xong mọi ca quá hạn"),
+		);
+		expect(
+			await screen.findByText("Không có ca học quá hạn chưa điểm danh."),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Quay lại hôm nay" }),
+		).toBeTruthy();
+		expect(errorSpy).not.toHaveBeenCalled();
+		errorSpy.mockRestore();
+	});
+
+	it("tab overdue: refetch sau PUT lỗi 500 chặn auto-advance; PUT 404 not-found hiện toast và refetch overdue", async () => {
+		routerState.search = { date: "2026-10-07", status: "overdue" };
+		let overdueGets = 0;
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+				if (init?.method === "PUT") {
+					return new Response(JSON.stringify({ updated: 1, recorded: true }), {
+						status: 200,
+					});
+				}
+				if (isOverdueUrl(input)) {
+					overdueGets += 1;
+					if (overdueGets === 1) {
+						return new Response(JSON.stringify(THREE_OVERDUE), { status: 200 });
+					}
+					return new Response(JSON.stringify({ error: "boom" }), {
+						status: 500,
+					});
+				}
+				return new Response(JSON.stringify(EMPTY_DAILY), { status: 200 });
+			}),
+		);
+
+		renderAttendance();
+		const group1 = await screen.findByRole("radiogroup", {
+			name: /Trạng thái điểm danh của An Nguyễn/,
+		});
+		fireEvent.click(within(group1).getByRole("radio", { name: "Có mặt" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Lưu điểm danh ca học" }),
+		);
+		await waitFor(() =>
+			expect(toast.success).toHaveBeenCalledWith("Đã lưu điểm danh"),
+		);
+		expect(screen.queryByRole("radiogroup", { name: /Bình Trần/ })).toBeNull();
+		expect(screen.getByTestId("attendance-live-status").textContent).toBe("");
+
+		cleanup();
+		vi.clearAllMocks();
+		let gets404 = 0;
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+				if (init?.method === "PUT") {
+					return new Response(
+						JSON.stringify({ error: "not found", reason: "not-found" }),
+						{ status: 404 },
+					);
+				}
+				if (isOverdueUrl(input)) {
+					gets404 += 1;
+					return new Response(JSON.stringify(THREE_OVERDUE), { status: 200 });
+				}
+				return new Response(JSON.stringify(EMPTY_DAILY), { status: 200 });
+			}),
+		);
+
+		renderAttendance();
+		const group404 = await screen.findByRole("radiogroup", {
+			name: /Trạng thái điểm danh của An Nguyễn/,
+		});
+		fireEvent.click(within(group404).getByRole("radio", { name: "Có mặt" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Lưu điểm danh ca học" }),
+		);
+		await waitFor(() =>
+			expect(toast.error).toHaveBeenCalledWith(
+				"Ca học không còn tồn tại hoặc đã bị thay đổi, đã tải lại.",
+			),
+		);
+		expect(gets404).toBeGreaterThanOrEqual(2);
+	});
+
+	it("URL date tương lai (2099-12-31) trên status=overdue không khoá read-only; đổi ngày hoặc bấm Hôm nay thoát về status=all", async () => {
+		routerState.search = { date: "2099-12-31", status: "overdue" };
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (input: RequestInfo | URL) => {
+				if (isOverdueUrl(input)) {
+					return new Response(JSON.stringify(THREE_OVERDUE), { status: 200 });
+				}
+				return new Response(JSON.stringify(EMPTY_DAILY), { status: 200 });
+			}),
+		);
+
+		renderAttendance();
+		const group1 = await screen.findByRole("radiogroup", {
+			name: /Trạng thái điểm danh của An Nguyễn/,
+		});
+		expect(
+			(
+				within(group1).getByRole("radio", {
+					name: "Có mặt",
+				}) as HTMLButtonElement
+			).disabled,
+		).toBe(false);
+		expect(screen.queryByText("Chưa đến ngày học")).toBeNull();
+
+		fireEvent.change(screen.getByLabelText("Chọn ngày điểm danh"), {
+			target: { value: "2026-10-08" },
+		});
+		expect(routerState.navigate).toHaveBeenCalledWith({
+			to: "/attendance",
+			search: { date: "2026-10-08", status: "all" },
+		});
+
+		const todayBtn = screen.getByRole("button", { name: "Hôm nay" });
+		expect((todayBtn as HTMLButtonElement).disabled).toBe(false);
+		fireEvent.click(todayBtn);
+		expect(routerState.navigate).toHaveBeenLastCalledWith({
+			to: "/attendance",
+			search: { date: THREE_OVERDUE.today, status: "all" },
+		});
+	});
+
+	it("lớp legacy ở ngày quá khứ không gắn badge Quá hạn; clock skew trên tab overdue vẫn gắn badge Quá hạn", async () => {
+		routerState.search = { date: "2020-01-01", status: "all" };
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (input: RequestInfo | URL) => {
+				if (isOverdueUrl(input)) return emptyOverdueResponse();
+				return new Response(
+					JSON.stringify({
+						date: "2020-01-01",
+						sessions: [
+							{
+								classId: "cls-leg",
+								className: "Lớp Legacy Cũ",
+								time: "08:00",
+								dur: 60,
+								mode: "legacy",
+								recorded: false,
+								students: [
+									{
+										lessonId: null,
+										studentId: "st-leg",
+										studentName: "Lê Thu Hà",
+										attendance: null,
+										note: "",
+									},
+								],
+							},
+						],
+						counts: { all: 1, pending: 1, completed: 0 },
+					}),
+					{ status: 200 },
+				);
+			}),
+		);
+
+		renderAttendance();
+		const legBtn = await screen.findByRole("button", {
+			name: /Lớp Legacy Cũ/,
+		});
+		expect(legBtn.textContent).toContain("Chưa điểm danh");
+		expect(legBtn.textContent).not.toContain("Quá hạn");
+
+		cleanup();
+		// Clock skew: server nói today = 2099-01-02 (xa hơn đồng hồ máy), ca ngày 2099-01-01 vẫn là Quá hạn.
+		routerState.search = { date: "2026-10-07", status: "overdue" };
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (input: RequestInfo | URL) => {
+				if (isOverdueUrl(input)) {
+					return new Response(
+						JSON.stringify({
+							today: "2099-01-02",
+							totalCount: 1,
+							hasMore: false,
+							sessions: [
+								makeOverdueSession("2099-01-01", "l-skew", "An Nguyễn"),
+							],
+						}),
+						{ status: 200 },
+					);
+				}
+				return new Response(JSON.stringify(EMPTY_DAILY), { status: 200 });
+			}),
+		);
+
+		renderAttendance();
+		const skewBtn = await screen.findByRole("button", {
+			name: /01\/01\/2099/,
+		});
+		expect(skewBtn.textContent).toContain("Quá hạn");
+
+		// Đồng hồ máy chậm hơn server (search.date === serverToday > clientToday):
+		// mở status=pending từ Dashboard không bị isFutureDate khoá read-only "Chưa đến ngày học".
+		cleanup();
+		routerState.search = { date: "2099-01-02", status: "pending" };
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (input: RequestInfo | URL) => {
+				if (isOverdueUrl(input)) {
+					return new Response(
+						JSON.stringify({
+							today: "2099-01-02",
+							totalCount: 0,
+							hasMore: false,
+							sessions: [],
+						}),
+						{ status: 200 },
+					);
+				}
+				return new Response(
+					JSON.stringify({
+						...SAMPLE_DAILY,
+						date: "2099-01-02",
+					}),
+					{ status: 200 },
+				);
+			}),
+		);
+
+		renderAttendance();
+		expect(await screen.findByText("IELTS 6.5A")).toBeTruthy();
+		expect(screen.queryByText(/Chưa đến ngày học/)).toBeNull();
+		expect(
+			(
+				screen.getByRole("button", {
+					name: "Lưu điểm danh ca học",
+				}) as HTMLButtonElement
+			).disabled,
+		).toBe(false);
+	});
+
+	it("overdue API 500: tab ngày vẫn hiển thị bình thường; tab overdue hiện alert và bấm Thử lại refetch /api/attendance/overdue để phục hồi", async () => {
+		routerState.search = { date: "2026-10-07", status: "all" };
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (input: RequestInfo | URL) => {
+				if (isOverdueUrl(input)) {
+					return new Response(JSON.stringify({ error: "boom" }), {
+						status: 500,
+					});
+				}
+				return new Response(JSON.stringify(SAMPLE_DAILY), { status: 200 });
+			}),
+		);
+
+		renderAttendance();
+		expect(await screen.findByText("IELTS 6.5A")).toBeTruthy();
+		expect(screen.queryByRole("alert")).toBeNull();
+
+		cleanup();
+		routerState.search = { date: "2026-10-07", status: "overdue" };
+		let overdueCalls = 0;
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (input: RequestInfo | URL) => {
+				if (isOverdueUrl(input)) {
+					overdueCalls += 1;
+					if (overdueCalls === 1) {
+						return new Response(JSON.stringify({ error: "boom" }), {
+							status: 500,
+						});
+					}
+					return new Response(JSON.stringify(THREE_OVERDUE), { status: 200 });
+				}
+				return new Response(JSON.stringify(EMPTY_DAILY), { status: 200 });
+			}),
+		);
+
+		renderAttendance();
+		const alertBox = await screen.findByRole("alert");
+		expect(alertBox.textContent).toContain(
+			"Không thể tải danh sách ca học quá hạn.",
+		);
+		fireEvent.click(within(alertBox).getByRole("button", { name: "Thử lại" }));
+		expect(
+			await screen.findByRole("button", { name: /05\/10\/2026/ }),
+		).toBeTruthy();
+		expect(overdueCalls).toBe(2);
 	});
 });

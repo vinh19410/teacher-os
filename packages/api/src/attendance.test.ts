@@ -9,7 +9,9 @@ import type { AttendanceStatus } from "./contracts";
 import {
 	ATTENDANCE_STATUSES,
 	dailyAttendanceResponseSchema,
+	dashboardRemindersResponseSchema,
 	lessonStatusForAttendance,
+	overdueAttendanceResponseSchema,
 	sessionAttendanceSaveSchema,
 	UNEXCUSED_CONSUMES_SESSION,
 } from "./contracts";
@@ -198,6 +200,203 @@ describe("dailyAttendanceResponseSchema", () => {
 					},
 				],
 				counts: { all: 1, pending: 1, completed: 0 },
+			}).success,
+		).toBe(false);
+	});
+});
+
+describe("dashboardRemindersResponseSchema — today & overdue fields", () => {
+	test("chấp nhận payload v2 có today, overdue và items[].date", () => {
+		const parsed = dashboardRemindersResponseSchema.parse({
+			date: "2026-10-26",
+			attendance: {
+				pending: 6,
+				today: 1,
+				overdue: 5,
+				items: [
+					{
+						classId: "c-1",
+						className: "IELTS 5.5",
+						time: "18:00",
+						dur: 90,
+						date: "2026-10-26",
+					},
+					{
+						classId: "c-1",
+						className: "IELTS 5.5",
+						time: "18:00",
+						dur: 90,
+						date: "2026-10-24",
+					},
+					{
+						classId: "c-legacy",
+						className: "Lớp cũ",
+						time: "07:00",
+						dur: 60,
+					},
+				],
+			},
+			overdueGrading: { count: 0, writing: 0, speaking: 0 },
+		});
+		expect(parsed.attendance.today).toBe(1);
+		expect(parsed.attendance.overdue).toBe(5);
+		expect(parsed.attendance.items[1]?.date).toBe("2026-10-24");
+		expect(parsed.attendance.items[2]?.date).toBeUndefined();
+	});
+
+	test("tương thích ngược payload v1 không có today, overdue và items[].date", () => {
+		const parsed = dashboardRemindersResponseSchema.parse({
+			date: "2026-10-26",
+			attendance: {
+				pending: 2,
+				items: [{ classId: "c-1", className: "Lớp A", time: "18:00", dur: 90 }],
+			},
+			overdueGrading: { count: 1, writing: 1, speaking: 0 },
+		});
+		expect(parsed.attendance.pending).toBe(2);
+		expect(parsed.attendance.today).toBeUndefined();
+		expect(parsed.attendance.overdue).toBeUndefined();
+	});
+
+	test("từ chối items[].date sai định dạng, overdue âm, hoặc field lạ (strict)", () => {
+		expect(
+			dashboardRemindersResponseSchema.safeParse({
+				date: "2026-10-26",
+				attendance: {
+					pending: 1,
+					today: 0,
+					overdue: 1,
+					items: [
+						{
+							classId: "c-1",
+							className: "Lớp A",
+							time: "18:00",
+							dur: 90,
+							date: "20-10-2026",
+						},
+					],
+				},
+				overdueGrading: { count: 0, writing: 0, speaking: 0 },
+			}).success,
+		).toBe(false);
+
+		expect(
+			dashboardRemindersResponseSchema.safeParse({
+				date: "2026-10-26",
+				attendance: {
+					pending: 1,
+					overdue: -1,
+					items: [],
+				},
+				overdueGrading: { count: 0, writing: 0, speaking: 0 },
+			}).success,
+		).toBe(false);
+
+		expect(
+			dashboardRemindersResponseSchema.safeParse({
+				date: "2026-10-26",
+				attendance: {
+					pending: 0,
+					extra: 1,
+					items: [],
+				},
+				overdueGrading: { count: 0, writing: 0, speaking: 0 },
+			}).success,
+		).toBe(false);
+	});
+});
+
+describe("overdueAttendanceResponseSchema", () => {
+	const validSession = {
+		date: "2026-10-24",
+		classId: "c-1",
+		className: "IELTS Foundation 5.5",
+		time: "19:00",
+		dur: 90,
+		mode: "dated" as const,
+		recorded: false as const,
+		students: [
+			{
+				lessonId: "l-1",
+				studentId: "s-1",
+				studentName: "Nguyễn Văn A",
+				attendance: null,
+				note: "",
+			},
+		],
+	};
+
+	test("parse payload hợp lệ với mode dated, recorded false và students >= 1", () => {
+		const parsed = overdueAttendanceResponseSchema.parse({
+			today: "2026-10-26",
+			totalCount: 2,
+			hasMore: false,
+			sessions: [validSession],
+		});
+		expect(parsed.today).toBe("2026-10-26");
+		expect(parsed.totalCount).toBe(2);
+		expect(parsed.hasMore).toBe(false);
+		expect(parsed.sessions[0]?.date).toBe("2026-10-24");
+	});
+
+	test("từ chối students rỗng, mode legacy, recorded true, lessonId null, date sai định dạng và field lạ", () => {
+		expect(
+			overdueAttendanceResponseSchema.safeParse({
+				today: "2026-10-26",
+				totalCount: 1,
+				hasMore: false,
+				sessions: [{ ...validSession, students: [] }],
+			}).success,
+		).toBe(false);
+
+		expect(
+			overdueAttendanceResponseSchema.safeParse({
+				today: "2026-10-26",
+				totalCount: 1,
+				hasMore: false,
+				sessions: [{ ...validSession, mode: "legacy" }],
+			}).success,
+		).toBe(false);
+
+		expect(
+			overdueAttendanceResponseSchema.safeParse({
+				today: "2026-10-26",
+				totalCount: 1,
+				hasMore: false,
+				sessions: [{ ...validSession, recorded: true }],
+			}).success,
+		).toBe(false);
+
+		expect(
+			overdueAttendanceResponseSchema.safeParse({
+				today: "2026-10-26",
+				totalCount: 1,
+				hasMore: false,
+				sessions: [
+					{
+						...validSession,
+						students: [{ ...validSession.students[0], lessonId: null }],
+					},
+				],
+			}).success,
+		).toBe(false);
+
+		expect(
+			overdueAttendanceResponseSchema.safeParse({
+				today: "2026-10-26",
+				totalCount: 1,
+				hasMore: false,
+				sessions: [{ ...validSession, date: "24-10-2026" }],
+			}).success,
+		).toBe(false);
+
+		expect(
+			overdueAttendanceResponseSchema.safeParse({
+				today: "2026-10-26",
+				totalCount: 1,
+				hasMore: false,
+				extra: true,
+				sessions: [validSession],
 			}).success,
 		).toBe(false);
 	});

@@ -1,3 +1,4 @@
+import { mkdirSync } from "node:fs";
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
 import {
@@ -137,7 +138,7 @@ test("3 thẻ nhắc việc: số đếm khớp seed, API ≤ 2s, bấm thẻ/n�
 	await expect(section.getByText("1 học viên")).toBeVisible();
 	await expect(
 		section.getByRole("link", {
-			name: /^1\. Điểm danh — Ca dạy hôm nay chưa điểm danh$/,
+			name: /^1\. Điểm danh — Ca dạy chưa điểm danh$/,
 		}),
 	).toBeVisible();
 	await expect(
@@ -154,7 +155,7 @@ test("3 thẻ nhắc việc: số đếm khớp seed, API ≤ 2s, bấm thẻ/n�
 	// AC-001: bấm 1 lần trên thẻ ca dạy → /attendance?date&status=pending.
 	await section
 		.getByRole("link", {
-			name: /^1\. Điểm danh — Ca dạy hôm nay chưa điểm danh$/,
+			name: /^1\. Điểm danh — Ca dạy chưa điểm danh$/,
 		})
 		.click();
 	await expect(page).toHaveURL(
@@ -202,4 +203,127 @@ test("screenshots dashboard reminders at 3 viewports", async ({ page }) => {
 			fullPage: true,
 		});
 	}
+});
+
+test("nợ điểm danh 6 buổi quá khứ (#959): API ?v=2 và v1 đều đúng, thẻ #1 cờ 6 ca quá hạn và 1 click mở thẳng /attendance?status=overdue", async ({
+	page,
+}) => {
+	const teacherEmail = await signUpViaApi(page);
+	const orgId = await orgIdForTeacherEmail(teacherEmail);
+	const pastDates = [-11, -9, -7, -5, -3, -1].map((offset) =>
+		isoInDaysFromTodayVN(offset),
+	);
+	await seedQuizFixture({
+		orgName: `Overdue 959 ${Date.now()}`,
+		orgId,
+		className: "IELTS Foundation 5.5 (Test)",
+		studentName: "Minh Anh",
+		studentEmail: `overdue959-${Date.now()}@e2e.test`,
+		prompts: [
+			{
+				skill: "writing",
+				part: "task2",
+				type: "essay",
+				title: "Writing Task 2",
+				passage: "",
+				note: "",
+				questions: [],
+			},
+		],
+		lessons: pastDates.map((date) => ({
+			date,
+			time: "19:00",
+			dur: 90,
+			status: "upcoming" as const,
+			topic: "",
+		})),
+	});
+
+	// API v2 trả đủ today=0, overdue=6, pending=6 trong ≤ 2000ms.
+	const t0 = Date.now();
+	const v2Res = await page.request.get(
+		`${API_ORIGIN}/api/dashboard/reminders?v=2`,
+		{ headers: { Origin: WEB_ORIGIN } },
+	);
+	expect(v2Res.status()).toBe(200);
+	expect(Date.now() - t0).toBeLessThanOrEqual(2000);
+	const v2Body = (await v2Res.json()) as {
+		date: string;
+		attendance: {
+			pending: number;
+			today?: number;
+			overdue?: number;
+			items: Array<{ date?: string }>;
+		};
+	};
+	expect(v2Body.date).toBe(TODAY);
+	expect(v2Body.attendance.pending).toBe(6);
+	expect(v2Body.attendance.today).toBe(0);
+	expect(v2Body.attendance.overdue).toBe(6);
+	expect(v2Body.attendance.items).toHaveLength(3);
+	expect(v2Body.attendance.items[0]?.date).toBe(pastDates[5]);
+
+	// API v1 (không có ?v=2) vẫn đếm pending=6 và lược bỏ field mới để client cũ không lỗi .strict().
+	const v1Res = await page.request.get(
+		`${API_ORIGIN}/api/dashboard/reminders`,
+		{
+			headers: { Origin: WEB_ORIGIN },
+		},
+	);
+	expect(v1Res.status()).toBe(200);
+	const v1Body = (await v1Res.json()) as {
+		attendance: Record<string, unknown> & {
+			pending: number;
+			items: Array<Record<string, unknown>>;
+		};
+	};
+	expect(v1Body.attendance.pending).toBe(6);
+	expect("today" in v1Body.attendance).toBe(false);
+	expect("overdue" in v1Body.attendance).toBe(false);
+	expect("date" in (v1Body.attendance.items[0] ?? {})).toBe(false);
+
+	await page.goto("/teacher/dashboard");
+	const attendanceCard = page.getByTestId("reminder-card-attendance");
+	await expect(attendanceCard.getByText("6 ca dạy")).toBeVisible({
+		timeout: 5000,
+	});
+	await expect(attendanceCard.getByText("6 ca quá hạn")).toBeVisible();
+	await expect(attendanceCard.getByText("Đã hoàn tất hôm nay")).toHaveCount(0);
+	await expect(page.getByTestId("dashboard-hero-summary")).not.toContainText(
+		"Mọi việc hôm nay đã xong.",
+	);
+
+	if (process.env.CAPTURE_POT_959 === "1") {
+		const reportsDir = new URL("../../../plans/reports/", import.meta.url)
+			.pathname;
+		mkdirSync(reportsDir, { recursive: true });
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await page.waitForTimeout(250);
+		await page.screenshot({
+			path: `${reportsDir}959-dashboard-overdue-1440-light.png`,
+			fullPage: true,
+		});
+		const themeSwitch = page.getByRole("switch", { name: "Giao diện tối" });
+		await themeSwitch.click();
+		await page.waitForTimeout(250);
+		await page.screenshot({
+			path: `${reportsDir}959-dashboard-overdue-1440-dark.png`,
+			fullPage: true,
+		});
+		await themeSwitch.click();
+		await page.waitForTimeout(150);
+	}
+
+	await attendanceCard
+		.getByRole("link", { name: /^1\. Điểm danh — Ca dạy chưa điểm danh$/ })
+		.click();
+	await expect(page).toHaveURL(
+		new RegExp(`/teacher/attendance\\?date=${TODAY}&status=overdue$`),
+	);
+	await expect(
+		page.getByText("IELTS Foundation 5.5 (Test)").first(),
+	).toBeVisible();
+	await expect(
+		page.getByRole("radiogroup", { name: /Trạng thái điểm danh của Minh Anh/ }),
+	).toBeVisible();
 });

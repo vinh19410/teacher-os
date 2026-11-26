@@ -467,4 +467,22 @@ describe("AttendanceSessionRow", () => {
 		expect(document.activeElement).toBe(firstRadio);
 		expect(onBulkFocusSettled).toHaveBeenCalledTimes(1);
 	});
+
+	test("ca quá hạn với showDate hiển thị ngày dd/MM/yyyy và badge Quá hạn thay vì Chưa điểm danh", () => {
+		render(
+			<AttendanceSessionRow
+				session={DATED_SESSION}
+				sessionDate="2026-11-24"
+				showDate={true}
+				isOverdue={true}
+				expanded={false}
+				onToggle={() => {}}
+				isFutureDate={false}
+				onSave={vi.fn()}
+			/>,
+		);
+		expect(screen.getByText("24/11/2026")).toBeTruthy();
+		expect(screen.getByText("Quá hạn")).toBeTruthy();
+		expect(screen.queryByText("Chưa điểm danh")).toBeNull();
+	});
 });
