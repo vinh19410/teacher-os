@@ -1,5 +1,18 @@
-import type { ClassGroup, Lesson, Student } from "@/lib/mock-data";
-import { startOfWeekMonday, todayISOVietnam, weekDates } from "@/lib/week-grid";
+import { evaluateAssignmentDeadline } from "@teacher-os/api/vietnam-date";
+import type {
+	Assignment,
+	ClassAssignment,
+	ClassGroup,
+	Lesson,
+	Student,
+} from "@/lib/mock-data";
+import {
+	isoDayNumber,
+	isValidISODate,
+	startOfWeekMonday,
+	todayISOVietnam,
+	weekDates,
+} from "@/lib/week-grid";
 
 function pausedClassIdSet(
 	classes?: readonly Pick<ClassGroup, "id" | "status">[],
@@ -13,12 +26,12 @@ function pausedClassIdSet(
 }
 
 /**
- * Weekday on a lesson row: Monday=1 … Sunday=7.
- * Matches schedule.tsx `l.day === i + 1` (column T2 = day 1), not class-create 0–6.
+ * Weekday on a lesson row: Monday=1 … Sunday=7 in Vietnam timezone (UTC+7).
+ * Matches schedule.tsx `l.day === i + 1` (column T2 = day 1) and keeps
+ * lessonsToday / upcomingLessonsThisWeek / atRiskRows aligned across timezones.
  */
 export function lessonDayFromDate(now = new Date()): number {
-	const day = now.getDay();
-	return day === 0 ? 7 : day;
+	return isoDayNumber(todayISOVietnam(now));
 }
 
 export function lessonsToday(
@@ -127,65 +140,117 @@ export function upcomingLessonsThisWeek(
 		.sort((a, b) => a.day - b.day || a.time.localeCompare(b.time));
 }
 
-export type DashboardRiskReason = "absent" | "missed-check-in";
+export type DashboardRiskReason = "missed-check-in" | "overdue-assignment";
 
 export interface DashboardRiskRow {
 	student: Student;
 	reasons: DashboardRiskReason[];
 }
 
-/**
- * TOS-7 — cửa sổ cảnh báo vắng: chỉ các buổi CÓ NGÀY trong 14 ngày gần
- * nhất. lesson.date là chuỗi UTC-anchored yyyy-mm-dd nên so sánh chuỗi với
- * cutoff ISO; legacy (date null) đóng băng, không có đường ghi absent.
- */
-const ABSENT_WINDOW_DAYS = 14;
+type DashboardRiskClassInput = Pick<ClassGroup, "id" | "status"> & {
+	studentIds?: readonly string[];
+};
 
-function isRecentAbsence(lesson: Lesson, now: Date): boolean {
-	if (lesson.date == null) return false;
-	if (lesson.attendance === "excused") return false;
-	const isUnexcused = lesson.attendance === "unexcused";
-	const isLegacyAbsentRow = lesson.attendance == null;
-	if (!isUnexcused && !(isLegacyAbsentRow && lesson.status === "absent")) {
-		return false;
+function pausedOnlyStudentSet(
+	classes: readonly DashboardRiskClassInput[] | undefined,
+	lessons: readonly Lesson[],
+	pausedIds: Set<string> | null,
+): Set<string> {
+	const pausedOnly = new Set<string>();
+	if (!classes || !pausedIds || pausedIds.size === 0) return pausedOnly;
+
+	const activeStudents = new Set<string>();
+	const pausedStudents = new Set<string>();
+	for (const cls of classes) {
+		const targetSet = cls.status === "paused" ? pausedStudents : activeStudents;
+		for (const sid of cls.studentIds ?? []) {
+			targetSet.add(sid);
+		}
 	}
-	const todayIso = todayISOVietnam(now);
-	const cutoff = new Date(`${todayIso}T00:00:00Z`);
-	cutoff.setUTCDate(cutoff.getUTCDate() - ABSENT_WINDOW_DAYS);
-	return lesson.date >= cutoff.toISOString().slice(0, 10);
+	for (const lesson of lessons) {
+		if (pausedIds.has(lesson.classId)) {
+			pausedStudents.add(lesson.sid);
+		} else {
+			activeStudents.add(lesson.sid);
+		}
+	}
+	for (const sid of pausedStudents) {
+		if (!activeStudents.has(sid)) pausedOnly.add(sid);
+	}
+	return pausedOnly;
 }
 
 /**
- * At-risk from kernel lessons only — never `student.atRisk` or tuition tags.
- * missed-check-in is the live signal: upcoming on a weekday strictly before
- * today in the Mon=1 week model (Monday therefore yields 0 missed — no wrap
- * from Sunday). `absent` kể từ TOS-7 có đường ghi: chỉ tính vắng trong cửa
- * sổ 14 ngày và KHÔNG tính vắng có phép (`excused`) — vắng hợp lệ không
- * phải cảnh báo; vắng không phép (`unexcused`) hoặc dòng absent cũ
- * (`attendance = NULL` trong cửa sổ) mới là tín hiệu.
+ * Attention rows from live kernel data only — never mock `student.atRisk` or
+ * tuition tags. Strictly tracks the two actionable teacher issues:
+ * - `missed-check-in`: upcoming lessons whose Vietnam date is before today
+ *   (or legacy undated lessons with `day < today` in the Mon=1 week model).
+ * - `overdue-assignment`: unsubmitted class assignments past deadline (excluding
+ *   paused classes and targets that already have a submitted `attemptId`), plus
+ *   legacy `assignments` marked `late` for non-paused-only students.
  */
 export function atRiskRows(
 	students: Student[],
 	lessons: Lesson[],
 	now = new Date(),
-	classes?: readonly Pick<ClassGroup, "id" | "status">[],
+	classes?: readonly DashboardRiskClassInput[],
+	classAssignments: readonly Pick<
+		ClassAssignment,
+		"classId" | "due" | "dueAt" | "targets"
+	>[] = [],
+	assignments: readonly Pick<Assignment, "sid" | "status">[] = [],
 ): DashboardRiskRow[] {
-	const today = lessonDayFromDate(now);
+	const todayIso = todayISOVietnam(now);
+	const today = isoDayNumber(todayIso);
+	const nowMs = now.getTime();
 	const pausedIds = pausedClassIdSet(classes);
 	const reasonsBySid = new Map<string, Set<DashboardRiskReason>>();
 
+	const addReason = (sid: string, reason: DashboardRiskReason) => {
+		const set = reasonsBySid.get(sid) ?? new Set<DashboardRiskReason>();
+		set.add(reason);
+		reasonsBySid.set(sid, set);
+	};
+
 	for (const lesson of lessons) {
 		if (pausedIds?.has(lesson.classId)) continue;
-		let reason: DashboardRiskReason | null = null;
-		if (isRecentAbsence(lesson, now)) {
-			reason = "absent";
-		} else if (lesson.status === "upcoming" && lesson.day < today) {
-			reason = "missed-check-in";
+		if (lesson.status !== "upcoming") continue;
+		const isMissedCheckIn =
+			lesson.date != null && isValidISODate(lesson.date)
+				? lesson.date < todayIso
+				: lesson.day < today;
+		if (isMissedCheckIn) {
+			addReason(lesson.sid, "missed-check-in");
 		}
-		if (!reason) continue;
-		const set = reasonsBySid.get(lesson.sid) ?? new Set<DashboardRiskReason>();
-		set.add(reason);
-		reasonsBySid.set(lesson.sid, set);
+	}
+
+	for (const ca of classAssignments) {
+		if (pausedIds?.has(ca.classId)) continue;
+		const deadline = evaluateAssignmentDeadline({
+			due: ca.due,
+			dueAt: ca.dueAt,
+			submittedAt: null,
+			todayISO: todayIso,
+			nowMs,
+		});
+		if (!deadline.isOverdue) continue;
+		for (const target of ca.targets) {
+			if (target.submittedAt != null || target.attemptId != null) continue;
+			addReason(target.studentId, "overdue-assignment");
+		}
+	}
+
+	if (assignments.length > 0) {
+		const pausedOnlyStudents = pausedOnlyStudentSet(
+			classes,
+			lessons,
+			pausedIds,
+		);
+		for (const assignment of assignments) {
+			if (assignment.status !== "late") continue;
+			if (pausedOnlyStudents.has(assignment.sid)) continue;
+			addReason(assignment.sid, "overdue-assignment");
+		}
 	}
 
 	const rows: DashboardRiskRow[] = [];
@@ -193,21 +258,23 @@ export function atRiskRows(
 		const set = reasonsBySid.get(student.id);
 		if (!set || set.size === 0) continue;
 		const reasons: DashboardRiskReason[] = [];
-		if (set.has("absent")) reasons.push("absent");
 		if (set.has("missed-check-in")) reasons.push("missed-check-in");
+		if (set.has("overdue-assignment")) reasons.push("overdue-assignment");
 		rows.push({ student, reasons });
 	}
 	return rows;
 }
 
 export function formatDashboardLead(now: Date, todayCount: number): string {
-	const weekday = new Intl.DateTimeFormat("vi-VN", { weekday: "long" }).format(
-		now,
-	);
+	const iso = todayISOVietnam(now);
+	const weekday = new Intl.DateTimeFormat("vi-VN", {
+		weekday: "long",
+		timeZone: "Asia/Ho_Chi_Minh",
+	}).format(now);
 	const label = weekday.charAt(0).toLocaleUpperCase("vi-VN") + weekday.slice(1);
-	const dd = String(now.getDate()).padStart(2, "0");
-	const mm = String(now.getMonth() + 1).padStart(2, "0");
-	return `${label}, ${dd}/${mm} · Hôm nay có ${todayCount} buổi học`;
+	const dd = iso.slice(8, 10);
+	const mm = iso.slice(5, 7);
+	return `${label}, ${dd}/${mm} · Hôm nay có ${todayCount} buổi dạy`;
 }
 
 /**

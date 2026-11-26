@@ -20,8 +20,10 @@ export const remindersBaseQueryKey = [
  * key là cách nối bộ đếm vào vòng đời snapshot: snapshot mới → key mới →
  * TanStack Query tự refetch.
  */
-export const remindersQueryKey = (kernelDataUpdatedAt: number) =>
-	[...remindersBaseQueryKey, kernelDataUpdatedAt] as const;
+export const remindersQueryKey = (
+	kernelDataUpdatedAt: number,
+	viewerRole = "unknown",
+) => [...remindersBaseQueryKey, kernelDataUpdatedAt, viewerRole] as const;
 
 export async function fetchDashboardReminders(
 	baseUrl: string = getApiBaseUrl(),
@@ -43,9 +45,10 @@ export async function fetchDashboardReminders(
 export function dashboardRemindersQueryOptions(
 	baseUrl = getApiBaseUrl(),
 	kernelDataUpdatedAt = 0,
+	viewerRole = "unknown",
 ) {
 	return queryOptions({
-		queryKey: remindersQueryKey(kernelDataUpdatedAt),
+		queryKey: remindersQueryKey(kernelDataUpdatedAt, viewerRole),
 		queryFn: ({ signal }) => fetchDashboardReminders(baseUrl, signal),
 	});
 }
