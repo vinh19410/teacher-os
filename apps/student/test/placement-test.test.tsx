@@ -98,6 +98,13 @@ vi.mock("@/lib/repos/student", async (importOriginal) => {
 			},
 		}),
 		useStudentInvoices: () => ({ isError: false, data: [] }),
+		useStudentSchedule: () => ({
+			isPending: false,
+			isSuccess: true,
+			isError: false,
+			error: null,
+			data: { classes: [], lessons: [] },
+		}),
 		useStudentOrgs: () => ({
 			data: [{ id: "org-1", name: "IELTS Cô Mỹ", isCurrent: true }],
 			isLoading: false,

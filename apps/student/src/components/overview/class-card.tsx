@@ -52,13 +52,14 @@ export function ClassCard({
 			data-testid="class-card"
 			className={cn(
 				CARD_CLASS,
+				isInvited && "border-dashed",
 				!isInvited && "relative focus-within:shadow-[var(--focus-ring)]",
 			)}
 		>
 			<div>
 				<ClassBadges cls={cls} />
 
-				<h3 className="mt-3 font-extrabold text-2xl text-foreground leading-tight tracking-[-0.02em]">
+				<h3 className="mt-3 font-semibold text-foreground text-lg leading-snug tracking-tight">
 					{isInvited ? (
 						cls.name
 					) : (
@@ -68,7 +69,7 @@ export function ClassCard({
 						<Link
 							to="/classes/$classId"
 							params={{ classId: cls.id }}
-							className="after:absolute after:inset-0 after:rounded-lg focus-visible:shadow-none focus-visible:outline-none"
+							className="after:absolute after:inset-0 after:rounded-xl focus-visible:shadow-none focus-visible:outline-none"
 						>
 							{cls.name}
 						</Link>
@@ -76,7 +77,7 @@ export function ClassCard({
 				</h3>
 
 				{cls.schedule && (
-					<p className="mt-1.5 font-mono text-foreground text-xs">
+					<p className="mt-1.5 font-mono text-muted-foreground text-xs">
 						{formatSchedule(cls.schedule)}
 					</p>
 				)}
@@ -94,7 +95,7 @@ export function ClassCard({
 								<span className="text-foreground">{cls.teacher.name}</span>
 							</p>
 							{/* Text thường, không mailto: lớp phủ của link card nằm trên. */}
-							<p className="truncate text-[12px] text-muted-foreground">
+							<p className="truncate text-muted-foreground text-xs">
 								{cls.teacher.email}
 							</p>
 						</div>
@@ -105,7 +106,7 @@ export function ClassCard({
 			<div className="mt-5 border-border border-t pt-4">
 				{isInvited ? (
 					<>
-						<p className="text-[12px] text-muted-foreground leading-normal">
+						<p className="text-muted-foreground text-xs leading-normal">
 							{isPaused
 								? "Lớp đang tạm dừng — chưa thể tham gia"
 								: "Giáo viên đã mời bạn vào lớp. Xác nhận tham gia để bắt đầu khóa học và nhận lịch buổi học."}
@@ -117,7 +118,7 @@ export function ClassCard({
 								if (isPaused) return;
 								onAccept?.(cls.enrollmentId);
 							}}
-							className="mt-3 flex h-10 w-full items-center justify-center rounded-lg bg-primary font-medium text-primary-foreground text-sm tracking-[0.02em] transition-colors duration-150 hover:bg-primary/90 focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40"
+							className="mt-3 flex h-10 w-full cursor-pointer items-center justify-center rounded-md bg-primary font-medium text-primary-foreground text-sm transition-colors duration-150 hover:bg-primary/90 focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40"
 						>
 							{accepting ? "Đang xử lý…" : "Tham gia lớp"}
 						</button>
@@ -126,7 +127,7 @@ export function ClassCard({
 					<>
 						<ClassProgress cls={cls} />
 
-						<p className="mt-3 truncate font-mono text-[12px] text-foreground">
+						<p className="mt-3 truncate font-mono text-foreground text-xs">
 							{nextSessionText}
 						</p>
 
@@ -179,7 +180,7 @@ function ClassCardAssignments({
 			<h4 className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.15em]">
 				Bài tập
 			</h4>
-			<div className="mt-2 overflow-hidden rounded-md rounded-md border border-input bg-transparent">
+			<div className="mt-2 overflow-hidden rounded-lg border border-border bg-card">
 				{assignments.map((assignment) => {
 					const derived = deriveAssignmentStatus(
 						assignment,
@@ -215,7 +216,7 @@ function ClassCardAssignments({
 									? `Xem lại kết quả: ${assignment.title}`
 									: `Làm bài: ${assignment.title}`
 							}
-							className="block transition-colors hover:text-primary"
+							className="block transition-colors hover:bg-muted/50 hover:text-primary"
 						>
 							{row}
 						</Link>
@@ -227,10 +228,10 @@ function ClassCardAssignments({
 }
 
 const CARD_CLASS =
-	"rounded-xl border bg-card shadow-sm flex flex-col justify-between rounded-lg p-6";
+	"flex flex-col justify-between rounded-xl border bg-card p-5 shadow-sm";
 
-/** Chip trạng thái kiểu design `Tag`: mono 10px uppercase, nền sunk; hot =
- * nền cam đặc (chờ kích hoạt cần hành động của học viên). */
+/** Chip trạng thái kiểu design `Tag`: pill mono 10px uppercase, nền muted; hot =
+ * nền primary đặc (chờ kích hoạt cần hành động của học viên). */
 export function ClassBadges({ cls }: { cls: StudentClass }) {
 	return (
 		<div className="flex flex-wrap items-center gap-2">
@@ -242,7 +243,7 @@ export function ClassBadges({ cls }: { cls: StudentClass }) {
 	);
 }
 
-/** Tag theo design `lib/ui.tsx`: pill mono 10px uppercase; hot = nền cam,
+/** Tag theo design `lib/ui.tsx`: pill mono 10px uppercase; hot = nền primary,
  * success = `bg-secondary` (badge "Đã thanh toán" theo DESIGN.md). */
 export function Tag({
 	children,
@@ -256,12 +257,12 @@ export function Tag({
 	return (
 		<span
 			className={cn(
-				"inline-block rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.08em]",
+				"inline-block rounded-full px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em]",
 				hot
 					? "bg-primary font-medium text-primary-foreground"
 					: success
 						? "bg-secondary text-foreground"
-						: "rounded-md bg-muted text-foreground",
+						: "bg-muted text-foreground",
 			)}
 		>
 			{children}
@@ -276,15 +277,18 @@ export function ClassProgress({ cls }: { cls: StudentClass }) {
 			: 0;
 	return (
 		<>
-			<div className="flex items-center justify-between text-[12px]">
+			<div className="flex items-center justify-between text-xs">
 				<span className="text-muted-foreground">Tiến độ khóa học</span>
-				<span className="font-medium font-mono text-foreground">
+				<span className="font-medium font-mono text-foreground tabular-nums">
 					Buổi {cls.sessionsDone}/{cls.sessionsTotal}
 				</span>
 			</div>
-			<div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+			<div
+				aria-hidden="true"
+				className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted"
+			>
 				<div
-					className="h-full rounded-full bg-primary transition-all duration-300"
+					className="h-full rounded-full bg-foreground transition-all duration-300"
 					style={{ width: `${progressPercent}%` }}
 				/>
 			</div>

@@ -1,6 +1,11 @@
 // @vitest-environment jsdom
 
 import type {
+	KernelAssignmentPromptRow,
+	KernelAssignmentRow,
+	KernelClassAssignmentRow,
+} from "@teacher-os/api/contracts";
+import type {
 	PlacementPublishedBand,
 	PlacementSubmissionDetail,
 } from "@teacher-os/api/placement-test-contracts";
@@ -150,6 +155,7 @@ beforeEach(() => {
 
 afterEach(() => {
 	cleanup();
+	vi.useRealTimers();
 	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
 });
@@ -394,5 +400,372 @@ describe("student detail", () => {
 			);
 		});
 		expect(toastMock.success).toHaveBeenCalled();
+	});
+
+	describe("tab Bài tập", () => {
+		const FIXED_NOW = new Date("2026-11-26T05:00:00.000Z");
+
+		function promptRow(
+			overrides: Partial<KernelAssignmentPromptRow> = {},
+		): KernelAssignmentPromptRow {
+			return {
+				id: "pr-writing",
+				skill: "writing",
+				part: "task2",
+				type: "opinion",
+				task: "task2",
+				genre: "opinion",
+				title: "Writing Prompt",
+				band: "6.5",
+				source: "",
+				prompt: "<p>Write an essay.</p>",
+				intro: "",
+				passage: "",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				imageUrl: "",
+				questions: [],
+				optionBank: [],
+				note: "",
+				status: "ready",
+				createdAt: "2026-11-01T00:00:00.000Z",
+				...overrides,
+			};
+		}
+
+		function classAssignmentRow(
+			overrides: Partial<KernelClassAssignmentRow> = {},
+		): KernelClassAssignmentRow {
+			return {
+				id: "ca-1",
+				classId: "cl-1",
+				promptId: "pr-writing",
+				title: "Homework 2",
+				due: "2026-11-30",
+				dueAt: null,
+				note: "",
+				createdAt: "2026-11-15T00:00:00.000Z",
+				targets: [
+					{
+						studentId: "st-1",
+						submittedAt: "2026-11-25T10:00:00.000Z",
+						attemptId: "att-1",
+						gradedAt: "2026-11-25T12:00:00.000Z",
+						band: 5.5,
+					},
+				],
+				...overrides,
+			};
+		}
+
+		function legacyAssignmentRow(
+			overrides: Partial<KernelAssignmentRow> = {},
+		): KernelAssignmentRow {
+			return {
+				id: "leg-1",
+				studentId: "st-1",
+				title: "Legacy Essay",
+				type: "Task 2",
+				due: "2026-11-10",
+				status: "graded",
+				scores: { task: 6.5, coherence: 6.5, lexical: 6.5, grammar: 6.5 },
+				...overrides,
+			};
+		}
+
+		function rowCellsByTitle(title: string): string[] {
+			const cell = screen.getByText(title).closest("tr");
+			if (!cell) throw new Error(`Row not found for title: ${title}`);
+			return Array.from(cell.querySelectorAll("td")).map(
+				(td) => td.textContent?.trim() ?? "",
+			);
+		}
+
+		it("renders formatted Band and Đã chấm for graded class assignments including band 0", async () => {
+			vi.useFakeTimers({ toFake: ["Date"] });
+			vi.setSystemTime(FIXED_NOW);
+			vi.unstubAllGlobals();
+			startKernelServer(
+				snapshotFixture({
+					classes: [classRow({ id: "cl-1", name: "IELTS Writing" })],
+					students: [studentRow({ id: "st-1", name: "Leah" })],
+					assignmentPrompts: [
+						promptRow({ id: "pr-writing", skill: "writing" }),
+					],
+					classAssignments: [
+						classAssignmentRow({
+							id: "ca-hw2",
+							title: "Homework 2",
+							due: "2026-11-20",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: "2026-11-19T10:00:00.000Z",
+									attemptId: "att-hw2",
+									gradedAt: "2026-11-21T08:00:00.000Z",
+									band: 5.5,
+								},
+							],
+						}),
+						classAssignmentRow({
+							id: "ca-hw3",
+							title: "Homework 3",
+							due: "2026-11-22",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: "2026-11-21T10:00:00.000Z",
+									attemptId: "att-hw3",
+									gradedAt: "2026-11-23T09:00:00.000Z",
+									band: 6.5,
+								},
+							],
+						}),
+						classAssignmentRow({
+							id: "ca-zero",
+							title: "Zero Band Essay",
+							due: "2026-11-24",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: "2026-11-23T10:00:00.000Z",
+									attemptId: "att-zero",
+									gradedAt: "2026-11-24T08:00:00.000Z",
+									band: 0,
+								},
+							],
+						}),
+					],
+				}),
+				notFoundPlacementHandler,
+			);
+			routerState.params = { studentId: "st-1" };
+			renderWithKernel(<StudentDetail />);
+
+			fireEvent.click(await screen.findByRole("tab", { name: "Bài tập" }));
+
+			const hw2 = rowCellsByTitle("Homework 2");
+			expect(hw2[3]).toBe("5.5");
+			expect(hw2[4]).toBe("Đã chấm");
+
+			const hw3 = rowCellsByTitle("Homework 3");
+			expect(hw3[3]).toBe("6.5");
+			expect(hw3[4]).toBe("Đã chấm");
+
+			const zero = rowCellsByTitle("Zero Band Essay");
+			expect(zero[3]).toBe("0.0");
+			expect(zero[4]).toBe("Đã chấm");
+		});
+
+		it("handles ungraded, unsubmitted, flip-first, malformed, multi-student isolation, and legacy rows", async () => {
+			vi.useFakeTimers({ toFake: ["Date"] });
+			vi.setSystemTime(FIXED_NOW);
+			vi.unstubAllGlobals();
+			startKernelServer(
+				snapshotFixture({
+					classes: [classRow({ id: "cl-1", name: "IELTS Writing" })],
+					students: [
+						studentRow({ id: "st-1", name: "Leah" }),
+						studentRow({ id: "st-2", name: "Minh" }),
+					],
+					assignmentPrompts: [
+						promptRow({ id: "pr-writing", skill: "writing" }),
+						promptRow({
+							id: "pr-reading",
+							skill: "reading",
+							part: "passage1",
+						}),
+					],
+					classAssignments: [
+						classAssignmentRow({
+							id: "ca-read",
+							promptId: "pr-reading",
+							title: "Reading Quiz",
+							due: "2026-11-30",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: "2026-11-25T10:00:00.000Z",
+									attemptId: "att-read",
+									gradedAt: null,
+									band: null,
+								},
+							],
+						}),
+						classAssignmentRow({
+							id: "ca-late",
+							title: "Late Writing",
+							due: "2026-11-20",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: "2026-11-22T10:00:00.000Z",
+									attemptId: "att-late",
+									gradedAt: null,
+									band: null,
+								},
+							],
+						}),
+						classAssignmentRow({
+							id: "ca-open",
+							title: "Future Writing",
+							due: "2099-12-31",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: null,
+									attemptId: null,
+									gradedAt: null,
+									band: null,
+								},
+							],
+						}),
+						classAssignmentRow({
+							id: "ca-overdue",
+							title: "Overdue Writing",
+							due: "2026-11-20",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: null,
+									attemptId: null,
+									gradedAt: null,
+									band: null,
+								},
+							],
+						}),
+						classAssignmentRow({
+							id: "ca-flip-first",
+							title: "Flip First Graded",
+							due: "2026-11-20",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: null,
+									attemptId: "att-flip",
+									gradedAt: "2026-11-21T08:00:00.000Z",
+									band: 5.5,
+								},
+							],
+						}),
+						classAssignmentRow({
+							id: "ca-partial",
+							title: "Malformed Partial Grade",
+							due: "2026-11-30",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: "2026-11-25T10:00:00.000Z",
+									attemptId: "att-partial",
+									gradedAt: null,
+									band: 6.5,
+								},
+							],
+						}),
+						classAssignmentRow({
+							id: "ca-out-of-range",
+							title: "Malformed Band Range",
+							due: "2026-11-30",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: "2026-11-25T10:00:00.000Z",
+									attemptId: "att-range",
+									gradedAt: "2026-11-25T12:00:00.000Z",
+									band: 9.5,
+								},
+							],
+						}),
+						classAssignmentRow({
+							id: "ca-bad-date",
+							title: "Malformed Graded Date",
+							due: "2026-11-30",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: "2026-11-25T10:00:00.000Z",
+									attemptId: "att-date",
+									gradedAt: "invalid",
+									band: 6.5,
+								},
+							],
+						}),
+						classAssignmentRow({
+							id: "ca-shared",
+							title: "Shared Class Essay",
+							due: "2026-11-30",
+							targets: [
+								{
+									studentId: "st-2",
+									submittedAt: "2026-11-25T09:00:00.000Z",
+									attemptId: "att-st2",
+									gradedAt: "2026-11-25T12:00:00.000Z",
+									band: 8.0,
+								},
+								{
+									studentId: "st-1",
+									submittedAt: "2026-11-25T10:00:00.000Z",
+									attemptId: "att-st1",
+									gradedAt: null,
+									band: null,
+								},
+							],
+						}),
+					],
+					assignments: [legacyAssignmentRow()],
+				}),
+				notFoundPlacementHandler,
+			);
+			routerState.params = { studentId: "st-1" };
+			renderWithKernel(<StudentDetail />);
+
+			fireEvent.click(await screen.findByRole("tab", { name: "Bài tập" }));
+
+			expect(rowCellsByTitle("Reading Quiz").slice(3, 5)).toEqual([
+				"—",
+				"Đã nộp",
+			]);
+			expect(rowCellsByTitle("Late Writing").slice(3, 5)).toEqual([
+				"—",
+				"Đã nộp · trễ hạn",
+			]);
+			expect(rowCellsByTitle("Future Writing").slice(3, 5)).toEqual([
+				"—",
+				"Chưa nộp",
+			]);
+			expect(rowCellsByTitle("Overdue Writing").slice(3, 5)).toEqual([
+				"—",
+				"Chưa nộp · quá hạn",
+			]);
+			expect(rowCellsByTitle("Flip First Graded").slice(3, 5)).toEqual([
+				"5.5",
+				"Đã chấm",
+			]);
+			expect(rowCellsByTitle("Malformed Partial Grade").slice(3, 5)).toEqual([
+				"—",
+				"Đã nộp",
+			]);
+			expect(rowCellsByTitle("Malformed Band Range").slice(3, 5)).toEqual([
+				"—",
+				"Đã nộp",
+			]);
+			expect(rowCellsByTitle("Malformed Graded Date").slice(3, 5)).toEqual([
+				"—",
+				"Đã nộp",
+			]);
+			expect(rowCellsByTitle("Shared Class Essay").slice(3, 5)).toEqual([
+				"—",
+				"Đã nộp",
+			]);
+
+			const legacyLink = screen.getByRole("link", { name: "Legacy Essay" });
+			expect(legacyLink.getAttribute("href")).toBe("/assignments/leg-1");
+			expect(rowCellsByTitle("Legacy Essay").slice(3, 5)).toEqual([
+				"6.5",
+				"Đã chấm",
+			]);
+		});
 	});
 });

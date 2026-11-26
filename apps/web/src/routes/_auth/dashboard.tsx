@@ -7,6 +7,7 @@ import {
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { FocusSessionCard } from "@/components/dashboard/focus-session-card";
+import { MonthCalendarSection } from "@/components/dashboard/month-calendar-section";
 import { OrgStatsSection } from "@/components/dashboard/org-stats-section";
 import { ReminderCards } from "@/components/dashboard/reminder-cards";
 import { RiskStudentsSection } from "@/components/dashboard/risk-students-section";
@@ -334,6 +335,12 @@ function DashboardRoute() {
 					classById={classById}
 				/>
 				<div className="min-w-0 space-y-10 self-start">
+					<MonthCalendarSection
+						lessons={data.lessons}
+						classes={data.classes}
+						classById={classById}
+						todayIso={todayIso}
+					/>
 					<RiskStudentsSection
 						rows={risk}
 						headingRef={riskHeadingRef}

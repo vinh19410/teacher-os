@@ -7,6 +7,7 @@ import {
 	type AssignmentDisplayStatus,
 	deriveAssignmentStatus,
 } from "@/lib/assignment-status";
+import { cn } from "@/lib/cn";
 
 export type FilterTab = "all" | "due-soon" | "overdue" | "submitted";
 
@@ -25,6 +26,7 @@ const TABS: Array<{ id: FilterTab; label: string }> = [
 ];
 
 export function AssignmentList({
+	id,
 	assignments,
 	showClassName = true,
 	activeTab: controlledTab,
@@ -34,6 +36,7 @@ export function AssignmentList({
 	todayISO,
 	nowMs,
 }: {
+	id?: string;
 	assignments: StudentAssignment[];
 	showClassName?: boolean;
 	activeTab?: FilterTab;
@@ -92,20 +95,25 @@ export function AssignmentList({
 	}, [activeTab, categorized.list]);
 
 	return (
-		<section className={className}>
+		<section
+			id={id}
+			aria-labelledby={hideHeading ? undefined : "assignments-heading"}
+			className={className}
+		>
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				{!hideHeading && (
-					<h2 className="font-extrabold text-[20px] text-foreground tracking-[-0.02em]">
+					<h2
+						id="assignments-heading"
+						className="font-semibold text-foreground text-lg tracking-tight"
+					>
 						Bài tập
 					</h2>
 				)}
 
-				{/* Filter Tabs — segmented theo design Tabs: nền sunk, tab chọn
-				 * = raise + chữ cam. */}
 				<div
 					role="tablist"
 					aria-label="Lọc bài tập theo trạng thái"
-					className="inline-flex flex-wrap items-center gap-1 rounded-lg rounded-md bg-muted p-1.5 text-[13px]"
+					className="inline-flex flex-wrap items-center gap-0.5 rounded-lg bg-muted p-1 text-sm"
 				>
 					{TABS.map((tab) => {
 						const isSelected = activeTab === tab.id;
@@ -121,18 +129,20 @@ export function AssignmentList({
 									setInternalTab(tab.id);
 									onTabChange?.(tab.id);
 								}}
-								className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none ${
+								className={cn(
+									"inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 									isSelected
-										? "rounded-md border border-input bg-transparent font-medium text-primary"
-										: "text-muted-foreground hover:text-foreground"
-								}`}
+										? "bg-card font-medium text-foreground shadow-sm"
+										: "text-muted-foreground hover:text-foreground",
+								)}
 							>
 								<span>{tab.label}</span>
 								<span
 									aria-hidden="true"
-									className={`rounded-full px-1.5 py-0.2 font-mono text-[11px] ${
-										isSelected ? "text-primary" : "text-muted-foreground"
-									}`}
+									className={cn(
+										"font-mono text-xs tabular-nums",
+										isSelected ? "text-foreground" : "text-muted-foreground",
+									)}
 								>
 									{count}
 								</span>
@@ -142,7 +152,8 @@ export function AssignmentList({
 				</div>
 			</div>
 
-			{/* List or Empty State */}
+			{/* Danh sách bài tập hoặc trạng thái trống — không dùng overflow-hidden
+			 * để giữ nguyên 4px --focus-ring trên Link của AssignmentRow. */}
 			<div className="mt-4">
 				{filtered.length === 0 ? (
 					<OverviewEmptyState
@@ -159,15 +170,21 @@ export function AssignmentList({
 						}
 					/>
 				) : (
-					<div className="space-y-2.5">
-						{filtered.map(({ assignment, derived }) => (
-							<AssignmentRow
-								key={assignment.id}
-								assignment={assignment}
-								derived={derived}
-								showClassName={showClassName}
-							/>
-						))}
+					<div className="rounded-xl border bg-card shadow-sm">
+						<ul className="divide-y divide-border">
+							{filtered.map(({ assignment, derived }) => (
+								<li
+									key={assignment.id}
+									className="first:[&>a]:rounded-t-xl last:[&>a]:rounded-b-xl"
+								>
+									<AssignmentRow
+										assignment={assignment}
+										derived={derived}
+										showClassName={showClassName}
+									/>
+								</li>
+							))}
+						</ul>
 					</div>
 				)}
 			</div>
