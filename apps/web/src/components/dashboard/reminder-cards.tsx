@@ -1,25 +1,14 @@
 import { Link } from "@tanstack/react-router";
 import type { DashboardReminders } from "@teacher-os/api/contracts";
+import { ArrowRight, Check } from "lucide-react";
+import type { ReactNode } from "react";
+import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/cn";
 import { fmtVND } from "@/lib/mock-data";
 
 const DONE_TODAY_LABEL = "Đã hoàn tất hôm nay";
-
-/** `HH:mm` + số phút → `HH:mm` (cùng ngày; ca hiện tại không vượt nửa đêm). */
-function addMinutes(time: string, minutes: number): string {
-	const [h, m] = time.split(":").map(Number);
-	if (
-		h === undefined ||
-		m === undefined ||
-		Number.isNaN(h) ||
-		Number.isNaN(m)
-	) {
-		return time;
-	}
-	const total = h * 60 + m + minutes;
-	return `${String(Math.floor(total / 60) % 24).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
-}
+const MAX_ATTENDANCE_PREVIEW = 3;
 
 /** `26/10/2026` straight from the ISO string — cùng quy ước formatDayMonth. */
 function formatVNDate(iso: string): string {
@@ -38,23 +27,33 @@ export function remindersSectionTitle(iso: string): string {
 
 /**
  * Khu vực 3 thẻ lối tắt "Việc cần làm hôm nay" theo thứ tự ưu tiên 1, 2, 3 —
- * chỉ nhận data, không tự fetch. Thẻ học phí chỉ render khi viewer có quyền
- * tài chính và response có block `tuition`.
+ * chỉ nhận data, không tự fetch. Thẻ học phí mặc định fail-closed
+ * (`canAccessFinance = false`) và chỉ render khi caller truyền
+ * `canAccessFinance={true}` đồng thời response có block `tuition`.
  */
 export function ReminderCards({
 	data,
-	canAccessFinance = true,
+	canAccessFinance = false,
 }: {
 	data: DashboardReminders;
 	canAccessFinance?: boolean;
 }) {
 	const showTuition = canAccessFinance && Boolean(data.tuition);
+	const attendancePreview = data.attendance.items.slice(
+		0,
+		MAX_ATTENDANCE_PREVIEW,
+	);
+	const extraAttendanceCount = Math.max(
+		0,
+		data.attendance.pending - attendancePreview.length,
+	);
+
 	return (
 		<div
 			className={
 				showTuition
-					? "grid grid-cols-1 gap-4 lg:grid-cols-3"
-					: "grid grid-cols-1 gap-4 lg:grid-cols-2"
+					? "grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-3"
+					: "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-2"
 			}
 		>
 			<ReminderCard
@@ -63,29 +62,51 @@ export function ReminderCards({
 				label="Điểm danh"
 				title="Ca dạy hôm nay chưa điểm danh"
 				done={data.attendance.pending === 0}
-				headline={`${data.attendance.pending} ca dạy`}
-				lines={data.attendance.items.map(
-					(item) =>
-						`${item.className} (${item.time} – ${addMinutes(item.time, item.dur)})`,
-				)}
-				cta="Điểm danh →"
+				count={data.attendance.pending}
+				unit="ca dạy"
+				cta="Điểm danh"
 				to="/attendance"
 				search={{ date: data.date, status: "pending" }}
-			/>
+			>
+				{attendancePreview.length > 0 && (
+					<ul className="grid gap-1 border-border border-t pt-3 text-sm">
+						{attendancePreview.map((item) => (
+							<li
+								key={`${item.classId}-${item.time}`}
+								className="flex min-w-0 items-baseline gap-2"
+							>
+								<span className="shrink-0 font-mono text-muted-foreground text-xs tabular-nums">
+									{item.time}
+								</span>
+								<span className="min-w-0 truncate">{item.className}</span>
+							</li>
+						))}
+						{extraAttendanceCount > 0 && (
+							<li className="text-muted-foreground">
+								{`+${extraAttendanceCount} ca khác`}
+							</li>
+						)}
+					</ul>
+				)}
+			</ReminderCard>
 			<ReminderCard
 				testId="reminder-card-grading"
 				step={2}
 				label="Chấm bài"
 				title="Bài tập quá hạn chấm > 24h"
 				done={data.overdueGrading.count === 0}
-				headline={`${data.overdueGrading.count} bài`}
-				lines={[
-					`${data.overdueGrading.writing} Writing · ${data.overdueGrading.speaking} Speaking`,
-				]}
-				cta="Chấm bài →"
+				count={data.overdueGrading.count}
+				unit="bài"
+				cta="Chấm bài"
 				to="/grading"
 				search={{ status: "awaiting" }}
-			/>
+			>
+				<ul className="grid gap-1 border-border border-t pt-3 text-sm">
+					<li className="tabular-nums">
+						{`${data.overdueGrading.writing} Writing · ${data.overdueGrading.speaking} Speaking`}
+					</li>
+				</ul>
+			</ReminderCard>
 			{showTuition && data.tuition && (
 				<ReminderCard
 					testId="reminder-card-tuition"
@@ -93,11 +114,20 @@ export function ReminderCards({
 					label="Học phí"
 					title="Học phí đến hạn"
 					done={data.tuition.students === 0}
-					headline={`${data.tuition.students} học viên`}
-					lines={[fmtVND(data.tuition.outstanding)]}
-					cta="Xem học phí →"
+					count={data.tuition.students}
+					unit="học viên"
+					cta="Xem học phí"
 					to="/tuition"
-				/>
+				>
+					<ul className="grid gap-1 border-border border-t pt-3 text-sm">
+						<li className="tabular-nums">
+							<span className="whitespace-nowrap font-mono">
+								{fmtVND(data.tuition.outstanding)}
+							</span>{" "}
+							cần thu
+						</li>
+					</ul>
+				</ReminderCard>
 			)}
 		</div>
 	);
@@ -105,7 +135,7 @@ export function ReminderCards({
 
 /**
  * Một thẻ nhắc việc: toàn thẻ là vùng bấm qua Link phủ inset-0 trên chính
- * Card (không lồng div thừa gây double-padding hay thụt focus ring).
+ * Card (không lồng interactive element, focus ring ôm khít viền thẻ).
  */
 function ReminderCard(props: {
 	testId: string;
@@ -113,19 +143,20 @@ function ReminderCard(props: {
 	label: string;
 	title: string;
 	done: boolean;
-	headline: string;
-	lines: string[];
+	count: number;
+	unit: string;
 	cta: string;
 	to: string;
 	search?: Record<string, unknown>;
+	children?: ReactNode;
 }) {
-	const previewLines = props.done ? [] : props.lines.slice(0, 3);
 	return (
 		<Card
 			data-testid={props.testId}
+			data-done={props.done ? "true" : "false"}
 			className={cn(
-				"relative flex min-w-0 flex-col gap-2 p-5",
-				props.done && "bg-muted/40",
+				"group relative flex min-w-0 flex-col gap-3 p-5",
+				props.done && "bg-muted shadow-none",
 			)}
 		>
 			<Link
@@ -135,32 +166,66 @@ function ReminderCard(props: {
 				aria-label={`${props.step}. ${props.label} — ${props.title}`}
 			/>
 			<div className="flex items-center gap-2">
-				<span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-foreground text-xs tabular-nums">
-					{props.step}
+				<span
+					aria-hidden={props.done ? "true" : undefined}
+					className={cn(
+						"grid size-6 shrink-0 place-items-center rounded-full font-mono font-semibold text-xs tabular-nums",
+						props.done
+							? "bg-success text-background"
+							: "bg-primary text-primary-foreground",
+					)}
+				>
+					{props.done ? (
+						<Check className="size-3.5" aria-hidden="true" />
+					) : (
+						props.step
+					)}
 				</span>
-				<span className="font-medium text-muted-foreground text-xs">
+				<span
+					data-testid="reminder-card-label"
+					className="font-semibold text-sm"
+				>
 					{props.label}
 				</span>
 			</div>
-			<h3 className="font-medium text-sm">{props.title}</h3>
+			<h3 className="font-normal text-muted-foreground text-sm">
+				{props.title}
+			</h3>
 			{props.done ? (
-				<p className="font-semibold text-base">{DONE_TODAY_LABEL}</p>
+				<p className="inline-flex min-h-9 items-center gap-2 font-semibold text-sm text-success">
+					<Check className="size-4 shrink-0" aria-hidden="true" />
+					{DONE_TODAY_LABEL}
+				</p>
 			) : (
-				<p className="font-semibold text-3xl tabular-nums">{props.headline}</p>
+				<>
+					{/* Block <p> với dấu cách thực giữa 2 inline <span> để innerText trình duyệt/Playwright luôn là "{count} {unit}". */}
+					<p data-testid="reminder-card-count" className="leading-none">
+						<span className="font-mono font-semibold text-[clamp(1.75rem,1.4rem+1vw,2.25rem)] tabular-nums tracking-tight">
+							{props.count}
+						</span>{" "}
+						<span className="ml-1 whitespace-nowrap text-muted-foreground text-sm">
+							{props.unit}
+						</span>
+					</p>
+					{props.children}
+				</>
 			)}
-			{previewLines.length > 0 && (
-				<ul className="space-y-1 text-muted-foreground text-sm">
-					{previewLines.map((line, index) => (
-						// Danh sách preview tĩnh (đã sort theo time) — index key ổn.
-						<li key={`${index}-${line}`} className="break-words">
-							{line}
-						</li>
-					))}
-				</ul>
-			)}
-			<p className="mt-auto pt-1 font-medium text-primary text-sm">
-				{props.cta}
-			</p>
+			<div className="mt-auto pt-2">
+				<span
+					aria-hidden="true"
+					data-testid="reminder-card-cta"
+					className={cn(
+						buttonVariants({
+							variant: props.done ? "ghost" : "outline",
+							size: "default",
+						}),
+						"pointer-events-none w-full group-hover:bg-accent group-hover:text-accent-foreground",
+					)}
+				>
+					{props.done ? "Xem lại" : props.cta}
+					<ArrowRight className="size-4" aria-hidden="true" />
+				</span>
+			</div>
 		</Card>
 	);
 }

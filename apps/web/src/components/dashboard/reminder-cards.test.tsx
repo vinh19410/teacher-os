@@ -27,46 +27,66 @@ afterEach(() => {
 });
 
 describe("ReminderCards", () => {
-	it("render đủ 3 thẻ theo thứ tự 1, 2, 3 với nhãn chức năng rõ, số đếm và CTA gọn", () => {
-		render(<ReminderCards data={FULL_DATA} />);
+	it("render đủ 3 thẻ theo thứ tự 1, 2, 3 với nhãn chức năng rõ, số đếm và CTA đáy", () => {
+		render(<ReminderCards data={FULL_DATA} canAccessFinance />);
 
 		const attendanceCard = screen.getByTestId("reminder-card-attendance");
+		expect(attendanceCard.getAttribute("data-done")).toBe("false");
 		expect(within(attendanceCard).getByText("1")).toBeTruthy();
-		expect(within(attendanceCard).getByText("Điểm danh")).toBeTruthy();
+		expect(
+			within(attendanceCard).getByTestId("reminder-card-label").textContent,
+		).toBe("Điểm danh");
 		expect(
 			within(attendanceCard).getByRole("heading", {
 				name: "Ca dạy hôm nay chưa điểm danh",
 			}),
 		).toBeTruthy();
-		expect(within(attendanceCard).getByText("2 ca dạy")).toBeTruthy();
-		expect(within(attendanceCard).getByText("Điểm danh →")).toBeTruthy();
+		expect(
+			within(attendanceCard).getByTestId("reminder-card-count").textContent,
+		).toBe("2 ca dạy");
+		expect(
+			within(attendanceCard).getByTestId("reminder-card-cta").textContent,
+		).toBe("Điểm danh");
 
 		const gradingCard = screen.getByTestId("reminder-card-grading");
 		expect(within(gradingCard).getByText("2")).toBeTruthy();
-		expect(within(gradingCard).getByText("Chấm bài")).toBeTruthy();
+		expect(
+			within(gradingCard).getByTestId("reminder-card-label").textContent,
+		).toBe("Chấm bài");
 		expect(
 			within(gradingCard).getByRole("heading", {
 				name: "Bài tập quá hạn chấm > 24h",
 			}),
 		).toBeTruthy();
-		expect(within(gradingCard).getByText("3 bài")).toBeTruthy();
+		expect(
+			within(gradingCard).getByTestId("reminder-card-count").textContent,
+		).toBe("3 bài");
 		expect(
 			within(gradingCard).getByText("2 Writing · 1 Speaking"),
 		).toBeTruthy();
-		expect(within(gradingCard).getByText("Chấm bài →")).toBeTruthy();
+		expect(
+			within(gradingCard).getByTestId("reminder-card-cta").textContent,
+		).toBe("Chấm bài");
 
 		const tuitionCard = screen.getByTestId("reminder-card-tuition");
 		expect(within(tuitionCard).getByText("3")).toBeTruthy();
-		expect(within(tuitionCard).getByText("Học phí")).toBeTruthy();
+		expect(
+			within(tuitionCard).getByTestId("reminder-card-label").textContent,
+		).toBe("Học phí");
 		expect(
 			within(tuitionCard).getByRole("heading", { name: "Học phí đến hạn" }),
 		).toBeTruthy();
-		expect(within(tuitionCard).getByText("4 học viên")).toBeTruthy();
-		expect(within(tuitionCard).getByText("Xem học phí →")).toBeTruthy();
+		expect(
+			within(tuitionCard).getByTestId("reminder-card-count").textContent,
+		).toBe("4 học viên");
+		expect(tuitionCard.textContent).toContain("2.500.000đ cần thu");
+		expect(
+			within(tuitionCard).getByTestId("reminder-card-cta").textContent,
+		).toBe("Xem học phí");
 	});
 
 	it("href thẻ điểm danh mang date và status=pending; thẻ chấm bài status=awaiting; aria-label mang thứ tự và nhãn", () => {
-		render(<ReminderCards data={FULL_DATA} />);
+		render(<ReminderCards data={FULL_DATA} canAccessFinance />);
 		const attendanceLink = screen.getByRole("link", {
 			name: "1. Điểm danh — Ca dạy hôm nay chưa điểm danh",
 		});
@@ -87,12 +107,21 @@ describe("ReminderCards", () => {
 		expect(tuitionLink.getAttribute("href")).toContain("/tuition");
 	});
 
+	it("fail-closed: mặc định không truyền canAccessFinance sẽ ẩn thẻ học phí", () => {
+		const { container } = render(<ReminderCards data={FULL_DATA} />);
+		expect(screen.queryByTestId("reminder-card-tuition")).toBeNull();
+		expect(screen.queryByRole("link", { name: /Học phí/ })).toBeNull();
+		expect(container.firstElementChild?.className).toContain("lg:grid-cols-2");
+	});
+
 	it("thiếu block tuition thì không render thẻ học phí và đổi grid sang 2 cột", () => {
 		const withoutTuition: DashboardReminders = {
 			...FULL_DATA,
 			tuition: undefined,
 		};
-		const { container } = render(<ReminderCards data={withoutTuition} />);
+		const { container } = render(
+			<ReminderCards data={withoutTuition} canAccessFinance />,
+		);
 		expect(screen.queryByTestId("reminder-card-tuition")).toBeNull();
 		expect(screen.queryByRole("link", { name: /Học phí/ })).toBeNull();
 		expect(container.firstElementChild?.className).toContain("lg:grid-cols-2");
@@ -109,28 +138,30 @@ describe("ReminderCards", () => {
 		expect(container.firstElementChild?.className).toContain("lg:grid-cols-2");
 	});
 
-	it("đếm 0 → nhãn zero inbox, ẩn số 0 và dòng preview thừa, CTA vẫn dẫn đúng", () => {
+	it("đếm 0 → nhãn zero inbox, ẩn số 0 và dòng preview thừa, CTA chuyển Xem lại và giữ URL đích", () => {
 		const zeroData: DashboardReminders = {
 			date: "2026-10-26",
 			attendance: { pending: 0, items: [] },
 			overdueGrading: { count: 0, writing: 0, speaking: 0 },
 			tuition: { students: 0, outstanding: 0 },
 		};
-		render(<ReminderCards data={zeroData} />);
+		render(<ReminderCards data={zeroData} canAccessFinance />);
 		const labels = screen.getAllByText("Đã hoàn tất hôm nay");
 		expect(labels).toHaveLength(3);
-		expect(screen.queryByText("0 ca dạy")).toBeNull();
-		expect(screen.queryByText("0 bài")).toBeNull();
-		expect(screen.queryByText("0 học viên")).toBeNull();
+		expect(
+			screen.getByTestId("reminder-card-attendance").getAttribute("data-done"),
+		).toBe("true");
+		expect(screen.queryByTestId("reminder-card-count")).toBeNull();
 		expect(screen.queryByText("0 Writing · 0 Speaking")).toBeNull();
-		expect(screen.queryByText("0đ")).toBeNull();
+		expect(screen.queryByText(/0đ/)).toBeNull();
+		expect(screen.getAllByText("Xem lại")).toHaveLength(3);
 		const attendanceLink = screen.getByRole("link", {
 			name: /Ca dạy hôm nay chưa điểm danh/,
 		});
 		expect(attendanceLink.getAttribute("href")).toContain("status=pending");
 	});
 
-	it("items preview cắt tối đa 3 dòng và ghép giờ kết thúc theo dur", () => {
+	it("items preview cắt tối đa 3 dòng với giờ bắt đầu + tên lớp và hiển thị +N ca khác khi pending > 3", () => {
 		const manyItems: DashboardReminders = {
 			...FULL_DATA,
 			attendance: {
@@ -144,11 +175,15 @@ describe("ReminderCards", () => {
 				],
 			},
 		};
-		render(<ReminderCards data={manyItems} />);
-		expect(screen.getByText("Lớp 1 (07:00 – 08:00)")).toBeTruthy();
-		expect(screen.getByText("Lớp 3 (13:30 – 15:00)")).toBeTruthy();
-		expect(screen.queryByText(/Lớp 4/)).toBeNull();
-		expect(screen.queryByText(/Lớp 5/)).toBeNull();
+		render(<ReminderCards data={manyItems} canAccessFinance />);
+		const attendanceCard = screen.getByTestId("reminder-card-attendance");
+		expect(within(attendanceCard).getByText("07:00")).toBeTruthy();
+		expect(within(attendanceCard).getByText("Lớp 1")).toBeTruthy();
+		expect(within(attendanceCard).getByText("13:30")).toBeTruthy();
+		expect(within(attendanceCard).getByText("Lớp 3")).toBeTruthy();
+		expect(within(attendanceCard).getByText("+2 ca khác")).toBeTruthy();
+		expect(within(attendanceCard).queryByText("Lớp 4")).toBeNull();
+		expect(within(attendanceCard).queryByText("Lớp 5")).toBeNull();
 	});
 });
 
