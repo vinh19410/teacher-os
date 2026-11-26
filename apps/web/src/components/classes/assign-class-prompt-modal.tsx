@@ -276,6 +276,8 @@ export function AssignClassPromptModal({
 	const allSelectableSelected =
 		maxSelectableCount > 0 &&
 		visibleSelectedStudentIds.length === maxSelectableCount;
+	const willAssignWholeClass =
+		allSelectableSelected && enrolledStudents.length <= MAX_STUDENTS_PER_ASSIGN;
 	const isReassign = promptOk && previousAssignment !== null;
 	const canSubmit = promptOk && dueOk && studentsOk;
 
@@ -411,6 +413,7 @@ export function AssignClassPromptModal({
 				dueTime,
 				note: note.trim(),
 				studentIds: visibleSelectedStudentIds,
+				targetScope: willAssignWholeClass ? "class" : "selected",
 			},
 		});
 
@@ -844,6 +847,17 @@ export function AssignClassPromptModal({
 							<p className="text-muted-foreground text-xs">
 								Mỗi lượt giao tối đa 100 học viên.
 							</p>
+						)}
+
+						{(classGroup.invitedStudentIds?.length ?? 0) > 0 && (
+							<div
+								data-testid="assign-modal-invited-notice"
+								className="rounded-md border border-warn/40 bg-warn-soft p-3 text-foreground text-xs leading-relaxed"
+							>
+								{willAssignWholeClass
+									? `Còn ${classGroup.invitedStudentIds.length} học viên đang chờ xác nhận — sẽ tự nhận bài khi kích hoạt trước hạn nộp.`
+									: `Còn ${classGroup.invitedStudentIds.length} học viên đang chờ xác nhận — đang giao chọn lọc nên sẽ không tự nhận bài khi kích hoạt.`}
+							</div>
 						)}
 
 						{enrolledStudents.length === 0 ? (

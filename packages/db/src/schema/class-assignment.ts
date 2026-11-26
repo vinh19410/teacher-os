@@ -37,6 +37,7 @@ export const classAssignment = sqliteTable(
 		dueAt: integer("due_at", { mode: "timestamp_ms" }),
 		availableAt: integer("available_at", { mode: "timestamp_ms" }),
 		classStudyPackId: text("class_study_pack_id"),
+		targetScope: text("target_scope").notNull().default("class"),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),

@@ -1605,6 +1605,10 @@ export type AssignmentTestPartsSet = z.infer<
 	typeof assignmentTestPartsSetSchema
 >;
 
+export const CLASS_ASSIGNMENT_TARGET_SCOPES = ["class", "selected"] as const;
+export type ClassAssignmentTargetScope =
+	(typeof CLASS_ASSIGNMENT_TARGET_SCOPES)[number];
+
 /**
  * Giao đề ngân hàng cho lớp (#208, #572). `due` là ISO yyyy-mm-dd; `dueTime`
  * tùy chọn là giờ 24h `HH:MM` theo múi giờ Việt Nam (mặc định `"23:59"` khi
@@ -1618,9 +1622,20 @@ export const classAssignmentCreateSchema = z
 		dueTime: z.string().regex(TIME_REGEX).optional(),
 		note: z.string().trim().max(2000).default(""),
 		studentIds: z.array(z.string().trim().min(1)).min(1).max(100),
+		targetScope: z.enum(CLASS_ASSIGNMENT_TARGET_SCOPES).optional(),
 	})
 	.strict();
 export type ClassAssignmentCreate = z.infer<typeof classAssignmentCreateSchema>;
+
+/** Bổ sung học viên đang học vào một lượt giao đề thường đã tồn tại (tối đa 100 HV/lần). */
+export const classAssignmentAddTargetsSchema = z
+	.object({
+		studentIds: z.array(z.string().trim().min(1)).min(1).max(100),
+	})
+	.strict();
+export type ClassAssignmentAddTargets = z.infer<
+	typeof classAssignmentAddTargetsSchema
+>;
 
 /** Feedback is teacher-authored and may contain sensitive education data. */
 export const commentBankCreateSchema = z
@@ -2247,6 +2262,8 @@ export interface KernelClassAssignmentRow {
 	due: string;
 	/** ISO datetime hạn nộp (UTC, tính từ giờ VN lúc giao); null trên dữ liệu cũ trước #572. */
 	dueAt?: string | null;
+	/** Phạm vi giao bài: cả lớp (tự bù học viên mới kích hoạt trước hạn) hay chỉ học viên đã chọn. */
+	targetScope?: ClassAssignmentTargetScope;
 	note: string;
 	createdAt: string;
 	targets: Array<{

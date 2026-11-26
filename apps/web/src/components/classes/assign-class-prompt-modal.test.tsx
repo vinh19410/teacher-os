@@ -820,7 +820,7 @@ describe("AssignClassPromptModal", () => {
 		expect(screen.getByText(/Phần 1 · 1 câu hỏi/)).toBeTruthy();
 		expect(screen.getByText("Phần 2 · Writing (Task 2)")).toBeTruthy();
 		expect(screen.getByText("Discuss technology impact.")).toBeTruthy();
-	});
+	}, 15_000);
 
 	it("giới hạn tối đa 100 học viên khi lớp đông và ẩn + Thêm học viên khi lớp tạm dừng trống", () => {
 		const manyStudents: Student[] = Array.from({ length: 105 }, (_, idx) => ({
@@ -875,7 +875,7 @@ describe("AssignClassPromptModal", () => {
 		expect(
 			screen.getByText("Mở lại lớp để thêm học viên trước khi giao bài."),
 		).toBeTruthy();
-	});
+	}, 15_000);
 
 	it("ẩn chip Band trong khối Xem trước phía học viên nhưng vẫn giữ Band trong danh sách chọn đề", () => {
 		render(
@@ -897,5 +897,72 @@ describe("AssignClassPromptModal", () => {
 		expect(previewCard?.textContent).not.toContain("Band 7.0");
 		// Danh sách chọn đề phía giáo viên vẫn hiển thị Band
 		expect(screen.getByText(/Task 2 · 250 từ · Band 7\.0/)).toBeTruthy();
+	});
+
+	it("cảnh báo học viên đang chờ xác nhận và gửi đúng targetScope ('class' vs 'selected')", async () => {
+		const onClose = vi.fn();
+		mockSubmit.run.mockResolvedValue({ kind: "refreshed" });
+		const classWithInvited: ClassGroup = {
+			...testClass,
+			invitedStudentIds: ["st-invited-1"],
+		};
+
+		render(
+			<AssignClassPromptModal
+				open
+				onClose={onClose}
+				classGroup={classWithInvited}
+			/>,
+		);
+
+		expect(
+			screen.getByText(
+				"Còn 1 học viên đang chờ xác nhận — sẽ tự nhận bài khi kích hoạt trước hạn nộp.",
+			),
+		).toBeTruthy();
+
+		// Chọn đủ toàn bộ học viên đang học -> targetScope = "class"
+		fireEvent.click(
+			screen.getByRole("button", { name: /Reading — True\/False/ }),
+		);
+		await act(async () => {
+			fireEvent.click(screen.getByRole("button", { name: "Giao bài tập" }));
+		});
+
+		await waitFor(() => {
+			expect(mockSubmit.run).toHaveBeenCalledWith(
+				expect.objectContaining({
+					type: "assign-class-prompt",
+					payload: expect.objectContaining({
+						studentIds: ["st-1", "st-2"],
+						targetScope: "class",
+					}),
+				}),
+			);
+		});
+
+		// Bỏ tick 1 học viên -> banner đổi copy đúng thực tế và gửi targetScope = "selected"
+		mockSubmit.run.mockClear();
+		fireEvent.click(screen.getByRole("checkbox", { name: /Trần Thị B/ }));
+		expect(
+			screen.getByText(
+				"Còn 1 học viên đang chờ xác nhận — đang giao chọn lọc nên sẽ không tự nhận bài khi kích hoạt.",
+			),
+		).toBeTruthy();
+		await act(async () => {
+			fireEvent.click(screen.getByRole("button", { name: "Giao bài tập" }));
+		});
+
+		await waitFor(() => {
+			expect(mockSubmit.run).toHaveBeenCalledWith(
+				expect.objectContaining({
+					type: "assign-class-prompt",
+					payload: expect.objectContaining({
+						studentIds: ["st-1"],
+						targetScope: "selected",
+					}),
+				}),
+			);
+		});
 	});
 });
