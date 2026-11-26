@@ -1,0 +1,114 @@
+# Workflow audit & xoá bộ từ vựng bị trùng (vocab_deck bank class_id IS NULL)
+# trong một nhóm vocab_group (mặc định: "Communication English Level 2") trên
+# Cloudflare D1 staging hoặc production.
+#
+# Ràng buộc an toàn (test gate: scripts/ci-workflow.test.mjs):
+# - Chỉ chạy bằng manual workflow_dispatch; không trigger tự động.
+# - Mặc định ở chế độ dry-run (read-only).
+# - Chế độ apply lên production yêu cầu gõ xác nhận chính xác "prod" vào confirm_prod
+#   và chạy dưới GitHub Environment "production" (chỉ nhánh main được phép deploy).
+# - Serialize với deploy qua cùng concurrency group deploy-staging / deploy-production.
+# - Quyền contents: read ở cấp top-level; không upload artifact nhạy cảm.
+# - Repo PUBLIC: luôn truyền --public-logs để không in UUID/ID/email nội bộ ra log.
+name: Dedup Vocab Group Prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: "Môi trường đích: prod hoặc staging"
+        type: choice
+        options:
+          - prod
+          - staging
+        default: prod
+        required: true
+      mode:
+        description: "Chế độ: dry-run (chỉ đọc & báo cáo trùng) hoặc apply (xoá bản trùng an toàn & verify)"
+        type: choice
+        options:
+          - dry-run
+          - apply
+        default: dry-run
+        required: true
+      group_name:
+        description: "Tên nhóm bộ từ (vocab_group) cần rà soát và xoá trùng"
+        type: string
+        required: true
+        default: "Communication English Level 2"
+      target_org_id:
+        description: "Org đích (để trống sẽ tự phân giải theo TEACHER_EMAILS -> fallback LEAD_ORG_ID)"
+        type: string
+        required: false
+        default: ""
+      confirm_prod:
+        description: "Gõ đúng chữ 'prod' để xác nhận khi chạy stage=prod & mode=apply"
+        type: string
+        required: false
+        default: ""
+
+concurrency:
+  group: deploy-${{ inputs.stage == 'staging' && 'staging' || 'production' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  dedup-vocab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ inputs.stage == 'staging' && 'staging' || 'production' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Validate inputs and safety gate
+        env:
+          STAGE: ${{ inputs.stage }}
+          DEDUP_MODE: ${{ inputs.mode }}
+          GROUP_NAME: ${{ inputs.group_name }}
+          CONFIRM_PROD: ${{ inputs.confirm_prod }}
+        run: |
+          if [ -z "$GROUP_NAME" ]; then
+            echo "::error::group_name là bắt buộc."
+            exit 1
+          fi
+          if [ "$STAGE" = "prod" ] && [ "$DEDUP_MODE" = "apply" ]; then
+            if [ "$CONFIRM_PROD" != "prod" ]; then
+              echo "::error::Mode 'apply' lên prod bắt buộc phải gõ đúng chữ 'prod' trong confirm_prod."
+              exit 1
+            fi
+            echo "Đã xác nhận chính xác 'prod'. Tiếp tục thực thi apply."
+          fi
+
+      - name: Run vocab group duplicate removal
+        working-directory: packages/db
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          LEAD_ORG_ID: ${{ vars.LEAD_ORG_ID }}
+          TEACHER_EMAILS: ${{ vars.TEACHER_EMAILS }}
+          STAGE: ${{ inputs.stage }}
+          DEDUP_MODE: ${{ inputs.mode }}
+          GROUP_NAME: ${{ inputs.group_name }}
+          TARGET_ORG_ID: ${{ inputs.target_org_id }}
+          CONFIRM_PROD: ${{ inputs.confirm_prod }}
+        run: |
+          set -euo pipefail
+          args=(
+            --d1
+            --d1-stage "$STAGE"
+            --mode "$DEDUP_MODE"
+            --group "$GROUP_NAME"
+            --public-logs
+          )
+          if [ -n "$TARGET_ORG_ID" ]; then
+            args+=(--target-org-id "$TARGET_ORG_ID")
+          fi
+          if [ "$STAGE" = "prod" ] && [ "$DEDUP_MODE" = "apply" ]; then
+            args+=(--allow-prod --confirm-prod "$CONFIRM_PROD" --dump /tmp/dedup-vocab-group-prod-backup)
+          elif [ "$DEDUP_MODE" = "apply" ]; then
+            args+=(--dump /tmp/dedup-vocab-group-staging-backup)
+          fi
+          pnpm exec tsx scripts/dedup-vocab-group-prod.ts "${args[@]}"
