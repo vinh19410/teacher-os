@@ -8,9 +8,7 @@ import {
 	ArrowLeft,
 	ArrowRight,
 	BookOpen,
-	Check,
 	CircleCheck,
-	CircleDashed,
 	ClipboardCheck,
 	MessageSquare,
 	Pin,
@@ -50,7 +48,6 @@ function BackHomeLink({ children }: { children: string }) {
 const CLASS_TABS = [
 	{ id: "journey", label: "Hành trình học" },
 	{ id: "assignments", label: "Bài tập" },
-	{ id: "syllabus", label: "Giáo trình" },
 	{ id: "materials", label: "Tài liệu chung" },
 ] as const;
 
@@ -158,72 +155,6 @@ function TodoBanner({
 				<ArrowRight aria-hidden="true" />
 			</Link>
 		</section>
-	);
-}
-
-/** Tab "Giáo trình": các chủ đề của lớp theo thứ tự buổi học, tick chủ đề đã
- * hoàn thành (mọi buổi của chủ đề đều `completed`). Buổi `holiday` (TOS-11)
- * không diễn ra — loại khỏi progress để chủ đề không bị khoá "chưa xong". */
-function SyllabusTab({ detail }: { detail: StudentClassDetail }) {
-	const topics = new Map<string, { total: number; completed: number }>();
-	for (const lesson of detail.lessons) {
-		if (lesson.status === "holiday") continue;
-		const topic = lesson.topic || "Chưa có chủ đề";
-		const entry = topics.get(topic) ?? { total: 0, completed: 0 };
-		entry.total += 1;
-		if (lesson.status === "completed") entry.completed += 1;
-		topics.set(topic, entry);
-	}
-
-	if (topics.size === 0) {
-		return (
-			<div className="rounded-xl border bg-card p-6 shadow-sm">
-				<p className="text-muted-foreground text-sm">
-					Giáo trình sẽ hiển thị theo chủ đề từng buổi học.
-				</p>
-			</div>
-		);
-	}
-
-	return (
-		<div className="rounded-xl border bg-card text-card-foreground shadow-sm">
-			<ul className="divide-y">
-				{[...topics.entries()].map(([topic, progress]) => {
-					const done = progress.completed >= progress.total;
-					return (
-						<li
-							key={topic}
-							className="flex items-center gap-3 px-5 py-3 text-sm"
-						>
-							{done ? (
-								<span
-									aria-hidden="true"
-									className="grid size-5 flex-none place-items-center rounded-full bg-primary text-primary-foreground"
-								>
-									<Check className="size-3" />
-								</span>
-							) : (
-								<CircleDashed
-									aria-hidden="true"
-									className="size-5 flex-none text-muted-foreground"
-								/>
-							)}
-							<span
-								className={cn(
-									"min-w-0 flex-1 truncate",
-									!done && "text-muted-foreground",
-								)}
-							>
-								{topic}
-							</span>
-							<span className="text-muted-foreground text-sm tabular-nums">
-								{progress.completed}/{progress.total} buổi
-							</span>
-						</li>
-					);
-				})}
-			</ul>
-		</div>
 	);
 }
 
@@ -355,6 +286,7 @@ export function ClassDetailView({
 							classId={cls.id}
 							isPaused={isPaused}
 							lessons={detail.lessons}
+							syllabus={detail.syllabus}
 							todayISO={todayISO}
 							now={now}
 						/>
@@ -367,7 +299,6 @@ export function ClassDetailView({
 						nowMs={now.getTime()}
 					/>
 				)}
-				{tab === "syllabus" && <SyllabusTab detail={detail} />}
 				{tab === "materials" && <ClassMaterialsTab classId={cls.id} />}
 			</div>
 		</>

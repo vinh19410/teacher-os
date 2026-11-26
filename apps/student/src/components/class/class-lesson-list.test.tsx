@@ -11,10 +11,34 @@ import {
 	waitFor,
 	within,
 } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { requestStudentZoomJoin } from "@/lib/repos/student";
 import { ClassLessonList } from "./class-lesson-list";
+
+vi.mock("@tanstack/react-router", () => ({
+	Link: ({
+		children,
+		to,
+		params,
+		...props
+	}: {
+		children: ReactNode;
+		to: string;
+		params?: Record<string, string>;
+	}) => {
+		const href = Object.entries(params ?? {}).reduce(
+			(acc, [k, v]) => acc.replace(`$${k}`, v),
+			to,
+		);
+		return (
+			<a href={href} {...props}>
+				{children}
+			</a>
+		);
+	},
+}));
 
 vi.mock("sonner", () => ({
 	toast: {
@@ -110,7 +134,7 @@ describe("ClassLessonList — TOS-11 holiday", () => {
 });
 
 describe("ClassLessonList — lớp tạm dừng (#694)", () => {
-	test("ẩn 'Buổi tới' và hiển thị 'Tạm hoãn' thay vì 'Đã kết thúc' hay 'Sắp tới' khi isPaused=true, vẫn giữ lịch sử và nút Tài liệu", () => {
+	test("ẩn 'Buổi tới' và hiển thị 'Tạm hoãn' thay vì 'Đã kết thúc' hay 'Sắp tới' khi isPaused=true, vẫn giữ lịch sử và link xem chi tiết buổi", () => {
 		render(
 			<ClassLessonList
 				classId="c1"
@@ -145,8 +169,12 @@ describe("ClassLessonList — lớp tạm dừng (#694)", () => {
 		expect(screen.getByText("Vắng")).toBeTruthy();
 		expect(screen.getByText("Nghỉ lễ — Đã dời lịch")).toBeTruthy();
 		expect(
-			screen.getAllByRole("button", { name: "Tài liệu" }).length,
-		).toBeGreaterThanOrEqual(3);
+			screen.getByTestId("session-link-2026-11-10").getAttribute("href"),
+		).toBe("/classes/c1/sessions/2026-11-10");
+		expect(
+			screen.getByTestId("session-link-2026-12-01").getAttribute("href"),
+		).toBe("/classes/c1/sessions/2026-12-01");
+		expect(screen.queryByTestId("session-link-2026-11-25")).toBeNull();
 	});
 });
 
@@ -491,5 +519,101 @@ describe("ClassLessonList — Zoom & Recording (#816)", () => {
 				name: "Sao chép mật khẩu recording",
 			}),
 		).toBeTruthy();
+	});
+});
+
+describe("ClassLessonList — gộp giáo trình & link chi tiết buổi", () => {
+	test("hiển thị badge đếm bài giảng/bài tập, nhóm theo module (không lồng li), loại holiday khỏi mẫu số và gộp buổi vượt giáo trình", () => {
+		const { container } = render(
+			<ClassLessonList
+				classId="c1"
+				syllabus={{
+					name: "IELTS Writing",
+					description: "",
+					modules: [
+						{ id: "m1", title: "Module 1: Foundation", description: "" },
+						{ id: "m2", title: "Module 2: Essays", description: "" },
+					],
+				}}
+				lessons={[
+					lesson({
+						id: "l1",
+						date: "2026-11-10",
+						status: "completed",
+						topic: "Mở bài",
+						moduleId: "m1",
+						moduleTitle: "Module 1: Foundation",
+						lectureCount: 2,
+						homeworkCount: 1,
+						assignmentCount: 2,
+					}),
+					lesson({
+						id: "l-hol",
+						date: "2026-11-12",
+						status: "holiday",
+						topic: "",
+					}),
+					lesson({
+						id: "l2",
+						date: "2026-11-24",
+						status: "upcoming",
+						topic: "Thân bài",
+						moduleId: "m2",
+						moduleTitle: "Module 2: Essays",
+					}),
+					lesson({
+						id: "l3-extra",
+						date: "2026-11-28",
+						status: "upcoming",
+						topic: "Ôn tập mở rộng",
+					}),
+				]}
+				todayISO={TODAY}
+				now={NOW}
+			/>,
+		);
+
+		// Tổng số <li> đúng bằng số buổi (không lồng <li> cho module)
+		expect(container.querySelectorAll("li")).toHaveLength(4);
+		expect(screen.getByTestId("journey-module-m1").textContent).toContain(
+			"1/1 buổi",
+		);
+		expect(screen.getByTestId("journey-module-m2").textContent).toContain(
+			"0/1 buổi",
+		);
+		expect(
+			screen.getByTestId("journey-module-__extra__").textContent,
+		).toContain("Buổi học bổ sung");
+		expect(screen.getByText("2 bài giảng")).toBeTruthy();
+		expect(screen.getByText("3 bài tập")).toBeTruthy();
+		expect(
+			screen.getByTestId("session-link-2026-11-10").getAttribute("href"),
+		).toBe("/classes/c1/sessions/2026-11-10");
+		expect(screen.queryByTestId("session-link-2026-11-12")).toBeNull();
+		// Holiday không tiêu thụ số buổi: l2 là Buổi 2 (khớp GET /sessions/:date), không phải Buổi 3
+		expect(screen.getByTestId("journey-module-m2").textContent).toContain(
+			"Buổi 2 ·",
+		);
+		expect(
+			screen.getByTestId("journey-module-__extra__").textContent,
+		).toContain("Buổi 3 ·");
+	});
+
+	test("lớp legacy (date null) không tạo link chi tiết buổi và fallback về timeline phẳng", () => {
+		render(
+			<ClassLessonList
+				classId="c1"
+				syllabus={{
+					name: "Legacy Syllabus",
+					description: "",
+					modules: [{ id: "m1", title: "Module 1", description: "" }],
+				}}
+				lessons={[lesson({ id: "leg-1", date: null, topic: "Buổi cũ" })]}
+				todayISO={TODAY}
+				now={NOW}
+			/>,
+		);
+		expect(screen.queryByTestId("journey-syllabus-header")).toBeNull();
+		expect(screen.queryByRole("link")).toBeNull();
 	});
 });

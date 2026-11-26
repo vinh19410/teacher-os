@@ -9,8 +9,8 @@ import { type QuizFixture, seedQuizFixture } from "./helpers-quiz";
 import { LMS_ORIGIN, STUDENT_BASE_URL } from "./origins";
 
 /**
- * Tab "Bạn cùng lớp" trên trang chi tiết lớp học viên đang được ẩn khỏi UI:
- * thanh tab còn 4 mục ("Hành trình học", "Bài tập", "Giáo trình", "Tài liệu chung"), không
+ * Tab "Bạn cùng lớp" ẩn khỏi UI và tab "Giáo trình" đã gộp vào "Hành trình học" (#998):
+ * thanh tab còn 3 mục ("Hành trình học", "Bài tập", "Tài liệu chung"), không
  * hiển thị danh sách/tên học viên cùng lớp và không gọi API /classmates.
  * Kernel rows seeded direct-DB (precedent seedStudent); auth học viên là thật
  * (portal signup + mail-log verification) làm một lần trong beforeAll.
@@ -126,13 +126,14 @@ test.describe("Student classmates tab", () => {
 		).toBeVisible();
 
 		const tabs = page.getByRole("tab");
-		await expect(tabs).toHaveCount(4);
+		await expect(tabs).toHaveCount(3);
 		await expect(tabs).toHaveText([
 			"Hành trình học",
 			"Bài tập",
-			"Giáo trình",
 			"Tài liệu chung",
 		]);
+		await expect(page.getByRole("tab", { name: "Giáo trình" })).toHaveCount(0);
+		await expect(page.getByTestId("class-tab-syllabus")).toHaveCount(0);
 		await expect(page.getByRole("tab", { name: "Bạn cùng lớp" })).toHaveCount(
 			0,
 		);
@@ -144,27 +145,24 @@ test.describe("Student classmates tab", () => {
 		await expect(body).not.toContainText(mateName);
 		await expect(body).not.toContainText(invitedOnlyName);
 
-		// Chuyển qua lại 3 tab còn lại (gồm cả Tab + Enter bằng bàn phím).
+		// Chuyển qua lại 3 tab (gồm cả Tab + Enter bằng bàn phím).
 		const assignmentsTab = page.getByRole("tab", { name: "Bài tập" });
 		await assignmentsTab.click();
 		await expect(assignmentsTab).toHaveAttribute("aria-selected", "true");
 		await expect(page.getByText("Chưa có bài tập nào")).toBeVisible();
 
-		const syllabusTab = page.getByRole("tab", { name: "Giáo trình" });
+		const materialsTab = page.getByRole("tab", { name: "Tài liệu chung" });
 		await page.keyboard.press("Tab");
-		await expect(syllabusTab).toBeFocused();
+		await expect(materialsTab).toBeFocused();
 		await page.keyboard.press("Enter");
-		await expect(syllabusTab).toHaveAttribute("aria-selected", "true");
-		const syllabusItem = page
-			.getByRole("listitem")
-			.filter({ hasText: "Buổi hôm qua" });
-		await expect(syllabusItem).toBeVisible();
-		await expect(syllabusItem).toContainText("1/1 buổi");
+		await expect(materialsTab).toHaveAttribute("aria-selected", "true");
+		await expect(page.getByTestId("class-materials-empty")).toBeVisible();
 
 		const journeyTab = page.getByRole("tab", { name: "Hành trình học" });
 		await journeyTab.click();
 		await expect(journeyTab).toHaveAttribute("aria-selected", "true");
 		await expect(page.getByText("Đã học", { exact: true })).toBeVisible();
+		await expect(page.getByText("Buổi hôm qua")).toBeVisible();
 
 		expect(classmatesRequests).toEqual([]);
 	});

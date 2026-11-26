@@ -1,16 +1,27 @@
-import { sanitizeMediaFileName } from "@teacher-os/api/lib/quiz-media";
+import {
+	normalizeMediaType,
+	sanitizeMediaFileName,
+} from "@teacher-os/api/lib/quiz-media";
 import {
 	type ClassMaterialView,
 	checkMaterialUpload,
 	classMaterialAttachSchema,
 	classMaterialLinkCreateSchema,
+	hasControlOrBidiChars,
+	isLessonMaterialCategory,
 	isMaterialKind,
+	type LessonMaterialCategory,
 	type LessonMaterialView,
 	lessonMaterialAttachSchema,
+	lessonMaterialLinkCreateSchema,
+	lessonMaterialUpdateSchema,
 	MATERIAL_FOLDER_MAX_DEPTH,
 	MATERIAL_MAGIC_PEEK_BYTES,
+	MATERIAL_PAGE_MAX,
 	MATERIAL_ROOT_FOLDER,
 	MATERIAL_SEARCH_MAX,
+	MATERIAL_SOURCE_TITLE_MAX,
+	MATERIAL_TITLE_MAX,
 	type MaterialErrorCode,
 	type MaterialFolderView,
 	type MaterialKind,
@@ -686,6 +697,10 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 				classUsageCount: classUsageCountColumn,
 				position: lessonMaterial.position,
 				attachedAt: lessonMaterial.createdAt,
+				category: lessonMaterial.category,
+				sourceTitle: lessonMaterial.sourceTitle,
+				sourcePageStart: lessonMaterial.sourcePageStart,
+				sourcePageEnd: lessonMaterial.sourcePageEnd,
 			})
 			.from(lessonMaterial)
 			.innerJoin(
@@ -711,6 +726,10 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			...toMaterialView(r.row, r.usageCount, r.classUsageCount),
 			position: r.position,
 			attachedAt: r.attachedAt.toISOString(),
+			category: isLessonMaterialCategory(r.category) ? r.category : "lecture",
+			sourceTitle: r.sourceTitle ?? null,
+			sourcePageStart: r.sourcePageStart ?? null,
+			sourcePageEnd: r.sourcePageEnd ?? null,
 		}));
 	}
 
@@ -1374,7 +1393,13 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		});
 		if (!session.ok) return session.response;
 		const { classId, date } = session;
-		const { materialId } = body.data;
+		const {
+			materialId,
+			category,
+			sourceTitle,
+			sourcePageStart,
+			sourcePageEnd,
+		} = body.data;
 		// #662: bucket đã-shift còn buổi manual — attach tại đây là tạo mồ côi
 		// (buổi thật duy nhất của ngày nằm ở makeup_date). Check trong route
 		// body, KHÔNG trong `resolveSession` (detach dùng chung và phải gỡ được
@@ -1400,6 +1425,10 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 					classId,
 					date: holidayGuard,
 					materialId,
+					category,
+					sourceTitle: sourceTitle ?? null,
+					sourcePageStart: sourcePageStart ?? null,
+					sourcePageEnd: sourcePageEnd ?? null,
 					position: nextPosition(classId, date),
 				})
 				.onConflictDoNothing()
@@ -1430,21 +1459,96 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 	routes.put("/classes/:classId/sessions/:date/materials/files", async (c) => {
 		const ctx = c.get("kernelCtx");
 		const store = deps.getMaterialsStore?.();
-		if (!store) return materialError(c, 503, "MATERIALS_DISABLED");
+		const cancelBody = () =>
+			c.req.raw.body?.cancel().catch(() => undefined) ?? Promise.resolve();
+		if (!store) {
+			await cancelBody();
+			return materialError(c, 503, "MATERIALS_DISABLED");
+		}
+		// Validate toàn bộ query params TRƯỚC storeUpload để không stream rác lên R2.
+		const rawCategory = (c.req.query("category") ?? "").trim();
+		let category: LessonMaterialCategory = "lecture";
+		if (rawCategory !== "") {
+			if (!isLessonMaterialCategory(rawCategory)) {
+				await cancelBody();
+				return c.json({ error: "invalid category" }, 400);
+			}
+			category = rawCategory;
+		}
+		const rawTitle = c.req.query("title");
+		let titleOverride: string | null = null;
+		if (rawTitle !== undefined && rawTitle.trim() !== "") {
+			const trimmed = rawTitle.trim();
+			if (
+				trimmed.length > MATERIAL_TITLE_MAX ||
+				hasControlOrBidiChars(trimmed)
+			) {
+				await cancelBody();
+				return c.json({ error: "invalid title" }, 400);
+			}
+			titleOverride = trimmed;
+		}
+		const rawSourceTitle = c.req.query("sourceTitle");
+		let sourceTitle: string | null = null;
+		if (rawSourceTitle !== undefined && rawSourceTitle.trim() !== "") {
+			const trimmed = rawSourceTitle.trim();
+			if (
+				trimmed.length > MATERIAL_SOURCE_TITLE_MAX ||
+				hasControlOrBidiChars(trimmed)
+			) {
+				await cancelBody();
+				return c.json({ error: "invalid sourceTitle" }, 400);
+			}
+			sourceTitle = trimmed;
+		}
+		const rawPageStart = (c.req.query("pageStart") ?? "").trim();
+		const rawPageEnd = (c.req.query("pageEnd") ?? "").trim();
+		let sourcePageStart: number | null = null;
+		let sourcePageEnd: number | null = null;
+		if (rawPageStart !== "" || rawPageEnd !== "") {
+			if (!/^\d+$/.test(rawPageStart) || !/^\d+$/.test(rawPageEnd)) {
+				await cancelBody();
+				return materialError(c, 400, "INVALID_PAGE_RANGE");
+			}
+			const parsedStart = Number(rawPageStart);
+			const parsedEnd = Number(rawPageEnd);
+			if (
+				!Number.isSafeInteger(parsedStart) ||
+				!Number.isSafeInteger(parsedEnd) ||
+				parsedStart < 1 ||
+				parsedEnd < parsedStart ||
+				parsedEnd > MATERIAL_PAGE_MAX ||
+				normalizeMediaType(c.req.header("Content-Type") ?? "") !==
+					"application/pdf"
+			) {
+				await cancelBody();
+				return materialError(c, 400, "INVALID_PAGE_RANGE");
+			}
+			sourcePageStart = parsedStart;
+			sourcePageEnd = parsedEnd;
+		}
+
 		const db = deps.getDb();
 		const session = await resolveSession(c, db, ctx.orgId, {
 			rejectHoliday: true,
 		});
-		if (!session.ok) return session.response;
+		if (!session.ok) {
+			await cancelBody();
+			return session.response;
+		}
 		const { classId, date } = session;
 		// #662: cùng predicate attach — check trong route body, KHÔNG trong
 		// `resolveSession`; race do nhánh OR #662 của `holidayBucketDateGuard`.
 		if (await isShiftedHolidayBucket(db, ctx.orgId, classId, date)) {
+			await cancelBody();
 			return materialError(c, 409, "SESSION_HOLIDAY");
 		}
 		const folderId = c.req.query("folderId") || null;
 		const folderError = await checkFolder(c, db, ctx.orgId, folderId);
-		if (folderError) return folderError;
+		if (folderError) {
+			await cancelBody();
+			return folderError;
+		}
 		const upload = await storeUpload(c, store, ctx.orgId);
 		if (!upload.ok) return upload.response;
 		try {
@@ -1452,6 +1556,7 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			await db.batch([
 				db.insert(material).values({
 					...upload.values,
+					title: titleOverride ?? upload.values.title,
 					orgId: ctx.orgId,
 					folderId,
 					createdBy: ctx.userId,
@@ -1464,6 +1569,10 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 					// batch rollback (material bank + link cùng biến mất).
 					date: holidayBucketDateGuard(ctx.orgId, classId, date),
 					materialId: upload.values.id,
+					category,
+					sourceTitle,
+					sourcePageStart,
+					sourcePageEnd,
 					position: nextPosition(classId, date),
 				}),
 			]);
@@ -1489,6 +1598,107 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		if (!item) throw new Error("uploaded material missing after insert");
 		return c.json({ item }, 201);
 	});
+
+	routes.post("/classes/:classId/sessions/:date/materials/links", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const body = await readBody(c, lessonMaterialLinkCreateSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+		const session = await resolveSession(c, db, ctx.orgId, {
+			rejectHoliday: true,
+		});
+		if (!session.ok) return session.response;
+		const { classId, date } = session;
+		if (await isShiftedHolidayBucket(db, ctx.orgId, classId, date)) {
+			return materialError(c, 409, "SESSION_HOLIDAY");
+		}
+		const id = crypto.randomUUID();
+		try {
+			await db.batch([
+				db.insert(material).values({
+					id,
+					orgId: ctx.orgId,
+					folderId: null,
+					title: body.data.title,
+					description: body.data.description,
+					kind: "link",
+					url: body.data.url,
+					createdBy: ctx.userId,
+				}),
+				db.insert(lessonMaterial).values({
+					orgId: ctx.orgId,
+					classId,
+					date: holidayBucketDateGuard(ctx.orgId, classId, date),
+					materialId: id,
+					category: body.data.category,
+					position: nextPosition(classId, date),
+				}),
+			]);
+		} catch (error) {
+			if (
+				(await isHolidayBucket(db, ctx.orgId, classId, date)) ||
+				(await isShiftedHolidayBucket(db, ctx.orgId, classId, date))
+			) {
+				return materialError(c, 409, "SESSION_HOLIDAY");
+			}
+			console.error("[materials] session link insert failed", { error });
+			return c.json({ error: "create link failed" }, 500);
+		}
+		const items = await loadSessionMaterials(db, ctx.orgId, classId, date);
+		const item = items.find((i) => i.id === id);
+		if (!item) throw new Error("created session link missing after insert");
+		return c.json({ item }, 201);
+	});
+
+	routes.patch(
+		"/classes/:classId/sessions/:date/materials/:materialId",
+		async (c) => {
+			const ctx = c.get("kernelCtx");
+			const body = await readBody(c, lessonMaterialUpdateSchema);
+			if (!body.ok) return body.response;
+			const db = deps.getDb();
+			const session = await resolveSession(c, db, ctx.orgId, {
+				rejectHoliday: true,
+			});
+			if (!session.ok) return session.response;
+			const { classId, date } = session;
+			if (await isShiftedHolidayBucket(db, ctx.orgId, classId, date)) {
+				return materialError(c, 409, "SESSION_HOLIDAY");
+			}
+			const materialId = c.req.param("materialId");
+			let updated: { materialId: string }[];
+			try {
+				updated = await db
+					.update(lessonMaterial)
+					.set({
+						category: body.data.category,
+						date: holidayBucketDateGuard(ctx.orgId, classId, date),
+					})
+					.where(
+						and(
+							eq(lessonMaterial.orgId, ctx.orgId),
+							eq(lessonMaterial.classId, classId),
+							eq(lessonMaterial.date, date),
+							eq(lessonMaterial.materialId, materialId),
+						),
+					)
+					.returning({ materialId: lessonMaterial.materialId });
+			} catch (error) {
+				if (
+					(await isHolidayBucket(db, ctx.orgId, classId, date)) ||
+					(await isShiftedHolidayBucket(db, ctx.orgId, classId, date))
+				) {
+					return materialError(c, 409, "SESSION_HOLIDAY");
+				}
+				throw error;
+			}
+			if (updated.length === 0) return materialError(c, 404, "NOT_ATTACHED");
+			const items = await loadSessionMaterials(db, ctx.orgId, classId, date);
+			const item = items.find((i) => i.id === materialId);
+			if (!item) return materialError(c, 404, "NOT_ATTACHED");
+			return c.json({ item });
+		},
+	);
 
 	routes.delete(
 		"/classes/:classId/sessions/:date/materials/:materialId",

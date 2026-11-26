@@ -1184,6 +1184,7 @@ describe("material bank and session materials", () => {
 		for (const item of body.items) {
 			expect(Object.keys(item).sort()).toEqual(
 				[
+					"category",
 					"description",
 					"id",
 					"kind",
@@ -1191,6 +1192,9 @@ describe("material bank and session materials", () => {
 					"originalName",
 					"position",
 					"sizeBytes",
+					"sourcePageEnd",
+					"sourcePageStart",
+					"sourceTitle",
 					"title",
 					"url",
 				].sort(),

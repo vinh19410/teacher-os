@@ -997,6 +997,9 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 					dur: 90,
 					status: "completed",
 					topic: "Reading Skimming",
+					lectureCount: 0,
+					homeworkCount: 0,
+					assignmentCount: 0,
 				},
 				{
 					id: "les-1",
@@ -1006,6 +1009,9 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 					dur: 90,
 					status: "upcoming",
 					topic: "Writing Task 2",
+					lectureCount: 0,
+					homeworkCount: 0,
+					assignmentCount: 0,
 				},
 			]);
 			expect(detail.assignments.map((a) => a.id)).toEqual(["ca-1"]);

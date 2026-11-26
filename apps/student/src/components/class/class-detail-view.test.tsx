@@ -20,7 +20,10 @@ vi.mock("@tanstack/react-router", () => ({
 	}) => {
 		const href =
 			typeof to === "string"
-				? to.replace("$classId", params?.classId ?? "")
+				? Object.entries(params ?? {}).reduce(
+						(acc, [k, v]) => acc.replace(`$${k}`, v),
+						to,
+					)
 				: String(to);
 		return (
 			<a href={href} {...props}>
@@ -143,7 +146,7 @@ describe("ClassDetailView — shared class materials tab", () => {
 		return fetchMock;
 	}
 
-	it("places Tài liệu chung right after Giáo trình and opens shared materials on click", async () => {
+	it("renders 3 merged tabs (Hành trình học, Bài tập, Tài liệu chung) without Giáo trình and opens shared materials on click", async () => {
 		const fetchMock = stubClassMaterialsFetch([
 			{
 				id: "m-shared-1",
@@ -162,9 +165,9 @@ describe("ClassDetailView — shared class materials tab", () => {
 
 		const tabs = screen.getAllByRole("tab");
 		const labels = tabs.map((t) => t.textContent);
-		expect(labels.indexOf("Tài liệu chung")).toBe(
-			labels.indexOf("Giáo trình") + 1,
-		);
+		expect(labels).toEqual(["Hành trình học", "Bài tập", "Tài liệu chung"]);
+		expect(screen.queryByTestId("class-tab-syllabus")).toBeNull();
+		expect(screen.queryByTestId("class-tab-classmates")).toBeNull();
 
 		const materialsTab = screen.getByTestId("class-tab-materials");
 		expect(materialsTab.textContent).toBe("Tài liệu chung");
@@ -177,6 +180,37 @@ describe("ClassDetailView — shared class materials tab", () => {
 			expect.stringMatching(/\/api\/student\/classes\/cls-1\/materials$/),
 			expect.objectContaining({ method: "GET", credentials: "include" }),
 		);
+	});
+
+	it("groups lessons by syllabus modules inside Hành trình học when syllabus is attached", () => {
+		const base = makeDetail("active");
+		const withSyllabus: StudentClassDetail = {
+			...base,
+			syllabus: {
+				name: "IELTS Speaking Pro",
+				description: "Lộ trình giao tiếp",
+				modules: [
+					{
+						id: "mod-1",
+						title: "Module 1: Part 1 Mastery",
+						description: "Nền tảng phản xạ",
+					},
+				],
+			},
+			lessons: base.lessons.map((l) => ({
+				...l,
+				moduleId: "mod-1",
+				moduleTitle: "Module 1: Part 1 Mastery",
+			})),
+		};
+
+		renderWithQueryClient(withSyllabus);
+		expect(screen.getByTestId("journey-syllabus-header").textContent).toContain(
+			"IELTS Speaking Pro",
+		);
+		const modRegion = screen.getByTestId("journey-module-mod-1");
+		expect(modRegion.textContent).toContain("Module 1: Part 1 Mastery");
+		expect(modRegion.textContent).toContain("1/2 buổi");
 	});
 
 	it("renders shared class materials when the class is paused", async () => {

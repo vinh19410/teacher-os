@@ -41,12 +41,19 @@ import { Section } from "@/components/ui/section";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tabs } from "@/components/ui/tabs";
 import { VocabDeckList } from "@/components/vocab/vocab-deck-list";
+import {
+	formatSessionDate,
+	resolveClassSessions,
+	sessionLessonInfo,
+	sessionStatus,
+} from "@/lib/class-sessions";
 import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
 import { formatSchedule } from "@/lib/format-schedule";
 import { isHttpError } from "@/lib/kernel-load-state";
 import { occurrenceSummary } from "@/lib/kernel-outcome";
 import { CLASS_TYPE_LABELS, fmtVND } from "@/lib/mock-data";
+import { makeupDateForShift } from "@/lib/repos/holidays";
 import { notificationLogsAllQueryKey } from "@/lib/repos/notifications";
 import { useClasses } from "@/lib/repos/use-classes";
 import { useClassCurriculum } from "@/lib/repos/use-syllabus";
@@ -199,6 +206,9 @@ function ClassDetailRoute() {
 		"sessions",
 	);
 	const [assignModalOpen, setAssignModalOpen] = useState(false);
+	const [assignSessionDate, setAssignSessionDate] = useState<string | null>(
+		null,
+	);
 	const [lastAssigned, setLastAssigned] = useState<{
 		classId: string;
 		nonce: number;
@@ -214,6 +224,7 @@ function ClassDetailRoute() {
 	useEffect(() => {
 		if (lastAssigned.classId !== classId) {
 			setAssignModalOpen(false);
+			setAssignSessionDate(null);
 			setConfirmOpeningOpen(false);
 			setLastAssigned({ classId, nonce: 0 });
 		}
@@ -311,6 +322,51 @@ function ClassDetailRoute() {
 	const classAssignments = useMemo(() => {
 		return (data.classAssignments ?? []).filter((ca) => ca.classId === classId);
 	}, [data.classAssignments, classId]);
+	const validAssignSessions = useMemo(() => {
+		const resolved = resolveClassSessions({
+			cls,
+			lessons: classLessonsForClass,
+			syllabus: sy,
+			classSessions: classSessionsForClass,
+		});
+		const projected =
+			!resolved.isManual &&
+			classLessonsForClass.length === 0 &&
+			resolved.sessions !== null;
+		if (
+			projected ||
+			!resolved.sessions ||
+			!resolved.sessions.every((s) => s.mode === "v2")
+		) {
+			return [];
+		}
+		const shifts = data.holidayShifts ?? [];
+		return resolved.sessions
+			.filter((s) => {
+				const st = sessionStatus(s);
+				const shifted =
+					s.rows.length === 0 &&
+					makeupDateForShift({ holidayShifts: shifts }, cls.id, s.dateISO) !==
+						null;
+				return st !== "holiday" && st !== "cancelled" && !shifted;
+			})
+			.map((s) => {
+				const info = sessionLessonInfo(s, sy);
+				const dateText = formatSessionDate(s.dateISO);
+				return {
+					dateISO: s.dateISO,
+					label: info.title
+						? `Buổi ${s.index} · ${dateText} — ${info.title}`
+						: `Buổi ${s.index} · ${dateText}`,
+				};
+			});
+	}, [
+		cls,
+		classLessonsForClass,
+		sy,
+		classSessionsForClass,
+		data.holidayShifts,
+	]);
 	// "Hôm nay" tính trong memo (#322): data đổi/reload là tính lại; tab mở
 	// qua nửa đêm không tự chuyển "Quá hạn" cho tới khi có refetch — chấp nhận.
 	const rosterDebt = useMemo(
@@ -532,6 +588,11 @@ function ClassDetailRoute() {
 								classSessions={classSessionsForClass}
 								holidayShifts={data.holidayShifts}
 								sessionMeetings={data.sessionMeetings}
+								classAssignments={classAssignments}
+								onOpenAssignForSession={(dateISO) => {
+									setAssignSessionDate(dateISO);
+									setAssignModalOpen(true);
+								}}
 								onRefresh={refresh}
 								studentById={studentById}
 								run={run}
@@ -555,7 +616,10 @@ function ClassDetailRoute() {
 							<ClassAssignmentsTab
 								key={`assign-${classId}`}
 								classGroup={cls}
-								onOpenAssignModal={() => setAssignModalOpen(true)}
+								onOpenAssignModal={() => {
+									setAssignSessionDate(null);
+									setAssignModalOpen(true);
+								}}
 								assignmentsFocus={assignmentsFocus}
 								lastAssignedNonce={
 									lastAssigned.classId === cls.id ? lastAssigned.nonce : 0
@@ -733,8 +797,13 @@ function ClassDetailRoute() {
 			<AssignClassPromptModal
 				key={`assign-prompt-${cls.id}`}
 				open={assignModalOpen}
-				onClose={() => setAssignModalOpen(false)}
+				onClose={() => {
+					setAssignModalOpen(false);
+					setAssignSessionDate(null);
+				}}
 				classGroup={cls}
+				sessions={validAssignSessions}
+				defaultSessionDate={assignSessionDate}
 				onAssigned={(info) =>
 					setLastAssigned((prev) => ({
 						classId: cls.id,

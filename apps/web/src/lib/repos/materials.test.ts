@@ -4,17 +4,21 @@ import { UPLOAD_HELP } from "@/components/materials/material-dialogs";
 import { HttpError } from "@/lib/kernel-load-state";
 import {
 	attachClassMaterial,
+	attachSessionMaterial,
 	classMaterialsQueryKey,
 	createClassMaterialLink,
+	createSessionMaterialLink,
 	deleteMaterial,
 	detachClassMaterial,
 	fetchClassMaterials,
+	fetchMaterialFileBytes,
 	fetchMaterials,
 	formatBytes,
 	isMaterialRequestError,
 	MaterialRequestError,
 	materialErrorMessage,
 	prepareMaterialUpload,
+	updateSessionMaterialCategory,
 	uploadClassMaterial,
 	uploadMaterialFile,
 	uploadSessionMaterial,
@@ -254,6 +258,94 @@ describe("material requests", () => {
 		expect(String(fetchMock.mock.calls[0]?.[0])).toMatch(
 			/\/api\/classes\/cl-1\/sessions\/2026-10-12\/materials\/files$/,
 		);
+	});
+
+	it("sends category, slice metadata, session links, category updates, and fetches PDF bytes", async () => {
+		const upMock = stubFetch(201, { item: { id: "m-slice" } });
+		await uploadSessionMaterial({
+			classId: "cl-1",
+			date: "2026-10-12",
+			file: fileOf("slice.pdf", "application/pdf", 50),
+			mimeType: "application/pdf",
+			category: "lecture",
+			title: "Buổi 1",
+			sourceTitle: "Sách gốc.pdf",
+			pageStart: 2,
+			pageEnd: 8,
+		});
+		const upUrl = new URL(String(upMock.mock.calls[0]?.[0]));
+		expect(upUrl.searchParams.get("category")).toBeNull();
+		expect(upUrl.searchParams.get("title")).toBe("Buổi 1");
+		expect(upUrl.searchParams.get("sourceTitle")).toBe("Sách gốc.pdf");
+		expect(upUrl.searchParams.get("pageStart")).toBe("2");
+		expect(upUrl.searchParams.get("pageEnd")).toBe("8");
+
+		const hwAttachMock = stubFetch(201, { item: { id: "m-hw" } });
+		await attachSessionMaterial("cl-1", "2026-10-12", "m-hw", {
+			category: "homework",
+		});
+		expect(hwAttachMock.mock.calls[0]?.[1]?.body).toBe(
+			JSON.stringify({ materialId: "m-hw", category: "homework" }),
+		);
+
+		const lecAttachMock = stubFetch(201, { item: { id: "m-lec" } });
+		await attachSessionMaterial("cl-1", "2026-10-12", "m-lec", {
+			category: "lecture",
+		});
+		expect(lecAttachMock.mock.calls[0]?.[1]?.body).toBe(
+			JSON.stringify({ materialId: "m-lec" }),
+		);
+
+		const linkMock = stubFetch(201, { item: { id: "m-link" } });
+		await createSessionMaterialLink("cl-1", "2026-10-12", {
+			title: "Form bài tập",
+			url: "https://forms.gle/demo",
+			description: "",
+			category: "homework",
+		});
+		expect(String(linkMock.mock.calls[0]?.[0])).toMatch(
+			/\/api\/classes\/cl-1\/sessions\/2026-10-12\/materials\/links$/,
+		);
+
+		const patchMock = stubFetch(200, { item: { id: "m-link" } });
+		await updateSessionMaterialCategory(
+			"cl-1",
+			"2026-10-12",
+			"m-link",
+			"lecture",
+		);
+		expect(patchMock.mock.calls[0]?.[1]?.method).toBe("PATCH");
+		expect(patchMock.mock.calls[0]?.[1]?.body).toBe(
+			JSON.stringify({ category: "lecture" }),
+		);
+
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(
+				async () =>
+					new Response(new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]), {
+						status: 200,
+						headers: { "content-type": "application/pdf" },
+					}),
+			),
+		);
+		const bytes = await fetchMaterialFileBytes("m-pdf");
+		expect(bytes.byteLength).toBe(5);
+
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(
+				async () =>
+					new Response("<html>", {
+						status: 200,
+						headers: { "content-type": "text/html" },
+					}),
+			),
+		);
+		await expect(fetchMaterialFileBytes("m-html")).rejects.toMatchObject({
+			status: 415,
+			materialCode: "UNSUPPORTED_FILE_TYPE",
+		});
 	});
 
 	it("manages class shared materials under /api/classes/:classId/materials", async () => {

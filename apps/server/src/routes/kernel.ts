@@ -1896,6 +1896,9 @@ export function kernelRoutes(deps: {
 	kernel.post("/classes/:id/assignments", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
+		if (ctx.role !== undefined && !canPublishGrade(ctx.role)) {
+			return c.json({ error: "forbidden", code: "FORBIDDEN" }, 403);
+		}
 		const body = await readBody(c, classAssignmentCreateSchema);
 		if (!body.ok) return body.response;
 		const input = body.data;
@@ -1905,6 +1908,67 @@ export function kernelRoutes(deps: {
 		const cls = await findClass(db, classId, ctx.orgId);
 		if (!cls) {
 			return c.json({ error: "class not found" }, 404);
+		}
+		let validSessionDate: string | null = null;
+		if (input.sessionDate != null) {
+			const parsedSessionDate = parseStartDateStrict(input.sessionDate);
+			if (!parsedSessionDate) {
+				return c.json(
+					{ error: "invalid session date", reason: "invalid-session" },
+					400,
+				);
+			}
+			const sessionLessons = await db
+				.select({ status: lesson.status })
+				.from(lesson)
+				.where(
+					and(
+						eq(lesson.orgId, ctx.orgId),
+						eq(lesson.classId, classId),
+						eq(lesson.date, parsedSessionDate),
+					),
+				);
+			const hasActiveLesson = sessionLessons.some(
+				(row) => row.status !== "holiday" && row.status !== "cancelled",
+			);
+			let hasActiveManualSession = false;
+			if (!hasActiveLesson) {
+				const [csRow] = await db
+					.select({ id: classSession.id })
+					.from(classSession)
+					.where(
+						and(
+							eq(classSession.orgId, ctx.orgId),
+							eq(classSession.classId, classId),
+							eq(classSession.date, parsedSessionDate),
+						),
+					)
+					.limit(1);
+				if (
+					csRow &&
+					!sessionLessons.some((row) => row.status === "cancelled")
+				) {
+					const [shiftRow] = await db
+						.select({ id: holidaySessionShift.id })
+						.from(holidaySessionShift)
+						.where(
+							and(
+								eq(holidaySessionShift.orgId, ctx.orgId),
+								eq(holidaySessionShift.classId, classId),
+								eq(holidaySessionShift.originalDate, parsedSessionDate),
+							),
+						)
+						.limit(1);
+					hasActiveManualSession = !shiftRow;
+				}
+			}
+			if (!hasActiveLesson && !hasActiveManualSession) {
+				return c.json(
+					{ error: "invalid session date", reason: "invalid-session" },
+					400,
+				);
+			}
+			validSessionDate = parsedSessionDate;
 		}
 		const [prompt] = await db
 			.select({
@@ -1976,6 +2040,39 @@ export function kernelRoutes(deps: {
 		}
 
 		const assignmentId = crypto.randomUUID();
+		// Guard SQL nguyên tử chống TOCTOU khi holiday shift / xoá / huỷ buổi chen ngang giữa lúc kiểm và lúc ghi.
+		const guardedTitle = validSessionDate
+			? sql<string>`CASE WHEN (
+					EXISTS (
+						SELECT 1 FROM ${lesson}
+						WHERE ${lesson.orgId} = ${ctx.orgId}
+							AND ${lesson.classId} = ${classId}
+							AND ${lesson.date} = ${validSessionDate}
+							AND ${lesson.status} NOT IN ('holiday', 'cancelled')
+					)
+					OR (
+						EXISTS (
+							SELECT 1 FROM ${classSession}
+							WHERE ${classSession.orgId} = ${ctx.orgId}
+								AND ${classSession.classId} = ${classId}
+								AND ${classSession.date} = ${validSessionDate}
+						)
+						AND NOT EXISTS (
+							SELECT 1 FROM ${holidaySessionShift}
+							WHERE ${holidaySessionShift.orgId} = ${ctx.orgId}
+								AND ${holidaySessionShift.classId} = ${classId}
+								AND ${holidaySessionShift.originalDate} = ${validSessionDate}
+						)
+						AND NOT EXISTS (
+							SELECT 1 FROM ${lesson}
+							WHERE ${lesson.orgId} = ${ctx.orgId}
+								AND ${lesson.classId} = ${classId}
+								AND ${lesson.date} = ${validSessionDate}
+								AND ${lesson.status} = 'cancelled'
+						)
+					)
+				) THEN ${prompt.title} ELSE NULL END`
+			: prompt.title;
 		const targetInsertChunkSize = 15;
 		const resolvedTargetScope =
 			input.targetScope === "selected"
@@ -2021,15 +2118,29 @@ export function kernelRoutes(deps: {
 				orgId: ctx.orgId,
 				classId,
 				promptId: prompt.id,
-				title: prompt.title,
+				title: guardedTitle,
 				due: input.due,
 				dueAt: dueAtDate,
 				note: input.note,
+				sessionDate: validSessionDate,
 				targetScope: resolvedTargetScope,
 			}),
 			...targetInsertStatements,
 		];
-		await db.batch(statements);
+		try {
+			await db.batch(statements);
+		} catch (err) {
+			if (validSessionDate && isRollbackableConstraintError(err)) {
+				return c.json(
+					{
+						error: "session no longer available",
+						reason: "invalid-session",
+					},
+					409,
+				);
+			}
+			throw err;
+		}
 
 		// Standalone catch-up after db.batch (drizzle-orm/d1 cannot prepare SQLiteRaw
 		// inside batch): closes the TOCTOU window if a student activated concurrently.
@@ -3867,6 +3978,17 @@ export function kernelRoutes(deps: {
 									bucketMoved,
 								),
 							),
+						db
+							.update(classAssignment)
+							.set({ sessionDate: moveDateISO })
+							.where(
+								and(
+									eq(classAssignment.orgId, ctx.orgId),
+									eq(classAssignment.classId, classId),
+									eq(classAssignment.sessionDate, dateISO),
+									bucketMoved,
+								),
+							),
 					];
 					const [updatedRows] = await db.batch(statements);
 					rows = updatedRows as Array<{ id: string }>;
@@ -4342,6 +4464,16 @@ export function kernelRoutes(deps: {
 						eq(lessonMaterial.orgId, ctx.orgId),
 						eq(lessonMaterial.classId, classId),
 						eq(lessonMaterial.date, dateISO),
+					),
+				),
+			db
+				.update(classAssignment)
+				.set({ sessionDate: null })
+				.where(
+					and(
+						eq(classAssignment.orgId, ctx.orgId),
+						eq(classAssignment.classId, classId),
+						eq(classAssignment.sessionDate, dateISO),
 					),
 				),
 		);

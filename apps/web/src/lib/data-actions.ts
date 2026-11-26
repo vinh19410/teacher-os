@@ -93,6 +93,7 @@ export type KernelAction =
 				promptId: string;
 				due: string;
 				dueTime?: string;
+				sessionDate?: string | null;
 				note?: string;
 				studentIds: string[];
 				targetScope?: ClassAssignmentTargetScope;

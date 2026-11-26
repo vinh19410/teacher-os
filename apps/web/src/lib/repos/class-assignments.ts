@@ -13,6 +13,7 @@ export function mapClassAssignments(
 		title: row.title,
 		due: row.due,
 		dueAt: row.dueAt ?? null,
+		sessionDate: row.sessionDate ?? null,
 		...(row.targetScope ? { targetScope: row.targetScope } : {}),
 		note: row.note,
 		createdAt: row.createdAt,

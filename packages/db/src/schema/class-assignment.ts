@@ -37,6 +37,8 @@ export const classAssignment = sqliteTable(
 		dueAt: integer("due_at", { mode: "timestamp_ms" }),
 		availableAt: integer("available_at", { mode: "timestamp_ms" }),
 		classStudyPackId: text("class_study_pack_id"),
+		/** Ngày buổi học (ISO yyyy-mm-dd) nếu bài tập được gắn với một buổi cụ thể; NULL = bài tập chung cấp lớp. */
+		sessionDate: text("session_date"),
 		targetScope: text("target_scope").notNull().default("class"),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
@@ -46,6 +48,10 @@ export const classAssignment = sqliteTable(
 		index("class_assignment_org_idx").on(table.orgId),
 		index("class_assignment_class_idx").on(table.classId),
 		index("class_assignment_study_pack_idx").on(table.classStudyPackId),
+		index("class_assignment_class_session_idx").on(
+			table.classId,
+			table.sessionDate,
+		),
 	],
 );
 
