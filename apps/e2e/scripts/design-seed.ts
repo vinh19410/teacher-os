@@ -1,11 +1,11 @@
 /**
  * Seed dữ liệu cho harness so sánh design v2 (plan #378, phase 1).
  *
- * Chạy SAU khi boot:api sẵn sàng (boot xoá local.db mỗi lần). Teacher đăng ký
- * qua UI thật (tạo org + bootstrap); student là auth thật qua portal + mail
- * log; phần còn lại seed thẳng DB theo tiền lệ Decision D6
- * (apps/e2e/specs/helpers-quiz.ts). Ghi ids vào
- * scripts/design-compare/.state/design-seed.json cho capture.mjs.
+ * Chạy SAU khi boot:api sẵn sàng (boot xoá local.db mỗi lần). Teacher được seed
+ * qua /__e2e/seed-user + sign-in API rồi bootstrap org qua /teacher/dashboard;
+ * student là auth thật qua cổng /login hợp nhất + mail log; phần còn lại seed
+ * thẳng DB theo tiền lệ Decision D6 (apps/e2e/specs/helpers-quiz.ts). Ghi ids
+ * vào scripts/design-compare/.state/design-seed.json cho capture.mjs.
  */
 import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -18,7 +18,7 @@ import {
 	seedQuizFixture,
 	seedSubmittedEssay,
 } from "../specs/helpers-quiz";
-import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "../specs/origins";
+import { API_ORIGIN, LMS_ORIGIN, TEACHER_BASE_URL } from "../specs/origins";
 import {
 	assertVerifiedEmailRedirect,
 	clampTimeoutMs,
@@ -124,6 +124,32 @@ async function readVerificationUrl(email: string): Promise<string> {
 	throw new Error(`không thấy email verify cho ${email}`);
 }
 
+function hasSessionTokenCookie(
+	cookies: ReadonlyArray<{ name: string; value: string }>,
+): boolean {
+	return cookies.some(
+		(cookie) =>
+			cookie.value.length > 0 &&
+			(cookie.name === "better-auth.session_token" ||
+				cookie.name === "__Secure-better-auth.session_token" ||
+				cookie.name.endsWith(".session_token")),
+	);
+}
+
+function assertNotRedirectedToLogin(page: Page): void {
+	let pathname = "";
+	try {
+		pathname = new URL(page.url()).pathname;
+	} catch {
+		return;
+	}
+	if (pathname === "/login") {
+		throw new Error(
+			`[design-seed] phiên giáo viên bị chuyển về /login (${redactCapabilityUrl(page.url())})`,
+		);
+	}
+}
+
 const browser = await chromium.launch();
 try {
 	const ctx = await browser.newContext({
@@ -131,21 +157,65 @@ try {
 	});
 	const page = await ctx.newPage();
 
-	// 1) Teacher đăng ký qua UI → org bootstrap.
-	await page.goto(`${WEB_ORIGIN}/login`);
-	await page.fill("#su-name", "Nguyễn Hoàng Lan");
-	await page.fill("#su-email", teacherEmail);
-	await page.fill("#su-password", PASSWORD);
+	// 1) Teacher seed qua /__e2e/seed-user + sign-in qua API → mở /teacher/dashboard
+	// để bootstrapMiddleware (apps/server/src/app.ts) tạo org + membership khi
+	// nhận GET /api/kernel đầu tiên (dưới unifiedOrigins, public sign-up chỉ tạo student).
+	const teacherSeedRes = await ctx.request.post(
+		`${API_ORIGIN}/__e2e/seed-user`,
+		{
+			headers: { "Content-Type": "application/json" },
+			data: {
+				email: teacherEmail,
+				password: PASSWORD,
+				name: "Nguyễn Hoàng Lan",
+				role: "teacher",
+				emailVerified: true,
+			},
+			maxRedirects: 0,
+			timeout: clampTimeoutMs(SEED_DEADLINE, 30_000, "teacher seed-user"),
+		},
+	);
+	if (teacherSeedRes.status() !== 200) {
+		const safeText = redactCapabilityUrl(
+			await teacherSeedRes.text().catch(() => ""),
+		).slice(0, 200);
+		throw new Error(
+			`[design-seed] teacher seed-user thất bại: HTTP ${teacherSeedRes.status()} ${safeText}`,
+		);
+	}
+	const teacherSignInRes = await ctx.request.post(
+		`${API_ORIGIN}/api/auth/sign-in/email`,
+		{
+			headers: {
+				"Content-Type": "application/json",
+				Origin: LMS_ORIGIN,
+			},
+			data: {
+				email: teacherEmail,
+				password: PASSWORD,
+			},
+			maxRedirects: 0,
+			timeout: clampTimeoutMs(SEED_DEADLINE, 30_000, "teacher sign-in"),
+		},
+	);
+	if (!teacherSignInRes.ok()) {
+		const safeText = redactCapabilityUrl(
+			await teacherSignInRes.text().catch(() => ""),
+		).slice(0, 200);
+		throw new Error(
+			`[design-seed] teacher sign-in thất bại: HTTP ${teacherSignInRes.status()} ${safeText}`,
+		);
+	}
+	const teacherCookies = await ctx.cookies(API_ORIGIN);
+	if (!hasSessionTokenCookie(teacherCookies)) {
+		throw new Error(
+			"[design-seed] teacher sign-in không tạo cookie session_token có giá trị trong ctx",
+		);
+	}
+
 	// Org + membership chỉ được tạo khi request GET /api/kernel ĐẦU TIÊN đi qua
-	// bootstrapMiddleware (apps/server/src/app.ts) — request này chỉ bắn sau
-	// khi vite dev transform xong graph dashboard (luôn lạnh mỗi lần boot,
-	// warm() của harness chỉ phủ /login). Issue #397: blind-poll DB ~21.75s
-	// thất bại trên máy đang tải vì AbortSignal.timeout(15000) + retry:false
-	// của fetchKernelSnapshot biến kernel chậm thành abort KHÔNG có retry.
-	// Collector duy nhất (đăng ký trước click, không promise mồ côi theo vòng)
-	// ghi lại request/response/requestfailed có mốc thời gian; response →
-	// DB (orgIdForTeacherEmail) là oracle; chỉ requestfailed hoặc window hết
-	// mà chưa có request nào mới goto lại /dashboard bắn kernel mới.
+	// bootstrapMiddleware (apps/server/src/app.ts). Collector duy nhất đăng ký
+	// TRƯỚC khi điều hướng để không bỏ sót request bắn trong lúc gotoStable.
 	type KernelObs = {
 		kind: "request" | "response" | "requestfailed";
 		at: number;
@@ -176,27 +246,22 @@ try {
 				at: Date.now() - tKernel,
 			});
 	});
-	await page.getByRole("button", { name: "Create account" }).click();
-	await page.waitForURL(/\/dashboard/, { timeout: 60_000 });
+	await gotoStable(page, `${TEACHER_BASE_URL}/dashboard`);
+	assertNotRedirectedToLogin(page);
 
 	// Vòng chờ kernel (tổng 120s): mỗi vòng chờ response HOẶC requestfailed
-	// (client tự abort ≤15s nhờ AbortSignal.timeout) trong window 30s. Chỉ goto
-	// /dashboard cứu khi (a) requestfailed — request đang bay ĐÃ chết, không
-	// bao giờ goto giữa chừng vì navigation hủy cả fetch đang treo; (b) window
-	// hết mà không hề có request nào (JS chưa boot). Observation `request`
-	// (đã gửi) KHÔNG kích hoạt goto. ERR_ABORTED không phân biệt abort-15s và
-	// navigation-cancel — observation ghi text thô, không khẳng định nguyên
-	// nhân; nguyên nhân thật được suy từ tổ hợp observations khi fail.
+	// (client tự abort ≤15s nhờ AbortSignal.timeout) trong window 30s. Fail-fast
+	// nếu _auth beforeLoad đá về /login; chỉ goto /teacher/dashboard cứu khi
+	// requestfailed hoặc window hết mà chưa có request nào.
 	const kernelDeadline = Date.now() + 120_000;
-	// Baseline quan sát: 0 (từ lúc click) — kernel có thể đã bắn trong lúc
-	// waitForURL và vẫn đang bay khi vào vòng (review #397 F3: snapshot
-	// kernelObs.length tại window đầu sẽ bỏ sót request đó).
 	let seen = 0;
 	while (!kernelObs.some((o) => o.kind === "response")) {
+		assertNotRedirectedToLogin(page);
 		const remaining = kernelDeadline - Date.now();
 		if (remaining <= 0) break;
 		const windowEnd = Date.now() + Math.min(30_000, remaining);
 		while (Date.now() < windowEnd) {
+			assertNotRedirectedToLogin(page);
 			const fresh = kernelObs.slice(seen);
 			if (
 				fresh.some((o) => o.kind === "response" || o.kind === "requestfailed")
@@ -207,6 +272,7 @@ try {
 			await promise;
 		}
 		if (kernelObs.some((o) => o.kind === "response")) break;
+		assertNotRedirectedToLogin(page);
 		const fresh = kernelObs.slice(seen);
 		const failed = fresh.some((o) => o.kind === "requestfailed");
 		const sent = fresh.some((o) => o.kind === "request");
@@ -222,15 +288,12 @@ try {
 			await promise;
 			continue;
 		}
-		// Bắn lại kernel bằng goto (không reload — trang có thể đã chuyển sang
-		// /login?returnUrl hoặc vừa full-reload); goto tự ném ERR_ABORTED thì
-		// ghi thành observation và để vòng sau thử tiếp.
 		try {
-			await page.goto(`${WEB_ORIGIN}/dashboard`, { waitUntil: "load" });
+			await page.goto(`${TEACHER_BASE_URL}/dashboard`, { waitUntil: "load" });
 		} catch (err) {
 			kernelObs.push({
 				kind: "requestfailed",
-				failure: `goto /dashboard: ${String(err).slice(0, 120)}`,
+				failure: `goto /teacher/dashboard: ${String(err).slice(0, 120)}`,
 				at: Date.now() - tKernel,
 			});
 		}
@@ -254,7 +317,7 @@ try {
 		// nghi cookie cross-origin (E2E_HOSTNAME=127.0.0.1); response 403 →
 		// role gate; chỉ request/abort/timeout → timing hoặc JS chưa boot.
 		throw new Error(
-			`orgIdForTeacherEmail thất bại. Kernel observations: ${kernelSummary}`,
+			`orgIdForTeacherEmail thất bại (url=${redactCapabilityUrl(page.url())}). Kernel observations: ${kernelSummary}`,
 			{ cause: err },
 		);
 	}
@@ -574,7 +637,7 @@ try {
 		timezoneId: "Asia/Ho_Chi_Minh",
 	});
 	const studentPage = await studentCtx.newPage();
-	await gotoStable(studentPage, `${STUDENT_ORIGIN}/login`);
+	await gotoStable(studentPage, `${LMS_ORIGIN}/login`);
 	try {
 		await studentPage.click("#tab-signup", {
 			timeout: clampTimeoutMs(SEED_DEADLINE, 15_000, "student #tab-signup"),
@@ -625,7 +688,7 @@ try {
 	const [signUpRes] = await Promise.all([
 		signUpResPromise,
 		studentPage
-			.getByRole("button", { name: "Tạo tài khoản" })
+			.locator("#panel-signup button[type='submit']")
 			.click({ timeout: signUpTimeout }),
 	]);
 	if (!signUpRes.ok()) {
@@ -634,13 +697,13 @@ try {
 		);
 	}
 	// Đóng nguyên tử renderer /login để chặn SignUpForm chạy getSession() ->
-	// window.location.assign("/") ở nền mà không đua navigation (#652 RT-1).
+	// redirect ở nền mà không đua navigation (#652 RT-1).
 	await studentPage.close();
 
 	const tVerifyStart = Date.now();
 	const verifyUrl = await readVerificationUrl(studentEmail);
 	// #652: xác thực qua API trực tiếp (maxRedirects: 0) thay vì page.goto qua
-	// Vite dev — không còn chết vì cold-transform module graph trên máy đang tải.
+	// browser — không còn chết vì cold-transform trên máy đang tải.
 	await withNavRetry(
 		async (timeoutMs) => {
 			const res = await studentCtx.request.get(verifyUrl, {
@@ -654,7 +717,7 @@ try {
 			assertVerifiedEmailRedirect({
 				status: res.status(),
 				location: res.headers().location,
-				studentOrigin: STUDENT_ORIGIN,
+				studentOrigin: LMS_ORIGIN,
 				cookies,
 			});
 			const sessRes = await studentCtx.request.get(
@@ -689,8 +752,7 @@ try {
 	const verifyMs = Date.now() - tVerifyStart;
 	// 8) Student bắt đầu 4 đề (reading/listening/writing/speaking) → attempt ids.
 	// #652: gọi thẳng POST /api/student/assignments/:id/quiz/start qua studentCtx.request
-	// (idempotent, chia sẻ cookie phiên với studentCtx, không phụ thuộc Vite dev
-	// cold-transform hay full-reload khi optimizeDeps bundle media/recorder).
+	// (idempotent, chia sẻ cookie phiên với studentCtx).
 	const tQuizzesStart = Date.now();
 	const attemptIds: Record<string, string> = {};
 	const quizTargets = [
@@ -712,7 +774,7 @@ try {
 					`${API_ORIGIN}/api/student/assignments/${encodeURIComponent(assignmentId)}/quiz/start`,
 					{
 						data: {},
-						headers: { Origin: STUDENT_ORIGIN },
+						headers: { Origin: LMS_ORIGIN },
 						timeout: timeoutMs,
 						maxRedirects: 0,
 					},
@@ -775,8 +837,9 @@ try {
 		quizzesDurationMs: quizzesMs,
 		navRetryCount,
 		apiOrigin: API_ORIGIN,
-		webOrigin: WEB_ORIGIN,
-		studentOrigin: STUDENT_ORIGIN,
+		lmsOrigin: LMS_ORIGIN,
+		webOrigin: LMS_ORIGIN,
+		studentOrigin: LMS_ORIGIN,
 	};
 	writeFileSync(OUT_FILE, `${JSON.stringify(out, null, 2)}\n`, { mode: 0o600 });
 	chmodSync(OUT_FILE, 0o600);
