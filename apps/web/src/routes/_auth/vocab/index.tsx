@@ -17,12 +17,13 @@ export function VocabHubRoute() {
 	const independentCount = data.vocabDecks.filter(
 		(d) => d.classId === null,
 	).length;
+	const classDeckCount = data.vocabDecks.length - independentCount;
 	const pendingSuggestionsCount = (data.vocabSuggestions ?? []).length;
 
 	return (
 		<div>
 			<PageHead
-				kicker={`${data.vocabDecks.length} BỘ TỪ · ${independentCount} RIÊNG · ${pendingSuggestionsCount} GỢI Ý CHỜ`}
+				kicker={`${independentCount} bộ ngân hàng · ${classDeckCount} theo lớp · ${pendingSuggestionsCount} gợi ý chờ`}
 				title="Từ vựng"
 			/>
 

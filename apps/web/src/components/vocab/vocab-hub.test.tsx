@@ -84,20 +84,47 @@ describe("Teacher Vocab Hub, Suggestions & Progress (#363)", () => {
 		classRender.unmount();
 		cleanup();
 
-		// 2) Hub mode shows BOTH decks with accurate source badges and pending suggestion count
+		// 2) Hub mode defaults to independent bank decks ("Ngân hàng riêng") so class clones do not visually duplicate bank decks
 		renderWithKernel(<VocabHubRoute />);
 		await waitFor(() => {
 			expect(screen.getByTestId("vocab-deck-row-deck-indep-1")).toBeDefined();
 		});
 		expect(
-			screen.getByTestId("vocab-deck-source-badge-deck-class-1").textContent,
-		).toBe("Lớp IELTS 6.5");
+			(screen.getByTestId("vocab-deck-source-filter") as HTMLSelectElement)
+				.value,
+		).toBe("independent");
+		expect(screen.queryByTestId("vocab-deck-row-deck-class-1")).toBeNull();
 		expect(
 			screen.getByTestId("vocab-deck-source-badge-deck-indep-1").textContent,
 		).toBe("Riêng");
 		expect(
 			screen.getByTestId("vocab-deck-pending-badge-deck-indep-1").textContent,
 		).toBe("1 chờ");
+
+		// Switching source filter to "all" reveals class decks too with accurate source badges
+		fireEvent.change(screen.getByTestId("vocab-deck-source-filter"), {
+			target: { value: "all" },
+		});
+		expect(
+			screen.getByTestId("vocab-deck-source-badge-deck-class-1").textContent,
+		).toBe("Lớp IELTS 6.5");
+		expect(screen.getByTestId("vocab-deck-row-deck-indep-1")).toBeDefined();
+
+		// Switching source filter to specific class shows only that class's decks
+		fireEvent.change(screen.getByTestId("vocab-deck-source-filter"), {
+			target: { value: "class:cl-1" },
+		});
+		expect(screen.getByTestId("vocab-deck-row-deck-class-1")).toBeDefined();
+		expect(screen.queryByTestId("vocab-deck-row-deck-indep-1")).toBeNull();
+
+		// Clearing filter returns to default "independent" view
+		fireEvent.click(screen.getByTestId("vocab-deck-group-filter-clear"));
+		expect(
+			(screen.getByTestId("vocab-deck-source-filter") as HTMLSelectElement)
+				.value,
+		).toBe("independent");
+		expect(screen.getByTestId("vocab-deck-row-deck-indep-1")).toBeDefined();
+		expect(screen.queryByTestId("vocab-deck-row-deck-class-1")).toBeNull();
 
 		// 3) Create independent deck from hub sends classId: null
 		fireEvent.click(screen.getByRole("button", { name: "Tạo bộ từ" }));
@@ -1300,7 +1327,7 @@ describe("Teacher Vocab Hub, Suggestions & Progress (#363)", () => {
 
 		startKernelServer(initialSnapshot);
 
-		// 1) Hub mode
+		// 1) Hub mode defaults to independent bank decks ("Ngân hàng riêng")
 		const hubRender = renderWithKernel(<VocabHubRoute />);
 		await waitFor(() => {
 			expect(
@@ -1312,29 +1339,66 @@ describe("Teacher Vocab Hub, Suggestions & Progress (#363)", () => {
 			screen.getByTestId("vocab-deck-group-badge-deck-hub-grouped").textContent,
 		).toBe("IELTS Foundation");
 		expect(
-			screen.getByTestId("vocab-deck-group-badge-deck-class-grouped")
-				.textContent,
-		).toBe("IELTS Foundation");
+			screen.queryByTestId("vocab-deck-row-deck-class-grouped"),
+		).toBeNull();
 		expect(
 			screen.queryByTestId("vocab-deck-group-badge-deck-hub-ungrouped"),
 		).toBeNull();
+		// Group dropdown count reflects the selected source ("Ngân hàng riêng" -> 1, not 2)
+		expect(screen.getByTestId("vocab-deck-group-filter").textContent).toContain(
+			"IELTS Foundation (1)",
+		);
 
-		// Filter by grp-ielts
+		// Filter by grp-ielts in default "independent" source -> shows only hub grouped deck (1 / 2)
 		fireEvent.change(screen.getByTestId("vocab-deck-group-filter"), {
 			target: { value: "grp-ielts" },
 		});
 		expect(screen.getByTestId("vocab-deck-row-deck-hub-grouped")).toBeDefined();
 		expect(
-			screen.getByTestId("vocab-deck-row-deck-class-grouped"),
-		).toBeDefined();
+			screen.queryByTestId("vocab-deck-row-deck-class-grouped"),
+		).toBeNull();
 		expect(
 			screen.queryByTestId("vocab-deck-row-deck-hub-ungrouped"),
 		).toBeNull();
 		expect(
 			screen.getByTestId("vocab-deck-group-filter-count").textContent,
+		).toContain("1 / 2");
+
+		// Switch source to "all" while keeping grp-ielts -> shows both hub and class deck (2 / 3)
+		fireEvent.change(screen.getByTestId("vocab-deck-source-filter"), {
+			target: { value: "all" },
+		});
+		expect(screen.getByTestId("vocab-deck-group-filter").textContent).toContain(
+			"IELTS Foundation (2)",
+		);
+		expect(screen.getByTestId("vocab-deck-row-deck-hub-grouped")).toBeDefined();
+		expect(
+			screen.getByTestId("vocab-deck-row-deck-class-grouped"),
+		).toBeDefined();
+		expect(
+			screen.getByTestId("vocab-deck-group-badge-deck-class-grouped")
+				.textContent,
+		).toBe("IELTS Foundation");
+		expect(
+			screen.getByTestId("vocab-deck-group-filter-count").textContent,
 		).toContain("2 / 3");
 
-		// Filter by ungrouped
+		// Switch source to "all-classes" -> shows only class grouped deck (1 / 1)
+		fireEvent.change(screen.getByTestId("vocab-deck-source-filter"), {
+			target: { value: "all-classes" },
+		});
+		expect(
+			screen.getByTestId("vocab-deck-row-deck-class-grouped"),
+		).toBeDefined();
+		expect(screen.queryByTestId("vocab-deck-row-deck-hub-grouped")).toBeNull();
+		expect(
+			screen.getByTestId("vocab-deck-group-filter-count").textContent,
+		).toContain("1 / 1");
+
+		// Switch back to "independent" and filter by ungrouped
+		fireEvent.change(screen.getByTestId("vocab-deck-source-filter"), {
+			target: { value: "independent" },
+		});
 		fireEvent.change(screen.getByTestId("vocab-deck-group-filter"), {
 			target: { value: "ungrouped" },
 		});
@@ -1343,7 +1407,7 @@ describe("Teacher Vocab Hub, Suggestions & Progress (#363)", () => {
 		).toBeDefined();
 		expect(screen.queryByTestId("vocab-deck-row-deck-hub-grouped")).toBeNull();
 
-		// Filter by empty group -> empty state + clear button restores all
+		// Filter by empty group -> empty state + clear button restores default independent view
 		fireEvent.change(screen.getByTestId("vocab-deck-group-filter"), {
 			target: { value: "grp-empty" },
 		});
@@ -1356,19 +1420,20 @@ describe("Teacher Vocab Hub, Suggestions & Progress (#363)", () => {
 			screen.getByTestId("vocab-deck-row-deck-hub-ungrouped"),
 		).toBeDefined();
 		expect(
-			screen.getByTestId("vocab-deck-row-deck-class-grouped"),
-		).toBeDefined();
+			screen.queryByTestId("vocab-deck-row-deck-class-grouped"),
+		).toBeNull();
 
 		hubRender.unmount();
 		cleanup();
 
-		// 2) Class mode shows class decks only with group badge and filter
+		// 2) Class mode shows class decks only without source filter
 		renderWithKernel(<VocabDeckList classId="cl-1" />);
 		await waitFor(() => {
 			expect(
 				screen.getByTestId("vocab-deck-row-deck-class-grouped"),
 			).toBeDefined();
 		});
+		expect(screen.queryByTestId("vocab-deck-source-filter")).toBeNull();
 		expect(screen.queryByTestId("vocab-deck-row-deck-hub-grouped")).toBeNull();
 		expect(
 			screen.getByTestId("vocab-deck-group-badge-deck-class-grouped")
@@ -1382,6 +1447,39 @@ describe("Teacher Vocab Hub, Suggestions & Progress (#363)", () => {
 		expect(
 			screen.getByTestId("vocab-deck-row-deck-class-grouped"),
 		).toBeDefined();
+	});
+
+	it("shows helpful shortcut to class decks when hub has 0 independent decks but has class decks", async () => {
+		const initialSnapshot = snapshotFixture({
+			classes: [classRow({ id: "cl-1", name: "Comm 2A" })],
+			vocabDecks: [
+				{
+					id: "deck-only-class",
+					classId: "cl-1",
+					title: "Lesson 01 – Home & Accommodation",
+					lang: "en",
+					wordCount: 27,
+					createdAt: "2026-10-20T00:00:00.000Z",
+					sourceLibraryDeckId: null,
+				},
+			],
+		});
+
+		startKernelServer(initialSnapshot);
+
+		renderWithKernel(<VocabHubRoute />);
+		await waitFor(() => {
+			expect(screen.getByTestId("vocab-deck-source-empty")).toBeDefined();
+		});
+		expect(screen.getByTestId("vocab-deck-source-empty").textContent).toContain(
+			"Hiện có 1 bộ từ đang gắn trong các lớp học.",
+		);
+		fireEvent.click(screen.getByTestId("vocab-deck-show-class-decks"));
+		expect(screen.getByTestId("vocab-deck-row-deck-only-class")).toBeDefined();
+		expect(
+			(screen.getByTestId("vocab-deck-source-filter") as HTMLSelectElement)
+				.value,
+		).toBe("all-classes");
 	});
 
 	it("imports CSV decks with a selected or quick-created groupId in create-decks mode", async () => {
