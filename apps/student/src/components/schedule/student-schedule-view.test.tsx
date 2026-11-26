@@ -17,6 +17,10 @@ import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requestStudentZoomJoin } from "@/lib/repos/student";
+import {
+	clearActiveStudentOrgId,
+	setActiveStudentOrgId,
+} from "@/lib/student-org-storage";
 import { StudentScheduleView } from "./student-schedule-view";
 
 vi.mock("sonner", () => ({
@@ -757,5 +761,106 @@ describe("StudentScheduleView component", () => {
 		expect(
 			within(holidayRow).queryByRole("link", { name: "Xem recording" }),
 		).toBeNull();
+	});
+
+	it("14. Mở modal xem video in-app cho R2 recording (kèm hạn lưu & org query), hiển thị badge hết hạn 90 ngày và giữ link fallback + mật khẩu", () => {
+		setActiveStudentOrgId("org-sched-1");
+		try {
+			const lessonsForR2: StudentScheduleLesson[] = [
+				{
+					...MOCK_LESSONS[0],
+					id: "les-r2-video",
+					recordingUrl: "",
+					recordingPassword: "ShouldHide",
+					recordingStatus: "ready",
+					recordingSource: "r2",
+					hasRecordingVideo: true,
+					recordingExpiresAt: "2027-01-30T18:00:00Z",
+				},
+				{
+					...MOCK_LESSONS[1],
+					id: "les-expired-video",
+					recordingUrl: "",
+					recordingStatus: "expired",
+					hasRecordingVideo: false,
+					recordingExpiresAt: "2026-10-15T10:00:00Z",
+				},
+				{
+					id: "les-fallback-zoom",
+					classId: "cls-1",
+					className: "IELTS 6.5A",
+					date: "2026-11-03",
+					day: 2,
+					time: "18:00",
+					dur: 90,
+					status: "completed",
+					topic: "Listening Section 4",
+					recordingUrl: "https://zoom.us/rec/share/sched-fallback",
+					recordingPassword: "SchedPass7",
+					recordingStatus: "failed",
+					hasRecordingVideo: false,
+				},
+			];
+
+			render(
+				<StudentScheduleView
+					classes={MOCK_CLASSES}
+					lessons={lessonsForR2}
+					now={FIXED_NOW}
+					selectedTab="all"
+				/>,
+			);
+
+			// 1) R2 recording mở modal trong app + hiển thị hạn lưu + ẩn mật khẩu
+			const r2Row = screen.getByTestId("session-row-les-r2-video");
+			expect(within(r2Row).getByText("Lưu đến 31/01/2027")).toBeTruthy();
+			expect(within(r2Row).queryByText("ShouldHide")).toBeNull();
+			expect(
+				within(r2Row).queryByRole("link", { name: "Xem recording" }),
+			).toBeNull();
+
+			fireEvent.click(
+				within(r2Row).getByRole("button", { name: "Xem recording" }),
+			);
+
+			const dialog = screen.getByRole("dialog", {
+				name: "IELTS 6.5A — Giới thiệu khoá học",
+			});
+			const video = dialog.querySelector("video") as HTMLVideoElement | null;
+			expect(video).not.toBeNull();
+			expect(video?.getAttribute("controlslist")).toBe("nodownload");
+			expect(video?.getAttribute("src")).toContain(
+				"/api/student/classes/cls-1/sessions/2026-11-01/recording/video?org=org-sched-1",
+			);
+			expect(
+				within(dialog).getByText(
+					"Lưu trữ đến 31/01/2027 (tự động xóa sau 90 ngày)",
+				),
+			).toBeTruthy();
+
+			fireEvent.click(within(dialog).getByRole("button", { name: "Đóng" }));
+			expect(screen.queryByRole("dialog")).toBeNull();
+
+			// 2) Expired recording hiện badge hết hạn 90 ngày
+			const expiredRow = screen.getByTestId("session-row-les-expired-video");
+			expect(
+				within(expiredRow).getByText("Recording đã hết hạn (90 ngày)"),
+			).toBeTruthy();
+			expect(
+				within(expiredRow).queryByRole("button", { name: "Xem recording" }),
+			).toBeNull();
+
+			// 3) Fallback Zoom giữ external link + mật khẩu
+			const fallbackRow = screen.getByTestId("session-row-les-fallback-zoom");
+			const fallbackLink = within(fallbackRow).getByRole("link", {
+				name: "Xem recording",
+			});
+			expect(fallbackLink.getAttribute("href")).toBe(
+				"https://zoom.us/rec/share/sched-fallback",
+			);
+			expect(within(fallbackRow).getByText("SchedPass7")).toBeTruthy();
+		} finally {
+			clearActiveStudentOrgId();
+		}
 	});
 });

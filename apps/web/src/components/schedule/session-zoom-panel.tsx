@@ -1,14 +1,23 @@
-import type { KernelSessionMeetingRow } from "@teacher-os/api/contracts";
+import {
+	type KernelSessionMeetingRow,
+	RECORDING_RETENTION_DAYS,
+} from "@teacher-os/api/contracts";
+import {
+	formatRecordingExpiryVN,
+	RecordingPlayerModal,
+} from "@teacher-os/ui/components/recording-player-modal";
 import { Copy, ExternalLink, Film, RefreshCw, Video } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
+import { formatSessionDate } from "@/lib/class-sessions";
 import { cn } from "@/lib/cn";
 import { isHttpError } from "@/lib/kernel-load-state";
 import {
 	createSessionZoom,
+	sessionRecordingVideoUrl,
 	syncSessionRecording,
 	updateSessionRecording,
 } from "@/lib/repos/zoom-meeting";
@@ -33,12 +42,33 @@ export function SessionZoomPanel({
 	const [editingRec, setEditingRec] = useState(false);
 	const [recInput, setRecInput] = useState(meeting?.recordingUrl ?? "");
 	const [savingRec, setSavingRec] = useState(false);
+	const [playerOpen, setPlayerOpen] = useState(false);
+
+	useEffect(() => {
+		void classId;
+		void dateISO;
+		setPlayerOpen(false);
+	}, [classId, dateISO]);
 
 	const joinUrl = zoom || meeting?.joinUrl || "";
 	const recordingUrl = meeting?.recordingUrl || "";
 	const recordingStatus = meeting?.recordingStatus ?? "none";
+	const hasR2Video =
+		Boolean(meeting?.hasRecordingVideo) &&
+		meeting?.recordingStatus !== "expired" &&
+		Boolean(dateISO);
+	const isExpired =
+		meeting?.recordingStatus === "expired" && !hasR2Video && !recordingUrl;
+	const isFallbackZoom =
+		recordingStatus === "failed" && !hasR2Video && Boolean(recordingUrl);
 	const showPassword =
-		recordingStatus === "ready" && Boolean(meeting?.recordingPassword);
+		!hasR2Video &&
+		Boolean(recordingUrl) &&
+		Boolean(meeting?.recordingPassword) &&
+		(recordingStatus === "ready" || isFallbackZoom);
+	const expiryDateVN = hasR2Video
+		? formatRecordingExpiryVN(meeting?.recordingExpiresAt)
+		: null;
 	const isInactive = status === "cancelled" || status === "holiday";
 
 	if (!dateISO && !joinUrl && !recordingUrl) {
@@ -97,7 +127,18 @@ export function SessionZoomPanel({
 		setSyncingRec(true);
 		try {
 			const res = await syncSessionRecording(classId, dateISO);
-			if (res.status === "ready") {
+			if (res.hasRecordingVideo) {
+				toast.success(
+					res.message
+						? `Đã lưu recording lên R2 cho buổi học. ${res.message}`
+						: "Đã lưu recording lên R2 cho buổi học.",
+				);
+			} else if (res.status === "failed" && res.recordingUrl) {
+				toast.info(
+					res.message ||
+						"Không lưu được recording lên R2 — tạm dùng link Zoom.",
+				);
+			} else if (res.status === "ready") {
 				toast.success(
 					res.message
 						? `Đã cập nhật recording. ${res.message}`
@@ -208,9 +249,19 @@ export function SessionZoomPanel({
 						<span className="font-medium text-muted-foreground text-xs">
 							Recording buổi học
 						</span>
-						{recordingUrl ? (
+						{hasR2Video ? (
 							<Badge variant="success" dot>
 								Đã có recording
+							</Badge>
+						) : isFallbackZoom ? (
+							<Badge variant="warn">Tạm dùng link Zoom</Badge>
+						) : recordingUrl ? (
+							<Badge variant="success" dot>
+								Đã có recording
+							</Badge>
+						) : isExpired ? (
+							<Badge variant="muted">
+								Đã hết hạn lưu trữ ({RECORDING_RETENTION_DAYS} ngày)
 							</Badge>
 						) : recordingStatus === "pending" ? (
 							<Badge variant="warn">Đang chờ recording</Badge>
@@ -222,7 +273,17 @@ export function SessionZoomPanel({
 					</div>
 
 					<div className="flex flex-wrap items-center gap-2">
-						{recordingUrl && (
+						{hasR2Video ? (
+							<Button
+								type="button"
+								variant="secondary"
+								size="sm"
+								onClick={() => setPlayerOpen(true)}
+							>
+								<Film aria-hidden="true" className="size-3.5" />
+								Xem recording
+							</Button>
+						) : recordingUrl ? (
 							<a
 								href={recordingUrl}
 								target="_blank"
@@ -236,7 +297,7 @@ export function SessionZoomPanel({
 								Xem recording
 								<ExternalLink aria-hidden="true" className="size-3" />
 							</a>
-						)}
+						) : null}
 						{meeting?.zoomMeetingId && (
 							<Button
 								type="button"
@@ -264,6 +325,12 @@ export function SessionZoomPanel({
 							{editingRec ? "Đóng" : recordingUrl ? "Sửa link" : "Gán link tay"}
 						</Button>
 					</div>
+
+					{hasR2Video && expiryDateVN && (
+						<p className="text-muted-foreground text-xs tabular-nums">
+							Lưu đến {expiryDateVN}
+						</p>
+					)}
 
 					{meeting?.recordingError && (
 						<p className="text-destructive text-xs">{meeting.recordingError}</p>
@@ -308,6 +375,16 @@ export function SessionZoomPanel({
 						</div>
 					)}
 				</div>
+			)}
+
+			{hasR2Video && dateISO && (
+				<RecordingPlayerModal
+					open={playerOpen}
+					onClose={() => setPlayerOpen(false)}
+					title={`Recording buổi học — ${formatSessionDate(dateISO)}`}
+					videoUrl={sessionRecordingVideoUrl(classId, dateISO)}
+					expiresAt={meeting?.recordingExpiresAt}
+				/>
 			)}
 		</div>
 	);
