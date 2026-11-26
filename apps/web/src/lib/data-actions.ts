@@ -196,6 +196,8 @@ export type KernelAction =
 			type: "import-curriculum";
 			classId: string;
 			templateId: string;
+			overwriteManualSessions?: boolean;
+			overwriteHash?: string;
 	  }
 	| {
 			/** Sync the class's curriculum copy from its linked source template or a replacement template (issue #700). */

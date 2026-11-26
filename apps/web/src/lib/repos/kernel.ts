@@ -107,8 +107,16 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 			};
 		case "import-curriculum":
 			return {
-				path: `/api/classes/${action.classId}/curriculum/import`,
-				body: { templateId: action.templateId },
+				path: `/api/classes/${encodeURIComponent(action.classId)}/curriculum/import`,
+				body: action.overwriteManualSessions
+					? {
+							templateId: action.templateId,
+							overwriteManualSessions: true,
+							...(action.overwriteHash
+								? { overwriteHash: action.overwriteHash }
+								: {}),
+						}
+					: { templateId: action.templateId },
 			};
 		case "sync-curriculum":
 			return {
@@ -544,6 +552,34 @@ async function parseErrorOptions(res: Response): Promise<HttpErrorOptions> {
 			}
 			if (typeof record.portalLinked === "boolean") {
 				options.portalLinked = record.portalLinked;
+			}
+			if (Array.isArray(record.conflictingDates)) {
+				options.conflictingDates = record.conflictingDates.filter(
+					(item): item is string => typeof item === "string",
+				);
+			}
+			if (Array.isArray(record.otherManualDates)) {
+				options.otherManualDates = record.otherManualDates.filter(
+					(item): item is string => typeof item === "string",
+				);
+			}
+			if (
+				typeof record.manualSessionCount === "number" &&
+				Number.isInteger(record.manualSessionCount) &&
+				record.manualSessionCount >= 0
+			) {
+				options.manualSessionCount = record.manualSessionCount;
+			}
+			if (
+				typeof record.overwriteHash === "string" &&
+				record.overwriteHash.length > 0
+			) {
+				options.overwriteHash = record.overwriteHash;
+			}
+			if (Array.isArray(record.completedDates)) {
+				options.completedDates = record.completedDates.filter(
+					(item): item is string => typeof item === "string",
+				);
 			}
 			return options;
 		}
