@@ -8,6 +8,7 @@ import {
 	type ClassType,
 	type KernelLessonRow,
 	type KernelSnapshot,
+	type RecordingSource,
 } from "@teacher-os/api/contracts";
 import { sanitizeAnswerSetKeys } from "@teacher-os/api/lib/grade-quiz";
 import {
@@ -247,10 +248,11 @@ const knownClassTypes = new Set<string>(CLASS_TYPES);
 export async function loadSnapshot(
 	db: Db,
 	orgId: string,
-	opts?: { role?: string },
+	opts?: { role?: string; now?: Date },
 ): Promise<KernelSnapshot> {
 	const viewerRole = opts?.role ?? "teacher";
 	const financeAllowed = canAccessFinance(viewerRole);
+	const now = opts?.now ?? new Date();
 	const [
 		studentRows,
 		classRows,
@@ -966,19 +968,48 @@ export async function loadSnapshot(
 			role: viewerRole,
 			canAccessFinance: financeAllowed,
 		},
-		sessionMeetings: classSessionMeetingRows.map((row) => ({
-			id: row.id,
-			classId: row.classId,
-			date: row.date,
-			joinUrl: row.joinUrl,
-			zoomMeetingId: row.zoomMeetingId ?? null,
-			recordingPassword: row.recordingPassword ?? null,
-			recordingUrl: row.recordingUrl,
-			recordingStatus: row.recordingStatus,
-			recordingError: row.recordingError ?? null,
-			recordingSyncedAt: row.recordingSyncedAt
-				? row.recordingSyncedAt.toISOString()
-				: null,
-		})),
+		sessionMeetings: classSessionMeetingRows.map((row) => {
+			const isExpired = Boolean(
+				row.recordingStorageKey &&
+					row.recordingExpiresAt &&
+					row.recordingExpiresAt.getTime() <= now.getTime(),
+			);
+			const hasRecordingVideo = Boolean(row.recordingStorageKey) && !isExpired;
+			const effectiveStatus = isExpired ? "expired" : row.recordingStatus;
+			const recordingSource: RecordingSource | null = hasRecordingVideo
+				? "r2"
+				: !isExpired && row.recordingUrl
+					? "external"
+					: null;
+			return {
+				id: row.id,
+				classId: row.classId,
+				date: row.date,
+				joinUrl: row.joinUrl,
+				zoomMeetingId: row.zoomMeetingId ?? null,
+				recordingPassword:
+					hasRecordingVideo || isExpired
+						? null
+						: (row.recordingPassword ?? null),
+				recordingUrl: hasRecordingVideo || isExpired ? "" : row.recordingUrl,
+				recordingStatus: effectiveStatus,
+				recordingError: isExpired ? null : (row.recordingError ?? null),
+				recordingSyncedAt: row.recordingSyncedAt
+					? row.recordingSyncedAt.toISOString()
+					: null,
+				recordingSource,
+				hasRecordingVideo,
+				recordingSizeBytes: hasRecordingVideo
+					? (row.recordingSizeBytes ?? null)
+					: null,
+				recordingUploadedAt: row.recordingUploadedAt
+					? row.recordingUploadedAt.toISOString()
+					: null,
+				recordingExpiresAt: row.recordingExpiresAt
+					? row.recordingExpiresAt.toISOString()
+					: null,
+				recordingZoomTrashStatus: row.recordingZoomTrashStatus,
+			};
+		}),
 	};
 }

@@ -29,6 +29,7 @@ import { runRecordingSyncCron } from "server/lib/zoom/session-zoom-service";
 import { getSessionUser } from "server/session";
 import { createFakeBankHub } from "./fake-bank-hub";
 import { createFsMediaStore } from "./fs-media-store";
+import { createFsRecordingStore } from "./fs-recording-store";
 
 // Port override chỉ phục vụ chạy e2e song song với dev server đang chiếm
 // 8000 (workerd của main worktree) — mặc định giữ 8000 như CI (playwright
@@ -173,6 +174,12 @@ const libraryAudioStore = createFsMediaStore(LIBRARY_AUDIO_DIR);
 const MATERIALS_DIR = mkdtempSync(join(tmpdir(), "teacher-os-e2e-materials-"));
 const materialsStore = createFsMediaStore(MATERIALS_DIR);
 
+// Video recording buổi học Zoom (bucket `recordings` ở production) — thư mục tạm riêng.
+const RECORDINGS_DIR = mkdtempSync(
+	join(tmpdir(), "teacher-os-e2e-recordings-"),
+);
+const recordingStore = createFsRecordingStore(RECORDINGS_DIR);
+
 // File đề gốc nhập AI (TOS-24 #470) — thư mục tạm RIÊNG, cùng bucket-logic
 // MEDIA của production; extractor là fake (đề cố định, pageCount 2) nên
 // E2E không đụng Workers AI.
@@ -199,6 +206,7 @@ const app = buildApp({
 	getMediaStore: () => mediaStore,
 	getLibraryAudioStore: () => libraryAudioStore,
 	getMaterialsStore: () => materialsStore,
+	getRecordingStore: () => recordingStore,
 	// TOS-24 (#470) + TOS-27 (#473): file đề nhập AI (FS thay R2) + extractor
 	// fake (tên tệp chứa `ai-fail` ném lỗi để E2E AC-004 kiểm hoàn trả Credit).
 	getExamImportStore: () => examImportStore,
@@ -552,11 +560,28 @@ app.post("/__e2e/seed-user", async (c) => {
 
 app.post("/__e2e/zoom-recording", async (c) => {
 	const raw: unknown = await c.req.json().catch(() => null);
-	const ready = Boolean(
-		raw && typeof raw === "object" && "ready" in raw && raw.ready === true,
-	);
-	fakeZoom.setRecordingReady(ready);
-	return c.json({ ok: true, ready });
+	const rec =
+		raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+	let ready: boolean | undefined;
+	if ("ready" in rec) {
+		ready = rec.ready === true;
+		fakeZoom.setRecordingReady(ready);
+	}
+	if ("downloadError" in rec) {
+		fakeZoom.setDownloadError(
+			typeof rec.downloadError === "string" && rec.downloadError.length > 0
+				? rec.downloadError
+				: null,
+		);
+	}
+	if ("trashError" in rec) {
+		fakeZoom.setTrashError(
+			typeof rec.trashError === "string" && rec.trashError.length > 0
+				? rec.trashError
+				: null,
+		);
+	}
+	return c.json({ ok: true, ...(ready !== undefined ? { ready } : {}) });
 });
 
 app.post("/__e2e/run-recording-cron", async (c) => {
@@ -571,9 +596,18 @@ app.post("/__e2e/run-recording-cron", async (c) => {
 	const res = await runRecordingSyncCron({
 		db: libsql as unknown as Db,
 		getZoomClient: () => fakeZoom.client,
-		now: () => (nowIso ? new Date(nowIso) : new Date()),
+		recordingStore,
+		now: () =>
+			nowIso
+				? new Date(nowIso)
+				: runtimeNowMs !== null
+					? new Date(runtimeNowMs)
+					: new Date(),
 	});
-	return c.json(res);
+	return c.json({
+		...res,
+		trashCalls: fakeZoom.calls.filter((call) => call.method === "trash").length,
+	});
 });
 
 // E2E-only helper: đặt hoặc khôi phục đồng hồ máy chủ cho các spec cần kiểm thử
@@ -618,6 +652,7 @@ const shutdown = () =>
 		rmSync(LIBRARY_AUDIO_DIR, { recursive: true, force: true });
 		rmSync(EXAM_IMPORT_DIR, { recursive: true, force: true });
 		rmSync(MATERIALS_DIR, { recursive: true, force: true });
+		rmSync(RECORDINGS_DIR, { recursive: true, force: true });
 		process.exit(0);
 	});
 process.on("SIGTERM", shutdown);

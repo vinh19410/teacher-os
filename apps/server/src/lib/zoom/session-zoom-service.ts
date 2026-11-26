@@ -1,6 +1,8 @@
 import {
 	type ClassZoomBulkCreateResponse,
+	RECORDING_RETENTION_DAYS,
 	type RecordingStatus,
+	type RecordingZoomTrashStatus,
 	type SessionRecordingSyncResponse,
 	type SessionZoomCreateResponse,
 	ZOOM_ERROR_CODES,
@@ -21,8 +23,20 @@ import {
 	classTable,
 	lesson,
 } from "@teacher-os/db/schema/index";
-import { and, asc, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	gte,
+	inArray,
+	isNotNull,
+	isNull,
+	lte,
+	or,
+} from "drizzle-orm";
 import type { Db } from "../../app";
+import type { RecordingPutResult, RecordingStore } from "../recording-store";
 import {
 	createZoomClient,
 	type FetchFn,
@@ -30,6 +44,7 @@ import {
 	type ZoomClient,
 	type ZoomConfig,
 	ZoomIntegrationError,
+	type ZoomRecordingDownloadResult,
 } from "./zoom-client";
 
 export interface ZoomServiceDeps {
@@ -38,19 +53,116 @@ export interface ZoomServiceDeps {
 	fetchFn?: FetchFn;
 	/** Test/E2E injection hook to avoid real Zoom network calls. */
 	getZoomClient?: () => ZoomClient;
+	/** Kho lưu trữ video recording R2 (production) hoặc FS (E2E). */
+	recordingStore?: RecordingStore;
+	/** Chạy dọn object R2 bù trừ ngoài vòng đời response (`waitUntil` ở Worker). */
+	runInBackground?: (promise: Promise<unknown>) => void;
 	now?: () => Date;
 }
 
 const MAX_AUTO_PROVISION_ON_CREATE = 5;
 const MAX_BULK_CREATE_PER_CALL = 12;
 const MAX_CRON_SYNC_PER_TICK = 10;
+const MAX_CRON_REUP_PER_TICK = 2;
+const MAX_CRON_TRASH_RETRY_PER_TICK = 10;
+const MAX_CRON_EXPIRE_SWEEP_PER_TICK = 50;
 const MAX_CRON_SCAN_ROWS = 30;
 const CRON_MIN_AFTER_END_MS = 5 * 60_000;
 const CRON_MAX_AFTER_END_MS = 72 * 3600_000;
 const CRON_FAILED_RETRY_MS = 60 * 60_000;
+const RECORDING_RETENTION_MS = RECORDING_RETENTION_DAYS * 24 * 60 * 60 * 1000;
 
 const RECORDING_TIMEOUT_MESSAGE =
 	"Không tìm thấy cloud recording trên Zoom sau 72 giờ (có thể hết dung lượng cloud hoặc buổi không được ghi).";
+
+function isStorageExpired(
+	storageKey: string | null | undefined,
+	expiresAt: Date | null | undefined,
+	now: Date,
+): boolean {
+	return Boolean(
+		storageKey && expiresAt && expiresAt.getTime() <= now.getTime(),
+	);
+}
+
+function normalizeTrashStatus(
+	raw: string | null | undefined,
+): RecordingZoomTrashStatus {
+	if (
+		raw === "none" ||
+		raw === "pending" ||
+		raw === "trashed" ||
+		raw === "failed"
+	) {
+		return raw;
+	}
+	return "none";
+}
+
+async function deleteRecordingObjectBestEffort(
+	store: RecordingStore | undefined,
+	key: string | null | undefined,
+	context: Record<string, unknown>,
+	runInBackground?: (promise: Promise<unknown>) => void,
+): Promise<void> {
+	if (!store || !key) return;
+	const task = store.delete(key).catch((err) => {
+		console.warn("[zoom] delete recording object failed", {
+			...context,
+			key,
+			err,
+		});
+	});
+	if (runInBackground) {
+		runInBackground(task);
+	} else {
+		await task;
+	}
+}
+
+async function tryTrashZoomRecording(
+	db: Db,
+	client: ZoomClient,
+	rowId: string,
+	zoomMeetingId: string,
+	now: Date,
+): Promise<"trashed" | "failed"> {
+	if (!client.trashRecording) {
+		await db
+			.update(classSessionMeeting)
+			.set({
+				recordingZoomTrashStatus: "failed",
+				recordingSyncedAt: now,
+			})
+			.where(eq(classSessionMeeting.id, rowId));
+		return "failed";
+	}
+	try {
+		await client.trashRecording(zoomMeetingId);
+		await db
+			.update(classSessionMeeting)
+			.set({
+				recordingZoomTrashStatus: "trashed",
+				recordingSyncedAt: now,
+			})
+			.where(eq(classSessionMeeting.id, rowId));
+		return "trashed";
+	} catch (err) {
+		console.warn("[zoom] trashRecording failed", {
+			id: rowId,
+			zoomMeetingId,
+			err,
+		});
+		await db
+			.update(classSessionMeeting)
+			.set({
+				recordingZoomTrashStatus: "failed",
+				recordingSyncedAt: now,
+			})
+			.where(eq(classSessionMeeting.id, rowId));
+		return "failed";
+	}
+}
 
 function resolveZoomClient(deps: ZoomServiceDeps): ZoomClient {
 	return deps.getZoomClient
@@ -396,10 +508,26 @@ export async function ensureSessionMeeting(
 			};
 		};
 
+	const now = deps.now ? deps.now() : new Date();
+	const hasActiveRecording = (row: {
+		recordingUrl: string;
+		recordingStorageKey: string | null;
+		recordingExpiresAt: Date | null;
+	}) =>
+		Boolean(
+			row.recordingUrl ||
+				(row.recordingStorageKey &&
+					!isStorageExpired(
+						row.recordingStorageKey,
+						row.recordingExpiresAt,
+						now,
+					)),
+		);
+
 	if (existing) {
 		const claimed = await saveClaimedMeeting(
 			existing.id,
-			Boolean(existing.recordingUrl),
+			hasActiveRecording(existing),
 		);
 		if (claimed.length === 0) {
 			return cleanupAndReturnWinner();
@@ -435,7 +563,7 @@ export async function ensureSessionMeeting(
 			if (!winner.joinUrl) {
 				const claimed = await saveClaimedMeeting(
 					winner.id,
-					Boolean(winner.recordingUrl),
+					hasActiveRecording(winner),
 				);
 				if (claimed.length === 0) {
 					return cleanupAndReturnWinner();
@@ -712,9 +840,24 @@ export async function syncZoomOnSessionEdit(
 					eq(classSessionMeeting.date, input.newDateISO),
 				),
 			);
+		if (target?.recordingStorageKey) {
+			await deleteRecordingObjectBestEffort(
+				deps.recordingStore,
+				target.recordingStorageKey,
+				{
+					classId: input.classId,
+					date: input.newDateISO,
+					reason: "session-move-overwrite",
+				},
+				deps.runInBackground,
+			);
+		}
 		updatePatch.date = input.newDateISO;
 	}
 	let detachedFromSystemMeeting = false;
+	const hasStoredOrExpiredRecording =
+		Boolean(meeting.recordingStorageKey) ||
+		meeting.recordingStatus === "expired";
 	if (input.zoom !== undefined && input.zoom !== meeting.joinUrl) {
 		updatePatch.joinUrl = input.zoom;
 		if (meeting.zoomMeetingId) {
@@ -725,9 +868,15 @@ export async function syncZoomOnSessionEdit(
 				date: input.oldDateISO,
 			});
 			updatePatch.zoomMeetingId = null;
-			updatePatch.recordingStatus = meeting.recordingUrl ? "ready" : "none";
+			if (!hasStoredOrExpiredRecording) {
+				updatePatch.recordingStatus = meeting.recordingUrl ? "ready" : "none";
+			}
 			detachedFromSystemMeeting = true;
-		} else if (input.zoom === "" && !meeting.recordingUrl) {
+		} else if (
+			input.zoom === "" &&
+			!meeting.recordingUrl &&
+			!hasStoredOrExpiredRecording
+		) {
 			updatePatch.recordingStatus = "none";
 		}
 	}
@@ -807,13 +956,31 @@ export async function syncZoomOnSessionCancelOrDelete(
 		await deps.db
 			.delete(classSessionMeeting)
 			.where(eq(classSessionMeeting.id, meeting.id));
+		if (meeting.recordingStorageKey) {
+			await deleteRecordingObjectBestEffort(
+				deps.recordingStore,
+				meeting.recordingStorageKey,
+				{
+					classId: input.classId,
+					date: input.dateISO,
+					reason: "session-delete",
+				},
+				deps.runInBackground,
+			);
+		}
 	} else {
+		const nextRecordingStatus =
+			meeting.recordingStorageKey || meeting.recordingStatus === "expired"
+				? meeting.recordingStatus
+				: meeting.recordingUrl
+					? "ready"
+					: "none";
 		await deps.db
 			.update(classSessionMeeting)
 			.set({
 				zoomMeetingId: null,
 				joinUrl: "",
-				recordingStatus: meeting.recordingUrl ? "ready" : "none",
+				recordingStatus: nextRecordingStatus,
 			})
 			.where(eq(classSessionMeeting.id, meeting.id));
 		await mirrorJoinUrlToSessionRows(
@@ -933,10 +1100,97 @@ export async function syncRecordingForOccurrence(
 
 	const client = input.cachedClient ?? resolveZoomClient(deps);
 	const now = deps.now ? deps.now() : new Date();
+	const oldKeyExpired = isStorageExpired(
+		meeting.recordingStorageKey,
+		meeting.recordingExpiresAt,
+		now,
+	);
+
+	// Đã lưu sẵn trên R2 và chưa hết hạn 90 ngày → trả ngay trạng thái R2, đồng thời thử dọn lại Zoom Trash nếu đang pending/failed.
+	if (meeting.recordingStorageKey && !oldKeyExpired) {
+		let trashStatus = normalizeTrashStatus(meeting.recordingZoomTrashStatus);
+		if (trashStatus === "pending" || trashStatus === "failed") {
+			trashStatus = await tryTrashZoomRecording(
+				deps.db,
+				client,
+				meeting.id,
+				meeting.zoomMeetingId,
+				now,
+			);
+		}
+		return {
+			status: "ready",
+			recordingUrl: "",
+			recordingPassword: null,
+			recordingSource: "r2",
+			hasRecordingVideo: true,
+			recordingExpiresAt: meeting.recordingExpiresAt
+				? meeting.recordingExpiresAt.toISOString()
+				: null,
+			recordingZoomTrashStatus: trashStatus,
+			syncedAt: (meeting.recordingSyncedAt ?? now).toISOString(),
+			message: null,
+		};
+	}
 
 	const rec = await client.getRecording(meeting.zoomMeetingId);
 
 	if (rec.status !== "ready") {
+		if (oldKeyExpired && meeting.recordingStorageKey) {
+			await deleteRecordingObjectBestEffort(
+				deps.recordingStore,
+				meeting.recordingStorageKey,
+				{ id: meeting.id, reason: "sync-found-expired" },
+				deps.runInBackground,
+			);
+			await deps.db
+				.update(classSessionMeeting)
+				.set({
+					recordingStorageKey: null,
+					recordingSizeBytes: null,
+					recordingMimeType: null,
+					recordingStatus: "expired",
+					recordingUrl: "",
+					recordingPassword: null,
+					recordingError: null,
+					recordingSyncedAt: now,
+				})
+				.where(eq(classSessionMeeting.id, meeting.id));
+			return {
+				status: "expired",
+				recordingUrl: "",
+				recordingPassword: null,
+				recordingSource: null,
+				hasRecordingVideo: false,
+				recordingExpiresAt: meeting.recordingExpiresAt
+					? meeting.recordingExpiresAt.toISOString()
+					: null,
+				recordingZoomTrashStatus: normalizeTrashStatus(
+					meeting.recordingZoomTrashStatus,
+				),
+				syncedAt: now.toISOString(),
+				message: "Recording đã hết hạn lưu trữ (90 ngày).",
+			};
+		}
+
+		if (meeting.recordingStatus === "expired" && rec.status === "missing") {
+			return {
+				status: "expired",
+				recordingUrl: "",
+				recordingPassword: null,
+				recordingSource: null,
+				hasRecordingVideo: false,
+				recordingExpiresAt: meeting.recordingExpiresAt
+					? meeting.recordingExpiresAt.toISOString()
+					: null,
+				recordingZoomTrashStatus: normalizeTrashStatus(
+					meeting.recordingZoomTrashStatus,
+				),
+				syncedAt: (meeting.recordingSyncedAt ?? now).toISOString(),
+				message: "Recording đã hết hạn lưu trữ (90 ngày).",
+			};
+		}
+
 		await deps.db
 			.update(classSessionMeeting)
 			.set({
@@ -950,43 +1204,374 @@ export async function syncRecordingForOccurrence(
 			status: "pending",
 			recordingUrl: meeting.recordingUrl,
 			recordingPassword: meeting.recordingPassword,
+			recordingSource: meeting.recordingUrl ? "external" : null,
+			hasRecordingVideo: false,
+			recordingExpiresAt: null,
+			recordingZoomTrashStatus: normalizeTrashStatus(
+				meeting.recordingZoomTrashStatus,
+			),
 			syncedAt: now.toISOString(),
 			message:
 				"Recording chưa sẵn sàng trên Zoom. Hệ thống sẽ tiếp tục kiểm tra định kỳ.",
 		};
 	}
 
-	await deps.db
-		.update(classSessionMeeting)
-		.set({
+	// Lưu link Zoom dự phòng khi không thể reup lên R2 — TUYỆT ĐỐI KHÔNG gọi Zoom Trash.
+	const saveZoomFallback = async (
+		errMsg: string,
+	): Promise<SessionRecordingSyncResponse> => {
+		const truncated = errMsg.slice(0, 300);
+		await deps.db
+			.update(classSessionMeeting)
+			.set({
+				recordingUrl: rec.shareUrl,
+				recordingPassword: rec.password,
+				recordingStatus: "failed",
+				recordingError: truncated,
+				recordingSyncedAt: now,
+				recordingStorageKey: null,
+				recordingSizeBytes: null,
+				recordingMimeType: null,
+				recordingUploadedAt: null,
+				recordingExpiresAt: null,
+				recordingZoomTrashStatus: "none",
+			})
+			.where(eq(classSessionMeeting.id, meeting.id));
+
+		return {
+			status: "failed",
 			recordingUrl: rec.shareUrl,
 			recordingPassword: rec.password,
-			recordingStatus: "ready",
-			recordingError: null,
-			recordingSyncedAt: now,
-		})
-		.where(eq(classSessionMeeting.id, meeting.id));
+			recordingSource: rec.shareUrl ? "external" : null,
+			hasRecordingVideo: false,
+			recordingExpiresAt: null,
+			recordingZoomTrashStatus: "none",
+			syncedAt: now.toISOString(),
+			message: truncated,
+		};
+	};
+
+	if (!deps.recordingStore) {
+		return saveZoomFallback(
+			"Chưa cấu hình kho lưu trữ R2 (RECORDINGS); đang tạm dùng link Zoom.",
+		);
+	}
+
+	if (!rec.primaryFile) {
+		return saveZoomFallback(
+			"Zoom chưa có file video MP4 để lưu lên R2; đang tạm dùng link Zoom.",
+		);
+	}
+
+	if (!client.downloadRecordingFile) {
+		return saveZoomFallback(
+			"Zoom client không hỗ trợ tải file MP4; đang tạm dùng link Zoom.",
+		);
+	}
+
+	const storageKey = `${input.orgId}/${input.classId}/${input.dateISO}/${crypto.randomUUID()}.mp4`;
+	let downloaded: ZoomRecordingDownloadResult;
+	let putRes: RecordingPutResult;
+	try {
+		downloaded = await client.downloadRecordingFile(
+			rec.primaryFile.downloadUrl,
+		);
+		putRes = await deps.recordingStore.putStream(storageKey, downloaded.body, {
+			contentType: downloaded.contentType,
+			declaredSize: downloaded.contentLength,
+		});
+	} catch (err) {
+		await deps.recordingStore.delete(storageKey).catch(() => {});
+		const msg =
+			err instanceof Error
+				? err.message
+				: "Không thể tải video recording từ Zoom lên R2.";
+		return saveZoomFallback(msg);
+	}
+
+	const expiresAt = new Date(now.getTime() + RECORDING_RETENTION_MS);
+	let claimed: Array<{ id: string }>;
+	try {
+		claimed = await deps.db
+			.update(classSessionMeeting)
+			.set({
+				recordingStorageKey: storageKey,
+				recordingSizeBytes: putRes.sizeBytes,
+				recordingMimeType: downloaded.contentType,
+				recordingUploadedAt: now,
+				recordingExpiresAt: expiresAt,
+				recordingStatus: "ready",
+				recordingUrl: "",
+				recordingPassword: null,
+				recordingError: null,
+				recordingSyncedAt: now,
+				recordingZoomTrashStatus: "pending",
+			})
+			.where(
+				and(
+					eq(classSessionMeeting.id, meeting.id),
+					or(
+						isNull(classSessionMeeting.recordingStorageKey),
+						lte(classSessionMeeting.recordingExpiresAt, now),
+					),
+				),
+			)
+			.returning({ id: classSessionMeeting.id });
+	} catch (err) {
+		await deps.recordingStore.delete(storageKey).catch(() => {});
+		throw err;
+	}
+
+	// Thua race đồng thời: xoá bản dư vừa đẩy lên R2 và trả trạng thái của lượt thắng.
+	if (claimed.length === 0) {
+		await deps.recordingStore.delete(storageKey).catch(() => {});
+		const [winner] = await deps.db
+			.select()
+			.from(classSessionMeeting)
+			.where(eq(classSessionMeeting.id, meeting.id))
+			.limit(1);
+		if (!winner) {
+			throw new ZoomIntegrationError(
+				ZOOM_ERROR_CODES.API_ERROR,
+				"Không tìm thấy bản ghi buổi học sau khi đồng bộ recording.",
+				404,
+			);
+		}
+		const winnerExpired = isStorageExpired(
+			winner.recordingStorageKey,
+			winner.recordingExpiresAt,
+			now,
+		);
+		const winnerHasVideo =
+			Boolean(winner.recordingStorageKey) && !winnerExpired;
+		const winnerStatus: RecordingStatus = winnerExpired
+			? "expired"
+			: (winner.recordingStatus as RecordingStatus) || "ready";
+		return {
+			status: winnerStatus,
+			recordingUrl: winnerHasVideo || winnerExpired ? "" : winner.recordingUrl,
+			recordingPassword:
+				winnerHasVideo || winnerExpired
+					? null
+					: (winner.recordingPassword ?? null),
+			recordingSource: winnerHasVideo
+				? "r2"
+				: !winnerExpired && winner.recordingUrl
+					? "external"
+					: null,
+			hasRecordingVideo: winnerHasVideo,
+			recordingExpiresAt: winner.recordingExpiresAt
+				? winner.recordingExpiresAt.toISOString()
+				: null,
+			recordingZoomTrashStatus: normalizeTrashStatus(
+				winner.recordingZoomTrashStatus,
+			),
+			syncedAt: (winner.recordingSyncedAt ?? now).toISOString(),
+			message: winner.recordingError ?? null,
+		};
+	}
+
+	if (
+		oldKeyExpired &&
+		meeting.recordingStorageKey &&
+		meeting.recordingStorageKey !== storageKey
+	) {
+		await deleteRecordingObjectBestEffort(
+			deps.recordingStore,
+			meeting.recordingStorageKey,
+			{ id: meeting.id, reason: "replaced-expired-recording" },
+			deps.runInBackground,
+		);
+	}
+
+	// Chỉ đưa bản gốc trên Zoom vào Trash SAU KHI R2 + D1 đã commit thành công.
+	const finalTrashStatus = await tryTrashZoomRecording(
+		deps.db,
+		client,
+		meeting.id,
+		meeting.zoomMeetingId,
+		now,
+	);
 
 	return {
 		status: "ready",
-		recordingUrl: rec.shareUrl,
-		recordingPassword: rec.password,
+		recordingUrl: "",
+		recordingPassword: null,
+		recordingSource: "r2",
+		hasRecordingVideo: true,
+		recordingExpiresAt: expiresAt.toISOString(),
+		recordingZoomTrashStatus: finalTrashStatus,
 		syncedAt: now.toISOString(),
 		message: null,
 	};
 }
 
+export async function runRecordingExpiryCron(deps: {
+	db: Db;
+	recordingStore?: RecordingStore;
+	now?: () => Date;
+}): Promise<{ expired: number; failed: number }> {
+	const now = deps.now ? deps.now() : new Date();
+	const rows = await deps.db
+		.select({
+			id: classSessionMeeting.id,
+			recordingStorageKey: classSessionMeeting.recordingStorageKey,
+		})
+		.from(classSessionMeeting)
+		.where(
+			and(
+				isNotNull(classSessionMeeting.recordingStorageKey),
+				lte(classSessionMeeting.recordingExpiresAt, now),
+			),
+		)
+		.orderBy(asc(classSessionMeeting.recordingExpiresAt))
+		.limit(MAX_CRON_EXPIRE_SWEEP_PER_TICK);
+
+	let expired = 0;
+	let failed = 0;
+
+	for (const row of rows) {
+		const key = row.recordingStorageKey;
+		if (!key) continue;
+		if (deps.recordingStore) {
+			try {
+				await deps.recordingStore.delete(key);
+			} catch (err) {
+				failed += 1;
+				console.warn("[zoom] delete expired recording object failed", {
+					id: row.id,
+					key,
+					err,
+				});
+				continue;
+			}
+		}
+		await deps.db
+			.update(classSessionMeeting)
+			.set({
+				recordingStorageKey: null,
+				recordingSizeBytes: null,
+				recordingMimeType: null,
+				recordingStatus: "expired",
+				recordingUrl: "",
+				recordingPassword: null,
+				recordingError: null,
+			})
+			.where(
+				and(
+					eq(classSessionMeeting.id, row.id),
+					eq(classSessionMeeting.recordingStorageKey, key),
+				),
+			);
+		expired += 1;
+	}
+
+	return { expired, failed };
+}
+
+export interface RecordingSyncCronResult {
+	checked: number;
+	updated: number;
+	failed: number;
+	expired: number;
+	trashed: number;
+}
+
 export async function runRecordingSyncCron(
 	deps: ZoomServiceDeps,
-): Promise<{ checked: number; updated: number; failed: number }> {
-	if (!isZoomConfigured(deps.zoom) && !deps.getZoomClient) {
-		return { checked: 0, updated: 0, failed: 0 };
-	}
+): Promise<RecordingSyncCronResult> {
 	const now = deps.now ? deps.now() : new Date();
+	const expiryRes = await runRecordingExpiryCron({
+		db: deps.db,
+		recordingStore: deps.recordingStore,
+		now: () => now,
+	});
+
+	if (!isZoomConfigured(deps.zoom) && !deps.getZoomClient) {
+		return {
+			checked: 0,
+			updated: 0,
+			failed: expiryRes.failed,
+			expired: expiryRes.expired,
+			trashed: 0,
+		};
+	}
+
 	const nowMs = now.getTime();
 	const todayISO = vietnamTodayISO(now);
 	const minDateISO = addDaysISO(todayISO, -4);
 
+	let cachedClient: ZoomClient | undefined;
+	const getClient = (): ZoomClient | null => {
+		if (cachedClient) return cachedClient;
+		try {
+			cachedClient = resolveZoomClient(deps);
+			return cachedClient;
+		} catch (err) {
+			console.warn("[zoom] recording sync cron: client unavailable", err);
+			return null;
+		}
+	};
+
+	let trashed = 0;
+	const retryCutoff = new Date(nowMs - CRON_FAILED_RETRY_MS);
+
+	// 1. Thử đưa lại bản gốc Zoom vào Trash cho các bản ghi đã lưu R2 nhưng trash còn pending/failed.
+	const trashCandidates = await deps.db
+		.select({
+			id: classSessionMeeting.id,
+			zoomMeetingId: classSessionMeeting.zoomMeetingId,
+			recordingZoomTrashStatus: classSessionMeeting.recordingZoomTrashStatus,
+			recordingSyncedAt: classSessionMeeting.recordingSyncedAt,
+		})
+		.from(classSessionMeeting)
+		.where(
+			and(
+				isNotNull(classSessionMeeting.recordingStorageKey),
+				isNotNull(classSessionMeeting.zoomMeetingId),
+				or(
+					eq(classSessionMeeting.recordingZoomTrashStatus, "pending"),
+					and(
+						eq(classSessionMeeting.recordingZoomTrashStatus, "failed"),
+						or(
+							isNull(classSessionMeeting.recordingSyncedAt),
+							lte(classSessionMeeting.recordingSyncedAt, retryCutoff),
+						),
+					),
+				),
+			),
+		)
+		.orderBy(asc(classSessionMeeting.recordingSyncedAt))
+		.limit(MAX_CRON_TRASH_RETRY_PER_TICK);
+
+	const dueTrashCandidates = trashCandidates.filter(
+		(row) =>
+			Boolean(row.zoomMeetingId) &&
+			!(
+				row.recordingZoomTrashStatus === "failed" &&
+				row.recordingSyncedAt &&
+				nowMs - row.recordingSyncedAt.getTime() < CRON_FAILED_RETRY_MS
+			),
+	);
+
+	if (dueTrashCandidates.length > 0) {
+		const client = getClient();
+		if (client) {
+			for (const row of dueTrashCandidates) {
+				if (!row.zoomMeetingId) continue;
+				const status = await tryTrashZoomRecording(
+					deps.db,
+					client,
+					row.id,
+					row.zoomMeetingId,
+					now,
+				);
+				if (status === "trashed") trashed += 1;
+			}
+		}
+	}
+
+	// 2. Quét các buổi chưa có file R2 (không tự backfill dòng legacy `ready` không có storageKey).
 	const candidates = await deps.db
 		.select({
 			id: classSessionMeeting.id,
@@ -1001,7 +1586,7 @@ export async function runRecordingSyncCron(
 		.from(classSessionMeeting)
 		.where(
 			and(
-				eq(classSessionMeeting.recordingUrl, ""),
+				isNull(classSessionMeeting.recordingStorageKey),
 				or(
 					eq(classSessionMeeting.recordingStatus, "pending"),
 					// Dòng failed chỉ được thử lại khi đã qua chu kỳ retry và còn trong
@@ -1011,10 +1596,7 @@ export async function runRecordingSyncCron(
 						gte(classSessionMeeting.date, addDaysISO(todayISO, -3)),
 						or(
 							isNull(classSessionMeeting.recordingSyncedAt),
-							lte(
-								classSessionMeeting.recordingSyncedAt,
-								new Date(nowMs - CRON_FAILED_RETRY_MS),
-							),
+							lte(classSessionMeeting.recordingSyncedAt, retryCutoff),
 						),
 					),
 				),
@@ -1022,7 +1604,10 @@ export async function runRecordingSyncCron(
 				lte(classSessionMeeting.date, todayISO),
 			),
 		)
-		.orderBy(asc(classSessionMeeting.recordingSyncedAt))
+		.orderBy(
+			desc(classSessionMeeting.date),
+			asc(classSessionMeeting.recordingSyncedAt),
+		)
 		.limit(MAX_CRON_SCAN_ROWS);
 
 	const eligible = candidates.filter(
@@ -1035,7 +1620,13 @@ export async function runRecordingSyncCron(
 			),
 	);
 	if (eligible.length === 0) {
-		return { checked: 0, updated: 0, failed: 0 };
+		return {
+			checked: 0,
+			updated: 0,
+			failed: expiryRes.failed,
+			expired: expiryRes.expired,
+			trashed,
+		};
 	}
 
 	const classIds = [...new Set(eligible.map((r) => r.classId))];
@@ -1107,9 +1698,9 @@ export async function runRecordingSyncCron(
 
 	let checked = 0;
 	let updated = 0;
-	let failed = 0;
+	let failed = expiryRes.failed;
 	const dueCandidates: typeof candidates = [];
-	const expiredIds: string[] = [];
+	const timedOutIds: string[] = [];
 	for (const row of eligible) {
 		const cls = clsByKey.get(`${row.orgId}|${row.classId}`);
 		const key = `${row.orgId}|${row.classId}|${row.date}`;
@@ -1124,7 +1715,9 @@ export async function runRecordingSyncCron(
 		if (endMs == null) continue;
 		const elapsedMs = nowMs - endMs;
 		if (elapsedMs > CRON_MAX_AFTER_END_MS) {
-			if (row.recordingStatus === "pending") expiredIds.push(row.id);
+			if (row.recordingStatus === "pending" && row.recordingUrl === "") {
+				timedOutIds.push(row.id);
+			}
 			continue;
 		}
 		if (elapsedMs >= CRON_MIN_AFTER_END_MS) {
@@ -1133,7 +1726,7 @@ export async function runRecordingSyncCron(
 		if (dueCandidates.length >= MAX_CRON_SYNC_PER_TICK) break;
 	}
 
-	for (const id of expiredIds) {
+	for (const id of timedOutIds) {
 		checked += 1;
 		failed += 1;
 		await deps.db
@@ -1147,18 +1740,29 @@ export async function runRecordingSyncCron(
 	}
 
 	if (dueCandidates.length === 0) {
-		return { checked, updated, failed };
+		return {
+			checked,
+			updated,
+			failed,
+			expired: expiryRes.expired,
+			trashed,
+		};
 	}
 
-	let client: ZoomClient;
-	try {
-		client = resolveZoomClient(deps);
-	} catch (err) {
-		console.warn("[zoom] recording sync cron: client unavailable", err);
-		return { checked, updated, failed };
+	const client = getClient();
+	if (!client) {
+		return {
+			checked,
+			updated,
+			failed,
+			expired: expiryRes.expired,
+			trashed,
+		};
 	}
 
+	let reupsAttempted = 0;
 	for (const row of dueCandidates) {
+		if (reupsAttempted >= MAX_CRON_REUP_PER_TICK) break;
 		checked += 1;
 		try {
 			const res = await syncRecordingForOccurrence(deps, {
@@ -1167,9 +1771,19 @@ export async function runRecordingSyncCron(
 				dateISO: row.date,
 				cachedClient: client,
 			});
-			if (res.status === "ready") updated += 1;
+			if (res.status === "ready") {
+				updated += 1;
+				reupsAttempted += 1;
+				if (res.recordingZoomTrashStatus === "trashed") {
+					trashed += 1;
+				}
+			} else if (res.status === "failed") {
+				failed += 1;
+				reupsAttempted += 1;
+			}
 		} catch (err) {
 			failed += 1;
+			reupsAttempted += 1;
 			const msg = err instanceof Error ? err.message : "Sync recording failed";
 			await deps.db
 				.update(classSessionMeeting)
@@ -1182,7 +1796,13 @@ export async function runRecordingSyncCron(
 		}
 	}
 
-	return { checked, updated, failed };
+	return {
+		checked,
+		updated,
+		failed,
+		expired: expiryRes.expired,
+		trashed,
+	};
 }
 
 export async function updateSessionRecordingManual(
@@ -1193,13 +1813,20 @@ export async function updateSessionRecordingManual(
 		dateISO: string;
 		recordingUrl: string;
 	},
+	opts?: {
+		recordingStore?: RecordingStore;
+		runInBackground?: (promise: Promise<unknown>) => void;
+	},
 ): Promise<{ status: RecordingStatus; recordingUrl: string }> {
 	const trimmed = input.recordingUrl.trim();
 	const nextStatus: RecordingStatus = trimmed ? "ready" : "none";
 	const now = new Date();
 
 	const [existing] = await db
-		.select({ id: classSessionMeeting.id })
+		.select({
+			id: classSessionMeeting.id,
+			recordingStorageKey: classSessionMeeting.recordingStorageKey,
+		})
 		.from(classSessionMeeting)
 		.where(
 			and(
@@ -1219,8 +1846,27 @@ export async function updateSessionRecordingManual(
 				recordingStatus: nextStatus,
 				recordingError: null,
 				recordingSyncedAt: now,
+				recordingStorageKey: null,
+				recordingSizeBytes: null,
+				recordingMimeType: null,
+				recordingUploadedAt: null,
+				recordingExpiresAt: null,
+				recordingZoomTrashStatus: "none",
 			})
 			.where(eq(classSessionMeeting.id, existing.id));
+
+		if (existing.recordingStorageKey) {
+			await deleteRecordingObjectBestEffort(
+				opts?.recordingStore,
+				existing.recordingStorageKey,
+				{
+					classId: input.classId,
+					date: input.dateISO,
+					reason: "manual-override",
+				},
+				opts?.runInBackground,
+			);
+		}
 	} else if (trimmed) {
 		await db.insert(classSessionMeeting).values({
 			id: crypto.randomUUID(),
