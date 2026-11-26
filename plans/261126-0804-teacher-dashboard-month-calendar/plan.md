@@ -1,7 +1,7 @@
 ---
 title: "Thêm Mini Calendar (Lịch tháng) vào /teacher/dashboard theo open-design/teacher.html"
 description: "Bổ sung widget Lịch tháng dạng chỉ xem (read-only) theo giờ Việt Nam vào đầu cột phải trang /teacher/dashboard (trên Cần kiểm tra và Toàn trung tâm) theo bản thiết kế open-design/teacher.html, dùng dữ liệu buổi dạy thật từ kernel snapshot với allowlist lớp active và mô hình hybrid 1-pass cho lớp legacy, bảo toàn 100% hợp đồng E2E/RBAC và chuẩn UX/AX REVIEW.md."
-status: in-progress
+status: completed
 priority: P1
 effort: "3h"
 issue: 976
@@ -65,15 +65,15 @@ Bổ sung widget **Lịch tháng** (`MonthCalendarSection`) vào đầu cột ph
 
 | # | Phase | Status |
 |---|---|---|
-| 1 | [Phase 1: Pure Calendar Index, Grid Math & Selectors (TDD)](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: MonthCalendarSection UI & Dashboard Integration (TDD)](./phase-02-month-calendar-ui-and-dashboard-integration.md) | Pending |
-| 3 | [Phase 3: E2E Verification, Design Compare & 3-Viewport Visual POT](./phase-03-verification-e2e-and-visual-pot.md) | Pending |
+| 1 | [Phase 1: Pure Calendar Index, Grid Math & Selectors (TDD)](./phase-01-start.md) | Completed |
+| 2 | [Phase 2: MonthCalendarSection UI & Dashboard Integration (TDD)](./phase-02-month-calendar-ui-and-dashboard-integration.md) | Completed |
+| 3 | [Phase 3: E2E Verification, Design Compare & 3-Viewport Visual POT](./phase-03-verification-e2e-and-visual-pot.md) | Completed |
 
 ## Success Criteria
 
-- [ ] `buildDashboardCalendarIndex` dùng allowlist fail-closed `activeClassById` (loại 100% lớp `paused` kể cả lịch sử `completed`/`absent` và dòng mồ côi), loại `cancelled`/`holiday` (kể cả trong lớp legacy trước `buildClassSessions`), đẩy tập con undated của lớp trộn dated+undated sang fallback, chuẩn hóa dedup theo số phút, trả `readonly DashboardCalendarSession[]` từ `sessionsForDashboardDate`, và guard đầu vào bẩn trên mọi hàm ngày/tháng (`1970-01`..`2099-12`, không `RangeError` / `"Thứ NaN"`).
-- [ ] `MonthCalendarSection` đặt ở đầu cột phải `/teacher/dashboard` (trên `Cần kiểm tra` và `Toàn trung tâm`), dùng `LEADING_BLANK_KEYS` sạch Biome, header `flex-wrap` không bóp vỡ nhãn tháng ở `320px` + `pointer: coarse`, chấm buổi dạy `bg-current`, viền hôm nay `var(--input)`, trạng thái chọn `bg-primary text-primary-foreground`, agenda read-only dùng `"buổi dạy"` (không có `"ca dạy"`), 1 vùng `aria-live="polite"` duy nhất với thông báo không trùng text hiển thị, trả focus bằng `todayBtnRef` sau khi bấm `"Hôm nay"`, và rollover nửa đêm VN nguyên tử (kể cả đêm cuối tháng) không cướp lựa chọn thủ công.
-- [ ] `pnpm exec biome check .`, `pnpm check-types`, `pnpm --filter web test`, 3 spec E2E mục tiêu (`dashboard-reminders.spec.ts`, `daily-attendance.spec.ts`, `class-status.spec.ts` không sửa assertion) và `pnpm design:compare --screens t-dashboard --side app --force` đều pass; không tràn ngang ở `320px` (cả `hasTouch: true` lẫn thường) / `375px` / `768px` / `1440px` Light & Dark; đủ 6 ảnh POT trong `plans/reports/` theo tiền tố issue; `open-design/teacher.html` không bị stage và không sót `_tmp-*.spec.ts`.
+- [x] `buildDashboardCalendarIndex` dùng allowlist fail-closed `activeClassById` (loại 100% lớp `paused` kể cả lịch sử `completed`/`absent` và dòng mồ côi), loại `cancelled`/`holiday` (kể cả trong lớp legacy trước `buildClassSessions`), đẩy tập con undated của lớp trộn dated+undated sang fallback, chuẩn hóa dedup theo số phút, trả `readonly DashboardCalendarSession[]` từ `sessionsForDashboardDate`, và guard đầu vào bẩn trên mọi hàm ngày/tháng (`1970-01`..`2099-12`, không `RangeError` / `"Thứ NaN"`).
+- [x] `MonthCalendarSection` đặt ở đầu cột phải `/teacher/dashboard` (trên `Cần kiểm tra` và `Toàn trung tâm`), dùng `LEADING_BLANK_KEYS` sạch Biome, header `flex-wrap` không bóp vỡ nhãn tháng ở `320px` + `pointer: coarse`, chấm buổi dạy `bg-current`, viền hôm nay `var(--input)`, trạng thái chọn `bg-primary text-primary-foreground`, agenda read-only dùng `"buổi dạy"` (không có `"ca dạy"`), 1 vùng `aria-live="polite"` duy nhất với thông báo không trùng text hiển thị, trả focus bằng `todayBtnRef` sau khi bấm `"Hôm nay"`, và rollover nửa đêm VN nguyên tử (kể cả đêm cuối tháng) không cướp lựa chọn thủ công.
+- [x] `pnpm exec biome check .`, `pnpm check-types`, `pnpm --filter web test`, 3 spec E2E mục tiêu (`dashboard-reminders.spec.ts`, `daily-attendance.spec.ts`, `class-status.spec.ts` không sửa assertion) và `pnpm design:compare --screens t-dashboard --side app --force` đều pass; không tràn ngang ở `320px` (cả `hasTouch: true` lẫn thường) / `375px` / `768px` / `1440px` Light & Dark; đủ 6 ảnh POT trong `plans/reports/` theo tiền tố issue; `open-design/teacher.html` không bị stage và không sót `_tmp-*.spec.ts`.
 
 ## Handover Note (`--advice`)
 

@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: Pure Calendar Index, Grid Math & Selectors (TDD)"
-status: pending
+status: completed
 priority: P1
 effort: "1h"
 dependencies: []

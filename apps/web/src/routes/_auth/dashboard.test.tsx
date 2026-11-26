@@ -805,4 +805,269 @@ describe("dashboard", () => {
 			expect(remindersLoads).toBeGreaterThan(loadsBefore);
 		});
 	});
+
+	it("renders Lịch tháng above Cần kiểm tra, switches agenda on day click, navigates months, and returns focus on Hôm nay", async () => {
+		startRemindersServer(
+			snapshotFixture({
+				classes: [
+					classRow({ id: "cl-1", name: "IELTS Writing tối" }),
+					classRow({ id: "cl-2", name: "IELTS Speaking chiều" }),
+				],
+				students: [studentRow({ id: "st-1" })],
+				enrollments: [
+					enrollmentRow({ id: "en-1", classId: "cl-1" }),
+					enrollmentRow({ id: "en-2", classId: "cl-2" }),
+				],
+				lessons: [
+					lessonRow({
+						id: "l-today",
+						classId: "cl-1",
+						enrollmentId: "en-1",
+						day: 3,
+						date: "2026-10-07",
+						time: "19:00",
+						status: "upcoming",
+					}),
+					lessonRow({
+						id: "l-fri",
+						classId: "cl-2",
+						enrollmentId: "en-2",
+						day: 5,
+						date: "2026-10-09",
+						time: "18:00",
+						status: "upcoming",
+					}),
+				],
+			}),
+		);
+		const view = renderWithKernel(<Dashboard />);
+		const calHeading = await screen.findByRole("heading", {
+			name: "Lịch tháng",
+		});
+		const riskHeading = screen.getByRole("heading", { name: "Cần kiểm tra" });
+		// Lịch tháng appears before Cần kiểm tra in DOM order (top of right column).
+		expect(
+			Boolean(
+				calHeading.compareDocumentPosition(riskHeading) &
+					Node.DOCUMENT_POSITION_FOLLOWING,
+			),
+		).toBe(true);
+
+		const calCard = screen.getByTestId("dashboard-month-calendar");
+		expect(screen.getByTestId("dashboard-calendar-month").textContent).toBe(
+			"Tháng 10 năm 2026",
+		);
+		expect(
+			within(calCard).queryByRole("button", { name: "Hôm nay" }),
+		).toBeNull();
+
+		// Single aria-live="polite" region across the whole dashboard, silent on initial mount.
+		const liveRegions = view.container.querySelectorAll('[aria-live="polite"]');
+		expect(liveRegions).toHaveLength(1);
+		const liveRegion = screen.getByTestId("dashboard-calendar-live");
+		expect(liveRegions[0]).toBe(liveRegion);
+		expect(liveRegion.textContent).toBe("");
+
+		const day7 = calCard.querySelector<HTMLButtonElement>(
+			'[data-cal-day="2026-10-07"]',
+		);
+		expect(day7).not.toBeNull();
+		expect(day7?.getAttribute("aria-pressed")).toBe("true");
+		expect(day7?.getAttribute("data-today")).toBe("true");
+		expect(day7?.getAttribute("aria-label")).toBe(
+			"Ngày 7, hôm nay, 1 buổi dạy",
+		);
+
+		const agenda = screen.getByTestId("dashboard-calendar-agenda");
+		expect(agenda.textContent).toContain("Hôm nay · 07/10 · 1 buổi dạy");
+		expect(agenda.textContent).toContain("19:00");
+		expect(agenda.textContent).toContain("IELTS Writing tối");
+		expect(calCard.textContent).not.toContain("ca dạy");
+
+		// Click day 9 (Friday with session).
+		const day9 = calCard.querySelector<HTMLButtonElement>(
+			'[data-cal-day="2026-10-09"]',
+		);
+		expect(day9).not.toBeNull();
+		if (day9) fireEvent.click(day9);
+		expect(day9?.getAttribute("aria-pressed")).toBe("true");
+		expect(day7?.getAttribute("aria-pressed")).toBe("false");
+		expect(agenda.textContent).toContain("Thứ Sáu · 09/10 · 1 buổi dạy");
+		expect(agenda.textContent).toContain("18:00");
+		expect(agenda.textContent).toContain("IELTS Speaking chiều");
+
+		// Click day 10 (Saturday empty weekend day).
+		const day10 = calCard.querySelector<HTMLButtonElement>(
+			'[data-cal-day="2026-10-10"]',
+		);
+		expect(day10?.getAttribute("data-weekend")).toBe("true");
+		if (day10) fireEvent.click(day10);
+		expect(agenda.textContent).toContain("Thứ Bảy · 10/10");
+		expect(within(agenda).getByText("Không có buổi dạy.")).toBeTruthy();
+		expect(liveRegion.textContent).toBe(
+			"Đã chọn Thứ Bảy 10/10, chưa có buổi dạy",
+		);
+
+		// Re-select today before shifting month to verify agenda stays on selected date while browsing months.
+		if (day7) fireEvent.click(day7);
+		fireEvent.click(within(calCard).getByRole("button", { name: "Tháng sau" }));
+		expect(screen.getByTestId("dashboard-calendar-month").textContent).toBe(
+			"Tháng 11 năm 2026",
+		);
+		expect(liveRegion.textContent).toBe("Đang xem Tháng 11 năm 2026");
+		expect(agenda.textContent).toContain("Hôm nay · 07/10 · 1 buổi dạy");
+
+		// Select a different empty date in November so Hôm nay proves resetting selectedIso + agenda + liveRegion.
+		const nov12 = calCard.querySelector<HTMLButtonElement>(
+			'[data-cal-day="2026-11-12"]',
+		);
+		expect(nov12).not.toBeNull();
+		if (nov12) fireEvent.click(nov12);
+		expect(nov12?.getAttribute("aria-pressed")).toBe("true");
+		expect(agenda.textContent).toContain("Thứ Năm · 12/11");
+		expect(within(agenda).getByText("Không có buổi dạy.")).toBeTruthy();
+
+		// Clicking Hôm nay returns to current month, resets selectedIso/agenda, announces return, hides Hôm nay, and focuses today's button.
+		const todayBtn = within(calCard).getByRole("button", { name: "Hôm nay" });
+		fireEvent.click(todayBtn);
+		expect(screen.getByTestId("dashboard-calendar-month").textContent).toBe(
+			"Tháng 10 năm 2026",
+		);
+		expect(
+			within(calCard).queryByRole("button", { name: "Hôm nay" }),
+		).toBeNull();
+		const day7After = calCard.querySelector<HTMLButtonElement>(
+			'[data-cal-day="2026-10-07"]',
+		);
+		expect(day7After?.getAttribute("aria-pressed")).toBe("true");
+		expect(document.activeElement).toBe(day7After);
+		expect(agenda.textContent).toContain("Hôm nay · 07/10 · 1 buổi dạy");
+		expect(agenda.textContent).toContain("IELTS Writing tối");
+		expect(liveRegion.textContent).toBe("Đã quay về hôm nay 07/10, 1 buổi dạy");
+
+		// Also exercise previous-month navigation button.
+		fireEvent.click(
+			within(calCard).getByRole("button", { name: "Tháng trước" }),
+		);
+		expect(screen.getByTestId("dashboard-calendar-month").textContent).toBe(
+			"Tháng 9 năm 2026",
+		);
+		expect(liveRegion.textContent).toBe("Đang xem Tháng 9 năm 2026");
+		expect(
+			within(calCard).getByRole("button", { name: "Hôm nay" }),
+		).toBeTruthy();
+	});
+
+	it("advances Lịch tháng across Vietnam month-end midnight rollover only when user has not picked a custom day", async () => {
+		// Branch 1: default selection (following today) rolls over 2026-10-31 → 2026-11-01.
+		vi.setSystemTime(new Date("2026-10-31T23:55:00+07:00"));
+		startRemindersServer(snapshotFixture());
+		renderWithKernel(<Dashboard />);
+		await screen.findByTestId("dashboard-month-calendar");
+		expect(screen.getByTestId("dashboard-calendar-month").textContent).toBe(
+			"Tháng 10 năm 2026",
+		);
+
+		vi.setSystemTime(new Date("2026-11-01T00:05:00+07:00"));
+		Object.defineProperty(document, "hidden", {
+			configurable: true,
+			value: false,
+		});
+		document.dispatchEvent(new Event("visibilitychange"));
+
+		await vi.waitFor(() => {
+			expect(screen.getByTestId("dashboard-calendar-month").textContent).toBe(
+				"Tháng 11 năm 2026",
+			);
+		});
+		const nov1 = screen
+			.getByTestId("dashboard-month-calendar")
+			.querySelector<HTMLButtonElement>('[data-cal-day="2026-11-01"]');
+		expect(nov1?.getAttribute("aria-pressed")).toBe("true");
+		expect(nov1?.getAttribute("data-today")).toBe("true");
+
+		// Branch 2: manual selection on 2026-10-15 must NOT be hijacked into November on rollover.
+		cleanup();
+		vi.setSystemTime(new Date("2026-10-31T23:55:00+07:00"));
+		startRemindersServer(snapshotFixture());
+		renderWithKernel(<Dashboard />);
+		const calCard2 = await screen.findByTestId("dashboard-month-calendar");
+		const oct15 = calCard2.querySelector<HTMLButtonElement>(
+			'[data-cal-day="2026-10-15"]',
+		);
+		expect(oct15).not.toBeNull();
+		if (oct15) fireEvent.click(oct15);
+		expect(oct15?.getAttribute("aria-pressed")).toBe("true");
+
+		vi.setSystemTime(new Date("2026-11-01T00:05:00+07:00"));
+		document.dispatchEvent(new Event("visibilitychange"));
+		await vi.waitFor(() => {
+			expect(
+				within(calCard2).getByRole("button", { name: "Hôm nay" }),
+			).toBeTruthy();
+		});
+		expect(screen.getByTestId("dashboard-calendar-month").textContent).toBe(
+			"Tháng 10 năm 2026",
+		);
+		expect(
+			calCard2
+				.querySelector<HTMLButtonElement>('[data-cal-day="2026-10-15"]')
+				?.getAttribute("aria-pressed"),
+		).toBe("true");
+	});
+
+	it("excludes paused class historical completed lessons from Lịch tháng (#694)", async () => {
+		startRemindersServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-paused",
+						name: "IELTS Tạm Dừng Lịch Sử",
+						status: "paused",
+					}),
+				],
+				students: [studentRow({ id: "st-p" })],
+				enrollments: [
+					enrollmentRow({
+						id: "en-p",
+						classId: "cl-paused",
+						studentId: "st-p",
+					}),
+				],
+				lessons: [
+					lessonRow({
+						id: "les-past-done",
+						classId: "cl-paused",
+						enrollmentId: "en-p",
+						day: 1,
+						date: "2026-10-05",
+						time: "08:00",
+						status: "completed",
+					}),
+					lessonRow({
+						id: "les-today-up",
+						classId: "cl-paused",
+						enrollmentId: "en-p",
+						day: 3,
+						date: "2026-10-07",
+						time: "19:00",
+						status: "upcoming",
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<Dashboard />);
+		const calCard = await screen.findByTestId("dashboard-month-calendar");
+		const day5 = calCard.querySelector<HTMLButtonElement>(
+			'[data-cal-day="2026-10-05"]',
+		);
+		expect(day5?.getAttribute("aria-label")).toBe("Ngày 5");
+		if (day5) fireEvent.click(day5);
+		expect(
+			within(screen.getByTestId("dashboard-calendar-agenda")).getByText(
+				"Không có buổi dạy.",
+			),
+		).toBeTruthy();
+		expect(screen.queryByText("IELTS Tạm Dừng Lịch Sử")).toBeNull();
+	});
 });
