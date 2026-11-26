@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: Dashboard Grading Card, Hero Copy & Overdue-Unsubmitted Highlight (TDD)"
-status: pending
+status: completed
 priority: P1
 effort: "1.5h"
 dependencies: []

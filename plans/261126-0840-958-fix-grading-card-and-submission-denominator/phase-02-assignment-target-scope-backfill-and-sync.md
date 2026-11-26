@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: Assignment Target Scope, Activation Backfill, Migration & Supplemental Sync (TDD)"
-status: pending
+status: completed
 priority: P1
 effort: "2.5h"
 dependencies: [1]

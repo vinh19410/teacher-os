@@ -1,7 +1,7 @@
 ---
 title: "Sửa thẻ Chấm bài gây hiểu lầm và mẫu số tỉ lệ nộp bài lớp (#958)"
 description: "Sửa câu chữ zero-state của thẻ Chấm bài (và Hero summary) để phản ánh đúng phạm vi bài quá hạn chấm > 24h đồng thời nổi bật bài quá hạn chưa nộp, và khắc phục lỗi trôi mẫu số 0/1 thay vì 0/2 bằng target_scope, tự động bù target khi kích hoạt học viên, migration dữ liệu bảo thủ 0095+0096, cảnh báo học viên đang mời và nút Giao bổ sung."
-status: pending
+status: completed
 priority: P1
 effort: "5h"
 issue: 958
@@ -58,20 +58,20 @@ Khắc phục triệt để cả hai lỗi nghiệp vụ và trải nghiệm tro
 
 | # | Phase | Status |
 |---|---|---|
-| 1 | [Phase 1: Dashboard Grading Card, Hero Copy & Overdue-Unsubmitted Highlight (TDD)](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: Assignment Target Scope, Activation Backfill, Migration & Supplemental Sync (TDD)](./phase-02-assignment-target-scope-backfill-and-sync.md) | Pending |
-| 3 | [Phase 3: Verification Gates, Targeted E2E, Design Compare & Visual POT](./phase-03-verification-e2e-and-visual-pot.md) | Pending |
+| 1 | [Phase 1: Dashboard Grading Card, Hero Copy & Overdue-Unsubmitted Highlight (TDD)](./phase-01-start.md) | Completed |
+| 2 | [Phase 2: Assignment Target Scope, Activation Backfill, Migration & Supplemental Sync (TDD)](./phase-02-assignment-target-scope-backfill-and-sync.md) | Completed |
+| 3 | [Phase 3: Verification Gates, Targeted E2E, Design Compare & Visual POT](./phase-03-verification-e2e-and-visual-pot.md) | Completed |
 
 ## Success Criteria
 
-- [ ] Thẻ 2 (`reminder-card-grading`) không bao giờ hiển thị `"Đã hoàn tất hôm nay"`; khi `overdueGrading.count === 0` hiển thị `"Không còn bài quá hạn chấm"`, và khi `overdueUnsubmitted.targets > 0` hiển thị dòng cảnh báo màu `--warn` (`Còn N bài quá hạn chưa nộp (M học viên) — xem ở Cần kiểm tra`, nối `aria-describedby` vào `<Link>`) trên nền `bg-card` không bị hạ mờ.
-- [ ] Thẻ 1 (`reminder-card-attendance`) giữ nguyên `"Đã hoàn tất hôm nay"` (`daily-attendance.spec.ts:198` pass không cần sửa); Thẻ 3 (`reminder-card-tuition`) hiển thị `"Không có khoản đến hạn"` khi `students === 0`.
-- [ ] Hero summary trên `/teacher/dashboard` hiển thị `"Còn N học viên cần kiểm tra."` khi `openTasks === 0 && risk.length > 0` và chỉ hiển thị `"Mọi việc hôm nay đã xong."` khi `openTasks === 0 && risk.length === 0`; `overdueUnsubmittedSummary` lọc theo `students` khớp 100% với `atRiskRows`.
-- [ ] Migration `0095_class_assignment_target_scope.sql` (DDL) + `0096_backfill_class_assignment_targets.sql` (DML idempotent) có đầy đủ `meta/0095_snapshot.json` và `meta/0096_snapshot.json` nối liền `prevId` và `when` đơn điệu tăng (`study-pack-migration.test.ts` pass); đánh dấu `'selected'` cho lượt giao chọn lọc lịch sử và bù bảo thủ target cho học viên `active` thuộc lớp `active` kích hoạt trước hạn nộp (`sp.created_at <= deadlineMs`, không `demo-student:%`).
-- [ ] `activateEnrollment(db, orgId, enrollmentId, now)` nhận `deps.now`, chỉ chạy `backfillClassAssignmentTargetsForStudent` (có join `classTable.status = 'active'`) khi kích hoạt thật từ `'invited' -> 'active'` (không chạy trên replay `active`), giúp mẫu số tự động chuyển `0/1` → `0/2` và học viên thứ 2 mở/nộp được bài trên Student Portal (`200`).
-- [ ] `POST /api/classes/:id/assignments` không tin mù `targetScope: "class"` từ client và đóng cửa sổ TOCTOU với `activateEnrollment`; `POST /api/classes/:id/assignments/:assignmentId/targets` cưỡng chế `409 CLASS_PAUSED` (kèm atomic SQL guard), RBAC `canPublishGrade` (chặn `ta` `403`), atomic `db.batch` `.returning()`, phát `assignmentPublishedEvents` chỉ cho học viên vừa thêm, và hoạt động qua nút `"Giao bổ sung"` (cắt lô ≤ 100 HV) kèm chỉ báo `"Giao X/Y HV"` trên `ClassAssignmentsTab`.
-- [ ] `AssignClassPromptModal` gửi `targetScope` (`"class"` khi chọn đủ toàn bộ học viên đang học và ≤ 100, `"selected"` khi chọn một phần) và hiển thị nhắc nhẹ khi lớp còn học viên `invited`.
-- [ ] `pnpm exec biome check .`, `pnpm check-types`, `pnpm --filter @teacher-os/api test`, `pnpm --filter server test`, `pnpm --filter web test`, targeted E2E (`dashboard-reminders.spec.ts`, `daily-attendance.spec.ts`, `class-assign.spec.ts`) và `pnpm design:compare --screens t-dashboard --side app --force` đều pass 100%; không tràn ngang ở `320px/375px/768px/1440px` Light & Dark; đủ 6 ảnh POT trong `plans/reports/` và không dính ảnh PNG lịch sử.
+- [x] Thẻ 2 (`reminder-card-grading`) không bao giờ hiển thị `"Đã hoàn tất hôm nay"`; khi `overdueGrading.count === 0` hiển thị `"Không còn bài quá hạn chấm"`, và khi `overdueUnsubmitted.targets > 0` hiển thị dòng cảnh báo màu `--warn` (`Còn N bài quá hạn chưa nộp (M học viên) — xem ở Cần kiểm tra`, nối `aria-describedby` vào `<Link>`) trên nền `bg-card` không bị hạ mờ.
+- [x] Thẻ 1 (`reminder-card-attendance`) giữ nguyên `"Đã hoàn tất hôm nay"` (`daily-attendance.spec.ts:198` pass không cần sửa); Thẻ 3 (`reminder-card-tuition`) hiển thị `"Không có khoản đến hạn"` khi `students === 0`.
+- [x] Hero summary trên `/teacher/dashboard` hiển thị `"Còn N học viên cần kiểm tra."` khi `openTasks === 0 && risk.length > 0` và chỉ hiển thị `"Mọi việc hôm nay đã xong."` khi `openTasks === 0 && risk.length === 0`; `overdueUnsubmittedSummary` lọc theo `students` khớp 100% với `atRiskRows`.
+- [x] Migration `0095_class_assignment_target_scope.sql` (DDL) + `0096_backfill_class_assignment_targets.sql` (DML idempotent) có đầy đủ `meta/0095_snapshot.json` và `meta/0096_snapshot.json` nối liền `prevId` và `when` đơn điệu tăng (`study-pack-migration.test.ts` pass); đánh dấu `'selected'` cho lượt giao chọn lọc lịch sử và bù bảo thủ target cho học viên `active` thuộc lớp `active` kích hoạt trước hạn nộp (`sp.created_at <= deadlineMs`, không `demo-student:%`).
+- [x] `activateEnrollment(db, orgId, enrollmentId, now)` nhận `deps.now`, chỉ chạy `backfillClassAssignmentTargetsForStudent` (có join `classTable.status = 'active'`) khi kích hoạt thật từ `'invited' -> 'active'` (không chạy trên replay `active`), giúp mẫu số tự động chuyển `0/1` → `0/2` và học viên thứ 2 mở/nộp được bài trên Student Portal (`200`).
+- [x] `POST /api/classes/:id/assignments` không tin mù `targetScope: "class"` từ client và đóng cửa sổ TOCTOU với `activateEnrollment`; `POST /api/classes/:id/assignments/:assignmentId/targets` cưỡng chế `409 CLASS_PAUSED` (kèm atomic SQL guard), RBAC `canPublishGrade` (chặn `ta` `403`), atomic `db.batch` `.returning()`, phát `assignmentPublishedEvents` chỉ cho học viên vừa thêm, và hoạt động qua nút `"Giao bổ sung"` (cắt lô ≤ 100 HV) kèm chỉ báo `"Giao X/Y HV"` trên `ClassAssignmentsTab`.
+- [x] `AssignClassPromptModal` gửi `targetScope` (`"class"` khi chọn đủ toàn bộ học viên đang học và ≤ 100, `"selected"` khi chọn một phần) và hiển thị nhắc nhẹ khi lớp còn học viên `invited`.
+- [x] `pnpm exec biome check .`, `pnpm check-types`, `pnpm --filter @teacher-os/api test`, `pnpm --filter server test`, `pnpm --filter web test`, targeted E2E (`dashboard-reminders.spec.ts`, `daily-attendance.spec.ts`, `class-assign.spec.ts`) và `pnpm design:compare --screens t-dashboard --side app --force` đều pass 100%; không tràn ngang ở `320px/375px/768px/1440px` Light & Dark; đủ 6 ảnh POT trong `plans/reports/` và không dính ảnh PNG lịch sử.
 
 ## Handover Note (`--advice`)
 
