@@ -10,6 +10,14 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-11-26
+
+### Changed
+- **Dọn dẹp Dashboard giáo viên: bỏ ô KPI trùng, thêm thứ tự & nhãn chức năng 1–2–3, chuyển ngôn ngữ góc nhìn giáo viên và giới hạn bảng "Cần kiểm tra" (`apps/web`, `apps/e2e`):**
+  - Bỏ ô KPI `"Buổi học hôm nay"` (trùng khối `"Lịch hôm nay"`), đổi `"Học viên"` thành `"Tổng học viên"` (phạm vi toàn org, bỏ dòng phụ) thống nhất với `"Bài tập chưa có điểm"` và `"Còn phải thu"`; đồng bộ ẩn fail-closed cả ô `"Còn phải thu"` lẫn Thẻ 3 `"Học phí"` khi `viewer.canAccessFinance !== true` và tách cache `remindersQueryKey` theo `viewerRole`.
+  - Nâng cấp 3 thẻ `"Việc cần làm hôm nay"` với số bước `1`, `2`, `3`, nhãn chức năng rõ (`Điểm danh`, `Chấm bài`, `Học phí`), ngôn ngữ giáo viên (`ca dạy`), CTA ngắn gọn (`Điểm danh →`, `Chấm bài →`, `Xem học phí →`), ẩn dòng preview nhiễu khi đếm `0`, và bỏ double-padding để `--focus-ring` ôm khít viền thẻ.
+  - Chuẩn hóa `atRiskRows` (`dashboard-from-kernel.ts`) và bảng `"Cần kiểm tra"` chỉ giữ đúng 2 loại vấn đề hành động (`Chưa điểm danh` và `Bài tập trễ hạn`, bỏ `Vắng`), vá so sánh ngày ISO `Asia/Ho_Chi_Minh` (`isValidISODate` + `lesson.date < todayIso`, đồng bộ `lessonDayFromDate` & `PageHead` `kicker`), chống cờ giả D1 flip-first (`attemptId != null`), lọc lớp tạm dừng (`#694`), hiển thị rõ đơn vị cột `"Còn"` (`còn N buổi` / `Chưa có gói`) với bảng responsive một bản DOM duy nhất không tràn từ `320px` đến `1440px`, giữ `"Lịch hôm nay"` / `"Lịch sắp tới"` dạng tóm tắt nhanh read-only và rút bớt chữ mô tả toàn trang (#947).
+
 ## 2026-11-25
 
 ### Added

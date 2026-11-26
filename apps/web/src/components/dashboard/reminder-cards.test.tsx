@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetRouterState } from "@/test/router-mock";
 
@@ -27,27 +27,48 @@ afterEach(() => {
 });
 
 describe("ReminderCards", () => {
-	it("render đủ 3 thẻ với số đếm", () => {
+	it("render đủ 3 thẻ theo thứ tự 1, 2, 3 với nhãn chức năng rõ, số đếm và CTA gọn", () => {
 		render(<ReminderCards data={FULL_DATA} />);
+
+		const attendanceCard = screen.getByTestId("reminder-card-attendance");
+		expect(within(attendanceCard).getByText("1")).toBeTruthy();
+		expect(within(attendanceCard).getByText("Điểm danh")).toBeTruthy();
 		expect(
-			screen.getByRole("heading", { name: "Ca học hôm nay chưa điểm danh" }),
+			within(attendanceCard).getByRole("heading", {
+				name: "Ca dạy hôm nay chưa điểm danh",
+			}),
 		).toBeTruthy();
+		expect(within(attendanceCard).getByText("2 ca dạy")).toBeTruthy();
+		expect(within(attendanceCard).getByText("Điểm danh →")).toBeTruthy();
+
+		const gradingCard = screen.getByTestId("reminder-card-grading");
+		expect(within(gradingCard).getByText("2")).toBeTruthy();
+		expect(within(gradingCard).getByText("Chấm bài")).toBeTruthy();
 		expect(
-			screen.getByRole("heading", { name: "Bài tập quá hạn chấm > 24h" }),
+			within(gradingCard).getByRole("heading", {
+				name: "Bài tập quá hạn chấm > 24h",
+			}),
 		).toBeTruthy();
+		expect(within(gradingCard).getByText("3 bài")).toBeTruthy();
 		expect(
-			screen.getByRole("heading", { name: "Học phí đến hạn / quá hạn thu" }),
+			within(gradingCard).getByText("2 Writing · 1 Speaking"),
 		).toBeTruthy();
-		expect(screen.getByText("2 ca")).toBeTruthy();
-		expect(screen.getByText("3 bài")).toBeTruthy();
-		expect(screen.getByText("4 học viên")).toBeTruthy();
-		expect(screen.getByText("2 Writing · 1 Speaking")).toBeTruthy();
+		expect(within(gradingCard).getByText("Chấm bài →")).toBeTruthy();
+
+		const tuitionCard = screen.getByTestId("reminder-card-tuition");
+		expect(within(tuitionCard).getByText("3")).toBeTruthy();
+		expect(within(tuitionCard).getByText("Học phí")).toBeTruthy();
+		expect(
+			within(tuitionCard).getByRole("heading", { name: "Học phí đến hạn" }),
+		).toBeTruthy();
+		expect(within(tuitionCard).getByText("4 học viên")).toBeTruthy();
+		expect(within(tuitionCard).getByText("Xem học phí →")).toBeTruthy();
 	});
 
-	it("href thẻ điểm danh mang date và status=pending; thẻ chấm bài status=awaiting", () => {
+	it("href thẻ điểm danh mang date và status=pending; thẻ chấm bài status=awaiting; aria-label mang thứ tự và nhãn", () => {
 		render(<ReminderCards data={FULL_DATA} />);
 		const attendanceLink = screen.getByRole("link", {
-			name: /Ca học hôm nay chưa điểm danh/,
+			name: "1. Điểm danh — Ca dạy hôm nay chưa điểm danh",
 		});
 		const href = attendanceLink.getAttribute("href") ?? "";
 		expect(href).toContain("/attendance");
@@ -55,25 +76,40 @@ describe("ReminderCards", () => {
 		expect(href).toContain("status=pending");
 
 		const gradingLink = screen.getByRole("link", {
-			name: /Bài tập quá hạn chấm/,
+			name: "2. Chấm bài — Bài tập quá hạn chấm > 24h",
 		});
+		expect(gradingLink.getAttribute("href")).toContain("/grading");
 		expect(gradingLink.getAttribute("href")).toContain("status=awaiting");
 
-		const tuitionLink = screen.getByRole("link", { name: /Học phí đến hạn/ });
+		const tuitionLink = screen.getByRole("link", {
+			name: "3. Học phí — Học phí đến hạn",
+		});
 		expect(tuitionLink.getAttribute("href")).toContain("/tuition");
 	});
 
-	it("thiếu block tuition thì không render thẻ học phí", () => {
+	it("thiếu block tuition thì không render thẻ học phí và đổi grid sang 2 cột", () => {
 		const withoutTuition: DashboardReminders = {
 			...FULL_DATA,
 			tuition: undefined,
 		};
-		render(<ReminderCards data={withoutTuition} />);
-		expect(screen.queryByText(/Học phí đến hạn/)).toBeNull();
-		expect(screen.queryByRole("link", { name: /Sổ học phí/ })).toBeNull();
+		const { container } = render(<ReminderCards data={withoutTuition} />);
+		expect(screen.queryByTestId("reminder-card-tuition")).toBeNull();
+		expect(screen.queryByRole("link", { name: /Học phí/ })).toBeNull();
+		expect(container.firstElementChild?.className).toContain("lg:grid-cols-2");
 	});
 
-	it("đếm 0 → nhãn zero inbox, thẻ không hiển thị số, CTA vẫn dẫn đúng", () => {
+	it("ẩn thẻ học phí khi canAccessFinance=false ngay cả khi response còn block tuition", () => {
+		const { container } = render(
+			<ReminderCards data={FULL_DATA} canAccessFinance={false} />,
+		);
+		expect(screen.queryByTestId("reminder-card-tuition")).toBeNull();
+		expect(screen.queryByRole("link", { name: /Học phí/ })).toBeNull();
+		expect(screen.getByTestId("reminder-card-attendance")).toBeTruthy();
+		expect(screen.getByTestId("reminder-card-grading")).toBeTruthy();
+		expect(container.firstElementChild?.className).toContain("lg:grid-cols-2");
+	});
+
+	it("đếm 0 → nhãn zero inbox, ẩn số 0 và dòng preview thừa, CTA vẫn dẫn đúng", () => {
 		const zeroData: DashboardReminders = {
 			date: "2026-10-26",
 			attendance: { pending: 0, items: [] },
@@ -83,10 +119,13 @@ describe("ReminderCards", () => {
 		render(<ReminderCards data={zeroData} />);
 		const labels = screen.getAllByText("Đã hoàn tất hôm nay");
 		expect(labels).toHaveLength(3);
-		expect(screen.queryByText("0 ca")).toBeNull();
+		expect(screen.queryByText("0 ca dạy")).toBeNull();
 		expect(screen.queryByText("0 bài")).toBeNull();
+		expect(screen.queryByText("0 học viên")).toBeNull();
+		expect(screen.queryByText("0 Writing · 0 Speaking")).toBeNull();
+		expect(screen.queryByText("0đ")).toBeNull();
 		const attendanceLink = screen.getByRole("link", {
-			name: /Ca học hôm nay chưa điểm danh/,
+			name: /Ca dạy hôm nay chưa điểm danh/,
 		});
 		expect(attendanceLink.getAttribute("href")).toContain("status=pending");
 	});

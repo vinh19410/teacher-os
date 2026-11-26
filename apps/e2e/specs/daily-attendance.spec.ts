@@ -56,12 +56,12 @@ test("AC-002: lọc theo ngày trên URL, buổi huỷ không hiện, tải ≤ 
 }) => {
 	await seedTodayClasses(page);
 
-	// 1. Mở /dashboard, ghi lại số trên thẻ "Ca học hôm nay chưa điểm danh" (N = 1).
+	// 1. Mở /dashboard, ghi lại số trên thẻ "Ca dạy hôm nay chưa điểm danh" (N = 1).
 	await page.goto("/teacher/dashboard");
 	const remindersSection = page.locator("section", {
 		hasText: "Việc cần làm hôm nay",
 	});
-	await expect(remindersSection.getByText("1 ca")).toBeVisible({
+	await expect(remindersSection.getByText("1 ca dạy")).toBeVisible({
 		timeout: 5000,
 	});
 
@@ -189,13 +189,16 @@ test("AC-002: lọc theo ngày trên URL, buổi huỷ không hiện, tải ≤ 
 	expect(reminders.attendance.pending).toBe(0);
 
 	await page.goto("/teacher/dashboard");
-	const attendanceCard = page
-		.getByRole("heading", { name: "Ca học hôm nay chưa điểm danh" })
-		.locator("xpath=..");
+	const attendanceCard = page.getByTestId("reminder-card-attendance");
+	await expect(
+		attendanceCard.getByRole("heading", {
+			name: "Ca dạy hôm nay chưa điểm danh",
+		}),
+	).toBeVisible({ timeout: 5000 });
 	await expect(attendanceCard.getByText("Đã hoàn tất hôm nay")).toBeVisible({
 		timeout: 5000,
 	});
-	await expect(page.getByText("1 ca")).toHaveCount(0);
+	await expect(page.getByText("1 ca dạy")).toHaveCount(0);
 });
 
 test("3 viewport (1440×900, 768×1024, 375×812): chụp screenshot ca đang mở và kiểm không cuộn ngang ở 375px", async ({

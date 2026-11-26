@@ -130,19 +130,32 @@ test("3 thẻ nhắc việc: số đếm khớp seed, API ≤ 2s, bấm thẻ/n�
 	await page.goto("/teacher/dashboard");
 	const section = page.locator("section", { hasText: "Việc cần làm hôm nay" });
 	await expect(section).toBeVisible();
-	// Chờ thẻ có số (mốc đo UX vẫn ≤ 2s từ navigate — assert không phá nếu
-	// dev server lạnh, gate chặt nằm ở response API phía trên).
-	await expect(section.getByText("Việc cần làm hôm nay (")).toBeVisible({
-		timeout: 2000,
-	});
-	await expect(section.getByText("1 ca")).toBeVisible({ timeout: 2000 });
+	// Chờ thẻ có số (gate 2s chặt nằm ở response API phía trên).
+	await expect(section.getByText("1 ca dạy")).toBeVisible({ timeout: 5000 });
 	await expect(section.getByText("1 bài")).toBeVisible();
 	await expect(section.getByText("1 Writing · 0 Speaking")).toBeVisible();
 	await expect(section.getByText("1 học viên")).toBeVisible();
+	await expect(
+		section.getByRole("link", {
+			name: /^1\. Điểm danh — Ca dạy hôm nay chưa điểm danh$/,
+		}),
+	).toBeVisible();
+	await expect(
+		section.getByRole("link", {
+			name: /^2\. Chấm bài — Bài tập quá hạn chấm > 24h$/,
+		}),
+	).toBeVisible();
+	await expect(
+		section.getByRole("link", {
+			name: /^3\. Học phí — Học phí đến hạn$/,
+		}),
+	).toBeVisible();
 
-	// AC-001: bấm 1 lần trên thẻ ca học → /attendance?date&status=pending.
+	// AC-001: bấm 1 lần trên thẻ ca dạy → /attendance?date&status=pending.
 	await section
-		.getByRole("link", { name: /Ca học hôm nay chưa điểm danh/ })
+		.getByRole("link", {
+			name: /^1\. Điểm danh — Ca dạy hôm nay chưa điểm danh$/,
+		})
 		.click();
 	await expect(page).toHaveURL(
 		new RegExp(`/teacher/attendance\\?date=${TODAY}&status=pending$`),
@@ -158,7 +171,9 @@ test("3 thẻ nhắc việc: số đếm khớp seed, API ≤ 2s, bấm thẻ/n�
 	});
 	await expect(sectionAgain.getByText("1 bài")).toBeVisible({ timeout: 5000 });
 	await sectionAgain
-		.getByRole("link", { name: /Bài tập quá hạn chấm/ })
+		.getByRole("link", {
+			name: /^2\. Chấm bài — Bài tập quá hạn chấm > 24h$/,
+		})
 		.click();
 	await expect(page).toHaveURL(/\/teacher\/grading\?status=awaiting$/);
 });
@@ -173,7 +188,7 @@ test("screenshots dashboard reminders at 3 viewports", async ({ page }) => {
 	await expect(
 		page
 			.locator("section", { hasText: "Việc cần làm hôm nay" })
-			.getByText("1 ca"),
+			.getByText("1 ca dạy"),
 	).toBeVisible({ timeout: 5000 });
 	for (const [w, h, name] of [
 		[1440, 900, "dashboard-reminders-1440"],
