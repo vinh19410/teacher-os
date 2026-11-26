@@ -86,18 +86,20 @@ describe("recordingVideoResponse", () => {
 			{ rangeHeader: undefined },
 		);
 
-		expect(res?.status).toBe(200);
-		expect(res?.headers.get("Content-Type")).toBe("video/mp4");
-		expect(res?.headers.get("Content-Disposition")).toBe(
+		expect(res).not.toBeNull();
+		if (!res) return;
+		expect(res.status).toBe(200);
+		expect(res.headers.get("Content-Type")).toBe("video/mp4");
+		expect(res.headers.get("Content-Disposition")).toBe(
 			"inline; filename*=UTF-8''recording-2026-11-26.mp4",
 		);
-		expect(res?.headers.get("Accept-Ranges")).toBe("bytes");
-		expect(res?.headers.get("Content-Length")).toBe("10");
-		expect(res?.headers.get("Content-Security-Policy")).toBe(INLINE_MEDIA_CSP);
-		expect(res?.headers.get("X-Content-Type-Options")).toBe("nosniff");
-		expect(res?.headers.get("Referrer-Policy")).toBe("no-referrer");
-		expect(res?.headers.get("Cache-Control")).toBe("private, no-store");
-		expect(new Uint8Array(await res!.arrayBuffer())).toEqual(sampleBytes);
+		expect(res.headers.get("Accept-Ranges")).toBe("bytes");
+		expect(res.headers.get("Content-Length")).toBe("10");
+		expect(res.headers.get("Content-Security-Policy")).toBe(INLINE_MEDIA_CSP);
+		expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
+		expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
+		expect(res.headers.get("Cache-Control")).toBe("private, no-store");
+		expect(new Uint8Array(await res.arrayBuffer())).toEqual(sampleBytes);
 	});
 
 	it("returns 206 Partial Content for valid single byte range", async () => {
@@ -119,10 +121,12 @@ describe("recordingVideoResponse", () => {
 			{ rangeHeader: "bytes=2-5" },
 		);
 
-		expect(res?.status).toBe(206);
-		expect(res?.headers.get("Content-Range")).toBe("bytes 2-5/10");
-		expect(res?.headers.get("Content-Length")).toBe("4");
-		expect(new Uint8Array(await res!.arrayBuffer())).toEqual(
+		expect(res).not.toBeNull();
+		if (!res) return;
+		expect(res.status).toBe(206);
+		expect(res.headers.get("Content-Range")).toBe("bytes 2-5/10");
+		expect(res.headers.get("Content-Length")).toBe("4");
+		expect(new Uint8Array(await res.arrayBuffer())).toEqual(
 			new Uint8Array([2, 3, 4, 5]),
 		);
 	});
