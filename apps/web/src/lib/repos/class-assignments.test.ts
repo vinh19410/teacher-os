@@ -31,6 +31,7 @@ describe("mapClassAssignments (#208)", () => {
 				title: "Writing Task 2 — Opinion",
 				due: "2026-09-25",
 				dueAt: null,
+				sessionDate: null,
 				note: "Làm cẩn thận",
 				createdAt: "2026-09-18T10:00:00.000Z",
 				targets: [
@@ -129,6 +130,27 @@ describe("mapClassAssignments (#208)", () => {
 		expect(mapClassAssignments(snapshot)[0]?.dueAt).toBe(
 			"2026-11-06T10:30:00.000Z",
 		);
+	});
+
+	test("projects non-null sessionDate onto ClassAssignment", () => {
+		const snapshot = {
+			classAssignments: [
+				{
+					id: "ca-session",
+					classId: "c-1",
+					promptId: "p-1",
+					title: "Writing Task 2",
+					due: "2026-11-30",
+					dueAt: null,
+					sessionDate: "2026-11-27",
+					note: "",
+					createdAt: "2026-11-26T10:00:00.000Z",
+					targets: [],
+				},
+			],
+		} as unknown as KernelSnapshot;
+
+		expect(mapClassAssignments(snapshot)[0]?.sessionDate).toBe("2026-11-27");
 	});
 
 	test("preserves targetScope when present in snapshot and omits when absent", () => {

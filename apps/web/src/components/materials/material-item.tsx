@@ -140,7 +140,7 @@ export function MaterialItem({
 					<Icon className="size-4" />
 				</span>
 			)}
-			<div className="min-w-0 flex-1">
+			<div className="min-w-[min(12rem,100%)] flex-1">
 				<p className="break-words font-medium text-sm">{item.title}</p>
 				{item.description && (
 					<p className="mt-0.5 line-clamp-2 break-words text-muted-foreground text-xs">

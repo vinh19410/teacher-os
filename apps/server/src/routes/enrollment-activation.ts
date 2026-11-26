@@ -573,7 +573,7 @@ export async function materializeScheduleForEnrollment(
 		const materialMoveStatements = (shift: {
 			originalDate: string;
 			makeupDate: string;
-		}): [BatchItem<"sqlite">, BatchItem<"sqlite">] => [
+		}): [BatchItem<"sqlite">, BatchItem<"sqlite">, BatchItem<"sqlite">] => [
 			db.delete(lessonMaterial).where(
 				and(
 					eq(lessonMaterial.orgId, orgId),
@@ -602,6 +602,16 @@ export async function materializeScheduleForEnrollment(
 						eq(lessonMaterial.orgId, orgId),
 						eq(lessonMaterial.classId, cls.id),
 						eq(lessonMaterial.date, shift.originalDate),
+					),
+				),
+			db
+				.update(classAssignment)
+				.set({ sessionDate: shift.makeupDate })
+				.where(
+					and(
+						eq(classAssignment.orgId, orgId),
+						eq(classAssignment.classId, cls.id),
+						eq(classAssignment.sessionDate, shift.originalDate),
 					),
 				),
 		];

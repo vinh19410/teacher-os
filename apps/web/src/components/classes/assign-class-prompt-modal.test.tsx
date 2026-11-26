@@ -899,6 +899,52 @@ describe("AssignClassPromptModal", () => {
 		expect(screen.getByText(/Task 2 · 250 từ · Band 7\.0/)).toBeTruthy();
 	});
 
+	it("chọn được buổi học để gắn bài tập và đồng bộ defaultSessionDate khi mở lại", async () => {
+		mockSubmit.run.mockResolvedValue({ kind: "refreshed", id: "ca-new" });
+		const sessions = [
+			{ dateISO: "2026-11-16", label: "Buổi 1 · 16/11 — Mở bài" },
+			{ dateISO: "2026-11-19", label: "Buổi 2 · 19/11 — Thân bài" },
+		];
+		const { rerender } = render(
+			<AssignClassPromptModal
+				open={false}
+				onClose={vi.fn()}
+				classGroup={testClass}
+				sessions={sessions}
+				defaultSessionDate="2026-11-19"
+			/>,
+		);
+		rerender(
+			<AssignClassPromptModal
+				open
+				onClose={vi.fn()}
+				classGroup={testClass}
+				sessions={sessions}
+				defaultSessionDate="2026-11-19"
+			/>,
+		);
+		const select = screen.getByLabelText(
+			"Gắn với buổi học (không bắt buộc)",
+		) as HTMLSelectElement;
+		expect(select.value).toBe("2026-11-19");
+
+		fireEvent.change(select, { target: { value: "2026-11-16" } });
+		fireEvent.click(
+			screen.getByRole("button", { name: /Writing Task 2 — Opinion/ }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Giao bài tập" }));
+
+		await waitFor(() => expect(mockSubmit.run).toHaveBeenCalled());
+		expect(mockSubmit.run).toHaveBeenCalledWith(
+			expect.objectContaining({
+				type: "assign-class-prompt",
+				payload: expect.objectContaining({
+					sessionDate: "2026-11-16",
+				}),
+			}),
+		);
+	});
+
 	it("cảnh báo học viên đang chờ xác nhận và gửi đúng targetScope ('class' vs 'selected')", async () => {
 		const onClose = vi.fn();
 		mockSubmit.run.mockResolvedValue({ kind: "refreshed" });

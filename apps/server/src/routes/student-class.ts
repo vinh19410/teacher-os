@@ -12,6 +12,7 @@ import {
 	studentAssignmentScoresSchema,
 } from "@teacher-os/api/contracts";
 import { formatSchedule } from "@teacher-os/api/format-schedule";
+import { isSafeMaterialUrl } from "@teacher-os/api/material-contracts";
 import {
 	vietnamSessionEndMs,
 	vietnamTodayISO,
@@ -201,6 +202,7 @@ export async function loadClassAssignmentItems(
 			className: classTable.name,
 			due: classAssignment.due,
 			dueAt: classAssignment.dueAt,
+			sessionDate: classAssignment.sessionDate,
 			submittedAt: classAssignmentTarget.submittedAt,
 			// TOS-30 #478: skill của đề — cổng học viên phân biệt nhãn chờ
 			// chấm giáo viên (Writing/Speaking) với bài tự chấm.
@@ -273,6 +275,7 @@ export async function loadClassAssignmentItems(
 			skill: row.skill,
 			gradedAt: row.gradedAt ? row.gradedAt.toISOString() : null,
 			...(row.writingPart !== null ? { hasWriting: true } : {}),
+			...(row.sessionDate != null ? { sessionDate: row.sessionDate } : {}),
 		};
 	});
 }
@@ -379,9 +382,13 @@ export function toStudentClassLessonWithMeeting(
 			? (rawRecStatus as RecordingStatus)
 			: undefined;
 	const isExpired = recordingStatus === "expired" || isExpiredKey;
-	const recordingUrl =
+	const rawRecordingUrl =
 		!isInactive && !hasRecordingVideo && !isExpired
-			? meeting?.recordingUrl || ""
+			? meeting?.recordingUrl?.trim() || ""
+			: "";
+	const recordingUrl =
+		rawRecordingUrl && isSafeMaterialUrl(rawRecordingUrl)
+			? rawRecordingUrl
 			: "";
 	const recordingPassword =
 		recordingUrl && meeting?.recordingPassword ? meeting.recordingPassword : "";

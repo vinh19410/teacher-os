@@ -19,6 +19,187 @@ import { findClassCurriculum } from "./syllabus-curriculum";
  */
 
 /**
+ * Đếm chỉ số buổi học (1-based) cho từng ngày có dòng `lesson` của lớp:
+ * nhóm `holiday` toàn phần không chiếm số (TOS-11 I4); các nhóm còn lại
+ * (kể cả `cancelled`) vẫn chiếm số theo thứ tự ngày tăng dần.
+ */
+function buildTeachingDateIndexMap(
+	rows: Array<{ date: string | null; status: string }>,
+): Map<string, number> {
+	const byDate = new Map<string, { status: string }[]>();
+	for (const row of rows) {
+		if (row.date === null) continue;
+		const bucket = byDate.get(row.date);
+		if (bucket) bucket.push(row);
+		else byDate.set(row.date, [row]);
+	}
+	const indexByDate = new Map<string, number>();
+	let teachingIndex = 0;
+	for (const date of [...byDate.keys()].sort()) {
+		const bucket = byDate.get(date) ?? [];
+		if (bucket.length > 0 && bucket.every((row) => row.status === "holiday")) {
+			continue;
+		}
+		teachingIndex += 1;
+		indexByDate.set(date, teachingIndex);
+	}
+	return indexByDate;
+}
+
+export interface ClassCurriculumSessionEntry {
+	moduleId: string;
+	moduleTitle: string;
+	syllabusLessonId: string;
+	title: string;
+	objectives: string;
+	kind: string;
+	bankMaterialIds: string[];
+}
+
+export interface ClassCurriculumSummary {
+	syllabus: {
+		name: string;
+		description: string;
+		modules: Array<{ id: string; title: string; description: string }>;
+	} | null;
+	byDate: Map<string, ClassCurriculumSessionEntry>;
+}
+
+/**
+ * Tải một lần cấu trúc giáo trình của lớp + ánh xạ theo ngày buổi học
+ * (buổi N ↔ bài N, không N+1) phục vụ cổng học viên. Whitelist trường
+ * student-safe: tuyệt đối không chiếu ghi chú nội bộ (`syllabusLesson.materials`)
+ * hay trạng thái nội bộ (`syllabusLesson.status`).
+ */
+export async function loadClassCurriculumSummary(
+	db: Db,
+	orgId: string,
+	classId: string,
+): Promise<ClassCurriculumSummary> {
+	const copy = await findClassCurriculum(db, classId, orgId);
+	if (!copy) return { syllabus: null, byDate: new Map() };
+
+	const [modules, datedLessons] = await Promise.all([
+		db
+			.select({
+				id: syllabusModule.id,
+				title: syllabusModule.title,
+				description: syllabusModule.description,
+			})
+			.from(syllabusModule)
+			.where(
+				and(
+					eq(syllabusModule.syllabusId, copy.id),
+					eq(syllabusModule.orgId, orgId),
+				),
+			)
+			.orderBy(asc(syllabusModule.position), asc(syllabusModule.createdAt)),
+		db
+			.select({ date: lesson.date, status: lesson.status })
+			.from(lesson)
+			.where(
+				and(
+					eq(lesson.orgId, orgId),
+					eq(lesson.classId, classId),
+					isNotNull(lesson.date),
+				),
+			),
+	]);
+
+	const summarySyllabus = {
+		name: copy.name,
+		description: copy.description,
+		modules,
+	};
+	if (modules.length === 0) {
+		return { syllabus: summarySyllabus, byDate: new Map() };
+	}
+
+	const lessonRows = await db
+		.select({
+			id: syllabusLesson.id,
+			moduleId: syllabusLesson.moduleId,
+			title: syllabusLesson.title,
+			objectives: syllabusLesson.objectives,
+			kind: syllabusLesson.kind,
+		})
+		.from(syllabusLesson)
+		.where(
+			and(
+				eq(syllabusLesson.orgId, orgId),
+				inArray(
+					syllabusLesson.moduleId,
+					modules.map((m) => m.id),
+				),
+			),
+		)
+		.orderBy(asc(syllabusLesson.position), asc(syllabusLesson.createdAt));
+
+	const lessonIds = lessonRows.map((row) => row.id);
+	const linkRows =
+		lessonIds.length > 0
+			? await db
+					.select({
+						syllabusLessonId: syllabusLessonMaterial.syllabusLessonId,
+						materialId: syllabusLessonMaterial.materialId,
+					})
+					.from(syllabusLessonMaterial)
+					.where(
+						and(
+							eq(syllabusLessonMaterial.orgId, orgId),
+							inArray(syllabusLessonMaterial.syllabusLessonId, lessonIds),
+						),
+					)
+					.orderBy(
+						asc(syllabusLessonMaterial.position),
+						asc(syllabusLessonMaterial.createdAt),
+					)
+			: [];
+
+	const materialIdsByLesson = new Map<string, string[]>();
+	for (const link of linkRows) {
+		const list = materialIdsByLesson.get(link.syllabusLessonId) ?? [];
+		list.push(link.materialId);
+		materialIdsByLesson.set(link.syllabusLessonId, list);
+	}
+
+	const byModule = new Map<string, typeof lessonRows>();
+	for (const row of lessonRows) {
+		const list = byModule.get(row.moduleId) ?? [];
+		list.push(row);
+		byModule.set(row.moduleId, list);
+	}
+	const flat: Array<{
+		moduleId: string;
+		moduleTitle: string;
+		row: (typeof lessonRows)[number];
+	}> = [];
+	for (const mod of modules) {
+		for (const row of byModule.get(mod.id) ?? []) {
+			flat.push({ moduleId: mod.id, moduleTitle: mod.title, row });
+		}
+	}
+
+	const indexByDate = buildTeachingDateIndexMap(datedLessons);
+	const byDate = new Map<string, ClassCurriculumSessionEntry>();
+	for (const [date, teachingIndex] of indexByDate) {
+		const matched = flat[teachingIndex - 1];
+		if (!matched) continue;
+		byDate.set(date, {
+			moduleId: matched.moduleId,
+			moduleTitle: matched.moduleTitle,
+			syllabusLessonId: matched.row.id,
+			title: matched.row.title,
+			objectives: matched.row.objectives,
+			kind: matched.row.kind,
+			bankMaterialIds: materialIdsByLesson.get(matched.row.id) ?? [],
+		});
+	}
+
+	return { syllabus: summarySyllabus, byDate };
+}
+
+/**
  * Bài học ứng với buổi `dateISO`: buổi N ↔ bài N theo ĐÚNG định nghĩa index
  * của tab Lịch học (apps/web `buildClassSessionsV2`, TOS-11 I4) — chronology
  * là sort tăng dần các distinct date của dòng `lesson` hiện hành, nhóm
@@ -50,29 +231,9 @@ async function findCurriculumLessonForDate(
 				isNotNull(lesson.date),
 			),
 		);
-	// Occurrence identity (#98): mọi dòng cùng (classId, date) là một buổi.
-	const byDate = new Map<string, { status: string }[]>();
-	for (const row of rows) {
-		if (row.date === null) continue;
-		const bucket = byDate.get(row.date);
-		if (bucket) bucket.push(row);
-		else byDate.set(row.date, [row]);
-	}
-	const target = byDate.get(dateISO);
-	if (!target) return null;
-	// Nhóm holiday toàn phần không chiếm số buổi (I4) — không ánh xạ bài.
-	if (target.length > 0 && target.every((row) => row.status === "holiday")) {
-		return null;
-	}
-	let teachingIndex = 0;
-	for (const date of [...byDate.keys()].sort()) {
-		const bucket = byDate.get(date) ?? [];
-		if (bucket.length > 0 && bucket.every((row) => row.status === "holiday")) {
-			continue;
-		}
-		teachingIndex += 1;
-		if (date === dateISO) break;
-	}
+	const indexByDate = buildTeachingDateIndexMap(rows);
+	const teachingIndex = indexByDate.get(dateISO);
+	if (teachingIndex === undefined) return null;
 
 	// Cây giáo trình theo (module position, lesson position) — cùng thứ tự
 	// build tree của snapshot (modulesBySyllabus/lessonsByModule).

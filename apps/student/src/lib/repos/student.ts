@@ -26,6 +26,7 @@ import {
 	type StudentOrgItem,
 	type StudentOverview,
 	type StudentScheduleResponse,
+	type StudentSessionDetailResponse,
 	type StudentZoomJoinError,
 	type StudentZoomJoinResponse,
 	studentClassDetailSchema,
@@ -33,6 +34,7 @@ import {
 	studentMeSchema,
 	studentOverviewSchema,
 	studentScheduleResponseSchema,
+	studentSessionDetailResponseSchema,
 	studentZoomJoinErrorSchema,
 	studentZoomJoinResponseSchema,
 } from "@teacher-os/api/contracts";
@@ -220,6 +222,29 @@ export async function fetchStudentClassDetail(
 
 	const data = (await res.json()) as unknown;
 	return studentClassDetailSchema.parse(data);
+}
+
+export async function fetchStudentSessionDetail(
+	classId: string,
+	date: string,
+): Promise<StudentSessionDetailResponse> {
+	const headers = getStudentHeaders();
+	const sentOrgId = headers["x-student-org-id"];
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/classes/${encodeURIComponent(classId)}/sessions/${encodeURIComponent(date)}`,
+		{
+			method: "GET",
+			headers,
+			credentials: "include",
+		},
+	);
+
+	if (!res.ok) {
+		await throwStudentHttpError(res, sentOrgId);
+	}
+
+	const data = (await res.json()) as unknown;
+	return studentSessionDetailResponseSchema.parse(data);
 }
 
 export type StudentZoomJoinResult =
@@ -449,6 +474,14 @@ export function useStudentClassDetail(classId: string) {
 	return useQuery({
 		queryKey: ["student", "class", classId],
 		queryFn: () => fetchStudentClassDetail(classId),
+		staleTime: 60_000,
+	});
+}
+
+export function useStudentSessionDetail(classId: string, date: string) {
+	return useQuery({
+		queryKey: ["student", "class", classId, "session", date],
+		queryFn: () => fetchStudentSessionDetail(classId, date),
 		staleTime: 60_000,
 	});
 }

@@ -1,8 +1,9 @@
-import type {
-	StudentClassMaterialView,
-	StudentLessonMaterialView,
+import {
+	isLessonMaterialCategory,
+	isMaterialKind,
+	type StudentClassMaterialView,
+	type StudentLessonMaterialView,
 } from "@teacher-os/api/material-contracts";
-import { isMaterialKind } from "@teacher-os/api/material-contracts";
 import { parseStartDateStrict } from "@teacher-os/api/skeleton";
 import {
 	classMaterial,
@@ -70,16 +71,19 @@ export function studentMaterialRoutes(deps: StudentMaterialRouteDeps) {
 		return row ? { classId, orgId } : null;
 	}
 
-	async function resolveSession(
-		c: Context<StudentEnv>,
-	): Promise<{ classId: string; date: string; orgId: string } | null> {
+	async function resolveSession(c: Context<StudentEnv>): Promise<{
+		classId: string;
+		date: string;
+		orgId: string;
+		isInactive: boolean;
+	} | null> {
 		const { student: me, orgId } = c.get("studentCtx");
 		const classId = c.req.param("classId") ?? "";
 		const date = parseStartDateStrict(c.req.param("date") ?? "");
 		if (!date) return null;
 		const db: Db = deps.getDb();
-		const [row] = await db
-			.select({ id: lesson.id })
+		const rows = await db
+			.select({ id: lesson.id, status: lesson.status })
 			.from(enrollment)
 			.innerJoin(
 				lesson,
@@ -96,14 +100,20 @@ export function studentMaterialRoutes(deps: StudentMaterialRouteDeps) {
 					eq(enrollment.classId, classId),
 					eq(enrollment.status, "active"),
 				),
-			)
-			.limit(1);
-		return row ? { classId, date, orgId } : null;
+			);
+		if (rows.length === 0) return null;
+		const isInactive = rows.every(
+			(row) => row.status === "holiday" || row.status === "cancelled",
+		);
+		return { classId, date, orgId, isInactive };
 	}
 
 	router.get(SESSION_PATH, async (c) => {
 		const session = await resolveSession(c);
 		if (!session) return c.json({ error: "session not found" }, 404);
+		if (session.isInactive) {
+			return c.json({ items: [], curriculumMaterials: [] });
+		}
 		const rows = await deps
 			.getDb()
 			.select({
@@ -116,6 +126,10 @@ export function studentMaterialRoutes(deps: StudentMaterialRouteDeps) {
 				sizeBytes: material.sizeBytes,
 				originalName: material.originalName,
 				position: lessonMaterial.position,
+				category: lessonMaterial.category,
+				sourceTitle: lessonMaterial.sourceTitle,
+				sourcePageStart: lessonMaterial.sourcePageStart,
+				sourcePageEnd: lessonMaterial.sourcePageEnd,
 			})
 			.from(lessonMaterial)
 			.innerJoin(
@@ -138,8 +152,21 @@ export function studentMaterialRoutes(deps: StudentMaterialRouteDeps) {
 				asc(material.id),
 			);
 		const items: StudentLessonMaterialView[] = rows.map((row) => ({
-			...row,
+			id: row.id,
+			title: row.title,
+			description: row.description,
 			kind: isMaterialKind(row.kind) ? row.kind : "file",
+			url: row.url,
+			mimeType: row.mimeType,
+			sizeBytes: row.sizeBytes,
+			originalName: row.originalName,
+			position: row.position,
+			category: isLessonMaterialCategory(row.category)
+				? row.category
+				: "lecture",
+			sourceTitle: row.sourceTitle ?? null,
+			sourcePageStart: row.sourcePageStart ?? null,
+			sourcePageEnd: row.sourcePageEnd ?? null,
 		}));
 		// #655: thêm tài liệu ngân hàng gắn qua giáo trình (buổi N ↔ bài N).
 		// Shape mirror route teacher GET cùng path: `items` giữ nguyên nghĩa
@@ -156,7 +183,9 @@ export function studentMaterialRoutes(deps: StudentMaterialRouteDeps) {
 				session.classId,
 				session.date,
 			)
-		).filter((ref) => !directIds.has(ref.id));
+		)
+			.filter((ref) => !directIds.has(ref.id))
+			.map((ref) => ({ ...ref, category: "lecture" as const }));
 		return c.json({ items, curriculumMaterials });
 	});
 
@@ -169,7 +198,9 @@ export function studentMaterialRoutes(deps: StudentMaterialRouteDeps) {
 			);
 		}
 		const session = await resolveSession(c);
-		if (!session) return c.json({ error: "session not found" }, 404);
+		if (!session || session.isInactive) {
+			return c.json({ error: "session not found" }, 404);
+		}
 		const [row] = await deps
 			.getDb()
 			.select({

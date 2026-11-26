@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "78b23aee-dc35-4640-8062-159344f12420",
+  "id": "9a2bc280-a6f4-4d71-874a-bc525a414e11",
   "prevId": "b0dcd6bc-992b-4f80-b4ce-80b4b614f64b",
   "tables": {
     "ai_grading_draft": {
@@ -1424,6 +1424,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "session_date": {
+          "name": "session_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "target_scope": {
           "name": "target_scope",
           "type": "text",
@@ -1460,6 +1467,14 @@
           "name": "class_assignment_study_pack_idx",
           "columns": [
             "class_study_pack_id"
+          ],
+          "isUnique": false
+        },
+        "class_assignment_class_session_idx": {
+          "name": "class_assignment_class_session_idx",
+          "columns": [
+            "class_id",
+            "session_date"
           ],
           "isUnique": false
         }
@@ -1826,49 +1841,6 @@
           "notNull": false,
           "autoincrement": false
         },
-        "recording_storage_key": {
-          "name": "recording_storage_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "recording_size_bytes": {
-          "name": "recording_size_bytes",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "recording_mime_type": {
-          "name": "recording_mime_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "recording_uploaded_at": {
-          "name": "recording_uploaded_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "recording_expires_at": {
-          "name": "recording_expires_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "recording_zoom_trash_status": {
-          "name": "recording_zoom_trash_status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'none'"
-        },
         "created_at": {
           "name": "created_at",
           "type": "integer",
@@ -1907,13 +1879,6 @@
           "columns": [
             "recording_status",
             "date"
-          ],
-          "isUnique": false
-        },
-        "class_session_meeting_recording_expires_idx": {
-          "name": "class_session_meeting_recording_expires_idx",
-          "columns": [
-            "recording_expires_at"
           ],
           "isUnique": false
         }
@@ -3732,6 +3697,35 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'lecture'"
+        },
+        "source_title": {
+          "name": "source_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "source_page_start": {
+          "name": "source_page_start",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "source_page_end": {
+          "name": "source_page_end",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "position": {

@@ -14,6 +14,7 @@ import {
 } from "@teacher-os/api/skeleton";
 import { addDaysISO } from "@teacher-os/api/vietnam-date";
 import { classTable } from "@teacher-os/db/schema/class";
+import { classAssignment } from "@teacher-os/db/schema/class-assignment";
 import { classSession } from "@teacher-os/db/schema/class-session";
 import { classSessionMeeting } from "@teacher-os/db/schema/class-session-meeting";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
@@ -27,7 +28,7 @@ import {
 } from "@teacher-os/db/schema/organization-holiday";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { syllabus } from "@teacher-os/db/schema/syllabus";
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { Db } from "../app";
 import {
@@ -299,6 +300,7 @@ export async function applyClassStartDateChange(
 			allHolidays,
 			meetingRows,
 			materialCountRows,
+			sessionAssignmentCountRows,
 		] = await Promise.all([
 			findClassCurriculum(db, classId, orgId),
 			db
@@ -348,11 +350,24 @@ export async function applyClassStartDateChange(
 						eq(lessonMaterial.classId, classId),
 					),
 				),
+			db
+				.select({ count: sql<number>`count(*)` })
+				.from(classAssignment)
+				.where(
+					and(
+						eq(classAssignment.orgId, orgId),
+						eq(classAssignment.classId, classId),
+						isNotNull(classAssignment.sessionDate),
+					),
+				),
 		]);
 
 		const hasCurriculum = Boolean(curriculumCopy);
 		const classSessionCount = Number(csCountRows[0]?.count ?? 0);
 		const materialCount = Number(materialCountRows[0]?.count ?? 0);
+		const sessionLinkedAssignmentCount = Number(
+			sessionAssignmentCountRows[0]?.count ?? 0,
+		);
 		const isManual =
 			!hasCurriculum &&
 			(cls.schedulingMode === "manual" || classSessionCount > 0);
@@ -457,6 +472,7 @@ export async function applyClassStartDateChange(
 			AND (SELECT count(*) FROM ${holidaySessionCancel} WHERE ${holidaySessionCancel.orgId} = ${orgId} AND ${holidaySessionCancel.classId} = ${classId}) = ${cancels.length}
 			AND (SELECT count(*) FROM ${classSessionMeeting} WHERE ${classSessionMeeting.orgId} = ${orgId} AND ${classSessionMeeting.classId} = ${classId}) = ${meetingRows.length}
 			AND (SELECT count(*) FROM ${lessonMaterial} WHERE ${lessonMaterial.orgId} = ${orgId} AND ${lessonMaterial.classId} = ${classId}) = ${materialCount}
+			AND (SELECT count(*) FROM ${classAssignment} WHERE ${classAssignment.orgId} = ${orgId} AND ${classAssignment.classId} = ${classId} AND ${classAssignment.sessionDate} IS NOT NULL) = ${sessionLinkedAssignmentCount}
 			AND (
 				(SELECT count(*) FROM ${organizationHoliday} WHERE ${organizationHoliday.orgId} = ${orgId} AND ${organizationHoliday.scope} = 'org')
 				+ (
@@ -492,7 +508,10 @@ export async function applyClassStartDateChange(
 
 		const needsRescheduleBatch =
 			!isManual &&
-			(lessonRows.length > 0 || meetingRows.length > 0 || materialCount > 0);
+			(lessonRows.length > 0 ||
+				meetingRows.length > 0 ||
+				materialCount > 0 ||
+				sessionLinkedAssignmentCount > 0);
 
 		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
 			statement0,
@@ -703,6 +722,20 @@ export async function applyClassStartDateChange(
 							),
 						);
 					}
+					if (sessionLinkedAssignmentCount > 0) {
+						statements.push(
+							db
+								.update(classAssignment)
+								.set({ sessionDate: shift.originalDate })
+								.where(
+									and(
+										eq(classAssignment.orgId, orgId),
+										eq(classAssignment.classId, classId),
+										eq(classAssignment.sessionDate, shift.makeupDate),
+									),
+								),
+						);
+					}
 					statements.push(
 						db
 							.delete(lesson)
@@ -758,23 +791,39 @@ export async function applyClassStartDateChange(
 			if (
 				plan.mode === "projected" &&
 				plan.surplusOldDates.length > 0 &&
-				meetingRows.length > 0
+				(meetingRows.length > 0 || sessionLinkedAssignmentCount > 0)
 			) {
 				for (const chunk of chunkDateMappings(
 					plan.surplusOldDates,
 					DATE_SET_GUARD_CHUNK,
 				)) {
-					statements.push(
-						db
-							.delete(classSessionMeeting)
-							.where(
-								and(
-									eq(classSessionMeeting.orgId, orgId),
-									eq(classSessionMeeting.classId, classId),
-									inArray(classSessionMeeting.date, chunk),
+					if (meetingRows.length > 0) {
+						statements.push(
+							db
+								.delete(classSessionMeeting)
+								.where(
+									and(
+										eq(classSessionMeeting.orgId, orgId),
+										eq(classSessionMeeting.classId, classId),
+										inArray(classSessionMeeting.date, chunk),
+									),
 								),
-							),
-					);
+						);
+					}
+					if (sessionLinkedAssignmentCount > 0) {
+						statements.push(
+							db
+								.update(classAssignment)
+								.set({ sessionDate: null })
+								.where(
+									and(
+										eq(classAssignment.orgId, orgId),
+										eq(classAssignment.classId, classId),
+										inArray(classAssignment.sessionDate, chunk),
+									),
+								),
+						);
+					}
 				}
 			}
 
@@ -915,6 +964,38 @@ export async function applyClassStartDateChange(
 					);
 				}
 
+				if (sessionLinkedAssignmentCount > 0) {
+					for (const chunk of chunkDateMappings(
+						plan.mappings,
+						DATE_ONLY_REMAP_CHUNK,
+					)) {
+						const dateCases = sql.join(
+							chunk.map(
+								(m) =>
+									sql`WHEN ${m.oldDate} THEN ${SHIFT_DATE_PREFIX + m.newDate}`,
+							),
+							sql` `,
+						);
+						statements.push(
+							db
+								.update(classAssignment)
+								.set({
+									sessionDate: sql`CASE ${classAssignment.sessionDate} ${dateCases} ELSE ${classAssignment.sessionDate} END`,
+								})
+								.where(
+									and(
+										eq(classAssignment.orgId, orgId),
+										eq(classAssignment.classId, classId),
+										inArray(
+											classAssignment.sessionDate,
+											chunk.map((m) => m.oldDate),
+										),
+									),
+								),
+						);
+					}
+				}
+
 				// Pass 2: gỡ tiền tố tạm bằng `substr` chính xác (không dùng `LIKE`)
 				if (plan.mode === "materialized") {
 					statements.push(
@@ -960,6 +1041,22 @@ export async function applyClassStartDateChange(
 									eq(classSessionMeeting.orgId, orgId),
 									eq(classSessionMeeting.classId, classId),
 									sql`substr(${classSessionMeeting.date}, 1, ${SHIFT_PREFIX_LEN}) = ${SHIFT_DATE_PREFIX}`,
+								),
+							),
+					);
+				}
+				if (sessionLinkedAssignmentCount > 0) {
+					statements.push(
+						db
+							.update(classAssignment)
+							.set({
+								sessionDate: sql`substr(${classAssignment.sessionDate}, ${SHIFT_SUBSTR_START})`,
+							})
+							.where(
+								and(
+									eq(classAssignment.orgId, orgId),
+									eq(classAssignment.classId, classId),
+									sql`substr(${classAssignment.sessionDate}, 1, ${SHIFT_PREFIX_LEN}) = ${SHIFT_DATE_PREFIX}`,
 								),
 							),
 					);
@@ -1045,6 +1142,20 @@ export async function applyClassStartDateChange(
 								shift.originalDate,
 								shift.makeupDate,
 							),
+						);
+					}
+					if (sessionLinkedAssignmentCount > 0) {
+						statements.push(
+							db
+								.update(classAssignment)
+								.set({ sessionDate: shift.makeupDate })
+								.where(
+									and(
+										eq(classAssignment.orgId, orgId),
+										eq(classAssignment.classId, classId),
+										eq(classAssignment.sessionDate, shift.originalDate),
+									),
+								),
 						);
 					}
 				}
