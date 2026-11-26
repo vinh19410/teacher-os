@@ -1039,21 +1039,147 @@ describe("dedup-vocab-group pipeline", () => {
 		expect(rerunOut).toContain("No safely deletable duplicate decks found");
 	});
 
-	it("formats non-public audit report with explicit IDs for local diagnostics", async () => {
+	it("formats classDecks breakdown and ungrouped overlaps, redacting classId/className in publicLogs mode", async () => {
 		const dir = makeTempDir();
 		const dbPath = join(dir, "report.sqlite");
 		const { client, db } = await openMigratedDb(dbPath);
 		try {
 			await seedBaseOrgAndGroup(db);
+			const t1 = new Date(1_700_000_001_000);
+			const t2 = new Date(1_700_000_002_000);
+
+			await db.insert(schema.vocabDeck).values([
+				{
+					id: "bank-l1",
+					orgId: "org-prod-1",
+					classId: null,
+					groupId: "grp-comm-2",
+					title: "Lesson 01 – Home & Accommodation",
+					lessonNumber: 1,
+					lang: "en",
+					createdAt: t1,
+					updatedAt: t1,
+				},
+				// Two duplicate decks inside cls-comm2-a
+				{
+					id: "cls-deck-1",
+					orgId: "org-prod-1",
+					classId: "cls-comm2-a",
+					groupId: "grp-comm-2",
+					title: "Lesson 01 – Home & Accommodation",
+					lessonNumber: 1,
+					lang: "en",
+					sourceDeckId: "bank-l1",
+					createdAt: t1,
+					updatedAt: t1,
+				},
+				{
+					id: "cls-deck-2",
+					orgId: "org-prod-1",
+					classId: "cls-comm2-a",
+					groupId: "grp-comm-2",
+					title: "Lesson 01 – Home & Accommodation",
+					lessonNumber: 1,
+					lang: "en",
+					sourceDeckId: "bank-l1",
+					createdAt: t2,
+					updatedAt: t2,
+				},
+				// Ungrouped bank deck with overlapping title
+				{
+					id: "ungrouped-l1",
+					orgId: "org-prod-1",
+					classId: null,
+					groupId: null,
+					title: "Lesson 01 – Home & Accommodation",
+					lessonNumber: 1,
+					lang: "en",
+					createdAt: t2,
+					updatedAt: t2,
+				},
+			]);
+
+			await db.insert(schema.vocabWord).values([
+				{
+					id: "w-bank-1",
+					deckId: "bank-l1",
+					word: "apartment",
+					entryType: "word",
+					translation: "căn hộ",
+					sortOrder: 0,
+				},
+				{
+					id: "w-cls-1",
+					deckId: "cls-deck-1",
+					word: "apartment",
+					entryType: "word",
+					translation: "căn hộ",
+					sortOrder: 0,
+				},
+				{
+					id: "w-cls-2",
+					deckId: "cls-deck-2",
+					word: "apartment",
+					entryType: "word",
+					translation: "căn hộ",
+					sortOrder: 0,
+				},
+				{
+					id: "w-ungrp-1",
+					deckId: "ungrouped-l1",
+					word: "apartment",
+					entryType: "word",
+					translation: "căn hộ",
+					sortOrder: 0,
+				},
+			]);
+
+			await db.insert(schema.vocabCard).values({
+				id: "card-cls-1",
+				studentId: "stu-1",
+				wordId: "w-cls-1",
+				level: 2,
+				state: "review",
+				intervalDays: 3,
+				dueAt: 1_700_500_000_000,
+			});
+
 			const runner = createLibsqlVocabPromoteRunner(client);
 			const audit = await auditDedupVocabGroup(runner, {
 				targetOrgId: "org-prod-1",
 				groupName: "Communication English Level 2",
 			});
-			const report = formatDedupAuditReport(audit, { publicLogs: false });
-			expect(report).toContain("groupId=grp-comm-2");
-			expect(report).toContain("orgId=org-prod-1");
-			expect(report).toContain("không tìm thấy bộ từ vựng bị trùng");
+
+			expect(audit.summary.duplicateClusters).toBe(0);
+			expect(audit.summary.classesWithDecks).toBe(1);
+			expect(audit.summary.classDuplicateClusters).toBe(1);
+			expect(audit.summary.classExtraDecks).toBe(1);
+			expect(audit.summary.ungroupedOverlapDecks).toBe(1);
+			expect(audit.classBreakdowns[0]?.totalCards).toBe(1);
+			expect(audit.classBreakdowns[0]?.linkedToBankSourceCount).toBe(2);
+			expect(
+				audit.classBreakdowns[0]?.duplicateClusters[0]?.allWordsIdentical,
+			).toBe(true);
+
+			const localReport = formatDedupAuditReport(audit, { publicLogs: false });
+			expect(localReport).toContain("groupId=grp-comm-2");
+			expect(localReport).toContain("orgId=org-prod-1");
+			expect(localReport).toContain('id=cls-comm2-a name="Comm 2A"');
+			expect(localReport).toContain("id=cls-deck-1");
+			expect(localReport).toContain("id=ungrouped-l1");
+			expect(localReport).toContain("không tìm thấy bộ từ vựng ngân hàng");
+
+			const publicReport = formatDedupAuditReport(audit, { publicLogs: true });
+			expect(publicReport).toContain("class#1");
+			expect(publicReport).toContain("CLASS-DUP[1]");
+			expect(publicReport).toContain("allWordsIdentical=true");
+			expect(publicReport).toContain("cards=1");
+			expect(publicReport).toContain("Ungrouped Bank Decks Overlapping Titles");
+			expect(publicReport).not.toContain("cls-comm2-a");
+			expect(publicReport).not.toContain("Comm 2A");
+			expect(publicReport).not.toContain("cls-deck-1");
+			expect(publicReport).not.toContain("ungrouped-l1");
+			expect(publicReport).not.toContain("org-prod-1");
 		} finally {
 			client.close();
 		}

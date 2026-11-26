@@ -88,6 +88,56 @@ export interface RepointDeckRecord {
 	previousUpdatedAt: number;
 }
 
+export interface ClassDeckDuplicateEntry {
+	deckId: string;
+	title: string;
+	lessonNumber: number | null;
+	wordCount: number;
+	cardCount: number;
+	suggestionCount: number;
+	sourceDeckId: string | null;
+	createdAt: number;
+	wordsSignature: string;
+}
+
+export interface ClassDeckDuplicateCluster {
+	normalizedTitle: string;
+	title: string;
+	lessonNumber: number | null;
+	entries: ClassDeckDuplicateEntry[];
+	allWordsIdentical: boolean;
+}
+
+export interface ClassDeckBreakdown {
+	classId: string;
+	className: string | null;
+	classType: string | null;
+	classLevel: string | null;
+	classMode: string | null;
+	classStatus: string | null;
+	deckCount: number;
+	uniqueTitleCount: number;
+	duplicateClusters: ClassDeckDuplicateCluster[];
+	totalExtraDecks: number;
+	matchedBankTitleCount: number;
+	linkedToBankSourceCount: number;
+	totalWords: number;
+	totalCards: number;
+	totalSuggestions: number;
+	earliestCreatedAt: number | null;
+	latestCreatedAt: number | null;
+}
+
+export interface UngroupedBankOverlapEntry {
+	deckId: string;
+	title: string;
+	lessonNumber: number | null;
+	wordCount: number;
+	cardCount: number;
+	suggestionCount: number;
+	createdAt: number;
+}
+
 export interface DedupVocabGroupAuditResult {
 	targetOrgId: string;
 	group: VocabGroupRow;
@@ -96,6 +146,9 @@ export interface DedupVocabGroupAuditResult {
 	uniqueTitleCount: number;
 	clusters: DedupDuplicateCluster[];
 	repointedDecks: RepointDeckRecord[];
+	classBreakdowns: ClassDeckBreakdown[];
+	ungroupedBankOverlaps: UngroupedBankOverlapEntry[];
+	otherOrgGroupCount: number;
 	summary: {
 		duplicateClusters: number;
 		totalExtraDecks: number;
@@ -103,6 +156,10 @@ export interface DedupVocabGroupAuditResult {
 		deletableWords: number;
 		skippedDecks: number;
 		repointedDecks: number;
+		classesWithDecks: number;
+		classDuplicateClusters: number;
+		classExtraDecks: number;
+		ungroupedOverlapDecks: number;
 	};
 }
 
@@ -519,12 +576,25 @@ export async function auditDedupVocabGroup(
 		throw new Error("Failed to resolve target vocab_group.");
 	}
 
-	// 3. Count class decks in this group (never deleted; reported & verified intact)
-	const classDeckCountRows = await runner.queryRows(
-		"SELECT COUNT(*) AS cnt FROM vocab_deck WHERE org_id = ? AND group_id = ? AND class_id IS NOT NULL",
+	// 3. Load class decks in this group (read-only breakdown; never deleted by bank-deck dedup)
+	const classDeckRows = await runner.queryRows(
+		`SELECT id, org_id, class_id, group_id, title, lesson_number, topic, lang,
+		        source_library_deck_id, source_deck_id, created_at, updated_at
+		   FROM vocab_deck
+		  WHERE org_id = ? AND group_id = ? AND class_id IS NOT NULL
+		  ORDER BY class_id ASC, lesson_number IS NULL ASC, lesson_number ASC, created_at ASC, id ASC`,
 		[targetOrgId, targetGroup.id],
 	);
-	const totalClassDecks = Number(classDeckCountRows[0]?.cnt ?? 0);
+	const classDecks = classDeckRows.map((r) => parseDeckRow(r, nowMs));
+	const totalClassDecks = classDecks.length;
+	const classDeckIds = classDecks.map((d) => d.id);
+	const distinctClassIds = [
+		...new Set(
+			classDecks
+				.map((d) => d.classId)
+				.filter((id): id is string => id !== null && id.length > 0),
+		),
+	];
 
 	// 4. Load all bank decks (class_id IS NULL) in targetGroup
 	const bankDeckRows = await runner.queryRows(
@@ -537,50 +607,76 @@ export async function auditDedupVocabGroup(
 	);
 	const bankDecks = bankDeckRows.map((r) => parseDeckRow(r, nowMs));
 	const bankDeckIds = bankDecks.map((d) => d.id);
+	const bankDeckIdSet = new Set(bankDeckIds);
 
-	// 5. Load all words, vocab_card counts, vocab_suggestion counts, and clone references
-	const [wordRows, cardCountRows, suggestionCountRows, cloneRefRows] =
-		await Promise.all([
-			queryRowsInIdChunks(
-				runner,
-				bankDeckIds,
-				(ph) =>
-					`SELECT id, deck_id, word, entry_type, ipa, pos, translation, example, audio_key, audio_url, sort_order, created_at, updated_at
-					   FROM vocab_word
-					  WHERE deck_id IN (${ph})
-					  ORDER BY sort_order ASC, created_at ASC, id ASC`,
-			),
-			queryRowsInIdChunks(
-				runner,
-				bankDeckIds,
-				(ph) =>
-					`SELECT w.deck_id AS deck_id, COUNT(c.id) AS card_count
-					   FROM vocab_word w
-					   INNER JOIN vocab_card c ON c.word_id = w.id
-					  WHERE w.deck_id IN (${ph})
-					    AND c.word_id NOT LIKE 'libword-%'
-					  GROUP BY w.deck_id`,
-			),
-			queryRowsInIdChunks(
-				runner,
-				bankDeckIds,
-				(ph) =>
-					`SELECT deck_id, COUNT(*) AS suggestion_count
-					   FROM vocab_suggestion
-					  WHERE deck_id IN (${ph})
-					  GROUP BY deck_id`,
-			),
-			queryRowsInIdChunks(
-				runner,
-				bankDeckIds,
-				(ph) =>
-					`SELECT id, org_id, class_id, title, source_deck_id, updated_at
-					   FROM vocab_deck
-					  WHERE org_id = ? AND source_deck_id IN (${ph})
-					  ORDER BY created_at ASC, id ASC`,
-				[targetOrgId],
-			),
-		]);
+	// 5. Load all words, vocab_card counts, vocab_suggestion counts, clone references,
+	//    class metadata, and ungrouped bank decks in targetOrgId
+	const allGroupDeckIds = [...bankDeckIds, ...classDeckIds];
+	const [
+		wordRows,
+		cardCountRows,
+		suggestionCountRows,
+		cloneRefRows,
+		classMetaRows,
+		ungroupedBankRows,
+	] = await Promise.all([
+		queryRowsInIdChunks(
+			runner,
+			allGroupDeckIds,
+			(ph) =>
+				`SELECT id, deck_id, word, entry_type, ipa, pos, translation, example, audio_key, audio_url, sort_order, created_at, updated_at
+				   FROM vocab_word
+				  WHERE deck_id IN (${ph})
+				  ORDER BY sort_order ASC, created_at ASC, id ASC`,
+		),
+		queryRowsInIdChunks(
+			runner,
+			allGroupDeckIds,
+			(ph) =>
+				`SELECT w.deck_id AS deck_id, COUNT(c.id) AS card_count
+				   FROM vocab_word w
+				   INNER JOIN vocab_card c ON c.word_id = w.id
+				  WHERE w.deck_id IN (${ph})
+				    AND c.word_id NOT LIKE 'libword-%'
+				  GROUP BY w.deck_id`,
+		),
+		queryRowsInIdChunks(
+			runner,
+			allGroupDeckIds,
+			(ph) =>
+				`SELECT deck_id, COUNT(*) AS suggestion_count
+				   FROM vocab_suggestion
+				  WHERE deck_id IN (${ph})
+				  GROUP BY deck_id`,
+		),
+		queryRowsInIdChunks(
+			runner,
+			bankDeckIds,
+			(ph) =>
+				`SELECT id, org_id, class_id, title, source_deck_id, updated_at
+				   FROM vocab_deck
+				  WHERE org_id = ? AND source_deck_id IN (${ph})
+				  ORDER BY created_at ASC, id ASC`,
+			[targetOrgId],
+		),
+		queryRowsInIdChunks(
+			runner,
+			distinctClassIds,
+			(ph) =>
+				`SELECT id, name, type, level, mode, status
+				   FROM class
+				  WHERE org_id = ? AND id IN (${ph})`,
+			[targetOrgId],
+		),
+		runner.queryRows(
+			`SELECT id, org_id, class_id, group_id, title, lesson_number, topic, lang,
+			        source_library_deck_id, source_deck_id, created_at, updated_at
+			   FROM vocab_deck
+			  WHERE org_id = ? AND group_id IS NULL AND class_id IS NULL
+			  ORDER BY created_at ASC, id ASC`,
+			[targetOrgId],
+		),
+	]);
 
 	const wordsByDeckId = new Map<string, VocabWordRow[]>();
 	for (const r of wordRows) {
@@ -752,6 +848,217 @@ export async function auditDedupVocabGroup(
 	}
 	repointedDecks.sort((a, b) => a.deckId.localeCompare(b.deckId));
 
+	// 9. Build read-only diagnostic breakdown for class decks in this group
+	const classMetaById = new Map<
+		string,
+		{
+			name: string | null;
+			type: string | null;
+			level: string | null;
+			mode: string | null;
+			status: string | null;
+		}
+	>();
+	for (const r of classMetaRows) {
+		classMetaById.set(String(r.id), {
+			name: toNullableString(r.name),
+			type: toNullableString(r.type),
+			level: toNullableString(r.level),
+			mode: toNullableString(r.mode),
+			status: toNullableString(r.status),
+		});
+	}
+
+	const classDecksByClassId = new Map<string, VocabDeckRow[]>();
+	for (const deck of classDecks) {
+		if (!deck.classId) continue;
+		const bucket = classDecksByClassId.get(deck.classId) ?? [];
+		bucket.push(deck);
+		classDecksByClassId.set(deck.classId, bucket);
+	}
+
+	const classBreakdowns: ClassDeckBreakdown[] = [];
+	let classDuplicateClustersTotal = 0;
+	let classExtraDecksTotal = 0;
+
+	for (const [classId, clsDecks] of classDecksByClassId.entries()) {
+		const meta = classMetaById.get(classId);
+		const byTitle = new Map<string, ClassDeckDuplicateEntry[]>();
+		let matchedBankTitleCount = 0;
+		let linkedToBankSourceCount = 0;
+		let totalWords = 0;
+		let totalCards = 0;
+		let totalSuggestions = 0;
+		let earliestCreatedAt: number | null = null;
+		let latestCreatedAt: number | null = null;
+
+		for (const d of clsDecks) {
+			const normTitle = normalizeDeckTitleForDedup(d.title);
+			if (decksByNormalizedTitle.has(normTitle)) {
+				matchedBankTitleCount++;
+			}
+			if (d.sourceDeckId && bankDeckIdSet.has(d.sourceDeckId)) {
+				linkedToBankSourceCount++;
+			}
+			const words = (wordsByDeckId.get(d.id) ?? []).sort(compareById);
+			const { wordsSignature } = computeDeckWordsSignature(words);
+			const cardCount = cardCountByDeckId.get(d.id) ?? 0;
+			const suggestionCount = suggestionCountByDeckId.get(d.id) ?? 0;
+			totalWords += words.length;
+			totalCards += cardCount;
+			totalSuggestions += suggestionCount;
+			if (earliestCreatedAt === null || d.createdAt < earliestCreatedAt) {
+				earliestCreatedAt = d.createdAt;
+			}
+			if (latestCreatedAt === null || d.createdAt > latestCreatedAt) {
+				latestCreatedAt = d.createdAt;
+			}
+
+			const list = byTitle.get(normTitle) ?? [];
+			list.push({
+				deckId: d.id,
+				title: d.title,
+				lessonNumber: d.lessonNumber,
+				wordCount: words.length,
+				cardCount,
+				suggestionCount,
+				sourceDeckId: d.sourceDeckId,
+				createdAt: d.createdAt,
+				wordsSignature,
+			});
+			byTitle.set(normTitle, list);
+		}
+
+		const duplicateClusters: ClassDeckDuplicateCluster[] = [];
+		let clsExtraDecks = 0;
+		const sortedClassTitleEntries = [...byTitle.entries()].sort(
+			([, aList], [, bList]) => {
+				const aLesson = aList[0]?.lessonNumber ?? Number.MAX_SAFE_INTEGER;
+				const bLesson = bList[0]?.lessonNumber ?? Number.MAX_SAFE_INTEGER;
+				if (aLesson !== bLesson) return aLesson - bLesson;
+				return (aList[0]?.title ?? "").localeCompare(bList[0]?.title ?? "");
+			},
+		);
+
+		for (const [normalizedTitle, entries] of sortedClassTitleEntries) {
+			if (entries.length < 2) continue;
+			entries.sort((a, b) =>
+				a.createdAt !== b.createdAt
+					? a.createdAt - b.createdAt
+					: a.deckId.localeCompare(b.deckId),
+			);
+			const firstSig = entries[0]?.wordsSignature ?? "";
+			const allWordsIdentical = entries.every(
+				(e) => e.wordsSignature === firstSig,
+			);
+			duplicateClusters.push({
+				normalizedTitle,
+				title: entries[0]?.title ?? normalizedTitle,
+				lessonNumber: entries[0]?.lessonNumber ?? null,
+				entries,
+				allWordsIdentical,
+			});
+			clsExtraDecks += entries.length - 1;
+		}
+
+		classDuplicateClustersTotal += duplicateClusters.length;
+		classExtraDecksTotal += clsExtraDecks;
+
+		classBreakdowns.push({
+			classId,
+			className: meta?.name ?? null,
+			classType: meta?.type ?? null,
+			classLevel: meta?.level ?? null,
+			classMode: meta?.mode ?? null,
+			classStatus: meta?.status ?? null,
+			deckCount: clsDecks.length,
+			uniqueTitleCount: byTitle.size,
+			duplicateClusters,
+			totalExtraDecks: clsExtraDecks,
+			matchedBankTitleCount,
+			linkedToBankSourceCount,
+			totalWords,
+			totalCards,
+			totalSuggestions,
+			earliestCreatedAt,
+			latestCreatedAt,
+		});
+	}
+
+	classBreakdowns.sort((a, b) => {
+		if (a.deckCount !== b.deckCount) return b.deckCount - a.deckCount;
+		const aTime = a.earliestCreatedAt ?? Number.MAX_SAFE_INTEGER;
+		const bTime = b.earliestCreatedAt ?? Number.MAX_SAFE_INTEGER;
+		if (aTime !== bTime) return aTime - bTime;
+		return a.classId.localeCompare(b.classId);
+	});
+
+	// 10. Check ungrouped bank decks in the same org whose title overlaps this group
+	const overlappingUngroupedDecks = ungroupedBankRows
+		.map((r) => parseDeckRow(r, nowMs))
+		.filter((d) =>
+			decksByNormalizedTitle.has(normalizeDeckTitleForDedup(d.title)),
+		);
+	const overlapIds = overlappingUngroupedDecks.map((d) => d.id);
+	const [overlapWordCounts, overlapCardCounts, overlapSuggestionCounts] =
+		overlapIds.length > 0
+			? await Promise.all([
+					queryRowsInIdChunks(
+						runner,
+						overlapIds,
+						(ph) =>
+							`SELECT deck_id, COUNT(*) AS cnt FROM vocab_word WHERE deck_id IN (${ph}) GROUP BY deck_id`,
+					),
+					queryRowsInIdChunks(
+						runner,
+						overlapIds,
+						(ph) =>
+							`SELECT w.deck_id AS deck_id, COUNT(c.id) AS card_count
+							   FROM vocab_word w
+							   INNER JOIN vocab_card c ON c.word_id = w.id
+							  WHERE w.deck_id IN (${ph})
+							    AND c.word_id NOT LIKE 'libword-%'
+							  GROUP BY w.deck_id`,
+					),
+					queryRowsInIdChunks(
+						runner,
+						overlapIds,
+						(ph) =>
+							`SELECT deck_id, COUNT(*) AS suggestion_count
+							   FROM vocab_suggestion
+							  WHERE deck_id IN (${ph})
+							  GROUP BY deck_id`,
+					),
+				])
+			: [[], [], []];
+
+	const overlapWordCountMap = new Map<string, number>();
+	for (const r of overlapWordCounts) {
+		overlapWordCountMap.set(String(r.deck_id), Number(r.cnt ?? 0));
+	}
+	const overlapCardCountMap = new Map<string, number>();
+	for (const r of overlapCardCounts) {
+		overlapCardCountMap.set(String(r.deck_id), Number(r.card_count ?? 0));
+	}
+	const overlapSuggestionCountMap = new Map<string, number>();
+	for (const r of overlapSuggestionCounts) {
+		overlapSuggestionCountMap.set(
+			String(r.deck_id),
+			Number(r.suggestion_count ?? 0),
+		);
+	}
+
+	const ungroupedBankOverlaps: UngroupedBankOverlapEntry[] =
+		overlappingUngroupedDecks.map((d) => ({
+			deckId: d.id,
+			title: d.title,
+			lessonNumber: d.lessonNumber,
+			wordCount: overlapWordCountMap.get(d.id) ?? 0,
+			cardCount: overlapCardCountMap.get(d.id) ?? 0,
+			suggestionCount: overlapSuggestionCountMap.get(d.id) ?? 0,
+			createdAt: d.createdAt,
+		}));
+
 	return {
 		targetOrgId,
 		group: targetGroup,
@@ -760,6 +1067,9 @@ export async function auditDedupVocabGroup(
 		uniqueTitleCount: decksByNormalizedTitle.size,
 		clusters,
 		repointedDecks,
+		classBreakdowns,
+		ungroupedBankOverlaps,
+		otherOrgGroupCount: Math.max(0, allOrgGroups.length - 1),
 		summary: {
 			duplicateClusters: clusters.length,
 			totalExtraDecks,
@@ -767,6 +1077,10 @@ export async function auditDedupVocabGroup(
 			deletableWords,
 			skippedDecks,
 			repointedDecks: repointedDecks.length,
+			classesWithDecks: classBreakdowns.length,
+			classDuplicateClusters: classDuplicateClustersTotal,
+			classExtraDecks: classExtraDecksTotal,
+			ungroupedOverlapDecks: ungroupedBankOverlaps.length,
 		},
 	};
 }
@@ -1258,55 +1572,54 @@ export function formatDedupAuditReport(
 		: ` [groupId=${audit.group.id}, orgId=${audit.targetOrgId}]`;
 	const lines: string[] = [
 		`=== Vocab Group Duplicate Audit: "${audit.group.name}"${groupIdPart} ===`,
-		`Inventory: bankDecks=${audit.totalBankDecks}, uniqueTitles=${audit.uniqueTitleCount}, classDecks=${audit.totalClassDecks} (untouched)`,
-		`Duplicates: clusters=${audit.summary.duplicateClusters}, extraDecks=${audit.summary.totalExtraDecks}, deletableDecks=${audit.summary.deletableDecks}, deletableWords=${audit.summary.deletableWords}, skippedDecks=${audit.summary.skippedDecks}, repointedDecks=${audit.summary.repointedDecks}`,
+		`Inventory: bankDecks=${audit.totalBankDecks}, uniqueTitles=${audit.uniqueTitleCount}, classDecks=${audit.totalClassDecks} across ${audit.summary.classesWithDecks} class(es) (untouched), otherOrgGroups=${audit.otherOrgGroupCount}, ungroupedBankOverlaps=${audit.summary.ungroupedOverlapDecks}`,
+		`Bank Duplicates: clusters=${audit.summary.duplicateClusters}, extraDecks=${audit.summary.totalExtraDecks}, deletableDecks=${audit.summary.deletableDecks}, deletableWords=${audit.summary.deletableWords}, skippedDecks=${audit.summary.skippedDecks}, repointedDecks=${audit.summary.repointedDecks}`,
 	];
 
 	if (audit.clusters.length === 0) {
 		lines.push(
-			"Result: không tìm thấy bộ từ vựng bị trùng nào trong nhóm này.",
+			"Result: không tìm thấy bộ từ vựng ngân hàng (class_id IS NULL) bị trùng nào trong nhóm này.",
 		);
-		return lines.join("\n");
-	}
-
-	lines.push("");
-	lines.push("-- Duplicate Clusters --");
-	for (const [clusterIdx, cluster] of audit.clusters.entries()) {
-		const lessonPart =
-			cluster.keeper.deck.lessonNumber !== null
-				? `L${cluster.keeper.deck.lessonNumber} `
-				: "";
-		const totalInCluster = 1 + cluster.candidates.length;
-		lines.push(
-			`  [${clusterIdx + 1}] ${lessonPart}"${cluster.keeper.deck.title}" — copies=${totalInCluster} (keep=1, delete=${cluster.deletableCount}, skip=${cluster.skippedCount})`,
-		);
-
-		const keeperIdPart = publicLogs ? "" : ` id=${cluster.keeper.deck.id}`;
-		lines.push(
-			`      KEEP:${keeperIdPart} words=${cluster.keeper.wordCount}, audio=${cluster.keeper.audioKeyCount}, cards=${cluster.keeper.cardCount}, suggestions=${cluster.keeper.suggestionCount}, clones=${cluster.keeper.cloneRefCount}, created=${formatTimestampIso(cluster.keeper.deck.createdAt)}`,
-		);
-
-		for (const [candIdx, decision] of cluster.candidates.entries()) {
-			const c = decision.inspection;
-			const tag =
-				decision.action === "delete"
-					? "DELETE"
-					: `SKIP[${decision.skipReasons.join(",")}]`;
-			const candIdPart = publicLogs
-				? ` copy#${candIdx + 1}`
-				: ` id=${c.deck.id}`;
-			const lessonDiffPart =
-				c.deck.lessonNumber !== cluster.keeper.deck.lessonNumber
-					? `, lesson=${c.deck.lessonNumber ?? "null"}`
+	} else {
+		lines.push("");
+		lines.push("-- Bank Duplicate Clusters --");
+		for (const [clusterIdx, cluster] of audit.clusters.entries()) {
+			const lessonPart =
+				cluster.keeper.deck.lessonNumber !== null
+					? `L${cluster.keeper.deck.lessonNumber} `
 					: "";
-			const coreNote =
-				decision.skipReasons.includes("word_content_mismatch") &&
-				c.coreWordsSignature === cluster.keeper.coreWordsSignature
-					? " (same word+translation, metadata differs)"
-					: "";
+			const totalInCluster = 1 + cluster.candidates.length;
 			lines.push(
-				`      ${tag}:${candIdPart} words=${c.wordCount}, audio=${c.audioKeyCount}, cards=${c.cardCount}, suggestions=${c.suggestionCount}, clones=${c.cloneRefCount}${lessonDiffPart}, created=${formatTimestampIso(c.deck.createdAt)}${coreNote}`,
+				`  [${clusterIdx + 1}] ${lessonPart}"${cluster.keeper.deck.title}" — copies=${totalInCluster} (keep=1, delete=${cluster.deletableCount}, skip=${cluster.skippedCount})`,
 			);
+
+			const keeperIdPart = publicLogs ? "" : ` id=${cluster.keeper.deck.id}`;
+			lines.push(
+				`      KEEP:${keeperIdPart} words=${cluster.keeper.wordCount}, audio=${cluster.keeper.audioKeyCount}, cards=${cluster.keeper.cardCount}, suggestions=${cluster.keeper.suggestionCount}, clones=${cluster.keeper.cloneRefCount}, created=${formatTimestampIso(cluster.keeper.deck.createdAt)}`,
+			);
+
+			for (const [candIdx, decision] of cluster.candidates.entries()) {
+				const c = decision.inspection;
+				const tag =
+					decision.action === "delete"
+						? "DELETE"
+						: `SKIP[${decision.skipReasons.join(",")}]`;
+				const candIdPart = publicLogs
+					? ` copy#${candIdx + 1}`
+					: ` id=${c.deck.id}`;
+				const lessonDiffPart =
+					c.deck.lessonNumber !== cluster.keeper.deck.lessonNumber
+						? `, lesson=${c.deck.lessonNumber ?? "null"}`
+						: "";
+				const coreNote =
+					decision.skipReasons.includes("word_content_mismatch") &&
+					c.coreWordsSignature === cluster.keeper.coreWordsSignature
+						? " (same word+translation, metadata differs)"
+						: "";
+				lines.push(
+					`      ${tag}:${candIdPart} words=${c.wordCount}, audio=${c.audioKeyCount}, cards=${c.cardCount}, suggestions=${c.suggestionCount}, clones=${c.cloneRefCount}${lessonDiffPart}, created=${formatTimestampIso(c.deck.createdAt)}${coreNote}`,
+				);
+			}
 		}
 	}
 
@@ -1321,6 +1634,62 @@ export function formatDedupAuditReport(
 				? `#${idx + 1} (${kind}) "${r.title}" -> ${r.toSourceDeckId ? "keeper" : "NULL"}`
 				: `id=${r.deckId} (${kind}) "${r.title}": ${r.fromSourceDeckId} -> ${r.toSourceDeckId ?? "NULL"}`;
 			lines.push(`  - ${detail}`);
+		}
+	}
+
+	if (audit.classBreakdowns.length > 0) {
+		lines.push("");
+		lines.push(
+			`-- Class Decks Breakdown (${audit.classBreakdowns.length} class(es), ${audit.totalClassDecks} deck(s), duplicateClusters=${audit.summary.classDuplicateClusters}, extraDuplicates=${audit.summary.classExtraDecks}) --`,
+		);
+		for (const [idx, cb] of audit.classBreakdowns.entries()) {
+			const classLabel = publicLogs
+				? `class#${idx + 1}`
+				: `id=${cb.classId} name="${cb.className ?? "(unknown)"}"`;
+			const metaParts = [
+				cb.classType ? `type=${cb.classType}` : null,
+				cb.classLevel ? `level=${cb.classLevel}` : null,
+				cb.classMode ? `mode=${cb.classMode}` : null,
+				cb.classStatus ? `status=${cb.classStatus}` : null,
+			].filter((p): p is string => p !== null);
+			const metaStr = metaParts.length > 0 ? ` (${metaParts.join(", ")})` : "";
+			const timeRange =
+				cb.earliestCreatedAt !== null && cb.latestCreatedAt !== null
+					? `${formatTimestampIso(cb.earliestCreatedAt)}..${formatTimestampIso(cb.latestCreatedAt)}`
+					: "unknown";
+			lines.push(
+				`  * ${classLabel}${metaStr}: decks=${cb.deckCount}, uniqueTitles=${cb.uniqueTitleCount}, extraDuplicates=${cb.totalExtraDecks}, matchedBankTitles=${cb.matchedBankTitleCount}, linkedToBankSource=${cb.linkedToBankSourceCount}, words=${cb.totalWords}, cards=${cb.totalCards}, suggestions=${cb.totalSuggestions}, created=${timeRange}`,
+			);
+			for (const [cIdx, dup] of cb.duplicateClusters.entries()) {
+				const lessonPart =
+					dup.lessonNumber !== null ? `L${dup.lessonNumber} ` : "";
+				lines.push(
+					`      CLASS-DUP[${cIdx + 1}] ${lessonPart}"${dup.title}" — copies=${dup.entries.length}, allWordsIdentical=${dup.allWordsIdentical}`,
+				);
+				for (const [eIdx, entry] of dup.entries.entries()) {
+					const entryIdPart = publicLogs
+						? `copy#${eIdx + 1}`
+						: `id=${entry.deckId}`;
+					lines.push(
+						`        - ${entryIdPart}: words=${entry.wordCount}, cards=${entry.cardCount}, suggestions=${entry.suggestionCount}, created=${formatTimestampIso(entry.createdAt)}`,
+					);
+				}
+			}
+		}
+	}
+
+	if (audit.ungroupedBankOverlaps.length > 0) {
+		lines.push("");
+		lines.push(
+			`-- Ungrouped Bank Decks Overlapping Titles (${audit.ungroupedBankOverlaps.length}) --`,
+		);
+		for (const [idx, entry] of audit.ungroupedBankOverlaps.entries()) {
+			const lessonPart =
+				entry.lessonNumber !== null ? `L${entry.lessonNumber} ` : "";
+			const idPart = publicLogs ? `#${idx + 1}` : `id=${entry.deckId}`;
+			lines.push(
+				`  - ${idPart} ${lessonPart}"${entry.title}": words=${entry.wordCount}, cards=${entry.cardCount}, suggestions=${entry.suggestionCount}, created=${formatTimestampIso(entry.createdAt)}`,
+			);
 		}
 	}
 
