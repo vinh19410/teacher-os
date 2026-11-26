@@ -246,7 +246,7 @@ function DeckListRow({
 					{deck.wordCount} từ · {deck.lang}
 				</p>
 			</div>
-			<div className="flex flex-none flex-wrap items-center gap-2">
+			<div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
 				<Button
 					size="sm"
 					variant="secondary"
@@ -287,8 +287,10 @@ function DeckListRow({
 /**
  * Danh sách bộ từ vựng (#359, #363):
  * - Khi truyền `classId` (trang chi tiết lớp): chỉ hiển thị bộ từ thuộc lớp đó (`deck.classId === classId`).
- * - Khi `classId` là `null` hoặc không truyền (trang Từ vựng hub `/vocab`): hiển thị toàn bộ deck của org
- *   (cả deck riêng `classId = null` lẫn deck lớp), kèm badge nguồn ("Riêng" / "Lớp {name}") và nút "Gợi ý".
+ * - Khi `classId` là `null` hoặc không truyền (trang Từ vựng hub `/vocab`): mặc định lọc theo nguồn
+ *   "Ngân hàng riêng" (`classId === null`) để tránh hiển thị lặp với các bản đã clone vào lớp học,
+ *   đồng thời cung cấp bộ lọc nguồn ("Ngân hàng riêng" / "Theo lớp" / "Lớp {name}" / "Tất cả nguồn")
+ *   kết hợp bộ lọc nhóm bộ từ.
  */
 export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 	const { data, dispatch } = useData();
@@ -296,7 +298,7 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 		typeof classId === "string" && classId.length > 0 ? classId : null;
 	const isHubMode = targetClassId === null;
 
-	const decks = useMemo(() => {
+	const allScopedDecks = useMemo(() => {
 		if (!isHubMode) {
 			return data.vocabDecks.filter(
 				(deck) => deck.classId != null && deck.classId === targetClassId,
@@ -312,6 +314,82 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 		}
 		return map;
 	}, [data.classes]);
+
+	const { independentCount, classDeckCount, sourceOptions } = useMemo(() => {
+		if (!isHubMode) {
+			return {
+				independentCount: 0,
+				classDeckCount: allScopedDecks.length,
+				sourceOptions: [] as Array<{ value: string; label: string }>,
+			};
+		}
+		let independent = 0;
+		let inClasses = 0;
+		const classCounts = new Map<string, number>();
+		for (const deck of allScopedDecks) {
+			if (deck.classId == null) {
+				independent += 1;
+			} else {
+				inClasses += 1;
+				classCounts.set(deck.classId, (classCounts.get(deck.classId) ?? 0) + 1);
+			}
+		}
+		const sortedClasses = [...classCounts.entries()]
+			.map(([id, count]) => ({
+				id,
+				name: classNameById.get(id) ?? id,
+				count,
+			}))
+			.sort((a, b) => a.name.localeCompare(b.name, "vi"));
+
+		const options: Array<{ value: string; label: string }> = [
+			{ value: "independent", label: `Ngân hàng riêng (${independent})` },
+		];
+		if (inClasses > 0) {
+			options.push({
+				value: "all-classes",
+				label: `Theo lớp (${inClasses})`,
+			});
+			for (const cls of sortedClasses) {
+				options.push({
+					value: `class:${cls.id}`,
+					label: `Lớp ${cls.name} (${cls.count})`,
+				});
+			}
+			options.push({
+				value: "all",
+				label: `Tất cả nguồn (${allScopedDecks.length})`,
+			});
+		}
+		return {
+			independentCount: independent,
+			classDeckCount: inClasses,
+			sourceOptions: options,
+		};
+	}, [allScopedDecks, classNameById, isHubMode]);
+
+	const [sourceFilter, setSourceFilter] = useState<string>("independent");
+	const effectiveSourceFilter = useMemo(() => {
+		if (!isHubMode) return "all";
+		return sourceOptions.some((opt) => opt.value === sourceFilter)
+			? sourceFilter
+			: "independent";
+	}, [isHubMode, sourceFilter, sourceOptions]);
+
+	const decks = useMemo(() => {
+		if (!isHubMode) return allScopedDecks;
+		if (effectiveSourceFilter === "independent") {
+			return allScopedDecks.filter((deck) => deck.classId == null);
+		}
+		if (effectiveSourceFilter === "all-classes") {
+			return allScopedDecks.filter((deck) => deck.classId != null);
+		}
+		if (effectiveSourceFilter.startsWith("class:")) {
+			const filterClassId = effectiveSourceFilter.slice("class:".length);
+			return allScopedDecks.filter((deck) => deck.classId === filterClassId);
+		}
+		return allScopedDecks;
+	}, [allScopedDecks, effectiveSourceFilter, isHubMode]);
 
 	const pendingCountByDeckId = useMemo(() => {
 		const map = new Map<string, number>();
@@ -366,9 +444,21 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 		return decks.filter((deck) => deck.groupId === effectiveGroupFilter);
 	}, [decks, effectiveGroupFilter, groupNameById]);
 
+	const showSourceFilter = isHubMode && classDeckCount > 0;
 	const showGroupFilter =
 		decks.length > 0 &&
 		(sortedGroups.length > 0 || effectiveGroupFilter !== "all");
+	const showFilterBar = showSourceFilter || showGroupFilter;
+	const hasActiveFilter =
+		effectiveGroupFilter !== "all" ||
+		(isHubMode && effectiveSourceFilter !== "independent");
+
+	const handleClearFilters = () => {
+		setGroupFilter("all");
+		if (isHubMode) {
+			setSourceFilter("independent");
+		}
+	};
 
 	const [createOpen, setCreateOpen] = useState(false);
 	const [libraryOpen, setLibraryOpen] = useState(false);
@@ -592,29 +682,46 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 				</div>
 			</div>
 
-			{showGroupFilter ? (
+			{showFilterBar ? (
 				<div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-					<div className="flex flex-wrap items-center gap-2">
-						<Select
-							data-testid="vocab-deck-group-filter"
-							aria-label="Lọc bộ từ theo nhóm"
-							value={effectiveGroupFilter}
-							onChange={(e) => setGroupFilter(e.target.value)}
-							className="w-full sm:w-64"
-						>
-							<option value="all">Tất cả nhóm</option>
-							{sortedGroups.map((group) => (
-								<option key={group.id} value={group.id}>
-									{group.name} ({deckCountByGroupId.get(group.id) ?? 0})
-								</option>
-							))}
-							{ungroupedCount > 0 || effectiveGroupFilter === "ungrouped" ? (
-								<option value="ungrouped">
-									Chưa phân nhóm ({ungroupedCount})
-								</option>
-							) : null}
-						</Select>
-						{effectiveGroupFilter !== "all" ? (
+					<div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto">
+						{showSourceFilter ? (
+							<Select
+								data-testid="vocab-deck-source-filter"
+								aria-label="Lọc bộ từ theo nguồn"
+								value={effectiveSourceFilter}
+								onChange={(e) => setSourceFilter(e.target.value)}
+								className="w-full min-w-0 max-w-full sm:w-56"
+							>
+								{sourceOptions.map((option) => (
+									<option key={option.value} value={option.value}>
+										{option.label}
+									</option>
+								))}
+							</Select>
+						) : null}
+						{showGroupFilter ? (
+							<Select
+								data-testid="vocab-deck-group-filter"
+								aria-label="Lọc bộ từ theo nhóm"
+								value={effectiveGroupFilter}
+								onChange={(e) => setGroupFilter(e.target.value)}
+								className="w-full min-w-0 max-w-full sm:w-64"
+							>
+								<option value="all">Tất cả nhóm</option>
+								{sortedGroups.map((group) => (
+									<option key={group.id} value={group.id}>
+										{group.name} ({deckCountByGroupId.get(group.id) ?? 0})
+									</option>
+								))}
+								{ungroupedCount > 0 || effectiveGroupFilter === "ungrouped" ? (
+									<option value="ungrouped">
+										Chưa phân nhóm ({ungroupedCount})
+									</option>
+								) : null}
+							</Select>
+						) : null}
+						{hasActiveFilter ? (
 							<span
 								aria-live="polite"
 								data-testid="vocab-deck-group-filter-count"
@@ -624,13 +731,13 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 							</span>
 						) : null}
 					</div>
-					{effectiveGroupFilter !== "all" && filteredDecks.length > 0 ? (
+					{hasActiveFilter && filteredDecks.length > 0 ? (
 						<Button
 							type="button"
 							size="sm"
 							variant="ghost"
 							data-testid="vocab-deck-group-filter-clear"
-							onClick={() => setGroupFilter("all")}
+							onClick={handleClearFilters}
 						>
 							Xóa bộ lọc
 						</Button>
@@ -638,24 +745,51 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 				</div>
 			) : null}
 
-			{decks.length === 0 ? (
+			{allScopedDecks.length === 0 ? (
 				<p className="mt-4 text-muted-foreground text-sm">
 					{isHubMode
 						? "Chưa có bộ từ vựng nào. Tạo bộ từ mới hoặc thêm từ thư viện để gợi ý cho học viên."
 						: "Chưa có bộ từ vựng nào cho lớp này. Tạo bộ từ để học sinh học và ôn tập theo 5 cấp độ trí nhớ."}
 				</p>
+			) : isHubMode &&
+				decks.length === 0 &&
+				effectiveSourceFilter === "independent" &&
+				independentCount === 0 &&
+				classDeckCount > 0 ? (
+				<div
+					data-testid="vocab-deck-source-empty"
+					className="mt-4 flex flex-col items-start gap-2 rounded-md border border-border bg-muted/30 p-4 text-muted-foreground text-sm"
+				>
+					<p>
+						Chưa có bộ từ nào trong ngân hàng riêng. Hiện có {classDeckCount} bộ
+						từ đang gắn trong các lớp học.
+					</p>
+					<Button
+						type="button"
+						size="sm"
+						variant="secondary"
+						data-testid="vocab-deck-show-class-decks"
+						onClick={() => setSourceFilter("all-classes")}
+					>
+						Xem bộ từ theo lớp
+					</Button>
+				</div>
 			) : filteredDecks.length === 0 ? (
 				<div
 					data-testid="vocab-deck-group-filter-empty"
 					className="mt-4 flex flex-col items-start gap-2 rounded-md border border-border bg-muted/30 p-4 text-muted-foreground text-sm"
 				>
-					<p>Không có bộ từ nào trong nhóm đã chọn.</p>
+					<p>
+						{effectiveGroupFilter !== "all"
+							? "Không có bộ từ nào trong nhóm đã chọn."
+							: "Không có bộ từ nào khớp bộ lọc đã chọn."}
+					</p>
 					<Button
 						type="button"
 						size="sm"
 						variant="secondary"
 						data-testid="vocab-deck-group-filter-clear"
-						onClick={() => setGroupFilter("all")}
+						onClick={handleClearFilters}
 					>
 						Xóa bộ lọc
 					</Button>
