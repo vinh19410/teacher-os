@@ -78,7 +78,7 @@ function applyShiftsToRows(
 /** Kỳ nghỉ có hiệu lực với một lớp: scope org của tổ chức + scope classes
  * có dòng organization_holiday_class trỏ tới lớp. Sắp createdAt ASC, id —
  * kỳ khai báo trước thắng khi chồng ngày (đồng bộ loader route, red-team I2). */
-async function loadClassHolidays(
+export async function loadClassHolidays(
 	db: Db,
 	orgId: string,
 	classId: string,
@@ -142,13 +142,14 @@ async function loadClassHolidays(
 		}));
 }
 
-async function loadClassShifts(
+export async function loadClassShifts(
 	db: Db,
 	orgId: string,
 	classId: string,
 ): Promise<
 	Array<{
 		id: string;
+		holidayId: string;
 		originalDate: string;
 		makeupDate: string;
 	}>
@@ -156,6 +157,7 @@ async function loadClassShifts(
 	return db
 		.select({
 			id: holidaySessionShift.id,
+			holidayId: holidaySessionShift.holidayId,
 			originalDate: holidaySessionShift.originalDate,
 			makeupDate: holidaySessionShift.makeupDate,
 		})
@@ -169,19 +171,21 @@ async function loadClassShifts(
 		.orderBy(holidaySessionShift.createdAt, holidaySessionShift.id);
 }
 
-async function loadClassCancels(
+export async function loadClassCancels(
 	db: Db,
 	orgId: string,
 	classId: string,
 ): Promise<
 	Array<{
 		id: string;
+		holidayId: string;
 		date: string;
 	}>
 > {
 	return db
 		.select({
 			id: holidaySessionCancel.id,
+			holidayId: holidaySessionCancel.holidayId,
 			date: holidaySessionCancel.date,
 		})
 		.from(holidaySessionCancel)

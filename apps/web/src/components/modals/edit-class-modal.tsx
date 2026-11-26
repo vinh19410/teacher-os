@@ -1,3 +1,4 @@
+import type { StartDateLockReason } from "@teacher-os/api/class-start-date";
 import { type ClassType, TIME_REGEX } from "@teacher-os/api/contracts";
 import { parseSchedule } from "@teacher-os/api/format-schedule";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
@@ -39,6 +40,10 @@ export interface EditClassModalProps {
 	onClose: () => void;
 	cls: ClassGroup;
 	hasRealSessions: boolean;
+	isManual?: boolean;
+	startDateLocked?: boolean;
+	startDateLockReason?: StartDateLockReason | null;
+	canEditStartDate?: boolean;
 	existingClasses: ClassGroup[];
 }
 
@@ -89,6 +94,10 @@ export function EditClassModal({
 	onClose,
 	cls,
 	hasRealSessions,
+	isManual,
+	startDateLocked,
+	startDateLockReason = null,
+	canEditStartDate = true,
 	existingClasses,
 }: EditClassModalProps) {
 	const curriculum = useClassCurriculum(cls.id);
@@ -106,7 +115,13 @@ export function EditClassModal({
 		[curriculumSkillsKey],
 	);
 	const skillsLockedByCurriculum = curriculumSkills.length > 0;
-	const isManualMode = cls.schedulingMode === "manual" && !curriculum;
+	const isManualMode =
+		isManual ?? (cls.schedulingMode === "manual" && !curriculum);
+	const rawStartDateLocked = startDateLocked ?? hasRealSessions;
+	const effectiveStartDateLocked = !canEditStartDate || rawStartDateLocked;
+	const isOpeningConfirmed =
+		(cls.openingAnnouncementVersion ?? 0) > 0 ||
+		Boolean(cls.openingConfirmedAt);
 	const parsedInitialSchedule = useMemo(
 		() => parseSchedule(cls.schedule),
 		[cls.schedule],
@@ -151,8 +166,11 @@ export function EditClassModal({
 
 	const wasOpenRef = useRef(false);
 	const prevClassIdRef = useRef(cls.id);
+	const prevStartDateLockedRef = useRef(effectiveStartDateLocked);
 	useEffect(() => {
 		const classChanged = prevClassIdRef.current !== cls.id;
+		const justLockedStartDate =
+			open && effectiveStartDateLocked && !prevStartDateLockedRef.current;
 		if (classChanged) {
 			prevClassIdRef.current = cls.id;
 		}
@@ -182,8 +200,12 @@ export function EditClassModal({
 			setStartDate(next.startDate);
 			setStartDateInvalid(false);
 			setTotal(next.total);
+		} else if (justLockedStartDate) {
+			setStartDate(cls.startDate);
+			setStartDateInvalid(false);
 		}
 		wasOpenRef.current = open;
+		prevStartDateLockedRef.current = effectiveStartDateLocked;
 	}, [
 		open,
 		cls,
@@ -192,6 +214,7 @@ export function EditClassModal({
 		curriculumSkills,
 		skillsLockedByCurriculum,
 		isManualMode,
+		effectiveStartDateLocked,
 		reset,
 	]);
 
@@ -213,6 +236,7 @@ export function EditClassModal({
 
 	const todayVN = vietnamTodayISO();
 	const trimmedStartDate = startDate.trim();
+	const startDateChanged = trimmedStartDate !== cls.startDate.trim();
 	const startDateInputValue = isValidIsoCalendarDate(trimmedStartDate)
 		? trimmedStartDate
 		: "";
@@ -222,34 +246,61 @@ export function EditClassModal({
 		trimmedStartDate === cls.startDate.trim();
 
 	const draftTotal = parseValidSessionsTotal(total) ?? 0;
-	const scheduleConflicts = useMemo(
-		() =>
-			hasRealSessions
-				? []
-				: findScheduleConflicts(
-						{
-							days,
-							start: startTime,
-							end: endTime,
-							startDate: startDateInputValue,
-							sessionsTotal: draftTotal,
-							excludeClassId: cls.id,
-						},
-						existingClasses,
-					),
-		[
-			hasRealSessions,
-			days,
-			startTime,
-			endTime,
-			startDateInputValue,
-			draftTotal,
-			cls.id,
-			existingClasses,
-		],
-	);
+	const scheduleConflicts = useMemo(() => {
+		if (!hasRealSessions) {
+			return findScheduleConflicts(
+				{
+					days,
+					start: startTime,
+					end: endTime,
+					startDate: startDateInputValue,
+					sessionsTotal: draftTotal,
+					excludeClassId: cls.id,
+				},
+				existingClasses,
+			);
+		}
+		if (
+			!isManualMode &&
+			!effectiveStartDateLocked &&
+			startDateChanged &&
+			parsedInitialSchedule !== null &&
+			cls.sessionsTotal > 0 &&
+			startDateInputValue !== ""
+		) {
+			return findScheduleConflicts(
+				{
+					days: parsedInitialSchedule.days,
+					start: parsedInitialSchedule.start,
+					end: parsedInitialSchedule.end,
+					startDate: startDateInputValue,
+					sessionsTotal: cls.sessionsTotal,
+					excludeClassId: cls.id,
+				},
+				existingClasses,
+			);
+		}
+		return [];
+	}, [
+		hasRealSessions,
+		isManualMode,
+		effectiveStartDateLocked,
+		startDateChanged,
+		parsedInitialSchedule,
+		cls.sessionsTotal,
+		days,
+		startTime,
+		endTime,
+		startDateInputValue,
+		draftTotal,
+		cls.id,
+		existingClasses,
+	]);
 	const showScheduleConflicts =
-		!hasRealSessions && !saving && !notice && scheduleConflicts.length > 0;
+		(!hasRealSessions || !effectiveStartDateLocked) &&
+		!saving &&
+		!notice &&
+		scheduleConflicts.length > 0;
 
 	function handleDaysChange(nextDays: number[]) {
 		setDays(nextDays);
@@ -347,25 +398,6 @@ export function EditClassModal({
 				});
 			}
 
-			if (startDateInvalid) {
-				setError("Ngày khai giảng không hợp lệ (dd/mm/yyyy).");
-				return;
-			}
-			const startDateChanged = trimmedStartDate !== cls.startDate.trim();
-			if (startDateChanged) {
-				if (trimmedStartDate !== "") {
-					if (!isValidIsoCalendarDate(trimmedStartDate)) {
-						setError("Ngày khai giảng không hợp lệ.");
-						return;
-					}
-					if (trimmedStartDate < todayVN) {
-						setError("Ngày khai giảng mới phải từ hôm nay trở đi.");
-						return;
-					}
-				}
-				payload.startDate = trimmedStartDate;
-			}
-
 			if (!sessionsLockedByCurriculum && !isManualMode) {
 				const trimmedTotal = total.trim();
 				const isUnchangedZero = cls.sessionsTotal === 0 && trimmedTotal === "";
@@ -381,6 +413,33 @@ export function EditClassModal({
 					}
 					payload.sessionsTotal = parsedTotal;
 				}
+			}
+		}
+
+		if (!effectiveStartDateLocked) {
+			if (startDateInvalid) {
+				setError("Ngày khai giảng không hợp lệ (dd/mm/yyyy).");
+				return;
+			}
+			if (startDateChanged) {
+				if (trimmedStartDate === "") {
+					if (hasRealSessions && !isManualMode) {
+						setError(
+							"Lớp đã có buổi học nên không thể xóa trống ngày khai giảng.",
+						);
+						return;
+					}
+				} else {
+					if (!isValidIsoCalendarDate(trimmedStartDate)) {
+						setError("Ngày khai giảng không hợp lệ.");
+						return;
+					}
+					if (trimmedStartDate < todayVN) {
+						setError("Ngày khai giảng mới phải từ hôm nay trở đi.");
+						return;
+					}
+				}
+				payload.startDate = trimmedStartDate;
 			}
 		}
 
@@ -518,9 +577,16 @@ export function EditClassModal({
 							data-testid="schedule-locked-note"
 							className="rounded-md border border-border bg-muted px-3 py-2 text-muted-foreground text-xs"
 						>
-							Lớp đã có buổi học thực tế nên lịch học, ngày khai giảng và tổng
-							số buổi được khóa. Bạn vẫn có thể chỉnh sửa thông tin chung của
-							lớp.
+							{!effectiveStartDateLocked
+								? isManualMode
+									? "Lớp đã có buổi học thủ công nên lịch học và tổng số buổi được khóa. Bạn vẫn có thể đổi ngày khai giảng hiển thị (các buổi thủ công đã thêm giữ nguyên ngày)."
+									: "Lớp đã có học viên/buổi học dự kiến nên lịch học trong tuần và tổng số buổi được khóa. Bạn vẫn có thể đổi ngày khai giảng khi lớp chưa bắt đầu — lịch các buổi học sẽ tự động cập nhật theo ngày mới."
+								: !canEditStartDate && !rawStartDateLocked
+									? "Lớp đã có học viên/buổi học dự kiến nên lịch học trong tuần và tổng số buổi được khóa. Bạn vẫn có thể chỉnh sửa thông tin chung của lớp."
+									: startDateLockReason === "legacy-undated" ||
+											startDateLockReason === "invalid-schedule"
+										? "Lớp dùng lịch định dạng cũ hoặc đã điều chỉnh buổi lẻ nên lịch học, ngày khai giảng và tổng số buổi được khóa. Bạn vẫn có thể chỉnh sửa thông tin chung của lớp."
+										: "Lớp đã bắt đầu học nên lịch học, ngày khai giảng và tổng số buổi được khóa. Bạn vẫn có thể chỉnh sửa thông tin chung của lớp."}
 						</p>
 					)}
 					{!hasRealSessions &&
@@ -602,9 +668,11 @@ export function EditClassModal({
 						<Field
 							label="Ngày khai giảng"
 							help={
-								isLegacyStartDate
-									? `Ngày hiện tại: ${cls.startDate} (giữ nguyên nếu không chọn ngày mới)`
-									: undefined
+								!canEditStartDate
+									? "Chỉ giáo viên phụ trách hoặc quản trị viên mới có thể thay đổi ngày khai giảng."
+									: isLegacyStartDate
+										? `Ngày hiện tại: ${cls.startDate} (giữ nguyên nếu không chọn ngày mới)`
+										: undefined
 							}
 						>
 							<DatePickerInput
@@ -613,10 +681,21 @@ export function EditClassModal({
 								todayISO={todayVN}
 								onChange={setStartDate}
 								onInvalidChange={setStartDateInvalid}
-								disabled={hasRealSessions || saving}
+								disabled={effectiveStartDateLocked || saving}
 							/>
 						</Field>
 					</div>
+					{!effectiveStartDateLocked &&
+						isOpeningConfirmed &&
+						startDateChanged && (
+							<p
+								role="note"
+								className="rounded-md border border-border bg-muted px-3 py-2 text-muted-foreground text-xs"
+							>
+								Lớp đã từng chốt khai giảng. Sau khi lưu, hãy mở «Thông báo khai
+								giảng» nếu muốn gửi email cập nhật ngày mới cho học viên.
+							</p>
+						)}
 				</div>
 
 				<div className="flex flex-col gap-2 empty:hidden">

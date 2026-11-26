@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { evaluateClassStartDateEditability } from "@teacher-os/api/class-start-date";
 import { CLASS_ERROR_CODES } from "@teacher-os/api/contracts";
 import { canManageClassStatus } from "@teacher-os/auth/role";
 import { ArrowLeft } from "lucide-react";
@@ -237,8 +238,33 @@ function ClassDetailRoute() {
 	const hasRealSessions =
 		classLessonsForClass.length > 0 || classSessionsForClass.length > 0;
 	const isManual =
-		classSessionsForClass.length > 0 ||
-		(!sy && cls?.schedulingMode === "manual");
+		!sy &&
+		(cls?.schedulingMode === "manual" || classSessionsForClass.length > 0);
+	const holidayCancelDatesForClass = (data.holidayCancels ?? [])
+		.filter((hc) => hc.classId === classId)
+		.map((hc) => hc.date);
+	const holidayShiftsForClass = (data.holidayShifts ?? [])
+		.filter((hs) => hs.classId === classId)
+		.map((hs) => ({
+			originalDate: hs.originalDate,
+			makeupDate: hs.makeupDate,
+		}));
+	const startDateEditability = cls
+		? evaluateClassStartDateEditability({
+				schedule: cls.schedule,
+				sessionsTotal: cls.sessionsTotal,
+				isManual,
+				lessons: classLessonsForClass.map((l) => ({
+					date: l.date ?? null,
+					status: l.status,
+					enrollmentKey: l.sid,
+					attendance: l.attendance,
+					attendanceNote: l.attendanceNote,
+				})),
+				holidayCancelDates: holidayCancelDatesForClass,
+				holidayShifts: holidayShiftsForClass,
+			})
+		: { editable: false as const, reason: "class-started" as const };
 	const canAddManualSession =
 		!isPaused && !sy && (isManual || classLessonsForClass.length === 0);
 	const canImportSyllabus =
@@ -672,6 +698,10 @@ function ClassDetailRoute() {
 				onClose={() => setEditModalOpen(false)}
 				cls={cls}
 				hasRealSessions={hasRealSessions}
+				isManual={isManual}
+				startDateLocked={!startDateEditability.editable}
+				startDateLockReason={startDateEditability.reason}
+				canEditStartDate={canToggleStatus}
 				existingClasses={data.classes}
 			/>
 			<ClassStatusModal
@@ -686,6 +716,9 @@ function ClassDetailRoute() {
 				onClose={() => setConfirmOpeningOpen(false)}
 				cls={cls}
 				hasRealSessions={hasRealSessions}
+				isManual={isManual}
+				startDateLocked={!startDateEditability.editable}
+				startDateLockReason={startDateEditability.reason}
 				roster={openingRoster}
 				onConfirmed={async () => {
 					await refresh();

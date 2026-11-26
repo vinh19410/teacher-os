@@ -26,7 +26,9 @@ function lockFailureMessage(error: unknown): string {
 		case ASSIGNMENT_TEST_ERROR_CODES.PARTS_LOCKED:
 			return "Bộ đề đã có học viên làm bài nên không thể thay đổi hoặc gỡ part. Bạn vẫn có thể đổi tên, thời gian và trạng thái bộ đề. Muốn thay đổi đề, hãy tạo bộ đề mới.";
 		case CLASS_ERROR_CODES.SCHEDULE_LOCKED:
-			return "Lớp đã có buổi học thực tế nên không sửa được lịch học, ngày khai giảng hoặc số buổi. Bạn vẫn có thể lưu thay đổi thông tin chung của lớp.";
+			return "Lớp đã có buổi học thực tế nên không sửa được lịch học hoặc số buổi. Bạn vẫn có thể lưu các thay đổi khác.";
+		case CLASS_ERROR_CODES.START_DATE_LOCKED:
+			return "Lớp đã bắt đầu học hoặc lịch không hỗ trợ dời tự động nên không sửa được ngày khai giảng. Dữ liệu lớp đã được tải lại.";
 		case CLASS_ERROR_CODES.CLASS_PAUSED:
 			return "Lớp đang tạm dừng — mở lại lớp để tiếp tục thao tác này.";
 		default:
@@ -83,7 +85,10 @@ export function useKernelFormSubmit(): KernelFormSubmitState {
 					const httpErr = isHttpError(result.error) ? result.error : undefined;
 					setFailureError(httpErr);
 					setError(lockFailureMessage(result.error));
-					if (httpErr?.code === CLASS_ERROR_CODES.CLASS_PAUSED) {
+					if (
+						httpErr?.code === CLASS_ERROR_CODES.CLASS_PAUSED ||
+						httpErr?.code === CLASS_ERROR_CODES.START_DATE_LOCKED
+					) {
 						void refresh();
 					}
 					return result;

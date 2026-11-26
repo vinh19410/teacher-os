@@ -712,9 +712,296 @@ describe("EditClassModal", () => {
 
 		const alert = await within(dialog).findByRole("alert");
 		expect(alert.textContent).toContain(
-			"Lớp đã có buổi học thực tế nên không sửa được lịch học, ngày khai giảng hoặc số buổi",
+			"Lớp đã có buổi học thực tế nên không sửa được lịch học hoặc số buổi",
 		);
 		expect(onClose).not.toHaveBeenCalled();
+	});
+
+	it("unlocks startDate on unstarted auto class with real sessions, warns on schedule conflicts, blocks clearing startDate, reminds when already confirmed, and submits startDate only", async () => {
+		const shiftedFutureDate = addDaysISO(futureDate, 28);
+		const cls = makeClassGroup({
+			id: "cl-1",
+			name: "Lớp chưa khai giảng",
+			schedule: '{"days":[0],"start":"19:00","end":"20:30"}',
+			startDate: futureDate,
+			sessionsTotal: 2,
+			openingAnnouncementVersion: 1,
+			openingConfirmedAt: "2026-11-20T02:30:00.000Z",
+		});
+		const other = makeClassGroup({
+			id: "cl-2",
+			name: "Lớp T2 tháng sau",
+			schedule: '{"days":[0],"start":"19:00","end":"20:30"}',
+			startDate: shiftedFutureDate,
+			sessionsTotal: 4,
+		});
+		const server = startKernelServer(snapshotFixture());
+		const onClose = vi.fn();
+		renderWithKernel(
+			<EditClassModal
+				open
+				onClose={onClose}
+				cls={cls}
+				hasRealSessions
+				isManual={false}
+				startDateLocked={false}
+				startDateLockReason={null}
+				canEditStartDate
+				existingClasses={[cls, other]}
+			/>,
+		);
+		const dialog = await screen.findByRole("dialog");
+
+		expect(
+			within(dialog).getByTestId("schedule-locked-note").textContent,
+		).toContain("Bạn vẫn có thể đổi ngày khai giảng khi lớp chưa bắt đầu");
+		expect(
+			(within(dialog).getByRole("button", { name: "T2" }) as HTMLButtonElement)
+				.disabled,
+		).toBe(true);
+		expect(
+			(within(dialog).getByLabelText("Giờ bắt đầu") as HTMLInputElement)
+				.disabled,
+		).toBe(true);
+		expect(
+			(within(dialog).getByLabelText("Giờ kết thúc") as HTMLInputElement)
+				.disabled,
+		).toBe(true);
+		expect(
+			(within(dialog).getByLabelText("Tổng số buổi") as HTMLInputElement)
+				.disabled,
+		).toBe(true);
+		const startDateInput = within(dialog).getByLabelText(
+			"Ngày khai giảng",
+		) as HTMLInputElement;
+		expect(startDateInput.disabled).toBe(false);
+
+		// Clearing startDate on an auto class with real sessions is blocked client-side.
+		fireEvent.change(startDateInput, { target: { value: "" } });
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Lưu thay đổi" }),
+		);
+		expect((await within(dialog).findByRole("alert")).textContent).toBe(
+			"Lớp đã có buổi học nên không thể xóa trống ngày khai giảng.",
+		);
+		expect(server.writes).toEqual([]);
+
+		// Shifting startDate into another class's window triggers conflict warning and opening reminder.
+		expect(
+			within(dialog).queryByTestId("schedule-conflict-warning"),
+		).toBeNull();
+		fireEvent.change(startDateInput, {
+			target: { value: formatViDateDisplay(shiftedFutureDate) },
+		});
+		const warning = within(dialog).getByTestId("schedule-conflict-warning");
+		expect(warning.textContent).toContain("Lớp T2 tháng sau");
+		expect(within(dialog).getByRole("note").textContent).toContain(
+			"Thông báo khai giảng",
+		);
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Lưu thay đổi" }),
+		);
+		await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+		expect(server.writes).toEqual([
+			{
+				method: "PATCH",
+				path: "/api/classes/cl-1",
+				body: {
+					name: "Lớp chưa khai giảng",
+					type: "ielts",
+					level: "Band 7.0",
+					skills: ["Writing", "Speaking"],
+					mode: "Online",
+					tuitionFee: 3_500_000,
+					startDate: shiftedFutureDate,
+				},
+			},
+		]);
+		expect(server.writes[0].body).not.toHaveProperty("schedule");
+		expect(server.writes[0].body).not.toHaveProperty("sessionsTotal");
+	});
+
+	it("shows manual-class copy and unlocks startDate when isManual is true even on legacy auto schedulingMode without false conflict warnings", async () => {
+		const cls = makeClassGroup({
+			schedulingMode: "auto",
+			startDate: futureDate,
+			sessionsTotal: 2,
+		});
+		const overlappingOther = makeClassGroup({
+			id: "cl-other",
+			name: "Lớp trùng giờ T2/T4",
+			schedule: cls.schedule,
+			startDate: laterFutureDate,
+			sessionsTotal: 4,
+		});
+		const server = startKernelServer(snapshotFixture());
+		const onClose = vi.fn();
+		renderWithKernel(
+			<EditClassModal
+				open
+				onClose={onClose}
+				cls={cls}
+				hasRealSessions
+				isManual
+				startDateLocked={false}
+				startDateLockReason={null}
+				canEditStartDate
+				existingClasses={[cls, overlappingOther]}
+			/>,
+		);
+		const dialog = await screen.findByRole("dialog");
+
+		expect(
+			within(dialog).getByTestId("schedule-locked-note").textContent,
+		).toContain("các buổi thủ công đã thêm giữ nguyên ngày");
+		const startDateInput = within(dialog).getByLabelText(
+			"Ngày khai giảng",
+		) as HTMLInputElement;
+		expect(startDateInput.disabled).toBe(false);
+
+		fireEvent.change(startDateInput, {
+			target: { value: formatViDateDisplay(laterFutureDate) },
+		});
+		expect(
+			within(dialog).queryByTestId("schedule-conflict-warning"),
+		).toBeNull();
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Lưu thay đổi" }),
+		);
+		await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+		expect(server.writes[0].body).toMatchObject({
+			startDate: laterFutureDate,
+		});
+		expect(server.writes[0].body).not.toHaveProperty("schedule");
+		expect(server.writes[0].body).not.toHaveProperty("sessionsTotal");
+	});
+
+	it("locks startDate with exact reason copy for started/legacy classes and for TA role", async () => {
+		const cls = makeClassGroup({ startDate: futureDate });
+		startKernelServer(snapshotFixture());
+		renderWithKernel(
+			<EditClassModal
+				open
+				onClose={() => undefined}
+				cls={cls}
+				hasRealSessions
+				isManual={false}
+				startDateLocked
+				startDateLockReason="legacy-undated"
+				canEditStartDate
+				existingClasses={[cls]}
+			/>,
+		);
+		const legacyDialog = await screen.findByRole("dialog");
+		expect(
+			(
+				within(legacyDialog).getByLabelText(
+					"Ngày khai giảng",
+				) as HTMLInputElement
+			).disabled,
+		).toBe(true);
+		expect(
+			within(legacyDialog).getByTestId("schedule-locked-note").textContent,
+		).toContain("định dạng cũ hoặc đã điều chỉnh buổi lẻ");
+
+		cleanup();
+		const serverTa = startKernelServer(snapshotFixture());
+		const onCloseTa = vi.fn();
+		renderWithKernel(
+			<EditClassModal
+				open
+				onClose={onCloseTa}
+				cls={cls}
+				hasRealSessions
+				isManual={false}
+				startDateLocked={false}
+				startDateLockReason={null}
+				canEditStartDate={false}
+				existingClasses={[cls]}
+			/>,
+		);
+		const taDialog = await screen.findByRole("dialog");
+		expect(
+			(within(taDialog).getByLabelText("Ngày khai giảng") as HTMLInputElement)
+				.disabled,
+		).toBe(true);
+		expect(
+			within(taDialog).getByText(
+				"Chỉ giáo viên phụ trách hoặc quản trị viên mới có thể thay đổi ngày khai giảng.",
+			),
+		).toBeTruthy();
+
+		fireEvent.change(within(taDialog).getByLabelText(/Tên lớp/), {
+			target: { value: "TA cập nhật tên lớp" },
+		});
+		fireEvent.click(
+			within(taDialog).getByRole("button", { name: "Lưu thay đổi" }),
+		);
+		await waitFor(() => expect(onCloseTa).toHaveBeenCalledTimes(1));
+		expect(serverTa.writes[0].body).not.toHaveProperty("startDate");
+	});
+
+	it("maps 409 CLASS_START_DATE_LOCKED to dedicated message, refreshes snapshot, and resets draft date once locked", async () => {
+		const cls = makeClassGroup({ startDate: futureDate });
+		const server = startKernelServer(snapshotFixture(), () => ({
+			status: 409,
+			body: {
+				error: "Class already started",
+				code: CLASS_ERROR_CODES.START_DATE_LOCKED,
+			},
+		}));
+		const onClose = vi.fn();
+		function Harness() {
+			const [locked, setLocked] = useState(false);
+			return (
+				<>
+					<button type="button" onClick={() => setLocked(true)}>
+						lock-start-date
+					</button>
+					<EditClassModal
+						open
+						onClose={onClose}
+						cls={cls}
+						hasRealSessions
+						isManual={false}
+						startDateLocked={locked}
+						startDateLockReason={locked ? "class-started" : null}
+						canEditStartDate
+						existingClasses={[cls]}
+					/>
+				</>
+			);
+		}
+		renderWithKernel(<Harness />);
+		const dialog = await screen.findByRole("dialog");
+		expect(server.snapshotLoads).toBe(1);
+
+		const startDateInput = within(dialog).getByLabelText(
+			"Ngày khai giảng",
+		) as HTMLInputElement;
+		fireEvent.change(startDateInput, {
+			target: { value: formatViDateDisplay(laterFutureDate) },
+		});
+		expect(startDateInput.value).toBe(formatViDateDisplay(laterFutureDate));
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Lưu thay đổi" }),
+		);
+
+		const alert = await within(dialog).findByRole("alert");
+		expect(alert.textContent).toContain(
+			"Lớp đã bắt đầu học hoặc lịch không hỗ trợ dời tự động nên không sửa được ngày khai giảng. Dữ liệu lớp đã được tải lại.",
+		);
+		await waitFor(() => expect(server.snapshotLoads).toBeGreaterThanOrEqual(2));
+		expect(onClose).not.toHaveBeenCalled();
+
+		// Once refreshed parent props flip startDateLocked -> true, the disabled input resets to cls.startDate.
+		fireEvent.click(screen.getByRole("button", { name: "lock-start-date" }));
+		await waitFor(() => {
+			expect(startDateInput.disabled).toBe(true);
+			expect(startDateInput.value).toBe(formatViDateDisplay(futureDate));
+		});
 	});
 
 	it("resets submitBlocked/notice when reopened on the same class after 5xx error and validates invalid time/date & empty legacy mode", async () => {

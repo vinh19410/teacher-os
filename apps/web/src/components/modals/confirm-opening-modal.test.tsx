@@ -273,7 +273,7 @@ describe("ConfirmOpeningModal", () => {
 		).toContain(formatViWeekdayDate(futureDate));
 		expect(
 			within(dialog).getByTestId("opening-date-locked-note").textContent,
-		).toContain("Lớp đã có buổi học thực tế");
+		).toContain("Lớp đã bắt đầu học nên ngày khai giảng được giữ cố định.");
 
 		fireEvent.click(
 			within(dialog).getByRole("button", { name: "Chốt & gửi 2 email" }),
@@ -742,7 +742,7 @@ describe("ConfirmOpeningModal", () => {
 		const dialog = screen.getByRole("dialog");
 		expect(
 			within(dialog).getByTestId("opening-date-locked-note").textContent,
-		).toContain("Lớp đã có buổi học thực tế");
+		).toContain("Lớp đã bắt đầu học nên ngày khai giảng được giữ cố định.");
 
 		fireEvent.click(
 			within(dialog).getByRole("radio", {
@@ -752,7 +752,201 @@ describe("ConfirmOpeningModal", () => {
 		expect(within(dialog).queryByLabelText(/Ngày khai giảng/)).toBeNull();
 		expect(
 			within(dialog).getByTestId("opening-date-locked-note").textContent,
-		).toContain("Lớp đã có buổi học thực tế");
+		).toContain("Lớp đã bắt đầu học nên ngày khai giảng được giữ cố định.");
+	});
+
+	it("allows editing startDate on unstarted class with real sessions in initial and all modes, keeps new_only read-only, and shows auto-reschedule note for auto classes", async () => {
+		const fetchMock = vi.fn(async () =>
+			jsonResponse(200, {
+				ok: true,
+				openingConfirmedAt: "2026-11-24T06:00:00.000Z",
+				openingAnnouncementVersion: 1,
+				startDate: laterFutureDate,
+				openingNote: "",
+				queuedEmailCount: 2,
+				inAppOnlyCount: 0,
+				skippedNoEmail: [],
+				skippedAlreadySentCount: 0,
+				notifiedStudentIds: ["st-1", "st-2"],
+			}),
+		);
+		vi.stubGlobal("fetch", fetchMock);
+		const onConfirmed = vi.fn(async () => undefined);
+		const onClose = vi.fn();
+
+		render(
+			<ConfirmOpeningModal
+				open
+				onClose={onClose}
+				cls={makeClassGroup()}
+				hasRealSessions
+				isManual={false}
+				startDateLocked={false}
+				startDateLockReason={null}
+				roster={makeDefaultRoster().slice(0, 2)}
+				onConfirmed={onConfirmed}
+			/>,
+		);
+
+		const dialog = screen.getByRole("dialog");
+		const dateInput = within(dialog).getByLabelText(
+			/Ngày khai giảng/,
+		) as HTMLInputElement;
+		expect(dateInput.value).toBe(formatViDateDisplay(futureDate));
+
+		fireEvent.change(dateInput, {
+			target: { value: formatViDateDisplay(laterFutureDate) },
+		});
+		expect(
+			within(dialog).getByText(
+				"Lịch các buổi học chưa diễn ra của lớp sẽ tự động cập nhật theo ngày khai giảng mới.",
+			),
+		).toBeTruthy();
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Chốt & gửi 2 email" }),
+		);
+		await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+		const [, init] = fetchMock.mock.calls[0] as unknown as [
+			string,
+			RequestInit,
+		];
+		expect(JSON.parse(String(init.body))).toEqual({
+			mode: "initial",
+			startDate: laterFutureDate,
+			note: "",
+			expectedVersion: 0,
+		});
+
+		// Already-confirmed unstarted class: new_only stays read-only, switching to all unlocks date.
+		cleanup();
+		const fetchAllMock = vi.fn(async () =>
+			jsonResponse(200, {
+				ok: true,
+				openingConfirmedAt: "2026-11-24T06:00:00.000Z",
+				openingAnnouncementVersion: 2,
+				startDate: laterFutureDate,
+				openingNote: "",
+				queuedEmailCount: 2,
+				inAppOnlyCount: 0,
+				skippedNoEmail: [],
+				skippedAlreadySentCount: 0,
+				notifiedStudentIds: ["st-1", "st-2"],
+			}),
+		);
+		vi.stubGlobal("fetch", fetchAllMock);
+		const onCloseAll = vi.fn();
+
+		render(
+			<ConfirmOpeningModal
+				open
+				onClose={onCloseAll}
+				cls={makeClassGroup({
+					openingConfirmedAt: "2026-11-20T02:30:00.000Z",
+					openingAnnouncementVersion: 1,
+					openingNotifiedStudentIds: ["st-1"],
+				})}
+				hasRealSessions
+				isManual={false}
+				startDateLocked={false}
+				startDateLockReason={null}
+				roster={makeDefaultRoster().slice(0, 2)}
+				onConfirmed={vi.fn(async () => undefined)}
+			/>,
+		);
+
+		const confirmedDialog = screen.getByRole("dialog");
+		expect(
+			within(confirmedDialog).queryByLabelText(/Ngày khai giảng/),
+		).toBeNull();
+		expect(
+			within(confirmedDialog).getByTestId("opening-date-locked-note")
+				.textContent,
+		).toContain(
+			'Chọn "Gửi thông báo cập nhật cho cả lớp" nếu cần thay đổi ngày khai giảng.',
+		);
+
+		fireEvent.click(
+			within(confirmedDialog).getByRole("radio", {
+				name: /Gửi thông báo cập nhật cho cả lớp \(2\)/,
+			}),
+		);
+		const allDateInput =
+			within(confirmedDialog).getByLabelText(/Ngày khai giảng/);
+		fireEvent.change(allDateInput, {
+			target: { value: formatViDateDisplay(laterFutureDate) },
+		});
+		fireEvent.click(
+			within(confirmedDialog).getByRole("button", {
+				name: "Gửi cập nhật (2 email)",
+			}),
+		);
+		await waitFor(() => expect(onCloseAll).toHaveBeenCalledTimes(1));
+		const [, allInit] = fetchAllMock.mock.calls[0] as unknown as [
+			string,
+			RequestInit,
+		];
+		expect(JSON.parse(String(allInit.body))).toEqual({
+			mode: "all",
+			startDate: laterFutureDate,
+			note: "",
+			expectedVersion: 1,
+		});
+	});
+
+	it("shows legacy lock reason copy and refreshes snapshot on 409 CLASS_START_DATE_LOCKED", async () => {
+		const fetchMock = vi.fn(async () =>
+			jsonResponse(409, {
+				code: CLASS_ERROR_CODES.START_DATE_LOCKED,
+			}),
+		);
+		vi.stubGlobal("fetch", fetchMock);
+		const onConfirmed = vi.fn(async () => undefined);
+		const onClose = vi.fn();
+
+		const { rerender } = render(
+			<ConfirmOpeningModal
+				open
+				onClose={onClose}
+				cls={makeClassGroup()}
+				hasRealSessions
+				isManual={false}
+				startDateLocked
+				startDateLockReason="legacy-undated"
+				roster={makeDefaultRoster().slice(0, 2)}
+				onConfirmed={onConfirmed}
+			/>,
+		);
+
+		expect(
+			screen.getByTestId("opening-date-locked-note").textContent,
+		).toContain("định dạng cũ hoặc đã điều chỉnh buổi lẻ");
+
+		rerender(
+			<ConfirmOpeningModal
+				open
+				onClose={onClose}
+				cls={makeClassGroup({ id: "cl-race" })}
+				hasRealSessions
+				isManual={false}
+				startDateLocked={false}
+				startDateLockReason={null}
+				roster={makeDefaultRoster().slice(0, 2)}
+				onConfirmed={onConfirmed}
+			/>,
+		);
+
+		fireEvent.change(screen.getByLabelText(/Ngày khai giảng/), {
+			target: { value: formatViDateDisplay(laterFutureDate) },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Chốt & gửi 2 email" }));
+
+		const alert = await screen.findByRole("alert");
+		expect(alert.textContent).toBe(
+			"Lớp đã bắt đầu học nên không thể đổi ngày khai giảng.",
+		);
+		expect(onConfirmed).toHaveBeenCalledTimes(1);
+		expect(onClose).not.toHaveBeenCalled();
 	});
 
 	it("submits form cleanly via Enter and footer type=submit button bound to form id", async () => {

@@ -88,6 +88,7 @@ import type { Db, KernelCtx } from "../app";
 import type { AiGrader } from "../lib/ai-grading/grader";
 import { formatSenderName } from "../lib/brand";
 import { isManualClass } from "../lib/class-mode";
+import { applyClassStartDateChange } from "../lib/class-start-date-reschedule";
 import type { MediaStore } from "../lib/media-store";
 import {
 	deliverNotifications,
@@ -140,6 +141,7 @@ import {
 import {
 	autoProvisionMeetingsForNewClass,
 	ensureSessionMeeting,
+	syncZoomMeetingsAfterReschedule,
 	syncZoomOnSessionCancelOrDelete,
 	syncZoomOnSessionEdit,
 } from "../lib/zoom/session-zoom-service";
@@ -2228,8 +2230,19 @@ export function kernelRoutes(deps: {
 		return c.json(
 			{
 				error:
-					"Lớp đã có buổi học thực tế nên không thể đổi lịch học, ngày khai giảng hoặc số buổi.",
+					"Lớp đã có buổi học thực tế nên không thể đổi lịch học hoặc số buổi.",
 				code: CLASS_ERROR_CODES.SCHEDULE_LOCKED,
+			},
+			409,
+		);
+	}
+
+	function startDateLockedResponse(c: KernelContext) {
+		return c.json(
+			{
+				error:
+					"Lớp đã bắt đầu học hoặc lịch không thể tự động dời nên không thể đổi ngày khai giảng.",
+				code: CLASS_ERROR_CODES.START_DATE_LOCKED,
 			},
 			409,
 		);
@@ -2238,8 +2251,10 @@ export function kernelRoutes(deps: {
 	/**
 	 * Cập nhật thông tin lớp học (#693).
 	 * - Thông tin chung (`name`, `type`, `level`, `skills`, `mode`, `tuitionFee`) luôn sửa được.
-	 * - `schedule`, `startDate`, `sessionsTotal` chỉ sửa được khi lớp chưa có buổi học thực tế (`lesson` hoặc `class_session`),
+	 * - `schedule` và `sessionsTotal` chỉ sửa được khi lớp chưa có buổi học thực tế (`lesson` hoặc `class_session`),
 	 *   bảo vệ nguyên tử bằng `WHERE NOT EXISTS (...)` chống race với `activateEnrollment` / `POST /sessions`.
+	 * - `startDate` sửa được khi lớp chưa bắt đầu (kể cả khi đã có học viên ghi danh hoặc buổi thủ công dự kiến),
+	 *   yêu cầu quyền quản lý lớp (`canManageClassStatus`) và đồng bộ nguyên tử qua `applyClassStartDateChange`.
 	 * - `syllabusId` và `schedulingMode` không thay đổi qua route này.
 	 */
 	kernel.patch("/classes/:id", async (c) => {
@@ -2341,11 +2356,15 @@ export function kernelRoutes(deps: {
 		const nextTuitionFee =
 			input.tuitionFee !== undefined ? input.tuitionFee : cls.tuitionFee;
 
-		if (
-			nextStartDate !== cls.startDate &&
-			nextStartDate !== "" &&
-			nextStartDate < vietnamTodayISO()
-		) {
+		const now = deps.now ? deps.now() : new Date();
+		const todayVN = vietnamTodayISO(now);
+		const startDateChanged = nextStartDate !== cls.startDate;
+
+		if (startDateChanged && !canManageClassStatusInKernel(ctx.role)) {
+			return c.json({ error: "forbidden", code: "FORBIDDEN" }, 403);
+		}
+
+		if (startDateChanged && nextStartDate !== "" && nextStartDate < todayVN) {
 			return c.json({ error: "startDate cannot be in the past" }, 400);
 		}
 
@@ -2368,12 +2387,10 @@ export function kernelRoutes(deps: {
 			}
 		}
 
-		const touchesSchedule =
-			scheduleChanged ||
-			nextStartDate !== cls.startDate ||
-			nextSessionsTotal !== cls.sessionsTotal;
+		const sessionsTotalChanged = nextSessionsTotal !== cls.sessionsTotal;
+		const touchesStructure = scheduleChanged || sessionsTotalChanged;
 
-		if (!touchesSchedule) {
+		if (!touchesStructure && !startDateChanged) {
 			const updated = await db
 				.update(classTable)
 				.set({
@@ -2389,6 +2406,86 @@ export function kernelRoutes(deps: {
 			if (updated.length === 0) {
 				return c.json({ error: "class not found" }, 404);
 			}
+			return c.json({ ok: true });
+		}
+
+		if (startDateChanged) {
+			const rescheduled = await applyClassStartDateChange({
+				db,
+				orgId: ctx.orgId,
+				classId,
+				nextStartDate,
+				todayVN,
+				classFieldPatch: {
+					name: input.name,
+					type: input.type,
+					level: input.level,
+					skills: JSON.stringify(input.skills),
+					mode: input.mode,
+					tuitionFee: nextTuitionFee,
+					...(scheduleChanged ? { schedule: nextSchedule } : {}),
+					...(sessionsTotalChanged ? { sessionsTotal: nextSessionsTotal } : {}),
+				},
+				nextSchedule: scheduleChanged ? nextSchedule : undefined,
+				nextSessionsTotal: sessionsTotalChanged ? nextSessionsTotal : undefined,
+				requireActiveStatus: false,
+				requireNoRealSessionsForOtherFields: touchesStructure,
+				syncPackageTotal: sessionsTotalChanged ? nextSessionsTotal : undefined,
+				expectedSchedulingMode: cls.schedulingMode,
+				expectedSyllabusId: cls.syllabusId,
+			});
+
+			if (!rescheduled.ok) {
+				switch (rescheduled.error) {
+					case "not-found":
+						return c.json({ error: "class not found" }, 404);
+					case "empty-start-date":
+						return c.json(
+							{
+								error:
+									"Lớp đã có buổi học nên không thể xóa trống ngày khai giảng.",
+							},
+							400,
+						);
+					case "holiday-scan-cap":
+						return c.json(
+							{
+								error:
+									"Không thể sắp lịch bù trong 364 ngày tới do kỳ nghỉ lễ phủ kín lịch học.",
+							},
+							422,
+						);
+					case "schedule-locked":
+						return scheduleLockedResponse(c);
+					case "start-date-locked":
+						return startDateLockedResponse(c);
+					case "class-paused":
+						return classPausedResponse(c);
+					default:
+						return c.json(
+							{
+								error:
+									"Lớp vừa thay đổi trạng thái lịch học, vui lòng thử lại.",
+							},
+							409,
+						);
+				}
+			}
+
+			if (
+				rescheduled.zoomSyncPlan.movedMeetings.length > 0 ||
+				rescheduled.zoomSyncPlan.deletedZoomMeetingIds.length > 0
+			) {
+				await runZoomSyncTask(deps, () =>
+					syncZoomMeetingsAfterReschedule(zoomDepsFrom(deps), {
+						orgId: ctx.orgId,
+						classId,
+						className: rescheduled.updatedRow.name,
+						plan: rescheduled.zoomSyncPlan,
+					}),
+				);
+			}
+
 			return c.json({ ok: true });
 		}
 
@@ -2628,38 +2725,119 @@ export function kernelRoutes(deps: {
 		let announcementVersion: number;
 		let persistedStartDate: string;
 		let persistedNote: string;
+		let emailClassName = cls.name;
+		let emailScheduleRaw = cls.schedule;
+		let emailMode = cls.mode;
+		let emailSessionsTotal = cls.sessionsTotal;
+		let emailLevel = cls.level;
 
 		if (input.mode === "new_only") {
 			confirmedAt = cls.openingConfirmedAt ?? now;
 			announcementVersion = currentVersion;
 			persistedStartDate = existingStartDate;
 			persistedNote = cls.openingNote;
-		} else {
+		} else if (startDateChanged) {
 			const nextVersion = currentVersion + 1;
-			const whereConditions = [
-				eq(classTable.id, classId),
-				eq(classTable.orgId, ctx.orgId),
-				eq(classTable.status, "active"),
-				eq(classTable.openingAnnouncementVersion, currentVersion),
-			];
-			if (startDateChanged) {
-				whereConditions.push(
-					sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.classId} = ${classId} AND ${lesson.orgId} = ${ctx.orgId})`,
-					sql`NOT EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId})`,
+			const rescheduled = await applyClassStartDateChange({
+				db,
+				orgId: ctx.orgId,
+				classId,
+				nextStartDate: effectiveStartDate,
+				todayVN: vietnamTodayISO(now),
+				classFieldPatch: {
+					openingConfirmedAt: now,
+					openingNote: effectiveNote,
+					openingAnnouncementVersion: nextVersion,
+				},
+				requireActiveStatus: true,
+				expectedOpeningVersion: currentVersion,
+			});
+
+			if (!rescheduled.ok) {
+				switch (rescheduled.error) {
+					case "not-found":
+						return c.json({ error: "class not found" }, 404);
+					case "class-paused":
+						return classPausedResponse(c);
+					case "start-date-locked":
+						return startDateLockedResponse(c);
+					case "schedule-locked":
+						return scheduleLockedResponse(c);
+					case "empty-start-date":
+						return c.json(
+							{
+								error:
+									"Lớp chưa có ngày khai giảng. Vui lòng chọn ngày khai giảng trước khi chốt.",
+							},
+							400,
+						);
+					case "holiday-scan-cap":
+						return c.json(
+							{
+								error:
+									"Không thể sắp lịch bù trong 364 ngày tới do kỳ nghỉ lễ phủ kín lịch học.",
+							},
+							422,
+						);
+					default:
+						return c.json(
+							{
+								error:
+									"Trạng thái chốt khai giảng của lớp vừa thay đổi, vui lòng tải lại.",
+								code: CLASS_ERROR_CODES.OPENING_VERSION_CONFLICT,
+							},
+							409,
+						);
+				}
+			}
+
+			if (
+				rescheduled.zoomSyncPlan.movedMeetings.length > 0 ||
+				rescheduled.zoomSyncPlan.deletedZoomMeetingIds.length > 0
+			) {
+				await runZoomSyncTask(deps, () =>
+					syncZoomMeetingsAfterReschedule(zoomDepsFrom(deps), {
+						orgId: ctx.orgId,
+						classId,
+						className: rescheduled.updatedRow.name,
+						plan: rescheduled.zoomSyncPlan,
+					}),
 				);
 			}
 
+			confirmedAt = rescheduled.updatedRow.openingConfirmedAt ?? now;
+			announcementVersion = rescheduled.updatedRow.openingAnnouncementVersion;
+			persistedStartDate = rescheduled.updatedRow.startDate;
+			persistedNote = rescheduled.updatedRow.openingNote;
+			emailClassName = rescheduled.updatedRow.name;
+			emailScheduleRaw = rescheduled.updatedRow.schedule;
+			emailMode = rescheduled.updatedRow.mode;
+			emailSessionsTotal = rescheduled.updatedRow.sessionsTotal;
+			emailLevel = rescheduled.updatedRow.level;
+		} else {
+			const nextVersion = currentVersion + 1;
 			const updated = await db
 				.update(classTable)
 				.set({
 					openingConfirmedAt: now,
 					openingNote: effectiveNote,
 					openingAnnouncementVersion: nextVersion,
-					...(startDateChanged ? { startDate: effectiveStartDate } : {}),
 				})
-				.where(and(...whereConditions))
+				.where(
+					and(
+						eq(classTable.id, classId),
+						eq(classTable.orgId, ctx.orgId),
+						eq(classTable.status, "active"),
+						eq(classTable.openingAnnouncementVersion, currentVersion),
+					),
+				)
 				.returning({
 					id: classTable.id,
+					name: classTable.name,
+					level: classTable.level,
+					schedule: classTable.schedule,
+					sessionsTotal: classTable.sessionsTotal,
+					mode: classTable.mode,
 					openingConfirmedAt: classTable.openingConfirmedAt,
 					openingAnnouncementVersion: classTable.openingAnnouncementVersion,
 					startDate: classTable.startDate,
@@ -2668,12 +2846,6 @@ export function kernelRoutes(deps: {
 
 			const updatedRow = updated[0];
 			if (!updatedRow) {
-				if (
-					startDateChanged &&
-					(await hasRealClassSessions(db, ctx.orgId, classId))
-				) {
-					return scheduleLockedResponse(c);
-				}
 				const stillExists = await findClass(db, classId, ctx.orgId);
 				if (!stillExists) {
 					return c.json({ error: "class not found" }, 404);
@@ -2695,6 +2867,11 @@ export function kernelRoutes(deps: {
 			announcementVersion = updatedRow.openingAnnouncementVersion;
 			persistedStartDate = updatedRow.startDate;
 			persistedNote = updatedRow.openingNote;
+			emailClassName = updatedRow.name;
+			emailScheduleRaw = updatedRow.schedule;
+			emailMode = updatedRow.mode;
+			emailSessionsTotal = updatedRow.sessionsTotal;
+			emailLevel = updatedRow.level;
 		}
 
 		const [rosterRows, priorNotifState, { senderName }] = await Promise.all([
@@ -2812,12 +2989,12 @@ export function kernelRoutes(deps: {
 
 		const events = classOpeningConfirmedEvents({
 			classId,
-			className: cls.name,
+			className: emailClassName,
 			startDate: persistedStartDate,
-			scheduleRaw: cls.schedule,
-			mode: cls.mode,
-			sessionsTotal: cls.sessionsTotal,
-			level: cls.level,
+			scheduleRaw: emailScheduleRaw,
+			mode: emailMode,
+			sessionsTotal: emailSessionsTotal,
+			level: emailLevel,
 			version: announcementVersion,
 			isUpdate: input.mode === "all",
 			teacherNote: persistedNote,
