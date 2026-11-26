@@ -296,12 +296,12 @@ describe("AssignmentList", () => {
 });
 
 describe("GreetingHeader", () => {
-	it("renders greeting with first name and summary text", () => {
+	it("renders greeting with first name and due-soon summary text", () => {
 		const html = renderToStaticMarkup(
 			<GreetingHeader studentName="Nguyễn Văn Minh" dueSoonCount={2} />,
 		);
 		expect(html).toContain("Chào Minh");
-		expect(html).toContain("2 bài tập sắp đến hạn cần nộp.");
+		expect(html).toContain("2 bài sắp đến hạn");
 	});
 
 	it("renders zero due soon message", () => {
@@ -309,7 +309,25 @@ describe("GreetingHeader", () => {
 			<GreetingHeader studentName="Lan" dueSoonCount={0} />,
 		);
 		expect(html).toContain("Chào Lan");
-		expect(html).toContain("Bạn không có bài tập nào cần nộp gấp.");
+		expect(html).toContain("không còn bài nào sắp đến hạn");
+	});
+
+	it("separates overdue and due-soon counts and appends today's remaining sessions", () => {
+		const html = renderToStaticMarkup(
+			<GreetingHeader
+				studentName="Lê Minh Anh"
+				overdueCount={1}
+				dueSoonCount={2}
+				remainingSessionsToday={2}
+				totalSessionsToday={3}
+				nowMs={Date.parse("2026-11-26T10:52:00Z")}
+			/>,
+		);
+		expect(html).toContain("Thứ Năm, 26 tháng 11");
+		expect(html).toContain("Chào Anh");
+		expect(html).toContain("1 bài quá hạn");
+		expect(html).toContain("2 bài sắp đến hạn");
+		expect(html).toContain("2 buổi học");
 	});
 });
 

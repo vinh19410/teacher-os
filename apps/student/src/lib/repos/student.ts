@@ -181,8 +181,10 @@ export async function fetchStudentOverview(): Promise<StudentOverview> {
 	return studentOverviewSchema.parse(data);
 }
 
-export async function fetchStudentSchedule(): Promise<StudentScheduleResponse> {
-	const headers = getStudentHeaders();
+export async function fetchStudentSchedule(
+	explicitOrgId?: string | null,
+): Promise<StudentScheduleResponse> {
+	const headers = getStudentHeaders({}, explicitOrgId);
 	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(`${getApiBaseUrl()}/api/student/schedule`, {
 		method: "GET",
@@ -423,6 +425,8 @@ export interface UseStudentScheduleOptions {
 	refetchOnMount?: boolean | "always";
 	refetchOnWindowFocus?: boolean | "always";
 	staleTime?: number;
+	enabled?: boolean;
+	orgIdOverride?: string | null;
 }
 
 export function useStudentSchedule(options?: UseStudentScheduleOptions) {
@@ -431,11 +435,13 @@ export function useStudentSchedule(options?: UseStudentScheduleOptions) {
 		getActiveStudentOrgId,
 		getActiveStudentOrgId,
 	);
+	const { orgIdOverride, ...queryOptions } = options ?? {};
+	const scopedOrgId = orgIdOverride !== undefined ? orgIdOverride : activeOrgId;
 	return useQuery({
-		queryKey: ["student", "schedule", activeOrgId],
-		queryFn: fetchStudentSchedule,
+		queryKey: ["student", "schedule", scopedOrgId],
+		queryFn: () => fetchStudentSchedule(scopedOrgId),
 		staleTime: 60_000,
-		...options,
+		...queryOptions,
 	});
 }
 
