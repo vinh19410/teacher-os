@@ -1721,7 +1721,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			return c.json({ error: "enrollment not found" }, 404);
 		}
 
-		const result = await activateEnrollment(db, orgId, enrollmentId);
+		const result = await activateEnrollment(db, orgId, enrollmentId, getNow());
 		if (result.ok) {
 			return c.json({ ok: true });
 		}

@@ -539,6 +539,9 @@ function ClassDetailRoute() {
 										? lastAssigned.target
 										: undefined
 								}
+								run={run}
+								isPending={isPending}
+								busy={busy}
 							/>
 						</div>
 					)}

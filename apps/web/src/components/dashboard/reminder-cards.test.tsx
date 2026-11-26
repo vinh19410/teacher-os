@@ -138,7 +138,7 @@ describe("ReminderCards", () => {
 		expect(container.firstElementChild?.className).toContain("lg:grid-cols-2");
 	});
 
-	it("đếm 0 → nhãn zero inbox, ẩn số 0 và dòng preview thừa, CTA chuyển Xem lại và giữ URL đích", () => {
+	it("đếm 0 → nhãn zero-state đúng phạm vi từng thẻ, ẩn số 0 và dòng preview thừa, CTA chuyển Xem lại và giữ URL đích", () => {
 		const zeroData: DashboardReminders = {
 			date: "2026-10-26",
 			attendance: { pending: 0, items: [] },
@@ -146,11 +146,24 @@ describe("ReminderCards", () => {
 			tuition: { students: 0, outstanding: 0 },
 		};
 		render(<ReminderCards data={zeroData} canAccessFinance />);
-		const labels = screen.getAllByText("Đã hoàn tất hôm nay");
-		expect(labels).toHaveLength(3);
+		const attendanceCard = screen.getByTestId("reminder-card-attendance");
+		const gradingCard = screen.getByTestId("reminder-card-grading");
+		const tuitionCard = screen.getByTestId("reminder-card-tuition");
+
 		expect(
-			screen.getByTestId("reminder-card-attendance").getAttribute("data-done"),
-		).toBe("true");
+			within(attendanceCard).getByText("Đã hoàn tất hôm nay"),
+		).toBeTruthy();
+		expect(attendanceCard.getAttribute("data-done")).toBe("true");
+		expect(
+			within(gradingCard).getByText("Không còn bài quá hạn chấm"),
+		).toBeTruthy();
+		expect(within(gradingCard).queryByText("Đã hoàn tất hôm nay")).toBeNull();
+		expect(gradingCard.getAttribute("data-done")).toBe("true");
+		expect(
+			within(tuitionCard).getByText("Không có khoản đến hạn"),
+		).toBeTruthy();
+		expect(tuitionCard.getAttribute("data-done")).toBe("true");
+
 		expect(screen.queryByTestId("reminder-card-count")).toBeNull();
 		expect(screen.queryByText("0 Writing · 0 Speaking")).toBeNull();
 		expect(screen.queryByText(/0đ/)).toBeNull();
@@ -159,6 +172,68 @@ describe("ReminderCards", () => {
 			name: /Ca dạy hôm nay chưa điểm danh/,
 		});
 		expect(attendanceLink.getAttribute("href")).toContain("status=pending");
+	});
+
+	it("khi 0 bài quá hạn chấm nhưng còn bài quá hạn chưa nộp: giữ nền nổi bật, hiện cảnh báo màu warn nối aria-describedby và không lồng interactive element", () => {
+		const zeroData: DashboardReminders = {
+			date: "2026-10-26",
+			attendance: { pending: 0, items: [] },
+			overdueGrading: { count: 0, writing: 0, speaking: 0 },
+			tuition: { students: 0, outstanding: 0 },
+		};
+		render(
+			<ReminderCards
+				data={zeroData}
+				canAccessFinance
+				overdueUnsubmitted={{ targets: 2, students: 1 }}
+			/>,
+		);
+		const gradingCard = screen.getByTestId("reminder-card-grading");
+		expect(
+			within(gradingCard).getByText("Không còn bài quá hạn chấm"),
+		).toBeTruthy();
+		expect(within(gradingCard).queryByText("Đã hoàn tất hôm nay")).toBeNull();
+
+		const warning = within(gradingCard).getByTestId(
+			"reminder-card-grading-overdue-unsubmitted",
+		);
+		expect(warning.textContent).toContain(
+			"Còn 2 bài quá hạn chưa nộp (1 học viên) — xem ở Cần kiểm tra",
+		);
+		expect(warning.id).toBeTruthy();
+
+		const gradingLinks = within(gradingCard).getAllByRole("link");
+		expect(gradingLinks).toHaveLength(1);
+		expect(gradingLinks[0].getAttribute("aria-describedby")).toBe(warning.id);
+		expect(within(gradingCard).queryAllByRole("button")).toHaveLength(0);
+		expect(gradingCard.className).not.toContain("bg-muted");
+	});
+
+	it("khi vừa có bài quá hạn chấm vừa có bài quá hạn chưa nộp: hiển thị đủ cả số đếm chấm bài và cảnh báo chưa nộp", () => {
+		render(
+			<ReminderCards
+				data={FULL_DATA}
+				canAccessFinance
+				overdueUnsubmitted={{ targets: 2, students: 1 }}
+			/>,
+		);
+		const gradingCard = screen.getByTestId("reminder-card-grading");
+		expect(
+			within(gradingCard).getByTestId("reminder-card-count").textContent,
+		).toBe("3 bài");
+		expect(
+			within(gradingCard).getByText("2 Writing · 1 Speaking"),
+		).toBeTruthy();
+		const warning = within(gradingCard).getByTestId(
+			"reminder-card-grading-overdue-unsubmitted",
+		);
+		expect(warning.textContent).toContain(
+			"Còn 2 bài quá hạn chưa nộp (1 học viên) — xem ở Cần kiểm tra",
+		);
+		const gradingLink = within(gradingCard).getByRole("link", {
+			name: "2. Chấm bài — Bài tập quá hạn chấm > 24h",
+		});
+		expect(gradingLink.getAttribute("aria-describedby")).toBe(warning.id);
 	});
 
 	it("items preview cắt tối đa 3 dòng với giờ bắt đầu + tên lớp và hiển thị +N ca khác khi pending > 3", () => {

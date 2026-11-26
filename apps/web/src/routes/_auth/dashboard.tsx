@@ -21,6 +21,7 @@ import {
 	groupLessonsByClassSession,
 	groupUpcomingByDay,
 	lessonsToday,
+	overdueUnsubmittedSummary,
 	resolveDashboardFocus,
 	sessionTimelineState,
 	studentRiskDetails,
@@ -94,6 +95,14 @@ function DashboardRoute() {
 	}, [todayIso, kernelUpdatedAt]);
 
 	const risk = atRiskRows(
+		data.students,
+		data.lessons,
+		now,
+		data.classes,
+		data.classAssignments,
+		data.assignments,
+	);
+	const overdueUnsubmitted = overdueUnsubmittedSummary(
 		data.students,
 		data.lessons,
 		now,
@@ -222,6 +231,14 @@ function DashboardRoute() {
 										</strong>{" "}
 										đang chờ bạn xử lý.
 									</>
+								) : risk.length > 0 ? (
+									<>
+										Còn{" "}
+										<strong className="font-semibold text-foreground">
+											{`${risk.length} học viên`}
+										</strong>{" "}
+										cần kiểm tra.
+									</>
 								) : (
 									"Mọi việc hôm nay đã xong."
 								)}
@@ -303,6 +320,7 @@ function DashboardRoute() {
 					<ReminderCards
 						data={reminders.data}
 						canAccessFinance={canAccessFinance}
+						overdueUnsubmitted={overdueUnsubmitted}
 					/>
 				)}
 			</section>

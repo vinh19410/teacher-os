@@ -14,6 +14,7 @@ import type {
 import {
 	addManualSessionSchema,
 	CLASS_ERROR_CODES,
+	classAssignmentAddTargetsSchema,
 	classAssignmentCreateSchema,
 	classConfirmOpeningSchema,
 	classCreateSchema,
@@ -80,7 +81,18 @@ import {
 	syllabusLesson,
 	syllabusModule,
 } from "@teacher-os/db/schema/syllabus";
-import { and, desc, eq, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
+import {
+	and,
+	desc,
+	eq,
+	inArray,
+	isNull,
+	lte,
+	ne,
+	notLike,
+	or,
+	sql,
+} from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
@@ -601,7 +613,7 @@ export function kernelRoutes(deps: {
 
 		const studentId = crypto.randomUUID();
 		const enrollmentId = cls ? crypto.randomUUID() : undefined;
-		const now = new Date();
+		const now = deps.now ? deps.now() : new Date();
 		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
 			db.insert(student).values({
 				id: studentId,
@@ -751,7 +763,7 @@ export function kernelRoutes(deps: {
 				}
 			};
 			if (input.activateNow) {
-				const act = await activateEnrollment(db, ctx.orgId, enrollmentId);
+				const act = await activateEnrollment(db, ctx.orgId, enrollmentId, now);
 				if (!act.ok) {
 					await cleanupCreatedStudentAndEnrollment();
 					if (act.error === "class-paused") {
@@ -1759,7 +1771,8 @@ export function kernelRoutes(deps: {
 			throw err;
 		}
 		if (input.activateNow === true) {
-			const act = await activateEnrollment(db, ctx.orgId, enrollmentId);
+			const now = deps.now ? deps.now() : new Date();
+			const act = await activateEnrollment(db, ctx.orgId, enrollmentId, now);
 			if (!act.ok) {
 				await db
 					.delete(enrollment)
@@ -1822,7 +1835,8 @@ export function kernelRoutes(deps: {
 		const db = deps.getDb();
 		const enrollmentId = c.req.param("enrollmentId");
 
-		const result = await activateEnrollment(db, ctx.orgId, enrollmentId);
+		const now = deps.now ? deps.now() : new Date();
+		const result = await activateEnrollment(db, ctx.orgId, enrollmentId, now);
 		if (result.ok) {
 			return c.json({ ok: true });
 		}
@@ -1938,6 +1952,7 @@ export function kernelRoutes(deps: {
 					eq(enrollment.classId, classId),
 					eq(enrollment.orgId, ctx.orgId),
 					eq(enrollment.status, "active"),
+					notLike(enrollment.studentId, "demo-student:%"),
 				),
 			);
 		const roster = new Set(rosterRows.map((row) => row.studentId));
@@ -1959,6 +1974,45 @@ export function kernelRoutes(deps: {
 		}
 
 		const assignmentId = crypto.randomUUID();
+		const targetInsertChunkSize = 15;
+		const resolvedTargetScope =
+			input.targetScope === "selected"
+				? "selected"
+				: input.targetScope === "class"
+					? roster.size <= 100
+						? "class"
+						: "selected"
+					: input.studentIds.length === roster.size
+						? "class"
+						: "selected";
+		const effectiveStudentIds =
+			resolvedTargetScope === "class" && input.targetScope === "class"
+				? [...roster]
+				: input.studentIds;
+
+		const targetInsertStatements: BatchItem<"sqlite">[] = [];
+		for (
+			let i = 0;
+			i < effectiveStudentIds.length;
+			i += targetInsertChunkSize
+		) {
+			const chunk = effectiveStudentIds.slice(i, i + targetInsertChunkSize);
+			targetInsertStatements.push(
+				db
+					.insert(classAssignmentTarget)
+					.values(
+						chunk.map((studentId) => ({
+							id: `cat_ca_${assignmentId}_${studentId}`,
+							orgId: ctx.orgId,
+							assignmentId,
+							studentId,
+							submittedAt: null,
+						})),
+					)
+					.onConflictDoNothing(),
+			);
+		}
+
 		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
 			db.insert(classAssignment).values({
 				id: assignmentId,
@@ -1969,18 +2023,26 @@ export function kernelRoutes(deps: {
 				due: input.due,
 				dueAt: dueAtDate,
 				note: input.note,
+				targetScope: resolvedTargetScope,
 			}),
-			...input.studentIds.map((studentId) =>
-				db.insert(classAssignmentTarget).values({
-					id: crypto.randomUUID(),
-					orgId: ctx.orgId,
-					assignmentId,
-					studentId,
-					submittedAt: null,
-				}),
-			),
+			...targetInsertStatements,
 		];
 		await db.batch(statements);
+
+		// Standalone catch-up after db.batch (drizzle-orm/d1 cannot prepare SQLiteRaw
+		// inside batch): closes the TOCTOU window if a student activated concurrently.
+		let catchUpStudentIds: string[] = [];
+		if (resolvedTargetScope === "class") {
+			const catchUpRows = await db.all<{ student_id: string }>(
+				sql`INSERT OR IGNORE INTO ${classAssignmentTarget} (id, org_id, assignment_id, student_id, submitted_at) SELECT 'cat_ca_' || ${assignmentId} || '_' || ${enrollment.studentId}, ${ctx.orgId}, ${assignmentId}, ${enrollment.studentId}, NULL FROM ${enrollment} WHERE ${enrollment.orgId} = ${ctx.orgId} AND ${enrollment.classId} = ${classId} AND ${enrollment.status} = 'active' AND ${enrollment.studentId} NOT LIKE 'demo-student:%' RETURNING student_id`,
+			);
+			catchUpStudentIds = catchUpRows
+				.map((row) => row.student_id)
+				.filter((id): id is string => typeof id === "string");
+		}
+		const notifiedStudentIds = [
+			...new Set([...effectiveStudentIds, ...catchUpStudentIds]),
+		];
 		await notify(
 			ctx.orgId,
 			assignmentPublishedEvents({
@@ -1988,10 +2050,169 @@ export function kernelRoutes(deps: {
 				title: prompt.title,
 				due: input.due,
 				dueAt: dueAtDate.toISOString(),
-				studentIds: input.studentIds,
+				studentIds: notifiedStudentIds,
 			}),
 		);
 		return c.json({ id: assignmentId } satisfies CreatedResponse, 201);
+	});
+
+	kernel.post("/classes/:id/assignments/:assignmentId/targets", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		if (ctx.role !== undefined && !canPublishGrade(ctx.role)) {
+			return c.json({ error: "forbidden" }, 403);
+		}
+		const body = await readBody(c, classAssignmentAddTargetsSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+		const classId = c.req.param("id");
+		const assignmentId = c.req.param("assignmentId");
+
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found" }, 404);
+		}
+		if (cls.status !== "active") {
+			return classPausedResponse(c);
+		}
+
+		const [ca] = await db
+			.select({
+				id: classAssignment.id,
+				title: classAssignment.title,
+				due: classAssignment.due,
+				dueAt: classAssignment.dueAt,
+			})
+			.from(classAssignment)
+			.where(
+				and(
+					eq(classAssignment.id, assignmentId),
+					eq(classAssignment.classId, classId),
+					eq(classAssignment.orgId, ctx.orgId),
+					isNull(classAssignment.classStudyPackId),
+				),
+			);
+		if (!ca) {
+			return c.json({ error: "assignment not found" }, 404);
+		}
+
+		if (new Set(input.studentIds).size !== input.studentIds.length) {
+			return c.json({ error: "duplicate student ids" }, 400);
+		}
+
+		const rosterRows = await db
+			.select({ studentId: enrollment.studentId })
+			.from(enrollment)
+			.where(
+				and(
+					eq(enrollment.classId, classId),
+					eq(enrollment.orgId, ctx.orgId),
+					eq(enrollment.status, "active"),
+					notLike(enrollment.studentId, "demo-student:%"),
+				),
+			);
+		const roster = new Set(rosterRows.map((row) => row.studentId));
+		if (input.studentIds.some((sid) => !roster.has(sid))) {
+			return c.json({ error: "student not enrolled" }, 400);
+		}
+
+		const guardClassActive = db
+			.update(classAssignment)
+			.set({
+				classId: sql`CASE WHEN EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${classId} AND ${classTable.orgId} = ${ctx.orgId} AND ${classTable.status} = 'active') THEN ${classAssignment.classId} ELSE NULL END`,
+			})
+			.where(
+				and(
+					eq(classAssignment.id, assignmentId),
+					eq(classAssignment.orgId, ctx.orgId),
+					eq(classAssignment.classId, classId),
+				),
+			);
+
+		const targetInsertChunkSize = 15;
+		const insertChunks: BatchItem<"sqlite">[] = [];
+		for (let i = 0; i < input.studentIds.length; i += targetInsertChunkSize) {
+			const chunk = input.studentIds.slice(i, i + targetInsertChunkSize);
+			insertChunks.push(
+				db
+					.insert(classAssignmentTarget)
+					.values(
+						chunk.map((studentId) => ({
+							id: `cat_ca_${assignmentId}_${studentId}`,
+							orgId: ctx.orgId,
+							assignmentId,
+							studentId,
+							submittedAt: null,
+						})),
+					)
+					.onConflictDoNothing()
+					.returning({ studentId: classAssignmentTarget.studentId }),
+			);
+		}
+
+		const upgradeScopeStmt = db
+			.update(classAssignment)
+			.set({ targetScope: "class" })
+			.where(
+				and(
+					eq(classAssignment.id, assignmentId),
+					eq(classAssignment.orgId, ctx.orgId),
+					eq(classAssignment.classId, classId),
+					isNull(classAssignment.classStudyPackId),
+					sql`NOT EXISTS (SELECT 1 FROM ${enrollment} e WHERE e.org_id = ${ctx.orgId} AND e.class_id = ${classId} AND e.status = 'active' AND e.student_id NOT LIKE 'demo-student:%' AND NOT EXISTS (SELECT 1 FROM ${classAssignmentTarget} t WHERE t.org_id = ${ctx.orgId} AND t.assignment_id = ${assignmentId} AND t.student_id = e.student_id))`,
+				),
+			);
+
+		let batchResults: unknown[];
+		try {
+			batchResults = await db.batch([
+				guardClassActive,
+				...insertChunks,
+				upgradeScopeStmt,
+			]);
+		} catch (err) {
+			const isConstraintErr =
+				isRollbackableConstraintError(err) ||
+				(err instanceof Error && isRollbackableConstraintError(err.cause));
+			if (isConstraintErr) {
+				const clsAfter = await findClass(db, classId, ctx.orgId);
+				if (!clsAfter) {
+					return c.json({ error: "class not found" }, 404);
+				}
+				if (clsAfter.status !== "active") {
+					return classPausedResponse(c);
+				}
+			}
+			throw err;
+		}
+
+		const actuallyAddedIds: string[] = [];
+		for (let i = 1; i <= insertChunks.length; i++) {
+			const rows = batchResults[i] as Array<{ studentId: string }> | undefined;
+			if (Array.isArray(rows)) {
+				for (const row of rows) {
+					if (typeof row.studentId === "string") {
+						actuallyAddedIds.push(row.studentId);
+					}
+				}
+			}
+		}
+
+		if (actuallyAddedIds.length > 0) {
+			await notify(
+				ctx.orgId,
+				assignmentPublishedEvents({
+					classAssignmentId: assignmentId,
+					title: ca.title,
+					due: ca.due,
+					dueAt: ca.dueAt ? ca.dueAt.toISOString() : undefined,
+					studentIds: actuallyAddedIds,
+				}),
+			);
+		}
+
+		return c.json({ id: assignmentId, added: actuallyAddedIds.length });
 	});
 
 	kernel.get("/classes", async (c) => {

@@ -1,13 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import type { DashboardReminders } from "@teacher-os/api/contracts";
-import { ArrowRight, Check } from "lucide-react";
-import type { ReactNode } from "react";
+import { AlertTriangle, ArrowRight, Check } from "lucide-react";
+import { type ReactNode, useId } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/cn";
+import type { OverdueUnsubmittedSummary } from "@/lib/dashboard-from-kernel";
 import { fmtVND } from "@/lib/mock-data";
 
-const DONE_TODAY_LABEL = "Đã hoàn tất hôm nay";
 const MAX_ATTENDANCE_PREVIEW = 3;
 
 /** `26/10/2026` straight from the ISO string — cùng quy ước formatDayMonth. */
@@ -34,10 +34,13 @@ export function remindersSectionTitle(iso: string): string {
 export function ReminderCards({
 	data,
 	canAccessFinance = false,
+	overdueUnsubmitted,
 }: {
 	data: DashboardReminders;
 	canAccessFinance?: boolean;
+	overdueUnsubmitted?: OverdueUnsubmittedSummary;
 }) {
+	const gradingWarningId = useId();
 	const showTuition = canAccessFinance && Boolean(data.tuition);
 	const attendancePreview = data.attendance.items.slice(
 		0,
@@ -47,6 +50,9 @@ export function ReminderCards({
 		0,
 		data.attendance.pending - attendancePreview.length,
 	);
+	const overdueUnsubmittedTargets = overdueUnsubmitted?.targets ?? 0;
+	const overdueUnsubmittedStudents = overdueUnsubmitted?.students ?? 0;
+	const hasOverdueUnsubmitted = overdueUnsubmittedTargets > 0;
 
 	return (
 		<div
@@ -62,6 +68,7 @@ export function ReminderCards({
 				label="Điểm danh"
 				title="Ca dạy hôm nay chưa điểm danh"
 				done={data.attendance.pending === 0}
+				doneLabel="Đã hoàn tất hôm nay"
 				count={data.attendance.pending}
 				unit="ca dạy"
 				cta="Điểm danh"
@@ -95,6 +102,26 @@ export function ReminderCards({
 				label="Chấm bài"
 				title="Bài tập quá hạn chấm > 24h"
 				done={data.overdueGrading.count === 0}
+				doneLabel="Không còn bài quá hạn chấm"
+				hasWarning={hasOverdueUnsubmitted}
+				warningBannerId={hasOverdueUnsubmitted ? gradingWarningId : undefined}
+				warningBanner={
+					hasOverdueUnsubmitted ? (
+						<div
+							id={gradingWarningId}
+							data-testid="reminder-card-grading-overdue-unsubmitted"
+							className="flex min-w-0 items-start gap-2 border-border border-t pt-3 font-medium text-warn text-xs"
+						>
+							<AlertTriangle
+								className="mt-0.5 size-3.5 shrink-0"
+								aria-hidden="true"
+							/>
+							<span className="min-w-0 break-words">
+								{`Còn ${overdueUnsubmittedTargets} bài quá hạn chưa nộp (${overdueUnsubmittedStudents} học viên) — xem ở Cần kiểm tra`}
+							</span>
+						</div>
+					) : undefined
+				}
 				count={data.overdueGrading.count}
 				unit="bài"
 				cta="Chấm bài"
@@ -114,6 +141,7 @@ export function ReminderCards({
 					label="Học phí"
 					title="Học phí đến hạn"
 					done={data.tuition.students === 0}
+					doneLabel="Không có khoản đến hạn"
 					count={data.tuition.students}
 					unit="học viên"
 					cta="Xem học phí"
@@ -143,6 +171,10 @@ function ReminderCard(props: {
 	label: string;
 	title: string;
 	done: boolean;
+	doneLabel: string;
+	hasWarning?: boolean;
+	warningBanner?: ReactNode;
+	warningBannerId?: string;
 	count: number;
 	unit: string;
 	cta: string;
@@ -156,7 +188,7 @@ function ReminderCard(props: {
 			data-done={props.done ? "true" : "false"}
 			className={cn(
 				"group relative flex min-w-0 flex-col gap-3 p-5",
-				props.done && "bg-muted shadow-none",
+				props.done && !props.hasWarning && "bg-muted shadow-none",
 			)}
 		>
 			<Link
@@ -164,6 +196,7 @@ function ReminderCard(props: {
 				search={props.search}
 				className="absolute inset-0 rounded-xl outline-none focus-visible:shadow-[var(--focus-ring)]"
 				aria-label={`${props.step}. ${props.label} — ${props.title}`}
+				aria-describedby={props.hasWarning ? props.warningBannerId : undefined}
 			/>
 			<div className="flex items-center gap-2">
 				<span
@@ -194,7 +227,7 @@ function ReminderCard(props: {
 			{props.done ? (
 				<p className="inline-flex min-h-9 items-center gap-2 font-semibold text-sm text-success">
 					<Check className="size-4 shrink-0" aria-hidden="true" />
-					{DONE_TODAY_LABEL}
+					{props.doneLabel}
 				</p>
 			) : (
 				<>
@@ -210,6 +243,7 @@ function ReminderCard(props: {
 					{props.children}
 				</>
 			)}
+			{props.warningBanner}
 			<div className="mt-auto pt-2">
 				<span
 					aria-hidden="true"

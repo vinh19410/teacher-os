@@ -899,6 +899,7 @@ export async function loadSnapshot(
 			title: row.title,
 			due: row.due,
 			dueAt: row.dueAt ? row.dueAt.toISOString() : null,
+			targetScope: row.targetScope === "selected" ? "selected" : "class",
 			note: row.note,
 			createdAt: row.createdAt.toISOString(),
 			targets: targetsByAssignment.get(row.id) ?? [],

@@ -3,6 +3,7 @@ import type {
 	AssignmentSkill,
 	AssignmentWritingSection,
 	AttendanceStatus,
+	ClassAssignmentTargetScope,
 	ClassStatus,
 	ClassType,
 	KernelAssignmentTestRow,
@@ -123,6 +124,7 @@ export interface ClassAssignment {
 	title: string;
 	due: string;
 	dueAt?: string | null;
+	targetScope?: ClassAssignmentTargetScope;
 	note: string;
 	createdAt: string;
 	targets: Array<{

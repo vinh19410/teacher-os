@@ -98,6 +98,7 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 		case "create-report":
 		case "create-assignment-prompt":
 		case "assign-class-prompt":
+		case "add-class-assignment-targets":
 		case "record-invoice-payment":
 		case "add-student":
 			// #450 / #508: figures come from the post-write snapshot refresh — the

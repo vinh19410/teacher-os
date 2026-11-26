@@ -9,6 +9,10 @@ import {
 } from "@teacher-os/api/skeleton";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { classTable } from "@teacher-os/db/schema/class";
+import {
+	classAssignment,
+	classAssignmentTarget,
+} from "@teacher-os/db/schema/class-assignment";
 import { classSession } from "@teacher-os/db/schema/class-session";
 import { classSessionMeeting } from "@teacher-os/db/schema/class-session-meeting";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
@@ -22,7 +26,17 @@ import {
 } from "@teacher-os/db/schema/organization-holiday";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { syllabus } from "@teacher-os/db/schema/syllabus";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import {
+	and,
+	eq,
+	gt,
+	gte,
+	inArray,
+	isNotNull,
+	isNull,
+	or,
+	sql,
+} from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { Db } from "../app";
 import { isManualClass } from "../lib/class-mode";
@@ -694,6 +708,95 @@ export async function materializeScheduleForEnrollment(
 	throw new Error("materializeScheduleForEnrollment: guard retry exhausted");
 }
 
+const D1_TARGET_INSERT_CHUNK = 15;
+const D1_BATCH_STATEMENT_LIMIT = 50;
+
+/**
+ * Backfill `class_assignment_target` rows for a student who activates their
+ * enrollment into an active class after regular class-wide assignments
+ * (`class_study_pack_id IS NULL`, `target_scope = 'class'`) were already
+ * published. Only open assignments (not past deadline relative to `now`) are
+ * assigned so late joiners never receive retroactively overdue homework.
+ */
+export async function backfillClassAssignmentTargetsForStudent(
+	db: Db,
+	orgId: string,
+	classId: string,
+	studentId: string,
+	now: Date = new Date(),
+): Promise<number> {
+	if (studentId.startsWith("demo-student:")) {
+		return 0;
+	}
+	const todayVN = vietnamTodayISO(now);
+	const eligibleAssignments = await db
+		.select({ id: classAssignment.id })
+		.from(classAssignment)
+		.innerJoin(
+			classTable,
+			and(
+				eq(classTable.id, classAssignment.classId),
+				eq(classTable.orgId, orgId),
+				eq(classTable.status, "active"),
+			),
+		)
+		.innerJoin(
+			enrollment,
+			and(
+				eq(enrollment.orgId, orgId),
+				eq(enrollment.classId, classId),
+				eq(enrollment.studentId, studentId),
+				eq(enrollment.status, "active"),
+			),
+		)
+		.where(
+			and(
+				eq(classAssignment.orgId, orgId),
+				eq(classAssignment.classId, classId),
+				isNull(classAssignment.classStudyPackId),
+				eq(classAssignment.targetScope, "class"),
+				or(
+					and(isNotNull(classAssignment.dueAt), gt(classAssignment.dueAt, now)),
+					and(
+						isNull(classAssignment.dueAt),
+						sql`${classAssignment.due} GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'`,
+						gte(classAssignment.due, todayVN),
+					),
+				),
+			),
+		);
+
+	if (eligibleAssignments.length === 0) {
+		return 0;
+	}
+
+	const targetValues: Array<typeof classAssignmentTarget.$inferInsert> =
+		eligibleAssignments.map((assignment) => ({
+			id: `cat_ca_${assignment.id}_${studentId}`,
+			orgId,
+			assignmentId: assignment.id,
+			studentId,
+			submittedAt: null,
+		}));
+
+	const statements: BatchItem<"sqlite">[] = [];
+	for (let i = 0; i < targetValues.length; i += D1_TARGET_INSERT_CHUNK) {
+		const chunk = targetValues.slice(i, i + D1_TARGET_INSERT_CHUNK);
+		statements.push(
+			db.insert(classAssignmentTarget).values(chunk).onConflictDoNothing(),
+		);
+	}
+
+	for (let i = 0; i < statements.length; i += D1_BATCH_STATEMENT_LIMIT) {
+		const batch = statements.slice(i, i + D1_BATCH_STATEMENT_LIMIT);
+		const [first, ...rest] = batch;
+		if (!first) continue;
+		await db.batch([first, ...rest]);
+	}
+
+	return targetValues.length;
+}
+
 /**
  * Kích hoạt enrollment: chuyển 'invited' -> 'active' và sinh sessionPackage +
  * lessons trong một atomic batch. Caller: nút "Kích hoạt" của teacher
@@ -711,6 +814,7 @@ export async function activateEnrollment(
 	db: Db,
 	orgId: string,
 	enrollmentId: string,
+	now: Date = new Date(),
 ): Promise<ActivateEnrollmentResult> {
 	// Pre-read: kiểm tra tồn tại và org-scoping
 	const [existingEnrollment] = await db
@@ -731,6 +835,7 @@ export async function activateEnrollment(
 			orgId,
 			existingEnrollment.classId,
 			existingEnrollment.studentId,
+			now,
 		);
 		return { ok: true };
 	}
@@ -819,7 +924,24 @@ export async function activateEnrollment(
 				orgId,
 				existingEnrollment.classId,
 				existingEnrollment.studentId,
+				now,
 			);
+			if (clsAfter[0].status === "active") {
+				try {
+					await backfillClassAssignmentTargetsForStudent(
+						db,
+						orgId,
+						existingEnrollment.classId,
+						existingEnrollment.studentId,
+						now,
+					);
+				} catch (err) {
+					console.warn(
+						"[enrollment-activation] backfillClassAssignmentTargetsForStudent failed:",
+						err,
+					);
+				}
+			}
 			return { ok: true };
 		}
 		if (clsAfter[0].status !== "active") {
@@ -854,6 +976,21 @@ export async function activateEnrollment(
 		orgId,
 		existingEnrollment.classId,
 		existingEnrollment.studentId,
+		now,
 	);
+	try {
+		await backfillClassAssignmentTargetsForStudent(
+			db,
+			orgId,
+			existingEnrollment.classId,
+			existingEnrollment.studentId,
+			now,
+		);
+	} catch (err) {
+		console.warn(
+			"[enrollment-activation] backfillClassAssignmentTargetsForStudent failed:",
+			err,
+		);
+	}
 	return { ok: true };
 }

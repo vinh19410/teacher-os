@@ -270,6 +270,74 @@ export function atRiskRows(
 	return rows;
 }
 
+export interface OverdueUnsubmittedSummary {
+	targets: number;
+	students: number;
+}
+
+/**
+ * Counts unsubmitted overdue assignments across active classes and legacy
+ * assignments using the exact same student set, paused-class exclusion, and
+ * deadline/submission guards as `atRiskRows`.
+ */
+export function overdueUnsubmittedSummary(
+	students: readonly Pick<Student, "id">[],
+	lessons: readonly Lesson[],
+	now = new Date(),
+	classes?: readonly DashboardRiskClassInput[],
+	classAssignments: readonly Pick<
+		ClassAssignment,
+		"classId" | "due" | "dueAt" | "targets"
+	>[] = [],
+	assignments: readonly Pick<Assignment, "sid" | "status">[] = [],
+): OverdueUnsubmittedSummary {
+	const validStudentIds = new Set(students.map((student) => student.id));
+	if (validStudentIds.size === 0) {
+		return { targets: 0, students: 0 };
+	}
+
+	const todayIso = todayISOVietnam(now);
+	const nowMs = now.getTime();
+	const pausedIds = pausedClassIdSet(classes);
+	let targets = 0;
+	const affectedStudents = new Set<string>();
+
+	for (const ca of classAssignments) {
+		if (pausedIds?.has(ca.classId)) continue;
+		const deadline = evaluateAssignmentDeadline({
+			due: ca.due,
+			dueAt: ca.dueAt,
+			submittedAt: null,
+			todayISO: todayIso,
+			nowMs,
+		});
+		if (!deadline.isOverdue) continue;
+		for (const target of ca.targets) {
+			if (target.submittedAt != null || target.attemptId != null) continue;
+			if (!validStudentIds.has(target.studentId)) continue;
+			targets += 1;
+			affectedStudents.add(target.studentId);
+		}
+	}
+
+	if (assignments.length > 0) {
+		const pausedOnlyStudents = pausedOnlyStudentSet(
+			classes,
+			lessons,
+			pausedIds,
+		);
+		for (const assignment of assignments) {
+			if (assignment.status !== "late") continue;
+			if (!validStudentIds.has(assignment.sid)) continue;
+			if (pausedOnlyStudents.has(assignment.sid)) continue;
+			targets += 1;
+			affectedStudents.add(assignment.sid);
+		}
+	}
+
+	return { targets, students: affectedStudents.size };
+}
+
 export function formatDashboardLead(now: Date, todayCount: number): string {
 	const iso = todayISOVietnam(now);
 	const weekday = new Intl.DateTimeFormat("vi-VN", {
