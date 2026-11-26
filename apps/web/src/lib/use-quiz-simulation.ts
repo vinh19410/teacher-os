@@ -43,7 +43,13 @@ export function useQuizSimulation(
 	const submit = useCallback(() => {
 		if (!sim || grade) return;
 		setGrade(
-			gradeQuiz(sim.fullQuestions, Object.fromEntries(Object.entries(answers))),
+			gradeQuiz(
+				sim.fullQuestions,
+				Object.fromEntries(Object.entries(answers)),
+				{
+					promptType: sim.detail.type,
+				},
+			),
 		);
 	}, [sim, answers, grade]);
 	const reset = useCallback(() => {

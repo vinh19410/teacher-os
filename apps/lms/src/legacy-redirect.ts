@@ -9,6 +9,11 @@ const UNIFIED_AUTH_PATHS = new Set([
 
 const SW_PASSTHROUGH_PATHS = new Set(["/sw.js", "/registerSW.js"]);
 
+const PORTAL_PREFIXES = ["/teacher", "/student", "/admin"] as const;
+const REDIRECT_SCHEME_PREFIX_RE = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
+const ENCODED_CONTROL_CHAR_RE = /%(?:25)*(?:0[0-9a-f]|1[0-9a-f]|7f)/i;
+const REDIRECT_BASE_ORIGIN = "https://lms.invalid";
+
 function isUnifiedAuthPath(pathname: string): boolean {
 	const normalized = pathname.replace(/\/+$/, "") || "/";
 	return UNIFIED_AUTH_PATHS.has(normalized);
@@ -18,14 +23,137 @@ function isPayPath(pathname: string): boolean {
 	return pathname === "/pay" || pathname.startsWith("/pay/");
 }
 
+function matchesSegmentPrefix(pathname: string, prefix: string): boolean {
+	return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
+
 function prefixPath(pathname: string, prefix: string): string {
-	if (pathname === prefix || pathname.startsWith(`${prefix}/`)) {
+	if (matchesSegmentPrefix(pathname, prefix)) {
 		return pathname;
 	}
 	if (pathname === "/") {
 		return prefix;
 	}
 	return `${prefix}${pathname}`;
+}
+
+function hasControlCharacter(value: string): boolean {
+	for (let i = 0; i < value.length; i += 1) {
+		const code = value.charCodeAt(i);
+		if (code <= 0x1f || code === 0x7f) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function stripReturnUrlParam(url: URL): string {
+	const nextParams = new URLSearchParams(url.searchParams);
+	nextParams.delete("returnUrl");
+	const serialized = nextParams.toString();
+	return serialized.length > 0 ? `?${serialized}` : "";
+}
+
+function isSafeRelativeReturnUrl(raw: string): boolean {
+	if (
+		raw.length === 0 ||
+		hasControlCharacter(raw) ||
+		ENCODED_CONTROL_CHAR_RE.test(raw) ||
+		!raw.startsWith("/") ||
+		raw.startsWith("//") ||
+		raw.startsWith("/\\") ||
+		REDIRECT_SCHEME_PREFIX_RE.test(raw)
+	) {
+		return false;
+	}
+
+	// Read-only multi-round decode on the pathname portion to reject encoded
+	// open-redirect bypasses (%2F%2F, %5C, double-encoded invalid UTF-8, or
+	// control characters) without mangling valid %26/%23/%25 in query/hash.
+	const pathEnd = raw.search(/[?#]/);
+	let probe = pathEnd === -1 ? raw : raw.slice(0, pathEnd);
+	for (let round = 0; round < 2; round += 1) {
+		if (
+			hasControlCharacter(probe) ||
+			!probe.startsWith("/") ||
+			probe.startsWith("//") ||
+			probe.startsWith("/\\") ||
+			probe.includes("\\") ||
+			REDIRECT_SCHEME_PREFIX_RE.test(probe)
+		) {
+			return false;
+		}
+		try {
+			const decoded = decodeURIComponent(probe);
+			if (decoded === probe) break;
+			probe = decoded;
+		} catch {
+			return false;
+		}
+	}
+	if (
+		hasControlCharacter(probe) ||
+		!probe.startsWith("/") ||
+		probe.startsWith("//") ||
+		probe.startsWith("/\\") ||
+		probe.includes("\\") ||
+		REDIRECT_SCHEME_PREFIX_RE.test(probe)
+	) {
+		return false;
+	}
+
+	try {
+		const parsed = new URL(raw, REDIRECT_BASE_ORIGIN);
+		const parsedProbe = new URL(probe, REDIRECT_BASE_ORIGIN);
+		if (
+			parsed.origin !== REDIRECT_BASE_ORIGIN ||
+			!parsed.pathname.startsWith("/") ||
+			parsed.pathname.startsWith("//") ||
+			parsedProbe.origin !== REDIRECT_BASE_ORIGIN ||
+			!parsedProbe.pathname.startsWith("/") ||
+			parsedProbe.pathname.startsWith("//")
+		) {
+			return false;
+		}
+	} catch {
+		return false;
+	}
+
+	return true;
+}
+
+function rewriteLegacyLoginSearch(
+	pathname: string,
+	url: URL,
+	portalPrefix: (typeof PORTAL_PREFIXES)[number],
+): string {
+	const normalizedPath = pathname.replace(/\/+$/, "") || "/";
+	if (normalizedPath !== "/login" || !url.searchParams.has("returnUrl")) {
+		return url.search;
+	}
+
+	const rawValues = url.searchParams.getAll("returnUrl");
+	if (rawValues.length !== 1) {
+		return stripReturnUrlParam(url);
+	}
+	const raw = rawValues[0] ?? "";
+	if (!isSafeRelativeReturnUrl(raw)) {
+		return stripReturnUrlParam(url);
+	}
+
+	const parsed = new URL(raw, REDIRECT_BASE_ORIGIN);
+	if (
+		PORTAL_PREFIXES.some((p) => matchesSegmentPrefix(parsed.pathname, p)) ||
+		isPayPath(parsed.pathname) ||
+		isUnifiedAuthPath(parsed.pathname)
+	) {
+		return url.search;
+	}
+
+	const rewritten = `${prefixPath(parsed.pathname, portalPrefix)}${parsed.search}${parsed.hash}`;
+	const nextParams = new URLSearchParams(url.searchParams);
+	nextParams.set("returnUrl", rewritten);
+	return `?${nextParams.toString()}`;
 }
 
 function stripDomainPrefix(hostname: string, prefix: string): string | null {
@@ -84,7 +212,8 @@ export function resolveLegacyHostRedirect(request: Request): string | null {
 			isPayPath(pathname) || isUnifiedAuthPath(pathname)
 				? pathname
 				: prefixPath(pathname, "/teacher");
-		return `https://${teacherTargetHost}${targetPath}${search}`;
+		const targetSearch = rewriteLegacyLoginSearch(pathname, url, "/teacher");
+		return `https://${teacherTargetHost}${targetPath}${targetSearch}`;
 	}
 
 	// Student legacy hosts: student.<domain>, www.student.<domain>
@@ -95,7 +224,8 @@ export function resolveLegacyHostRedirect(request: Request): string | null {
 		const targetPath = isUnifiedAuthPath(pathname)
 			? pathname
 			: prefixPath(pathname, "/student");
-		return `https://lms.${studentDomain}${targetPath}${search}`;
+		const targetSearch = rewriteLegacyLoginSearch(pathname, url, "/student");
+		return `https://lms.${studentDomain}${targetPath}${targetSearch}`;
 	}
 
 	// Admin legacy hosts: admin.<domain>, www.admin.<domain>
@@ -106,7 +236,8 @@ export function resolveLegacyHostRedirect(request: Request): string | null {
 		const targetPath = isUnifiedAuthPath(pathname)
 			? pathname
 			: prefixPath(pathname, "/admin");
-		return `https://lms.${adminDomain}${targetPath}${search}`;
+		const targetSearch = rewriteLegacyLoginSearch(pathname, url, "/admin");
+		return `https://lms.${adminDomain}${targetPath}${targetSearch}`;
 	}
 
 	// Canonical www alias: www.lms.<domain> -> lms.<domain>

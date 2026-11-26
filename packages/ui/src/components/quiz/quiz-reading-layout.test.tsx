@@ -67,4 +67,24 @@ describe("QuizReadingSplitLayout — reading split-pane (#286)", () => {
 		expect(html).toContain('aria-label="Bài đọc"');
 		expect(html.endsWith("</footer></div>")).toBe(true);
 	});
+
+	it("annotations prop giữ nguyên cấu trúc split-pane, không phát sinh overflow-y-auto trần và giữ navigator ngoài grid", () => {
+		const html = renderToStaticMarkup(
+			<QuizReadingSplitLayout
+				passage="<p>Đoạn đọc có công cụ tô sáng.</p>"
+				navigator={<footer data-testid="nav" />}
+				annotations={{
+					mode: "edit",
+					items: [{ id: "hl-1", start: 0, end: 8, note: "Lưu ý" }],
+				}}
+			>
+				<p>paper</p>
+			</QuizReadingSplitLayout>,
+		);
+		expect(html).toContain('aria-label="Bài đọc"');
+		expect(html).toContain('data-testid="reading-passage-pane"');
+		expect(html).toContain('data-highlight-id="hl-1"');
+		expect(html).not.toMatch(/[^:]overflow-y-auto/);
+		expect(html.endsWith("</footer></div>")).toBe(true);
+	});
 });

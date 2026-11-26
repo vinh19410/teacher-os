@@ -1,9 +1,12 @@
 import {
 	type AssignmentQuestion,
 	PRACTICE_CATALOG_PAGE_SIZE,
+	PRACTICE_FILTER_MAX_LENGTH,
 	PRACTICE_SKILLS,
+	type PracticeCatalogFacets,
 	type PracticeCatalogResponse,
 	type PracticeSkill,
+	parsePracticePageParam,
 	quizAttemptActionSchema,
 	type StartPracticeResponse,
 	type StudentQuizDetail,
@@ -12,8 +15,15 @@ import {
 	studentQuizDetailSchema,
 	studentQuizGroupSchema,
 } from "@teacher-os/api/contracts";
+import { resolveAnswerSetGroups } from "@teacher-os/api/lib/grade-quiz";
 import { formatBand, ieltsOverallBand } from "@teacher-os/api/lib/ielts-band";
 import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
+import {
+	expandPracticeTypeFilter,
+	sortPracticeBands,
+	sortPracticeParts,
+	sortPracticeTypes,
+} from "@teacher-os/api/lib/practice-type-catalog";
 import {
 	assignmentPrompt,
 	assignmentTest,
@@ -21,6 +31,7 @@ import {
 	quizAttempt,
 } from "@teacher-os/db/schema/index";
 import { and, asc, count, desc, eq, inArray, type SQL, sql } from "drizzle-orm";
+import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import { type Context, Hono } from "hono";
 import type { Db } from "../app";
 import { syncLibraryTestsToOrg } from "../lib/library-test-sync";
@@ -65,21 +76,133 @@ function normalizeTimeLimitSeconds(
 		: null;
 }
 
+/** Fast-path + nested CASE JSON1: luôn trả mảng JSON hợp lệ (hoặc '[]'),
+ * tránh lỗi `malformed JSON` khi cột text rỗng/hỏng trên SQLite/D1. */
+function safeJsonArraySql(col: SQLiteColumn): SQL {
+	return sql`CASE
+		WHEN ${col} IN ('', '[]') THEN '[]'
+		WHEN json_valid(${col}) = 1 THEN
+			CASE WHEN json_type(${col}) = 'array' THEN ${col} ELSE '[]' END
+		ELSE '[]'
+	END`;
+}
+
+function safeJsonArrayLengthSql(col: SQLiteColumn): SQL {
+	return sql`CASE
+		WHEN ${col} IN ('', '[]') THEN 0
+		WHEN json_valid(${col}) = 1 THEN
+			CASE WHEN json_type(${col}) = 'array' THEN json_array_length(${col}) ELSE 0 END
+		ELSE 0
+	END`;
+}
+
+/** Trích `$.type` dạng string đã trim từ phần tử `json_each` — nested CASE
+ * chặn tuyệt đối `malformed JSON` khi phần tử mảng là scalar/text trần và
+ * loại bỏ giá trị `$.type` không phải text (number/array/object). */
+function safeElementTypeSql(alias: "g" | "q"): SQL {
+	const ref = sql.raw(alias);
+	return sql`CASE
+		WHEN ${ref}.type = 'object' THEN
+			CASE
+				WHEN json_type(${ref}.value, '$.type') = 'text'
+				THEN trim(json_extract(${ref}.value, '$.type'))
+			END
+	END`;
+}
+
+function partMatchesTypeSql(expandedTypes: readonly string[]): SQL {
+	const typeList = sql.join(
+		expandedTypes.map((value) => sql`${value}`),
+		sql`, `,
+	);
+	const safeGroups = safeJsonArraySql(assignmentPrompt.groups);
+	const safeGroupsLen = safeJsonArrayLengthSql(assignmentPrompt.groups);
+	const safeQuestions = safeJsonArraySql(assignmentPrompt.questions);
+	const groupTypeExpr = safeElementTypeSql("g");
+	const questionTypeExpr = safeElementTypeSql("q");
+	return sql`(
+		trim(${assignmentPrompt.type}) IN (${typeList})
+		OR exists (
+			select 1 from json_each(${safeGroups}) as g
+			where ${groupTypeExpr} IN (${typeList})
+		)
+		OR (
+			${safeGroupsLen} = 0
+			and exists (
+				select 1 from json_each(${safeQuestions}) as q
+				where ${questionTypeExpr} IN (${typeList})
+			)
+		)
+	)`;
+}
+
+function parseJsonStringList(raw: string | null | undefined): string[] {
+	if (!raw || raw === "[]") return [];
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return [];
+		return parsed.filter((item): item is string => typeof item === "string");
+	} catch {
+		return [];
+	}
+}
+
+function buildPracticeFacets(
+	skill: PracticeSkill,
+	collectionRows: ReadonlyArray<{ collection: string | null }>,
+	partRows: ReadonlyArray<{
+		part: string;
+		band: string;
+		promptType: string;
+		groupTypesJson: string | null;
+		questionTypesJson: string | null;
+	}>,
+): PracticeCatalogFacets {
+	const collectionSet = new Set<string>();
+	for (const row of collectionRows) {
+		const trimmed = row.collection?.trim() ?? "";
+		if (trimmed) collectionSet.add(trimmed);
+	}
+	const collections = [...collectionSet].sort((a, b) =>
+		a.localeCompare(b, "en", { sensitivity: "base", numeric: true }),
+	);
+
+	const parts: string[] = [];
+	const bands: string[] = [];
+	const rawTypes: string[] = [];
+	for (const row of partRows) {
+		if (row.part) parts.push(row.part);
+		if (row.band) bands.push(row.band);
+		if (row.promptType) rawTypes.push(row.promptType);
+		rawTypes.push(...parseJsonStringList(row.groupTypesJson));
+		rawTypes.push(...parseJsonStringList(row.questionTypesJson));
+	}
+
+	return {
+		collections,
+		types: sortPracticeTypes(skill, rawTypes),
+		parts: sortPracticeParts(skill, parts),
+		bands: sortPracticeBands(bands),
+	};
+}
+
 async function loadPracticeTestWithParts(
 	db: Db,
 	orgId: string,
 	testId: string,
+	options?: { allowDraft?: boolean },
 ): Promise<PracticeTestWithParts | null> {
+	const testConditions: SQL[] = [
+		eq(assignmentTest.id, testId),
+		eq(assignmentTest.orgId, orgId),
+	];
+	if (!options?.allowDraft) {
+		testConditions.push(eq(assignmentTest.status, "ready"));
+	}
 	const [test] = await db
 		.select()
 		.from(assignmentTest)
-		.where(
-			and(
-				eq(assignmentTest.id, testId),
-				eq(assignmentTest.orgId, orgId),
-				eq(assignmentTest.status, "ready"),
-			),
-		)
+		.where(and(...testConditions))
 		.limit(1);
 	if (!test) return null;
 
@@ -105,6 +228,38 @@ async function loadPracticeTestWithParts(
 	return { test, parts: partRows };
 }
 
+/** Tải đề cho các route đọc (`/quiz`, `/audio`): ưu tiên đề `ready`; nếu đề
+ * đã bị hạ `draft` (vd khử trùng đề thư viện) nhưng học viên hiện tại đã từng
+ * nộp lượt tự luyện cho đúng đề đó thì vẫn cho đọc để màn xem chi tiết bài
+ * làm và phát audio lịch sử không bị 404. Học viên chưa từng nộp bài và
+ * `POST /attempts` vẫn bị chặn 404 như đề nháp riêng tư của giáo viên. */
+async function loadPracticeTestForRead(
+	db: Db,
+	orgId: string,
+	studentId: string,
+	testId: string,
+): Promise<PracticeTestWithParts | null> {
+	const ready = await loadPracticeTestWithParts(db, orgId, testId);
+	if (ready) return ready;
+
+	const [submitted] = await db
+		.select({ id: quizAttempt.id })
+		.from(quizAttempt)
+		.where(
+			and(
+				eq(quizAttempt.orgId, orgId),
+				eq(quizAttempt.studentId, studentId),
+				eq(quizAttempt.testId, testId),
+				eq(quizAttempt.mode, "practice"),
+				eq(quizAttempt.status, "submitted"),
+			),
+		)
+		.limit(1);
+	if (!submitted) return null;
+
+	return loadPracticeTestWithParts(db, orgId, testId, { allowDraft: true });
+}
+
 /** Gộp questions của mọi part thành MỘT snapshot theo thứ tự position —
  * cùng bộ làm sạch với luồng assignment (`parseQuizQuestions`, giữ nguyên
  * answer/alts: snapshot là bản chụp ĐẦY ĐỦ KEY, RT#3). Đánh số hiển thị
@@ -114,16 +269,46 @@ function buildMergedQuestions(
 	parts: PracticeTestWithParts["parts"],
 	testId: string,
 ): AssignmentQuestion[] {
-	return parts.flatMap((row) => {
+	return parts.flatMap((row, partIndex) => {
 		const parsed = parseQuizQuestions(
 			row.prompt.questions,
 			`${testId}:${row.part}`,
 		);
 		const effectiveTypes = inferQuestionTypes(parsed, row.prompt.type);
-		return parsed.map((q, index) => ({
+		const partQuestions = parsed.map((q, index) => ({
 			...q,
 			type: effectiveTypes[index] ?? row.prompt.type,
 		}));
+		if (parts.length <= 1) {
+			return partQuestions;
+		}
+		const { unorderedGroups, positional } = resolveAnswerSetGroups(
+			partQuestions,
+			{ promptType: row.prompt.type },
+		);
+		const scopedKeyByIndex = new Map<number, string>();
+		let seq = 0;
+		for (const group of unorderedGroups) {
+			seq += 1;
+			const scopedKey = `p${partIndex + 1}-s${seq}`;
+			for (const member of group) {
+				scopedKeyByIndex.set(member.index, scopedKey);
+			}
+		}
+		for (const member of positional) {
+			const rawKey = member.question.answerSet?.trim();
+			const effectiveType =
+				member.question.type?.trim() || row.prompt.type?.trim();
+			if (rawKey || effectiveType === "mcq_many") {
+				seq += 1;
+				scopedKeyByIndex.set(member.index, `p${partIndex + 1}-s${seq}`);
+			}
+		}
+		return partQuestions.map((q, index) => {
+			const { answerSet: _drop, ...rest } = q;
+			const scopedKey = scopedKeyByIndex.get(index);
+			return scopedKey ? { ...rest, answerSet: scopedKey } : rest;
+		});
 	});
 }
 
@@ -261,10 +446,12 @@ export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 	);
 
 	/**
-	 * GET /api/student/practice?skill=&collection=&q=&page= — catalog đề
-	 * ready của org đang chọn, phân trang 12 (PRACTICE_CATALOG_PAGE_SIZE).
+	 * GET /api/student/practice?skill=&collection=&part=&type=&band=&q=&page=&facets=1
+	 * — catalog đề ready của org đang chọn, phân trang 12 (PRACTICE_CATALOG_PAGE_SIZE).
 	 * `q` tìm theo tiêu đề (instr, không LIKE nên ký tự %/_ của học viên
-	 * không thành wildcard); `collection` lọc đúng bằng giá trị select.
+	 * không thành wildcard); `collection` lọc khớp sau trim; `part`/`type`/`band`
+	 * giao trên cùng 1 part qua 1 EXISTS duy nhất; `facets=1` trả bộ lọc toàn
+	 * catalog `(orgId, skill)` độc lập trang/filter đang chọn.
 	 */
 	router.get("/practice", async (c) => {
 		const { student: s, orgId } = c.get("studentCtx");
@@ -278,50 +465,181 @@ export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 			return invalidParam(c, "invalid skill");
 		}
 		const skill = rawSkill as PracticeSkill;
-		const collection = c.req.query("collection") || null;
-		const q = (c.req.query("q") ?? "").trim().toLowerCase();
-		const rawPage = Number.parseInt(c.req.query("page") ?? "1", 10);
-		if (!Number.isInteger(rawPage) || rawPage < 1) {
+
+		const rawCollection = c.req.query("collection");
+		const rawPart = c.req.query("part");
+		const rawType = c.req.query("type");
+		const rawBand = c.req.query("band");
+		const rawQ = c.req.query("q");
+		for (const [label, value] of [
+			["collection", rawCollection],
+			["part", rawPart],
+			["type", rawType],
+			["band", rawBand],
+			["query", rawQ],
+		] as const) {
+			if (value !== undefined && value.length > PRACTICE_FILTER_MAX_LENGTH) {
+				return invalidParam(c, `invalid ${label}`);
+			}
+		}
+
+		const collection = (rawCollection ?? "").trim();
+		const part = (rawPart ?? "").trim();
+		const type = (rawType ?? "").trim();
+		const band = (rawBand ?? "").trim();
+		const q = (rawQ ?? "").trim().toLowerCase();
+
+		const rawPageParam = c.req.query("page");
+		const page =
+			rawPageParam === undefined ? 1 : parsePracticePageParam(rawPageParam);
+		if (page === null) {
 			return invalidParam(c, "invalid page");
 		}
-		const page = rawPage;
+
+		const rawFacets = c.req.query("facets");
+		const includeFacets = rawFacets === "1" || rawFacets === "true";
 
 		// Đề thư viện (admin xuất bản) chỉ vào catalog sau khi có bản sao org.
 		await syncLibraryTestsToOrg(db, orgId, skill);
 
-		const filters: SQL[] = [
+		const testHeaderFilters: SQL[] = [
 			eq(assignmentTest.orgId, orgId),
 			eq(assignmentTest.status, "ready"),
 			eq(assignmentTest.skill, skill),
-			sql`exists (
+		];
+		const validPartExists = sql`exists (
+			select 1 from ${assignmentTestPart}
+			inner join ${assignmentPrompt}
+				on ${assignmentPrompt.id} = ${assignmentTestPart.promptId}
+				and ${assignmentPrompt.orgId} = ${orgId}
+			where ${assignmentTestPart.testId} = ${assignmentTest.id}
+		)`;
+
+		const catalogFilters: SQL[] = [...testHeaderFilters];
+		if (collection) {
+			catalogFilters.push(
+				sql`trim(coalesce(${assignmentTest.collection}, '')) = ${collection}`,
+			);
+		}
+		if (q) {
+			// instr thay LIKE: ký tự %/_ trong từ khoá học viên không thành
+			// wildcard; q đã lowercase nên so khớp không phân biệt hoa/thường.
+			catalogFilters.push(sql`instr(lower(${assignmentTest.title}), ${q}) > 0`);
+		}
+
+		if (part || band || type) {
+			const partConditions: SQL[] = [
+				eq(assignmentTestPart.testId, assignmentTest.id),
+			];
+			if (part) {
+				partConditions.push(sql`trim(${assignmentTestPart.part}) = ${part}`);
+			}
+			if (band) {
+				partConditions.push(sql`trim(${assignmentPrompt.band}) = ${band}`);
+			}
+			if (type) {
+				const expandedTypes = expandPracticeTypeFilter(skill, type);
+				if (expandedTypes.length > 0) {
+					partConditions.push(partMatchesTypeSql(expandedTypes));
+				}
+			}
+			catalogFilters.push(sql`exists (
 				select 1 from ${assignmentTestPart}
 				inner join ${assignmentPrompt}
 					on ${assignmentPrompt.id} = ${assignmentTestPart.promptId}
 					and ${assignmentPrompt.orgId} = ${orgId}
-				where ${assignmentTestPart.testId} = ${assignmentTest.id}
-			)`,
-		];
-		if (collection) filters.push(eq(assignmentTest.collection, collection));
-		if (q) {
-			// instr thay LIKE: ký tự %/_ trong từ khoá học viên không thành
-			// wildcard; q đã lowercase nên so khớp không phân biệt hoa/thường.
-			filters.push(sql`instr(lower(${assignmentTest.title}), ${q}) > 0`);
+				where ${and(...partConditions)}
+			)`);
+		} else {
+			catalogFilters.push(validPartExists);
 		}
-		const where = and(...filters);
 
-		const [totalRow] = await db
+		const where = and(...catalogFilters);
+		const totalQuery = db
 			.select({ total: count() })
 			.from(assignmentTest)
 			.where(where);
-		const total = Number(totalRow?.total ?? 0);
-
-		const rows = await db
+		const rowsQuery = db
 			.select()
 			.from(assignmentTest)
 			.where(where)
 			.orderBy(desc(assignmentTest.createdAt), desc(assignmentTest.id))
 			.limit(PRACTICE_CATALOG_PAGE_SIZE)
 			.offset((page - 1) * PRACTICE_CATALOG_PAGE_SIZE);
+
+		let totalRows: Array<{ total: number }>;
+		let rows: Array<typeof assignmentTest.$inferSelect>;
+		let facets: PracticeCatalogFacets | undefined;
+
+		if (includeFacets) {
+			const safeGroups = safeJsonArraySql(assignmentPrompt.groups);
+			const safeGroupsLen = safeJsonArrayLengthSql(assignmentPrompt.groups);
+			const safeQuestions = safeJsonArraySql(assignmentPrompt.questions);
+			const groupTypeExpr = safeElementTypeSql("g");
+			const questionTypeExpr = safeElementTypeSql("q");
+
+			const collectionFacetQuery = db
+				.selectDistinct({
+					collection: sql<string>`trim(${assignmentTest.collection})`,
+				})
+				.from(assignmentTest)
+				.where(
+					and(
+						...testHeaderFilters,
+						validPartExists,
+						sql`${assignmentTest.collection} IS NOT NULL AND trim(${assignmentTest.collection}) <> ''`,
+					),
+				);
+
+			const partFacetQuery = db
+				.selectDistinct({
+					part: sql<string>`trim(${assignmentTestPart.part})`,
+					band: sql<string>`trim(${assignmentPrompt.band})`,
+					promptType: sql<string>`trim(${assignmentPrompt.type})`,
+					groupTypesJson: sql<string>`(
+						select json_group_array(distinct ${groupTypeExpr})
+						from json_each(${safeGroups}) as g
+						where ${groupTypeExpr} is not null and ${groupTypeExpr} <> ''
+					)`,
+					questionTypesJson: sql<string>`CASE
+						WHEN ${safeGroupsLen} = 0 THEN (
+							select json_group_array(distinct ${questionTypeExpr})
+							from json_each(${safeQuestions}) as q
+							where ${questionTypeExpr} is not null and ${questionTypeExpr} <> ''
+						)
+						ELSE '[]'
+					END`,
+				})
+				.from(assignmentTest)
+				.innerJoin(
+					assignmentTestPart,
+					eq(assignmentTestPart.testId, assignmentTest.id),
+				)
+				.innerJoin(
+					assignmentPrompt,
+					and(
+						eq(assignmentPrompt.id, assignmentTestPart.promptId),
+						eq(assignmentPrompt.orgId, orgId),
+					),
+				)
+				.where(and(...testHeaderFilters));
+
+			const [tRows, pageRows, colRows, partRows] = await db.batch([
+				totalQuery,
+				rowsQuery,
+				collectionFacetQuery,
+				partFacetQuery,
+			]);
+			totalRows = tRows;
+			rows = pageRows;
+			facets = buildPracticeFacets(skill, colRows, partRows);
+		} else {
+			const [tRows, pageRows] = await db.batch([totalQuery, rowsQuery]);
+			totalRows = tRows;
+			rows = pageRows;
+		}
+
+		const total = Number(totalRows[0]?.total ?? 0);
 
 		// parts count + lượt nộp gần nhất chỉ cho các đề trên trang hiện tại.
 		const testIds = rows.map((row) => row.id);
@@ -398,7 +716,10 @@ export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 			page,
 			pages: Math.max(1, Math.ceil(total / PRACTICE_CATALOG_PAGE_SIZE)),
 			total,
+			...(facets ? { facets } : {}),
 		};
+		c.header("Cache-Control", "no-store");
+		c.header("Vary", "Cookie, x-student-org-id");
 		return c.json(response);
 	});
 
@@ -413,25 +734,28 @@ export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 		const db: Db = deps.getDb();
 		const testId = c.req.param("testId");
 
-		const loaded = await loadPracticeTestWithParts(db, orgId, testId);
+		const loaded = await loadPracticeTestForRead(db, orgId, s.id, testId);
 		if (!loaded || loaded.parts.length === 0) {
 			return c.json({ error: "test not found" }, 404);
 		}
 
-		const [attempt] = await db
-			.select()
-			.from(quizAttempt)
-			.where(
-				and(
-					eq(quizAttempt.orgId, orgId),
-					eq(quizAttempt.studentId, s.id),
-					eq(quizAttempt.testId, testId),
-					eq(quizAttempt.mode, "practice"),
-					eq(quizAttempt.status, "in_progress"),
-				),
-			)
-			.orderBy(asc(quizAttempt.startedAt), asc(quizAttempt.id))
-			.limit(1);
+		const [attempt] =
+			loaded.test.status === "ready"
+				? await db
+						.select()
+						.from(quizAttempt)
+						.where(
+							and(
+								eq(quizAttempt.orgId, orgId),
+								eq(quizAttempt.studentId, s.id),
+								eq(quizAttempt.testId, testId),
+								eq(quizAttempt.mode, "practice"),
+								eq(quizAttempt.status, "in_progress"),
+							),
+						)
+						.orderBy(asc(quizAttempt.startedAt), asc(quizAttempt.id))
+						.limit(1)
+				: [];
 
 		const questions = attempt
 			? parseQuizQuestions(attempt.questionsSnapshot, attempt.id)
@@ -453,11 +777,11 @@ export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 	 * `serveStudyPackAudio` với luồng assignment).
 	 */
 	router.get("/practice/:testId/audio", async (c) => {
-		const { orgId } = c.get("studentCtx");
+		const { student: s, orgId } = c.get("studentCtx");
 		const db: Db = deps.getDb();
 		const testId = c.req.param("testId");
 
-		const loaded = await loadPracticeTestWithParts(db, orgId, testId);
+		const loaded = await loadPracticeTestForRead(db, orgId, s.id, testId);
 		const header = loaded?.parts[0]?.prompt;
 		if (!header || (!header.audioUrl && !header.audioKey)) {
 			return c.json({ error: "audio not found" }, 404);

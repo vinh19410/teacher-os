@@ -219,8 +219,10 @@ export const classStatusResponseSchema = z
 export type ClassStatusResponse = z.infer<typeof classStatusResponseSchema>;
 
 export const CLASS_ERROR_CODES = {
-	/** Lớp đã có buổi học thực tế (lesson hoặc class_session) — không được đổi lịch, ngày khai giảng hoặc số buổi. */
+	/** Lớp đã có buổi học thực tế (lesson hoặc class_session) — không được đổi lịch học trong tuần hoặc số buổi. */
 	SCHEDULE_LOCKED: "CLASS_SCHEDULE_LOCKED",
+	/** Lớp đã bắt đầu học hoặc lịch không thể tự động tính lại — không được đổi ngày khai giảng. */
+	START_DATE_LOCKED: "CLASS_START_DATE_LOCKED",
 	/** Lớp đang tạm dừng — chặn tuyển sinh mới và thao tác ghi giảng dạy (#694). */
 	CLASS_PAUSED: "CLASS_PAUSED",
 	/** Phiên bản thông báo khai giảng đã thay đổi bởi thao tác đồng thời khác. */
@@ -290,7 +292,7 @@ export const classConfirmOpeningSchema = z
 			.string()
 			.trim()
 			.max(CLASS_OPENING_NOTE_MAX_LENGTH, "Lời nhắn tối đa 1.000 ký tự")
-			.default(""),
+			.optional(),
 		expectedVersion: z.number().int().min(0),
 	})
 	.strict();
@@ -919,7 +921,11 @@ export function quizTypeDisplay(type: string): {
 	label: string;
 	instruction: string;
 } {
-	return QUIZ_TYPE_DISPLAY[type] ?? { label: type, instruction: "" };
+	return (
+		(Object.hasOwn(QUIZ_TYPE_DISPLAY, type)
+			? QUIZ_TYPE_DISPLAY[type]
+			: undefined) ?? { label: type, instruction: "" }
+	);
 }
 
 /**
@@ -1735,6 +1741,53 @@ export const dailyAttendanceResponseSchema = z
 	.strict();
 export type DailyAttendanceResponse = z.infer<
 	typeof dailyAttendanceResponseSchema
+>;
+
+/**
+ * Một ca học quá hạn (`date < today` giờ VN) còn tối thiểu 1 dòng `upcoming`
+ * trên lớp `active` với ghi danh `active` (issue #959). Nạp đủ toàn bộ roster
+ * teaching rows (kể cả học viên đã `completed`/`absent` trong ca chấm dở dang)
+ * để `PUT /api/classes/:id/sessions/:date/attendance` không lỗi 422.
+ */
+export const overdueAttendanceSessionSchema = z
+	.object({
+		date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+		classId: z.string().min(1),
+		className: z.string(),
+		time: z.string(),
+		dur: z.number().int().min(1),
+		mode: z.literal("dated"),
+		recorded: z.literal(false),
+		students: z
+			.array(
+				z
+					.object({
+						lessonId: z.string().min(1),
+						studentId: z.string().min(1),
+						studentName: z.string(),
+						attendance: attendanceStatusSchema.nullable(),
+						note: z.string(),
+					})
+					.strict(),
+			)
+			.min(1),
+	})
+	.strict();
+export type OverdueAttendanceSession = z.infer<
+	typeof overdueAttendanceSessionSchema
+>;
+
+/** Response của GET /api/attendance/overdue — danh sách ca quá hạn chưa điểm danh. */
+export const overdueAttendanceResponseSchema = z
+	.object({
+		today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+		totalCount: z.number().int().min(0),
+		hasMore: z.boolean(),
+		sessions: z.array(overdueAttendanceSessionSchema),
+	})
+	.strict();
+export type OverdueAttendanceResponse = z.infer<
+	typeof overdueAttendanceResponseSchema
 >;
 
 /**
@@ -2602,6 +2655,28 @@ export type ClassmatesResponse = z.infer<typeof classmatesResponseSchema>;
 /** Số đề mỗi trang catalog (design-v2 SkillCatalog PER=12). */
 export const PRACTICE_CATALOG_PAGE_SIZE = 12;
 
+/** Trần độ dài mỗi tham số filter/query của catalog tự luyện. */
+export const PRACTICE_FILTER_MAX_LENGTH = 200;
+
+/** Trần số trang hợp lệ cho catalog tự luyện — chặn tràn int64 OFFSET. */
+export const PRACTICE_CATALOG_MAX_PAGE = 100_000;
+
+/**
+ * Parse tham số `page` của catalog tự luyện thành số nguyên dương trong
+ * `1..PRACTICE_CATALOG_MAX_PAGE`. Trả về `null` khi vắng, sai định dạng,
+ * có số 0 ở đầu, hoặc vượt ngưỡng an toàn.
+ */
+export function parsePracticePageParam(raw: string | undefined): number | null {
+	if (raw === undefined || !/^[1-9]\d*$/.test(raw)) {
+		return null;
+	}
+	const parsed = Number(raw);
+	if (!Number.isSafeInteger(parsed) || parsed > PRACTICE_CATALOG_MAX_PAGE) {
+		return null;
+	}
+	return parsed;
+}
+
 /** Kết quả gần nhất của CHÍNH học viên này với một đề luyện tập. `score`
  * là chuỗi hiển thị sẵn ("8/13" tự chấm, "Band 6.5" đã chấm Writing/
  * Speaking), null khi đề tự chấm mà server không derive được. */
@@ -2637,13 +2712,25 @@ export const practiceCatalogItemSchema = z
 	.strict();
 export type PracticeCatalogItem = z.infer<typeof practiceCatalogItemSchema>;
 
-/** GET /api/student/practice?skill=&collection=&q=&page= — phân trang 12. */
+/** Bộ facet toàn catalog (độc lập trang và bộ lọc đang chọn) — opt-in qua `?facets=1`. */
+export const practiceCatalogFacetsSchema = z
+	.object({
+		collections: z.array(z.string()),
+		types: z.array(z.string()),
+		parts: z.array(z.string()),
+		bands: z.array(z.string()),
+	})
+	.strict();
+export type PracticeCatalogFacets = z.infer<typeof practiceCatalogFacetsSchema>;
+
+/** GET /api/student/practice?skill=&collection=&part=&type=&band=&q=&page=&facets=1 — phân trang 12. */
 export const practiceCatalogResponseSchema = z
 	.object({
 		items: z.array(practiceCatalogItemSchema),
 		page: z.number().int().min(1),
 		pages: z.number().int().min(1),
 		total: z.number().int().min(0),
+		facets: practiceCatalogFacetsSchema.optional(),
 	})
 	.strict();
 export type PracticeCatalogResponse = z.infer<
@@ -3039,27 +3126,35 @@ export const gradingQueueResponseSchema = z
 	.strict();
 export type GradingQueueResponse = z.infer<typeof gradingQueueResponseSchema>;
 
-/** Một ca học chưa điểm danh — nhóm (classId, time) của lesson hôm nay. */
+/** Một ca học chưa điểm danh — lớp dated có `date` (yyyy-mm-dd), lớp legacy bỏ qua `date`. */
 export const dashboardReminderItemSchema = z
 	.object({
 		classId: z.string(),
 		className: z.string(),
 		time: z.string(),
 		dur: z.number(),
+		date: z
+			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/)
+			.optional(),
 	})
 	.strict();
 export type DashboardReminderItem = z.infer<typeof dashboardReminderItemSchema>;
 
 /** GET /api/dashboard/reminders — bộ đếm 3 thẻ "Việc cần làm hôm nay" (TOS-6,
- * issue #439). `tuition` vắng mặt khi scope không có quyền tài chính (TA),
- * không trả `null` hay số 0. `date` là yyyy-mm-dd giờ Việt Nam dùng cho link
- * `/attendance?date=`. */
+ * issue #439; mở rộng nợ quá hạn ở #959). `tuition` vắng mặt khi scope không
+ * có quyền tài chính (TA), không trả `null` hay số 0. `date` là yyyy-mm-dd giờ
+ * Việt Nam dùng cho link `/attendance?date=`. `today`, `overdue` và
+ * `items[].date` là optional để an toàn deploy skew 2 chiều với client `.strict()`
+ * (client mới opt-in qua `?v=2`). */
 export const dashboardRemindersResponseSchema = z
 	.object({
 		date: z.string(),
 		attendance: z
 			.object({
 				pending: z.number(),
+				today: z.number().int().min(0).optional(),
+				overdue: z.number().int().min(0).optional(),
 				items: z.array(dashboardReminderItemSchema),
 			})
 			.strict(),

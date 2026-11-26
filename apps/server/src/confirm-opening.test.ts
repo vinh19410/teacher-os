@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { createClient } from "@libsql/client";
+import { createClient, type InArgs, type InStatement } from "@libsql/client";
 import {
 	CLASS_ERROR_CODES,
 	classConfirmOpeningResponseSchema,
@@ -46,6 +46,19 @@ async function setupTestApp(options?: {
 	now?: () => Date;
 }) {
 	const client = createClient({ url: "file::memory:" });
+	let beforeNextClassUpdateSql: (() => Promise<void>) | null = null;
+	const origExecute = client.execute.bind(client);
+	client.execute = async (stmt: InStatement, args?: InArgs) => {
+		const sqlText = typeof stmt === "string" ? stmt : stmt.sql;
+		if (beforeNextClassUpdateSql && /^\s*update\s+"?class"?\b/i.test(sqlText)) {
+			const hook = beforeNextClassUpdateSql;
+			beforeNextClassUpdateSql = null;
+			await hook();
+		}
+		return typeof stmt === "string"
+			? origExecute(stmt, args)
+			: origExecute(stmt);
+	};
 	const libsql = drizzle(client, { schema });
 	await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
 	const db = libsql as unknown as Db;
@@ -256,6 +269,10 @@ async function setupTestApp(options?: {
 		setMailerImpl(impl: Mailer["send"]) {
 			currentMailerImpl = impl;
 		},
+		setBeforeNextClassUpdate(fn: (() => Promise<void>) | null) {
+			beforeNextClassUpdateSql = fn;
+		},
+		rawExecute: origExecute,
 		insertUser,
 		addTaToTeacherOrg,
 		getOrgIdForUser,
@@ -405,21 +422,42 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 		);
 		expect(pastRes.status).toBe(400);
 
-		// Restore valid startDate and create a real class_session -> changing startDate returns 409 CLASS_SCHEDULE_LOCKED
+		// Restore valid startDate, enroll active student, mark first lesson completed -> changing startDate returns 409 CLASS_START_DATE_LOCKED
 		const currentStart = futureMondayISO(7);
 		const changedStart = futureMondayISO(14);
 		await t.libsql
 			.update(schema.classTable)
 			.set({ startDate: currentStart })
 			.where(eq(schema.classTable.id, classId));
-		await t.libsql.insert(schema.classSession).values({
+		const startedStudentId = await t.seedStudentAndEnroll({
+			orgId,
+			classId,
+			name: "HV Đã Học",
+			email: "started@test.local",
+			status: "active",
+		});
+		const [enr] = await t.libsql
+			.select({ id: schema.enrollment.id })
+			.from(schema.enrollment)
+			.where(
+				and(
+					eq(schema.enrollment.classId, classId),
+					eq(schema.enrollment.studentId, startedStudentId),
+				),
+			);
+		expect(enr).toBeDefined();
+		await t.libsql.insert(schema.lesson).values({
 			id: crypto.randomUUID(),
 			orgId,
 			classId,
-			date: currentStart,
+			enrollmentId: enr?.id ?? "",
+			day: 1,
 			time: "19:00",
 			dur: 90,
+			date: currentStart,
+			status: "completed",
 			topic: "Buổi 1",
+			zoom: "",
 		});
 
 		const lockedRes = await t.call(
@@ -435,10 +473,10 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 		);
 		expect(lockedRes.status).toBe(409);
 		expect(await lockedRes.json()).toMatchObject({
-			code: CLASS_ERROR_CODES.SCHEDULE_LOCKED,
+			code: CLASS_ERROR_CODES.START_DATE_LOCKED,
 		});
 
-		// Confirming without changing startDate succeeds even when real sessions exist
+		// Confirming without changing startDate succeeds even when class already started
 		const unchangedStartRes = await t.call(
 			teacher.token,
 			`/api/classes/${classId}/confirm-opening`,
@@ -446,7 +484,7 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 				body: {
 					mode: "initial",
 					startDate: currentStart,
-					note: "Lớp đã có buổi, giữ nguyên ngày",
+					note: "Lớp đã bắt đầu, giữ nguyên ngày",
 					expectedVersion: 0,
 				},
 			},
@@ -457,6 +495,128 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 		);
 		expect(parsed.startDate).toBe(currentStart);
 		expect(parsed.openingAnnouncementVersion).toBe(1);
+	});
+
+	test("reschedules unstarted auto class lessons and updates manual class metadata when changing startDate in confirm-opening", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher Reschedule Opening");
+		const initialStart = futureMondayISO(7);
+		const nextStart = futureMondayISO(14);
+		const thirdStart = futureMondayISO(21);
+
+		const autoClassId = await t.createClass(teacher.token, {
+			name: "IELTS Unstarted Confirm",
+			schedule: { days: [0, 2], start: "19:00", end: "20:30" },
+			sessionsTotal: 4,
+			startDate: initialStart,
+		});
+		const enrollRes = await t.call(teacher.token, "/api/students", {
+			body: {
+				name: "Nguyễn Minh",
+				email: "minh-opening@test.local",
+				classId: autoClassId,
+				activateNow: true,
+			},
+		});
+		expect(enrollRes.status).toBe(201);
+
+		// Mode initial: change startDate on class with upcoming lessons -> 200, reschedules lessons & sends email with new date
+		const initialRes = await t.call(
+			teacher.token,
+			`/api/classes/${autoClassId}/confirm-opening`,
+			{
+				body: {
+					mode: "initial",
+					startDate: nextStart,
+					note: "Dời ngày khai giảng trước khi mở lớp",
+					expectedVersion: 0,
+				},
+			},
+		);
+		expect(initialRes.status).toBe(200);
+		const initialBody = classConfirmOpeningResponseSchema.parse(
+			await initialRes.json(),
+		);
+		expect(initialBody.startDate).toBe(nextStart);
+		expect(initialBody.openingAnnouncementVersion).toBe(1);
+		expect(t.sentMails.at(-1)?.html).toContain(formatViDateDisplay(nextStart));
+
+		const lessonsAfterInitial = await t.libsql
+			.select({ date: schema.lesson.date })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.classId, autoClassId));
+		expect(lessonsAfterInitial.map((l) => l.date).sort()).toEqual([
+			nextStart,
+			addDaysISO(nextStart, 2),
+			addDaysISO(nextStart, 7),
+			addDaysISO(nextStart, 9),
+		]);
+
+		// Mode all: shift again to thirdStart -> 200, version 2, lessons updated again
+		const allRes = await t.call(
+			teacher.token,
+			`/api/classes/${autoClassId}/confirm-opening`,
+			{
+				body: {
+					mode: "all",
+					startDate: thirdStart,
+					note: "Dời thêm 1 tuần",
+					expectedVersion: 1,
+				},
+			},
+		);
+		expect(allRes.status).toBe(200);
+		const allBody = classConfirmOpeningResponseSchema.parse(
+			await allRes.json(),
+		);
+		expect(allBody.startDate).toBe(thirdStart);
+		expect(allBody.openingAnnouncementVersion).toBe(2);
+		expect(t.sentMails.at(-1)?.html).toContain(formatViDateDisplay(thirdStart));
+
+		const lessonsAfterAll = await t.libsql
+			.select({ date: schema.lesson.date })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.classId, autoClassId));
+		expect(lessonsAfterAll.map((l) => l.date).sort()).toEqual([
+			thirdStart,
+			addDaysISO(thirdStart, 2),
+			addDaysISO(thirdStart, 7),
+			addDaysISO(thirdStart, 9),
+		]);
+
+		// Manual class with future class_session: updates startDate metadata, keeps manual session date untouched
+		const orgId = await t.getOrgIdForUser(teacher.id);
+		const manualClassId = await t.createClass(teacher.token, {
+			name: "Manual Unstarted Confirm",
+			schedulingMode: "manual",
+			startDate: initialStart,
+		});
+		await t.libsql.insert(schema.classSession).values({
+			id: crypto.randomUUID(),
+			orgId,
+			classId: manualClassId,
+			date: initialStart,
+			time: "18:00",
+			dur: 90,
+			topic: "Buổi thủ công 1",
+		});
+		const manualRes = await t.call(
+			teacher.token,
+			`/api/classes/${manualClassId}/confirm-opening`,
+			{
+				body: {
+					mode: "initial",
+					startDate: nextStart,
+					expectedVersion: 0,
+				},
+			},
+		);
+		expect(manualRes.status).toBe(200);
+		const manualSessions = await t.libsql
+			.select({ date: schema.classSession.date })
+			.from(schema.classSession)
+			.where(eq(schema.classSession.classId, manualClassId));
+		expect(manualSessions.map((s) => s.date)).toEqual([initialStart]);
 	});
 
 	test("happy path initial: syncs startDate when unlocked, sends rich HTML to active & invited students, creates in_app-only for students without email, and updates snapshot", async () => {
@@ -690,7 +850,7 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 		);
 		expect(newOnlyBody.openingAnnouncementVersion).toBe(1);
 		expect(newOnlyBody.openingConfirmedAt).toBe("2026-05-01T08:00:00.000Z");
-		expect(newOnlyBody.openingNote).toBe("Lần đầu khai giảng");
+		expect(newOnlyBody.openingNote).toBe("Chào mừng học viên mới");
 		expect(newOnlyBody.queuedEmailCount).toBe(1);
 		expect(newOnlyBody.inAppOnlyCount).toBe(0);
 		expect(newOnlyBody.skippedAlreadySentCount).toBe(1);
@@ -698,6 +858,17 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 		expect(t.sentMails).toHaveLength(1);
 		expect(t.sentMails[0]?.to).toBe("s2@example.com");
 		expect(t.sentMails[0]?.subject).toContain("Thông báo khai giảng lớp");
+		expect(t.sentMails[0]?.html).toContain("Chào mừng học viên mới");
+
+		const [clsAfterNewOnly] = await t.libsql
+			.select()
+			.from(schema.classTable)
+			.where(eq(schema.classTable.id, classId));
+		expect(clsAfterNewOnly?.openingNote).toBe("Chào mừng học viên mới");
+		expect(clsAfterNewOnly?.openingAnnouncementVersion).toBe(1);
+		expect(clsAfterNewOnly?.openingConfirmedAt?.toISOString()).toBe(
+			"2026-05-01T08:00:00.000Z",
+		);
 
 		// Second new_only immediately is idempotent: sends 0 emails
 		t.sentMails.length = 0;
@@ -1171,5 +1342,151 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 			expect(row.htmlBody).toContain("<!DOCTYPE html>");
 			expect(row.textBody).toContain("Hẹn gặp cả lớp đúng giờ!");
 		}
+	});
+
+	test("new_only preserves existing openingNote when note is omitted, and rejects mid-flight CAS conflict without sending emails", async () => {
+		const fixedNow = new Date("2026-06-01T08:00:00.000Z");
+		const t = await setupTestApp({ now: () => fixedNow });
+		const teacher = await t.insertUser("Teacher NewOnly Note");
+		const startDate = futureMondayISO(10);
+		const classId = await t.createClass(teacher.token, {
+			name: "IELTS NewOnly CAS",
+			startDate,
+		});
+		const orgId = await t.getOrgIdForUser(teacher.id);
+
+		await t.seedStudentAndEnroll({
+			orgId,
+			classId,
+			name: "Học viên 1",
+			email: "s1@example.com",
+			status: "active",
+		});
+
+		const initialRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/confirm-opening`,
+			{
+				body: {
+					mode: "initial",
+					note: "Ghi chú gốc",
+					expectedVersion: 0,
+				},
+			},
+		);
+		expect(initialRes.status).toBe(200);
+
+		// Part A: omit `note` in `new_only` -> preserves DB openingNote and uses it in email
+		await t.seedStudentAndEnroll({
+			orgId,
+			classId,
+			name: "Học viên 2",
+			email: "s2@example.com",
+			status: "active",
+		});
+		t.sentMails.length = 0;
+
+		const omitRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/confirm-opening`,
+			{
+				body: {
+					mode: "new_only",
+					expectedVersion: 1,
+				},
+			},
+		);
+		expect(omitRes.status).toBe(200);
+		const omitBody = classConfirmOpeningResponseSchema.parse(
+			await omitRes.json(),
+		);
+		expect(omitBody.openingNote).toBe("Ghi chú gốc");
+		expect(omitBody.openingAnnouncementVersion).toBe(1);
+		expect(omitBody.queuedEmailCount).toBe(1);
+		expect(t.sentMails).toHaveLength(1);
+		expect(t.sentMails[0]?.to).toBe("s2@example.com");
+		expect(t.sentMails[0]?.html).toContain("Ghi chú gốc");
+
+		const [clsAfterOmit] = await t.libsql
+			.select()
+			.from(schema.classTable)
+			.where(eq(schema.classTable.id, classId));
+		expect(clsAfterOmit?.openingNote).toBe("Ghi chú gốc");
+
+		// Part A2: explicit empty string `note: ""` clears openingNote and omits it from email
+		await t.seedStudentAndEnroll({
+			orgId,
+			classId,
+			name: "Học viên 2b",
+			email: "s2b@example.com",
+			status: "active",
+		});
+		t.sentMails.length = 0;
+
+		const clearRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/confirm-opening`,
+			{
+				body: {
+					mode: "new_only",
+					note: "",
+					expectedVersion: 1,
+				},
+			},
+		);
+		expect(clearRes.status).toBe(200);
+		const clearBody = classConfirmOpeningResponseSchema.parse(
+			await clearRes.json(),
+		);
+		expect(clearBody.openingNote).toBe("");
+		expect(clearBody.openingAnnouncementVersion).toBe(1);
+		expect(t.sentMails).toHaveLength(1);
+		expect(t.sentMails[0]?.to).toBe("s2b@example.com");
+		expect(t.sentMails[0]?.html).not.toContain("Ghi chú gốc");
+
+		const [clsAfterClear] = await t.libsql
+			.select()
+			.from(schema.classTable)
+			.where(eq(schema.classTable.id, classId));
+		expect(clsAfterClear?.openingNote).toBe("");
+
+		// Part B: mid-flight CAS miss when another tab updates opening_note between findClass and UPDATE
+		await t.seedStudentAndEnroll({
+			orgId,
+			classId,
+			name: "Học viên 3",
+			email: "s3@example.com",
+			status: "active",
+		});
+		t.sentMails.length = 0;
+		t.setBeforeNextClassUpdate(async () => {
+			await t.rawExecute({
+				sql: 'UPDATE "class" SET opening_note = ? WHERE id = ?',
+				args: ["Ghi chú từ tab khác", classId],
+			});
+		});
+
+		const casRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/confirm-opening`,
+			{
+				body: {
+					mode: "new_only",
+					note: "Ghi chú xung đột",
+					expectedVersion: 1,
+				},
+			},
+		);
+		expect(casRes.status).toBe(409);
+		expect(await casRes.json()).toMatchObject({
+			code: CLASS_ERROR_CODES.OPENING_VERSION_CONFLICT,
+		});
+		expect(t.sentMails).toHaveLength(0);
+
+		const [clsAfterCas] = await t.libsql
+			.select()
+			.from(schema.classTable)
+			.where(eq(schema.classTable.id, classId));
+		expect(clsAfterCas?.openingNote).toBe("Ghi chú từ tab khác");
 	});
 });

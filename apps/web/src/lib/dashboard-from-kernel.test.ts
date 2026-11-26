@@ -4,16 +4,32 @@ import {
 	formatClassSessionMeta,
 	formatDashboardGreeting,
 	formatDashboardLead,
+	formatDurationVi,
+	formatEndTime,
+	formatWeekdayLong,
 	groupLessonsByClassSession,
+	groupUpcomingByDay,
+	hasPendingTodayAttendance,
 	lessonDayFromDate,
 	lessonsToday,
+	parseTimeToMinutes,
+	resolveDashboardFocus,
+	sessionTimelineState,
+	studentRiskDetails,
 	upcomingLessonsThisWeek,
+	vietnamNowMinutes,
 } from "./dashboard-from-kernel";
-import type { ClassGroup, Lesson, Student } from "./mock-data";
+import type {
+	Assignment,
+	ClassAssignment,
+	ClassGroup,
+	Lesson,
+	Student,
+} from "./mock-data";
 
-const monday = new Date(2026, 7, 17, 12, 0, 0);
-const wednesday = new Date(2026, 7, 19, 12, 0, 0);
-const sunday = new Date(2026, 7, 23, 12, 0, 0);
+const monday = new Date("2026-08-17T12:00:00+07:00");
+const wednesday = new Date("2026-08-19T12:00:00+07:00");
+const sunday = new Date("2026-08-23T12:00:00+07:00");
 
 function student(id: string, overrides: Partial<Student> = {}): Student {
 	return {
@@ -62,11 +78,45 @@ function lesson(
 	};
 }
 
+function classAssignment(
+	partial: Partial<ClassAssignment> = {},
+): ClassAssignment {
+	return {
+		id: "ca-1",
+		classId: "cl-1",
+		promptId: "pr-1",
+		title: "Essay Task 2",
+		due: "2026-08-18",
+		dueAt: null,
+		note: "",
+		createdAt: "2026-08-10T00:00:00.000Z",
+		targets: [],
+		...partial,
+	};
+}
+
+function legacyAssignment(
+	partial: Pick<Assignment, "id" | "sid"> & Partial<Assignment>,
+): Assignment {
+	return {
+		title: "Legacy Essay",
+		type: "Writing",
+		due: "2026-08-18",
+		status: "not-submitted",
+		scores: null,
+		...partial,
+	};
+}
+
 describe("lessonDayFromDate", () => {
-	test("Monday is 1 and Sunday is 7 (schedule.tsx column convention)", () => {
+	test("Monday is 1 and Sunday is 7 in Vietnam timezone", () => {
 		expect(lessonDayFromDate(monday)).toBe(1);
 		expect(lessonDayFromDate(wednesday)).toBe(3);
 		expect(lessonDayFromDate(sunday)).toBe(7);
+	});
+
+	test("pins Asia/Ho_Chi_Minh across UTC midnight boundary (01:00 VN Thursday while UTC is still Wednesday)", () => {
+		expect(lessonDayFromDate(new Date("2026-08-19T18:00:00Z"))).toBe(4);
 	});
 });
 
@@ -128,6 +178,66 @@ describe("lessonsToday", () => {
 		);
 		expect(lessonsToday(series, monday)).toHaveLength(12);
 		expect(lessonsToday(series, wednesday)).toHaveLength(0);
+	});
+
+	test("dated multi-week rows: keeps only rows whose Vietnam ISO date matches today", () => {
+		const multiWeek: Lesson[] = [
+			lesson({
+				id: "last-wed",
+				sid: "s1",
+				day: 3,
+				date: "2026-08-12",
+				time: "18:00",
+				status: "completed",
+			}),
+			lesson({
+				id: "today-wed",
+				sid: "s1",
+				day: 3,
+				date: "2026-08-19",
+				time: "18:00",
+				status: "upcoming",
+			}),
+			lesson({
+				id: "next-wed",
+				sid: "s1",
+				day: 3,
+				date: "2026-08-26",
+				time: "18:00",
+				status: "upcoming",
+			}),
+			lesson({
+				id: "today-cancelled",
+				classId: "cl-2",
+				sid: "s2",
+				day: 3,
+				date: "2026-08-19",
+				time: "20:00",
+				status: "cancelled",
+			}),
+			lesson({
+				id: "next-wed-cl2",
+				classId: "cl-2",
+				sid: "s2",
+				day: 3,
+				date: "2026-08-26",
+				time: "20:00",
+				status: "upcoming",
+			}),
+			lesson({
+				id: "empty-date-legacy",
+				classId: "cl-3",
+				sid: "s3",
+				day: 3,
+				date: "",
+				time: "09:00",
+				status: "upcoming",
+			}),
+		];
+		expect(lessonsToday(multiWeek, wednesday).map((l) => l.id)).toEqual([
+			"empty-date-legacy",
+			"today-wed",
+		]);
 	});
 });
 
@@ -301,7 +411,7 @@ describe("atRiskRows", () => {
 		).toEqual([]);
 	});
 
-	test("absent dated within 14 days is a risk reason", () => {
+	test("does not flag absence statuses — attention table only tracks missed check-ins and overdue assignments", () => {
 		const rows = atRiskRows(
 			students,
 			[
@@ -312,51 +422,6 @@ describe("atRiskRows", () => {
 					status: "absent",
 					date: "2026-08-18",
 				}),
-			],
-			wednesday,
-		);
-		expect(rows).toEqual([{ student: s2, reasons: ["absent"] }]);
-	});
-
-	test("upcoming before today is missed check-in; today upcoming is not", () => {
-		const lessons: Lesson[] = [
-			lesson({ id: "mon", sid: "s1", day: 1, status: "upcoming" }),
-			lesson({ id: "wed", sid: "s1", day: 3, status: "upcoming" }),
-			lesson({ id: "done", sid: "s3", day: 1, status: "completed" }),
-			lesson({ id: "cx", sid: "s3", day: 1, status: "cancelled" }),
-		];
-		expect(atRiskRows(students, lessons, wednesday)).toEqual([
-			{ student: s1, reasons: ["missed-check-in"] },
-		]);
-	});
-
-	test("Monday wrap does not treat Sunday as missed", () => {
-		const lessons = [
-			lesson({ id: "sun", sid: "s1", day: 7, status: "upcoming" }),
-		];
-		expect(atRiskRows(students, lessons, monday)).toEqual([]);
-	});
-
-	test("Sunday treats Mon–Sat upcoming as missed; merges reasons without duplicate students", () => {
-		const lessons: Lesson[] = [
-			lesson({
-				id: "a",
-				sid: "s2",
-				day: 2,
-				status: "absent",
-				date: "2026-08-18",
-			}),
-			lesson({ id: "m", sid: "s2", day: 4, status: "upcoming" }),
-		];
-		expect(atRiskRows(students, lessons, sunday)).toEqual([
-			{ student: s2, reasons: ["absent", "missed-check-in"] },
-		]);
-	});
-
-	test("TOS-7: completed + unexcused in window is absent risk", () => {
-		const rows = atRiskRows(
-			students,
-			[
 				lesson({
 					id: "u",
 					sid: "s3",
@@ -365,19 +430,9 @@ describe("atRiskRows", () => {
 					attendance: "unexcused",
 					date: "2026-08-19",
 				}),
-			],
-			wednesday,
-		);
-		expect(rows).toEqual([{ student: s3, reasons: ["absent"] }]);
-	});
-
-	test("TOS-7: excused is a legitimate absence, never a risk", () => {
-		const rows = atRiskRows(
-			students,
-			[
 				lesson({
 					id: "e",
-					sid: "s3",
+					sid: "s1",
 					day: 3,
 					status: "absent",
 					attendance: "excused",
@@ -389,65 +444,180 @@ describe("atRiskRows", () => {
 		expect(rows).toEqual([]);
 	});
 
-	test("TOS-7: absent + attendance null in window (legacy 1-click rows) stays a risk", () => {
-		const rows = atRiskRows(
-			students,
-			[
-				lesson({
-					id: "n",
-					sid: "s3",
-					day: 3,
-					status: "absent",
-					date: "2026-08-10",
-				}),
-			],
-			wednesday,
-		);
-		expect(rows).toEqual([{ student: s3, reasons: ["absent"] }]);
+	test("legacy undated upcoming before today is missed check-in; today upcoming is not", () => {
+		const lessons: Lesson[] = [
+			lesson({ id: "mon", sid: "s1", day: 1, status: "upcoming", date: null }),
+			lesson({ id: "wed", sid: "s1", day: 3, status: "upcoming", date: null }),
+			lesson({
+				id: "done",
+				sid: "s3",
+				day: 1,
+				status: "completed",
+				date: null,
+			}),
+			lesson({ id: "cx", sid: "s3", day: 1, status: "cancelled", date: null }),
+		];
+		expect(atRiskRows(students, lessons, wednesday)).toEqual([
+			{ student: s1, reasons: ["missed-check-in"] },
+		]);
 	});
 
-	test("TOS-7: absences older than 14 days no longer alert", () => {
-		const rows = atRiskRows(
-			students,
-			[
-				lesson({
-					id: "old",
-					sid: "s3",
-					day: 3,
-					status: "absent",
-					attendance: "unexcused",
-					date: "2026-07-01",
-				}),
-			],
-			wednesday,
-		);
-		expect(rows).toEqual([]);
+	test("Monday wrap does not treat legacy Sunday as missed", () => {
+		const lessons = [
+			lesson({ id: "sun", sid: "s1", day: 7, status: "upcoming", date: null }),
+		];
+		expect(atRiskRows(students, lessons, monday)).toEqual([]);
 	});
 
-	test("TOS-7: legacy undated rows have no absent write path, no absent reason", () => {
-		const rows = atRiskRows(
-			students,
-			[
-				lesson({ id: "legacy", sid: "s3", day: 3, status: "absent" }),
-				lesson({
-					id: "legacy-unexcused",
-					sid: "s3",
-					day: 4,
-					status: "completed",
-					attendance: "unexcused",
-				}),
-			],
-			wednesday,
-		);
-		expect(rows).toEqual([]);
+	test("dated upcoming lessons compare against Vietnam ISO date: flags past dates, ignores today and future dates even when weekday < today", () => {
+		const lessons: Lesson[] = [
+			lesson({
+				id: "past",
+				sid: "s1",
+				day: 2,
+				date: "2026-08-18",
+				status: "upcoming",
+			}),
+			lesson({
+				id: "today",
+				sid: "s2",
+				day: 3,
+				date: "2026-08-19",
+				status: "upcoming",
+			}),
+			// Future Monday (day=1 < wednesday=3) must NOT be falsely flagged.
+			lesson({
+				id: "next-mon",
+				sid: "s3",
+				day: 1,
+				date: "2026-08-24",
+				status: "upcoming",
+			}),
+		];
+		expect(atRiskRows(students, lessons, wednesday)).toEqual([
+			{ student: s1, reasons: ["missed-check-in"] },
+		]);
+	});
+
+	test("dated past lesson from previous week is still flagged on Monday", () => {
+		const lessons = [
+			lesson({
+				id: "last-fri",
+				sid: "s2",
+				day: 5,
+				date: "2026-08-14",
+				status: "upcoming",
+			}),
+		];
+		expect(atRiskRows(students, lessons, monday)).toEqual([
+			{ student: s2, reasons: ["missed-check-in"] },
+		]);
+	});
+
+	test("empty or malformed lesson.date falls back to legacy weekday check instead of comparing empty string", () => {
+		const lessons: Lesson[] = [
+			lesson({
+				id: "empty-future-day",
+				sid: "s1",
+				day: 5,
+				date: "",
+				status: "upcoming",
+			}),
+			lesson({
+				id: "empty-past-day",
+				sid: "s2",
+				day: 1,
+				date: "",
+				status: "upcoming",
+			}),
+		];
+		expect(atRiskRows(students, lessons, wednesday)).toEqual([
+			{ student: s2, reasons: ["missed-check-in"] },
+		]);
+	});
+
+	test("flags unsubmitted overdue classAssignments (both date-only and dueAt) and ignores upcoming, submitted-late, or flip-first attemptId targets", () => {
+		const classAssignments: ClassAssignment[] = [
+			classAssignment({
+				id: "ca-overdue-date",
+				due: "2026-08-18",
+				dueAt: null,
+				targets: [
+					{ studentId: "s1", submittedAt: null, attemptId: null },
+					// Submitted late must NOT stick permanently in attention table.
+					{
+						studentId: "s2",
+						submittedAt: "2026-08-19T03:00:00.000Z",
+						attemptId: "att-late",
+					},
+					// Submitted attempt with lagging submittedAt (flip-first) must NOT false-flag.
+					{ studentId: "s3", submittedAt: null, attemptId: "att-flip" },
+				],
+			}),
+			classAssignment({
+				id: "ca-dueat-passed",
+				due: "2026-08-19",
+				// 11:00+07:00 < wednesday 12:00+07:00
+				dueAt: "2026-08-19T11:00:00+07:00",
+				targets: [{ studentId: "s2", submittedAt: null, attemptId: null }],
+			}),
+			classAssignment({
+				id: "ca-dueat-future",
+				due: "2026-08-19",
+				// 18:00+07:00 > wednesday 12:00+07:00
+				dueAt: "2026-08-19T18:00:00+07:00",
+				targets: [{ studentId: "s3", submittedAt: null, attemptId: null }],
+			}),
+		];
+		expect(
+			atRiskRows(students, [], wednesday, undefined, classAssignments),
+		).toEqual([
+			{ student: s1, reasons: ["overdue-assignment"] },
+			{ student: s2, reasons: ["overdue-assignment"] },
+		]);
+	});
+
+	test("merges missed-check-in and overdue-assignment in deterministic order without duplicate students", () => {
+		const lessons = [
+			lesson({
+				id: "m",
+				sid: "s2",
+				day: 2,
+				date: "2026-08-18",
+				status: "upcoming",
+			}),
+		];
+		const classAssignments = [
+			classAssignment({
+				id: "ca-1",
+				due: "2026-08-18",
+				targets: [{ studentId: "s2", submittedAt: null }],
+			}),
+		];
+		expect(
+			atRiskRows(students, lessons, wednesday, undefined, classAssignments),
+		).toEqual([
+			{ student: s2, reasons: ["missed-check-in", "overdue-assignment"] },
+		]);
+	});
+
+	test("flags legacy assignments with status late only", () => {
+		const legacy: Assignment[] = [
+			legacyAssignment({ id: "a1", sid: "s1", status: "late" }),
+			legacyAssignment({ id: "a2", sid: "s2", status: "not-submitted" }),
+			legacyAssignment({ id: "a3", sid: "s3", status: "graded" }),
+		];
+		expect(atRiskRows(students, [], wednesday, undefined, [], legacy)).toEqual([
+			{ student: s1, reasons: ["overdue-assignment"] },
+		]);
 	});
 });
 
 describe("formatDashboardLead", () => {
-	test("uses local date and the today count, including zero", () => {
+	test("uses Vietnam date and teacher-facing wording, including zero", () => {
 		const lead = formatDashboardLead(monday, 0);
 		expect(lead).toContain("17/08");
-		expect(lead).toContain("Hôm nay có 0 buổi học");
+		expect(lead).toContain("Hôm nay có 0 buổi dạy");
 		expect(lead).not.toContain("19/08");
 	});
 });
@@ -707,11 +877,13 @@ describe("formatClassSessionMeta (issue #373)", () => {
 });
 
 describe("paused classes filter (#694)", () => {
-	test("excludes paused class lessons from lessonsToday, upcomingLessonsThisWeek, and atRiskRows", () => {
-		const wed = new Date(2026, 9, 7, 10, 0); // day = 3
-		const classes: Pick<ClassGroup, "id" | "status">[] = [
-			{ id: "cl-active", status: "active" },
-			{ id: "cl-paused", status: "paused" },
+	test("excludes paused class lessons and overdue assignments from dashboard selectors", () => {
+		const wed = new Date("2026-10-07T10:00:00+07:00"); // day = 3
+		const classes: (Pick<ClassGroup, "id" | "status"> & {
+			studentIds?: string[];
+		})[] = [
+			{ id: "cl-active", status: "active", studentIds: ["s-act"] },
+			{ id: "cl-paused", status: "paused", studentIds: ["s-pau"] },
 		];
 		const students = [
 			student("s-act", { name: "Active Stu" }),
@@ -752,7 +924,7 @@ describe("paused classes filter (#694)", () => {
 				sid: "s-act",
 				day: 1,
 				date: "2026-10-05",
-				status: "absent",
+				status: "upcoming",
 			}),
 			lesson({
 				id: "l-risk-pau",
@@ -760,8 +932,36 @@ describe("paused classes filter (#694)", () => {
 				sid: "s-pau",
 				day: 1,
 				date: "2026-10-05",
-				status: "absent",
+				status: "upcoming",
 			}),
+		];
+		const classAssignments: ClassAssignment[] = [
+			classAssignment({
+				id: "ca-paused-overdue",
+				classId: "cl-paused",
+				due: "2026-10-05",
+				targets: [{ studentId: "s-pau", submittedAt: null }],
+			}),
+		];
+		const legacy: Assignment[] = [
+			legacyAssignment({ id: "leg-pau", sid: "s-pau", status: "late" }),
+			legacyAssignment({ id: "leg-both", sid: "s-both", status: "late" }),
+		];
+		const studentsWithBoth = [
+			...students,
+			student("s-both", { name: "Both Active & Paused Stu" }),
+		];
+		const classesWithBoth = [
+			{
+				id: "cl-active",
+				status: "active" as const,
+				studentIds: ["s-act", "s-both"],
+			},
+			{
+				id: "cl-paused",
+				status: "paused" as const,
+				studentIds: ["s-pau", "s-both"],
+			},
 		];
 		expect(lessonsToday(lessons, wed, classes).map((l) => l.id)).toEqual([
 			"l-today-act",
@@ -770,7 +970,434 @@ describe("paused classes filter (#694)", () => {
 			upcomingLessonsThisWeek(lessons, wed, classes).map((l) => l.id),
 		).toEqual(["l-up-act"]);
 		expect(
-			atRiskRows(students, lessons, wed, classes).map((r) => r.student.id),
-		).toEqual(["s-act"]);
+			atRiskRows(
+				studentsWithBoth,
+				lessons,
+				wed,
+				classesWithBoth,
+				classAssignments,
+				legacy,
+			).map((r) => r.student.id),
+		).toEqual(["s-act", "s-both"]);
+	});
+});
+
+describe("Vietnam time & duration helpers", () => {
+	test("vietnamNowMinutes converts UTC timestamps into Asia/Ho_Chi_Minh minutes", () => {
+		// 01:30 UTC = 08:30 ICT
+		expect(vietnamNowMinutes(new Date("2026-08-19T01:30:00Z"))).toBe(
+			8 * 60 + 30,
+		);
+		// 17:05 UTC = 00:05 ICT next day
+		expect(vietnamNowMinutes(new Date("2026-08-19T17:05:00Z"))).toBe(5);
+	});
+
+	test("parseTimeToMinutes validates HH:mm strictly", () => {
+		expect(parseTimeToMinutes("08:30")).toBe(510);
+		expect(parseTimeToMinutes("00:00")).toBe(0);
+		expect(parseTimeToMinutes("23:59")).toBe(1439);
+		expect(parseTimeToMinutes("24:00")).toBeNull();
+		expect(parseTimeToMinutes("08:60")).toBeNull();
+		expect(parseTimeToMinutes("bad")).toBeNull();
+		expect(parseTimeToMinutes("")).toBeNull();
+	});
+
+	test("formatEndTime wraps past midnight and returns empty string on invalid time/dur", () => {
+		expect(formatEndTime("08:00", 90)).toBe("09:30");
+		expect(formatEndTime("23:30", 60)).toBe("00:30");
+		expect(formatEndTime("08:00", 0)).toBe("08:00");
+		expect(formatEndTime("invalid", 90)).toBe("");
+		expect(formatEndTime("08:00", Number.NaN)).toBe("");
+	});
+
+	test("formatDurationVi formats minutes cleanly in Vietnamese", () => {
+		expect(formatDurationVi(45)).toBe("45 phút");
+		expect(formatDurationVi(60)).toBe("1 giờ");
+		expect(formatDurationVi(90)).toBe("1 giờ 30 phút");
+		expect(formatDurationVi(0)).toBe("1 phút");
+		expect(formatDurationVi(Number.NaN)).toBe("1 phút");
+	});
+
+	test("formatWeekdayLong maps 1..7 to Vietnamese weekdays", () => {
+		expect(formatWeekdayLong(1)).toBe("Thứ Hai");
+		expect(formatWeekdayLong(4)).toBe("Thứ Năm");
+		expect(formatWeekdayLong(7)).toBe("Chủ Nhật");
+	});
+});
+
+describe("sessionTimelineState & hasPendingTodayAttendance", () => {
+	test("classifies next, live, past across boundaries and invalid inputs", () => {
+		const slot = { time: "08:00", dur: 90 };
+		expect(sessionTimelineState(slot, 479)).toBe("next");
+		expect(sessionTimelineState(slot, 480)).toBe("live");
+		expect(sessionTimelineState(slot, 569)).toBe("live");
+		expect(sessionTimelineState(slot, 570)).toBe("past");
+		expect(sessionTimelineState({ time: "08:00", dur: 0 }, 480)).toBe("past");
+		expect(sessionTimelineState({ time: "bad", dur: 90 }, 500)).toBe("next");
+	});
+
+	test("hasPendingTodayAttendance returns true if any lesson in the slot is still upcoming", () => {
+		const todayLessons: Lesson[] = [
+			lesson({
+				id: "l1",
+				classId: "cl-1",
+				sid: "s1",
+				day: 3,
+				time: "08:00",
+				status: "completed",
+			}),
+			lesson({
+				id: "l2",
+				classId: "cl-1",
+				sid: "s2",
+				day: 3,
+				time: "08:00",
+				status: "absent",
+			}),
+			lesson({
+				id: "l3",
+				classId: "cl-2",
+				sid: "s1",
+				day: 3,
+				time: "10:00",
+				status: "completed",
+			}),
+			lesson({
+				id: "l4",
+				classId: "cl-2",
+				sid: "s2",
+				day: 3,
+				time: "10:00",
+				status: "upcoming",
+			}),
+		];
+		expect(hasPendingTodayAttendance(todayLessons, "cl-1", "08:00")).toBe(
+			false,
+		);
+		expect(hasPendingTodayAttendance(todayLessons, "cl-2", "10:00")).toBe(true);
+	});
+});
+
+describe("groupUpcomingByDay", () => {
+	test("groups by day, keeps valid dateIso only for dated classes, preserves null for legacy", () => {
+		const input: Lesson[] = [
+			lesson({
+				id: "thu-1",
+				classId: "cl-1",
+				sid: "s1",
+				day: 4,
+				date: "2026-08-20",
+				time: "08:00",
+			}),
+			lesson({
+				id: "thu-2",
+				classId: "cl-1",
+				sid: "s2",
+				day: 4,
+				date: "2026-08-20",
+				time: "08:00",
+			}),
+			lesson({
+				id: "fri-legacy",
+				classId: "cl-2",
+				sid: "s1",
+				day: 5,
+				date: null,
+				time: "19:00",
+			}),
+		];
+		const groups = groupUpcomingByDay(input);
+		expect(groups).toHaveLength(2);
+		expect(groups[0].day).toBe(4);
+		expect(groups[0].dateIso).toBe("2026-08-20");
+		expect(groups[0].sessions).toHaveLength(1);
+		expect(groups[0].sessions[0].lessons).toHaveLength(2);
+		expect(groups[1].day).toBe(5);
+		expect(groups[1].dateIso).toBeNull();
+	});
+});
+
+describe("resolveDashboardFocus", () => {
+	const s1 = groupLessonsByClassSession([
+		lesson({
+			id: "a",
+			classId: "cl-1",
+			sid: "s1",
+			day: 3,
+			time: "08:00",
+			dur: 90,
+		}),
+	])[0];
+	const s2 = groupLessonsByClassSession([
+		lesson({
+			id: "b",
+			classId: "cl-2",
+			sid: "s1",
+			day: 3,
+			time: "14:00",
+			dur: 60,
+		}),
+	])[0];
+	const badSession = groupLessonsByClassSession([
+		lesson({
+			id: "bad",
+			classId: "cl-bad",
+			sid: "s1",
+			day: 3,
+			time: "bad",
+			dur: 60,
+		}),
+	])[0];
+	const tomorrowGroups = groupUpcomingByDay([
+		lesson({
+			id: "tm",
+			classId: "cl-3",
+			sid: "s1",
+			day: 4,
+			date: "2026-08-20",
+			time: "09:00",
+		}),
+	]);
+	const fridayGroups = groupUpcomingByDay([
+		lesson({
+			id: "fr",
+			classId: "cl-4",
+			sid: "s1",
+			day: 5,
+			date: "2026-08-21",
+			time: "09:00",
+		}),
+	]);
+
+	test("returns live state with progress and minutesLeft during active session", () => {
+		const res = resolveDashboardFocus({
+			todaySessions: [s1, s2],
+			upcomingGroups: tomorrowGroups,
+			now: new Date("2026-08-19T08:45:00+07:00"),
+		});
+		expect(res.kind).toBe("live");
+		if (res.kind === "live") {
+			expect(res.session.classId).toBe("cl-1");
+			expect(res.progress).toBeCloseTo(0.5, 5);
+			expect(res.minutesLeft).toBe(45);
+		}
+	});
+
+	test("returns next state with minutesUntil before next session today and skips malformed times", () => {
+		const res = resolveDashboardFocus({
+			todaySessions: [badSession, s1, s2],
+			upcomingGroups: tomorrowGroups,
+			now: new Date("2026-08-19T12:30:00+07:00"),
+		});
+		expect(res.kind).toBe("next");
+		if (res.kind === "next") {
+			expect(res.session.classId).toBe("cl-2");
+			expect(res.minutesUntil).toBe(90);
+		}
+	});
+
+	test("returns done-today-with-upcoming distinguishing tomorrow vs later weekday", () => {
+		const evening = new Date("2026-08-19T20:00:00+07:00");
+		const withTomorrow = resolveDashboardFocus({
+			todaySessions: [s1],
+			upcomingGroups: tomorrowGroups,
+			now: evening,
+		});
+		expect(withTomorrow).toMatchObject({
+			kind: "done-today-with-upcoming",
+			day: 4,
+			dateIso: "2026-08-20",
+			isTomorrow: true,
+		});
+
+		const withFriday = resolveDashboardFocus({
+			todaySessions: [s1],
+			upcomingGroups: fridayGroups,
+			now: evening,
+		});
+		expect(withFriday).toMatchObject({
+			kind: "done-today-with-upcoming",
+			day: 5,
+			dateIso: "2026-08-21",
+			isTomorrow: false,
+		});
+	});
+
+	test("returns no-today-with-upcoming when today has no sessions but week still has sessions", () => {
+		const res = resolveDashboardFocus({
+			todaySessions: [],
+			upcomingGroups: tomorrowGroups,
+			now: wednesday,
+		});
+		expect(res).toMatchObject({
+			kind: "no-today-with-upcoming",
+			day: 4,
+			dateIso: "2026-08-20",
+			isTomorrow: true,
+		});
+	});
+
+	test("returns done-today-no-upcoming and empty honestly", () => {
+		expect(
+			resolveDashboardFocus({
+				todaySessions: [s1],
+				upcomingGroups: [],
+				now: new Date("2026-08-19T20:00:00+07:00"),
+			}),
+		).toEqual({ kind: "done-today-no-upcoming" });
+
+		expect(
+			resolveDashboardFocus({
+				todaySessions: [],
+				upcomingGroups: [],
+				now: wednesday,
+			}),
+		).toEqual({ kind: "empty" });
+	});
+});
+
+describe("studentRiskDetails", () => {
+	test("collects deduped real missed check-ins and overdue assignments using dueDateISO, respecting paused classes and attemptId", () => {
+		const classes = [
+			{
+				id: "cl-1",
+				name: "IELTS Writing K12",
+				status: "active" as const,
+				studentIds: ["s1"],
+			},
+			{
+				id: "cl-paused",
+				name: "Lớp Tạm Dừng",
+				status: "paused" as const,
+				studentIds: ["s1"],
+			},
+		];
+		const lessons: Lesson[] = [
+			lesson({
+				id: "m1",
+				classId: "cl-1",
+				sid: "s1",
+				day: 2,
+				date: "2026-08-18",
+				time: "18:00",
+				status: "upcoming",
+			}),
+			lesson({
+				id: "m1-dup",
+				classId: "cl-1",
+				sid: "s1",
+				day: 2,
+				date: "2026-08-18",
+				time: "18:00",
+				status: "upcoming",
+			}),
+			lesson({
+				id: "m-leg",
+				classId: "cl-1",
+				sid: "s1",
+				day: 1,
+				date: null,
+				time: "19:00",
+				status: "upcoming",
+			}),
+			lesson({
+				id: "m-paused",
+				classId: "cl-paused",
+				sid: "s1",
+				day: 2,
+				date: "2026-08-18",
+				time: "10:00",
+				status: "upcoming",
+			}),
+		];
+		const classAssignments: ClassAssignment[] = [
+			classAssignment({
+				id: "ca-dueat",
+				classId: "cl-1",
+				title: "Writing Task 2",
+				due: "2026-08-17",
+				// 2026-08-18T18:00:00Z = 2026-08-19 01:00+07:00 (already passed wednesday 12:00+07:00)
+				dueAt: "2026-08-18T18:00:00Z",
+				targets: [{ studentId: "s1", submittedAt: null, attemptId: null }],
+			}),
+			classAssignment({
+				id: "ca-flip",
+				classId: "cl-1",
+				title: "Đã nộp flip-first",
+				due: "2026-08-17",
+				dueAt: null,
+				targets: [{ studentId: "s1", submittedAt: null, attemptId: "att-1" }],
+			}),
+			classAssignment({
+				id: "ca-paused",
+				classId: "cl-paused",
+				title: "Bài lớp tạm dừng",
+				due: "2026-08-17",
+				dueAt: null,
+				targets: [{ studentId: "s1", submittedAt: null, attemptId: null }],
+			}),
+		];
+		const legacy: Assignment[] = [
+			legacyAssignment({
+				id: "leg-1",
+				sid: "s1",
+				title: "Legacy Empty Due",
+				due: "",
+				status: "late",
+			}),
+			legacyAssignment({
+				id: "leg-2",
+				sid: "s1",
+				title: "Legacy Slash Due",
+				due: "18/08",
+				status: "late",
+			}),
+		];
+
+		const details = studentRiskDetails(
+			"s1",
+			lessons,
+			wednesday,
+			classes,
+			classAssignments,
+			legacy,
+		);
+
+		expect(details).toEqual([
+			{
+				kind: "missed-check-in",
+				classId: "cl-1",
+				className: "IELTS Writing K12",
+				dateIso: "2026-08-18",
+				day: 2,
+				time: "18:00",
+			},
+			{
+				kind: "missed-check-in",
+				classId: "cl-1",
+				className: "IELTS Writing K12",
+				dateIso: null,
+				day: 1,
+				time: "19:00",
+			},
+			{
+				kind: "overdue-assignment",
+				title: "Writing Task 2",
+				due: "2026-08-19",
+				className: "IELTS Writing K12",
+			},
+			{
+				kind: "overdue-assignment",
+				title: "Legacy Empty Due",
+				due: "",
+				className: null,
+			},
+			{
+				kind: "overdue-assignment",
+				title: "Legacy Slash Due",
+				due: "18/08",
+				className: null,
+			},
+		]);
 	});
 });

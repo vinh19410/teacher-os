@@ -1,7 +1,13 @@
 import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
+import {
+	AnnotatableReadingPassage,
+	type ReadingAnnotationConfig,
+} from "@teacher-os/ui/components/quiz/annotatable-reading-passage";
 import { cn } from "@teacher-os/ui/lib/utils";
 import type { ReactNode } from "react";
+
+export type { ReadingAnnotationConfig };
 
 /**
  * Layout reading split-pane (#286): bài đọc trái, bài làm phải — mỗi pane
@@ -23,6 +29,7 @@ export function QuizReadingSplitLayout({
 	children,
 	navigator,
 	fillParent = false,
+	annotations,
 }: {
 	/** Rich-text HTML của đoạn đọc (đã kiểm tra không rỗng). */
 	passage: string;
@@ -32,6 +39,8 @@ export function QuizReadingSplitLayout({
 	navigator: ReactNode;
 	/** Chiếm đúng chiều cao parent thay vì calc từ viewport (#433 overlay). */
 	fillParent?: boolean;
+	/** Tuỳ chọn bật công cụ tô sáng & ghi chú IELTS CBT trên pane bài đọc. */
+	annotations?: ReadingAnnotationConfig;
 }) {
 	return (
 		<div
@@ -46,13 +55,22 @@ export function QuizReadingSplitLayout({
 					data-testid="reading-passage-pane"
 					className="border-border border-b px-4 py-6 lg:min-h-0 lg:overflow-y-auto lg:border-r lg:border-b-0"
 				>
-					<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
-						Bài đọc
-					</p>
-					<RichTextBody
-						text={passage}
-						className="mt-2 text-sm leading-[1.85]"
-					/>
+					{annotations ? (
+						<AnnotatableReadingPassage
+							passage={passage}
+							annotations={annotations}
+						/>
+					) : (
+						<>
+							<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
+								Bài đọc
+							</p>
+							<RichTextBody
+								text={passage}
+								className="mt-2 text-sm leading-[1.85]"
+							/>
+						</>
+					)}
 				</section>
 				<section
 					aria-label="Bài làm"

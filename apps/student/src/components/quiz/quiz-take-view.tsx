@@ -50,12 +50,14 @@ import {
 	reauth,
 } from "@/lib/query-client";
 import {
+	type QuizAttemptHaltReason,
 	type QuizAttemptStore,
 	type QuizSaveState,
 	quizAttemptEssayMirrorKey,
 	useQuizAttemptSnapshot,
 	useQuizAttemptStore,
 } from "@/lib/quiz-attempt-store";
+import { useReadingAnnotationsStorage } from "@/lib/reading-annotations-store";
 import {
 	patchQuizAnswer,
 	patchQuizEssay,
@@ -78,6 +80,64 @@ class QuizSubmitSkippedError extends Error {
 /** URL summary của attempt (route Phase 4) — redirect cứng full-document. */
 export const attemptSummaryHref = (attemptId: string): string =>
 	`/student/learn/quizzes/attempt/${encodeURIComponent(attemptId)}`;
+
+/**
+ * Xác định lý do khóa nút "Nộp bài" theo thứ tự ưu tiên cố định; trả `null`
+ * khi học viên có thể nộp bài ngay. `submitDisabled` suy trực tiếp từ hàm này
+ * để trạng thái khóa và lý do giải thích không bao giờ lệch nhau.
+ */
+export function resolveSubmitDisabledReason({
+	attemptStatus,
+	needsResumeDialog,
+	isSubmitting,
+	haltedReason,
+	isSpeaking,
+	hasMedia,
+	mediaUploading,
+	hasPrimaryStore,
+	hasHybridWriting,
+	hasEssayStore,
+}: {
+	attemptStatus: string;
+	needsResumeDialog: boolean;
+	isSubmitting: boolean;
+	haltedReason: QuizAttemptHaltReason | null;
+	isSpeaking: boolean;
+	hasMedia: boolean;
+	mediaUploading: boolean;
+	hasPrimaryStore: boolean;
+	hasHybridWriting: boolean;
+	hasEssayStore: boolean;
+}): string | null {
+	if (attemptStatus !== "in_progress") {
+		return "Bài làm không còn ở trạng thái đang làm.";
+	}
+	if (needsResumeDialog) {
+		return 'Hãy chọn "Tiếp tục" trong hộp thoại để mở khóa nút nộp bài.';
+	}
+	if (isSubmitting) {
+		return "Đang nộp bài…";
+	}
+	if (haltedReason !== null) {
+		if (haltedReason === "auth") {
+			return "Phiên đăng nhập đã hết hạn — vui lòng đăng nhập lại.";
+		}
+		if (haltedReason === "org_mismatch") {
+			return "Tổ chức học tập vừa thay đổi — vui lòng tải lại trang.";
+		}
+		return "Bài làm không còn ở trạng thái đang làm.";
+	}
+	if (isSpeaking && mediaUploading) {
+		return "Đang tải file bài nói lên — vui lòng chờ hoàn tất.";
+	}
+	if (isSpeaking && !hasMedia) {
+		return "Bạn cần tải file bài nói lên trước khi nộp bài.";
+	}
+	if (!hasPrimaryStore || (hasHybridWriting && !hasEssayStore)) {
+		return "Đang khôi phục dữ liệu bài làm…";
+	}
+	return null;
+}
 
 export function QuizTakeError({ error }: { error: unknown }) {
 	if (isTeacherOnStudentPortalError(error)) {
@@ -448,8 +508,10 @@ export function QuizTakeView({
 		submitMutation.mutate();
 	};
 
-	// Audio streaming: gọi hook TRƯỚC mọi early return để không đổi số hook
-	// khi attempt chuyển từ null -> in_progress (Rules of Hooks).
+	// Audio streaming & reading annotations: gọi hook TRƯỚC mọi early return để
+	// không đổi số hook khi attempt chuyển từ null -> in_progress (Rules of Hooks).
+	const [readingAnnotations, setReadingAnnotations] =
+		useReadingAnnotationsStorage(attemptId, detail?.passage ?? "");
 	const {
 		audioSrc,
 		audioLoading,
@@ -648,7 +710,7 @@ export function QuizTakeView({
 		);
 	}
 
-	const anyHalted = snapshot.halted !== null || essaySnapshot.halted !== null;
+	const haltedReason = snapshot.halted ?? essaySnapshot.halted;
 	const combinedSaveState: QuizSaveState =
 		snapshot.saveState === "error" ||
 		(hasHybridWriting && essaySnapshot.saveState === "error")
@@ -657,13 +719,19 @@ export function QuizTakeView({
 					(hasHybridWriting && essaySnapshot.saveState === "saving")
 				? "saving"
 				: "saved";
-	const submitDisabled =
-		submitMutation.isPending ||
-		anyHalted ||
-		!storeActive ||
-		store === null ||
-		(hasHybridWriting && essayStore === null) ||
-		(isSpeaking && (media === null || mediaUploading));
+	const submitDisabledReason = resolveSubmitDisabledReason({
+		attemptStatus: attempt.status,
+		needsResumeDialog,
+		isSubmitting: submitMutation.isPending,
+		haltedReason,
+		isSpeaking,
+		hasMedia: media !== null,
+		mediaUploading,
+		hasPrimaryStore: store !== null,
+		hasHybridWriting,
+		hasEssayStore: essayStore !== null,
+	});
+	const submitDisabled = submitDisabledReason !== null;
 	// Writing thay navigator số câu bằng footer đếm từ (#304) — giữ testid
 	// navigator-progress nên helper e2e openPaper dùng chung được.
 	const navigator = isSpeaking ? (
@@ -697,6 +765,7 @@ export function QuizTakeView({
 				saveState={store && !isSpeaking ? combinedSaveState : null}
 				onSubmitClick={handleSubmitClick}
 				submitDisabled={submitDisabled}
+				submitDisabledReason={submitDisabledReason}
 				exitTarget={exitTarget}
 			>
 				{timerKey && detail.timeLimitSeconds && attempt.startedAt ? (
@@ -736,6 +805,15 @@ export function QuizTakeView({
 						fillParent
 						passage={detail.passage}
 						navigator={navigator}
+						annotations={
+							attemptId
+								? {
+										mode: storeActive ? "edit" : "readonly",
+										items: readingAnnotations,
+										onChange: storeActive ? setReadingAnnotations : undefined,
+									}
+								: undefined
+						}
 					>
 						<div className="mx-auto w-full max-w-[720px]">
 							<QuizPaper
@@ -794,6 +872,7 @@ export function QuizTakeView({
 										window.location.assign(attemptSummaryHref(attemptId))
 									}
 									onAuthError={() => {
+										storeRef.current?.halt("auth");
 										setAuthBanner(true);
 										reauth();
 									}}

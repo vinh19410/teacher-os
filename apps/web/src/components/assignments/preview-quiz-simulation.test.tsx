@@ -65,7 +65,13 @@ function mcqDraft(): PreviewDraft {
 
 /** Harness mirror wiring của route preview.tsx: state sống ở harness
  * (route-level), tab render điều kiện đúng 1 tab tại một thời điểm. */
-function SimHarness({ sim }: { sim: QuizSimulation }) {
+function SimHarness({
+	sim,
+	transcript,
+}: {
+	sim: QuizSimulation;
+	transcript?: string;
+}) {
 	const [tab, setTab] = useState<"paper" | "sim">("paper");
 	const quiz = useQuizSimulation(sim);
 	return (
@@ -92,6 +98,7 @@ function SimHarness({ sim }: { sim: QuizSimulation }) {
 					onAnswer={quiz.onAnswer}
 					onSubmit={quiz.submit}
 					onReset={quiz.reset}
+					transcript={transcript}
 				/>
 			) : (
 				<div data-testid="harness-paper" />
@@ -232,5 +239,175 @@ describe("PreviewQuizSimulation — composed state", () => {
 		rerender(<SimHarness sim={simOf(mcqDraft(), "prompt-b")} />);
 		expect(screen.getByRole("button", { name: /Nộp bài/ })).toBeTruthy();
 		expect(screen.queryByTestId("attempt-correct-count")).toBeNull();
+	});
+});
+
+describe("PreviewQuizSimulation — Choose THREE unordered grading & answerSet cluster separation", () => {
+	const BIKES_OPTS = [
+		"Option A",
+		"Option B",
+		"Option C",
+		"Option D",
+		"Option E",
+		"Option F",
+	];
+
+	function bikesDraft(withAnswerSet: boolean): PreviewDraft {
+		return {
+			...noteDraft(),
+			skill: "listening",
+			part: "s3",
+			type: "mcq_many",
+			title: "Talking about the history of bikes",
+			note: "",
+			items: [
+				{
+					stem: "Choose THREE letters, A-F.",
+					opts: BIKES_OPTS,
+					answer: "C",
+					alts: "",
+					...(withAnswerSet ? { answerSet: "set-2" } : {}),
+				},
+				{
+					stem: "Choose THREE letters, A-F.",
+					opts: BIKES_OPTS,
+					answer: "D",
+					alts: "",
+					...(withAnswerSet ? { answerSet: "set-2" } : {}),
+				},
+				{
+					stem: "Choose THREE letters, A-F.",
+					opts: BIKES_OPTS,
+					answer: "F",
+					alts: "",
+					...(withAnswerSet ? { answerSet: "set-2" } : {}),
+				},
+			],
+		};
+	}
+
+	it("chấm 2/3 không thứ tự và hiển thị Đáp án: C, D, F trên cả 3 dòng AttemptCompactList (cả có và thiếu answerSet)", () => {
+		for (const withAnswerSet of [true, false]) {
+			cleanup();
+			openSimHarness(
+				simOf(
+					bikesDraft(withAnswerSet),
+					`bikes-${withAnswerSet ? "explicit" : "implicit"}`,
+				),
+			);
+			fireEvent.click(screen.getByLabelText("Questions 1–3 lựa chọn A"));
+			fireEvent.click(screen.getByLabelText("Questions 1–3 lựa chọn C"));
+			fireEvent.click(screen.getByLabelText("Questions 1–3 lựa chọn D"));
+			fireEvent.click(screen.getByRole("button", { name: /Nộp bài/ }));
+
+			expect(screen.getByTestId("attempt-correct-count").textContent).toBe("2");
+			expect(screen.getByTestId("attempt-wrong").textContent).toBe("1");
+
+			const list = screen.getByTestId("attempt-compact-list");
+			const rows = Array.from(list.querySelectorAll("li"));
+			expect(rows).toHaveLength(3);
+			for (const row of rows) {
+				expect(row.textContent).toContain("Đáp án: C, D, F");
+			}
+		}
+	});
+
+	it("hai cụm mcq_many liên tiếp cùng stem/opts khác answerSet tách thành 2 thẻ Chọn 2 đáp án và chấm độc lập", () => {
+		const twoClustersDraft: PreviewDraft = {
+			...noteDraft(),
+			skill: "listening",
+			part: "s3",
+			type: "mcq_many",
+			note: "",
+			items: [
+				{
+					stem: "Choose TWO letters, A-E.",
+					opts: ["Opt A", "Opt B", "Opt C", "Opt D", "Opt E"],
+					answer: "A",
+					alts: "",
+					type: "mcq_many",
+					answerSet: "s1",
+				},
+				{
+					stem: "Choose TWO letters, A-E.",
+					opts: ["Opt A", "Opt B", "Opt C", "Opt D", "Opt E"],
+					answer: "B",
+					alts: "",
+					type: "mcq_many",
+					answerSet: "s1",
+				},
+				{
+					stem: "Choose TWO letters, A-E.",
+					opts: ["Opt A", "Opt B", "Opt C", "Opt D", "Opt E"],
+					answer: "C",
+					alts: "",
+					type: "mcq_many",
+					answerSet: "s2",
+				},
+				{
+					stem: "Choose TWO letters, A-E.",
+					opts: ["Opt A", "Opt B", "Opt C", "Opt D", "Opt E"],
+					answer: "D",
+					alts: "",
+					type: "mcq_many",
+					answerSet: "s2",
+				},
+			],
+		};
+
+		openSimHarness(simOf(twoClustersDraft, "two-clusters"));
+		expect(screen.getAllByText("Chọn 2 đáp án")).toHaveLength(2);
+		expect(screen.queryByText("Chọn 4 đáp án")).toBeNull();
+
+		// Select swapped cross-cluster answers: C, D on cluster 1 and A, B on cluster 2 → 0/4
+		fireEvent.click(screen.getByLabelText("Questions 1–2 lựa chọn C"));
+		fireEvent.click(screen.getByLabelText("Questions 1–2 lựa chọn D"));
+		fireEvent.click(screen.getByLabelText("Questions 3–4 lựa chọn A"));
+		fireEvent.click(screen.getByLabelText("Questions 3–4 lựa chọn B"));
+		fireEvent.click(screen.getByRole("button", { name: /Nộp bài/ }));
+
+		expect(screen.getByTestId("attempt-correct-count").textContent).toBe("0");
+		const rows = Array.from(
+			screen.getByTestId("attempt-compact-list").querySelectorAll("li"),
+		);
+		expect(rows.map((row) => row.textContent)).toEqual([
+			expect.stringContaining("Đáp án: A, B"),
+			expect.stringContaining("Đáp án: A, B"),
+			expect.stringContaining("Đáp án: C, D"),
+			expect.stringContaining("Đáp án: C, D"),
+		]);
+	});
+
+	it("ẩn transcript hoàn toàn ở take mode và hiển thị TranscriptBody có nhãn người nói ở review mode sau khi nộp (#888)", () => {
+		const listeningDraft: PreviewDraft = {
+			...mcqDraft(),
+			skill: "listening",
+			part: "s1",
+			title: "City Health Services",
+		};
+		const transcript =
+			"Speaker 1: Agent: CANARY-SECRET-TRANSCRIPT Good morning.\nSpeaker 2: Customer: Hello there.";
+		render(
+			<SimHarness
+				sim={simOf(listeningDraft, "listening-transcript-canary")}
+				transcript={transcript}
+			/>,
+		);
+		fireEvent.click(screen.getByTestId("harness-tab-sim"));
+
+		// Take mode must never leak transcript
+		expect(document.body.innerHTML).not.toContain("CANARY-SECRET-TRANSCRIPT");
+		expect(screen.queryByTestId("quiz-review-transcript")).toBeNull();
+
+		fireEvent.click(screen.getByRole("radio", { name: "C Paris" }));
+		fireEvent.click(screen.getByRole("button", { name: /Nộp bài/ }));
+
+		const transcriptBox = screen.getByTestId("quiz-review-transcript");
+		const speakers = Array.from(
+			transcriptBox.querySelectorAll('[data-testid="transcript-speaker"]'),
+		).map((el) => el.textContent);
+		expect(speakers).toEqual(["Agent:", "Customer:"]);
+		expect(transcriptBox.textContent).toContain("CANARY-SECRET-TRANSCRIPT");
+		expect(transcriptBox.textContent).not.toContain("Speaker 1:");
 	});
 });

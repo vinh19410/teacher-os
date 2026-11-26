@@ -3134,4 +3134,591 @@ describe("QuizPaper — inline answer inputs", () => {
 			}
 		});
 	});
+
+	describe("unordered answerSet review clarity and shared implicit mcq_many clustering", () => {
+		const BIKES_OPTS = [
+			"Option A",
+			"Option B",
+			"Option C",
+			"Option D",
+			"Option E",
+			"Option F",
+		];
+
+		it("normalizes lowercase answer/key in QuizMcqManyCard review and appends unordered note", () => {
+			const part: QuizPart = {
+				id: "part-bikes",
+				label: "Questions 8–10",
+				qStart: 8,
+				typeId: "mcq_many",
+				source: "group",
+				questions: [
+					{
+						q: 7,
+						number: 8,
+						stem: "Choose THREE letters, A-F.",
+						opts: BIKES_OPTS,
+						pin: null,
+						type: "mcq_many",
+						answerSet: "set-2",
+					},
+					{
+						q: 8,
+						number: 9,
+						stem: "Choose THREE letters, A-F.",
+						opts: BIKES_OPTS,
+						pin: null,
+						type: "mcq_many",
+						answerSet: "set-2",
+					},
+					{
+						q: 9,
+						number: 10,
+						stem: "Choose THREE letters, A-F.",
+						opts: BIKES_OPTS,
+						pin: null,
+						type: "mcq_many",
+						answerSet: "set-2",
+					},
+				],
+			};
+			const review: Record<number, QuizReviewInfo> = {
+				7: {
+					verdict: "wrong",
+					key: " c ",
+					alts: "",
+					answer: " a ",
+					note: "",
+				},
+				8: {
+					verdict: "correct",
+					key: "d",
+					alts: "",
+					answer: "c",
+					note: "",
+				},
+				9: {
+					verdict: "correct",
+					key: "f",
+					alts: "",
+					answer: "d",
+					note: "",
+				},
+			};
+
+			const { container } = render(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq_many" })}
+					parts={[part]}
+					answers={{ 7: "a", 8: "c", 9: "d" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={review}
+				/>,
+			);
+
+			const labels = Array.from(container.querySelectorAll("label"));
+			expect(labels[0]?.textContent).toContain("Bạn chọn");
+			expect(labels[2]?.textContent).toContain("Đúng");
+			expect(labels[3]?.textContent).toContain("Đúng");
+			expect(labels[5]?.textContent).toContain("Đáp án đúng");
+
+			const reviewFooter = container.querySelector(
+				'[data-testid="quiz-review-item"]',
+			);
+			expect(reviewFooter?.textContent).toContain("C, D, F");
+			expect(reviewFooter?.textContent).toContain("(không tính thứ tự)");
+		});
+
+		it("clusters implicit mcq_many with slot suffixes (lựa chọn 1/3..3/3) and refuses < 2 non-empty opts", () => {
+			const slotPart: QuizPart = {
+				id: "part-slot",
+				label: "Questions 1–3",
+				qStart: 1,
+				typeId: "mcq_many",
+				questions: [
+					{
+						q: 0,
+						number: 1,
+						stem: "  Questions 1 (lựa chọn 1/3)  ",
+						opts: BIKES_OPTS,
+						pin: null,
+						type: "mcq_many",
+					},
+					{
+						q: 1,
+						number: 2,
+						stem: "Questions 1 (lựa chọn 2/3)",
+						opts: BIKES_OPTS,
+						pin: null,
+						type: "mcq_many",
+					},
+					{
+						q: 2,
+						number: 3,
+						stem: "Questions 1 (lựa chọn 3/3)",
+						opts: BIKES_OPTS,
+						pin: null,
+						type: "mcq_many",
+					},
+				],
+			};
+			const slotHtml = renderToStaticMarkup(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq_many" })}
+					parts={[slotPart]}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+				/>,
+			);
+			expect(slotHtml).toContain("Chọn 3 đáp án");
+
+			const emptyOptsPart: QuizPart = {
+				id: "part-empty-opts",
+				label: "Questions 1–2",
+				qStart: 1,
+				typeId: "mcq_many",
+				questions: [
+					{
+						q: 0,
+						number: 1,
+						stem: "Same stem",
+						opts: ["Only one", "   "],
+						pin: null,
+						type: "mcq_many",
+					},
+					{
+						q: 1,
+						number: 2,
+						stem: "Same stem",
+						opts: ["Only one", "   "],
+						pin: null,
+						type: "mcq_many",
+					},
+				],
+			};
+			const emptyOptsHtml = renderToStaticMarkup(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq_many" })}
+					parts={[emptyOptsPart]}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+				/>,
+			);
+			expect(emptyOptsHtml).not.toContain("Chọn 2 đáp án");
+			expect((emptyOptsHtml.match(/Chọn 1 đáp án/g) ?? []).length).toBe(2);
+		});
+
+		it("shows unordered set key with (không tính thứ tự) for non-mcq_many answerSet items in QuizReviewItem and InlineAnswerSlot", () => {
+			// Non-zero starting q offset (q = 2..5) to verify index-to-q mapping.
+			const sent4Part: QuizPart = {
+				id: "part-sent4",
+				label: "Questions 3–6",
+				qStart: 3,
+				typeId: "sent4",
+				questions: [
+					{
+						q: 2,
+						number: 3,
+						stem: "Choose FOUR letters (1)",
+						opts: null,
+						pin: null,
+						type: "sent4",
+						answerSet: "q1-4",
+					},
+					{
+						q: 3,
+						number: 4,
+						stem: "Choose FOUR letters (2)",
+						opts: null,
+						pin: null,
+						type: "sent4",
+						answerSet: "q1-4",
+					},
+					{
+						q: 4,
+						number: 5,
+						stem: "Choose FOUR letters (3)",
+						opts: null,
+						pin: null,
+						type: "sent4",
+						answerSet: "q1-4",
+					},
+					{
+						q: 5,
+						number: 6,
+						stem: "Choose FOUR letters (4)",
+						opts: null,
+						pin: null,
+						type: "sent4",
+						answerSet: "q1-4",
+					},
+				],
+			};
+			const review: Record<number, QuizReviewInfo> = {
+				2: { verdict: "correct", key: "C", alts: "", answer: "K", note: "" },
+				3: { verdict: "correct", key: "E", alts: "", answer: "G", note: "" },
+				4: { verdict: "correct", key: "G", alts: "", answer: "E", note: "" },
+				5: { verdict: "correct", key: "K", alts: "", answer: "C", note: "" },
+			};
+
+			const { container } = render(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "sent4" })}
+					parts={[sent4Part]}
+					answers={{ 2: "K", 3: "G", 4: "E", 5: "C" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={review}
+				/>,
+			);
+
+			const items = Array.from(
+				container.querySelectorAll('[data-testid="quiz-review-item"]'),
+			);
+			expect(items).toHaveLength(4);
+			for (const item of items) {
+				expect(item.textContent).toContain("C, E, G, K");
+				expect(item.textContent).toContain("(không tính thứ tự)");
+			}
+
+			// InlineAnswerSlot variant with wrong answer must show set key "→ C, E" instead of single positional "→ C".
+			cleanup();
+			const inlinePart: QuizPart = {
+				id: "part-inline-set",
+				label: "Questions 1–2",
+				qStart: 1,
+				typeId: "sent4",
+				source: "group",
+				instructionHtml:
+					"<p>Write TWO letters: first <strong>(1)</strong> and second <strong>(2)</strong>.</p>",
+				questions: [
+					{
+						q: 0,
+						number: 1,
+						stem: "First letter",
+						opts: null,
+						pin: null,
+						type: "sent4",
+						answerSet: "q1-2",
+					},
+					{
+						q: 1,
+						number: 2,
+						stem: "Second letter",
+						opts: null,
+						pin: null,
+						type: "sent4",
+						answerSet: "q1-2",
+					},
+				],
+			};
+			const inlineReview: Record<number, QuizReviewInfo> = {
+				0: { verdict: "wrong", key: "C", alts: "", answer: "X", note: "" },
+				1: { verdict: "correct", key: "E", alts: "", answer: "C", note: "" },
+			};
+			const { container: inlineContainer } = render(
+				<QuizPaper
+					detail={baseDetail({
+						skill: "listening",
+						type: "sent4",
+						passage: "",
+					})}
+					parts={[inlinePart]}
+					answers={{ 0: "X", 1: "C" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={inlineReview}
+				/>,
+			);
+			const inlineKey = inlineContainer.querySelector(
+				'[data-testid="quiz-inline-slot"][data-question="0"] [data-testid="quiz-inline-key"]',
+			);
+			expect(inlineKey?.textContent).toContain("→ C, E");
+			const inlineDetails = inlineContainer.querySelector(
+				'[data-testid="quiz-inline-review-details"]',
+			);
+			expect(inlineDetails?.textContent).toContain("C, E");
+			expect(inlineDetails?.textContent).toContain("(không tính thứ tự)");
+		});
+	});
+
+	describe("QuizPaper — listening transcript formatting (#888)", () => {
+		const simpleListeningPart: QuizPart = {
+			id: "part-listen-1",
+			label: "Questions 1–1",
+			qStart: 1,
+			typeId: "mcq",
+			questions: [
+				{
+					q: 0,
+					number: 1,
+					stem: "What is the topic?",
+					opts: ["Bikes", "Boats", "Trains"],
+					pin: null,
+					type: "mcq",
+				},
+			],
+		};
+
+		const simpleReview: Record<number, QuizReviewInfo> = {
+			0: { verdict: "correct", key: "A", alts: "", answer: "A", note: "" },
+		};
+
+		it("renders multi-speaker City Health Services excerpt as structured turns with styled speaker labels and no Speaker N noise", () => {
+			const transcript = [
+				"Speaker 1: Agent: Good morning. City Health Services. How may I help you?",
+				"Speaker 2: Customer: Good morning. I'd like to arrange cleaning. Agent: Certainly. Customer: Thank you.",
+				"Speaker 1: Agent: Excellent. Agent: Any extra services you need?",
+				"Speaker 1: When is it convenient for us to come over?",
+			].join("\n");
+
+			const { container } = render(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{ 0: "A" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={simpleReview}
+					transcript={transcript}
+				/>,
+			);
+
+			const box = container.querySelector(
+				'[data-testid="quiz-review-transcript"]',
+			);
+			expect(box).not.toBeNull();
+			expect(
+				box?.querySelector('[data-testid="transcript-body"]'),
+			).not.toBeNull();
+			const turns = Array.from(
+				box?.querySelectorAll('[data-testid="transcript-turn"]') ?? [],
+			);
+			expect(turns).toHaveLength(5);
+			const speakers = Array.from(
+				box?.querySelectorAll('[data-testid="transcript-speaker"]') ?? [],
+			).map((el) => el.textContent);
+			expect(speakers).toEqual([
+				"Agent:",
+				"Customer:",
+				"Agent:",
+				"Customer:",
+				"Agent:",
+			]);
+			expect(box?.textContent).not.toContain("Speaker 1:");
+			expect(box?.textContent).not.toContain("Speaker 2:");
+			// Consecutive Agent turns at end merge into 3 paragraphs under 1 Agent label
+			expect(turns[4]?.querySelectorAll("p")).toHaveLength(3);
+		});
+
+		it("renders Talking about the history of bikes excerpt with a single NARRATOR header, separated paragraphs, and intact prose colons", () => {
+			const transcript =
+				'Speaker 1: NARRATOR: Good afternoon, ladies and gentlemen. NARRATOR: Probably because this was the start of the Machine Age: people wanted machines to do all the work. NARRATOR: There was one problem when you were going quickly and comfortably: "OH NO! HOW DO I STOP?"';
+
+			const { container } = render(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{ 0: "A" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={simpleReview}
+					transcript={transcript}
+				/>,
+			);
+
+			const box = container.querySelector(
+				'[data-testid="quiz-review-transcript"]',
+			);
+			const turns = Array.from(
+				box?.querySelectorAll('[data-testid="transcript-turn"]') ?? [],
+			);
+			expect(turns).toHaveLength(1);
+			expect(
+				box?.querySelectorAll('[data-testid="transcript-speaker"]'),
+			).toHaveLength(1);
+			expect(
+				box?.querySelector('[data-testid="transcript-speaker"]')?.textContent,
+			).toBe("NARRATOR:");
+			expect(turns[0]?.querySelectorAll("p")).toHaveLength(3);
+			expect(box?.textContent).toContain(
+				"Machine Age: people wanted machines to do all the work.",
+			);
+			expect(box?.textContent).toContain(
+				'comfortably: "OH NO! HOW DO I STOP?"',
+			);
+		});
+
+		it("splits long unbroken monologues without newlines into multiple <p> elements", () => {
+			const monologue =
+				"Welcome everyone to today's university orientation session for new engineering students. We have prepared a full schedule covering laboratory safety, library access, and workshop tools. Every student should pick up a badge from the reception desk before noon. Firstly, let us walk through the main lecture theatres located in the northern wing of the campus. These rooms host all first-year introductory courses and weekly review clinics. Secondly, remember that the computer labs stay open until ten every evening during term time. Finally, please ask any senior tutor if you need help setting up your account.";
+
+			const { container } = render(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{ 0: "A" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={simpleReview}
+					transcript={monologue}
+				/>,
+			);
+
+			const paras = container.querySelectorAll(
+				'[data-testid="transcript-body"] p',
+			);
+			expect(paras.length).toBeGreaterThanOrEqual(2);
+		});
+
+		it("extracts flat Tiptap/legacy <p>/<br> HTML into structured turns with decoded entities", () => {
+			const flatHtml =
+				"<p>Speaker 1: Agent: Welcome to B&amp;B.<br>Speaker 2: Customer: Hello &amp; thanks.</p>";
+
+			const { container } = render(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{ 0: "A" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={simpleReview}
+					transcript={flatHtml}
+				/>,
+			);
+
+			const speakers = Array.from(
+				container.querySelectorAll('[data-testid="transcript-speaker"]'),
+			).map((el) => el.textContent);
+			expect(speakers).toEqual(["Agent:", "Customer:"]);
+			expect(
+				container.querySelector('[data-testid="transcript-body"]')?.textContent,
+			).toContain("Welcome to B&B.");
+		});
+
+		it("sanitizes rich HTML via RichTextBody, fails closed on head-scoped/unclosed dangerous tags, survives HTML<->plain rerenders, and hides transcript in take mode", () => {
+			const richHtml =
+				"<p><strong>Agent:</strong> Hello</p><p>Second paragraph</p><script>alert(1)</script>";
+
+			const { container, rerender } = render(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{ 0: "A" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={simpleReview}
+					transcript={richHtml}
+				/>,
+			);
+
+			const box = container.querySelector(
+				'[data-testid="quiz-review-transcript"]',
+			);
+			expect(box?.querySelector("script")).toBeNull();
+			expect(box?.textContent).not.toContain("alert(1)");
+			expect(box?.querySelector("strong")?.textContent).toBe("Agent:");
+			expect(box?.querySelectorAll("p")).toHaveLength(2);
+			expect(box?.innerHTML).toContain("[&amp;_p+p]:mt-2.5");
+
+			// Standalone <head>-scoped <script> and unclosed <svg>: fail closed via React escaped text (no DOM script/svg nodes inside transcript box)
+			rerender(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{ 0: "A" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={simpleReview}
+					transcript="<script>alert(1)</script>Agent: Hello"
+				/>,
+			);
+			const headScriptBox = container.querySelector(
+				'[data-testid="quiz-review-transcript"]',
+			);
+			expect(headScriptBox).not.toBeNull();
+			expect(headScriptBox?.querySelector("script, svg")).toBeNull();
+			expect(headScriptBox?.innerHTML).not.toContain("<script");
+
+			rerender(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{ 0: "A" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={simpleReview}
+					transcript="<svg onload=alert(1)>Hi"
+				/>,
+			);
+			const unclosedSvgBox = container.querySelector(
+				'[data-testid="quiz-review-transcript"]',
+			);
+			expect(unclosedSvgBox).not.toBeNull();
+			expect(unclosedSvgBox?.querySelector("script, svg")).toBeNull();
+			expect(unclosedSvgBox?.innerHTML).not.toContain("<svg");
+
+			// Rerender back and forth between plain and rich HTML: zero Rules of Hooks crash
+			rerender(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{ 0: "A" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={simpleReview}
+					transcript="Agent: Back to plain text."
+				/>,
+			);
+			expect(
+				container.querySelector('[data-testid="transcript-speaker"]')
+					?.textContent,
+			).toBe("Agent:");
+
+			rerender(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{ 0: "A" }}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="review"
+					review={simpleReview}
+					transcript={richHtml}
+				/>,
+			);
+			expect(container.querySelector("strong")?.textContent).toBe("Agent:");
+
+			// Take mode never renders transcript
+			rerender(
+				<QuizPaper
+					detail={baseDetail({ skill: "listening", type: "mcq", passage: "" })}
+					parts={[simpleListeningPart]}
+					answers={{}}
+					onAnswer={vi.fn()}
+					currentQuestion={null}
+					mode="take"
+					transcript="Agent: Secret transcript line"
+				/>,
+			);
+			expect(
+				container.querySelector('[data-testid="quiz-review-transcript"]'),
+			).toBeNull();
+			expect(container.textContent).not.toContain("Secret transcript line");
+		});
+	});
 });

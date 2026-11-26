@@ -9,6 +9,7 @@ import {
 	type KernelLessonRow,
 	type KernelSnapshot,
 } from "@teacher-os/api/contracts";
+import { sanitizeAnswerSetKeys } from "@teacher-os/api/lib/grade-quiz";
 import {
 	isMaterialKind,
 	type SyllabusBankMaterialRef,
@@ -165,35 +166,44 @@ function parseQuestions(
 			);
 			return [];
 		}
-		return parsed.flatMap((item) => {
-			if (!item || typeof item !== "object") return [];
-			const record = item as Record<string, unknown>;
-			return [
-				{
-					stem: typeof record.stem === "string" ? record.stem : "",
-					opts: Array.isArray(record.opts)
-						? record.opts.filter(
-								(option): option is string => typeof option === "string",
-							)
-						: null,
-					answer: typeof record.answer === "string" ? record.answer : "",
-					alts: typeof record.alts === "string" ? record.alts : "",
-					// Per-question type (#286) — forward như pin: write path persist
-					// field này trong cùng JSON, đây là read path duy nhất; strip nó
-					// thì mọi edit/Apply qua test-builder xoá âm thầm type đã soạn.
-					type: typeof record.type === "string" ? record.type : null,
-					// Phase-04 FR7 — forward the pin or the image labels vanish on
-					// the first reload (the write path persists them inside this
-					// same JSON; this destructure is the only read path).
-					pin: parsePin(record.pin),
-					// TOS-26 (#472): forward explanation khi có để giải thích đáp án
-					// không bị rơi lúc load snapshot ngân hàng đề.
-					...(typeof record.explanation === "string"
-						? { explanation: record.explanation }
-						: {}),
-				},
-			];
-		});
+		return sanitizeAnswerSetKeys(
+			parsed.flatMap((item) => {
+				if (!item || typeof item !== "object") return [];
+				const record = item as Record<string, unknown>;
+				return [
+					{
+						stem: typeof record.stem === "string" ? record.stem : "",
+						opts: Array.isArray(record.opts)
+							? record.opts.filter(
+									(option): option is string => typeof option === "string",
+								)
+							: null,
+						answer: typeof record.answer === "string" ? record.answer : "",
+						alts: typeof record.alts === "string" ? record.alts : "",
+						// Per-question type (#286) — forward như pin: write path persist
+						// field này trong cùng JSON, đây là read path duy nhất; strip nó
+						// thì mọi edit/Apply qua test-builder xoá âm thầm type đã soạn.
+						type:
+							typeof record.type === "string" && record.type.trim().length > 0
+								? record.type.trim()
+								: null,
+						// Phase-04 FR7 — forward the pin or the image labels vanish on
+						// the first reload (the write path persists them inside this
+						// same JSON; this destructure is the only read path).
+						pin: parsePin(record.pin),
+						// TOS-26 (#472): forward explanation khi có để giải thích đáp án
+						// không bị rơi lúc load snapshot ngân hàng đề.
+						...(typeof record.explanation === "string"
+							? { explanation: record.explanation }
+							: {}),
+						...(typeof record.answerSet === "string" &&
+						record.answerSet.trim().length > 0
+							? { answerSet: record.answerSet.trim() }
+							: {}),
+					},
+				];
+			}),
+		);
 	} catch {
 		console.warn(
 			`[kernel] invalid assignment prompt questions JSON for row ${rowId}`,

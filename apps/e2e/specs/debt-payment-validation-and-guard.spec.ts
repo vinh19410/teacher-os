@@ -233,6 +233,11 @@ test("AC-003 Scenario 2: thành viên role ta và class_teacher bị chặn 403 
 	const nav = page.getByRole("navigation", { name: "Điều hướng chính" });
 	await expect(nav.getByRole("link", { name: "Công nợ" })).toHaveCount(0);
 	await expect(nav.getByRole("link", { name: "Doanh thu" })).toHaveCount(0);
+	// Chờ KPI & thẻ nhắc việc tải xong rồi mới xác nhận ẩn bề mặt tài chính trên Dashboard.
+	await expect(page.getByText("Tổng học viên")).toBeVisible();
+	await expect(page.getByTestId("reminder-card-attendance")).toBeVisible();
+	await expect(page.getByText("Còn phải thu")).toHaveCount(0);
+	await expect(page.getByTestId("reminder-card-tuition")).toHaveCount(0);
 
 	const taPayRes = await page.request.post(
 		`${API_ORIGIN}/api/invoices/${invoiceId}/payments`,
@@ -275,6 +280,10 @@ test("AC-003 Scenario 2: thành viên role ta và class_teacher bị chặn 403 
 	).toBeVisible();
 	await expect(nav.getByRole("link", { name: "Công nợ" })).toHaveCount(0);
 	await expect(nav.getByRole("link", { name: "Doanh thu" })).toHaveCount(0);
+	await expect(page.getByText("Tổng học viên")).toBeVisible();
+	await expect(page.getByTestId("reminder-card-attendance")).toBeVisible();
+	await expect(page.getByText("Còn phải thu")).toHaveCount(0);
+	await expect(page.getByTestId("reminder-card-tuition")).toHaveCount(0);
 
 	const ctCreateRes = await page.request.post(`${API_ORIGIN}/api/invoices`, {
 		data: {

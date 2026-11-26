@@ -121,7 +121,7 @@ const seedQuestionSchema = z
 			.nullable()
 			.optional(),
 		explanation: z.string().optional(),
-		answerSet: z.string().trim().min(1).optional(),
+		answerSet: z.string().trim().min(1).max(20).optional(),
 	})
 	.strict();
 

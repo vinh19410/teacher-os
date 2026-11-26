@@ -1,5 +1,12 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createClient } from "@libsql/client";
+import {
+	type Client,
+	createClient,
+	type InArgs,
+	type InStatement,
+} from "@libsql/client";
 import type {
 	CourseCatalogResponse,
 	CourseCategoryDto,
@@ -30,11 +37,25 @@ function jsonHeaders(user: string): Record<string, string> {
 }
 
 describe("courses master data routes (/api/courses)", () => {
+	let client: Client;
 	let db: Db;
 	let app: ServerApp;
+	let nextSqlWriteUniqueErrorPattern: RegExp | null;
 
 	beforeEach(async () => {
-		const client = createClient({ url: "file::memory:" });
+		nextSqlWriteUniqueErrorPattern = null;
+		client = createClient({ url: "file::memory:" });
+		const origExecute = client.execute.bind(client);
+		client.execute = async (stmt: InStatement, args?: InArgs) => {
+			const sqlText = typeof stmt === "string" ? stmt : stmt.sql;
+			if (nextSqlWriteUniqueErrorPattern?.test(sqlText)) {
+				nextSqlWriteUniqueErrorPattern = null;
+				throw new Error("SQLITE_CONSTRAINT_UNIQUE: UNIQUE constraint failed");
+			}
+			return typeof stmt === "string"
+				? origExecute(stmt, args)
+				: origExecute(stmt);
+		};
 		const raw = drizzle(client, { schema });
 		await migrate(raw, { migrationsFolder: MIGRATIONS_DIR });
 		db = raw as unknown as Db;
@@ -596,5 +617,323 @@ describe("courses master data routes (/api/courses)", () => {
 		expect(isSqliteUniqueError(new Error("generic database timeout"))).toBe(
 			false,
 		);
+	});
+
+	test("DB unique index chặn chèn trùng tên không phân biệt hoa/thường ASCII cho course_category và course, cho phép trùng tên khác org/khác nhóm", async () => {
+		await app.request("/api/courses", { headers: { "x-test-user": "owner" } });
+		await app.request("/api/courses", { headers: { "x-test-user": "org2" } });
+
+		let catDupErr: unknown = null;
+		try {
+			await db.insert(schema.courseCategory).values({
+				id: "org-1:cat:ielts-dup",
+				orgId: "org-1",
+				name: "  ielts  ",
+				sortOrder: 99,
+				isActive: true,
+			});
+		} catch (err) {
+			catDupErr = err;
+		}
+		expect(catDupErr).not.toBeNull();
+		expect(isSqliteUniqueError(catDupErr)).toBe(true);
+
+		let courseDupErr: unknown = null;
+		try {
+			await db.insert(schema.course).values({
+				id: "org-1:course:foundation-dup",
+				orgId: "org-1",
+				categoryId: "org-1:cat:ielts",
+				name: "  FOUNDATION ",
+				sortOrder: 99,
+				isActive: true,
+			});
+		} catch (err) {
+			courseDupErr = err;
+		}
+		expect(courseDupErr).not.toBeNull();
+		expect(isSqliteUniqueError(courseDupErr)).toBe(true);
+
+		// Same course name in a different category of the same org is allowed.
+		await expect(
+			db.insert(schema.course).values({
+				id: "org-1:course:gt-foundation",
+				orgId: "org-1",
+				categoryId: "org-1:cat:giao-tiep",
+				name: "Foundation",
+				sortOrder: 99,
+				isActive: true,
+			}),
+		).resolves.toBeDefined();
+
+		// Same category name across different orgs is allowed.
+		await expect(
+			db.insert(schema.courseCategory).values([
+				{
+					id: "org-1:cat:business",
+					orgId: "org-1",
+					name: "Business",
+					sortOrder: 50,
+					isActive: true,
+				},
+				{
+					id: "org-2:cat:business",
+					orgId: "org-2",
+					name: "Business",
+					sortOrder: 50,
+					isActive: true,
+				},
+			]),
+		).resolves.toBeDefined();
+	});
+
+	test("cả 4 endpoint ghi trả 409 khi gặp lỗi SQLITE UNIQUE ở tầng DB (race condition sau pre-SELECT)", async () => {
+		await app.request("/api/courses", { headers: { "x-test-user": "owner" } });
+
+		const createCatOk = await app.request("/api/courses/categories", {
+			method: "POST",
+			headers: jsonHeaders("owner"),
+			body: JSON.stringify({ name: "TOEIC" }),
+		});
+		expect(createCatOk.status).toBe(201);
+		const { category: toeicCat } = (await createCatOk.json()) as {
+			category: CourseCategoryDto;
+		};
+
+		const createCourseOk = await app.request("/api/courses/items", {
+			method: "POST",
+			headers: jsonHeaders("owner"),
+			body: JSON.stringify({ categoryId: toeicCat.id, name: "TOEIC 500" }),
+		});
+		expect(createCourseOk.status).toBe(201);
+		const { course: toeicCourse } = (await createCourseOk.json()) as {
+			course: CourseItemDto;
+		};
+
+		// 1. POST /categories race
+		nextSqlWriteUniqueErrorPattern =
+			/^\s*insert\s+into\s+"?course_category"?\b/i;
+		const postCatRace = await app.request("/api/courses/categories", {
+			method: "POST",
+			headers: jsonHeaders("owner"),
+			body: JSON.stringify({ name: "Business English" }),
+		});
+		expect(postCatRace.status).toBe(409);
+		expect(((await postCatRace.json()) as { code: string }).code).toBe(
+			"COURSE_CATEGORY_DUPLICATE",
+		);
+
+		// 2. PATCH /categories/:id race
+		nextSqlWriteUniqueErrorPattern = /^\s*update\s+"?course_category"?\b/i;
+		const patchCatRace = await app.request(
+			`/api/courses/categories/${toeicCat.id}`,
+			{
+				method: "PATCH",
+				headers: jsonHeaders("owner"),
+				body: JSON.stringify({ name: "Business English 2" }),
+			},
+		);
+		expect(patchCatRace.status).toBe(409);
+		expect(((await patchCatRace.json()) as { code: string }).code).toBe(
+			"COURSE_CATEGORY_DUPLICATE",
+		);
+
+		// 3. POST /items race
+		nextSqlWriteUniqueErrorPattern = /^\s*insert\s+into\s+"?course"?\b/i;
+		const postCourseRace = await app.request("/api/courses/items", {
+			method: "POST",
+			headers: jsonHeaders("owner"),
+			body: JSON.stringify({ categoryId: toeicCat.id, name: "TOEIC 700" }),
+		});
+		expect(postCourseRace.status).toBe(409);
+		expect(((await postCourseRace.json()) as { code: string }).code).toBe(
+			"COURSE_DUPLICATE",
+		);
+
+		// 4. PATCH /items/:id race
+		nextSqlWriteUniqueErrorPattern = /^\s*update\s+"?course"?\b/i;
+		const patchCourseRace = await app.request(
+			`/api/courses/items/${toeicCourse.id}`,
+			{
+				method: "PATCH",
+				headers: jsonHeaders("owner"),
+				body: JSON.stringify({ name: "TOEIC 800" }),
+			},
+		);
+		expect(patchCourseRace.status).toBe(409);
+		expect(((await patchCourseRace.json()) as { code: string }).code).toBe(
+			"COURSE_DUPLICATE",
+		);
+	});
+
+	test("PATCH /items/:id chỉ đổi isActive không kiểm trùng tên khi không đổi tên/chuyển nhóm", async () => {
+		await app.request("/api/courses", { headers: { "x-test-user": "owner" } });
+
+		// Legacy row with double whitespace: distinct under SQLite lower(trim(name))
+		// but collides under app-level normalizeCourseNameKey().
+		await db.insert(schema.course).values({
+			id: "org-1:course:legacy-double-space",
+			orgId: "org-1",
+			categoryId: "org-1:cat:ielts",
+			name: "Pre  IELTS",
+			sortOrder: 99,
+			isActive: true,
+		});
+
+		const toggleRes = await app.request(
+			"/api/courses/items/org-1:course:ielts-pre",
+			{
+				method: "PATCH",
+				headers: jsonHeaders("owner"),
+				body: JSON.stringify({ isActive: false }),
+			},
+		);
+		expect(toggleRes.status).toBe(200);
+		const { course: toggled } = (await toggleRes.json()) as {
+			course: CourseItemDto;
+		};
+		expect(toggled.isActive).toBe(false);
+	});
+
+	test("migration 0093 khử trùng an toàn bằng rowid cho dữ liệu trùng phức tạp, bảo toàn toàn bộ row và FK", async () => {
+		const migFiles = readdirSync(MIGRATIONS_DIR)
+			.filter((f) => f.endsWith(".sql"))
+			.sort();
+		const preFiles = migFiles.filter((f) => f < "0093_");
+		const mig0093 = migFiles.find((f) => f.startsWith("0093_"));
+		expect(mig0093, "migration 0093_*.sql must exist").toBeDefined();
+
+		const rehearsalClient = createClient({ url: "file::memory:" });
+		try {
+			await rehearsalClient.execute("PRAGMA foreign_keys = OFF;");
+			for (const file of preFiles) {
+				const rawSql = readFileSync(join(MIGRATIONS_DIR, file), "utf8");
+				for (const stmt of rawSql
+					.split("--> statement-breakpoint")
+					.map((s) => s.trim())
+					.filter((s) => s.length > 0)) {
+					await rehearsalClient.execute(stmt);
+				}
+			}
+			await rehearsalClient.execute("PRAGMA foreign_keys = ON;");
+
+			const now = Date.now();
+			await rehearsalClient.execute({
+				sql: "INSERT INTO organization (id, name, created_at) VALUES (?, ?, ?)",
+				args: ["org-mig", "Org Migration Test", now],
+			});
+
+			const catPrefix76 = "A".repeat(76);
+			const catRows = [
+				["org-mig:cat:toeic", "TOEIC", 0],
+				["org-mig:cat:toeic-2", "toeic", 1],
+				["org-mig:cat:toeic-existing-2", "TOEIC (2)", 2],
+				["org-mig:cat:long-a1", `${catPrefix76}AAAA`, 3],
+				["org-mig:cat:long-a2", `${catPrefix76}aaaa`, 4],
+				["org-mig:cat:long-b1", `${catPrefix76}BBBB`, 5],
+				["org-mig:cat:long-b2", `${catPrefix76}bbbb`, 6],
+			] as const;
+			for (const [id, name, sortOrder] of catRows) {
+				await rehearsalClient.execute({
+					sql: `INSERT INTO course_category (id, org_id, name, sort_order, is_active, created_at, updated_at)
+						VALUES (?, ?, ?, ?, 1, ?, ?)`,
+					args: [id, "org-mig", name, sortOrder, now, now],
+				});
+			}
+
+			const coursePrefix116 = "C".repeat(116);
+			const courseRows = [
+				["org-mig:course:level-1", "Level 1", 0],
+				["org-mig:course:level-1-dup", "level 1", 1],
+				["org-mig:course:level-1-existing-2", "Level 1 (2)", 2],
+				["org-mig:course:long-a1", `${coursePrefix116}AAAA`, 3],
+				["org-mig:course:long-a2", `${coursePrefix116}aaaa`, 4],
+				["org-mig:course:long-b1", `${coursePrefix116}BBBB`, 5],
+				["org-mig:course:long-b2", `${coursePrefix116}bbbb`, 6],
+			] as const;
+			for (const [id, name, sortOrder] of courseRows) {
+				await rehearsalClient.execute({
+					sql: `INSERT INTO course (id, org_id, category_id, name, sort_order, is_active, created_at, updated_at)
+						VALUES (?, ?, ?, ?, ?, 1, ?, ?)`,
+					args: [id, "org-mig", "org-mig:cat:toeic", name, sortOrder, now, now],
+				});
+			}
+
+			await rehearsalClient.execute({
+				sql: `INSERT INTO lead (
+						id, org_id, name, phone, email, birth_date, course, study_mode,
+						study_days, time_slot, note, placement, teacher_note, source,
+						status, ip_hash, submit_count, created_at, updated_at
+					) VALUES (?, ?, ?, ?, '', '', '', '', '', '', '', '', '', 'placement-test', 'new', '', 1, ?, ?)`,
+				args: ["lead-mig", "org-mig", "Học viên Mig", "0909111222", now, now],
+			});
+			await rehearsalClient.execute({
+				sql: `INSERT INTO placement_test_submission (
+						id, org_id, lead_id, test_version, snapshot_json, answers_json,
+						objective_breakdown_json, status, final_course_id, final_course,
+						final_display_course, submitted_at, updated_at
+					) VALUES (?, ?, ?, 1, '{}', '{}', '{}', 'graded', ?, ?, ?, ?, ?)`,
+				args: [
+					"sub-mig",
+					"org-mig",
+					"lead-mig",
+					"org-mig:course:level-1-dup",
+					"org-mig:course:level-1-dup",
+					"TOEIC - level 1",
+					now,
+					now,
+				],
+			});
+
+			const sql0093 = readFileSync(
+				join(MIGRATIONS_DIR, mig0093 as string),
+				"utf8",
+			);
+			for (const stmt of sql0093
+				.split("--> statement-breakpoint")
+				.map((s) => s.trim())
+				.filter((s) => s.length > 0)) {
+				await rehearsalClient.execute(stmt);
+			}
+
+			const catsAfter = await rehearsalClient.execute(
+				"SELECT id, name FROM course_category WHERE org_id = 'org-mig'",
+			);
+			expect(catsAfter.rows).toHaveLength(catRows.length);
+			const catKeys = new Set<string>();
+			for (const row of catsAfter.rows) {
+				const name = String(row.name);
+				expect(name.length).toBeLessThanOrEqual(80);
+				catKeys.add(name.trim().toLowerCase());
+			}
+			expect(catKeys.size).toBe(catRows.length);
+
+			const coursesAfter = await rehearsalClient.execute(
+				"SELECT id, name FROM course WHERE org_id = 'org-mig' AND category_id = 'org-mig:cat:toeic'",
+			);
+			expect(coursesAfter.rows).toHaveLength(courseRows.length);
+			const courseKeys = new Set<string>();
+			for (const row of coursesAfter.rows) {
+				const name = String(row.name);
+				expect(name.length).toBeLessThanOrEqual(120);
+				courseKeys.add(name.trim().toLowerCase());
+			}
+			expect(courseKeys.size).toBe(courseRows.length);
+
+			const fkRow = await rehearsalClient.execute(
+				"SELECT final_course_id FROM placement_test_submission WHERE id = 'sub-mig'",
+			);
+			expect(fkRow.rows[0]?.final_course_id).toBe("org-mig:course:level-1-dup");
+
+			const idxRows = await rehearsalClient.execute(
+				`SELECT name FROM sqlite_master WHERE type = 'index' AND name IN ('course_category_org_name_uq', 'course_org_category_name_uq')`,
+			);
+			expect(idxRows.rows.map((r) => String(r.name)).sort()).toEqual([
+				"course_category_org_name_uq",
+				"course_org_category_name_uq",
+			]);
+		} finally {
+			rehearsalClient.close();
+		}
 	});
 });

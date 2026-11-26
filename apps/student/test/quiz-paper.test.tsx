@@ -1087,4 +1087,75 @@ describe("QuizPaper — listening audio player không hiển thị tên file bê
 		expect(errorHtml).not.toContain("Đang tải file nghe…");
 		expect(errorHtml).not.toContain("exercise.mp3");
 	});
+
+	it("SSR node renderToStaticMarkup định dạng transcript plain/flat-HTML thành lượt + đoạn và fail-closed an toàn với rich HTML có script", () => {
+		const detail = paperFields({
+			skill: "listening",
+			type: "mcq",
+			audioName: "section-1.mp3",
+			hasAudio: true,
+			passage: "",
+		});
+		const review = {
+			0: {
+				verdict: "correct" as const,
+				key: "A",
+				alts: "",
+				answer: "A",
+				note: "",
+			},
+		};
+
+		const plainHtml = renderToStaticMarkup(
+			<QuizPaper
+				detail={detail}
+				parts={buildQuizParts(listeningQuestions, "mcq")}
+				answers={{ 0: "A" }}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+				mode="review"
+				review={review}
+				transcript={
+					"Speaker 1: Agent: Good morning.\nSpeaker 2: Customer: Hello there."
+				}
+			/>,
+		);
+		expect(plainHtml).toContain('data-testid="transcript-body"');
+		expect(plainHtml).toContain('data-testid="transcript-speaker"');
+		expect(plainHtml).toContain("Agent:");
+		expect(plainHtml).toContain("Customer:");
+		expect(plainHtml).not.toContain("Speaker 1:");
+
+		const flatHtml = renderToStaticMarkup(
+			<QuizPaper
+				detail={detail}
+				parts={buildQuizParts(listeningQuestions, "mcq")}
+				answers={{ 0: "A" }}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+				mode="review"
+				review={review}
+				transcript="<p>Speaker 1: Agent: Welcome.<br>Speaker 2: Customer: Hi.</p>"
+			/>,
+		);
+		expect(flatHtml).toContain('data-testid="transcript-body"');
+		expect(flatHtml).toContain("Agent:");
+		expect(flatHtml).toContain("Customer:");
+
+		// Node SSR has no document/DOMParser: rich HTML fails closed via RichTextBody escaped text (no unescaped <script>)
+		const richSsrHtml = renderToStaticMarkup(
+			<QuizPaper
+				detail={detail}
+				parts={buildQuizParts(listeningQuestions, "mcq")}
+				answers={{ 0: "A" }}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+				mode="review"
+				review={review}
+				transcript="<p><strong>Agent:</strong> Hello</p><script>alert(1)</script>"
+			/>,
+		);
+		expect(richSsrHtml).toContain('data-testid="quiz-review-transcript"');
+		expect(richSsrHtml).not.toContain("<script>");
+	});
 });

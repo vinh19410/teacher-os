@@ -260,6 +260,97 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 		await expect(teacherPage).toHaveURL(/tab=assignments/);
 		await expect(row).toContainText("Đã chấm · Band 6.5");
 
+		// Điều hướng SPA sang chi tiết học viên → tab Bài tập để xác minh cache
+		// kernelQueryKey đã đồng bộ Band và trạng thái Đã chấm mà không reload trang.
+		await teacherPage
+			.getByRole("navigation", { name: "Điều hướng chính" })
+			.getByRole("link", { name: "Học viên", exact: true })
+			.click();
+		await expect(teacherPage).toHaveURL(/\/students\/?$/);
+		await teacherPage.getByRole("row", { name: /Học Viên Chấm/ }).click();
+		await expect(teacherPage).toHaveURL(
+			new RegExp(`/students/${fixture.studentId}$`),
+		);
+		const assignTab = teacherPage.getByRole("tab", {
+			name: "Bài tập",
+			exact: true,
+		});
+		await assignTab.click();
+		await expect(assignTab).toHaveAttribute("aria-selected", "true");
+
+		const studentWritingRow = teacherPage
+			.getByRole("row")
+			.filter({ hasText: "Writing chấm: city life" });
+		await expect(studentWritingRow.locator("td").nth(3)).toHaveText("6.5");
+		await expect(studentWritingRow.locator("td").nth(4)).toHaveText("Đã chấm");
+
+		const studentSpeakingRow = teacherPage
+			.getByRole("row")
+			.filter({ hasText: "Speaking chấm: a place" });
+		await expect(studentSpeakingRow.locator("td").nth(3)).toHaveText("—");
+		await expect(studentSpeakingRow.locator("td").nth(4)).toHaveText(
+			"Chưa nộp",
+		);
+
+		if (process.env.CAPTURE_POT_ISSUE === "957") {
+			try {
+				const profileTab = teacherPage.getByRole("tab", {
+					name: "Hồ sơ",
+					exact: true,
+				});
+				await profileTab.click();
+				await expect(profileTab).toHaveAttribute("aria-selected", "true");
+				await profileTab.focus();
+				await teacherPage.keyboard.press("Tab");
+				await teacherPage.keyboard.press("Tab");
+				await teacherPage.keyboard.press("Tab");
+				await expect(assignTab).toBeFocused();
+				await teacherPage.keyboard.press("Enter");
+				await expect(assignTab).toHaveAttribute("aria-selected", "true");
+				await expect(studentWritingRow.locator("td").nth(3)).toHaveText("6.5");
+
+				const potDir = new URL("../../../plans/reports", import.meta.url)
+					.pathname;
+				mkdirSync(potDir, { recursive: true });
+				const potViewports: Array<[string, number, number]> = [
+					["desktop", 1440, 900],
+					["tablet", 768, 1024],
+					["phone", 375, 812],
+					["reflow-320", 320, 812],
+				];
+				for (const theme of ["light", "dark"] as const) {
+					await teacherPage.evaluate((t) => {
+						localStorage.setItem("theme", t);
+						document.documentElement.classList.toggle("dark", t === "dark");
+					}, theme);
+					for (const [label, width, height] of potViewports) {
+						await teacherPage.setViewportSize({ width, height });
+						const overflow = await teacherPage.evaluate(
+							() =>
+								document.documentElement.scrollWidth >
+								document.documentElement.clientWidth,
+						);
+						expect(
+							overflow,
+							`student assignments tab overflow at ${label} (${width}x${height}) ${theme}`,
+						).toBe(false);
+						if (label !== "reflow-320") {
+							await teacherPage.screenshot({
+								path: `${potDir}/957-student-assignments-band-${label}-${theme}.png`,
+								animations: "disabled",
+							});
+						}
+					}
+				}
+			} finally {
+				await teacherPage.evaluate(() => {
+					localStorage.setItem("theme", "light");
+					document.documentElement.classList.remove("dark");
+				});
+				await teacherPage.setViewportSize({ width: 1280, height: 720 });
+			}
+		}
+
 		// Student sees the grade on the attempt summary (fresh context).
 		const sc = await browser.newContext();
 		const sp = await sc.newPage();

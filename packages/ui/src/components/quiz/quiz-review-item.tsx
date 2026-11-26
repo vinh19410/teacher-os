@@ -22,6 +22,8 @@ export interface QuizReviewInfo {
 	/** Giải thích đáp án riêng của câu (rich text, #358) — chỉ có ở detail
 	 * sau nộp. Ưu tiên hơn `note`. */
 	explanation?: string;
+	/** Nhãn tập đáp án hợp lệ (UI-only) cho câu thuộc nhóm chấm không thứ tự. */
+	answerSetKey?: string;
 }
 
 /** Nội dung disclosure "Giải thích": giải thích riêng của câu (#358) nếu có,
@@ -83,6 +85,8 @@ export function QuizReviewItem({ info }: { info: QuizReviewInfo }) {
 		.map((alt) => alt.trim())
 		.filter(Boolean);
 	const explanation = quizReviewExplanation(info);
+	const answerSetKey = info.answerSetKey?.trim() ?? "";
+	const displayKey = answerSetKey || info.key;
 	return (
 		<div
 			data-testid="quiz-review-item"
@@ -92,8 +96,13 @@ export function QuizReviewItem({ info }: { info: QuizReviewInfo }) {
 			<p className="text-muted-foreground">
 				Đáp án:{" "}
 				<span className="font-medium font-mono text-verdict-correct">
-					{info.key}
+					{displayKey}
 				</span>
+				{answerSetKey.length > 0 && (
+					<span className="ml-1 text-muted-foreground text-xs">
+						(không tính thứ tự)
+					</span>
+				)}
 				{alts.length > 0 && (
 					<>
 						{" — thay thế: "}

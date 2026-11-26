@@ -75,9 +75,10 @@ const getMailer = (): Mailer => {
 
 // One memoized auth (sharing the memoized db) per isolate, still created
 // lazily on the first request that needs it — never at module-eval time.
-// Behavior note vs. the old construct-per-request code: better-auth's
-// in-memory rate limiter is now actually effective (one persistent instance
-// per isolate); bursts on /api/auth/* may see 429s they never saw before.
+// Better-Auth's in-memory rate limiter is explicitly enabled here with
+// per-IP `cf-connecting-ip` bucketing (Cloudflare edge overwrites this header)
+// and a 120 req/10s allowance on `/get-session` while keeping strict limits
+// on `/sign-in/*` and `/sign-up/*`.
 const getAuth = (): Auth => {
 	if (!db) {
 		db = createDb() as unknown as Db;
@@ -107,6 +108,8 @@ const getAuth = (): Auth => {
 			googleClientSecret: env.GOOGLE_CLIENT_SECRET,
 			mailer,
 			runInBackground: (promise) => waitUntil(promise),
+			rateLimit: { enabled: true },
+			trustedIpHeaders: ["cf-connecting-ip"],
 		});
 	}
 	return auth;

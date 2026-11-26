@@ -1,5 +1,6 @@
 import { ASSIGNMENT_TEST_PRESETS } from "@teacher-os/api/contracts";
 import {
+	assignmentPrompt,
 	assignmentTest,
 	assignmentTestPart,
 } from "@teacher-os/db/schema/index";
@@ -194,6 +195,9 @@ export async function syncLibraryTestsToOrg(
 	if (needPartsFor.length === 0) return;
 
 	const needIds = needPartsFor.map((row) => row.id);
+	const needCopyIds = needPartsFor
+		.map((row) => allCopies.get(row.id))
+		.filter((id): id is string => Boolean(id));
 	const libraryParts: Array<typeof libraryTestPart.$inferSelect> = [];
 	for (let i = 0; i < needIds.length; i += D1_IN_ARRAY_CHUNK) {
 		libraryParts.push(
@@ -208,12 +212,104 @@ export async function syncLibraryTestsToOrg(
 				)),
 		);
 	}
+	if (libraryParts.length === 0) return;
+
+	// Nạp các slot đã chiếm trên bản sao và part hiện có của prompt đã clone sẵn
+	// để tránh xung đột unique(test_id, part) hoặc vòng lặp re-sync ghi thừa
+	// trên đề multi-part khi một prompt cũ lệch slot (#884).
+	const occupiedSlotsByCopy = new Map<string, Set<string>>();
+	for (let i = 0; i < needCopyIds.length; i += D1_IN_ARRAY_CHUNK) {
+		const slice = needCopyIds.slice(i, i + D1_IN_ARRAY_CHUNK);
+		for (const row of await db
+			.select({
+				testId: assignmentTestPart.testId,
+				part: assignmentTestPart.part,
+			})
+			.from(assignmentTestPart)
+			.where(inArray(assignmentTestPart.testId, slice))) {
+			let set = occupiedSlotsByCopy.get(row.testId);
+			if (!set) {
+				set = new Set();
+				occupiedSlotsByCopy.set(row.testId, set);
+			}
+			set.add(row.part);
+		}
+	}
+
+	const existingPromptPartByRef = new Map<string, string>();
+	const partLibraryRefs = libraryParts.map((row) =>
+		studyPackSourceKey("library_test_part", row.id),
+	);
+	for (let i = 0; i < partLibraryRefs.length; i += D1_IN_ARRAY_CHUNK) {
+		const slice = partLibraryRefs.slice(i, i + D1_IN_ARRAY_CHUNK);
+		for (const row of await db
+			.select({
+				libraryRef: assignmentPrompt.libraryRef,
+				part: assignmentPrompt.part,
+			})
+			.from(assignmentPrompt)
+			.where(
+				and(
+					eq(assignmentPrompt.orgId, orgId),
+					inArray(assignmentPrompt.libraryRef, slice),
+				),
+			)) {
+			if (row.libraryRef) {
+				existingPromptPartByRef.set(row.libraryRef, row.part);
+			}
+		}
+	}
+
+	// Ưu tiên part khớp slot gốc trước (effectivePart === part.part), sau đó ổn định theo part/id.
+	const orderedParts = [...libraryParts].sort((a, b) => {
+		const effA =
+			existingPromptPartByRef.get(
+				studyPackSourceKey("library_test_part", a.id),
+			) ?? a.part;
+		const effB =
+			existingPromptPartByRef.get(
+				studyPackSourceKey("library_test_part", b.id),
+			) ?? b.part;
+		const exactA = effA === a.part ? 0 : 1;
+		const exactB = effB === b.part ? 0 : 1;
+		if (exactA !== exactB) return exactA - exactB;
+		if (a.part !== b.part) return a.part < b.part ? -1 : 1;
+		return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+	});
+
+	const partsToAttach: Array<{
+		part: typeof libraryTestPart.$inferSelect;
+		copyId: string;
+		skill: LibrarySkill;
+	}> = [];
+	const claimedSlotsByCopy = new Map<string, Set<string>>();
+	for (const [copyId, set] of occupiedSlotsByCopy.entries()) {
+		claimedSlotsByCopy.set(copyId, new Set(set));
+	}
+
+	for (const part of orderedParts) {
+		const copyId = allCopies.get(part.testId);
+		const test = needPartsFor.find((row) => row.id === part.testId);
+		if (!copyId || !test || !isLibrarySkill(test.skill)) continue;
+		const sourceKey = studyPackSourceKey("library_test_part", part.id);
+		const candidatePart = existingPromptPartByRef.get(sourceKey) ?? part.part;
+		let claimed = claimedSlotsByCopy.get(copyId);
+		if (!claimed) {
+			claimed = new Set();
+			claimedSlotsByCopy.set(copyId, claimed);
+		}
+		if (claimed.has(candidatePart)) continue;
+		claimed.add(candidatePart);
+		partsToAttach.push({ part, copyId, skill: test.skill });
+	}
+	if (partsToAttach.length === 0) return;
+
 	const materialized = await materializePrompts(
 		db,
 		orgId,
-		libraryParts.map((row) => ({
+		partsToAttach.map(({ part }) => ({
 			sourceKind: "library_test_part",
-			sourceId: row.id,
+			sourceId: part.id,
 		})),
 		{ allowListeningLibraryParts: true },
 	);
@@ -222,21 +318,21 @@ export async function syncLibraryTestsToOrg(
 	}
 
 	const partRows: Array<typeof assignmentTestPart.$inferInsert> = [];
-	for (const part of libraryParts) {
-		const copyId = allCopies.get(part.testId);
-		const promptId = materialized.promptIdBySourceKey.get(
-			studyPackSourceKey("library_test_part", part.id),
+	for (const { part, copyId, skill: testSkill } of partsToAttach) {
+		const sourceKey = studyPackSourceKey("library_test_part", part.id);
+		const promptId = materialized.promptIdBySourceKey.get(sourceKey);
+		if (!promptId) continue;
+		const effectivePart =
+			materialized.promptPartBySourceKey.get(sourceKey) ?? part.part;
+		const slotIndex = ASSIGNMENT_TEST_PRESETS[testSkill].slots.findIndex(
+			(slot) => slot.part === effectivePart,
 		);
-		const test = needPartsFor.find((row) => row.id === part.testId);
-		if (!copyId || !promptId || !test || !isLibrarySkill(test.skill)) continue;
 		partRows.push({
 			id: crypto.randomUUID(),
 			testId: copyId,
 			promptId,
-			part: part.part,
-			position: ASSIGNMENT_TEST_PRESETS[test.skill].slots.findIndex(
-				(slot) => slot.part === part.part,
-			),
+			part: effectivePart,
+			position: slotIndex >= 0 ? slotIndex : 0,
 		});
 	}
 	for (let i = 0; i < partRows.length; i += PART_INSERT_CHUNK) {

@@ -239,12 +239,14 @@ describe("wrong-role 403 ACCOUNT_TEACHER_ROLE redirect handling", () => {
 		}
 	});
 
-	it("reauth() preserves /student/... returnUrl and defaults non-student paths to /student", () => {
+	it("reauth() preserves /student/... returnUrl and defaults non-student paths to /student", async () => {
 		reauth();
-		expect(assignSpy).toHaveBeenCalledWith(
-			`/login?returnUrl=${encodeURIComponent("/student/classes/cls-1?tab=lessons#top")}`,
-		);
 		expect(authMocks.signOut).toHaveBeenCalledTimes(1);
+		await vi.waitFor(() => {
+			expect(assignSpy).toHaveBeenCalledWith(
+				`/login?returnUrl=${encodeURIComponent("/student/classes/cls-1?tab=lessons#top")}`,
+			);
+		});
 
 		resetRedirectGuardsForTests();
 		assignSpy.mockClear();
@@ -256,9 +258,78 @@ describe("wrong-role 403 ACCOUNT_TEACHER_ROLE redirect handling", () => {
 		});
 
 		reauth();
-		expect(assignSpy).toHaveBeenCalledWith(
-			`/login?returnUrl=${encodeURIComponent("/student")}`,
+		await vi.waitFor(() => {
+			expect(assignSpy).toHaveBeenCalledWith(
+				`/login?returnUrl=${encodeURIComponent("/student")}`,
+			);
+		});
+	});
+
+	it("reauth() calls signOut synchronously, waits for settle/timeout/reject, and cancels on persisted pageshow", async () => {
+		let resolveSignOut!: () => void;
+		authMocks.signOut.mockImplementationOnce(
+			() =>
+				new Promise<Record<string, never>>((resolve) => {
+					resolveSignOut = () => resolve({});
+				}),
 		);
+
+		reauth();
+		reauth();
+		expect(authMocks.signOut).toHaveBeenCalledTimes(1);
+		expect(authMocks.clearSessionCache).toHaveBeenCalledTimes(1);
+		expect(assignSpy).not.toHaveBeenCalled();
+
+		resolveSignOut();
+		await vi.waitFor(() => {
+			expect(assignSpy).toHaveBeenCalledTimes(1);
+		});
+
+		// Timeout fallback at 2000ms when signOut hangs
+		resetRedirectGuardsForTests();
+		assignSpy.mockClear();
+		authMocks.signOut.mockClear();
+		vi.useFakeTimers();
+		try {
+			authMocks.signOut.mockImplementationOnce(() => new Promise(() => {}));
+			reauth();
+			expect(authMocks.signOut).toHaveBeenCalledTimes(1);
+			await vi.advanceTimersByTimeAsync(1_999);
+			expect(assignSpy).not.toHaveBeenCalled();
+			await vi.advanceTimersByTimeAsync(1);
+			expect(assignSpy).toHaveBeenCalledTimes(1);
+		} finally {
+			vi.useRealTimers();
+		}
+
+		// Reject fallback
+		resetRedirectGuardsForTests();
+		assignSpy.mockClear();
+		authMocks.signOut.mockRejectedValueOnce(new Error("offline"));
+		reauth();
+		await vi.waitFor(() => {
+			expect(assignSpy).toHaveBeenCalledTimes(1);
+		});
+
+		// bfcache persisted pageshow cancels pending continuation
+		resetRedirectGuardsForTests();
+		assignSpy.mockClear();
+		let resolveStale!: () => void;
+		authMocks.signOut.mockImplementationOnce(
+			() =>
+				new Promise<Record<string, never>>((resolve) => {
+					resolveStale = () => resolve({});
+				}),
+		);
+		reauth();
+		const persistedEvent = new Event("pageshow") as PageTransitionEvent;
+		Object.defineProperty(persistedEvent, "persisted", { value: true });
+		window.dispatchEvent(persistedEvent);
+
+		resolveStale();
+		await Promise.resolve();
+		await Promise.resolve();
+		expect(assignSpy).not.toHaveBeenCalled();
 	});
 
 	it("redirects to /login from imperative repo fetch and XHR calls on 403 ACCOUNT_TEACHER_ROLE without signOut", async () => {

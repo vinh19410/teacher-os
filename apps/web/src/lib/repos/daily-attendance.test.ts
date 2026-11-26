@@ -1,8 +1,13 @@
 import { CLASS_ERROR_CODES } from "@teacher-os/api/contracts";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import {
+	attendanceBaseQueryKey,
 	DailyAttendanceApiError,
+	dailyAttendanceBaseQueryKey,
 	fetchDailyAttendance,
+	fetchOverdueAttendance,
+	overdueAttendanceBaseQueryKey,
+	overdueAttendanceQueryKey,
 	saveSessionAttendance,
 } from "./daily-attendance";
 
@@ -92,5 +97,79 @@ describe("daily-attendance repo (#694)", () => {
 		);
 		expect(data.sessions[0]?.classPaused).toBe(true);
 		expect(data.counts.pending).toBe(0);
+	});
+
+	test("query keys share attendanceBaseQueryKey prefix and fetchOverdueAttendance parses valid payload / throws on HTTP error", async () => {
+		expect(attendanceBaseQueryKey).toEqual(["kernel", "attendance"]);
+		expect(dailyAttendanceBaseQueryKey).toEqual([
+			"kernel",
+			"attendance",
+			"daily",
+		]);
+		expect(overdueAttendanceBaseQueryKey).toEqual([
+			"kernel",
+			"attendance",
+			"overdue",
+		]);
+		expect(overdueAttendanceQueryKey("2026-11-26")).toEqual([
+			"kernel",
+			"attendance",
+			"overdue",
+			"2026-11-26",
+		]);
+
+		vi.stubGlobal(
+			"fetch",
+			vi.fn().mockResolvedValue(
+				new Response(
+					JSON.stringify({
+						today: "2026-11-26",
+						totalCount: 1,
+						hasMore: false,
+						sessions: [
+							{
+								date: "2026-11-24",
+								classId: "cl-1",
+								className: "IELTS Foundation 5.5",
+								time: "19:00",
+								dur: 90,
+								mode: "dated",
+								recorded: false,
+								students: [
+									{
+										lessonId: "l-1",
+										studentId: "st-1",
+										studentName: "Minh Anh",
+										attendance: null,
+										note: "",
+									},
+								],
+							},
+						],
+					}),
+					{
+						status: 200,
+						headers: { "Content-Type": "application/json" },
+					},
+				),
+			),
+		);
+
+		const overdue = await fetchOverdueAttendance("http://localhost:8000");
+		expect(overdue.totalCount).toBe(1);
+		expect(overdue.sessions[0]?.date).toBe("2026-11-24");
+
+		vi.stubGlobal(
+			"fetch",
+			vi.fn().mockResolvedValue(
+				new Response(JSON.stringify({ error: "server boom" }), {
+					status: 500,
+					headers: { "Content-Type": "application/json" },
+				}),
+			),
+		);
+		await expect(
+			fetchOverdueAttendance("http://localhost:8000"),
+		).rejects.toBeInstanceOf(DailyAttendanceApiError);
 	});
 });

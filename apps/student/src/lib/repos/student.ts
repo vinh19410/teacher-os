@@ -181,8 +181,10 @@ export async function fetchStudentOverview(): Promise<StudentOverview> {
 	return studentOverviewSchema.parse(data);
 }
 
-export async function fetchStudentSchedule(): Promise<StudentScheduleResponse> {
-	const headers = getStudentHeaders();
+export async function fetchStudentSchedule(
+	explicitOrgId?: string | null,
+): Promise<StudentScheduleResponse> {
+	const headers = getStudentHeaders({}, explicitOrgId);
 	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(`${getApiBaseUrl()}/api/student/schedule`, {
 		method: "GET",
@@ -423,6 +425,8 @@ export interface UseStudentScheduleOptions {
 	refetchOnMount?: boolean | "always";
 	refetchOnWindowFocus?: boolean | "always";
 	staleTime?: number;
+	enabled?: boolean;
+	orgIdOverride?: string | null;
 }
 
 export function useStudentSchedule(options?: UseStudentScheduleOptions) {
@@ -431,11 +435,13 @@ export function useStudentSchedule(options?: UseStudentScheduleOptions) {
 		getActiveStudentOrgId,
 		getActiveStudentOrgId,
 	);
+	const { orgIdOverride, ...queryOptions } = options ?? {};
+	const scopedOrgId = orgIdOverride !== undefined ? orgIdOverride : activeOrgId;
 	return useQuery({
-		queryKey: ["student", "schedule", activeOrgId],
-		queryFn: fetchStudentSchedule,
+		queryKey: ["student", "schedule", scopedOrgId],
+		queryFn: () => fetchStudentSchedule(scopedOrgId),
 		staleTime: 60_000,
-		...options,
+		...queryOptions,
 	});
 }
 
@@ -702,11 +708,17 @@ export function useClassMaterials(classId: string, enabled = true) {
 export async function fetchPracticeCatalog(filters: {
 	skill: PracticeSkill;
 	collection?: string;
+	part?: string;
+	type?: string;
+	band?: string;
 	q?: string;
 	page?: number;
 }): Promise<PracticeCatalogResponse> {
-	const params = new URLSearchParams({ skill: filters.skill });
+	const params = new URLSearchParams({ skill: filters.skill, facets: "1" });
 	if (filters.collection) params.set("collection", filters.collection);
+	if (filters.part) params.set("part", filters.part);
+	if (filters.type) params.set("type", filters.type);
+	if (filters.band) params.set("band", filters.band);
 	if (filters.q) params.set("q", filters.q);
 	if (filters.page && filters.page > 1)
 		params.set("page", String(filters.page));
@@ -730,6 +742,9 @@ export async function fetchPracticeCatalog(filters: {
 export function usePracticeCatalog(filters: {
 	skill: PracticeSkill;
 	collection?: string;
+	part?: string;
+	type?: string;
+	band?: string;
 	q?: string;
 	page?: number;
 }) {
@@ -739,11 +754,18 @@ export function usePracticeCatalog(filters: {
 			"practice",
 			filters.skill,
 			filters.collection ?? "",
+			filters.part ?? "",
+			filters.type ?? "",
+			filters.band ?? "",
 			filters.q ?? "",
 			filters.page ?? 1,
 		],
 		queryFn: () => fetchPracticeCatalog(filters),
 		staleTime: 30_000,
+		// Giữ dữ liệu + facets trong cùng skill khi đổi trang/filter/search để
+		// tránh unmount dropdown và mất focus bàn phím; không rò sang skill khác.
+		placeholderData: (prev, prevQuery) =>
+			prevQuery?.queryKey[2] === filters.skill ? prev : undefined,
 	});
 }
 

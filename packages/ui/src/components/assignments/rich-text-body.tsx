@@ -1,14 +1,8 @@
+import { isHtmlRichText } from "@teacher-os/ui/lib/reading-annotations";
 import { RICH_TEXT_CONTENT_CLASSES } from "@teacher-os/ui/lib/rich-text-content-classes";
 import { sanitizeRichText } from "@teacher-os/ui/lib/rich-text-sanitize";
 import { cn } from "@teacher-os/ui/lib/utils";
 import { useMemo } from "react";
-
-// Quick "does this already contain HTML markup?" heuristic — same regex as
-// web's `rich-text-legacy` (kept private per surface: the web adapter also
-// feeds the Tiptap editor, this copy only picks the render branch here).
-const HTML_TAG_RE = /<\/?[a-z][^>]*>/i;
-const PAIRED_OR_VOID_TAG_RE = /<\/[a-z][a-z0-9]*\s*>|<(?:br|hr|img)\b[^>]*>/i;
-const HTML_ENTITY_RE = /&(?:amp|lt|gt|quot|#39);/i;
 
 /**
  * The single rendering sink for rich text content.
@@ -29,17 +23,7 @@ export function RichTextBody({
 	className?: string;
 	legacyWhitespace?: "pre-line" | "pre-wrap";
 }) {
-	const isHtml = useMemo(() => {
-		if (HTML_ENTITY_RE.test(text)) return true;
-		if (!HTML_TAG_RE.test(text) || !PAIRED_OR_VOID_TAG_RE.test(text)) {
-			return false;
-		}
-		if (typeof DOMParser === "undefined") return true;
-		// Regex pre-check passed; confirm with a real parse so text like "a<b>c"
-		// that happens to contain a closing angle bracket is not misdetected.
-		const doc = new DOMParser().parseFromString(text, "text/html");
-		return doc.body.children.length > 0 || /<(br|img|hr)\b/i.test(text);
-	}, [text]);
+	const isHtml = useMemo(() => isHtmlRichText(text), [text]);
 
 	const legacyClass =
 		legacyWhitespace === "pre-wrap"

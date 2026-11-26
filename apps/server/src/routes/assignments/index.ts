@@ -12,6 +12,10 @@ import {
 	mcqOptionsIssue,
 } from "@teacher-os/api/contracts";
 import { isAutoGradableSkill } from "@teacher-os/api/lib/ielts-band";
+import {
+	isLibrarySkill,
+	librarySkillTypes,
+} from "@teacher-os/api/library-contracts";
 import { assignment } from "@teacher-os/db/schema/assignment";
 import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
 import {
@@ -235,6 +239,7 @@ export function assignmentRoutes(deps: {
 				writingPart: assignmentPrompt.writingPart,
 				writingType: assignmentPrompt.writingType,
 				writingPrompt: assignmentPrompt.writingPrompt,
+				libraryRef: assignmentPrompt.libraryRef,
 			})
 			.from(assignmentPrompt)
 			.where(
@@ -247,9 +252,17 @@ export function assignmentRoutes(deps: {
 
 		// Rule phụ thuộc skill/part của ROW (contract không có context):
 		// type membership + questions chỉ hợp cho reading/listening.
-		const partTypes =
+		// Với prompt đồng bộ từ thư viện hoặc Study Pack (library_ref IS NOT NULL),
+		// hợp nhất thêm danh sách dạng bài của kỹ năng thư viện vì đề Reading p2/p3
+		// trong kho có thể mang dạng chéo slot (vd tfng ở p2) trong khi Study Pack
+		// dùng dạng riêng (vd note ở p1).
+		const slotTypes =
 			ASSIGNMENT_PART_TYPES[row.skill as AssignmentSkill]?.types[row.part] ??
 			[];
+		const partTypes =
+			(row.libraryRef ?? "").trim().length > 0 && isLibrarySkill(row.skill)
+				? [...new Set([...slotTypes, ...librarySkillTypes(row.skill)])]
+				: slotTypes;
 		const effectiveStatus = body.data.status ?? row.status;
 		const effectiveType =
 			body.data.type !== undefined ? body.data.type : row.type;
@@ -425,7 +438,21 @@ export function assignmentRoutes(deps: {
 			// rồi so JSON — đổi thứ tự key/giá trị mặc định không tính là đổi.
 			const normalizeQuestions = (value: unknown) => {
 				const parsed = promptQuestionsSchema.safeParse(value);
-				return JSON.stringify(parsed.success ? parsed.data : value);
+				if (!parsed.success) return JSON.stringify(value);
+				return JSON.stringify(
+					parsed.data.map((q) => ({
+						stem: q.stem,
+						opts: q.opts ?? null,
+						answer: q.answer,
+						alts: q.alts,
+						...(q.type ? { type: q.type } : {}),
+						...(q.pin != null ? { pin: { x: q.pin.x, y: q.pin.y } } : {}),
+						...(q.explanation !== undefined
+							? { explanation: q.explanation }
+							: {}),
+						...(q.answerSet ? { answerSet: q.answerSet } : {}),
+					})),
+				);
 			};
 			let storedQuestions: unknown;
 			try {

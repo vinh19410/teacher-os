@@ -1,12 +1,20 @@
 import type {
 	AttendanceStatus,
 	DailyAttendanceResponse,
+	OverdueAttendanceSession,
 	SessionAttendanceSave,
 } from "@teacher-os/api/contracts";
 
 export type DailyAttendanceSession =
 	DailyAttendanceResponse["sessions"][number];
+export type AttendanceRowSession =
+	| DailyAttendanceSession
+	| OverdueAttendanceSession;
 export type DailyAttendanceStudent = DailyAttendanceSession["students"][number];
+
+export function isSessionPaused(session: AttendanceRowSession): boolean {
+	return "classPaused" in session && Boolean(session.classPaused);
+}
 
 export interface AttendanceDraftEntry {
 	attendance: AttendanceStatus | null;

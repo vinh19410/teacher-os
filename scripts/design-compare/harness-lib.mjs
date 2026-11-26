@@ -54,22 +54,297 @@ export function parseCliArgs(argv) {
 	return res;
 }
 
-// ── child env (signup flag #539) ─────────────────────────────────────────
-/** Env cho child server của harness: luôn bật form đăng ký giáo viên. */
+// ── child env (unified LMS #939 + signup flag #539) ───────────────────────
+const STRIPPED_INHERITED_ENV_KEYS = [
+	"E2E_API_PORT",
+	"E2E_LMS_PORT",
+	"E2E_WEB_PORT",
+	"E2E_STUDENT_PORT",
+	"VITE_SERVER_URL",
+	"LMS_SKIP_PORTAL_ASSEMBLE",
+	"LMS_REBUILD_PORTALS",
+	"E2E_TEACHER_EMAILS",
+	"E2E_ADMIN_EMAILS",
+	"ALCHEMY_CLOUDFLARE_VITE_INJECTED",
+	"NODE_ENV",
+];
+
+function validatePortValue(name, val) {
+	if (
+		typeof val !== "number" ||
+		!Number.isInteger(val) ||
+		val < 1 ||
+		val > 65_535
+	) {
+		throw new Error(`${name} port không hợp lệ: ${String(val)}`);
+	}
+	return val;
+}
+
+/** Env cho child server/build của harness: làm sạch biến môi trường kế thừa
+ * gây xung đột, ánh xạ 2 port hợp nhất (apiPort + lmsPort/webPort), luôn bật
+ * form đăng ký giáo viên và menu tự luyện học viên. */
 export function buildChildEnv(
 	baseEnv,
-	{ apiPort, webPort, studentPort, extraEnv } = {},
+	{ apiPort, lmsPort, webPort, extraEnv } = {},
 ) {
-	return {
-		...baseEnv,
-		E2E_API_PORT: String(apiPort),
-		E2E_WEB_PORT: String(webPort),
-		E2E_STUDENT_PORT: String(studentPort),
-		VITE_SERVER_URL: `http://localhost:${apiPort}`,
-		VITE_TEACHER_SIGNUP_ENABLED: "true",
-		VITE_STUDENT_PRACTICE_ENABLED: "true",
-		...extraEnv,
-	};
+	const env = { ...baseEnv };
+	for (const key of STRIPPED_INHERITED_ENV_KEYS) {
+		delete env[key];
+	}
+	if (apiPort !== undefined) {
+		const validApi = validatePortValue("apiPort", apiPort);
+		env.E2E_API_PORT = String(validApi);
+		env.VITE_SERVER_URL = `http://localhost:${validApi}`;
+	}
+	const effectiveLmsPort = lmsPort ?? webPort;
+	if (effectiveLmsPort !== undefined) {
+		const validLms = validatePortValue(
+			lmsPort !== undefined ? "lmsPort" : "webPort",
+			effectiveLmsPort,
+		);
+		env.E2E_LMS_PORT = String(validLms);
+		env.E2E_WEB_PORT = String(validLms);
+	}
+	env.VITE_TEACHER_SIGNUP_ENABLED = "true";
+	env.VITE_STUDENT_PRACTICE_ENABLED = "true";
+	if (extraEnv) {
+		Object.assign(env, extraEnv);
+	}
+	return env;
+}
+
+// ── unified LMS URL & landing regex helpers (#939) ───────────────────────
+function hasControlCharacter(value) {
+	for (let i = 0; i < value.length; i += 1) {
+		const code = value.charCodeAt(i);
+		if (code <= 0x1f || code === 0x7f) return true;
+	}
+	return false;
+}
+
+function normalizeStrictOrigin(rawOrigin) {
+	if (typeof rawOrigin !== "string" || rawOrigin.trim().length === 0) {
+		throw new Error(`origin không hợp lệ: ${String(rawOrigin)}`);
+	}
+	let parsed;
+	try {
+		parsed = new URL(rawOrigin);
+	} catch {
+		throw new Error(`origin không hợp lệ: ${rawOrigin}`);
+	}
+	if (
+		(parsed.protocol !== "http:" && parsed.protocol !== "https:") ||
+		parsed.username !== "" ||
+		parsed.password !== "" ||
+		parsed.search !== "" ||
+		parsed.hash !== "" ||
+		parsed.pathname !== "/"
+	) {
+		throw new Error(`origin không hợp lệ: ${rawOrigin}`);
+	}
+	return parsed.origin;
+}
+
+function escapeRegExp(s) {
+	return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Ánh xạ đường dẫn màn trong screens.json sang URL tuyệt đối của cổng LMS hợp
+ * nhất theo `auth` (`null` → root, `"teacher"` → `/teacher`, `"student"` → `/student`).
+ * Fail-closed với auth lạ, origin bất thường, traversal `..`, backslash và ký tự điều khiển. */
+export function resolveAppScreenUrl(lmsOrigin, auth, appPath) {
+	const origin = normalizeStrictOrigin(lmsOrigin);
+	if (auth !== null && auth !== "teacher" && auth !== "student") {
+		throw new Error(`auth không hợp lệ: ${String(auth)}`);
+	}
+	if (
+		typeof appPath !== "string" ||
+		!appPath.startsWith("/") ||
+		appPath.startsWith("//") ||
+		appPath.includes("\\") ||
+		hasControlCharacter(appPath)
+	) {
+		throw new Error(`appPath không hợp lệ: ${String(appPath)}`);
+	}
+	const rawPathname = appPath.split(/[?#]/, 1)[0];
+	let candidate = rawPathname;
+	for (let round = 0; round < 3; round += 1) {
+		if (
+			candidate.startsWith("//") ||
+			candidate.includes("\\") ||
+			hasControlCharacter(candidate) ||
+			candidate.split("/").includes("..")
+		) {
+			throw new Error(`appPath không hợp lệ: ${appPath}`);
+		}
+		if (round === 2) break;
+		let decoded;
+		try {
+			decoded = decodeURIComponent(candidate);
+		} catch {
+			throw new Error(`appPath không hợp lệ (URI encoding): ${appPath}`);
+		}
+		if (decoded === candidate) break;
+		candidate = decoded;
+	}
+
+	let prefixedPath = appPath;
+	if (auth === "teacher") {
+		prefixedPath = /^\/teacher(?:\/|\?|#|$)/.test(appPath)
+			? appPath
+			: `/teacher${appPath}`;
+	} else if (auth === "student") {
+		prefixedPath = /^\/student(?:\/|\?|#|$)/.test(appPath)
+			? appPath
+			: `/student${appPath}`;
+	}
+
+	let parsed;
+	try {
+		parsed = new URL(prefixedPath, origin);
+	} catch {
+		throw new Error(`appPath không hợp lệ: ${appPath}`);
+	}
+	if (parsed.origin !== origin) {
+		throw new Error(`appPath không hợp lệ (lệch origin): ${appPath}`);
+	}
+	if (
+		auth === "teacher" &&
+		parsed.pathname !== "/teacher" &&
+		!parsed.pathname.startsWith("/teacher/")
+	) {
+		throw new Error(`appPath không hợp lệ (thoát /teacher): ${appPath}`);
+	}
+	if (
+		auth === "student" &&
+		parsed.pathname !== "/student" &&
+		!parsed.pathname.startsWith("/student/")
+	) {
+		throw new Error(`appPath không hợp lệ (thoát /student): ${appPath}`);
+	}
+	return parsed.href;
+}
+
+/** Regex neo origin cho đích sau khi giáo viên đăng nhập trên cổng LMS hợp nhất. */
+export function buildTeacherDashboardRegex(lmsOrigin) {
+	const origin = normalizeStrictOrigin(lmsOrigin);
+	return new RegExp(`^${escapeRegExp(origin)}/teacher/dashboard(?:[/?#].*)?$`);
+}
+
+/** Regex neo origin cho đích sau khi học viên đăng nhập (`/student` có hoặc
+ * không có trailing slash và query). */
+export function buildStudentLandingRegex(lmsOrigin) {
+	const origin = normalizeStrictOrigin(lmsOrigin);
+	return new RegExp(`^${escapeRegExp(origin)}/student/?(?:\\?.*)?$`);
+}
+
+/** Kiểm tra cookie jar có cookie phiên Better-Auth khác rỗng (khớp
+ * `assertVerifiedEmailRedirect` của design-seed). */
+export function hasSessionTokenCookie(cookies) {
+	if (!Array.isArray(cookies)) return false;
+	return cookies.some(
+		(cookie) =>
+			typeof cookie?.name === "string" &&
+			typeof cookie?.value === "string" &&
+			cookie.value.length > 0 &&
+			(cookie.name === "better-auth.session_token" ||
+				cookie.name === "__Secure-better-auth.session_token" ||
+				cookie.name.endsWith(".session_token")),
+	);
+}
+
+/** Chờ `page.url()` khớp `pattern` bằng polling thay vì `page.waitForURL`
+ * (chịu được double-redirect `location.assign` + `location.replace` mà không
+ * văng `net::ERR_ABORTED`, đồng thời fail-fast nếu page đóng và redact URL
+ * khi timeout — #939). */
+export async function waitForUrlMatch(
+	page,
+	pattern,
+	{ timeoutMs = 30_000, pollMs = 50 } = {},
+) {
+	if (!(pattern instanceof RegExp) || pattern.global || pattern.sticky) {
+		throw new Error("waitForUrlMatch: pattern phải là RegExp không có cờ g/y");
+	}
+	if (
+		typeof timeoutMs !== "number" ||
+		!Number.isFinite(timeoutMs) ||
+		timeoutMs <= 0
+	) {
+		throw new Error(
+			`waitForUrlMatch: timeoutMs không hợp lệ: ${String(timeoutMs)}`,
+		);
+	}
+	if (typeof pollMs !== "number" || !Number.isFinite(pollMs) || pollMs <= 0) {
+		throw new Error(`waitForUrlMatch: pollMs không hợp lệ: ${String(pollMs)}`);
+	}
+	const deadline = Date.now() + timeoutMs;
+	let lastUrl = "";
+	for (;;) {
+		if (typeof page?.isClosed === "function" && page.isClosed()) {
+			throw new Error("waitForUrlMatch: page đã đóng trước khi URL khớp đích");
+		}
+		lastUrl = String(page.url());
+		if (pattern.test(lastUrl)) return lastUrl;
+		const remaining = deadline - Date.now();
+		if (remaining <= 0) break;
+		await new Promise((resolve) =>
+			setTimeout(resolve, Math.min(pollMs, remaining)),
+		);
+	}
+	if (typeof page?.isClosed === "function" && page.isClosed()) {
+		throw new Error("waitForUrlMatch: page đã đóng trước khi URL khớp đích");
+	}
+	lastUrl = String(page.url());
+	if (pattern.test(lastUrl)) return lastUrl;
+	throw new Error(
+		`waitForUrlMatch: timeout ${timeoutMs}ms chờ URL khớp ${pattern} (cuối cùng: ${redactLog(lastUrl)})`,
+	);
+}
+
+/** Inline ESM boot script khởi chạy programmatic `startLmsServer` từ
+ * `apps/lms/scripts/serve-lms.mjs` với `distDir` cô lập. Đọc `process.argv.slice(2)`
+ * vì `process.argv[1]` luôn là sentinel `"design-compare-lms"` để guard
+ * `isDirectRun` trong `serve-lms.mjs` luôn là `false` (#939). */
+export const SERVE_LMS_BOOT_SCRIPT = [
+	'import { pathToFileURL } from "node:url";',
+	"const [modPath, distDir, host, port] = process.argv.slice(2);",
+	"const portNum = Number(port);",
+	'if (!modPath || !distDir || !host || !Number.isInteger(portNum) || portNum < 1 || portNum > 65535) { throw new Error("serve-lms boot args không hợp lệ"); }',
+	"const { startLmsServer } = await import(pathToFileURL(modPath).href);",
+	"startLmsServer({ distDir, host, port: portNum });",
+].join(" ");
+
+/** Tạo mảng argv cho `node` khởi chạy `startLmsServer({ distDir, host, port })`
+ * với sentinel `"design-compare-lms"` ở `argv[1]` (chặn `serve-lms.mjs` tự gọi
+ * `startLmsServer()` lần 2 qua `isDirectRun`). */
+export function buildServeLmsBootArgs({
+	modulePath,
+	distDir,
+	host = "127.0.0.1",
+	port,
+} = {}) {
+	if (typeof modulePath !== "string" || modulePath.trim().length === 0) {
+		throw new Error("modulePath không hợp lệ");
+	}
+	if (typeof distDir !== "string" || distDir.trim().length === 0) {
+		throw new Error("distDir không hợp lệ");
+	}
+	if (typeof host !== "string" || host.trim().length === 0) {
+		throw new Error("host không hợp lệ");
+	}
+	const validPort = validatePortValue("lmsPort", port);
+	return [
+		"--input-type=module",
+		"-e",
+		SERVE_LMS_BOOT_SCRIPT,
+		"--",
+		"design-compare-lms",
+		modulePath,
+		distDir,
+		host,
+		String(validPort),
+	];
 }
 
 // ── log redact ───────────────────────────────────────────────────────────
@@ -162,6 +437,83 @@ export async function probeFreePort({ excludePorts } = {}) {
 	}
 	throw new Error(
 		"probeFreePort: 10 lần thử không tìm được cổng trống dual-stack",
+	);
+}
+
+function createHoldServer() {
+	const sockets = new Set();
+	const srv = net.createServer((socket) => {
+		sockets.add(socket);
+		socket.on("error", () => {});
+		socket.once("close", () => sockets.delete(socket));
+		socket.destroy();
+	});
+	return { srv, sockets };
+}
+
+function closeServerQuietly(srv, sockets) {
+	if (!srv) return Promise.resolve();
+	if (sockets) {
+		for (const s of sockets) s.destroy();
+	}
+	return new Promise((resolve) => {
+		try {
+			srv.close(() => resolve());
+		} catch {
+			resolve();
+		}
+	});
+}
+
+/** Cấp và GIỮ CHỖ một cổng trống dual-stack (127.0.0.1 + ::1 khi khả dụng) cho
+ * tới khi caller gọi `release()`. Hủy ngay mọi kết nối TCP lọt vào cổng đang
+ * giữ chỗ để `srv.close()` không bao giờ bị treo deadlock (`net.Server` không
+ * có `closeAllConnections`). Dùng để đóng cửa sổ TOCTOU trong thời gian build
+ * bundle trước khi spawn tiến trình thật (#939). */
+export async function reserveFreePort({ excludePorts } = {}) {
+	const taken =
+		excludePorts instanceof Set ? excludePorts : new Set(excludePorts ?? []);
+	for (let attempt = 0; attempt < 10; attempt += 1) {
+		const h4 = createHoldServer();
+		const r4 = await listenOnce(h4.srv, 0, "127.0.0.1");
+		if (!r4.ok) {
+			await closeServerQuietly(h4.srv, h4.sockets);
+			continue;
+		}
+		h4.srv.on("error", () => {});
+		const port = h4.srv.address().port;
+		if (taken.has(port)) {
+			await closeServerQuietly(h4.srv, h4.sockets);
+			continue;
+		}
+		const h6 = createHoldServer();
+		const r6 = await listenOnce(h6.srv, port, "::1");
+		if (r6.ok || r6.code === "EADDRNOTAVAIL" || r6.code === "EAFNOSUPPORT") {
+			const heldV6 = r6.ok ? h6 : null;
+			if (heldV6) {
+				heldV6.srv.on("error", () => {});
+			} else {
+				await closeServerQuietly(h6.srv, h6.sockets);
+			}
+			let releasePromise = null;
+			const release = () => {
+				if (!releasePromise) {
+					releasePromise = Promise.all([
+						closeServerQuietly(h4.srv, h4.sockets),
+						heldV6
+							? closeServerQuietly(heldV6.srv, heldV6.sockets)
+							: Promise.resolve(),
+					]).then(() => {});
+				}
+				return releasePromise;
+			};
+			return { port, release };
+		}
+		await closeServerQuietly(h4.srv, h4.sockets);
+		await closeServerQuietly(h6.srv, h6.sockets);
+	}
+	throw new Error(
+		"reserveFreePort: 10 lần thử không giữ được cổng trống dual-stack",
 	);
 }
 

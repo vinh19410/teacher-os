@@ -326,6 +326,13 @@ describe("buildQuizSim — sanitize opts/pin như parseQuizQuestions phía serve
 				type: "multi",
 				answerSet: " pair-1 ",
 			},
+			{
+				stem: "Regular question without set",
+				opts: null,
+				answer: "river",
+				alts: "",
+				type: "note",
+			},
 		];
 		const sim = buildQuizSim(
 			draft({
@@ -337,7 +344,44 @@ describe("buildQuizSim — sanitize opts/pin như parseQuizQuestions phía serve
 		);
 		expect(sim?.fullQuestions[0]?.answerSet).toBe("pair-1");
 		expect(sim?.fullQuestions[1]?.answerSet).toBe("pair-1");
-		expect("answerSet" in (sim?.takeQuestions[0] ?? {})).toBe(false);
+		expect(sim?.takeQuestions[0]?.answerSet).toBe("pair-1");
+		expect(sim?.takeQuestions[1]?.answerSet).toBe("pair-1");
+		expect("answerSet" in (sim?.takeQuestions[2] ?? {})).toBe(false);
+	});
+
+	it("sanitize answerSet dài > 20 ký tự đồng nhất giữa fullQuestions và takeQuestions", () => {
+		const overlong = "legacy-overlong-answerset-key-01";
+		const sim = buildQuizSim(
+			draft({
+				skill: "listening",
+				part: "s3",
+				type: "mcq_many",
+				items: [
+					{
+						stem: "Choose TWO letters, A-E.",
+						opts: ["A", "B", "C", "D", "E"],
+						answer: "B",
+						alts: "",
+						type: "mcq_many",
+						answerSet: overlong,
+					},
+					{
+						stem: "Choose TWO letters, A-E.",
+						opts: ["A", "B", "C", "D", "E"],
+						answer: "E",
+						alts: "",
+						type: "mcq_many",
+						answerSet: overlong,
+					},
+				],
+			}),
+		);
+		const k0 = sim?.fullQuestions[0]?.answerSet ?? "";
+		expect(k0.length).toBeGreaterThan(0);
+		expect(k0.length).toBeLessThanOrEqual(20);
+		expect(sim?.fullQuestions[1]?.answerSet).toBe(k0);
+		expect(sim?.takeQuestions[0]?.answerSet).toBe(k0);
+		expect(sim?.takeQuestions[1]?.answerSet).toBe(k0);
 	});
 });
 

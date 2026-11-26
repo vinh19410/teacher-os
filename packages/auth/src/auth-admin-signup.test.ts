@@ -107,6 +107,34 @@ describe("user.create.before — admin allowlist gate (plan #413 phase 1)", () =
 		);
 		expect(rows.rows[0]?.role).toBe("student");
 	});
+
+	test("student origin hoặc thiếu Origin + email thuộc adminEmails → 403 ADMIN_SIGNUP_FORBIDDEN, chống role-poisoning thành student", async () => {
+		const freshCtx = await setup(["admin-legacy@example.com"]);
+		for (const origin of [STUDENT_ORIGIN, null] as const) {
+			const headers: Record<string, string> = {
+				"content-type": "application/json",
+			};
+			if (origin !== null) {
+				headers.origin = origin;
+			}
+			const res = await freshCtx.auth.handler(
+				new Request(`${API_ORIGIN}/api/auth/sign-up/email`, {
+					method: "POST",
+					headers,
+					body: JSON.stringify({
+						name: "Poison Attempt",
+						email: "ADMIN-LEGACY@Example.COM",
+						password: "password-8chars",
+					}),
+				}),
+			);
+			expect(res.status, String(origin)).toBe(403);
+			const body = (await res.json()) as { code?: string };
+			expect(body.code).toBe("ADMIN_SIGNUP_FORBIDDEN");
+		}
+		const rows = await freshCtx.raw.execute("SELECT count(*) AS n FROM user");
+		expect(Number(rows.rows[0]?.n ?? 0)).toBe(0);
+	});
 });
 
 describe("session.create.before — ROLE_MISMATCH với admin (plan #413 phase 1)", () => {

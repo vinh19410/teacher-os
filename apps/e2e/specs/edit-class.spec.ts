@@ -16,6 +16,16 @@ function addDaysIso(iso: string, days: number): string {
 		.slice(0, 10);
 }
 
+function formatDdMmYyyy(iso: string): string {
+	const [y, m, d] = iso.split("-");
+	return `${d}/${m}/${y}`;
+}
+
+function formatDdMm(iso: string): string {
+	const [, m, d] = iso.split("-");
+	return `${d}/${m}`;
+}
+
 test.describe("edit class information (issue #693)", () => {
 	test("1. opens via keyboard Enter, closes on Escape, and warns only on conflicts with other classes", async ({
 		page,
@@ -146,16 +156,17 @@ test.describe("edit class information (issue #693)", () => {
 		).toBeVisible();
 	});
 
-	test("3. locks schedule inputs when real sessions exist while saving general info", async ({
+	test("3. locks weekly schedule & total on unstarted manual class while allowing startDate edit without shifting manual sessions", async ({
 		page,
 	}) => {
 		const stamp = Date.now();
 		const sessionDate = addDaysIso(vietnamTodayISO(), 7);
+		const shiftedStartDate = addDaysIso(sessionDate, 7);
 
 		await signUpViaApi(page);
 
-		const initialName = `E2E Edit Locked ${stamp}`;
-		const updatedName = `E2E Edit Locked Renamed ${stamp}`;
+		const initialName = `E2E Edit Manual ${stamp}`;
+		const updatedName = `E2E Edit Manual Renamed ${stamp}`;
 		const classId = await seedDatedClass(page, {
 			name: initialName,
 			schedulingMode: "manual",
@@ -187,17 +198,22 @@ test.describe("edit class information (issue #693)", () => {
 		const dialog = page.getByRole("dialog", { name: "Chỉnh sửa lớp học" });
 		await expect(dialog).toBeVisible();
 
-		await expect(dialog.getByTestId("schedule-locked-note")).toBeVisible();
+		await expect(dialog.getByTestId("schedule-locked-note")).toContainText(
+			"các buổi thủ công đã thêm giữ nguyên ngày",
+		);
 		await expect(
 			dialog.getByRole("button", { name: "T3", exact: true }),
 		).toBeDisabled();
 		await expect(dialog.getByLabel("Giờ bắt đầu")).toBeDisabled();
 		await expect(dialog.getByLabel("Giờ kết thúc")).toBeDisabled();
 		await expect(dialog.getByLabel("Tổng số buổi")).toBeDisabled();
-		await expect(dialog.getByLabel("Ngày khai giảng")).toBeDisabled();
+		await expect(dialog.getByLabel("Ngày khai giảng")).toBeEnabled();
 
 		await dialog.getByLabel("Tên lớp *").fill(updatedName);
 		await dialog.getByLabel("Học phí / học viên (VND)").fill("3800000");
+		await dialog
+			.getByLabel("Ngày khai giảng")
+			.fill(formatDdMmYyyy(shiftedStartDate));
 		await dialog
 			.getByRole("button", { name: "Lưu thay đổi", exact: true })
 			.click();
@@ -206,6 +222,12 @@ test.describe("edit class information (issue #693)", () => {
 		await expect(
 			page.getByRole("heading", { name: updatedName }),
 		).toBeVisible();
+		await expect(
+			page.getByText(`Từ ${formatDdMmYyyy(shiftedStartDate)}`),
+		).toBeVisible();
+		await expect(page.getByTestId("session-row").first()).toContainText(
+			formatDdMm(sessionDate),
+		);
 		await expect(
 			page.getByText(/T3 & T5 · 19:00–20:30 · Online/),
 		).toBeVisible();
@@ -216,24 +238,139 @@ test.describe("edit class information (issue #693)", () => {
 		).toBeVisible();
 	});
 
-	test("4. responsive layout & Light/Dark themes across 3 viewports and 320px reflow", async ({
+	test("4. shifts upcoming sessions when editing startDate on an unstarted auto class with active student", async ({
+		page,
+	}) => {
+		const stamp = Date.now();
+		const initialStart = addDaysIso(vietnamTodayISO(), 7);
+		const shiftedStart = addDaysIso(initialStart, 14);
+		const dayIdx = vnWeekdayMon0(initialStart);
+
+		const teacherEmail = await signUpViaApi(page);
+
+		const className = `E2E Reschedule Auto ${stamp}`;
+		const classId = await seedDatedClass(page, {
+			name: className,
+			schedulingMode: "auto",
+			schedule: { days: [dayIdx], start: "19:00", end: "20:30" },
+			startDate: initialStart,
+			sessionsTotal: 3,
+			students: { teacherEmail, names: ["Nguyễn Minh Anh"] },
+		});
+
+		await page.goto(`/teacher/classes/${classId}`);
+		await expect(page.getByRole("heading", { name: className })).toBeVisible();
+
+		const rows = page.getByTestId("session-row");
+		await expect(rows).toHaveCount(3);
+		await expect(rows.nth(0)).toContainText(formatDdMm(initialStart));
+		await expect(rows.nth(1)).toContainText(
+			formatDdMm(addDaysIso(initialStart, 7)),
+		);
+		await expect(rows.nth(2)).toContainText(
+			formatDdMm(addDaysIso(initialStart, 14)),
+		);
+
+		await page.getByRole("button", { name: "Chỉnh sửa", exact: true }).click();
+		const dialog = page.getByRole("dialog", { name: "Chỉnh sửa lớp học" });
+		await expect(dialog).toBeVisible();
+
+		await expect(dialog.getByTestId("schedule-locked-note")).toContainText(
+			"Bạn vẫn có thể đổi ngày khai giảng khi lớp chưa bắt đầu",
+		);
+		await expect(dialog.getByLabel("Giờ bắt đầu")).toBeDisabled();
+		await expect(dialog.getByLabel("Giờ kết thúc")).toBeDisabled();
+		await expect(dialog.getByLabel("Tổng số buổi")).toBeDisabled();
+		await expect(dialog.getByLabel("Ngày khai giảng")).toBeEnabled();
+
+		await dialog
+			.getByLabel("Ngày khai giảng")
+			.fill(formatDdMmYyyy(shiftedStart));
+		await dialog
+			.getByRole("button", { name: "Lưu thay đổi", exact: true })
+			.click();
+		await expect(dialog).toBeHidden();
+
+		await expect(
+			page.getByText(`Từ ${formatDdMmYyyy(shiftedStart)}`),
+		).toBeVisible();
+		await expect(rows).toHaveCount(3);
+		await expect(rows.nth(0)).toContainText(formatDdMm(shiftedStart));
+		await expect(rows.nth(0)).not.toContainText(formatDdMm(initialStart));
+		await expect(rows.nth(1)).toContainText(
+			formatDdMm(addDaysIso(shiftedStart, 7)),
+		);
+		await expect(rows.nth(2)).toContainText(
+			formatDdMm(addDaysIso(shiftedStart, 14)),
+		);
+	});
+
+	test("5. locks startDate once class has a checked-in session", async ({
+		page,
+	}) => {
+		const stamp = Date.now();
+		const today = vietnamTodayISO();
+		const dayIdx = vnWeekdayMon0(today);
+
+		const teacherEmail = await signUpViaApi(page);
+
+		const className = `E2E Started Locked ${stamp}`;
+		const classId = await seedDatedClass(page, {
+			name: className,
+			schedulingMode: "auto",
+			schedule: { days: [dayIdx], start: "19:00", end: "20:30" },
+			startDate: today,
+			sessionsTotal: 2,
+			students: { teacherEmail, names: ["Trần Gia Bảo"] },
+		});
+
+		const checkInRes = await page.request.post(
+			`${API_ORIGIN}/api/classes/${classId}/sessions/${today}/check-in`,
+			{
+				data: {},
+				headers: { Origin: WEB_ORIGIN, "Content-Type": "application/json" },
+			},
+		);
+		expect(checkInRes.status()).toBe(200);
+
+		await page.goto(`/teacher/classes/${classId}`);
+		await expect(page.getByRole("heading", { name: className })).toBeVisible();
+
+		await page.getByRole("button", { name: "Chỉnh sửa", exact: true }).click();
+		const dialog = page.getByRole("dialog", { name: "Chỉnh sửa lớp học" });
+		await expect(dialog).toBeVisible();
+		await expect(dialog.getByLabel("Ngày khai giảng")).toBeDisabled();
+		await expect(dialog.getByTestId("schedule-locked-note")).toContainText(
+			"Lớp đã bắt đầu học",
+		);
+	});
+
+	test("6. responsive layout & Light/Dark themes across 3 viewports and 320px reflow", async ({
 		page,
 	}) => {
 		const nextWeek = addDaysIso(vietnamTodayISO(), 7);
-		await signUpViaApi(page);
+		const dayIdx = vnWeekdayMon0(nextWeek);
+		const teacherEmail = await signUpViaApi(page);
 
 		const classId = await seedDatedClass(page, {
 			name: "IELTS Writing 7.0 — Nhóm tối",
 			schedulingMode: "auto",
-			schedule: { days: [1, 3], start: "19:00", end: "20:30" },
+			schedule: {
+				days: [dayIdx, (dayIdx + 2) % 7],
+				start: "19:00",
+				end: "20:30",
+			},
 			startDate: nextWeek,
 			sessionsTotal: 12,
+			students: { teacherEmail, names: ["Nguyễn Minh Anh"] },
 		});
 
 		await page.goto(`/teacher/classes/${classId}`);
 		await page.getByRole("button", { name: "Chỉnh sửa", exact: true }).click();
 		const dialog = page.getByRole("dialog", { name: "Chỉnh sửa lớp học" });
 		await expect(dialog).toBeVisible();
+		await expect(dialog.getByLabel("Tổng số buổi")).toBeDisabled();
+		await expect(dialog.getByLabel("Ngày khai giảng")).toBeEnabled();
 
 		const viewports = [
 			{ key: "desktop", width: 1440, height: 900 },
@@ -264,7 +401,10 @@ test.describe("edit class information (issue #693)", () => {
 
 				if (process.env.CAPTURE_POT === "1") {
 					await page.screenshot({
-						path: resolve(REPORT_DIR, `693-edit-class-${vp.key}-${theme}.png`),
+						path: resolve(
+							REPORT_DIR,
+							`985-edit-start-date-${vp.key}-${theme}.png`,
+						),
 					});
 				}
 			}

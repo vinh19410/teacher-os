@@ -245,10 +245,123 @@ describe("resolveLegacyHostRedirect", () => {
 				from: "https://www.lms.staging.teacheros.io.vn/pay/tok-1",
 				to: "https://lms.staging.teacheros.io.vn/pay/tok-1",
 			},
+			{
+				from: "https://www.lms.msmy.io.vn/login?returnUrl=/classes",
+				to: "https://lms.msmy.io.vn/login?returnUrl=/classes",
+			},
 		];
 
 		for (const { from, to } of cases) {
 			expect(resolveLegacyHostRedirect(new Request(from)), from).toBe(to);
 		}
+	});
+
+	it("rewrites relative returnUrl on legacy /login hosts with portal prefix and preserves percent-encoded query/hash", () => {
+		const cases = [
+			{
+				from: "https://app.msmy.io.vn/login?returnUrl=/classes",
+				to: "https://lms.msmy.io.vn/login?returnUrl=%2Fteacher%2Fclasses",
+			},
+			{
+				from: "https://app.msmy.io.vn/login?returnUrl=%2Fclasses%2Fc-1%3Ftab%3Dstudents%23roster&tab=signin",
+				to: "https://lms.msmy.io.vn/login?returnUrl=%2Fteacher%2Fclasses%2Fc-1%3Ftab%3Dstudents%23roster&tab=signin",
+			},
+			{
+				from: "https://app.msmy.io.vn/login?returnUrl=/",
+				to: "https://lms.msmy.io.vn/login?returnUrl=%2Fteacher",
+			},
+			{
+				from: "https://app.msmy.io.vn/login?returnUrl=/students",
+				to: "https://lms.msmy.io.vn/login?returnUrl=%2Fteacher%2Fstudents",
+			},
+			{
+				from: "https://app.msmy.io.vn/login/?returnUrl=/classes",
+				to: "https://lms.msmy.io.vn/login/?returnUrl=%2Fteacher%2Fclasses",
+			},
+			{
+				from: "https://teacheros.io.vn/login?returnUrl=/grading",
+				to: "https://lms.msmy.io.vn/login?returnUrl=%2Fteacher%2Fgrading",
+			},
+			{
+				from: "https://student.msmy.io.vn/login?returnUrl=/schedule?week=2",
+				to: "https://lms.msmy.io.vn/login?returnUrl=%2Fstudent%2Fschedule%3Fweek%3D2",
+			},
+			{
+				from: "https://admin.msmy.io.vn/login?returnUrl=/library/tests?page=2",
+				to: "https://lms.msmy.io.vn/login?returnUrl=%2Fadmin%2Flibrary%2Ftests%3Fpage%3D2",
+			},
+		];
+
+		for (const { from, to } of cases) {
+			expect(resolveLegacyHostRedirect(new Request(from)), from).toBe(to);
+		}
+
+		// Preserve percent-encoded &, #, % inside query/hash without double-decoding.
+		const encodedRedirect = resolveLegacyHostRedirect(
+			new Request(
+				"https://app.msmy.io.vn/login?returnUrl=%2Fstudents%3Fq%3Da%2526b%2523c%26p%3D100%2525",
+			),
+		);
+		expect(encodedRedirect).not.toBeNull();
+		const parsed = new URL(encodedRedirect as string);
+		expect(parsed.origin).toBe("https://lms.msmy.io.vn");
+		expect(parsed.pathname).toBe("/login");
+		expect(parsed.searchParams.get("returnUrl")).toBe(
+			"/teacher/students?q=a%26b%23c&p=100%25",
+		);
+	});
+
+	it("keeps already-prefixed portal, pay, and unified-auth returnUrl unchanged on legacy /login", () => {
+		const unchangedCases = [
+			"https://app.msmy.io.vn/login?returnUrl=%2Fteacher%2Fclasses",
+			"https://app.msmy.io.vn/login?returnUrl=%2Fstudent%2Fclasses",
+			"https://app.msmy.io.vn/login?returnUrl=%2Fadmin%2Flibrary",
+			"https://app.msmy.io.vn/login?returnUrl=%2Fpay%2Ftok-1",
+			"https://app.msmy.io.vn/login?returnUrl=%2Flogin",
+		];
+
+		for (const from of unchangedCases) {
+			const expected = from.replace("app.msmy.io.vn", "lms.msmy.io.vn");
+			expect(resolveLegacyHostRedirect(new Request(from)), from).toBe(expected);
+		}
+	});
+
+	it("strips malicious or malformed returnUrl from legacy /login 301 redirect while preserving other query params", () => {
+		const badReturnUrls = [
+			"https://evil.com",
+			"//evil.com",
+			"/\\evil.com",
+			"%2F%2Fevil.com",
+			"\r\n/classes",
+			"%0d%0a/classes",
+			"javascript:alert(1)",
+			"%2Fclasses%25E0%25A4%25A",
+			"/teacher/%2e%2e%2f%2fevil.com",
+			"/%2e%2e%2f%2fevil.com",
+			"",
+		];
+
+		for (const bad of badReturnUrls) {
+			const url = `https://app.msmy.io.vn/login?returnUrl=${encodeURIComponent(bad)}&tab=signin`;
+			const redirected = resolveLegacyHostRedirect(new Request(url));
+			expect(redirected, `bad returnUrl=${bad}`).toBe(
+				"https://lms.msmy.io.vn/login?tab=signin",
+			);
+
+			const soloUrl = `https://app.msmy.io.vn/login?returnUrl=${encodeURIComponent(bad)}`;
+			const soloRedirected = resolveLegacyHostRedirect(new Request(soloUrl));
+			expect(soloRedirected, `solo bad returnUrl=${bad}`).toBe(
+				"https://lms.msmy.io.vn/login",
+			);
+		}
+
+		// Duplicate returnUrl parameters (HPP) are stripped cleanly.
+		expect(
+			resolveLegacyHostRedirect(
+				new Request(
+					"https://app.msmy.io.vn/login?returnUrl=%2Fclasses&returnUrl=https%3A%2F%2Fevil.com&tab=signin",
+				),
+			),
+		).toBe("https://lms.msmy.io.vn/login?tab=signin");
 	});
 });

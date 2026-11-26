@@ -4,9 +4,14 @@ import {
 	resolveUserRole,
 	roleHomePath,
 } from "@teacher-os/auth/role";
+import { MAX_FALLBACK_AGE_MS } from "@teacher-os/auth/session-cache";
 import { AdminShell } from "@/components/layout/admin-shell";
 import { type AdminMe, apiJson } from "@/lib/api";
-import { authClient } from "@/lib/auth-client";
+import {
+	type AuthSessionResult,
+	authClient,
+	onSessionCacheClear,
+} from "@/lib/auth-client";
 import { adminGateErrorCode } from "@/lib/auth-error";
 
 export interface AdminRouteContext {
@@ -14,6 +19,25 @@ export interface AdminRouteContext {
 }
 
 const ADMIN_BASE = ROLE_HOME_PATH.admin;
+
+/**
+ * Lưu identity admin vừa xác minh gần nhất trong RAM để CHỈ tái dùng lúc
+ * hover preload (`preload: true`) khớp cùng `userId` trong cửa sổ
+ * `MAX_FALLBACK_AGE_MS`, tránh bắn thừa `GET /api/admin/me` khi rê chuột;
+ * điều hướng thật vẫn kiểm tra allowlist `ADMIN_EMAILS` trực tiếp mỗi lần
+ * để thu hồi quyền tức thì và tự xoá khi `clearSessionCache()` chạy.
+ */
+let lastKnownAdmin: {
+	userId: string;
+	admin: AdminMe;
+	verifiedAt: number;
+} | null = null;
+
+export function clearAdminGateCache(): void {
+	lastKnownAdmin = null;
+}
+
+onSessionCacheClear?.(clearAdminGateCache);
 
 /**
  * Chuẩn hoá `location.href` (đã bị TanStack Router tách `basepath: "/admin"`)
@@ -56,28 +80,49 @@ export function toAdminReturnUrl(href: string): string {
  */
 export const Route = createFileRoute("/_auth")({
 	component: AuthLayout,
-	beforeLoad: async ({ location }) => {
-		let session: Awaited<ReturnType<typeof authClient.getSession>> | null =
-			null;
+	beforeLoad: async ({ location, preload }) => {
+		const isPreload = Boolean(preload);
+		let session: AuthSessionResult | null = null;
 		try {
-			session = await authClient.getSession();
+			session = await (typeof authClient.getCachedSession === "function"
+				? authClient.getCachedSession({ allowStale: isPreload })
+				: authClient.getSession());
 		} catch {
 			session = null;
 		}
 		if (!session?.data) {
+			if (!isPreload) {
+				clearAdminGateCache();
+				authClient.clearSessionCache?.();
+			}
 			throw redirect({
 				href: `/login?returnUrl=${encodeURIComponent(toAdminReturnUrl(location.href))}`,
 				reloadDocument: true,
 			});
 		}
 
-		const rawRole = (session.data.user as { role?: string | null } | undefined)
-			?.role;
+		const user = session.data.user as
+			| { id?: string; role?: string | null }
+			| undefined;
+		const rawRole = user?.role;
 		if (rawRole && resolveUserRole(rawRole) !== "admin") {
+			clearAdminGateCache();
+			authClient.clearSessionCache?.();
 			throw redirect({
 				href: roleHomePath(rawRole),
 				reloadDocument: true,
 			});
+		}
+
+		const sessionUserId = typeof user?.id === "string" ? user.id : "";
+		if (
+			isPreload &&
+			sessionUserId &&
+			lastKnownAdmin &&
+			lastKnownAdmin.userId === sessionUserId &&
+			Date.now() - lastKnownAdmin.verifiedAt < MAX_FALLBACK_AGE_MS
+		) {
+			return { admin: lastKnownAdmin.admin };
 		}
 
 		let admin: AdminMe;
@@ -98,6 +143,10 @@ export const Route = createFileRoute("/_auth")({
 				typeof error.code === "string"
 					? error.code
 					: undefined;
+			clearAdminGateCache();
+			if (status === 401 || status === 403) {
+				authClient.clearSessionCache?.();
+			}
 			if (status === 401) {
 				throw redirect({
 					href: `/login?returnUrl=${encodeURIComponent(toAdminReturnUrl(location.href))}`,
@@ -116,6 +165,13 @@ export const Route = createFileRoute("/_auth")({
 				href: `/login?${params.toString()}`,
 				reloadDocument: true,
 			});
+		}
+		if (sessionUserId) {
+			lastKnownAdmin = {
+				userId: sessionUserId,
+				admin,
+				verifiedAt: Date.now(),
+			};
 		}
 		return { admin };
 	},

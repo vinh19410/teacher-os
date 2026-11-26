@@ -427,4 +427,206 @@ describe("student practice — đồng bộ đề thư viện", () => {
 		);
 		expect(otherOrgAudio.status).toBe(404);
 	});
+
+	test("đề thư viện listening đồng bộ hiện đủ dạng câu hỏi nhóm phụ (mcq_many) trong facets và lọc đúng (#884)", async () => {
+		const res = await app.request(
+			"/api/student/practice?skill=listening&facets=1&type=mcq_many&part=s4",
+			{
+				headers: { "x-test-user": "hoa", "x-student-org-id": "org-1" },
+			},
+		);
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as {
+			total: number;
+			items: Array<{ title: string }>;
+			facets?: { types: string[]; parts: string[]; bands: string[] };
+		};
+		expect(body.total).toBe(1);
+		expect(body.items[0]?.title).toBe("Talking about the history of bikes");
+		expect(body.facets?.types).toEqual(["mcq_many", "notes"]);
+		expect(body.facets?.parts).toEqual(["s4"]);
+		expect(body.facets?.bands).toEqual(["7.0"]);
+	});
+
+	test("giữ nguyên part của assignment_prompt đã clone sẵn (Study Pack p1) khi đồng bộ đề thư viện đã nâng cấp lên p2 (#884)", async () => {
+		await db.insert(schema.organization).values({
+			id: "org-pack-pre",
+			name: "Study Pack Pre-Migrated Academy",
+		});
+		await db.insert(schema.student).values({
+			id: "s-pack-pre",
+			orgId: "org-pack-pre",
+			name: "Hoa",
+			email: "hoa@test.local",
+		});
+		await db.insert(schema.libraryTest).values({
+			id: "lt-reading-p2",
+			title: "The Falkirk Wheel",
+			skill: "reading",
+			status: "ready",
+			collection: "Cambridge IELTS 11",
+			testGroup: "Test 1",
+		});
+		await db.insert(schema.libraryTestPart).values({
+			id: "ltp-reading-p2",
+			testId: "lt-reading-p2",
+			part: "p2",
+			type: "tfng",
+			title: "The Falkirk Wheel — P2",
+			passage: "<p>Original library passage</p>",
+			questions: JSON.stringify([{ stem: "Q1", answer: "TRUE", alts: "" }]),
+		});
+		// Org đã từng materialize prompt này qua Study Pack trước khi migration đổi library_test_part sang p2
+		// và giáo viên đã sửa passage nên prompt giữ part='p1'.
+		await db.insert(schema.assignmentPrompt).values({
+			id: "ap-pack-pre",
+			orgId: "org-pack-pre",
+			task: "task2",
+			genre: "",
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			title: "The Falkirk Wheel — P1",
+			band: "7.0",
+			prompt: "",
+			passage: "<p>Teacher-edited passage</p>",
+			questions: JSON.stringify([{ stem: "Q1", answer: "TRUE", alts: "" }]),
+			status: "ready",
+			libraryRef: "library_test_part:ltp-reading-p2",
+		});
+
+		const res = await app.request(
+			"/api/student/practice?skill=reading&facets=1",
+			{
+				headers: {
+					"x-test-user": "hoa",
+					"x-student-org-id": "org-pack-pre",
+				},
+			},
+		);
+		expect(res.status).toBe(200);
+
+		const syncedTests = await db
+			.select()
+			.from(schema.assignmentTest)
+			.where(eq(schema.assignmentTest.orgId, "org-pack-pre"));
+		const falkirkTest = syncedTests.find(
+			(row) => row.libraryRef === "lt-reading-p2",
+		);
+		expect(falkirkTest).toBeTruthy();
+
+		const [atp] = await db
+			.select()
+			.from(schema.assignmentTestPart)
+			.where(eq(schema.assignmentTestPart.testId, falkirkTest?.id ?? ""));
+		// Bắt buộc khớp existing assignment_prompt.part ('p1', position 0) để không vỡ tests.ts:212.
+		expect(atp?.promptId).toBe("ap-pack-pre");
+		expect(atp?.part).toBe("p1");
+		expect(atp?.position).toBe(0);
+	});
+
+	test("ưu tiên part khớp slot gốc trên đề multi-part có prompt cũ lệch slot và không lặp ghi vô hạn ở lần mở sau (#884)", async () => {
+		await db.insert(schema.organization).values({
+			id: "org-multi-collide",
+			name: "Multi Collide Academy",
+		});
+		await db.insert(schema.student).values({
+			id: "s-multi-collide",
+			orgId: "org-multi-collide",
+			name: "Hoa",
+			email: "hoa@test.local",
+		});
+		await db.insert(schema.libraryTest).values({
+			id: "lt-multi-collide",
+			title: "Full Reading Multi-Part",
+			skill: "reading",
+			status: "ready",
+			collection: "Cambridge IELTS 19",
+			testGroup: "Test 1",
+		});
+		await db.insert(schema.libraryTestPart).values([
+			{
+				id: "ltp-multi-1",
+				testId: "lt-multi-collide",
+				part: "p1",
+				type: "tfng",
+				title: "Passage 1",
+				passage: "<p>Passage 1</p>",
+				questions: JSON.stringify([{ stem: "Q1", answer: "TRUE", alts: "" }]),
+			},
+			{
+				id: "ltp-multi-2",
+				testId: "lt-multi-collide",
+				part: "p2",
+				type: "tfng",
+				title: "Passage 2",
+				passage: "<p>Passage 2</p>",
+				questions: JSON.stringify([{ stem: "Q2", answer: "FALSE", alts: "" }]),
+			},
+		]);
+		// Org đã có sẵn prompt từ Study Pack cho ltp-multi-2 nhưng giữ part='p1' (trùng slot với ltp-multi-1)
+		await db.insert(schema.assignmentPrompt).values({
+			id: "ap-collide-p2-as-p1",
+			orgId: "org-multi-collide",
+			task: "task2",
+			genre: "",
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			title: "Edited Passage 2",
+			band: "7.0",
+			prompt: "",
+			passage: "<p>Teacher edited passage</p>",
+			questions: JSON.stringify([{ stem: "Q2", answer: "FALSE", alts: "" }]),
+			status: "ready",
+			libraryRef: "library_test_part:ltp-multi-2",
+		});
+
+		const firstRes = await app.request("/api/student/practice?skill=reading", {
+			headers: {
+				"x-test-user": "hoa",
+				"x-student-org-id": "org-multi-collide",
+			},
+		});
+		expect(firstRes.status).toBe(200);
+
+		const copies = await db
+			.select()
+			.from(schema.assignmentTest)
+			.where(eq(schema.assignmentTest.orgId, "org-multi-collide"));
+		const multiCopy = copies.find(
+			(row) => row.libraryRef === "lt-multi-collide",
+		);
+		expect(multiCopy).toBeTruthy();
+
+		const partsAfterFirst = await db
+			.select()
+			.from(schema.assignmentTestPart)
+			.where(eq(schema.assignmentTestPart.testId, multiCopy?.id ?? ""));
+		// Exact-match ltp-multi-1 thắng slot p1; không vỡ unique(test_id, part) hay lệch atp.part !== ap.part
+		expect(partsAfterFirst).toHaveLength(1);
+		expect(partsAfterFirst[0]?.part).toBe("p1");
+		const [attachedPrompt] = await db
+			.select()
+			.from(schema.assignmentPrompt)
+			.where(
+				eq(schema.assignmentPrompt.id, partsAfterFirst[0]?.promptId ?? ""),
+			);
+		expect(attachedPrompt?.libraryRef).toBe("library_test_part:ltp-multi-1");
+		expect(attachedPrompt?.part).toBe("p1");
+
+		// Lần mở catalog thứ 2 vẫn ổn định, không ghi thêm dòng/đổi id
+		const secondRes = await app.request("/api/student/practice?skill=reading", {
+			headers: {
+				"x-test-user": "hoa",
+				"x-student-org-id": "org-multi-collide",
+			},
+		});
+		expect(secondRes.status).toBe(200);
+		const partsAfterSecond = await db
+			.select()
+			.from(schema.assignmentTestPart)
+			.where(eq(schema.assignmentTestPart.testId, multiCopy?.id ?? ""));
+		expect(partsAfterSecond).toEqual(partsAfterFirst);
+	});
 });

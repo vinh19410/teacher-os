@@ -30,6 +30,7 @@ import { createClient } from "@libsql/client";
 import {
 	DEFAULT_LISTENING_DATA_DIR,
 	DEFAULT_STAGING_IMAGE_BASE_URL,
+	LISTENING_TEST_ID_PREFIX,
 	loadListeningLibraryDataset,
 	syncListeningMediaToR2,
 	upsertListeningLibraryToDb,
@@ -207,6 +208,40 @@ export function parseImportListeningArgs(
 	};
 }
 
+const PREEXISTING_DUPLICATE_SCAN_LIMIT = 500;
+const PREEXISTING_DUPLICATE_LOG_CAP = 10;
+
+function normalizeTitleForDuplicateCheck(value: string): string {
+	return value
+		.replace(/[\t\r\n\u00a0]/g, " ")
+		.trim()
+		.toLowerCase();
+}
+
+/** Strips ASCII/C1 control characters and Unicode line separators to prevent log or CI workflow-command injection. */
+function sanitizeForSingleLineLog(value: string): string {
+	let out = "";
+	let prevSpace = false;
+	for (const ch of value) {
+		const code = ch.charCodeAt(0);
+		if (
+			code <= 0x1f ||
+			(code >= 0x7f && code <= 0x9f) ||
+			code === 0x2028 ||
+			code === 0x2029
+		) {
+			if (!prevSpace) {
+				out += " ";
+				prevSpace = true;
+			}
+		} else {
+			out += ch;
+			prevSpace = false;
+		}
+	}
+	return out.trim();
+}
+
 export async function runImportListeningCli(
 	argv: readonly string[],
 	deps?: {
@@ -326,7 +361,7 @@ export async function runImportListeningCli(
 			// Pre-flight check existing rows in DB (read-only).
 			if (runner.queryRows) {
 				const existing = await runner.queryRows(
-					"SELECT status, COUNT(*) AS n FROM library_test WHERE id LIKE 'lib-listen-%' GROUP BY status;",
+					`SELECT status, COUNT(*) AS n FROM library_test WHERE SUBSTR(id, 1, ${LISTENING_TEST_ID_PREFIX.length}) = '${LISTENING_TEST_ID_PREFIX}' GROUP BY status;`,
 				);
 				const summary = existing
 					.map((r) => `${String(r.status)}=${String(r.n)}`)
@@ -334,6 +369,48 @@ export async function runImportListeningCli(
 				log(
 					`[listening-import] Pre-existing lib-listen-* rows in DB: ${summary || "none"}`,
 				);
+
+				const datasetTitles = new Set(
+					dataset.items.map((item) =>
+						normalizeTitleForDuplicateCheck(item.title),
+					),
+				);
+				const customReadyRows = await runner.queryRows(
+					`SELECT id, title FROM library_test WHERE skill = 'listening' AND status = 'ready' AND SUBSTR(id, 1, ${LISTENING_TEST_ID_PREFIX.length}) <> '${LISTENING_TEST_ID_PREFIX}' ORDER BY id ASC LIMIT ${PREEXISTING_DUPLICATE_SCAN_LIMIT};`,
+				);
+				const duplicateCustomRows = customReadyRows.filter((row) =>
+					datasetTitles.has(
+						normalizeTitleForDuplicateCheck(String(row.title ?? "")),
+					),
+				);
+				if (duplicateCustomRows.length > 0) {
+					if (args.publicLogs) {
+						log(
+							`[listening-import] WARNING: Found ${duplicateCustomRows.length} pre-existing non-lib-listen ready listening test(s) sharing titles with imported dataset (details suppressed under --public-logs).`,
+						);
+					} else {
+						const samples = duplicateCustomRows
+							.slice(0, PREEXISTING_DUPLICATE_LOG_CAP)
+							.map((row) => {
+								const safeId = sanitizeForSingleLineLog(String(row.id ?? ""));
+								const safeTitle = sanitizeForSingleLineLog(
+									String(row.title ?? ""),
+								);
+								return `${safeId} (${safeTitle})`;
+							})
+							.join(", ");
+						const suffix =
+							duplicateCustomRows.length > PREEXISTING_DUPLICATE_LOG_CAP
+								? `, ... (+${duplicateCustomRows.length - PREEXISTING_DUPLICATE_LOG_CAP} more)`
+								: "";
+						log(
+							redactSensitive(
+								`[listening-import] WARNING: Found ${duplicateCustomRows.length} pre-existing non-lib-listen ready listening test(s) sharing titles with imported dataset: ${samples}${suffix}`,
+								secretsToRedact,
+							),
+						);
+					}
+				}
 			}
 
 			if (args.mode === "audit") {
@@ -419,11 +496,11 @@ export async function runImportListeningCli(
 			if (args.verify) {
 				const report = await verifyListeningLibraryInDb(runner, dataset);
 				log(
-					`[listening-import] Verify: tests=${report.actualTests}/${report.expectedTests} (ready=${report.actualReady}/${report.expectedReady}, draft=${report.actualDraft}/${report.expectedDraft}), parts=${report.actualParts}/${report.expectedParts}, withAudio=${report.partsWithAudio}/${report.expectedParts}, stepIeltsMatches=${report.stepIeltsMatches}`,
+					`[listening-import] Verify: tests=${report.actualTests}/${report.expectedTests} (ready=${report.actualReady}/${report.expectedReady}, draft=${report.actualDraft}/${report.expectedDraft}), parts=${report.actualParts}/${report.expectedParts}, withAudio=${report.partsWithAudio}/${report.expectedParts}, stepIeltsMatches=${report.stepIeltsMatches}, unknownCollectionMatches=${report.unknownCollectionMatches}, unknownPartSourceMatches=${report.unknownPartSourceMatches}`,
 				);
 				if (!report.ok) {
 					throw new Error(
-						"Verification failed: DB rows do not match expected dataset counts.",
+						"Verification failed: DB rows do not match expected dataset counts or metadata cleanliness checks.",
 					);
 				}
 				log("[listening-import] Verification PASSED.");

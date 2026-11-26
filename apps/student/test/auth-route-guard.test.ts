@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
 	clearSessionCache: vi.fn(),
 	signOut: vi.fn(),
 	syncStudentSessionUser: vi.fn(),
+	clearStudentQueryCacheIfUserChanged: vi.fn(),
 	redirect: vi.fn((options: unknown) => ({ __redirect: true, options })),
 }));
 
@@ -28,12 +29,17 @@ vi.mock("@/lib/auth-client", async (importOriginal) => {
 
 vi.mock("@/lib/query-client", () => ({
 	syncStudentSessionUser: mocks.syncStudentSessionUser,
+	clearStudentQueryCacheIfUserChanged:
+		mocks.clearStudentQueryCacheIfUserChanged,
 }));
 
 import { Route as AuthRoute, toStudentReturnUrl } from "@/routes/_auth/route";
 
 type AuthRouteOptions = {
-	beforeLoad: (args: { location: { href: string } }) => Promise<unknown>;
+	beforeLoad: (args: {
+		location: { href: string };
+		preload?: boolean;
+	}) => Promise<unknown>;
 };
 
 const beforeLoad = (AuthRoute as unknown as AuthRouteOptions).beforeLoad;
@@ -206,9 +212,96 @@ describe("_auth route beforeLoad role guard", () => {
 		const result = await beforeLoad({ location: { href: "/classes" } });
 
 		expect(result).toEqual({ session: studentSession });
+		expect(mocks.getCachedSession).toHaveBeenCalledWith({ allowStale: false });
 		expect(mocks.syncStudentSessionUser).toHaveBeenCalledWith("u-student");
 		expect(mocks.clearSessionCache).not.toHaveBeenCalled();
 		expect(mocks.redirect).not.toHaveBeenCalled();
 		expect(mocks.signOut).not.toHaveBeenCalled();
+	});
+
+	it("passes allowStale: true on hover preload and skips destructive cache/storage cleanup on null or error", async () => {
+		mocks.getCachedSession.mockResolvedValueOnce({ data: null });
+
+		await expect(
+			beforeLoad({
+				location: { href: "/practice/listening?page=1" },
+				preload: true,
+			}),
+		).rejects.toEqual({
+			__redirect: true,
+			options: {
+				href: `/login?returnUrl=${encodeURIComponent("/student/practice/listening?page=1")}`,
+				reloadDocument: true,
+			},
+		});
+		expect(mocks.getCachedSession).toHaveBeenCalledWith({ allowStale: true });
+		expect(mocks.syncStudentSessionUser).not.toHaveBeenCalled();
+		expect(mocks.clearSessionCache).not.toHaveBeenCalled();
+
+		vi.clearAllMocks();
+		mocks.getCachedSession.mockRejectedValueOnce(new Error("transient blip"));
+		await expect(
+			beforeLoad({
+				location: { href: "/practice/listening?page=1" },
+				preload: true,
+			}),
+		).rejects.toEqual({
+			__redirect: true,
+			options: {
+				href: `/login?returnUrl=${encodeURIComponent("/student/practice/listening?page=1")}`,
+				reloadDocument: true,
+			},
+		});
+		expect(mocks.syncStudentSessionUser).not.toHaveBeenCalled();
+		expect(mocks.clearSessionCache).not.toHaveBeenCalled();
+	});
+
+	it("clears wrong-role session cache on hover preload without wiping active student storage/QueryClient", async () => {
+		mocks.getCachedSession.mockResolvedValueOnce({
+			data: {
+				user: { id: "u-teacher", email: "t@test.local", role: "teacher" },
+				session: { id: "s-t" },
+			},
+		});
+
+		await expect(
+			beforeLoad({
+				location: { href: "/practice/listening?page=1" },
+				preload: true,
+			}),
+		).rejects.toEqual({
+			__redirect: true,
+			options: {
+				href: "/teacher",
+				reloadDocument: true,
+			},
+		});
+
+		expect(mocks.clearSessionCache).toHaveBeenCalledTimes(1);
+		expect(mocks.syncStudentSessionUser).not.toHaveBeenCalled();
+		expect(mocks.signOut).not.toHaveBeenCalled();
+	});
+
+	it("returns valid student session on hover preload while running RAM-only user mismatch check instead of localStorage sync", async () => {
+		const studentSession = {
+			data: {
+				user: { id: "u-student-b", email: "b@test.local", role: "student" },
+				session: { id: "s-b" },
+			},
+		};
+		mocks.getCachedSession.mockResolvedValueOnce(studentSession);
+
+		const result = await beforeLoad({
+			location: { href: "/learn/quizzes/as-1" },
+			preload: true,
+		});
+
+		expect(result).toEqual({ session: studentSession });
+		expect(mocks.getCachedSession).toHaveBeenCalledWith({ allowStale: true });
+		expect(mocks.clearStudentQueryCacheIfUserChanged).toHaveBeenCalledWith(
+			"u-student-b",
+		);
+		expect(mocks.syncStudentSessionUser).not.toHaveBeenCalled();
+		expect(mocks.clearSessionCache).not.toHaveBeenCalled();
 	});
 });

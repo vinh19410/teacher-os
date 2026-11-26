@@ -1,5 +1,8 @@
 import type { QuizVerdict } from "@teacher-os/api/contracts";
-import type { QuizGrade } from "@teacher-os/api/lib/grade-quiz";
+import {
+	type QuizGrade,
+	resolveSummaryAnswerKeys,
+} from "@teacher-os/api/lib/grade-quiz";
 import { buildQuizParts } from "@teacher-os/api/lib/quiz-parts";
 import { AttemptCompactList } from "@teacher-os/ui/components/quiz/attempt-compact-list";
 import { AttemptScoreCard } from "@teacher-os/ui/components/quiz/attempt-score-card";
@@ -81,9 +84,12 @@ export function PreviewQuizSimulation({
 		const verdicts = Object.fromEntries(
 			grade.verdicts.map((verdict, q): [number, QuizVerdict] => [q, verdict]),
 		);
-		const items = perQuestion.map(({ verdict, key, answer }) => ({
+		const summaryKeys = resolveSummaryAnswerKeys(sim.fullQuestions, {
+			promptType: sim.detail.type,
+		});
+		const items = perQuestion.map(({ verdict, key, answer }, q) => ({
 			verdict,
-			key,
+			key: summaryKeys[q] ?? key,
 			answer,
 		}));
 		return (

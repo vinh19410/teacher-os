@@ -2585,3 +2585,234 @@ describe("class detail → confirm opening confirmation", () => {
 		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 	});
 });
+
+describe("class detail → edit startDate before class starts", () => {
+	const AUTO_SCHEDULE = '{"days":[0],"start":"19:00","end":"20:30"}';
+
+	function unstartedAutoSnapshot(
+		overrides: Partial<ReturnType<typeof snapshotFixture>> = {},
+	) {
+		return snapshotFixture({
+			classes: [
+				classRow({
+					id: "cl-1",
+					name: "IELTS Writing Unstarted",
+					schedulingMode: "auto",
+					schedule: AUTO_SCHEDULE,
+					startDate: "2099-05-04",
+					sessionsTotal: 2,
+				}),
+			],
+			students: [
+				studentRow({
+					id: "st-1",
+					name: "Nguyễn Minh Anh",
+					email: "minhanh@example.com",
+				}),
+			],
+			enrollments: [
+				enrollmentRow({
+					id: "en-1",
+					classId: "cl-1",
+					studentId: "st-1",
+					status: "active",
+				}),
+			],
+			lessons: [
+				lessonRow({
+					id: "les-1",
+					classId: "cl-1",
+					enrollmentId: "en-1",
+					day: 1,
+					date: "2099-05-04",
+					status: "upcoming",
+				}),
+				lessonRow({
+					id: "les-2",
+					classId: "cl-1",
+					enrollmentId: "en-1",
+					day: 1,
+					date: "2099-05-11",
+					status: "upcoming",
+				}),
+			],
+			...overrides,
+		});
+	}
+
+	it("enables startDate in both EditClassModal and ConfirmOpeningModal when auto class has only upcoming lessons", async () => {
+		startKernelServer(unstartedAutoSnapshot());
+		renderWithKernel(<ClassDetail />);
+
+		fireEvent.click(await screen.findByRole("button", { name: "Chỉnh sửa" }));
+		const editDialog = await screen.findByRole("dialog", {
+			name: "Chỉnh sửa lớp học",
+		});
+		expect(
+			(within(editDialog).getByLabelText("Tổng số buổi") as HTMLInputElement)
+				.disabled,
+		).toBe(true);
+		expect(
+			(within(editDialog).getByLabelText("Ngày khai giảng") as HTMLInputElement)
+				.disabled,
+		).toBe(false);
+		fireEvent.click(within(editDialog).getByRole("button", { name: "Hủy" }));
+
+		fireEvent.click(screen.getByRole("button", { name: "Chốt khai giảng" }));
+		const openingDialog = await screen.findByRole("dialog", {
+			name: "Chốt khai giảng — IELTS Writing Unstarted",
+		});
+		expect(
+			within(openingDialog).queryByTestId("opening-date-readonly"),
+		).toBeNull();
+		expect(
+			(
+				within(openingDialog).getByLabelText(
+					/Ngày khai giảng/,
+				) as HTMLInputElement
+			).disabled,
+		).toBe(false);
+	});
+
+	it("locks startDate when class has a completed or manually cancelled lesson", async () => {
+		startKernelServer(
+			unstartedAutoSnapshot({
+				lessons: [
+					lessonRow({
+						id: "les-1",
+						classId: "cl-1",
+						enrollmentId: "en-1",
+						day: 1,
+						date: "2099-05-04",
+						status: "completed",
+					}),
+					lessonRow({
+						id: "les-2",
+						classId: "cl-1",
+						enrollmentId: "en-1",
+						day: 1,
+						date: "2099-05-11",
+						status: "upcoming",
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<ClassDetail />);
+
+		fireEvent.click(await screen.findByRole("button", { name: "Chỉnh sửa" }));
+		const editDialog = await screen.findByRole("dialog", {
+			name: "Chỉnh sửa lớp học",
+		});
+		expect(
+			(within(editDialog).getByLabelText("Ngày khai giảng") as HTMLInputElement)
+				.disabled,
+		).toBe(true);
+		expect(
+			within(editDialog).getByTestId("schedule-locked-note").textContent,
+		).toContain("Lớp đã bắt đầu học");
+
+		cleanup();
+		startKernelServer(
+			unstartedAutoSnapshot({
+				lessons: [
+					lessonRow({
+						id: "les-1",
+						classId: "cl-1",
+						enrollmentId: "en-1",
+						day: 1,
+						date: "2099-05-04",
+						status: "cancelled",
+					}),
+					lessonRow({
+						id: "les-2",
+						classId: "cl-1",
+						enrollmentId: "en-1",
+						day: 1,
+						date: "2099-05-11",
+						status: "upcoming",
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<ClassDetail />);
+		fireEvent.click(await screen.findByRole("button", { name: "Chỉnh sửa" }));
+		const manualCancelDialog = await screen.findByRole("dialog", {
+			name: "Chỉnh sửa lớp học",
+		});
+		expect(
+			(
+				within(manualCancelDialog).getByLabelText(
+					"Ngày khai giảng",
+				) as HTMLInputElement
+			).disabled,
+		).toBe(true);
+	});
+
+	it("keeps startDate enabled when cancelled lesson belongs to holidayCancels", async () => {
+		startKernelServer(
+			unstartedAutoSnapshot({
+				lessons: [
+					lessonRow({
+						id: "les-1",
+						classId: "cl-1",
+						enrollmentId: "en-1",
+						day: 1,
+						date: "2099-05-04",
+						status: "cancelled",
+					}),
+					lessonRow({
+						id: "les-2",
+						classId: "cl-1",
+						enrollmentId: "en-1",
+						day: 1,
+						date: "2099-05-11",
+						status: "upcoming",
+					}),
+				],
+				holidayCancels: [
+					{
+						holidayId: "hol-1",
+						classId: "cl-1",
+						date: "2099-05-04",
+					},
+				],
+			}),
+		);
+		renderWithKernel(<ClassDetail />);
+
+		fireEvent.click(await screen.findByRole("button", { name: "Chỉnh sửa" }));
+		const editDialog = await screen.findByRole("dialog", {
+			name: "Chỉnh sửa lớp học",
+		});
+		expect(
+			(within(editDialog).getByLabelText("Ngày khai giảng") as HTMLInputElement)
+				.disabled,
+		).toBe(false);
+	});
+
+	it("disables startDate in EditClassModal when viewer has ta role", async () => {
+		startKernelServer(
+			unstartedAutoSnapshot({
+				viewer: {
+					role: "ta",
+					canAccessFinance: false,
+				},
+			}),
+		);
+		renderWithKernel(<ClassDetail />);
+
+		fireEvent.click(await screen.findByRole("button", { name: "Chỉnh sửa" }));
+		const editDialog = await screen.findByRole("dialog", {
+			name: "Chỉnh sửa lớp học",
+		});
+		expect(
+			(within(editDialog).getByLabelText("Ngày khai giảng") as HTMLInputElement)
+				.disabled,
+		).toBe(true);
+		expect(
+			within(editDialog).getByText(
+				"Chỉ giáo viên phụ trách hoặc quản trị viên mới có thể thay đổi ngày khai giảng.",
+			),
+		).toBeTruthy();
+	});
+});

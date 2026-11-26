@@ -34,7 +34,11 @@ import {
 	studentQuizGroupSchema,
 } from "@teacher-os/api/contracts";
 import { essayToPlain } from "@teacher-os/api/lib/essay-plain";
-import { gradeQuiz } from "@teacher-os/api/lib/grade-quiz";
+import {
+	gradeQuiz,
+	resolveSummaryAnswerKeys,
+	sanitizeAnswerSetKeys,
+} from "@teacher-os/api/lib/grade-quiz";
 import { essayTaskOf, hasGradableTask } from "@teacher-os/api/lib/ielts-band";
 import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
 import {
@@ -320,36 +324,41 @@ export function parseQuizQuestions(
 			console.warn(`[student] invalid quiz questions JSON for ${rowId}`);
 			return [];
 		}
-		return parsed.flatMap((item) => {
-			if (!item || typeof item !== "object") return [];
-			const record = item as Record<string, unknown>;
-			return [
-				{
-					stem: typeof record.stem === "string" ? record.stem : "",
-					opts: Array.isArray(record.opts)
-						? record.opts.filter(
-								(option): option is string => typeof option === "string",
-							)
-						: null,
-					answer: typeof record.answer === "string" ? record.answer : "",
-					alts: typeof record.alts === "string" ? record.alts : "",
-					type: typeof record.type === "string" ? record.type : null,
-					pin: parsePin(record.pin),
-					// #358: forward giải thích (soạn từ #423) như `type`/`pin` —
-					// thiếu dòng này thì snapshot lúc start strip mất field và
-					// review không bao giờ thấy. Take payload whitelist
-					// stem/opts/type/pin nên explanation không lộ trước khi nộp.
-					...(typeof record.explanation === "string" &&
-					record.explanation.trim().length > 0
-						? { explanation: record.explanation }
-						: {}),
-					...(typeof record.answerSet === "string" &&
-					record.answerSet.trim().length > 0
-						? { answerSet: record.answerSet.trim() }
-						: {}),
-				},
-			];
-		});
+		return sanitizeAnswerSetKeys(
+			parsed.flatMap((item) => {
+				if (!item || typeof item !== "object") return [];
+				const record = item as Record<string, unknown>;
+				return [
+					{
+						stem: typeof record.stem === "string" ? record.stem : "",
+						opts: Array.isArray(record.opts)
+							? record.opts.filter(
+									(option): option is string => typeof option === "string",
+								)
+							: null,
+						answer: typeof record.answer === "string" ? record.answer : "",
+						alts: typeof record.alts === "string" ? record.alts : "",
+						type:
+							typeof record.type === "string" && record.type.trim().length > 0
+								? record.type.trim()
+								: null,
+						pin: parsePin(record.pin),
+						// #358: forward giải thích (soạn từ #423) như `type`/`pin` —
+						// thiếu dòng này thì snapshot lúc start strip mất field và
+						// review không bao giờ thấy. Take payload whitelist
+						// stem/opts/type/pin nên explanation không lộ trước khi nộp.
+						...(typeof record.explanation === "string" &&
+						record.explanation.trim().length > 0
+							? { explanation: record.explanation }
+							: {}),
+						...(typeof record.answerSet === "string" &&
+						record.answerSet.trim().length > 0
+							? { answerSet: record.answerSet.trim() }
+							: {}),
+					},
+				];
+			}),
+		);
 	} catch {
 		console.warn(`[student] invalid quiz questions JSON for ${rowId}`);
 		return [];
@@ -961,6 +970,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				assignmentId: classAssignment.id,
 				availableAt: classAssignment.availableAt,
 				skill: assignmentPrompt.skill,
+				promptType: assignmentPrompt.type,
 				writingPart: assignmentPrompt.writingPart,
 				writingPrompt: assignmentPrompt.writingPrompt,
 				testSkill: assignmentTest.skill,
@@ -1000,6 +1010,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			return {
 				...row,
 				skill: row.testSkill ?? "",
+				promptType: null,
 				writingPart: null,
 				writingPrompt: "",
 			};
@@ -2499,7 +2510,11 @@ export function studentRoutes(deps: StudentRouteDeps) {
 
 		const questions = parseQuizQuestions(attempt.questionsSnapshot, attemptId);
 		const answers = parseQuizAnswers(attempt.answers);
-		const grade = gradeQuiz(questions, answers);
+		const gradingPromptType =
+			attempt.mode === "practice" ? undefined : header.promptType || undefined;
+		const grade = gradeQuiz(questions, answers, {
+			promptType: gradingPromptType,
+		});
 
 		// Đóng non-goal #208: write-path đánh dấu đã nộp (ISO datetime).
 		// Attempt tự luyện (phase 10) KHÔNG có class_assignment_target — chỉ ghi
@@ -2660,7 +2675,11 @@ export function studentRoutes(deps: StudentRouteDeps) {
 
 		const questions = parseQuizQuestions(attempt.questionsSnapshot, attempt.id);
 		const answers = parseQuizAnswers(attempt.answers);
-		const grade = gradeQuiz(questions, answers);
+		const gradingPromptType =
+			attempt.mode === "practice" ? undefined : header[0]?.type || undefined;
+		const grade = gradeQuiz(questions, answers, {
+			promptType: gradingPromptType,
+		});
 		return {
 			attempt,
 			questions,
@@ -2759,8 +2778,22 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				? c.json({ error: "attempt not found" }, 404)
 				: c.json({ error: "attempt not yet submitted" }, 409);
 		}
-		const { attempt, questions, answers, grade, title, skill, part, writing } =
-			loaded;
+		const {
+			attempt,
+			questions,
+			answers,
+			grade,
+			title,
+			skill,
+			part,
+			promptType,
+			writing,
+		} = loaded;
+		const gradingPromptType =
+			attempt.mode === "practice" ? undefined : promptType || undefined;
+		const summaryKeys = resolveSummaryAnswerKeys(questions, {
+			promptType: gradingPromptType,
+		});
 		const essayTask = essayTaskOf({ skill, part, writing });
 		const essayView = essayTask ? essayToPlain(attempt.essay) : null;
 		const summary: QuizAttemptSummary = {
@@ -2780,7 +2813,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				const given = answers[String(index)];
 				return {
 					verdict: grade.verdicts[index] ?? "skipped",
-					key: question.answer,
+					key: summaryKeys[index] ?? question.answer,
 					answer: given !== undefined && given.trim().length > 0 ? given : null,
 				};
 			}),
@@ -2850,7 +2883,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			transcript,
 			writing,
 		} = loaded;
-		const effectiveTypes = inferQuestionTypes(questions, promptType);
+		const detailPromptType = attempt.mode === "practice" ? "" : promptType;
+		const effectiveTypes = inferQuestionTypes(questions, detailPromptType);
 		// #358: snapshot cũ (start trước khi parser forward explanation) không
 		// có câu nào mang giải thích → thử fallback đề hiện hành (chỉ khi đề
 		// chưa đổi). Route này đã gate 409 in_progress ở loader nên giải thích
@@ -2893,7 +2927,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					opts: question.opts,
 					// Type hiệu dụng như take payload (gồm suy luận tfng/ynng) —
 					// review screen phân cụm cùng cấu trúc bài làm.
-					type: effectiveTypes[index] ?? promptType,
+					type: effectiveTypes[index] ?? detailPromptType,
 					pin: question.pin ?? null,
 					...(question.answerSet ? { answerSet: question.answerSet } : {}),
 					key: question.answer,

@@ -1,5 +1,11 @@
+import {
+	createSessionCache,
+	SESSION_CACHE_TTL_MS,
+} from "@teacher-os/auth/session-cache";
 import { env } from "@teacher-os/env/web";
 import { createAuthClient } from "better-auth/react";
+
+export { SESSION_CACHE_TTL_MS };
 
 export function getServerUrl(url: string) {
 	const processEnv = (
@@ -37,8 +43,6 @@ export function getServerUrl(url: string) {
 	return `http://localhost:8000${normalized}`;
 }
 
-export const SESSION_CACHE_TTL_MS = 10_000;
-
 export const rawAuthClient = createAuthClient({
 	// better-auth derives its route-matching base from this URL's path, so the
 	// public auth path must equal the server-side mount (/api/auth everywhere)
@@ -49,95 +53,49 @@ export type AuthSessionResult = Awaited<
 	ReturnType<typeof rawAuthClient.getSession>
 >;
 
-let cacheEpoch = 0;
-let cachedSession: { data: AuthSessionResult; expiresAt: number } | null = null;
-let lastKnownSession: AuthSessionResult | null = null;
-let inFlightSessionPromise: Promise<AuthSessionResult> | null = null;
+const sessionCache = createSessionCache<AuthSessionResult>((signal) =>
+	rawAuthClient.getSession({
+		fetchOptions: { signal },
+	}),
+);
 
-export function clearSessionCache(): void {
-	cacheEpoch++;
-	cachedSession = null;
-	lastKnownSession = null;
-	inFlightSessionPromise = null;
-}
-
-export async function getCachedSession({
-	force = false,
-}: {
-	force?: boolean;
-} = {}): Promise<AuthSessionResult> {
-	const now = Date.now();
-	if (!force && cachedSession && now < cachedSession.expiresAt) {
-		return cachedSession.data;
-	}
-
-	if (inFlightSessionPromise) {
-		return inFlightSessionPromise;
-	}
-
-	const requestEpoch = cacheEpoch;
-	inFlightSessionPromise = (async () => {
-		try {
-			const res = await rawAuthClient.getSession({
-				fetchOptions: {
-					signal: AbortSignal.timeout(5_000),
-				},
-			});
-			if (requestEpoch !== cacheEpoch) {
-				return res;
-			}
-			if (res?.data) {
-				cachedSession = {
-					data: res,
-					expiresAt: Date.now() + SESSION_CACHE_TTL_MS,
-				};
-				lastKnownSession = res;
-			} else {
-				clearSessionCache();
-			}
-			return res;
-		} catch (err) {
-			if (requestEpoch === cacheEpoch && lastKnownSession?.data) {
-				console.warn(
-					"getSession failed; falling back to last known session",
-					err,
-				);
-				cachedSession = {
-					data: lastKnownSession,
-					expiresAt: Date.now() + 5_000,
-				};
-				return lastKnownSession;
-			}
-			if (requestEpoch === cacheEpoch) {
-				clearSessionCache();
-			}
-			throw err;
-		} finally {
-			if (requestEpoch === cacheEpoch) {
-				inFlightSessionPromise = null;
-			}
-		}
-	})();
-
-	return inFlightSessionPromise;
-}
+export const getCachedSession = sessionCache.getCachedSession;
+export const clearSessionCache = sessionCache.clearSessionCache;
 
 const overrides = {
 	getCachedSession,
 	clearSessionCache,
 	signOut: async (...args: Parameters<typeof rawAuthClient.signOut>) => {
 		clearSessionCache();
-		return rawAuthClient.signOut(...args);
+		try {
+			return await rawAuthClient.signOut(...args);
+		} finally {
+			clearSessionCache();
+		}
 	},
 	updateUser: async (...args: Parameters<typeof rawAuthClient.updateUser>) => {
 		clearSessionCache();
-		return rawAuthClient.updateUser(...args);
+		try {
+			return await rawAuthClient.updateUser(...args);
+		} finally {
+			clearSessionCache();
+		}
+	},
+	resetPassword: async (
+		...args: Parameters<typeof rawAuthClient.resetPassword>
+	) => {
+		clearSessionCache();
+		try {
+			return await rawAuthClient.resetPassword(...args);
+		} finally {
+			clearSessionCache();
+		}
 	},
 };
 
 export const authClient = new Proxy(rawAuthClient, {
 	get(target, prop, receiver) {
-		if (prop in overrides) {
+		if (Object.hasOwn(overrides, prop)) {
 			return overrides[prop as keyof typeof overrides];
 		}
 		return Reflect.get(target, prop, receiver);

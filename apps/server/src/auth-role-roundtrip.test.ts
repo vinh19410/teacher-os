@@ -19,6 +19,7 @@ import {
 import { createAuth } from "@teacher-os/auth";
 import { createLogMailer } from "@teacher-os/auth/mail/mailer";
 import * as schema from "@teacher-os/db/schema/index";
+import { hashPassword } from "better-auth/crypto";
 import { count } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
@@ -339,6 +340,32 @@ describe("unified origin auth and API role guards", () => {
 		});
 	}
 
+	async function seedUnifiedCredentialUser(
+		email: string,
+		name: string,
+		role: "admin" | "teacher",
+		passwordHash: string,
+	): Promise<string> {
+		const userId = crypto.randomUUID();
+		await libsqlDb.insert(schema.user).values({
+			id: userId,
+			name,
+			email: email.toLowerCase(),
+			emailVerified: false,
+			role,
+		});
+		await libsqlDb.insert(schema.account).values({
+			id: crypto.randomUUID(),
+			accountId: userId,
+			providerId: "credential",
+			userId,
+			password: passwordHash,
+		});
+		const res = await signInUnified(email);
+		expect(res.status).toBe(200);
+		return extractSessionToken(res);
+	}
+
 	async function setVerified(email: string, verified: boolean): Promise<void> {
 		await raw.execute({
 			sql: "UPDATE user SET email_verified = ? WHERE lower(email) = ?",
@@ -356,8 +383,12 @@ describe("unified origin auth and API role guards", () => {
 			corsOrigin: [LMS_ORIGIN],
 			unifiedOrigins: [LMS_ORIGIN],
 			adminOrigins: [LMS_ORIGIN],
-			adminEmails: [ADMIN_EMAIL, REMOVED_ADMIN_EMAIL],
-			teacherEmails: [TEACHER_EMAIL],
+			adminEmails: [
+				ADMIN_EMAIL,
+				REMOVED_ADMIN_EMAIL,
+				"unclaimed-admin@test.local",
+			],
+			teacherEmails: [TEACHER_EMAIL, "unclaimed-teacher@test.local"],
 			secret: "test-secret-0123456789abcdef0123456789abcdef",
 			baseURL: "http://localhost:8000",
 			googleClientId: "test-dummy",
@@ -377,13 +408,57 @@ describe("unified origin auth and API role guards", () => {
 			authHandler: (req) => auth.handler(req),
 		});
 
-		adminToken = await signUpUnified(ADMIN_EMAIL, "Unified Admin");
-		revokedAdminToken = await signUpUnified(
+		const passwordHash = await hashPassword("password-8chars");
+		adminToken = await seedUnifiedCredentialUser(
+			ADMIN_EMAIL,
+			"Unified Admin",
+			"admin",
+			passwordHash,
+		);
+		revokedAdminToken = await seedUnifiedCredentialUser(
 			REMOVED_ADMIN_EMAIL,
 			"Revoked Admin",
+			"admin",
+			passwordHash,
 		);
-		teacherToken = await signUpUnified(TEACHER_EMAIL, "Unified Teacher");
+		teacherToken = await seedUnifiedCredentialUser(
+			TEACHER_EMAIL,
+			"Unified Teacher",
+			"teacher",
+			passwordHash,
+		);
 		studentToken = await signUpUnified(STUDENT_EMAIL, "Unified Student");
+	}, 15_000);
+
+	test("blocks POST /api/auth/sign-up/email for ADMIN_EMAILS and TEACHER_EMAILS on unified and missing Origin", async () => {
+		for (const email of [
+			"unclaimed-admin@test.local",
+			"unclaimed-teacher@test.local",
+			ADMIN_EMAIL,
+			TEACHER_EMAIL,
+		]) {
+			for (const origin of [LMS_ORIGIN, null] as const) {
+				const headers: Record<string, string> = {
+					"content-type": "application/json",
+				};
+				if (origin !== null) {
+					headers.origin = origin;
+				}
+				const res = await app.request("/api/auth/sign-up/email", {
+					method: "POST",
+					headers,
+					body: JSON.stringify({
+						name: "Squatter",
+						email,
+						password: "password-8chars",
+					}),
+				});
+				expect(res.status, `${email}:${String(origin)}`).toBe(403);
+				expect(((await res.json()) as { code?: string }).code).toBe(
+					"ROLE_SIGNUP_FORBIDDEN",
+				);
+			}
+		}
 	});
 
 	test("teacher, student, and admin can all sign in via /api/auth/sign-in/email from the unified origin", async () => {
@@ -408,7 +483,7 @@ describe("unified origin auth and API role guards", () => {
 			};
 			expect(sessionBody.user?.role).toBe(expectedRole);
 		}
-	});
+	}, 15_000);
 
 	test("/api/kernel strictly rejects student and admin sessions and enforces teacher email verification", async () => {
 		const orgsBefore = await countTable(schema.organization);

@@ -4,6 +4,7 @@ import {
 	notFound,
 	useNavigate,
 } from "@tanstack/react-router";
+import { formatBand, isBandStep } from "@teacher-os/api/lib/ielts-band";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { useState } from "react";
 import {
@@ -76,14 +77,27 @@ const STATUS_VARIANT: Record<
 	absent: "danger",
 };
 
-/** #317 — cells tab Bài tập theo nhánh kind: class row (flow #208) plain text
- * + StatusTag; grading row giữ hành vi cũ (link trang chấm, Band, text). */
+function hasGradedBand(
+	row: StudentAssignmentRow,
+): row is StudentAssignmentRow & { band: number; gradedAt: string } {
+	return (
+		row.band !== null &&
+		isBandStep(row.band) &&
+		row.gradedAt !== null &&
+		row.gradedAt.trim().length > 0 &&
+		Number.isFinite(Date.parse(row.gradedAt))
+	);
+}
+
+/** Cells tab Bài tập theo nhánh kind: class row hiển thị plain text, Band đã chấm
+ * (khớp /teacher/grading) và StatusTag; grading row giữ hành vi legacy cũ. */
 function assignmentRowCells(
 	row: StudentAssignmentRow,
 	todayVN: string,
 	nowMs: number,
 ) {
 	if (row.kind === "class") {
+		const graded = hasGradedBand(row);
 		const status = studentSubmissionStatus(
 			{ submittedAt: row.submittedAt },
 			row.due,
@@ -99,8 +113,18 @@ function assignmentRowCells(
 			</div>,
 			row.typeLabel ?? "—",
 			fmtDueDisplay(row.due, row.dueAt),
-			"—",
-			<StatusTag tone={status.tone}>{status.label}</StatusTag>,
+			graded ? (
+				<span className="font-semibold text-primary tabular-nums">
+					{formatBand(row.band)}
+				</span>
+			) : (
+				"—"
+			),
+			graded ? (
+				<StatusTag tone="ok">Đã chấm</StatusTag>
+			) : (
+				<StatusTag tone={status.tone}>{status.label}</StatusTag>
+			),
 		];
 	}
 	return [

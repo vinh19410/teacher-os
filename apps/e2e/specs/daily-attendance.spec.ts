@@ -1,7 +1,13 @@
 import { mkdirSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
-import { signUpViaApi, vietnamTodayISO } from "./helpers";
+import {
+	isoInDaysFromTodayVN,
+	orgIdForTeacherEmail,
+	signUpViaApi,
+	vietnamTodayISO,
+} from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
+import { seedQuizFixture } from "./helpers-quiz";
 import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
 /**
@@ -56,12 +62,12 @@ test("AC-002: lọc theo ngày trên URL, buổi huỷ không hiện, tải ≤ 
 }) => {
 	await seedTodayClasses(page);
 
-	// 1. Mở /dashboard, ghi lại số trên thẻ "Ca học hôm nay chưa điểm danh" (N = 1).
+	// 1. Mở /dashboard, ghi lại số trên thẻ "Ca dạy chưa điểm danh" (N = 1).
 	await page.goto("/teacher/dashboard");
 	const remindersSection = page.locator("section", {
 		hasText: "Việc cần làm hôm nay",
 	});
-	await expect(remindersSection.getByText("1 ca")).toBeVisible({
+	await expect(remindersSection.getByText("1 ca dạy")).toBeVisible({
 		timeout: 5000,
 	});
 
@@ -189,13 +195,16 @@ test("AC-002: lọc theo ngày trên URL, buổi huỷ không hiện, tải ≤ 
 	expect(reminders.attendance.pending).toBe(0);
 
 	await page.goto("/teacher/dashboard");
-	const attendanceCard = page
-		.getByRole("heading", { name: "Ca học hôm nay chưa điểm danh" })
-		.locator("xpath=..");
+	const attendanceCard = page.getByTestId("reminder-card-attendance");
+	await expect(
+		attendanceCard.getByRole("heading", {
+			name: "Ca dạy chưa điểm danh",
+		}),
+	).toBeVisible({ timeout: 5000 });
 	await expect(attendanceCard.getByText("Đã hoàn tất hôm nay")).toBeVisible({
 		timeout: 5000,
 	});
-	await expect(page.getByText("1 ca")).toHaveCount(0);
+	await expect(page.getByText("1 ca dạy")).toHaveCount(0);
 });
 
 test("3 viewport (1440×900, 768×1024, 375×812): chụp screenshot ca đang mở và kiểm không cuộn ngang ở 375px", async ({
@@ -601,4 +610,149 @@ test.describe("AC-003 mark all present (TOS-8)", () => {
 			fullPage: false,
 		});
 	});
+});
+
+test("nợ điểm danh 6 buổi quá khứ (#959): banner đỏ trên tab ngày, điểm danh trực tiếp tab Quá hạn giảm bộ đếm và không tràn ngang ở 375px/320px Light & Dark", async ({
+	page,
+}) => {
+	const teacherEmail = await signUpViaApi(page);
+	const orgId = await orgIdForTeacherEmail(teacherEmail);
+	const pastDates = [-11, -9, -7, -5, -3, -1].map((offset) =>
+		isoInDaysFromTodayVN(offset),
+	);
+	await seedQuizFixture({
+		orgName: `Attendance Overdue 959 ${Date.now()}`,
+		orgId,
+		className: "IELTS Foundation 5.5 (Test)",
+		studentName: "Nguyễn Minh Anh",
+		studentEmail: `att-overdue-${Date.now()}@e2e.test`,
+		prompts: [
+			{
+				skill: "writing",
+				part: "task2",
+				type: "essay",
+				title: "Writing Task 2",
+				passage: "",
+				note: "",
+				questions: [],
+			},
+		],
+		lessons: pastDates.map((date) => ({
+			date,
+			time: "19:00",
+			dur: 90,
+			status: "upcoming" as const,
+			topic: "",
+		})),
+	});
+
+	// Mở mặc định /teacher/attendance (hôm nay 0 ca): vẫn thấy chip Quá hạn (6) và banner đỏ.
+	await page.goto("/teacher/attendance");
+	const banner = page.getByTestId("attendance-overdue-banner");
+	await expect(banner).toBeVisible({ timeout: 5000 });
+	await expect(banner).toContainText(
+		"Có 6 ca học từ các ngày trước chưa điểm danh.",
+	);
+	const chipGroup = page.getByRole("group", {
+		name: "Lọc trạng thái điểm danh",
+	});
+	await expect(
+		chipGroup.getByRole("button", { name: "Quá hạn" }),
+	).toContainText("6");
+
+	const reportsDir = new URL("../../../plans/reports/", import.meta.url)
+		.pathname;
+	if (process.env.CAPTURE_POT_959 === "1") {
+		mkdirSync(reportsDir, { recursive: true });
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await page.waitForTimeout(200);
+		await page.screenshot({
+			path: `${reportsDir}959-attendance-banner-1440-light.png`,
+			fullPage: true,
+		});
+	}
+
+	await banner.getByRole("button", { name: "Xem ca quá hạn" }).click();
+	await expect(page).toHaveURL(/status=overdue/);
+	await expect(page.getByText("IELTS Foundation 5.5 (Test)")).toHaveCount(6);
+	await expect(
+		page.getByRole("radiogroup", {
+			name: /Trạng thái điểm danh của Nguyễn Minh Anh/,
+		}),
+	).toBeVisible();
+
+	// Kiểm tra 3 viewport + 320px reflow ở cả Light và Dark theme.
+	for (const [w, h, suffix] of [
+		[1440, 900, "1440-light"],
+		[768, 1024, "768-light"],
+		[375, 812, "375-light"],
+		[320, 568, null],
+	] as const) {
+		await page.setViewportSize({ width: w, height: h });
+		await page.waitForTimeout(200);
+		const overflow = await page.evaluate(
+			() =>
+				document.documentElement.scrollWidth >
+				document.documentElement.clientWidth,
+		);
+		expect(overflow, `horizontal overflow at ${w}x${h} light`).toBe(false);
+		if (process.env.CAPTURE_POT_959 === "1" && suffix) {
+			await page.screenshot({
+				path: `${reportsDir}959-attendance-overdue-${suffix}.png`,
+				fullPage: true,
+			});
+		}
+	}
+
+	// Dark theme check at 1440 & 320.
+	await page.setViewportSize({ width: 1440, height: 900 });
+	const themeSwitch = page.getByRole("switch", { name: "Giao diện tối" });
+	await themeSwitch.click();
+	await page.waitForTimeout(250);
+	if (process.env.CAPTURE_POT_959 === "1") {
+		await page.screenshot({
+			path: `${reportsDir}959-attendance-overdue-1440-dark.png`,
+			fullPage: true,
+		});
+	}
+	await page.setViewportSize({ width: 320, height: 568 });
+	await page.waitForTimeout(200);
+	expect(
+		await page.evaluate(
+			() =>
+				document.documentElement.scrollWidth >
+				document.documentElement.clientWidth,
+		),
+	).toBe(false);
+
+	// Quay lại Light 1440 để điểm danh 1 ca quá hạn và kiểm tra giảm bộ đếm + auto-advance.
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await themeSwitch.click();
+	await page.waitForTimeout(150);
+
+	await page.getByRole("button", { name: "Đánh dấu tất cả Có mặt" }).click();
+	await page.getByRole("button", { name: "Lưu điểm danh ca học" }).click();
+	await expect(page.getByText("Đã lưu điểm danh")).toBeVisible({
+		timeout: 3000,
+	});
+	await expect(page.getByText("IELTS Foundation 5.5 (Test)")).toHaveCount(5);
+
+	// Auto-advance: ca quá hạn kế tiếp tự mở và focus vào picker đầu tiên.
+	const nextFirstRadio = page
+		.getByRole("radiogroup", {
+			name: /Trạng thái điểm danh của Nguyễn Minh Anh/,
+		})
+		.getByRole("radio", { name: "Có mặt" });
+	await expect(nextFirstRadio).toBeFocused();
+
+	const afterRes = await page.request.get(
+		`${API_ORIGIN}/api/dashboard/reminders?v=2`,
+		{ headers: { Origin: WEB_ORIGIN } },
+	);
+	expect(afterRes.status()).toBe(200);
+	const afterBody = (await afterRes.json()) as {
+		attendance: { pending: number; overdue?: number };
+	};
+	expect(afterBody.attendance.pending).toBe(5);
+	expect(afterBody.attendance.overdue).toBe(5);
 });

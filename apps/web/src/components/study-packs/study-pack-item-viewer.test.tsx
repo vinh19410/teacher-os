@@ -258,9 +258,12 @@ describe("StudyPackItemViewer", () => {
 		expect(transcriptBtn.getAttribute("aria-expanded")).toBe("false");
 		fireEvent.click(transcriptBtn);
 		expect(transcriptBtn.getAttribute("aria-expanded")).toBe("true");
-		expect(
-			screen.getByText("Receptionist: Welcome to Central Library."),
-		).toBeTruthy();
+		expect(screen.getByTestId("transcript-speaker").textContent).toBe(
+			"Receptionist:",
+		);
+		expect(screen.getByTestId("transcript-body").textContent).toBe(
+			"Receptionist: Welcome to Central Library.",
+		);
 
 		// Switch item -> revokes old blob URL
 		rerender(
@@ -319,9 +322,12 @@ describe("StudyPackItemViewer", () => {
 		const correctCount = await screen.findByTestId("attempt-correct-count");
 		expect(correctCount.textContent?.trim()).toBe("1");
 		expect(screen.getByText(/trên tổng 1 câu/)).toBeTruthy();
-		expect(
-			screen.getByText("Receptionist: Welcome to Central Library."),
-		).toBeTruthy();
+		expect(screen.getByTestId("transcript-speaker").textContent).toBe(
+			"Receptionist:",
+		);
+		expect(screen.getByTestId("transcript-body").textContent).toBe(
+			"Receptionist: Welcome to Central Library.",
+		);
 		const simAudioReview = screen.getByTestId("quiz-audio-player");
 		expect(simAudioReview.getAttribute("aria-label")).toBe("Bài nghe");
 		expect(screen.queryByText(/library-part1\.mp3/)).toBeNull();
