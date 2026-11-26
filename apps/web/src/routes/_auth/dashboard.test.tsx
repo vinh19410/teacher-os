@@ -48,6 +48,7 @@ const REMINDERS_BODY = {
 };
 
 let remindersLoads = 0;
+let lastRemindersPath = "";
 
 /** startKernelServer + trả reply reminders cho /api/dashboard/reminders
  * (mọi GET không phải snapshot rơi vào onWrite). */
@@ -57,12 +58,14 @@ function startRemindersServer(
 	remindersStatus = 200,
 ): KernelServer {
 	remindersLoads = 0;
+	lastRemindersPath = "";
 	return startKernelServer(snapshot, (req) => {
 		if (
 			req.method === "GET" &&
 			req.path.startsWith("/api/dashboard/reminders")
 		) {
 			remindersLoads += 1;
+			lastRemindersPath = req.path;
 			return { status: remindersStatus, body: remindersBody };
 		}
 		return undefined;
@@ -565,10 +568,11 @@ describe("dashboard", () => {
 				"reminder-card-count",
 			).textContent,
 		).toBe("3 học viên");
-		// CTA thẻ điểm danh dẫn đúng hợp đồng URL.
+		// CTA thẻ điểm danh dẫn đúng hợp đồng URL và client gửi opt-in ?v=2.
+		expect(lastRemindersPath).toBe("/api/dashboard/reminders?v=2");
 		const link = screen
 			.getByRole("link", {
-				name: "1. Điểm danh — Ca dạy hôm nay chưa điểm danh",
+				name: "1. Điểm danh — Ca dạy chưa điểm danh",
 			})
 			.getAttribute("href");
 		expect(link).toContain("date=2026-10-07");

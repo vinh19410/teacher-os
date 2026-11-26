@@ -123,8 +123,9 @@ describe("classUpdateSchema", () => {
 		).toBe(false);
 	});
 
-	test("khai báo CLASS_ERROR_CODES.SCHEDULE_LOCKED và CLASS_PAUSED", () => {
+	test("khai báo CLASS_ERROR_CODES.SCHEDULE_LOCKED, START_DATE_LOCKED và CLASS_PAUSED", () => {
 		expect(CLASS_ERROR_CODES.SCHEDULE_LOCKED).toBe("CLASS_SCHEDULE_LOCKED");
+		expect(CLASS_ERROR_CODES.START_DATE_LOCKED).toBe("CLASS_START_DATE_LOCKED");
 		expect(CLASS_ERROR_CODES.CLASS_PAUSED).toBe("CLASS_PAUSED");
 	});
 });

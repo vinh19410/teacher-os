@@ -826,6 +826,82 @@ export async function syncZoomOnSessionCancelOrDelete(
 	}
 }
 
+export interface ZoomRescheduleMovedMeeting {
+	zoomMeetingId: string;
+	newDateISO: string;
+	time: string;
+	dur: number;
+	topic: string;
+}
+
+export interface ZoomRescheduleDeletedMeeting {
+	zoomMeetingId: string;
+	dateISO: string;
+}
+
+export interface ZoomRescheduleSyncPlan {
+	movedMeetings: ZoomRescheduleMovedMeeting[];
+	deletedZoomMeetingIds: ZoomRescheduleDeletedMeeting[];
+}
+
+/**
+ * Đồng bộ hàng loạt phòng Zoom sau khi batch đổi ngày khai giảng đã commit DB:
+ * gọi trực tiếp `deleteMeeting` / `updateMeeting` theo danh sách kết quả cuối,
+ * tránh xóa nhầm đích khi lịch mới gối đè lên các ngày lịch cũ.
+ */
+export async function syncZoomMeetingsAfterReschedule(
+	deps: ZoomServiceDeps,
+	input: {
+		orgId: string;
+		classId: string;
+		className: string;
+		plan: ZoomRescheduleSyncPlan;
+	},
+): Promise<void> {
+	for (const deleted of input.plan.deletedZoomMeetingIds) {
+		await deleteZoomMeetingBestEffort(deps, deleted.zoomMeetingId, {
+			classId: input.classId,
+			date: deleted.dateISO,
+		});
+	}
+
+	if (input.plan.movedMeetings.length === 0) return;
+
+	let client: ZoomClient;
+	try {
+		client = resolveZoomClient(deps);
+	} catch (err) {
+		console.warn("[zoom] reschedule sync skipped: client unavailable", {
+			classId: input.classId,
+			err,
+		});
+		return;
+	}
+
+	for (const moved of input.plan.movedMeetings) {
+		try {
+			await client.updateMeeting(moved.zoomMeetingId, {
+				topic: buildMeetingTopic(input.className, moved.topic),
+				agenda: buildMeetingAgenda(
+					input.className,
+					moved.newDateISO,
+					moved.time,
+				),
+				dateISO: moved.newDateISO,
+				time: moved.time,
+				durMinutes: moved.dur,
+			});
+		} catch (err) {
+			console.warn("[zoom] updateMeeting after reschedule failed", {
+				classId: input.classId,
+				date: moved.newDateISO,
+				zoomMeetingId: moved.zoomMeetingId,
+				err,
+			});
+		}
+	}
+}
+
 export async function syncRecordingForOccurrence(
 	deps: ZoomServiceDeps,
 	input: {

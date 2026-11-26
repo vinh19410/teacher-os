@@ -422,21 +422,42 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 		);
 		expect(pastRes.status).toBe(400);
 
-		// Restore valid startDate and create a real class_session -> changing startDate returns 409 CLASS_SCHEDULE_LOCKED
+		// Restore valid startDate, enroll active student, mark first lesson completed -> changing startDate returns 409 CLASS_START_DATE_LOCKED
 		const currentStart = futureMondayISO(7);
 		const changedStart = futureMondayISO(14);
 		await t.libsql
 			.update(schema.classTable)
 			.set({ startDate: currentStart })
 			.where(eq(schema.classTable.id, classId));
-		await t.libsql.insert(schema.classSession).values({
+		const startedStudentId = await t.seedStudentAndEnroll({
+			orgId,
+			classId,
+			name: "HV Đã Học",
+			email: "started@test.local",
+			status: "active",
+		});
+		const [enr] = await t.libsql
+			.select({ id: schema.enrollment.id })
+			.from(schema.enrollment)
+			.where(
+				and(
+					eq(schema.enrollment.classId, classId),
+					eq(schema.enrollment.studentId, startedStudentId),
+				),
+			);
+		expect(enr).toBeDefined();
+		await t.libsql.insert(schema.lesson).values({
 			id: crypto.randomUUID(),
 			orgId,
 			classId,
-			date: currentStart,
+			enrollmentId: enr?.id ?? "",
+			day: 1,
 			time: "19:00",
 			dur: 90,
+			date: currentStart,
+			status: "completed",
 			topic: "Buổi 1",
+			zoom: "",
 		});
 
 		const lockedRes = await t.call(
@@ -452,10 +473,10 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 		);
 		expect(lockedRes.status).toBe(409);
 		expect(await lockedRes.json()).toMatchObject({
-			code: CLASS_ERROR_CODES.SCHEDULE_LOCKED,
+			code: CLASS_ERROR_CODES.START_DATE_LOCKED,
 		});
 
-		// Confirming without changing startDate succeeds even when real sessions exist
+		// Confirming without changing startDate succeeds even when class already started
 		const unchangedStartRes = await t.call(
 			teacher.token,
 			`/api/classes/${classId}/confirm-opening`,
@@ -463,7 +484,7 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 				body: {
 					mode: "initial",
 					startDate: currentStart,
-					note: "Lớp đã có buổi, giữ nguyên ngày",
+					note: "Lớp đã bắt đầu, giữ nguyên ngày",
 					expectedVersion: 0,
 				},
 			},
@@ -474,6 +495,128 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 		);
 		expect(parsed.startDate).toBe(currentStart);
 		expect(parsed.openingAnnouncementVersion).toBe(1);
+	});
+
+	test("reschedules unstarted auto class lessons and updates manual class metadata when changing startDate in confirm-opening", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher Reschedule Opening");
+		const initialStart = futureMondayISO(7);
+		const nextStart = futureMondayISO(14);
+		const thirdStart = futureMondayISO(21);
+
+		const autoClassId = await t.createClass(teacher.token, {
+			name: "IELTS Unstarted Confirm",
+			schedule: { days: [0, 2], start: "19:00", end: "20:30" },
+			sessionsTotal: 4,
+			startDate: initialStart,
+		});
+		const enrollRes = await t.call(teacher.token, "/api/students", {
+			body: {
+				name: "Nguyễn Minh",
+				email: "minh-opening@test.local",
+				classId: autoClassId,
+				activateNow: true,
+			},
+		});
+		expect(enrollRes.status).toBe(201);
+
+		// Mode initial: change startDate on class with upcoming lessons -> 200, reschedules lessons & sends email with new date
+		const initialRes = await t.call(
+			teacher.token,
+			`/api/classes/${autoClassId}/confirm-opening`,
+			{
+				body: {
+					mode: "initial",
+					startDate: nextStart,
+					note: "Dời ngày khai giảng trước khi mở lớp",
+					expectedVersion: 0,
+				},
+			},
+		);
+		expect(initialRes.status).toBe(200);
+		const initialBody = classConfirmOpeningResponseSchema.parse(
+			await initialRes.json(),
+		);
+		expect(initialBody.startDate).toBe(nextStart);
+		expect(initialBody.openingAnnouncementVersion).toBe(1);
+		expect(t.sentMails.at(-1)?.html).toContain(formatViDateDisplay(nextStart));
+
+		const lessonsAfterInitial = await t.libsql
+			.select({ date: schema.lesson.date })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.classId, autoClassId));
+		expect(lessonsAfterInitial.map((l) => l.date).sort()).toEqual([
+			nextStart,
+			addDaysISO(nextStart, 2),
+			addDaysISO(nextStart, 7),
+			addDaysISO(nextStart, 9),
+		]);
+
+		// Mode all: shift again to thirdStart -> 200, version 2, lessons updated again
+		const allRes = await t.call(
+			teacher.token,
+			`/api/classes/${autoClassId}/confirm-opening`,
+			{
+				body: {
+					mode: "all",
+					startDate: thirdStart,
+					note: "Dời thêm 1 tuần",
+					expectedVersion: 1,
+				},
+			},
+		);
+		expect(allRes.status).toBe(200);
+		const allBody = classConfirmOpeningResponseSchema.parse(
+			await allRes.json(),
+		);
+		expect(allBody.startDate).toBe(thirdStart);
+		expect(allBody.openingAnnouncementVersion).toBe(2);
+		expect(t.sentMails.at(-1)?.html).toContain(formatViDateDisplay(thirdStart));
+
+		const lessonsAfterAll = await t.libsql
+			.select({ date: schema.lesson.date })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.classId, autoClassId));
+		expect(lessonsAfterAll.map((l) => l.date).sort()).toEqual([
+			thirdStart,
+			addDaysISO(thirdStart, 2),
+			addDaysISO(thirdStart, 7),
+			addDaysISO(thirdStart, 9),
+		]);
+
+		// Manual class with future class_session: updates startDate metadata, keeps manual session date untouched
+		const orgId = await t.getOrgIdForUser(teacher.id);
+		const manualClassId = await t.createClass(teacher.token, {
+			name: "Manual Unstarted Confirm",
+			schedulingMode: "manual",
+			startDate: initialStart,
+		});
+		await t.libsql.insert(schema.classSession).values({
+			id: crypto.randomUUID(),
+			orgId,
+			classId: manualClassId,
+			date: initialStart,
+			time: "18:00",
+			dur: 90,
+			topic: "Buổi thủ công 1",
+		});
+		const manualRes = await t.call(
+			teacher.token,
+			`/api/classes/${manualClassId}/confirm-opening`,
+			{
+				body: {
+					mode: "initial",
+					startDate: nextStart,
+					expectedVersion: 0,
+				},
+			},
+		);
+		expect(manualRes.status).toBe(200);
+		const manualSessions = await t.libsql
+			.select({ date: schema.classSession.date })
+			.from(schema.classSession)
+			.where(eq(schema.classSession.classId, manualClassId));
+		expect(manualSessions.map((s) => s.date)).toEqual([initialStart]);
 	});
 
 	test("happy path initial: syncs startDate when unlocked, sends rich HTML to active & invited students, creates in_app-only for students without email, and updates snapshot", async () => {

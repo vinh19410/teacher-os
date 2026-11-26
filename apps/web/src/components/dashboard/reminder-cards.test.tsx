@@ -38,7 +38,7 @@ describe("ReminderCards", () => {
 		).toBe("Điểm danh");
 		expect(
 			within(attendanceCard).getByRole("heading", {
-				name: "Ca dạy hôm nay chưa điểm danh",
+				name: "Ca dạy chưa điểm danh",
 			}),
 		).toBeTruthy();
 		expect(
@@ -88,7 +88,7 @@ describe("ReminderCards", () => {
 	it("href thẻ điểm danh mang date và status=pending; thẻ chấm bài status=awaiting; aria-label mang thứ tự và nhãn", () => {
 		render(<ReminderCards data={FULL_DATA} canAccessFinance />);
 		const attendanceLink = screen.getByRole("link", {
-			name: "1. Điểm danh — Ca dạy hôm nay chưa điểm danh",
+			name: "1. Điểm danh — Ca dạy chưa điểm danh",
 		});
 		const href = attendanceLink.getAttribute("href") ?? "";
 		expect(href).toContain("/attendance");
@@ -169,7 +169,7 @@ describe("ReminderCards", () => {
 		expect(screen.queryByText(/0đ/)).toBeNull();
 		expect(screen.getAllByText("Xem lại")).toHaveLength(3);
 		const attendanceLink = screen.getByRole("link", {
-			name: /Ca dạy hôm nay chưa điểm danh/,
+			name: /Ca dạy chưa điểm danh/,
 		});
 		expect(attendanceLink.getAttribute("href")).toContain("status=pending");
 	});
@@ -234,6 +234,111 @@ describe("ReminderCards", () => {
 			name: "2. Chấm bài — Bài tập quá hạn chấm > 24h",
 		});
 		expect(gradingLink.getAttribute("aria-describedby")).toBe(warning.id);
+	});
+
+	it("khi chỉ có ca quá hạn (today=0, overdue=6): hiển thị breakdown quá hạn, ngày dd/MM · HH:mm không trùng key và dẫn thẳng status=overdue", () => {
+		const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		const overdueOnly: DashboardReminders = {
+			...FULL_DATA,
+			date: "2026-11-26",
+			attendance: {
+				pending: 6,
+				today: 0,
+				overdue: 6,
+				items: [
+					{
+						classId: "cl-found",
+						className: "IELTS Foundation 5.5",
+						time: "19:00",
+						dur: 90,
+						date: "2026-11-24",
+					},
+					{
+						classId: "cl-found",
+						className: "IELTS Foundation 5.5",
+						time: "19:00",
+						dur: 90,
+						date: "2026-11-20",
+					},
+					{
+						classId: "cl-found",
+						className: "IELTS Foundation 5.5",
+						time: "19:00",
+						dur: 90,
+						date: "2026-11-17",
+					},
+				],
+			},
+		};
+		render(<ReminderCards data={overdueOnly} canAccessFinance />);
+		const attendanceCard = screen.getByTestId("reminder-card-attendance");
+		expect(attendanceCard.getAttribute("data-done")).toBe("false");
+		expect(
+			within(attendanceCard).getByTestId("reminder-card-count").textContent,
+		).toBe("6 ca dạy");
+		expect(within(attendanceCard).getByText("6 ca quá hạn")).toBeTruthy();
+		expect(within(attendanceCard).getByText("24/11 · 19:00")).toBeTruthy();
+		expect(within(attendanceCard).getByText("20/11 · 19:00")).toBeTruthy();
+		expect(within(attendanceCard).getByText("+3 ca khác")).toBeTruthy();
+		const link = screen.getByRole("link", {
+			name: "1. Điểm danh — Ca dạy chưa điểm danh",
+		});
+		expect(link.getAttribute("href")).toContain("date=2026-11-26");
+		expect(link.getAttribute("href")).toContain("status=overdue");
+		expect(errorSpy).not.toHaveBeenCalled();
+		errorSpy.mockRestore();
+	});
+
+	it("khi có cả ca hôm nay và quá hạn (today=1, overdue=4): hiển thị breakdown cả hai, item hôm nay chỉ hiện giờ, item quá hạn hiện dd/MM · HH:mm và dẫn status=pending", () => {
+		const mixed: DashboardReminders = {
+			...FULL_DATA,
+			date: "2026-11-26",
+			attendance: {
+				pending: 5,
+				today: 1,
+				overdue: 4,
+				items: [
+					{
+						classId: "cl-today",
+						className: "Lớp Hôm Nay",
+						time: "18:00",
+						dur: 90,
+						date: "2026-11-26",
+					},
+					{
+						classId: "cl-old",
+						className: "Lớp Quá Hạn",
+						time: "19:00",
+						dur: 90,
+						date: "2026-11-24",
+					},
+				],
+			},
+		};
+		render(<ReminderCards data={mixed} canAccessFinance />);
+		const attendanceCard = screen.getByTestId("reminder-card-attendance");
+		expect(
+			within(attendanceCard).getByTestId("reminder-card-count").textContent,
+		).toBe("5 ca dạy");
+		expect(within(attendanceCard).getByText("4 quá hạn")).toBeTruthy();
+		expect(attendanceCard.textContent).toContain("1 hôm nay");
+		expect(within(attendanceCard).getByText("18:00")).toBeTruthy();
+		expect(within(attendanceCard).getByText("24/11 · 19:00")).toBeTruthy();
+		const link = screen.getByRole("link", {
+			name: "1. Điểm danh — Ca dạy chưa điểm danh",
+		});
+		expect(link.getAttribute("href")).toContain("status=pending");
+	});
+
+	it("deploy skew fallback: thiếu today và overdue vẫn hiển thị sạch không NaN và dẫn status=pending", () => {
+		render(<ReminderCards data={FULL_DATA} canAccessFinance />);
+		const attendanceCard = screen.getByTestId("reminder-card-attendance");
+		expect(attendanceCard.textContent).not.toContain("NaN");
+		expect(attendanceCard.textContent).not.toContain("quá hạn");
+		const link = screen.getByRole("link", {
+			name: "1. Điểm danh — Ca dạy chưa điểm danh",
+		});
+		expect(link.getAttribute("href")).toContain("status=pending");
 	});
 
 	it("items preview cắt tối đa 3 dòng với giờ bắt đầu + tên lớp và hiển thị +N ca khác khi pending > 3", () => {
