@@ -469,7 +469,7 @@ export function createD1VocabPromoteRunner(options: {
 	};
 }
 
-async function queryByIdsInChunks(
+export async function queryByIdsInChunks(
 	runner: VocabPromoteSqlRunner,
 	table: "vocab_group" | "vocab_deck" | "vocab_word",
 	columns: string,
@@ -1094,7 +1094,7 @@ export async function loadSelectedStagingVocab(
 	return { groups, decks, words };
 }
 
-function buildChunkedUpsertStatements<T>(options: {
+export function buildChunkedUpsertStatements<T>(options: {
 	table: string;
 	columns: readonly string[];
 	updateColumns: readonly string[];
