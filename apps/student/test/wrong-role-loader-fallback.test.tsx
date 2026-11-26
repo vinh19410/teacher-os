@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	ACCOUNT_ERROR_CODES,
 	STUDENT_ERROR_CODES,
@@ -27,6 +28,13 @@ const queryState = vi.hoisted(() => ({
 	},
 	overviewQuery: {
 		isLoading: false,
+		error: null as unknown,
+		data: undefined as unknown,
+	},
+	scheduleQuery: {
+		isPending: false,
+		isSuccess: false,
+		isError: false,
 		error: null as unknown,
 		data: undefined as unknown,
 	},
@@ -77,6 +85,7 @@ vi.mock("@/lib/repos/student", () => ({
 	useStudentMe: () => queryState.meQuery,
 	useStudentOverview: () => queryState.overviewQuery,
 	useStudentInvoices: () => ({ data: [], isError: false }),
+	useStudentSchedule: () => queryState.scheduleQuery,
 	useAcceptClassEnrollment: () => ({
 		mutate: vi.fn(),
 		isPending: false,
@@ -101,6 +110,13 @@ describe("wrong-role loader fallback suppresses StudentErrorView flash", () => {
 		};
 		queryState.overviewQuery = {
 			isLoading: false,
+			error: null,
+			data: undefined,
+		};
+		queryState.scheduleQuery = {
+			isPending: false,
+			isSuccess: false,
+			isError: false,
 			error: null,
 			data: undefined,
 		};
@@ -167,6 +183,41 @@ describe("wrong-role loader fallback suppresses StudentErrorView flash", () => {
 		const { container } = render(<StudentOverviewPage />);
 
 		expect(screen.queryByText("Đây là tài khoản giáo viên")).toBeNull();
+		expect(container.querySelector(".animate-spin")).not.toBeNull();
+	});
+
+	it("StudentOverviewPage renders Loader instead of dashboard when scheduleQuery fails with ACCOUNT_TEACHER_ROLE", () => {
+		queryState.meQuery.data = {
+			user: { id: "u-1", name: "Minh", email: "minh@test.local" },
+			student: {
+				id: "s-1",
+				orgId: "org-1",
+				name: "Minh",
+				email: "minh@test.local",
+				onboardingCompletedAt: "2026-01-01T00:00:00.000Z",
+			},
+		};
+		queryState.overviewQuery.data = {
+			student: { id: "s-1", name: "Minh" },
+			classes: [],
+			assignments: [],
+		};
+		queryState.scheduleQuery.isError = true;
+		queryState.scheduleQuery.error = new HttpError(403, "Forbidden", {
+			code: ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL,
+		});
+
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const { container } = render(
+			<QueryClientProvider client={qc}>
+				<StudentOverviewPage />
+			</QueryClientProvider>,
+		);
+
+		expect(screen.queryByText("Đây là tài khoản giáo viên")).toBeNull();
+		expect(screen.queryByTestId("student-shell")).toBeNull();
 		expect(container.querySelector(".animate-spin")).not.toBeNull();
 	});
 

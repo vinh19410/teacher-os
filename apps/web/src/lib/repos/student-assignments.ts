@@ -1,3 +1,4 @@
+import { isBandStep } from "@teacher-os/api/lib/ielts-band";
 import { SKILLS } from "@/components/assignments/assignment-presets";
 import type { KernelHydratedData, Scores } from "@/lib/mock-data";
 
@@ -19,6 +20,12 @@ export interface StudentAssignmentRow {
 	dueAt: string | null;
 	/** class row: từ target.submittedAt; grading row: null. */
 	submittedAt: string | null;
+	/** class row: Band tổng IELTS hợp lệ (0–9, bước 0.5) đi kèm gradedAt hợp lệ;
+	 * null khi chưa chấm hoặc dữ liệu không hợp lệ; grading row: null. */
+	band: number | null;
+	/** class row: ISO datetime lần chấm gần nhất đi kèm band hợp lệ;
+	 * null khi chưa chấm hoặc dữ liệu không hợp lệ; grading row: null. */
+	gradedAt: string | null;
 	/** grading row: "graded" | "late" | "not-submitted"; class row: null. */
 	gradingStatus: string | null;
 	scores: Scores | null;
@@ -58,6 +65,12 @@ export function studentAssignmentRows(
 		const className = data.classes.find((c) => c.id === ca.classId)?.name ?? "";
 		for (const target of ca.targets) {
 			if (target.studentId !== studentId) continue;
+			const hasGrade =
+				typeof target.band === "number" &&
+				isBandStep(target.band) &&
+				typeof target.gradedAt === "string" &&
+				target.gradedAt.trim().length > 0 &&
+				Number.isFinite(Date.parse(target.gradedAt));
 			rows.push({
 				key: `ca:${ca.id}`,
 				kind: "class",
@@ -68,6 +81,8 @@ export function studentAssignmentRows(
 				due: ca.due,
 				dueAt: ca.dueAt ?? null,
 				submittedAt: target.submittedAt,
+				band: hasGrade ? (target.band as number) : null,
+				gradedAt: hasGrade ? (target.gradedAt as string) : null,
 				gradingStatus: null,
 				scores: null,
 			});
@@ -86,6 +101,8 @@ export function studentAssignmentRows(
 			due: a.due,
 			dueAt: null,
 			submittedAt: null,
+			band: null,
+			gradedAt: null,
 			gradingStatus: a.status,
 			scores: a.scores,
 		});
