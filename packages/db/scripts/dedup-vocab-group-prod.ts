@@ -345,6 +345,18 @@ export async function runDedupVocabGroupCli(
 			for (const repoint of audit.repointedDecks) {
 				secrets.push(repoint.deckId);
 			}
+			for (const cb of audit.classBreakdowns) {
+				secrets.push(cb.classId);
+				if (cb.className) secrets.push(cb.className);
+				for (const dup of cb.duplicateClusters) {
+					for (const entry of dup.entries) {
+						secrets.push(entry.deckId);
+					}
+				}
+			}
+			for (const overlap of audit.ungroupedBankOverlaps) {
+				secrets.push(overlap.deckId);
+			}
 		}
 
 		write(
