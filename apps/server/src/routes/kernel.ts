@@ -549,7 +549,10 @@ export function kernelRoutes(deps: {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
 		return c.json(
-			await loadSnapshot(deps.getDb(), ctx.orgId, { role: ctx.role }),
+			await loadSnapshot(deps.getDb(), ctx.orgId, {
+				role: ctx.role,
+				...(deps.now ? { now: deps.now() } : {}),
+			}),
 		);
 	});
 

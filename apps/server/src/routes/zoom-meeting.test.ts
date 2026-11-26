@@ -1976,4 +1976,92 @@ describe("Bảo vệ route Zoom", () => {
 		expect(s1Detail.class.nextSession?.hasZoom).toBeUndefined();
 		expect(s1Detail.class.nextSession?.joinUrl).toBeUndefined();
 	});
+
+	test("race condition: luồng lỗi download muộn sau khi luồng thắng đã commit R2 + Trash Zoom KHÔNG ghi đè mất recordingStorageKey", async () => {
+		const store = createMemoryRecordingStore();
+		let downloadCallCount = 0;
+		let releaseSlowFailure!: () => void;
+		const slowFailureGate = new Promise<void>((resolve) => {
+			releaseSlowFailure = resolve;
+		});
+
+		const baseFake = createFakeZoom();
+		baseFake.setRecordingReady(true);
+
+		const racingClient: ZoomClient = {
+			...baseFake.client,
+			async getRecording(meetingId) {
+				return baseFake.client.getRecording(meetingId);
+			},
+			async downloadRecordingFile(downloadUrl) {
+				downloadCallCount += 1;
+				if (downloadCallCount === 1) {
+					// Luồng chậm T2: chờ cho tới sau khi T1 commit R2 + Trash Zoom rồi mới lỗi 404.
+					await slowFailureGate;
+					throw new ZoomIntegrationError(
+						ZOOM_ERROR_CODES.API_ERROR,
+						"Tải recording từ Zoom lỗi 404: Recording trashed",
+						502,
+					);
+				}
+				return baseFake.client.downloadRecordingFile(downloadUrl);
+			},
+			async trashRecording(meetingId) {
+				await baseFake.client.trashRecording(meetingId);
+			},
+		};
+
+		const app = createApp(racingClient, { recordingStore: store });
+		const classId = await createManualOnlineClass(app, "Race Protection Class");
+		const date = futureDate(4);
+		await addManualSession(app, classId, date, "");
+
+		const syncPath = `/api/classes/${classId}/sessions/${date}/recording/sync`;
+		// Bắt đầu T2 (chậm và sẽ lỗi sau khi Zoom bị trash)
+		const slowSyncPromise = app.request(syncPath, {
+			method: "POST",
+			headers: TEACHER_HEADERS,
+			body: "{}",
+		});
+
+		// Chạy T1 (nhanh, thành công commit R2 + Trash Zoom)
+		const fastRes = await app.request(syncPath, {
+			method: "POST",
+			headers: TEACHER_HEADERS,
+			body: "{}",
+		});
+		expect(fastRes.status).toBe(200);
+		const fastBody = (await fastRes.json()) as {
+			status: string;
+			hasRecordingVideo: boolean;
+			recordingZoomTrashStatus: string;
+		};
+		expect(fastBody.status).toBe("ready");
+		expect(fastBody.hasRecordingVideo).toBe(true);
+		expect(fastBody.recordingZoomTrashStatus).toBe("trashed");
+
+		const rowAfterFast = await meetingRow(classId, date);
+		expect(rowAfterFast?.recordingStorageKey).toBeTruthy();
+
+		// Giải phóng T2 để rơi vào nhánh saveZoomFallback
+		releaseSlowFailure();
+		const slowRes = await slowSyncPromise;
+		expect(slowRes.status).toBe(200);
+		const slowBody = (await slowRes.json()) as {
+			status: string;
+			hasRecordingVideo: boolean;
+			recordingSource: string | null;
+		};
+		// T2 phải trả về trạng thái thắng cuộc (R2 ready), KHÔNG ghi đè D1 sang failed/null!
+		expect(slowBody.status).toBe("ready");
+		expect(slowBody.hasRecordingVideo).toBe(true);
+		expect(slowBody.recordingSource).toBe("r2");
+
+		const rowFinal = await meetingRow(classId, date);
+		expect(rowFinal?.recordingStorageKey).toBe(
+			rowAfterFast?.recordingStorageKey,
+		);
+		expect(rowFinal?.recordingStatus).toBe("ready");
+		expect(rowFinal?.recordingZoomTrashStatus).toBe("trashed");
+	});
 });

@@ -420,6 +420,105 @@ describe("createZoomClient", () => {
 		});
 	});
 
+	it("getRecording: chờ pending khi còn đoạn MP4 thứ 2 đang processing", async () => {
+		const client = createZoomClient(
+			cfg(),
+			mockFetch(
+				token(),
+				json({
+					share_url: "https://zoom.us/rec/share/seg",
+					recording_files: [
+						{
+							id: "seg-1",
+							status: "completed",
+							file_type: "MP4",
+							file_size: 1_000,
+							download_url: "https://us06web.zoom.us/rec/download/seg-1",
+							recording_type: "shared_screen_with_speaker_view",
+						},
+						{
+							id: "seg-2",
+							status: "processing",
+							file_type: "MP4",
+						},
+					],
+				}),
+			),
+		);
+		expect(await client.getRecording("seg")).toEqual({ status: "pending" });
+	});
+
+	it("downloadRecordingFile chặn redirect sang IP private/loopback/credentials, chặn XML/text và bỏ Content-Length khi có Content-Encoding", async () => {
+		for (const badLocation of [
+			"https://127.0.0.1/secret",
+			"https://169.254.169.254/latest/meta-data",
+			"https://localhost/internal",
+			"https://[::1]/secret",
+			"https://user:pass@cdn.example.com/video.mp4",
+		]) {
+			const ssrfClient = createZoomClient(
+				cfg(),
+				mockFetch(
+					token(),
+					new Response(null, {
+						status: 302,
+						headers: { Location: badLocation },
+					}),
+				),
+			);
+			await expect(
+				ssrfClient.downloadRecordingFile(
+					"https://us06web.zoom.us/rec/download/ssrf",
+				),
+			).rejects.toMatchObject({
+				code: "ZOOM_API_ERROR",
+				status: 502,
+			});
+		}
+
+		for (const badMime of ["application/xml", "text/plain; charset=utf-8"]) {
+			const badMimeClient = createZoomClient(
+				cfg(),
+				mockFetch(
+					token(),
+					new Response("<Error>AccessDenied</Error>", {
+						status: 200,
+						headers: { "Content-Type": badMime },
+					}),
+				),
+			);
+			await expect(
+				badMimeClient.downloadRecordingFile(
+					"https://us06web.zoom.us/rec/download/badmime",
+				),
+			).rejects.toMatchObject({
+				code: "ZOOM_API_ERROR",
+				status: 502,
+			});
+		}
+
+		const gzipClient = createZoomClient(
+			cfg(),
+			mockFetch(
+				token(),
+				new Response(new Uint8Array([1, 2, 3, 4]), {
+					status: 200,
+					headers: {
+						"Content-Type": "video/mp4",
+						"Content-Length": "4",
+						"Content-Encoding": "gzip",
+					},
+				}),
+			),
+		);
+		const gzipped = await gzipClient.downloadRecordingFile(
+			"https://us06web.zoom.us/rec/download/gzip",
+		);
+		expect(gzipped.contentType).toBe("video/mp4");
+		expect(gzipped.contentLength).toBeUndefined();
+		await gzipped.body.cancel();
+	});
+
 	it("trashRecording gọi DELETE ?action=trash và coi 404 là thành công idempotent", async () => {
 		const fn = mockFetch(
 			token(),

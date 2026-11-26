@@ -134,7 +134,12 @@ async function tryTrashZoomRecording(
 				recordingZoomTrashStatus: "failed",
 				recordingSyncedAt: now,
 			})
-			.where(eq(classSessionMeeting.id, rowId));
+			.where(
+				and(
+					eq(classSessionMeeting.id, rowId),
+					isNotNull(classSessionMeeting.recordingStorageKey),
+				),
+			);
 		return "failed";
 	}
 	try {
@@ -145,7 +150,12 @@ async function tryTrashZoomRecording(
 				recordingZoomTrashStatus: "trashed",
 				recordingSyncedAt: now,
 			})
-			.where(eq(classSessionMeeting.id, rowId));
+			.where(
+				and(
+					eq(classSessionMeeting.id, rowId),
+					isNotNull(classSessionMeeting.recordingStorageKey),
+				),
+			);
 		return "trashed";
 	} catch (err) {
 		console.warn("[zoom] trashRecording failed", {
@@ -159,9 +169,66 @@ async function tryTrashZoomRecording(
 				recordingZoomTrashStatus: "failed",
 				recordingSyncedAt: now,
 			})
-			.where(eq(classSessionMeeting.id, rowId));
+			.where(
+				and(
+					eq(classSessionMeeting.id, rowId),
+					isNotNull(classSessionMeeting.recordingStorageKey),
+				),
+			);
 		return "failed";
 	}
+}
+
+async function readWinnerSyncResponse(
+	db: Db,
+	meetingId: string,
+	now: Date,
+): Promise<SessionRecordingSyncResponse> {
+	const [winner] = await db
+		.select()
+		.from(classSessionMeeting)
+		.where(eq(classSessionMeeting.id, meetingId))
+		.limit(1);
+	if (!winner) {
+		throw new ZoomIntegrationError(
+			ZOOM_ERROR_CODES.API_ERROR,
+			"Không tìm thấy bản ghi buổi học sau khi đồng bộ recording.",
+			404,
+		);
+	}
+	const winnerExpired =
+		winner.recordingStatus === "expired" ||
+		isStorageExpired(
+			winner.recordingStorageKey,
+			winner.recordingExpiresAt,
+			now,
+		);
+	const winnerHasVideo = Boolean(winner.recordingStorageKey) && !winnerExpired;
+	const winnerStatus: RecordingStatus = winnerExpired
+		? "expired"
+		: (winner.recordingStatus as RecordingStatus) || "ready";
+	return {
+		status: winnerStatus,
+		recordingUrl: winnerHasVideo || winnerExpired ? "" : winner.recordingUrl,
+		recordingPassword:
+			winnerHasVideo || winnerExpired
+				? null
+				: (winner.recordingPassword ?? null),
+		recordingSource: winnerHasVideo
+			? "r2"
+			: !winnerExpired && winner.recordingUrl
+				? "external"
+				: null,
+		hasRecordingVideo: winnerHasVideo,
+		recordingExpiresAt: winner.recordingExpiresAt
+			? winner.recordingExpiresAt.toISOString()
+			: null,
+		recordingZoomTrashStatus: normalizeTrashStatus(
+			winner.recordingZoomTrashStatus,
+		),
+		syncedAt: (winner.recordingSyncedAt ?? now).toISOString(),
+		message: winner.recordingError ?? null,
+	};
 }
 
 function resolveZoomClient(deps: ZoomServiceDeps): ZoomClient {
@@ -1191,14 +1258,22 @@ export async function syncRecordingForOccurrence(
 			};
 		}
 
-		await deps.db
+		const unclaimedOrExpired = or(
+			isNull(classSessionMeeting.recordingStorageKey),
+			lte(classSessionMeeting.recordingExpiresAt, now),
+		);
+		const claimedPending = await deps.db
 			.update(classSessionMeeting)
 			.set({
 				recordingStatus: "pending",
 				recordingError: null,
 				recordingSyncedAt: now,
 			})
-			.where(eq(classSessionMeeting.id, meeting.id));
+			.where(and(eq(classSessionMeeting.id, meeting.id), unclaimedOrExpired))
+			.returning({ id: classSessionMeeting.id });
+		if (claimedPending.length === 0) {
+			return readWinnerSyncResponse(deps.db, meeting.id, now);
+		}
 
 		return {
 			status: "pending",
@@ -1216,12 +1291,18 @@ export async function syncRecordingForOccurrence(
 		};
 	}
 
+	const unclaimedOrExpired = or(
+		isNull(classSessionMeeting.recordingStorageKey),
+		lte(classSessionMeeting.recordingExpiresAt, now),
+	);
+
 	// Lưu link Zoom dự phòng khi không thể reup lên R2 — TUYỆT ĐỐI KHÔNG gọi Zoom Trash.
+	// CAS guard đảm bảo một luồng lỗi muộn không bao giờ ghi đè bản ghi R2 vừa commit ở luồng thắng.
 	const saveZoomFallback = async (
 		errMsg: string,
 	): Promise<SessionRecordingSyncResponse> => {
 		const truncated = errMsg.slice(0, 300);
-		await deps.db
+		const claimedFallback = await deps.db
 			.update(classSessionMeeting)
 			.set({
 				recordingUrl: rec.shareUrl,
@@ -1236,7 +1317,21 @@ export async function syncRecordingForOccurrence(
 				recordingExpiresAt: null,
 				recordingZoomTrashStatus: "none",
 			})
-			.where(eq(classSessionMeeting.id, meeting.id));
+			.where(and(eq(classSessionMeeting.id, meeting.id), unclaimedOrExpired))
+			.returning({ id: classSessionMeeting.id });
+
+		if (claimedFallback.length === 0) {
+			return readWinnerSyncResponse(deps.db, meeting.id, now);
+		}
+
+		if (oldKeyExpired && meeting.recordingStorageKey) {
+			await deleteRecordingObjectBestEffort(
+				deps.recordingStore,
+				meeting.recordingStorageKey,
+				{ id: meeting.id, reason: "fallback-replaced-expired-recording" },
+				deps.runInBackground,
+			);
+		}
 
 		return {
 			status: "failed",
@@ -1325,50 +1420,7 @@ export async function syncRecordingForOccurrence(
 	// Thua race đồng thời: xoá bản dư vừa đẩy lên R2 và trả trạng thái của lượt thắng.
 	if (claimed.length === 0) {
 		await deps.recordingStore.delete(storageKey).catch(() => {});
-		const [winner] = await deps.db
-			.select()
-			.from(classSessionMeeting)
-			.where(eq(classSessionMeeting.id, meeting.id))
-			.limit(1);
-		if (!winner) {
-			throw new ZoomIntegrationError(
-				ZOOM_ERROR_CODES.API_ERROR,
-				"Không tìm thấy bản ghi buổi học sau khi đồng bộ recording.",
-				404,
-			);
-		}
-		const winnerExpired = isStorageExpired(
-			winner.recordingStorageKey,
-			winner.recordingExpiresAt,
-			now,
-		);
-		const winnerHasVideo =
-			Boolean(winner.recordingStorageKey) && !winnerExpired;
-		const winnerStatus: RecordingStatus = winnerExpired
-			? "expired"
-			: (winner.recordingStatus as RecordingStatus) || "ready";
-		return {
-			status: winnerStatus,
-			recordingUrl: winnerHasVideo || winnerExpired ? "" : winner.recordingUrl,
-			recordingPassword:
-				winnerHasVideo || winnerExpired
-					? null
-					: (winner.recordingPassword ?? null),
-			recordingSource: winnerHasVideo
-				? "r2"
-				: !winnerExpired && winner.recordingUrl
-					? "external"
-					: null,
-			hasRecordingVideo: winnerHasVideo,
-			recordingExpiresAt: winner.recordingExpiresAt
-				? winner.recordingExpiresAt.toISOString()
-				: null,
-			recordingZoomTrashStatus: normalizeTrashStatus(
-				winner.recordingZoomTrashStatus,
-			),
-			syncedAt: (winner.recordingSyncedAt ?? now).toISOString(),
-			message: winner.recordingError ?? null,
-		};
+		return readWinnerSyncResponse(deps.db, meeting.id, now);
 	}
 
 	if (
@@ -1728,15 +1780,24 @@ export async function runRecordingSyncCron(
 
 	for (const id of timedOutIds) {
 		checked += 1;
-		failed += 1;
-		await deps.db
+		const claimedTimeout = await deps.db
 			.update(classSessionMeeting)
 			.set({
 				recordingStatus: "failed",
 				recordingError: RECORDING_TIMEOUT_MESSAGE,
 				recordingSyncedAt: now,
 			})
-			.where(eq(classSessionMeeting.id, id));
+			.where(
+				and(
+					eq(classSessionMeeting.id, id),
+					isNull(classSessionMeeting.recordingStorageKey),
+					eq(classSessionMeeting.recordingStatus, "pending"),
+				),
+			)
+			.returning({ id: classSessionMeeting.id });
+		if (claimedTimeout.length > 0) {
+			failed += 1;
+		}
 	}
 
 	if (dueCandidates.length === 0) {
@@ -1792,7 +1853,12 @@ export async function runRecordingSyncCron(
 					recordingError: msg.slice(0, 300),
 					recordingSyncedAt: now,
 				})
-				.where(eq(classSessionMeeting.id, row.id));
+				.where(
+					and(
+						eq(classSessionMeeting.id, row.id),
+						isNull(classSessionMeeting.recordingStorageKey),
+					),
+				);
 		}
 	}
 

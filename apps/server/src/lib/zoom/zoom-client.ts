@@ -104,8 +104,26 @@ interface RawZoomRecordingFile {
 }
 
 function isZoomHostname(hostname: string): boolean {
-	const lower = hostname.toLowerCase();
+	const lower = hostname.trim().toLowerCase().replace(/\.$/, "");
 	return lower === "zoom.us" || lower.endsWith(".zoom.us");
+}
+
+function isDisallowedDownloadHost(url: URL): boolean {
+	if (url.username || url.password) return true;
+	const hostname = url.hostname.trim().toLowerCase().replace(/\.$/, "");
+	if (!hostname) return true;
+	if (
+		hostname === "localhost" ||
+		hostname.endsWith(".localhost") ||
+		hostname.endsWith(".local") ||
+		hostname.endsWith(".internal")
+	) {
+		return true;
+	}
+	// Chặn mọi IPv6 literal ([::1], [fe80::1], ...) và IPv4 literal (WHATWG URL chuẩn hóa cả hex/int/octal về dotted-quad).
+	if (hostname.includes(":")) return true;
+	if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) return true;
+	return false;
 }
 
 function selectPrimaryMp4File(
@@ -325,12 +343,19 @@ export function createZoomClient(
 			const hasProcessing = files.some(
 				(f) => (f.status ?? "").toLowerCase() === "processing",
 			);
+			const hasProcessingMp4 = files.some((f) => {
+				if ((f.status ?? "").toLowerCase() !== "processing") return false;
+				const ft = (f.file_type ?? "").trim().toUpperCase();
+				const ext = (f.file_extension ?? "").trim().toUpperCase();
+				return ft === "MP4" || ext === "MP4" || (!ft && !ext);
+			});
 			const hasCompletedAny = files.some(
 				(f) => (f.status ?? "").toLowerCase() === "completed",
 			);
 
-			// Chưa có MP4 hoàn tất nhưng Zoom vẫn đang xử lý file khác (vd M4A xong trước MP4) → chờ tiếp.
-			if (!primaryFile && hasProcessing) {
+			// Còn đoạn MP4 đang xử lý (tránh chọn nhầm đoạn ngắn xong trước rồi Trash cả buổi),
+			// hoặc chưa có MP4 hoàn tất mà Zoom vẫn đang xử lý file khác (vd M4A xong trước MP4) → chờ tiếp.
+			if (hasProcessingMp4 || (!primaryFile && hasProcessing)) {
 				return { status: "pending" };
 			}
 			if (
@@ -359,6 +384,7 @@ export function createZoomClient(
 			}
 			if (
 				currentUrl.protocol !== "https:" ||
+				isDisallowedDownloadHost(currentUrl) ||
 				!isZoomHostname(currentUrl.hostname)
 			) {
 				throw new ZoomIntegrationError(
@@ -417,10 +443,13 @@ export function createZoomClient(
 							502,
 						);
 					}
-					if (nextUrl.protocol !== "https:") {
+					if (
+						nextUrl.protocol !== "https:" ||
+						isDisallowedDownloadHost(nextUrl)
+					) {
 						throw new ZoomIntegrationError(
 							ZOOM_ERROR_CODES.API_ERROR,
-							"Từ chối chuyển hướng tải recording không dùng HTTPS.",
+							"Từ chối chuyển hướng tải recording sang địa chỉ không hợp lệ hoặc không dùng HTTPS.",
 							502,
 						);
 					}
@@ -462,11 +491,13 @@ export function createZoomClient(
 			).trim();
 			const baseMediaType =
 				rawContentType.split(";")[0]?.trim().toLowerCase() ?? "";
-			if (
-				baseMediaType.startsWith("text/html") ||
-				baseMediaType.startsWith("application/json") ||
-				baseMediaType.endsWith("+json")
-			) {
+			const isAllowedDownloadMime =
+				!baseMediaType ||
+				baseMediaType === "application/octet-stream" ||
+				baseMediaType === "binary/octet-stream" ||
+				(baseMediaType.startsWith("video/") &&
+					baseMediaType.length > "video/".length);
+			if (!isAllowedDownloadMime) {
 				await finalRes.body?.cancel().catch(() => {});
 				throw new ZoomIntegrationError(
 					ZOOM_ERROR_CODES.API_ERROR,
@@ -483,9 +514,14 @@ export function createZoomClient(
 				);
 			}
 
+			// Nếu upstream nén bằng Content-Encoding (vd gzip), runtime giải nén trong suốt
+			// khiến độ dài byte thực của stream lệch khỏi Content-Length → đi qua multipart.
+			const rawEncoding =
+				finalRes.headers.get("content-encoding")?.trim().toLowerCase() ?? "";
+			const hasIdentityEncoding = !rawEncoding || rawEncoding === "identity";
 			const rawLength = finalRes.headers.get("content-length")?.trim();
 			let contentLength: number | undefined;
-			if (rawLength && /^\d+$/.test(rawLength)) {
+			if (hasIdentityEncoding && rawLength && /^\d+$/.test(rawLength)) {
 				const parsed = Number.parseInt(rawLength, 10);
 				if (Number.isSafeInteger(parsed) && parsed > 0) {
 					contentLength = parsed;

@@ -79,7 +79,6 @@ export async function recordingVideoResponse(
 	);
 	if (!object) return null;
 
-	const effectiveTotal = total > 0 ? total : object.size;
 	const contentType = resolveSafeVideoMime(row.mimeType ?? object.contentType);
 	const headers: Record<string, string> = {
 		...LOCKED_VIDEO_HEADERS,
@@ -90,11 +89,12 @@ export async function recordingVideoResponse(
 	};
 
 	if (range && object.range) {
+		const rangeEnd = object.range.offset + object.range.length - 1;
 		return new Response(object.body, {
 			status: 206,
 			headers: {
 				...headers,
-				"Content-Range": `bytes ${range.start}-${range.end}/${effectiveTotal}`,
+				"Content-Range": `bytes ${object.range.offset}-${rangeEnd}/${object.size}`,
 				"Content-Length": String(object.range.length),
 			},
 		});

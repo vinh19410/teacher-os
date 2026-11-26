@@ -969,11 +969,13 @@ export async function loadSnapshot(
 			canAccessFinance: financeAllowed,
 		},
 		sessionMeetings: classSessionMeetingRows.map((row) => {
-			const isExpired = Boolean(
-				row.recordingStorageKey &&
-					row.recordingExpiresAt &&
-					row.recordingExpiresAt.getTime() <= now.getTime(),
-			);
+			const isExpired =
+				row.recordingStatus === "expired" ||
+				Boolean(
+					row.recordingStorageKey &&
+						row.recordingExpiresAt &&
+						row.recordingExpiresAt.getTime() <= now.getTime(),
+				);
 			const hasRecordingVideo = Boolean(row.recordingStorageKey) && !isExpired;
 			const effectiveStatus = isExpired ? "expired" : row.recordingStatus;
 			const recordingSource: RecordingSource | null = hasRecordingVideo

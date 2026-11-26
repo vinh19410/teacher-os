@@ -170,6 +170,25 @@ describe("recordingVideoResponse", () => {
 		expect(res).toBeNull();
 	});
 
+	it("uses actual clamped object range and size for Content-Range when DB sizeBytes drifts", async () => {
+		const store = createMemoryRecordingStore({
+			k: { bytes: sampleBytes, contentType: "video/mp4" },
+		});
+		const res = await recordingVideoResponse(
+			store,
+			{
+				storageKey: "k",
+				mimeType: "video/mp4",
+				sizeBytes: 20, // DB drifted larger than actual 10-byte object
+				fileName: "rec.mp4",
+			},
+			{ rangeHeader: "bytes=6-15" },
+		);
+		expect(res?.status).toBe(206);
+		expect(res?.headers.get("Content-Range")).toBe("bytes 6-9/10");
+		expect(res?.headers.get("Content-Length")).toBe("4");
+	});
+
 	it("falls back non-video MIME to video/mp4 safely", async () => {
 		const store = createMemoryRecordingStore({
 			k: { bytes: sampleBytes, contentType: "text/html" },

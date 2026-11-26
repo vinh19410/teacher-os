@@ -22,9 +22,17 @@ async function uploadViaMultipart(
 	contentType: string,
 	partSizeBytes = MULTIPART_PART_BYTES,
 ): Promise<{ sizeBytes: number }> {
-	const upload = await bucket.createMultipartUpload(key, {
-		httpMetadata: { contentType },
-	});
+	let upload: R2MultipartUpload;
+	try {
+		upload = await bucket.createMultipartUpload(key, {
+			httpMetadata: { contentType },
+		});
+	} catch (err) {
+		if (!body.locked) {
+			await body.cancel().catch(() => {});
+		}
+		throw err;
+	}
 	const reader = body.getReader();
 	const parts: R2UploadedPart[] = [];
 	let pending: Uint8Array[] = [];
@@ -121,15 +129,35 @@ export function createR2RecordingStore(
 				declaredSize <= MAX_SINGLE_PUT_BYTES;
 
 			if (canSinglePut) {
-				const stored = await bucket.put(key, body, {
-					httpMetadata: { contentType },
-				});
-				const actualSize = stored?.size ?? declaredSize;
-				if (actualSize <= 0) {
-					await bucket.delete(key).catch(() => {});
-					throw new Error("File recording rỗng (0 byte).");
+				try {
+					const stored = await bucket.put(key, body, {
+						httpMetadata: { contentType },
+					});
+					const actualSize = stored?.size ?? declaredSize;
+					if (actualSize <= 0) {
+						await bucket.delete(key).catch(() => {});
+						throw new Error("File recording rỗng (0 byte).");
+					}
+					return { sizeBytes: actualSize };
+				} catch (err) {
+					if (
+						!body.locked &&
+						err instanceof TypeError &&
+						/known length/i.test(err.message)
+					) {
+						return uploadViaMultipart(
+							bucket,
+							key,
+							body,
+							contentType,
+							partSizeBytes,
+						);
+					}
+					if (!body.locked) {
+						await body.cancel().catch(() => {});
+					}
+					throw err;
 				}
-				return { sizeBytes: actualSize };
 			}
 
 			return uploadViaMultipart(bucket, key, body, contentType, partSizeBytes);

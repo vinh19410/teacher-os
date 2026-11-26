@@ -142,6 +142,94 @@ describe("createR2RecordingStore", () => {
 		expect(abort).toHaveBeenCalledTimes(1);
 	});
 
+	it("cancels upstream stream when single put or createMultipartUpload fails", async () => {
+		let cancelledSingle = false;
+		const singleStream = new ReadableStream<Uint8Array>({
+			start(controller) {
+				controller.enqueue(new Uint8Array([1, 2, 3]));
+			},
+			cancel() {
+				cancelledSingle = true;
+			},
+		});
+		const singleBucket = {
+			put: vi.fn().mockRejectedValue(new Error("r2 put failed")),
+			createMultipartUpload: vi.fn(),
+			head: vi.fn(),
+			get: vi.fn(),
+			delete: vi.fn(),
+		} as unknown as R2Bucket;
+
+		await expect(
+			createR2RecordingStore(singleBucket).putStream("k", singleStream, {
+				contentType: "video/mp4",
+				declaredSize: 3,
+			}),
+		).rejects.toThrow("r2 put failed");
+		expect(cancelledSingle).toBe(true);
+
+		let cancelledMultipart = false;
+		const multipartStream = new ReadableStream<Uint8Array>({
+			start(controller) {
+				controller.enqueue(new Uint8Array([1, 2, 3]));
+			},
+			cancel() {
+				cancelledMultipart = true;
+			},
+		});
+		const multipartBucket = {
+			put: vi.fn(),
+			createMultipartUpload: vi
+				.fn()
+				.mockRejectedValue(new Error("multipart init failed")),
+			head: vi.fn(),
+			get: vi.fn(),
+			delete: vi.fn(),
+		} as unknown as R2Bucket;
+
+		await expect(
+			createR2RecordingStore(multipartBucket).putStream("k", multipartStream, {
+				contentType: "video/mp4",
+			}),
+		).rejects.toThrow("multipart init failed");
+		expect(cancelledMultipart).toBe(true);
+	});
+
+	it("falls back to multipart upload when bucket.put rejects unknown-length stream", async () => {
+		const complete = vi.fn(async () => ({}));
+		const uploadPart = vi.fn(async (partNumber: number) => ({
+			partNumber,
+			etag: `e-${partNumber}`,
+		}));
+		const bucket = {
+			put: vi
+				.fn()
+				.mockRejectedValue(
+					new TypeError(
+						"Provided readable stream must have a known length (request/response body)",
+					),
+				),
+			createMultipartUpload: vi.fn(async () => ({
+				uploadPart,
+				complete,
+				abort: vi.fn(),
+			})),
+			head: vi.fn(),
+			get: vi.fn(),
+			delete: vi.fn(),
+		} as unknown as R2Bucket;
+
+		const res = await createR2RecordingStore(bucket, {
+			partSizeBytes: 4,
+		}).putStream("k", streamFromChunks([new Uint8Array([1, 2, 3, 4, 5])]), {
+			contentType: "video/mp4",
+			declaredSize: 5,
+		});
+		expect(res).toEqual({ sizeBytes: 5 });
+		expect(uploadPart).toHaveBeenCalledTimes(2);
+		expect(complete).toHaveBeenCalledTimes(1);
+	});
+
 	it("clamps byte ranges on get", async () => {
 		const payload = new Uint8Array([10, 20, 30, 40]);
 		const bucket = {
