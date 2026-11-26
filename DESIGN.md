@@ -108,14 +108,20 @@ giấy trên nền trắng (shadcn neutral), hành động chính = mực đậm
   (`--verdict-*`); skipped = viền đứt `--border`, không thêm màu; đáp án đã chọn KHÔNG dùng
   `text-primary` ở review — tô theo verdict, hàng đáp án đúng có viền xanh + nhãn "Đáp án đúng";
   chip verdict kèm icon ✓/✗ đặt cạnh số câu. Take mode không có class verdict nào.
-- **Chi tiết lớp học viên (`/classes/$classId`, #389):** khớp khung design v2 (`StudentClass.tsx`:
+- **Chi tiết lớp học viên (`/classes/$classId`, #389, #998):** khớp khung design v2 (`StudentClass.tsx`:
   banner việc cần làm, header + badge trạng thái + nút nhắn giáo viên, thẻ thông tin `<dl>` + footer,
-  4 vòng ring `stroke-muted`/`stroke-primary`, segmented `Tabs`, timeline buổi học 32px, bảng bài tập,
-  giáo trình icon tròn, avatar bạn cùng lớp `size-8 rounded-full`). **Lệch có chủ đích vì không bịa
-  dữ liệu server chưa trả:** giữ đích Back link `/` ("Trang chủ"); bỏ dòng bài về nhà theo buổi,
-  phòng học, học phí theo lớp, "Tham gia từ buổi", cột Skill của bài tập, nhóm module và nhãn
-  Mid/Final test trong giáo trình, "Target band" của bạn cùng lớp (quyền riêng #378), nút "Join online
-  class" (chưa có link lớp online); Ring "Band trung bình" hiện `"—"` khi endpoint lớp trả `scores: null`.
+  4 vòng ring `stroke-muted`/`stroke-primary`, segmented `Tabs`, timeline buổi học 32px, bảng bài tập).
+  Từ #998, gộp tab **"Hành trình học"** và **"Giáo trình"** thành một tab **"Hành trình học"** duy nhất
+  (thanh tab gồm 3 mục: `Hành trình học` | `Bài tập` | `Tài liệu chung`, ẩn tab `Bạn cùng lớp`): khi lớp
+  có giáo trình, buổi học nhóm theo từng Module kèm thanh tiến độ và badge `Giữa kỳ`/`Cuối kỳ`; lớp không
+  giáo trình hoặc legacy giữ timeline phẳng. Mỗi buổi có ngày (trừ `holiday`) bấm mở trang chi tiết
+  `/classes/$classId/sessions/$date` gồm header buổi + mục tiêu giáo trình, mục **Bài giảng** (hỗ trợ cắt
+  từng khoảng trang từ sách PDF gốc bằng `pdf-lib` phía giáo viên kèm badge `Trang X–Y` & xem trước PDF),
+  mục **Bài tập của buổi** (bài tập tương tác gắn buổi + file/link bài tập upload trước hoặc sau buổi), và
+  điều hướng `Buổi trước` / `Buổi tiếp theo`. **Lệch có chủ đích vì không bịa dữ liệu server chưa trả:**
+  giữ đích Back link `/` ("Trang chủ"); bỏ phòng học, học phí theo lớp, "Tham gia từ buổi", cột Skill của
+  bài tập, "Target band" của bạn cùng lớp (quyền riêng #378); Ring "Band trung bình" hiện `"—"` khi endpoint
+  lớp trả `scores: null`.
 
 ## Voice
 

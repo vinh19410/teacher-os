@@ -1,8 +1,21 @@
-import type { StudentClassLesson } from "@teacher-os/api/contracts";
+import { Link } from "@tanstack/react-router";
+import type {
+	StudentClassLesson,
+	StudentClassSyllabusSummary,
+} from "@teacher-os/api/contracts";
+import { isSafeMaterialUrl } from "@teacher-os/api/material-contracts";
 import { vietnamSessionEndMs } from "@teacher-os/api/vietnam-date";
 import { buttonVariants } from "@teacher-os/ui/components/button";
-import { Check, CircleDashed, Clock, PlayCircle, X } from "lucide-react";
-import { LessonMaterialsDisclosure } from "@/components/class/lesson-materials";
+import {
+	BookOpen,
+	Check,
+	ChevronRight,
+	CircleDashed,
+	ClipboardList,
+	Clock,
+	PlayCircle,
+	X,
+} from "lucide-react";
 import { RecordingPassword } from "@/components/class/recording-password";
 import { ZoomJoinButton } from "@/components/class/zoom-join-button";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
@@ -13,7 +26,7 @@ import {
 	VI_DAY_NAMES,
 } from "@/lib/vietnam-display-date";
 
-const LESSON_STATUS: Record<
+export const LESSON_STATUS: Record<
 	string,
 	{ label: string; variant: BadgeVariant; badgeClass: string }
 > = {
@@ -92,10 +105,388 @@ export function findNextLessonId(
 	return next?.id ?? null;
 }
 
+interface IndexedLesson {
+	lesson: StudentClassLesson;
+	/** 1-based teaching session index skipping holiday rows (khớp GET /sessions/:date và TOS-11 I4). */
+	teachingIndex: number | null;
+}
+
+function buildIndexedLessons(lessons: StudentClassLesson[]): IndexedLesson[] {
+	let teachingIndex = 0;
+	return lessons.map((lesson) => {
+		if (lesson.status === "holiday") {
+			return { lesson, teachingIndex: null };
+		}
+		teachingIndex += 1;
+		return { lesson, teachingIndex };
+	});
+}
+
+interface ModuleGroup {
+	id: string;
+	title: string;
+	description?: string;
+	items: IndexedLesson[];
+	completedCount: number;
+	teachingCount: number;
+}
+
+/**
+ * Nhóm 100% buổi học theo Module giáo trình khi có `syllabus` và ít nhất 1 buổi
+ * có `moduleId`. Buổi `holiday` (không có `moduleId`) bám theo module của buổi
+ * học liền kề để giữ nguyên trình tự thời gian và KHÔNG tính vào mẫu số tiến độ.
+ * Buổi vượt quá số tiết giáo trình vào cụm "Buổi học bổ sung" ở cuối.
+ */
+function groupLessonsByModules(
+	lessons: StudentClassLesson[],
+	syllabus: StudentClassSyllabusSummary,
+): ModuleGroup[] {
+	const moduleIds = new Set(syllabus.modules.map((m) => m.id));
+	const buckets = new Map<string, IndexedLesson[]>();
+	for (const mod of syllabus.modules) {
+		buckets.set(mod.id, []);
+	}
+	const extra: IndexedLesson[] = [];
+
+	// Tìm module mục tiêu gần nhất cho buổi holiday
+	const findAdjacentModuleId = (idx: number): string | null => {
+		for (let back = idx - 1; back >= 0; back -= 1) {
+			const mid = lessons[back]?.moduleId;
+			if (mid && moduleIds.has(mid)) return mid;
+		}
+		for (let fwd = idx + 1; fwd < lessons.length; fwd += 1) {
+			const mid = lessons[fwd]?.moduleId;
+			if (mid && moduleIds.has(mid)) return mid;
+		}
+		return syllabus.modules[0]?.id ?? null;
+	};
+
+	const indexed = buildIndexedLessons(lessons);
+	for (let i = 0; i < indexed.length; i += 1) {
+		const entry = indexed[i];
+		if (!entry) continue;
+		const item = entry.lesson;
+		if (item.moduleId && moduleIds.has(item.moduleId)) {
+			buckets.get(item.moduleId)?.push(entry);
+		} else if (item.status === "holiday") {
+			const targetModId = findAdjacentModuleId(i);
+			if (targetModId && buckets.has(targetModId)) {
+				buckets.get(targetModId)?.push(entry);
+			} else {
+				extra.push(entry);
+			}
+		} else {
+			extra.push(entry);
+		}
+	}
+
+	const groups: ModuleGroup[] = [];
+	for (const mod of syllabus.modules) {
+		const items = buckets.get(mod.id) ?? [];
+		if (items.length === 0) continue;
+		const teaching = items.filter((e) => e.lesson.status !== "holiday");
+		const completed = teaching.filter(
+			(e) => e.lesson.status === "completed",
+		).length;
+		groups.push({
+			id: mod.id,
+			title: mod.title,
+			description: mod.description,
+			items,
+			completedCount: completed,
+			teachingCount: teaching.length,
+		});
+	}
+
+	if (extra.length > 0) {
+		const teaching = extra.filter((e) => e.lesson.status !== "holiday");
+		const completed = teaching.filter(
+			(e) => e.lesson.status === "completed",
+		).length;
+		groups.push({
+			id: "__extra__",
+			title: "Buổi học bổ sung",
+			items: extra,
+			completedCount: completed,
+			teachingCount: teaching.length,
+		});
+	}
+
+	return groups;
+}
+
+function LessonRow({
+	classId,
+	entry,
+	isLastInList,
+	isPaused,
+	nextId,
+	todayISO,
+	now,
+	zoomNowMs,
+}: {
+	classId: string;
+	entry: IndexedLesson;
+	isLastInList: boolean;
+	isPaused: boolean;
+	nextId: string | null;
+	todayISO: string;
+	now: Date;
+	zoomNowMs?: number;
+}) {
+	const { lesson, teachingIndex } = entry;
+	const isNext = lesson.id === nextId;
+	const isEnded = isLessonEnded(lesson, now);
+	const displayStatus =
+		isPaused && lesson.status === "upcoming"
+			? "paused_upcoming"
+			: isEnded
+				? "ended"
+				: lesson.status;
+	const showZoomLink =
+		displayStatus === "upcoming" && Boolean(lesson.hasZoom ?? lesson.joinUrl);
+	const canShowRecording =
+		lesson.status !== "cancelled" && lesson.status !== "holiday";
+	const safeRecordingUrl =
+		canShowRecording &&
+		lesson.recordingUrl &&
+		isSafeMaterialUrl(lesson.recordingUrl)
+			? lesson.recordingUrl
+			: null;
+	const showRecordingLink = safeRecordingUrl !== null;
+	const showPendingRecording =
+		!safeRecordingUrl &&
+		lesson.recordingStatus === "pending" &&
+		(isEnded || lesson.status === "completed" || lesson.status === "absent");
+	const hasActions = showZoomLink || showRecordingLink || showPendingRecording;
+	const future =
+		nextId !== null &&
+		displayStatus === "upcoming" &&
+		!isNext &&
+		lesson.date != null &&
+		lesson.date > todayISO;
+	const status = LESSON_STATUS[displayStatus] ?? {
+		label: displayStatus,
+		variant: "outline" as const,
+		badgeClass: "text-muted-foreground",
+	};
+	const Dot =
+		displayStatus === "completed"
+			? Check
+			: displayStatus === "absent" || displayStatus === "cancelled"
+				? X
+				: displayStatus === "ended"
+					? Clock
+					: CircleDashed;
+
+	const isClickable = lesson.date != null && lesson.status !== "holiday";
+	const primaryTitle =
+		lesson.topic?.trim() || lesson.syllabusTitle?.trim() || "";
+	const secondarySyllabusTitle =
+		lesson.topic?.trim() &&
+		lesson.syllabusTitle?.trim() &&
+		lesson.topic.trim() !== lesson.syllabusTitle.trim()
+			? lesson.syllabusTitle.trim()
+			: null;
+	const lectureCount =
+		lesson.status !== "cancelled" && lesson.status !== "holiday"
+			? (lesson.lectureCount ?? 0)
+			: 0;
+	const homeworkFileCount =
+		lesson.status !== "cancelled" && lesson.status !== "holiday"
+			? (lesson.homeworkCount ?? 0)
+			: 0;
+	const assignmentCount =
+		lesson.status !== "holiday" ? (lesson.assignmentCount ?? 0) : 0;
+	const homeworkTotal = homeworkFileCount + assignmentCount;
+
+	return (
+		<li
+			aria-current={isNext ? "true" : undefined}
+			className={cn(
+				"relative grid grid-cols-[2rem_minmax(0,1fr)] gap-4 pb-5 last:pb-0",
+				future && "opacity-60",
+			)}
+		>
+			{!isLastInList && (
+				<span
+					aria-hidden="true"
+					className="absolute top-8 bottom-0 left-4 w-px -translate-x-1/2 bg-border"
+				/>
+			)}
+			<span
+				aria-hidden="true"
+				className={cn(
+					"relative z-10 grid size-8 place-items-center rounded-full border",
+					displayStatus === "completed" &&
+						"border-primary bg-primary text-primary-foreground",
+					displayStatus === "absent" &&
+						"border-destructive bg-destructive text-white",
+					(displayStatus === "cancelled" ||
+						displayStatus === "ended" ||
+						displayStatus === "paused_upcoming") &&
+						"bg-muted text-muted-foreground",
+					displayStatus !== "completed" &&
+						displayStatus !== "absent" &&
+						displayStatus !== "cancelled" &&
+						displayStatus !== "ended" &&
+						displayStatus !== "paused_upcoming" &&
+						"bg-background text-muted-foreground",
+					isNext && "text-foreground ring-[3px] ring-ring/30",
+				)}
+			>
+				<Dot className="size-4" />
+			</span>
+			<div
+				className={cn(
+					"group relative -mt-1 -ml-1 flex min-w-0 flex-wrap items-start justify-between gap-x-4 gap-y-1.5 rounded-lg p-3 transition-colors",
+					isNext
+						? "border bg-muted/40"
+						: isClickable
+							? "border border-transparent hover:border-border hover:bg-muted/30"
+							: "px-1 py-1",
+				)}
+			>
+				<div className="min-w-0 flex-1">
+					<div className="flex flex-wrap items-center gap-1.5 text-muted-foreground text-xs tabular-nums">
+						<span>
+							{teachingIndex !== null ? `Buổi ${teachingIndex} · ` : ""}
+							{lessonDayLabel(lesson)} · {lesson.time} · {lesson.dur} phút
+						</span>
+						{lesson.lessonKind === "midterm" && (
+							<Badge variant="outline" className="text-[11px]">
+								Giữa kỳ
+							</Badge>
+						)}
+						{lesson.lessonKind === "final" && (
+							<Badge variant="outline" className="text-[11px]">
+								Cuối kỳ
+							</Badge>
+						)}
+					</div>
+
+					{isClickable && lesson.date ? (
+						<Link
+							to="/classes/$classId/sessions/$date"
+							params={{ classId, date: lesson.date }}
+							data-testid={`session-link-${lesson.date}`}
+							className={cn(
+								"mt-0.5 inline-block max-w-full rounded-sm font-medium text-foreground text-sm outline-none after:absolute after:inset-0 after:content-[''] focus-visible:shadow-[var(--focus-ring)] group-hover:text-primary",
+								lesson.status === "cancelled" &&
+									"text-muted-foreground line-through",
+							)}
+						>
+							{primaryTitle ||
+								(teachingIndex !== null
+									? `Buổi ${teachingIndex} · Xem chi tiết`
+									: "Xem chi tiết buổi học")}
+						</Link>
+					) : primaryTitle ? (
+						<div
+							className={cn(
+								"mt-0.5 font-medium text-sm",
+								lesson.status === "cancelled" &&
+									"text-muted-foreground line-through",
+							)}
+						>
+							{primaryTitle}
+						</div>
+					) : null}
+
+					{secondarySyllabusTitle && (
+						<p className="mt-0.5 truncate text-muted-foreground text-xs">
+							{secondarySyllabusTitle}
+						</p>
+					)}
+
+					{(lectureCount > 0 || homeworkTotal > 0) && (
+						<div className="mt-1.5 flex flex-wrap items-center gap-2 text-muted-foreground text-xs tabular-nums">
+							{lectureCount > 0 && (
+								<span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5">
+									<BookOpen aria-hidden="true" className="size-3" />
+									{lectureCount} bài giảng
+								</span>
+							)}
+							{homeworkTotal > 0 && (
+								<span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5">
+									<ClipboardList aria-hidden="true" className="size-3" />
+									{homeworkTotal} bài tập
+								</span>
+							)}
+						</div>
+					)}
+				</div>
+
+				<div className="flex shrink-0 items-center gap-1.5">
+					{isNext ? (
+						<Badge variant="default">Buổi tới</Badge>
+					) : (
+						<Badge variant={status.variant} className={status.badgeClass}>
+							{status.label}
+						</Badge>
+					)}
+					{isClickable && (
+						<ChevronRight
+							aria-hidden="true"
+							className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground"
+						/>
+					)}
+				</div>
+
+				{hasActions && (
+					<div className="relative z-10 mt-1.5 flex w-full min-w-0 flex-wrap items-center gap-2">
+						{showZoomLink && (
+							<ZoomJoinButton
+								classId={classId}
+								date={lesson.date}
+								time={lesson.time}
+								dur={lesson.dur}
+								variant={isNext ? "default" : "outline"}
+								size="sm"
+								className="max-w-full"
+								nowMs={zoomNowMs}
+							/>
+						)}
+						{showRecordingLink && safeRecordingUrl && (
+							<a
+								href={safeRecordingUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								className={cn(
+									buttonVariants({
+										variant: "outline",
+										size: "sm",
+									}),
+									"max-w-full whitespace-normal text-center focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-0",
+								)}
+							>
+								<PlayCircle aria-hidden="true" className="size-3.5" />
+								Xem recording
+							</a>
+						)}
+						{showRecordingLink &&
+							safeRecordingUrl &&
+							lesson.recordingPassword && (
+								<RecordingPassword password={lesson.recordingPassword} />
+							)}
+						{showPendingRecording && (
+							<Badge variant="outline" className="text-muted-foreground">
+								<Clock aria-hidden="true" className="size-3" />
+								Đang chờ recording
+							</Badge>
+						)}
+					</div>
+				)}
+			</div>
+		</li>
+	);
+}
+
 export function ClassLessonList({
 	classId,
 	isPaused = false,
 	lessons,
+	syllabus,
 	todayISO,
 	now,
 	zoomNowMs,
@@ -103,6 +494,7 @@ export function ClassLessonList({
 	classId: string;
 	isPaused?: boolean;
 	lessons: StudentClassLesson[];
+	syllabus?: StudentClassSyllabusSummary | null;
 	todayISO: string;
 	now: Date;
 	/** Chỉ dùng trong unit test để cố định đồng hồ cục bộ cho ZoomJoinButton. */
@@ -119,183 +511,137 @@ export function ClassLessonList({
 	}
 
 	const nextId = isPaused ? null : findNextLessonId(lessons, todayISO, now);
+	const useModuleGrouping = Boolean(
+		syllabus &&
+			syllabus.modules.length > 0 &&
+			lessons.some((l) => Boolean(l.moduleId)),
+	);
+
+	if (useModuleGrouping && syllabus) {
+		const groups = groupLessonsByModules(lessons, syllabus);
+		const totalTeaching = lessons.filter((l) => l.status !== "holiday").length;
+		const totalCompleted = lessons.filter(
+			(l) => l.status === "completed",
+		).length;
+		const pct =
+			totalTeaching > 0
+				? Math.round((totalCompleted / totalTeaching) * 100)
+				: 0;
+
+		return (
+			<div className="space-y-4">
+				<div
+					data-testid="journey-syllabus-header"
+					className="rounded-xl border bg-card p-5 text-card-foreground shadow-sm"
+				>
+					<div className="flex flex-wrap items-center justify-between gap-2">
+						<div className="min-w-0">
+							<p className="font-semibold text-base text-foreground tracking-tight">
+								{syllabus.name}
+							</p>
+							{syllabus.description && (
+								<p className="mt-0.5 text-muted-foreground text-xs">
+									{syllabus.description}
+								</p>
+							)}
+						</div>
+						<span className="shrink-0 font-medium text-muted-foreground text-xs tabular-nums">
+							{totalCompleted}/{totalTeaching} buổi ({pct}%)
+						</span>
+					</div>
+					<div
+						aria-hidden="true"
+						className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted"
+					>
+						<div
+							className="h-full rounded-full bg-primary transition-all"
+							style={{ width: `${pct}%` }}
+						/>
+					</div>
+				</div>
+
+				{groups.map((group) => {
+					const moduleDone =
+						group.teachingCount > 0 &&
+						group.completedCount >= group.teachingCount;
+					return (
+						<section
+							key={group.id}
+							aria-label={group.title}
+							data-testid={`journey-module-${group.id}`}
+							className="rounded-xl border bg-card p-5 text-card-foreground shadow-sm sm:p-6"
+						>
+							<div className="mb-4 flex flex-wrap items-start justify-between gap-2 border-b pb-3">
+								<div className="flex min-w-0 items-center gap-2.5">
+									{moduleDone ? (
+										<span
+											aria-hidden="true"
+											className="grid size-5 flex-none place-items-center rounded-full bg-primary text-primary-foreground"
+										>
+											<Check className="size-3" />
+										</span>
+									) : (
+										<CircleDashed
+											aria-hidden="true"
+											className="size-5 flex-none text-muted-foreground"
+										/>
+									)}
+									<div className="min-w-0">
+										<h3 className="font-semibold text-foreground text-sm tracking-tight">
+											{group.title}
+										</h3>
+										{group.description && (
+											<p className="mt-0.5 text-muted-foreground text-xs">
+												{group.description}
+											</p>
+										)}
+									</div>
+								</div>
+								<span className="shrink-0 text-muted-foreground text-xs tabular-nums">
+									{group.completedCount}/{group.teachingCount} buổi
+								</span>
+							</div>
+
+							<ol className="relative">
+								{group.items.map((entry, idx) => (
+									<LessonRow
+										key={entry.lesson.id}
+										classId={classId}
+										entry={entry}
+										isLastInList={idx === group.items.length - 1}
+										isPaused={isPaused}
+										nextId={nextId}
+										todayISO={todayISO}
+										now={now}
+										zoomNowMs={zoomNowMs}
+									/>
+								))}
+							</ol>
+						</section>
+					);
+				})}
+			</div>
+		);
+	}
+
+	const flatEntries = buildIndexedLessons(lessons);
 
 	return (
 		<div className="rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
 			<ol className="relative">
-				{lessons.map((lesson, i) => {
-					const isNext = lesson.id === nextId;
-					const isEnded = isLessonEnded(lesson, now);
-					const displayStatus =
-						isPaused && lesson.status === "upcoming"
-							? "paused_upcoming"
-							: isEnded
-								? "ended"
-								: lesson.status;
-					const showZoomLink =
-						displayStatus === "upcoming" &&
-						Boolean(lesson.hasZoom ?? lesson.joinUrl);
-					const canShowRecording =
-						lesson.status !== "cancelled" && lesson.status !== "holiday";
-					const showRecordingLink =
-						canShowRecording && Boolean(lesson.recordingUrl);
-					const showPendingRecording =
-						!lesson.recordingUrl &&
-						lesson.recordingStatus === "pending" &&
-						(isEnded ||
-							lesson.status === "completed" ||
-							lesson.status === "absent");
-					const hasActions =
-						showZoomLink || showRecordingLink || showPendingRecording;
-					const future =
-						nextId !== null &&
-						displayStatus === "upcoming" &&
-						!isNext &&
-						lesson.date != null &&
-						lesson.date > todayISO;
-					const status = LESSON_STATUS[displayStatus] ?? {
-						label: displayStatus,
-						variant: "outline" as const,
-						badgeClass: "text-muted-foreground",
-					};
-					const Dot =
-						displayStatus === "completed"
-							? Check
-							: displayStatus === "absent" || displayStatus === "cancelled"
-								? X
-								: displayStatus === "ended"
-									? Clock
-									: CircleDashed;
-
-					return (
-						<li
-							key={lesson.id}
-							aria-current={isNext ? "true" : undefined}
-							className={cn(
-								"relative grid grid-cols-[2rem_minmax(0,1fr)] gap-4 pb-5 last:pb-0",
-								future && "opacity-60",
-							)}
-						>
-							{i < lessons.length - 1 && (
-								<span
-									aria-hidden="true"
-									className="absolute top-8 bottom-0 left-4 w-px -translate-x-1/2 bg-border"
-								/>
-							)}
-							<span
-								aria-hidden="true"
-								className={cn(
-									"relative z-10 grid size-8 place-items-center rounded-full border",
-									displayStatus === "completed" &&
-										"border-primary bg-primary text-primary-foreground",
-									displayStatus === "absent" &&
-										"border-destructive bg-destructive text-white",
-									(displayStatus === "cancelled" ||
-										displayStatus === "ended" ||
-										displayStatus === "paused_upcoming") &&
-										"bg-muted text-muted-foreground",
-									displayStatus !== "completed" &&
-										displayStatus !== "absent" &&
-										displayStatus !== "cancelled" &&
-										displayStatus !== "ended" &&
-										displayStatus !== "paused_upcoming" &&
-										"bg-background text-muted-foreground",
-									isNext && "text-foreground ring-[3px] ring-ring/30",
-								)}
-							>
-								<Dot className="size-4" />
-							</span>
-							<div
-								className={cn(
-									"flex min-w-0 flex-wrap items-start justify-between gap-x-4 gap-y-1 pt-1",
-									isNext && "-mt-1 rounded-lg border bg-muted/40 p-3",
-								)}
-							>
-								<div className="min-w-0">
-									<div className="text-muted-foreground text-xs tabular-nums">
-										Buổi {i + 1} · {lessonDayLabel(lesson)} · {lesson.time} ·{" "}
-										{lesson.dur} phút
-									</div>
-									{lesson.topic && (
-										<div
-											className={cn(
-												"font-medium",
-												lesson.status === "cancelled" &&
-													"text-muted-foreground line-through",
-											)}
-										>
-											{lesson.topic}
-										</div>
-									)}
-								</div>
-								{isNext ? (
-									<Badge variant="default">Buổi tới</Badge>
-								) : (
-									<Badge variant={status.variant} className={status.badgeClass}>
-										{status.label}
-									</Badge>
-								)}
-								{hasActions && (
-									<div className="mt-2 flex w-full min-w-0 flex-wrap items-center gap-2">
-										{showZoomLink && (
-											<ZoomJoinButton
-												classId={classId}
-												date={lesson.date}
-												time={lesson.time}
-												dur={lesson.dur}
-												variant={isNext ? "default" : "outline"}
-												size="sm"
-												className="max-w-full"
-												nowMs={zoomNowMs}
-											/>
-										)}
-										{showRecordingLink && lesson.recordingUrl && (
-											<a
-												href={lesson.recordingUrl}
-												target="_blank"
-												rel="noopener noreferrer"
-												className={cn(
-													buttonVariants({
-														variant: "outline",
-														size: "sm",
-													}),
-													"max-w-full whitespace-normal text-center focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-0",
-												)}
-											>
-												<PlayCircle aria-hidden="true" className="size-3.5" />
-												Xem recording
-											</a>
-										)}
-										{showRecordingLink &&
-											lesson.recordingUrl &&
-											lesson.recordingPassword && (
-												<RecordingPassword
-													password={lesson.recordingPassword}
-												/>
-											)}
-										{showPendingRecording && (
-											<Badge
-												variant="outline"
-												className="text-muted-foreground"
-											>
-												<Clock aria-hidden="true" className="size-3" />
-												Đang chờ recording
-											</Badge>
-										)}
-									</div>
-								)}
-								{lesson.date != null &&
-									lesson.status !== "holiday" &&
-									lesson.status !== "cancelled" && (
-										<LessonMaterialsDisclosure
-											classId={classId}
-											date={lesson.date}
-										/>
-									)}
-							</div>
-						</li>
-					);
-				})}
+				{flatEntries.map((entry, i) => (
+					<LessonRow
+						key={entry.lesson.id}
+						classId={classId}
+						entry={entry}
+						isLastInList={i === flatEntries.length - 1}
+						isPaused={isPaused}
+						nextId={nextId}
+						todayISO={todayISO}
+						now={now}
+						zoomNowMs={zoomNowMs}
+					/>
+				))}
 			</ol>
 		</div>
 	);

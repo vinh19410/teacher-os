@@ -111,6 +111,14 @@ export const lessonMaterial = sqliteTable(
 		materialId: text("material_id")
 			.notNull()
 			.references(() => material.id, { onDelete: "no action" }),
+		/** Phân loại tài liệu trên buổi học: `lecture` (Bài giảng) | `homework` (Bài tập buổi học). */
+		category: text("category").notNull().default("lecture"),
+		/** Snapshot tên sách gốc khi bài giảng được cắt từ sách PDF (nullable). */
+		sourceTitle: text("source_title"),
+		/** Trang bắt đầu (1-based inclusive) trong sách gốc khi cắt PDF (nullable). */
+		sourcePageStart: integer("source_page_start"),
+		/** Trang kết thúc (1-based inclusive) trong sách gốc khi cắt PDF (nullable). */
+		sourcePageEnd: integer("source_page_end"),
 		position: integer("position").notNull().default(0),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)

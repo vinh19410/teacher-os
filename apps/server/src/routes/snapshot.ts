@@ -900,6 +900,7 @@ export async function loadSnapshot(
 			due: row.due,
 			dueAt: row.dueAt ? row.dueAt.toISOString() : null,
 			note: row.note,
+			sessionDate: row.sessionDate ?? null,
 			createdAt: row.createdAt.toISOString(),
 			targets: targetsByAssignment.get(row.id) ?? [],
 		})),

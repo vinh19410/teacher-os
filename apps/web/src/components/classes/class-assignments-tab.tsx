@@ -24,6 +24,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Section } from "@/components/ui/section";
 import { Tag } from "@/components/ui/tag";
+import { formatSessionDate } from "@/lib/class-sessions";
 import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
 import type { ClassAssignment, ClassGroup } from "@/lib/mock-data";
@@ -294,6 +295,9 @@ export function ClassAssignmentsTab({
 										</span>
 									</span>
 									<span className="flex flex-wrap items-center gap-2 pl-12 sm:shrink-0 sm:pl-0">
+										{ca.sessionDate && (
+											<Tag>Buổi {formatSessionDate(ca.sessionDate)}</Tag>
+										)}
 										{promptRow?.writing != null && <Tag>+ Writing</Tag>}
 										<StatusTag tone={rollup.tone}>{rollup.label}</StatusTag>
 									</span>

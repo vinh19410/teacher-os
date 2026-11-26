@@ -123,6 +123,7 @@ export interface ClassAssignment {
 	title: string;
 	due: string;
 	dueAt?: string | null;
+	sessionDate?: string | null;
 	note: string;
 	createdAt: string;
 	targets: Array<{

@@ -9,6 +9,7 @@ import {
 } from "@teacher-os/api/skeleton";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { classTable } from "@teacher-os/db/schema/class";
+import { classAssignment } from "@teacher-os/db/schema/class-assignment";
 import { classSession } from "@teacher-os/db/schema/class-session";
 import { classSessionMeeting } from "@teacher-os/db/schema/class-session-meeting";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
@@ -554,7 +555,7 @@ export async function materializeScheduleForEnrollment(
 		const materialMoveStatements = (shift: {
 			originalDate: string;
 			makeupDate: string;
-		}): [BatchItem<"sqlite">, BatchItem<"sqlite">] => [
+		}): [BatchItem<"sqlite">, BatchItem<"sqlite">, BatchItem<"sqlite">] => [
 			db.delete(lessonMaterial).where(
 				and(
 					eq(lessonMaterial.orgId, orgId),
@@ -583,6 +584,16 @@ export async function materializeScheduleForEnrollment(
 						eq(lessonMaterial.orgId, orgId),
 						eq(lessonMaterial.classId, cls.id),
 						eq(lessonMaterial.date, shift.originalDate),
+					),
+				),
+			db
+				.update(classAssignment)
+				.set({ sessionDate: shift.makeupDate })
+				.where(
+					and(
+						eq(classAssignment.orgId, orgId),
+						eq(classAssignment.classId, cls.id),
+						eq(classAssignment.sessionDate, shift.originalDate),
 					),
 				),
 		];

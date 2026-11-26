@@ -13,6 +13,7 @@ export function mapClassAssignments(
 		title: row.title,
 		due: row.due,
 		dueAt: row.dueAt ?? null,
+		sessionDate: row.sessionDate ?? null,
 		note: row.note,
 		createdAt: row.createdAt,
 		targets: row.targets.map((target) => ({

@@ -455,8 +455,11 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 				name: `Lớp Tài liệu ${stamp}`,
 			}),
 		).toBeVisible();
-		await studentPage.getByRole("button", { name: "Tài liệu" }).first().click();
-		const materialsList = studentPage.getByTestId("lesson-material");
+		await studentPage.getByTestId(`session-link-${sessionDate}`).click();
+		await expect(studentPage).toHaveURL(
+			`${STUDENT_BASE_URL}/classes/${classAId}/sessions/${sessionDate}`,
+		);
+		const materialsList = studentPage.getByTestId("session-lecture-item");
 		await expect(materialsList.filter({ hasText: MP3_NAME })).toBeVisible();
 		await expect(materialsList.filter({ hasText: PDF_NAME })).toBeVisible();
 

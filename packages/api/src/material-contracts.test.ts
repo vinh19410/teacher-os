@@ -5,6 +5,8 @@ import {
 	classMaterialLinkCreateSchema,
 	isSafeMaterialUrl,
 	lessonMaterialAttachSchema,
+	lessonMaterialLinkCreateSchema,
+	lessonMaterialUpdateSchema,
 	MATERIAL_DOC_MAX_BYTES,
 	MATERIAL_MAGIC_PEEK_BYTES,
 	MATERIAL_MEDIA_MAX_BYTES,
@@ -459,11 +461,86 @@ describe("material schemas", () => {
 		).toBe(true);
 	});
 
-	test("attach requires a material id", () => {
+	test("attach requires a material id and validates optional category + source page range", () => {
 		expect(lessonMaterialAttachSchema.safeParse({}).success).toBe(false);
+		expect(lessonMaterialAttachSchema.parse({ materialId: "m-1" })).toEqual({
+			materialId: "m-1",
+			category: "lecture",
+		});
 		expect(
-			lessonMaterialAttachSchema.parse({ materialId: "m-1" }).materialId,
-		).toBe("m-1");
+			lessonMaterialAttachSchema.parse({
+				materialId: "m-1",
+				category: "homework",
+				sourceTitle: "  IELTS Book  ",
+				sourcePageStart: 1,
+				sourcePageEnd: 12,
+			}),
+		).toEqual({
+			materialId: "m-1",
+			category: "homework",
+			sourceTitle: "IELTS Book",
+			sourcePageStart: 1,
+			sourcePageEnd: 12,
+		});
+		expect(
+			lessonMaterialAttachSchema.safeParse({
+				materialId: "m-1",
+				category: "unknown",
+			}).success,
+		).toBe(false);
+		expect(
+			lessonMaterialAttachSchema.safeParse({
+				materialId: "m-1",
+				sourcePageStart: 5,
+				sourcePageEnd: 3,
+			}).success,
+		).toBe(false);
+		expect(
+			lessonMaterialAttachSchema.safeParse({
+				materialId: "m-1",
+				sourcePageStart: 1,
+			}).success,
+		).toBe(false);
+		expect(
+			lessonMaterialAttachSchema.safeParse({
+				materialId: "m-1",
+				sourceTitle: "bad\u202ename",
+			}).success,
+		).toBe(false);
+	});
+
+	test("lesson material update and link create validate category and URL safety", () => {
+		expect(lessonMaterialUpdateSchema.parse({ category: "homework" })).toEqual({
+			category: "homework",
+		});
+		expect(lessonMaterialUpdateSchema.safeParse({}).success).toBe(false);
+		expect(
+			lessonMaterialUpdateSchema.safeParse({ category: "other" }).success,
+		).toBe(false);
+		expect(
+			lessonMaterialLinkCreateSchema.parse({
+				title: "  Bài tập Google Form  ",
+				url: " https://forms.gle/abc ",
+				category: "homework",
+			}),
+		).toEqual({
+			title: "Bài tập Google Form",
+			description: "",
+			url: "https://forms.gle/abc",
+			category: "homework",
+		});
+		expect(
+			lessonMaterialLinkCreateSchema.parse({
+				title: "Slide bài giảng",
+				url: "https://example.com/slides",
+			}).category,
+		).toBe("lecture");
+		expect(
+			lessonMaterialLinkCreateSchema.safeParse({
+				title: "Bad",
+				url: "javascript:alert(1)",
+			}).success,
+		).toBe(false);
 	});
 
 	test("class material attach validates materialId strictly", () => {

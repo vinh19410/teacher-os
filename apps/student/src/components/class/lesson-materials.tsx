@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useId, useState, useSyncExternalStore } from "react";
 import { StudentInlineMaterialPreview } from "@/components/class/student-material-preview";
+import { Badge } from "@/components/ui/badge";
 import { HttpError } from "@/lib/query-client";
 import {
 	getActiveStudentOrgId,
@@ -60,11 +61,28 @@ function KindIcon({ material }: { material: StudentClassMaterialView }) {
 }
 
 export interface StudentMaterialRowProps {
-	material: StudentClassMaterialView;
+	material: StudentClassMaterialView | StudentLessonMaterialView;
 	fileUrl: string;
 	downloadUrl: string;
 	preview?: ReactNode;
 	testId?: string;
+}
+
+function sliceMetadata(
+	material: StudentClassMaterialView | StudentLessonMaterialView,
+): { pageLabel: string; sourceTitle: string | null } | null {
+	if (!("sourcePageStart" in material)) return null;
+	if (material.sourcePageStart == null || material.sourcePageEnd == null) {
+		return null;
+	}
+	const pageLabel =
+		material.sourcePageStart === material.sourcePageEnd
+			? `Trang ${material.sourcePageStart}`
+			: `Trang ${material.sourcePageStart}–${material.sourcePageEnd}`;
+	return {
+		pageLabel,
+		sourceTitle: material.sourceTitle?.trim() || null,
+	};
 }
 
 /** Hàng tài liệu chỉ đọc dùng chung cho tài liệu buổi học và tài liệu chung của lớp. */
@@ -76,6 +94,7 @@ export function StudentMaterialRow({
 	testId,
 }: StudentMaterialRowProps) {
 	const size = formatFileSize(material.sizeBytes);
+	const slice = sliceMetadata(material);
 	const hasPreview =
 		preview !== undefined && preview !== null && preview !== false;
 	return (
@@ -97,6 +116,18 @@ export function StudentMaterialRow({
 				)}
 				<div className="min-w-0 flex-1">
 					<p className="break-words font-medium text-sm">{material.title}</p>
+					{slice && (
+						<div className="mt-1 flex flex-wrap items-center gap-1.5">
+							<Badge variant="secondary" className="text-[11px] tabular-nums">
+								{slice.pageLabel}
+							</Badge>
+							{slice.sourceTitle && (
+								<span className="min-w-0 max-w-full truncate text-muted-foreground text-xs">
+									Từ sách: {slice.sourceTitle}
+								</span>
+							)}
+						</div>
+					)}
 					{material.description && (
 						<p className="mt-0.5 whitespace-pre-line break-words text-muted-foreground text-xs">
 							{material.description}
@@ -175,14 +206,16 @@ export function StudentMaterialRow({
 	);
 }
 
-function MaterialRow({
+export function LessonMaterialItemRow({
 	material,
 	classId,
 	date,
+	testId = "lesson-material",
 }: {
 	material: StudentLessonMaterialView;
 	classId: string;
 	date: string;
+	testId?: string;
 }) {
 	useSyncExternalStore(
 		subscribeActiveStudentOrg,
@@ -207,7 +240,7 @@ function MaterialRow({
 					/>
 				) : undefined
 			}
-			testId="lesson-material"
+			testId={testId}
 		/>
 	);
 }
@@ -247,7 +280,12 @@ export function LessonMaterials({
 	return (
 		<ul className="divide-y">
 			{items.map((m) => (
-				<MaterialRow key={m.id} material={m} classId={classId} date={date} />
+				<LessonMaterialItemRow
+					key={m.id}
+					material={m}
+					classId={classId}
+					date={date}
+				/>
 			))}
 		</ul>
 	);

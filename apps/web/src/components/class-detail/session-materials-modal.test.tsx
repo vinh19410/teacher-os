@@ -724,4 +724,155 @@ describe("SessionMaterialsModal", () => {
 		fireEvent.keyDown(document, { key: "Escape" });
 		expect(onClose).toHaveBeenCalledTimes(2);
 	});
+
+	it("separates lecture and homework tabs, shows page-range metadata, switches category, and displays session assignments", async () => {
+		const patchCalls: Array<{ path: string; body: unknown }> = [];
+		const linkCalls: Array<{ path: string; body: unknown }> = [];
+		const lectureItem = lessonMaterial({
+			id: "mat-lec-slice",
+			title: "Bài giảng mở bài",
+			category: "lecture",
+			sourceTitle: "Cambridge 18.pdf",
+			sourcePageStart: 5,
+			sourcePageEnd: 12,
+		});
+		const homeworkItem = lessonMaterial({
+			id: "mat-hw-1",
+			title: "Phiếu bài tập về nhà",
+			category: "homework",
+		});
+
+		startKernelServer(
+			snapshotFixture({ viewer: { role: "teacher", canAccessFinance: false } }),
+		);
+		const kernelFetch = globalThis.fetch;
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+				const url = new URL(String(input));
+				const method = (init?.method ?? "GET").toUpperCase();
+				if (
+					method === "GET" &&
+					/^\/api\/materials\/[^/]+\/file$/.test(url.pathname)
+				) {
+					return new Response(new Blob(["%PDF"], { type: "application/pdf" }), {
+						status: 200,
+						headers: { "content-type": "application/pdf" },
+					});
+				}
+				if (
+					method === "GET" &&
+					url.pathname === "/api/classes/cl-1/sessions/2026-11-10/materials"
+				) {
+					return jsonResponse(200, { items: [lectureItem, homeworkItem] });
+				}
+				if (
+					method === "PATCH" &&
+					url.pathname ===
+						"/api/classes/cl-1/sessions/2026-11-10/materials/mat-lec-slice"
+				) {
+					const body = JSON.parse(String(init?.body ?? "{}"));
+					patchCalls.push({ path: url.pathname, body });
+					return jsonResponse(200, {
+						item: { ...lectureItem, category: body.category },
+					});
+				}
+				if (
+					method === "POST" &&
+					url.pathname ===
+						"/api/classes/cl-1/sessions/2026-11-10/materials/links"
+				) {
+					const body = JSON.parse(String(init?.body ?? "{}"));
+					linkCalls.push({ path: url.pathname, body });
+					return jsonResponse(201, {
+						item: lessonMaterial({
+							id: "mat-new-link",
+							title: body.title,
+							kind: "link",
+							url: body.url,
+							category: body.category,
+						}),
+					});
+				}
+				return kernelFetch(input, init);
+			}),
+		);
+
+		const onOpenAssignPrompt = vi.fn();
+		renderWithKernel(
+			<SessionMaterialsModal
+				classId="cl-1"
+				dateISO="2026-11-10"
+				sessionLabel="10/11"
+				sessionAssignments={[
+					{
+						id: "ca-1",
+						classId: "cl-1",
+						promptId: "p-1",
+						title: "Writing Task 2 — Education",
+						due: "2026-11-20",
+						sessionDate: "2026-11-10",
+						note: "",
+						createdAt: "2026-11-01T00:00:00Z",
+						targets: [{ studentId: "st-1", submittedAt: null }],
+					},
+				]}
+				onOpenAssignPrompt={onOpenAssignPrompt}
+				onClose={vi.fn()}
+			/>,
+		);
+
+		const dialog = await screen.findByRole("dialog", {
+			name: "Tài liệu buổi 10/11",
+		});
+
+		// Lecture tab shows sliced lecture badge and hides homework item
+		expect(await within(dialog).findByText("Bài giảng mở bài")).toBeTruthy();
+		expect(
+			within(dialog).getByText("Cambridge 18.pdf · tr. 5–12"),
+		).toBeTruthy();
+		expect(within(dialog).queryByText("Phiếu bài tập về nhà")).toBeNull();
+
+		// Switch category from lecture -> homework
+		fireEvent.click(
+			within(dialog).getByRole("button", {
+				name: "Chuyển Bài giảng mở bài sang bài tập",
+			}),
+		);
+		await waitFor(() => expect(patchCalls).toHaveLength(1));
+		expect(patchCalls[0]?.body).toEqual({ category: "homework" });
+
+		// Switch to Homework tab
+		fireEvent.click(
+			within(dialog).getByRole("tab", { name: /Bài tập buổi học/ }),
+		);
+		expect(within(dialog).getByText("Phiếu bài tập về nhà")).toBeTruthy();
+		expect(within(dialog).getByText("Writing Task 2 — Education")).toBeTruthy();
+
+		// Trigger assign prompt callback
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Giao bài từ ngân hàng đề" }),
+		);
+		expect(onOpenAssignPrompt).toHaveBeenCalledTimes(1);
+
+		// Create homework link directly
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Thêm liên kết" }),
+		);
+		fireEvent.change(within(dialog).getByLabelText("Tiêu đề"), {
+			target: { value: "Form bài tập" },
+		});
+		fireEvent.change(within(dialog).getByLabelText("Đường dẫn"), {
+			target: { value: "https://forms.gle/test" },
+		});
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Thêm liên kết" }),
+		);
+		await waitFor(() => expect(linkCalls).toHaveLength(1));
+		expect(linkCalls[0]?.body).toMatchObject({
+			title: "Form bài tập",
+			url: "https://forms.gle/test",
+			category: "homework",
+		});
+	});
 });

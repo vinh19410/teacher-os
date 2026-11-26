@@ -284,15 +284,11 @@ describe("ClassDetailView", () => {
 		// Ring stats.
 		expect(html).toContain("Chuyên cần");
 		expect(html).toContain("Band trung bình");
-		// Tabs: gồm 4 tab (ẩn tab "Bạn cùng lớp").
-		for (const label of [
-			"Hành trình học",
-			"Bài tập",
-			"Giáo trình",
-			"Tài liệu chung",
-		]) {
+		// Tabs: gồm 3 tab sau khi gộp Giáo trình vào Hành trình học.
+		for (const label of ["Hành trình học", "Bài tập", "Tài liệu chung"]) {
 			expect(html).toContain(label);
 		}
+		expect(html).not.toContain("class-tab-syllabus");
 		expect(html).not.toContain("Bạn cùng lớp");
 		expect(html).not.toContain("class-tab-classmates");
 		expect(html).toContain('href="/"');
@@ -333,19 +329,35 @@ describe("ClassDetailView", () => {
 		utils.unmount();
 	});
 
-	it("shows syllabus topics with Check and CircleDashed icons on syllabus tab", () => {
+	it("shows syllabus module progress directly inside the merged Hành trình học tab", () => {
+		const withSyllabus: StudentClassDetail = {
+			...detail,
+			syllabus: {
+				name: "IELTS Reading Intensive",
+				description: "",
+				modules: [
+					{ id: "m1", title: "Module 1: Skimming", description: "" },
+					{ id: "m2", title: "Module 2: Scanning", description: "" },
+				],
+			},
+			lessons: detail.lessons.map((l, idx) => ({
+				...l,
+				moduleId: idx === 0 ? "m1" : "m2",
+				moduleTitle: idx === 0 ? "Module 1: Skimming" : "Module 2: Scanning",
+			})),
+		};
 		const utils = render(
-			<ClassDetailView detail={detail} todayISO={TODAY} now={NOW} />,
+			<ClassDetailView detail={withSyllabus} todayISO={TODAY} now={NOW} />,
 		);
-		fireEvent.click(screen.getByRole("tab", { name: "Giáo trình" }));
-		expect(screen.getByText("Reading Skimming")).toBeTruthy();
+		expect(screen.getByText("IELTS Reading Intensive")).toBeTruthy();
+		expect(screen.getByText("Module 1: Skimming")).toBeTruthy();
 		expect(screen.getByText("1/1 buổi")).toBeTruthy();
-		expect(screen.getByText("Chưa có chủ đề")).toBeTruthy();
+		expect(screen.getByText("Module 2: Scanning")).toBeTruthy();
 		expect(screen.getByText("0/4 buổi")).toBeTruthy();
 		utils.unmount();
 	});
 
-	it("hides the classmates tab, switches across the remaining tabs, and never calls useClassmates", () => {
+	it("hides classmates and syllabus tabs, switches across the 3 remaining tabs, and never calls useClassmates", () => {
 		const useClassmatesSpy = vi.spyOn(repos, "useClassmates");
 		const utils = render(
 			<ClassDetailView detail={detail} todayISO={TODAY} now={NOW} />,
@@ -355,17 +367,15 @@ describe("ClassDetailView", () => {
 		expect(tabs.map((tab) => tab.textContent)).toEqual([
 			"Hành trình học",
 			"Bài tập",
-			"Giáo trình",
 			"Tài liệu chung",
 		]);
+		expect(screen.queryByRole("tab", { name: "Giáo trình" })).toBeNull();
+		expect(screen.queryByTestId("class-tab-syllabus")).toBeNull();
 		expect(screen.queryByRole("tab", { name: "Bạn cùng lớp" })).toBeNull();
 		expect(screen.queryByTestId("class-tab-classmates")).toBeNull();
 
 		fireEvent.click(screen.getByRole("tab", { name: "Bài tập" }));
 		expect(screen.getByRole("table")).toBeTruthy();
-
-		fireEvent.click(screen.getByRole("tab", { name: "Giáo trình" }));
-		expect(screen.getByText("Reading Skimming")).toBeTruthy();
 
 		fireEvent.click(screen.getByRole("tab", { name: "Hành trình học" }));
 		expect(

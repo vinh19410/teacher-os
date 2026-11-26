@@ -219,6 +219,9 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 					...(action.payload.dueTime
 						? { dueTime: action.payload.dueTime }
 						: {}),
+					...(action.payload.sessionDate
+						? { sessionDate: action.payload.sessionDate }
+						: {}),
 					note: action.payload.note,
 					studentIds: action.payload.studentIds,
 				},

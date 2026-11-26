@@ -9,6 +9,7 @@ import {
 	ExternalLink,
 	Film,
 	Paperclip,
+	Scissors,
 	Video,
 } from "lucide-react";
 import { type KeyboardEvent, useState } from "react";
@@ -21,6 +22,10 @@ import {
 } from "@/components/class-detail/session-actions-modal";
 import { SessionAttendanceModal } from "@/components/class-detail/session-attendance-modal";
 import { SessionMaterialsModal } from "@/components/class-detail/session-materials-modal";
+import {
+	SliceBookModal,
+	type SliceSessionOption,
+} from "@/components/class-detail/slice-book-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -41,6 +46,7 @@ import type { KernelAction } from "@/lib/data-actions";
 import { lessonDayLabel } from "@/lib/format-schedule";
 import { isHttpError } from "@/lib/kernel-load-state";
 import type {
+	ClassAssignment,
 	ClassGroup,
 	ClassSessionItem,
 	Lesson,
@@ -49,6 +55,7 @@ import type {
 } from "@/lib/mock-data";
 import { makeupDateForShift } from "@/lib/repos/holidays";
 import type { KernelCommandResult } from "@/lib/repos/kernel";
+import { useCanWriteMaterials } from "@/lib/repos/materials";
 import { createClassZoomBulk } from "@/lib/repos/zoom-meeting";
 import { todayISOVietnam } from "@/lib/week-grid";
 
@@ -84,6 +91,8 @@ export function ClassSessionsSection({
 	onImportSyllabus,
 	onDeleteOccurrence,
 	sessionMeetings = [],
+	classAssignments = [],
+	onOpenAssignForSession,
 	onRefresh,
 }: {
 	cls: ClassGroup;
@@ -113,10 +122,13 @@ export function ClassSessionsSection({
 	onImportSyllabus?: () => void;
 	onDeleteOccurrence?: (dateISO: string) => Promise<OccurrenceActionResult>;
 	sessionMeetings?: KernelSessionMeetingRow[];
+	classAssignments?: readonly ClassAssignment[];
+	onOpenAssignForSession?: (dateISO: string) => void;
 	onRefresh?: () => Promise<boolean>;
 	isPending: (key: string) => boolean;
 	busy: boolean;
 }) {
+	const canWriteMaterials = useCanWriteMaterials();
 	const [bulkCreatingZoom, setBulkCreatingZoom] = useState(false);
 	const [expandedDetails, setExpandedDetails] = useState<Set<number>>(
 		new Set(),
@@ -126,6 +138,7 @@ export function ClassSessionsSection({
 	// moveDate reorders the chronology under an open dialog.
 	const [actionsDateISO, setActionsDateISO] = useState<string | null>(null);
 	const [materialsDateISO, setMaterialsDateISO] = useState<string | null>(null);
+	const [bulkSliceOpen, setBulkSliceOpen] = useState(false);
 
 	// Issue #649 & #697: dùng chung helper resolveClassSessions với modal
 	// "Quản lý buổi của lớp" để đồng bộ 100% ánh xạ buổi N ↔ bài N.
@@ -240,6 +253,32 @@ export function ClassSessionsSection({
 	const supportsMaterials =
 		!isProjected && sessions.every((s) => s.mode === "v2");
 
+	const sliceableSessions: SliceSessionOption[] = supportsMaterials
+		? sessions.flatMap((s) => {
+				const st = sessionStatus(s);
+				const shifted =
+					s.rows.length === 0 &&
+					makeupDateForShift({ holidayShifts }, cls.id, s.dateISO) !== null;
+				if (st === "holiday" || st === "cancelled" || shifted) return [];
+				const info = sessionLessonInfo(s, syllabus);
+				const dateText = formatSessionDate(s.dateISO);
+				const topicSuffix = info.title ? ` — ${info.title}` : "";
+				return [
+					{
+						dateISO: s.dateISO,
+						index: s.index,
+						label: `Buổi ${s.index} · ${dateText}${topicSuffix}`,
+						defaultTitle: info.title
+							? `Buổi ${s.index} — ${info.title}`
+							: `Bài giảng buổi ${s.index} (${dateText})`,
+					},
+				];
+			})
+		: [];
+
+	const showSliceBookBtn =
+		canWriteMaterials && supportsMaterials && sliceableSessions.length > 0;
+
 	const meetingByDate = new Map(
 		sessionMeetings.filter((m) => m.classId === cls.id).map((m) => [m.date, m]),
 	);
@@ -294,8 +333,20 @@ export function ClassSessionsSection({
 				title="Sessions"
 				count={sessions.length}
 				action={
-					showAddSessionBtn || hasMissingZoom ? (
+					showAddSessionBtn || hasMissingZoom || showSliceBookBtn ? (
 						<div className="flex flex-wrap items-center gap-2">
+							{showSliceBookBtn && (
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									disabled={busy}
+									onClick={() => setBulkSliceOpen(true)}
+								>
+									<Scissors aria-hidden="true" className="size-3.5" />
+									Cắt sách theo buổi
+								</Button>
+							)}
 							{hasMissingZoom && onRefresh && (
 								<Button
 									type="button"
@@ -461,22 +512,24 @@ export function ClassSessionsSection({
 										</button>
 									)}
 									{
-										// Buổi holiday vô hình với học sinh (TOS-11) — không mở
+										// Buổi holiday / đã dời lễ vô hình với học sinh (TOS-11) — không mở
 										// modal tài liệu (#645): server cũng chặn attach 409.
-										supportsMaterials && status !== "holiday" && (
-											<button
-												type="button"
-												aria-label={`Tài liệu buổi ${formatSessionDate(s.dateISO)}`}
-												onClick={() => setMaterialsDateISO(s.dateISO)}
-												className={cn(
-													"mt-0.5 inline-flex items-center gap-1 font-medium text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
-													showGroupAttendanceLink && "ml-3",
-												)}
-											>
-												<Paperclip aria-hidden="true" className="size-3.5" />
-												Tài liệu
-											</button>
-										)
+										supportsMaterials &&
+											status !== "holiday" &&
+											!shiftedAway && (
+												<button
+													type="button"
+													aria-label={`Tài liệu buổi ${formatSessionDate(s.dateISO)}`}
+													onClick={() => setMaterialsDateISO(s.dateISO)}
+													className={cn(
+														"mt-0.5 inline-flex items-center gap-1 font-medium text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+														showGroupAttendanceLink && "ml-3",
+													)}
+												>
+													<Paperclip aria-hidden="true" className="size-3.5" />
+													Tài liệu
+												</button>
+											)
 									}
 									{(rowJoinUrl || rowRecordingUrl) && (
 										<div className="mt-1 flex flex-wrap items-center gap-2.5">
@@ -617,13 +670,40 @@ export function ClassSessionsSection({
 				onSaveEdit={onSaveEdit}
 				onDeleteOccurrence={onDeleteOccurrence}
 			/>
-			{materialsDateISO !== null && (
-				<SessionMaterialsModal
-					key={materialsDateISO}
+			{materialsDateISO !== null &&
+				(() => {
+					const isSelectedSessionSliceable = sliceableSessions.some(
+						(s) => s.dateISO === materialsDateISO,
+					);
+					return (
+						<SessionMaterialsModal
+							key={materialsDateISO}
+							classId={cls.id}
+							dateISO={materialsDateISO}
+							sessionLabel={formatSessionDate(materialsDateISO)}
+							sliceSessions={sliceableSessions}
+							allowSlice={isSelectedSessionSliceable}
+							sessionAssignments={classAssignments.filter(
+								(ca) => ca.sessionDate === materialsDateISO,
+							)}
+							onOpenAssignPrompt={
+								onOpenAssignForSession && isSelectedSessionSliceable
+									? () => {
+											const targetDate = materialsDateISO;
+											setMaterialsDateISO(null);
+											onOpenAssignForSession(targetDate);
+										}
+									: undefined
+							}
+							onClose={() => setMaterialsDateISO(null)}
+						/>
+					);
+				})()}
+			{bulkSliceOpen && showSliceBookBtn && (
+				<SliceBookModal
 					classId={cls.id}
-					dateISO={materialsDateISO}
-					sessionLabel={formatSessionDate(materialsDateISO)}
-					onClose={() => setMaterialsDateISO(null)}
+					sessions={sliceableSessions}
+					onClose={() => setBulkSliceOpen(false)}
 				/>
 			)}
 		</>
