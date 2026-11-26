@@ -29,7 +29,7 @@ export async function fetchDashboardReminders(
 	baseUrl: string = getApiBaseUrl(),
 	signal?: AbortSignal,
 ): Promise<DashboardReminders> {
-	const res = await fetch(`${baseUrl}/api/dashboard/reminders`, {
+	const res = await fetch(`${baseUrl}/api/dashboard/reminders?v=2`, {
 		credentials: "include",
 		signal,
 	});

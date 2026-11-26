@@ -2,19 +2,31 @@ import { queryOptions } from "@tanstack/react-query";
 import {
 	type DailyAttendanceResponse,
 	dailyAttendanceResponseSchema,
+	type OverdueAttendanceResponse,
+	overdueAttendanceResponseSchema,
 	type SessionAttendanceSave,
 } from "@teacher-os/api/contracts";
 import { HttpError } from "@/lib/kernel-load-state";
 import { getApiBaseUrl } from "./api-base-url";
 
+/** Prefix cha dùng chung cho cả daily và overdue attendance để DataProvider invalidate một lần. */
+export const attendanceBaseQueryKey = ["kernel", "attendance"] as const;
+
 export const dailyAttendanceBaseQueryKey = [
-	"kernel",
-	"attendance",
+	...attendanceBaseQueryKey,
 	"daily",
 ] as const;
 
 export const dailyAttendanceQueryKey = (date: string) =>
 	[...dailyAttendanceBaseQueryKey, date] as const;
+
+export const overdueAttendanceBaseQueryKey = [
+	...attendanceBaseQueryKey,
+	"overdue",
+] as const;
+
+export const overdueAttendanceQueryKey = (todayISO: string) =>
+	[...overdueAttendanceBaseQueryKey, todayISO] as const;
 
 export class DailyAttendanceApiError extends HttpError {
 	readonly reason?: string;
@@ -92,6 +104,30 @@ export function dailyAttendanceQuery(
 	return queryOptions({
 		queryKey: dailyAttendanceQueryKey(date),
 		queryFn: ({ signal }) => fetchDailyAttendance(date, baseUrl, signal),
+	});
+}
+
+export async function fetchOverdueAttendance(
+	baseUrl: string = getApiBaseUrl(),
+	signal?: AbortSignal,
+): Promise<OverdueAttendanceResponse> {
+	const res = await fetch(`${baseUrl}/api/attendance/overdue`, {
+		credentials: "include",
+		signal,
+	});
+	if (!res.ok) {
+		await throwAttendanceHttpError(res, "load overdue attendance");
+	}
+	return overdueAttendanceResponseSchema.parse(await res.json());
+}
+
+export function overdueAttendanceQuery(
+	todayISO: string,
+	baseUrl: string = getApiBaseUrl(),
+) {
+	return queryOptions({
+		queryKey: overdueAttendanceQueryKey(todayISO),
+		queryFn: ({ signal }) => fetchOverdueAttendance(baseUrl, signal),
 	});
 }
 

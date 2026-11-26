@@ -1742,6 +1742,53 @@ export type DailyAttendanceResponse = z.infer<
 >;
 
 /**
+ * Một ca học quá hạn (`date < today` giờ VN) còn tối thiểu 1 dòng `upcoming`
+ * trên lớp `active` với ghi danh `active` (issue #959). Nạp đủ toàn bộ roster
+ * teaching rows (kể cả học viên đã `completed`/`absent` trong ca chấm dở dang)
+ * để `PUT /api/classes/:id/sessions/:date/attendance` không lỗi 422.
+ */
+export const overdueAttendanceSessionSchema = z
+	.object({
+		date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+		classId: z.string().min(1),
+		className: z.string(),
+		time: z.string(),
+		dur: z.number().int().min(1),
+		mode: z.literal("dated"),
+		recorded: z.literal(false),
+		students: z
+			.array(
+				z
+					.object({
+						lessonId: z.string().min(1),
+						studentId: z.string().min(1),
+						studentName: z.string(),
+						attendance: attendanceStatusSchema.nullable(),
+						note: z.string(),
+					})
+					.strict(),
+			)
+			.min(1),
+	})
+	.strict();
+export type OverdueAttendanceSession = z.infer<
+	typeof overdueAttendanceSessionSchema
+>;
+
+/** Response của GET /api/attendance/overdue — danh sách ca quá hạn chưa điểm danh. */
+export const overdueAttendanceResponseSchema = z
+	.object({
+		today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+		totalCount: z.number().int().min(0),
+		hasMore: z.boolean(),
+		sessions: z.array(overdueAttendanceSessionSchema),
+	})
+	.strict();
+export type OverdueAttendanceResponse = z.infer<
+	typeof overdueAttendanceResponseSchema
+>;
+
+/**
  * Lesson edit (issue #55) — full-replace, upcoming-only. day: 1 = Monday …
  * 7 = Sunday (lesson-day convention; the class schedule JSON is 0-based —
  * the off-by-one is pinned here). WARNING for consumers (#56): omitted
@@ -3077,27 +3124,35 @@ export const gradingQueueResponseSchema = z
 	.strict();
 export type GradingQueueResponse = z.infer<typeof gradingQueueResponseSchema>;
 
-/** Một ca học chưa điểm danh — nhóm (classId, time) của lesson hôm nay. */
+/** Một ca học chưa điểm danh — lớp dated có `date` (yyyy-mm-dd), lớp legacy bỏ qua `date`. */
 export const dashboardReminderItemSchema = z
 	.object({
 		classId: z.string(),
 		className: z.string(),
 		time: z.string(),
 		dur: z.number(),
+		date: z
+			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/)
+			.optional(),
 	})
 	.strict();
 export type DashboardReminderItem = z.infer<typeof dashboardReminderItemSchema>;
 
 /** GET /api/dashboard/reminders — bộ đếm 3 thẻ "Việc cần làm hôm nay" (TOS-6,
- * issue #439). `tuition` vắng mặt khi scope không có quyền tài chính (TA),
- * không trả `null` hay số 0. `date` là yyyy-mm-dd giờ Việt Nam dùng cho link
- * `/attendance?date=`. */
+ * issue #439; mở rộng nợ quá hạn ở #959). `tuition` vắng mặt khi scope không
+ * có quyền tài chính (TA), không trả `null` hay số 0. `date` là yyyy-mm-dd giờ
+ * Việt Nam dùng cho link `/attendance?date=`. `today`, `overdue` và
+ * `items[].date` là optional để an toàn deploy skew 2 chiều với client `.strict()`
+ * (client mới opt-in qua `?v=2`). */
 export const dashboardRemindersResponseSchema = z
 	.object({
 		date: z.string(),
 		attendance: z
 			.object({
 				pending: z.number(),
+				today: z.number().int().min(0).optional(),
+				overdue: z.number().int().min(0).optional(),
 				items: z.array(dashboardReminderItemSchema),
 			})
 			.strict(),

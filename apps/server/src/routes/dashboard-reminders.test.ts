@@ -9,7 +9,7 @@ import * as schema from "@teacher-os/db/schema/index";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
-import { beforeAll, describe, expect, test } from "vitest";
+import { beforeAll, beforeEach, describe, expect, test } from "vitest";
 import { buildApp, type Db } from "../app";
 import { computeReminders, type ReminderScope } from "./dashboard-reminders";
 
@@ -258,12 +258,21 @@ describe("computeReminders — attendance", () => {
 		expect(result.attendance.pending).toBe(3);
 	});
 
-	test("(b) items gom theo (classId, time), sắp time tăng dần", async () => {
+	test("(b) items gom theo (classId, time), sắp time tăng dần và gắn date cho lớp dated", async () => {
+		const today = vietnamTodayISO(NOW);
 		const result = await computeReminders(db, "org-1", { kind: "org" }, NOW);
+		expect(result.attendance.today).toBe(3);
+		expect(result.attendance.overdue).toBe(0);
 		expect(result.attendance.items).toEqual([
 			{ classId: "class-legacy", className: "Lớp B", time: "07:00", dur: 60 },
 			{ classId: "class-legacy", className: "Lớp B", time: "09:00", dur: 60 },
-			{ classId: "class-dated", className: "Lớp A", time: "18:00", dur: 90 },
+			{
+				classId: "class-dated",
+				className: "Lớp A",
+				time: "18:00",
+				dur: 90,
+				date: today,
+			},
 		]);
 	});
 
@@ -525,8 +534,16 @@ describe("computeReminders — ReminderScope", () => {
 			new Date(`${today}T03:00:00Z`),
 		);
 		expect(result.attendance.pending).toBe(1);
+		expect(result.attendance.today).toBe(1);
+		expect(result.attendance.overdue).toBe(0);
 		expect(result.attendance.items).toEqual([
-			{ classId: "class-dated", className: "Lớp A", time: "18:00", dur: 90 },
+			{
+				classId: "class-dated",
+				className: "Lớp A",
+				time: "18:00",
+				dur: 90,
+				date: today,
+			},
 		]);
 		// Chỉ nhánh assignment của lớp phân công: att-old (class-dated); practice không tính.
 		expect(result.overdueGrading).toEqual({
@@ -549,6 +566,8 @@ describe("computeReminders — ReminderScope", () => {
 			NOW,
 		);
 		expect(result.attendance.pending).toBe(0);
+		expect(result.attendance.today).toBe(0);
+		expect(result.attendance.overdue).toBe(0);
 		expect(result.attendance.items).toEqual([]);
 		expect(result.overdueGrading).toEqual({
 			count: 0,
@@ -626,5 +645,513 @@ describe("computeReminders — hiệu năng", () => {
 		const start = performance.now();
 		await computeReminders(db, "org-1", { kind: "org" }, NOW);
 		expect(performance.now() - start).toBeLessThan(200);
+	});
+});
+
+describe("computeReminders — overdue attendance", () => {
+	let isoDb: Db;
+
+	beforeEach(async () => {
+		const client = createClient({ url: "file::memory:" });
+		const raw = drizzle(client, { schema });
+		await migrate(raw, { migrationsFolder: MIGRATIONS_DIR });
+		isoDb = raw as unknown as Db;
+
+		await isoDb.insert(schema.organization).values([
+			{ id: "org-1", name: "Academy 1" },
+			{ id: "org-2", name: "Academy 2" },
+		]);
+		await isoDb.insert(schema.user).values({
+			id: "t-1",
+			name: "Cô Mỹ",
+			email: "my@test.local",
+			role: "teacher",
+		});
+		await isoDb.insert(schema.membership).values({
+			id: "mem-1",
+			orgId: "org-1",
+			userId: "t-1",
+			role: "teacher",
+		});
+		await isoDb.insert(schema.student).values([
+			{ id: "st-1", orgId: "org-1", name: "An Nguyễn" },
+			{ id: "st-2", orgId: "org-1", name: "Bình Trần" },
+			{ id: "st-3", orgId: "org-1", name: "Cường Tạm Dừng" },
+			{ id: "st-org2", orgId: "org-2", name: "Khách Org Khác" },
+		]);
+		await isoDb.insert(schema.classTable).values([
+			{
+				id: "cls-found",
+				orgId: "org-1",
+				name: "IELTS Foundation 5.5",
+				status: "active",
+			},
+			{
+				id: "cls-paused",
+				orgId: "org-1",
+				name: "IELTS Tạm Dừng",
+				status: "paused",
+			},
+			{
+				id: "cls-legacy",
+				orgId: "org-1",
+				name: "Lớp Cũ Legacy",
+				status: "active",
+			},
+			{
+				id: "cls-org2",
+				orgId: "org-2",
+				name: "Lớp Org 2",
+				status: "active",
+			},
+		]);
+		await isoDb.insert(schema.enrollment).values([
+			{
+				id: "e-1",
+				orgId: "org-1",
+				classId: "cls-found",
+				studentId: "st-1",
+				status: "active",
+			},
+			{
+				id: "e-2",
+				orgId: "org-1",
+				classId: "cls-found",
+				studentId: "st-2",
+				status: "active",
+			},
+			{
+				id: "e-inactive",
+				orgId: "org-1",
+				classId: "cls-found",
+				studentId: "st-3",
+				status: "paused",
+			},
+			{
+				id: "e-paused-cls",
+				orgId: "org-1",
+				classId: "cls-paused",
+				studentId: "st-1",
+				status: "active",
+			},
+			{
+				id: "e-legacy",
+				orgId: "org-1",
+				classId: "cls-legacy",
+				studentId: "st-1",
+				status: "active",
+			},
+			{
+				id: "e-org2",
+				orgId: "org-2",
+				classId: "cls-org2",
+				studentId: "st-org2",
+				status: "active",
+			},
+			// Ghi danh trỏ sai student thuộc org-2 — phải bị loại bởi predicate student.orgId = orgId.
+			{
+				id: "e-cross-student",
+				orgId: "org-1",
+				classId: "cls-found",
+				studentId: "st-org2",
+				status: "active",
+			},
+		]);
+	});
+
+	test("6 buổi quá khứ upcoming và 0 buổi hôm nay -> pending 6, today 0, overdue 6, items top 3 mới nhất trước", async () => {
+		const pastDates = [
+			"2026-10-05",
+			"2026-10-08",
+			"2026-10-12",
+			"2026-10-15",
+			"2026-10-19",
+			"2026-10-24",
+		];
+		await isoDb.insert(schema.lesson).values(
+			pastDates.flatMap((date, idx) => [
+				{
+					id: `l-a-${idx}`,
+					orgId: "org-1",
+					classId: "cls-found",
+					enrollmentId: "e-1",
+					day: 1,
+					time: "19:00",
+					dur: 90,
+					date,
+					status: "upcoming",
+				},
+				{
+					id: `l-b-${idx}`,
+					orgId: "org-1",
+					classId: "cls-found",
+					enrollmentId: "e-2",
+					day: 1,
+					time: "19:00",
+					dur: 90,
+					date,
+					status: "upcoming",
+				},
+			]),
+		);
+
+		const result = await computeReminders(isoDb, "org-1", { kind: "org" }, NOW);
+		expect(result.attendance.pending).toBe(6);
+		expect(result.attendance.today).toBe(0);
+		expect(result.attendance.overdue).toBe(6);
+		expect(result.attendance.items).toEqual([
+			{
+				classId: "cls-found",
+				className: "IELTS Foundation 5.5",
+				time: "19:00",
+				dur: 90,
+				date: "2026-10-24",
+			},
+			{
+				classId: "cls-found",
+				className: "IELTS Foundation 5.5",
+				time: "19:00",
+				dur: 90,
+				date: "2026-10-19",
+			},
+			{
+				classId: "cls-found",
+				className: "IELTS Foundation 5.5",
+				time: "19:00",
+				dur: 90,
+				date: "2026-10-15",
+			},
+		]);
+	});
+
+	test("kết hợp 1 ca hôm nay + 4 ca quá hạn -> pending 5, today 1, overdue 4, items ưu tiên hôm nay trước rồi quá hạn mới nhất", async () => {
+		const today = vietnamTodayISO(NOW);
+		await isoDb.insert(schema.lesson).values([
+			{
+				id: "l-today",
+				orgId: "org-1",
+				classId: "cls-found",
+				enrollmentId: "e-1",
+				day: 1,
+				time: "18:00",
+				dur: 90,
+				date: today,
+				status: "upcoming",
+			},
+			...["2026-10-10", "2026-10-15", "2026-10-20", "2026-10-25"].map(
+				(date, i) => ({
+					id: `l-past-${i}`,
+					orgId: "org-1",
+					classId: "cls-found",
+					enrollmentId: "e-1",
+					day: 1,
+					time: "19:00",
+					dur: 90,
+					date,
+					status: "upcoming",
+				}),
+			),
+		]);
+
+		const result = await computeReminders(isoDb, "org-1", { kind: "org" }, NOW);
+		expect(result.attendance.pending).toBe(5);
+		expect(result.attendance.today).toBe(1);
+		expect(result.attendance.overdue).toBe(4);
+		expect(result.attendance.items.map((item) => item.date)).toEqual([
+			today,
+			"2026-10-25",
+			"2026-10-20",
+		]);
+	});
+
+	test("loại trừ completed/absent/cancelled/holiday, lớp paused, enrollment inactive, student khác org, date rỗng/sai lịch, legacy và org khác; giữ ca chấm dở dang", async () => {
+		await isoDb.insert(schema.lesson).values([
+			// Ca dở dang hợp lệ: 1 HV completed + 1 HV upcoming → đếm 1 overdue.
+			{
+				id: "l-partial-done",
+				orgId: "org-1",
+				classId: "cls-found",
+				enrollmentId: "e-1",
+				day: 1,
+				time: "19:00",
+				dur: 90,
+				date: "2026-10-24",
+				status: "completed",
+			},
+			{
+				id: "l-partial-up",
+				orgId: "org-1",
+				classId: "cls-found",
+				enrollmentId: "e-2",
+				day: 1,
+				time: "19:00",
+				dur: 90,
+				date: "2026-10-24",
+				status: "upcoming",
+			},
+			// Các buổi phải bị loại trừ:
+			{
+				id: "l-completed",
+				orgId: "org-1",
+				classId: "cls-found",
+				enrollmentId: "e-1",
+				day: 1,
+				time: "19:00",
+				dur: 90,
+				date: "2026-10-20",
+				status: "completed",
+			},
+			{
+				id: "l-absent",
+				orgId: "org-1",
+				classId: "cls-found",
+				enrollmentId: "e-1",
+				day: 1,
+				time: "19:00",
+				dur: 90,
+				date: "2026-10-19",
+				status: "absent",
+			},
+			{
+				id: "l-cancelled",
+				orgId: "org-1",
+				classId: "cls-found",
+				enrollmentId: "e-1",
+				day: 1,
+				time: "19:00",
+				dur: 90,
+				date: "2026-10-18",
+				status: "cancelled",
+			},
+			{
+				id: "l-holiday",
+				orgId: "org-1",
+				classId: "cls-found",
+				enrollmentId: "e-1",
+				day: 1,
+				time: "19:00",
+				dur: 90,
+				date: "2026-10-17",
+				status: "holiday",
+			},
+			{
+				id: "l-paused-cls",
+				orgId: "org-1",
+				classId: "cls-paused",
+				enrollmentId: "e-paused-cls",
+				day: 1,
+				time: "19:00",
+				dur: 90,
+				date: "2026-10-16",
+				status: "upcoming",
+			},
+			{
+				id: "l-inactive-enr",
+				orgId: "org-1",
+				classId: "cls-found",
+				enrollmentId: "e-inactive",
+				day: 1,
+				time: "19:00",
+				dur: 90,
+				date: "2026-10-15",
+				status: "upcoming",
+			},
+			{
+				id: "l-cross-student",
+				orgId: "org-1",
+				classId: "cls-found",
+				enrollmentId: "e-cross-student",
+				day: 1,
+				time: "19:00",
+				dur: 90,
+				date: "2026-10-14",
+				status: "upcoming",
+			},
+			{
+				id: "l-empty-date",
+				orgId: "org-1",
+				classId: "cls-found",
+				enrollmentId: "e-1",
+				day: 1,
+				time: "19:00",
+				dur: 90,
+				date: "",
+				status: "upcoming",
+			},
+			{
+				id: "l-invalid-date",
+				orgId: "org-1",
+				classId: "cls-found",
+				enrollmentId: "e-1",
+				day: 1,
+				time: "19:00",
+				dur: 90,
+				date: "2026-02-30",
+				status: "upcoming",
+			},
+			// Legacy (date null) ngày khác hôm nay (Thứ 3 = 2 trong khi NOW là Thứ 2 = 1) không vào overdue.
+			{
+				id: "l-legacy-other-day",
+				orgId: "org-1",
+				classId: "cls-legacy",
+				enrollmentId: "e-legacy",
+				day: 2,
+				time: "08:00",
+				dur: 60,
+				date: null,
+				status: "upcoming",
+			},
+			// Org khác:
+			{
+				id: "l-org2",
+				orgId: "org-2",
+				classId: "cls-org2",
+				enrollmentId: "e-org2",
+				day: 1,
+				time: "19:00",
+				dur: 90,
+				date: "2026-10-22",
+				status: "upcoming",
+			},
+		]);
+
+		const result = await computeReminders(isoDb, "org-1", { kind: "org" }, NOW);
+		expect(result.attendance.pending).toBe(1);
+		expect(result.attendance.today).toBe(0);
+		expect(result.attendance.overdue).toBe(1);
+		expect(result.attendance.items).toEqual([
+			{
+				classId: "cls-found",
+				className: "IELTS Foundation 5.5",
+				time: "19:00",
+				dur: 90,
+				date: "2026-10-24",
+			},
+		]);
+	});
+
+	test("scope assigned với 65 classIds (có phần tử trùng) chunk an toàn cho cả attendance lẫn overdueGrading", async () => {
+		await isoDb.insert(schema.lesson).values({
+			id: "l-chunk-1",
+			orgId: "org-1",
+			classId: "cls-found",
+			enrollmentId: "e-1",
+			day: 1,
+			time: "19:00",
+			dur: 90,
+			date: "2026-10-20",
+			status: "upcoming",
+		});
+		await isoDb.insert(schema.assignmentPrompt).values({
+			id: "pr-chunk",
+			orgId: "org-1",
+			task: "task2",
+			genre: "essay",
+			skill: "writing",
+			part: "task2",
+			type: "essay",
+			title: "Essay",
+			prompt: "<p>p</p>",
+			questions: "[]",
+			optionBank: "[]",
+			note: "",
+			status: "ready",
+		});
+		await isoDb.insert(schema.assignmentTest).values({
+			id: "t-chunk",
+			orgId: "org-1",
+			title: "Test",
+			skill: "writing",
+			status: "ready",
+		});
+		await isoDb.insert(schema.classAssignment).values({
+			id: "ca-chunk",
+			orgId: "org-1",
+			classId: "cls-found",
+			promptId: "pr-chunk",
+			title: "HW",
+			due: "2026-10-20",
+		});
+		await isoDb.insert(schema.quizAttempt).values({
+			id: "att-chunk",
+			orgId: "org-1",
+			assignmentId: "ca-chunk",
+			studentId: "st-1",
+			testId: "t-chunk",
+			mode: "assignment",
+			status: "submitted",
+			questionsSnapshot: "[]",
+			submittedAt: new Date(NOW.getTime() - 30 * HOUR_MS),
+		});
+
+		const manyClassIds = [
+			"cls-found",
+			...Array.from({ length: 63 }, (_, i) => `cls-dummy-${i}`),
+			"cls-found",
+		];
+		const result = await computeReminders(
+			isoDb,
+			"org-1",
+			{ kind: "assigned", classIds: manyClassIds, finance: false },
+			NOW,
+		);
+		expect(result.attendance.pending).toBe(1);
+		expect(result.attendance.overdue).toBe(1);
+		// Dedup classIds đảm bảo không cộng đúp quizAttempt giữa các chunk.
+		expect(result.overdueGrading).toEqual({
+			count: 1,
+			writing: 1,
+			speaking: 0,
+		});
+	});
+
+	test("HTTP GET /api/dashboard/reminders: không có ?v=2 giữ shape v1 cho .strict() cũ; ?v=2 trả đủ today/overdue/items[].date", async () => {
+		await isoDb.insert(schema.lesson).values({
+			id: "l-http-overdue",
+			orgId: "org-1",
+			classId: "cls-found",
+			enrollmentId: "e-1",
+			day: 1,
+			time: "19:00",
+			dur: 90,
+			date: "2026-10-20",
+			status: "upcoming",
+		});
+		const isoApp = buildApp({
+			getDb: () => isoDb,
+			now: () => NOW,
+			corsOrigin: ["http://localhost:8001"],
+			getSessionUser: sessionFor,
+			authHandler: () => new Response("auth OK"),
+		});
+
+		const v1Res = await isoApp.request("/api/dashboard/reminders", {
+			headers: TEACHER,
+		});
+		expect(v1Res.status).toBe(200);
+		const v1Body = (await v1Res.json()) as {
+			date: string;
+			attendance: Record<string, unknown> & {
+				pending: number;
+				items: Array<Record<string, unknown>>;
+			};
+		};
+		expect(v1Body.date).toBe("2026-10-26");
+		expect(v1Body.attendance.pending).toBe(1);
+		expect("today" in v1Body.attendance).toBe(false);
+		expect("overdue" in v1Body.attendance).toBe(false);
+		expect(v1Body.attendance.items).toHaveLength(1);
+		expect("date" in (v1Body.attendance.items[0] ?? {})).toBe(false);
+
+		const v2Res = await isoApp.request("/api/dashboard/reminders?v=2", {
+			headers: TEACHER,
+		});
+		expect(v2Res.status).toBe(200);
+		const v2Body = dashboardRemindersResponseSchema.parse(await v2Res.json());
+		expect(v2Body.date).toBe("2026-10-26");
+		expect(v2Body.attendance.pending).toBe(1);
+		expect(v2Body.attendance.today).toBe(0);
+		expect(v2Body.attendance.overdue).toBe(1);
+		expect(v2Body.attendance.items[0]?.date).toBe("2026-10-20");
 	});
 });

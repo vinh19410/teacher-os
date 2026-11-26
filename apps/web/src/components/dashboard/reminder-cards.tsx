@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/cn";
 import { fmtVND } from "@/lib/mock-data";
+import { formatDayMonth } from "@/lib/week-grid";
 
 const DONE_TODAY_LABEL = "Đã hoàn tất hôm nay";
 const MAX_ATTENDANCE_PREVIEW = 3;
@@ -39,6 +40,14 @@ export function ReminderCards({
 	canAccessFinance?: boolean;
 }) {
 	const showTuition = canAccessFinance && Boolean(data.tuition);
+	const overdueCount = data.attendance.overdue ?? 0;
+	const todayCount =
+		data.attendance.today ??
+		Math.max(0, data.attendance.pending - overdueCount);
+	const attendanceSearch =
+		todayCount === 0 && overdueCount > 0
+			? { date: data.date, status: "overdue" as const }
+			: { date: data.date, status: "pending" as const };
 	const attendancePreview = data.attendance.items.slice(
 		0,
 		MAX_ATTENDANCE_PREVIEW,
@@ -60,27 +69,58 @@ export function ReminderCards({
 				testId="reminder-card-attendance"
 				step={1}
 				label="Điểm danh"
-				title="Ca dạy hôm nay chưa điểm danh"
+				title="Ca dạy chưa điểm danh"
 				done={data.attendance.pending === 0}
 				count={data.attendance.pending}
 				unit="ca dạy"
 				cta="Điểm danh"
 				to="/attendance"
-				search={{ date: data.date, status: "pending" }}
+				search={attendanceSearch}
 			>
+				{overdueCount > 0 && (
+					<p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-muted-foreground text-xs tabular-nums">
+						<span className="inline-flex items-center gap-1.5 font-medium text-destructive">
+							<span
+								aria-hidden="true"
+								className="size-1.5 rounded-full bg-current"
+							/>
+							{todayCount > 0
+								? `${overdueCount} quá hạn`
+								: `${overdueCount} ca quá hạn`}
+						</span>
+						{todayCount > 0 && (
+							<>
+								<span aria-hidden="true">·</span>
+								<span>{`${todayCount} hôm nay`}</span>
+							</>
+						)}
+					</p>
+				)}
 				{attendancePreview.length > 0 && (
 					<ul className="grid gap-1 border-border border-t pt-3 text-sm">
-						{attendancePreview.map((item) => (
-							<li
-								key={`${item.classId}-${item.time}`}
-								className="flex min-w-0 items-baseline gap-2"
-							>
-								<span className="shrink-0 font-mono text-muted-foreground text-xs tabular-nums">
-									{item.time}
-								</span>
-								<span className="min-w-0 truncate">{item.className}</span>
-							</li>
-						))}
+						{attendancePreview.map((item) => {
+							const isOverdueItem = Boolean(item.date && item.date < data.date);
+							return (
+								<li
+									key={`${item.classId}-${item.date ?? "legacy"}-${item.time}`}
+									className="flex min-w-0 items-baseline gap-2"
+								>
+									<span
+										className={cn(
+											"shrink-0 font-mono text-xs tabular-nums",
+											isOverdueItem
+												? "font-medium text-destructive"
+												: "text-muted-foreground",
+										)}
+									>
+										{isOverdueItem && item.date
+											? `${formatDayMonth(item.date)} · ${item.time}`
+											: item.time}
+									</span>
+									<span className="min-w-0 truncate">{item.className}</span>
+								</li>
+							);
+						})}
 						{extraAttendanceCount > 0 && (
 							<li className="text-muted-foreground">
 								{`+${extraAttendanceCount} ca khác`}

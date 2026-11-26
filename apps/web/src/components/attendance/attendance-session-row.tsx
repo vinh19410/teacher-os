@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/field";
 import {
+	type AttendanceRowSession,
 	attendanceDraftReducer,
 	createAttendanceDraft,
-	type DailyAttendanceSession,
+	isSessionPaused,
 	markAllPresentState,
 	missingAttendanceLessonIds,
 	toSaveEntries,
@@ -19,7 +20,13 @@ import { AttendanceStatusPicker } from "./attendance-status-picker";
 import { FillMissingConfirm } from "./fill-missing-confirm";
 
 export interface AttendanceSessionRowProps {
-	session: DailyAttendanceSession;
+	session: AttendanceRowSession;
+	/** Ngày học YYYY-MM-DD của ca (dùng khi hiện cột ngày ở tab Quá hạn). */
+	sessionDate?: string;
+	/** Có hiển thị ngày học trên header ca không (bật ở tab Quá hạn). */
+	showDate?: boolean;
+	/** Ca dated đã qua ngày học và chưa điểm danh → badge Quá hạn (--destructive). */
+	isOverdue?: boolean;
 	expanded: boolean;
 	onToggle: () => void;
 	isFutureDate: boolean;
@@ -35,6 +42,10 @@ export interface AttendanceSessionRowProps {
 	busy?: boolean;
 }
 
+function formatVNDate(iso: string): string {
+	return `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+}
+
 function formatTimeWindow(time: string, dur: number): string {
 	const [hhRaw, mmRaw] = time.split(":");
 	const hh = Number(hhRaw);
@@ -48,6 +59,9 @@ function formatTimeWindow(time: string, dur: number): string {
 
 export function AttendanceSessionRow({
 	session,
+	sessionDate,
+	showDate = false,
+	isOverdue = false,
 	expanded,
 	onToggle,
 	isFutureDate,
@@ -61,7 +75,8 @@ export function AttendanceSessionRow({
 	// Saving của chính ca này hoặc một ca khác đang bay — mọi nút ghi đều khoá
 	// để tránh double-PUT và dead-click nuốt save im lặng (CR-Bugs F1/FAIL-3).
 	const lockSaving = saving || busy;
-	const isReadOnly = isFutureDate || Boolean(session.classPaused);
+	const classPaused = isSessionPaused(session);
+	const isReadOnly = isFutureDate || classPaused;
 	const [draft, dispatch] = useReducer(
 		attendanceDraftReducer,
 		session.students,
@@ -181,27 +196,49 @@ export function AttendanceSessionRow({
 					"focus-visible:ring-[3px] focus-visible:ring-ring/50",
 				)}
 			>
-				<div className="flex min-w-0 items-center gap-2.5">
+				<div className="flex min-w-0 items-start gap-2.5 sm:items-center">
 					{expanded ? (
 						<ChevronDown
 							aria-hidden="true"
-							className="size-4 shrink-0 text-muted-foreground"
+							className="mt-0.5 size-4 shrink-0 text-muted-foreground sm:mt-0"
 						/>
 					) : (
 						<ChevronRight
 							aria-hidden="true"
-							className="size-4 shrink-0 text-muted-foreground"
+							className="mt-0.5 size-4 shrink-0 text-muted-foreground sm:mt-0"
 						/>
 					)}
-					<div className="min-w-0">
-						<span className="font-medium text-foreground text-sm tabular-nums">
-							{timeLabel}
+					<div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 sm:gap-x-1.5">
+						<span className="inline-flex shrink-0 items-baseline gap-1.5">
+							{showDate && sessionDate && (
+								<>
+									<span className="font-medium font-mono text-destructive text-xs tabular-nums">
+										{formatVNDate(sessionDate)}
+									</span>
+									<span aria-hidden="true" className="text-muted-foreground">
+										·
+									</span>
+								</>
+							)}
+							<span className="font-medium text-foreground text-sm tabular-nums">
+								{timeLabel}
+							</span>
 						</span>
-						<span className="mx-1.5 text-muted-foreground">·</span>
-						<span className="font-semibold text-foreground text-sm">
+						<span
+							aria-hidden="true"
+							className="hidden text-muted-foreground sm:inline"
+						>
+							·
+						</span>
+						<span className="basis-full break-words font-semibold text-foreground text-sm [overflow-wrap:anywhere] sm:basis-auto">
 							{session.className}
 						</span>
-						<span className="mx-1.5 text-muted-foreground">·</span>
+						<span
+							aria-hidden="true"
+							className="hidden text-muted-foreground sm:inline"
+						>
+							·
+						</span>
 						<span className="text-muted-foreground text-xs tabular-nums">
 							Sĩ số {totalStudents} HV
 						</span>
@@ -209,7 +246,7 @@ export function AttendanceSessionRow({
 				</div>
 
 				<div className="flex flex-wrap items-center gap-2">
-					{session.classPaused && <Badge variant="muted">Tạm dừng</Badge>}
+					{classPaused && <Badge variant="muted">Tạm dừng</Badge>}
 					{session.mode === "legacy" && (
 						<Badge variant="outline">Lớp chưa gắn lịch ngày</Badge>
 					)}
@@ -219,10 +256,20 @@ export function AttendanceSessionRow({
 								? `Đã điểm danh (${presentCount}/${totalStudents} có mặt)`
 								: "Đã điểm danh"}
 						</Badge>
-					) : !session.classPaused ? (
-						<Badge variant="warn" dot>
-							Chưa điểm danh
-						</Badge>
+					) : !classPaused ? (
+						isOverdue ? (
+							<Badge
+								variant="outline"
+								dot
+								className="border-destructive/30 bg-destructive/10 text-destructive"
+							>
+								Quá hạn
+							</Badge>
+						) : (
+							<Badge variant="warn" dot>
+								Chưa điểm danh
+							</Badge>
+						)
 					) : null}
 				</div>
 			</button>
@@ -276,7 +323,7 @@ export function AttendanceSessionRow({
 						</div>
 					) : (
 						<div className="space-y-4">
-							{session.classPaused && (
+							{classPaused && (
 								<p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-muted-foreground text-xs">
 									Lớp đang tạm dừng — chỉ xem lịch sử điểm danh.
 								</p>

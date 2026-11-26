@@ -5,7 +5,10 @@ import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { KernelAction } from "@/lib/data-actions";
 import { useData } from "@/lib/data-store";
-import { dailyAttendanceBaseQueryKey } from "@/lib/repos/daily-attendance";
+import {
+	dailyAttendanceBaseQueryKey,
+	overdueAttendanceBaseQueryKey,
+} from "@/lib/repos/daily-attendance";
 import {
 	classRow,
 	renderWithKernel,
@@ -203,8 +206,9 @@ describe("DataProvider writes", () => {
 		expect(await screen.findByText("Tên mới")).toBeTruthy();
 	});
 
-	it("invalidates daily attendance queries when update-class-status succeeds", async () => {
+	it("invalidates daily and overdue attendance queries when update-class-status succeeds", async () => {
 		let attendanceLoads = 0;
+		let overdueLoads = 0;
 		const server = startKernelServer(
 			snapshotFixture({
 				classes: [classRow({ id: "cl-1", status: "active" })],
@@ -227,10 +231,20 @@ describe("DataProvider writes", () => {
 					return { count: attendanceLoads };
 				},
 			});
+			const overdueQuery = useQuery({
+				queryKey: [...overdueAttendanceBaseQueryKey, "2026-11-26"],
+				queryFn: async () => {
+					overdueLoads += 1;
+					return { count: overdueLoads };
+				},
+			});
 			return (
 				<div>
 					<span data-testid="attendance-loads">
 						{attendanceQuery.data?.count ?? 0}
+					</span>
+					<span data-testid="overdue-loads">
+						{overdueQuery.data?.count ?? 0}
 					</span>
 					<button
 						type="button"
@@ -252,10 +266,16 @@ describe("DataProvider writes", () => {
 		await waitFor(() =>
 			expect(screen.getByTestId("attendance-loads").textContent).toBe("1"),
 		);
+		await waitFor(() =>
+			expect(screen.getByTestId("overdue-loads").textContent).toBe("1"),
+		);
 
 		fireEvent.click(screen.getByRole("button", { name: "pause" }));
 		await waitFor(() =>
 			expect(screen.getByTestId("attendance-loads").textContent).toBe("2"),
+		);
+		await waitFor(() =>
+			expect(screen.getByTestId("overdue-loads").textContent).toBe("2"),
 		);
 		expect(server.writes).toEqual([
 			{
