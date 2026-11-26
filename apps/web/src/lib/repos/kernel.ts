@@ -107,8 +107,16 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 			};
 		case "import-curriculum":
 			return {
-				path: `/api/classes/${action.classId}/curriculum/import`,
-				body: { templateId: action.templateId },
+				path: `/api/classes/${encodeURIComponent(action.classId)}/curriculum/import`,
+				body: action.overwriteManualSessions
+					? {
+							templateId: action.templateId,
+							overwriteManualSessions: true,
+							...(action.overwriteHash
+								? { overwriteHash: action.overwriteHash }
+								: {}),
+						}
+					: { templateId: action.templateId },
 			};
 		case "sync-curriculum":
 			return {
@@ -210,7 +218,7 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 			};
 		case "assign-class-prompt":
 			// #208: classAssignmentCreateSchema is .strict() — the payload is
-			// the entire body (promptId, due, note, studentIds).
+			// the entire body (promptId, due, dueTime?, note, studentIds, targetScope?).
 			return {
 				path: `/api/classes/${action.payload.classId}/assignments`,
 				body: {
@@ -224,7 +232,15 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 						: {}),
 					note: action.payload.note,
 					studentIds: action.payload.studentIds,
+					...(action.payload.targetScope
+						? { targetScope: action.payload.targetScope }
+						: {}),
 				},
+			};
+		case "add-class-assignment-targets":
+			return {
+				path: `/api/classes/${encodeURIComponent(action.classId)}/assignments/${encodeURIComponent(action.assignmentId)}/targets`,
+				body: { studentIds: action.studentIds },
 			};
 		case "add-module":
 			return {
@@ -458,6 +474,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 export interface KernelCommandPayload {
 	updated?: number;
 	skipped?: number;
+	added?: number;
 	duplicates?: string[];
 	inviteEmailSent?: boolean;
 }
@@ -500,6 +517,7 @@ export interface KernelWriteEnvelope {
 	id?: string;
 	updated?: number;
 	skipped?: number;
+	added?: number;
 	duplicates?: string[];
 	inviteEmailSent?: boolean;
 }
@@ -513,6 +531,7 @@ function parseWriteEnvelope(json: unknown): KernelWriteEnvelope {
 	if (typeof record.id === "string") envelope.id = record.id;
 	if (typeof record.updated === "number") envelope.updated = record.updated;
 	if (typeof record.skipped === "number") envelope.skipped = record.skipped;
+	if (typeof record.added === "number") envelope.added = record.added;
 	if (
 		Array.isArray(record.duplicates) &&
 		record.duplicates.every((item): item is string => typeof item === "string")
@@ -547,6 +566,34 @@ async function parseErrorOptions(res: Response): Promise<HttpErrorOptions> {
 			}
 			if (typeof record.portalLinked === "boolean") {
 				options.portalLinked = record.portalLinked;
+			}
+			if (Array.isArray(record.conflictingDates)) {
+				options.conflictingDates = record.conflictingDates.filter(
+					(item): item is string => typeof item === "string",
+				);
+			}
+			if (Array.isArray(record.otherManualDates)) {
+				options.otherManualDates = record.otherManualDates.filter(
+					(item): item is string => typeof item === "string",
+				);
+			}
+			if (
+				typeof record.manualSessionCount === "number" &&
+				Number.isInteger(record.manualSessionCount) &&
+				record.manualSessionCount >= 0
+			) {
+				options.manualSessionCount = record.manualSessionCount;
+			}
+			if (
+				typeof record.overwriteHash === "string" &&
+				record.overwriteHash.length > 0
+			) {
+				options.overwriteHash = record.overwriteHash;
+			}
+			if (Array.isArray(record.completedDates)) {
+				options.completedDates = record.completedDates.filter(
+					(item): item is string => typeof item === "string",
+				);
 			}
 			return options;
 		}
@@ -844,11 +891,13 @@ export function createKernelCommandBus(
 					}
 				: { kind: "outcome-unknown", error };
 		}
-		const { id, updated, skipped, duplicates, inviteEmailSent } = envelope;
+		const { id, updated, skipped, added, duplicates, inviteEmailSent } =
+			envelope;
 		const payload: { id?: string } & KernelCommandPayload = {
 			id,
 			updated,
 			skipped,
+			...(added !== undefined ? { added } : {}),
 			duplicates,
 			...(inviteEmailSent !== undefined ? { inviteEmailSent } : {}),
 		};

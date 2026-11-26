@@ -8,7 +8,7 @@ export interface DirectKernelAction {
 	run: (
 		key: string,
 		action: KernelAction,
-		successText: string,
+		successText: string | ((result: KernelCommandResult) => string),
 	) => Promise<KernelCommandResult>;
 	isPending: (key: string) => boolean;
 	busy: boolean;
@@ -29,7 +29,7 @@ export function useDirectKernelAction(): DirectKernelAction {
 		async (
 			key: string,
 			action: KernelAction,
-			successText: string,
+			successText: string | ((result: KernelCommandResult) => string),
 		): Promise<KernelCommandResult> => {
 			// Busy-guard trả trước khi dispatch — không qua reportDirectOutcome
 			// nên không phát sinh toast lỗi giả cho một hành động chưa xảy ra.
@@ -42,7 +42,14 @@ export function useDirectKernelAction(): DirectKernelAction {
 			setPendingKey(key);
 			try {
 				const result = await dispatch(action);
-				await reportDirectOutcome(result, successText, refresh, action.type);
+				const resolvedSuccessText =
+					typeof successText === "function" ? successText(result) : successText;
+				await reportDirectOutcome(
+					result,
+					resolvedSuccessText,
+					refresh,
+					action.type,
+				);
 				return result;
 			} finally {
 				setPendingKey(null);

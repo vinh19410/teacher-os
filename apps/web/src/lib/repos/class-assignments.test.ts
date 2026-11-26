@@ -152,4 +152,39 @@ describe("mapClassAssignments (#208)", () => {
 
 		expect(mapClassAssignments(snapshot)[0]?.sessionDate).toBe("2026-11-27");
 	});
+
+	test("preserves targetScope when present in snapshot and omits when absent", () => {
+		const snapshot = {
+			classAssignments: [
+				{
+					id: "ca-class",
+					classId: "c-1",
+					promptId: "p-1",
+					title: "Class Scope",
+					due: "2026-11-06",
+					dueAt: null,
+					targetScope: "class",
+					note: "",
+					createdAt: "2026-11-01T10:00:00.000Z",
+					targets: [],
+				},
+				{
+					id: "ca-selected",
+					classId: "c-1",
+					promptId: "p-1",
+					title: "Selected Scope",
+					due: "2026-11-06",
+					dueAt: null,
+					targetScope: "selected",
+					note: "",
+					createdAt: "2026-11-01T10:00:00.000Z",
+					targets: [],
+				},
+			],
+		} as unknown as KernelSnapshot;
+
+		const mapped = mapClassAssignments(snapshot);
+		expect(mapped[0]?.targetScope).toBe("class");
+		expect(mapped[1]?.targetScope).toBe("selected");
+	});
 });

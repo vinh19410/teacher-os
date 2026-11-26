@@ -8,6 +8,7 @@ import {
 	within,
 } from "@testing-library/react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { itFollowsTheKernelFormContract } from "@/test/kernel-form-contract";
 import {
@@ -237,5 +238,360 @@ describe("ImportSyllabusModal", () => {
 				}) as HTMLButtonElement
 			).disabled,
 		).toBe(true);
+	});
+
+	it("shows conflicting & other manual dates formatted as Vietnamese weekday + dd/mm/yyyy and overwrites after user confirms", async () => {
+		const toastSuccess = vi
+			.spyOn(toast, "success")
+			.mockImplementation(() => "");
+		let attempt = 0;
+		const server = startKernelServer(snapshot(), () => {
+			attempt += 1;
+			if (attempt === 1) {
+				return {
+					status: 409,
+					body: {
+						error: "Lớp đã có buổi học thủ công trùng ngày với giáo trình.",
+						reason: "has-manual-sessions",
+						code: "MANUAL_SESSIONS_EXIST",
+						conflictingDates: ["2026-11-10"],
+						otherManualDates: ["2026-11-11"],
+						manualSessionCount: 2,
+						overwriteHash: "hash-1",
+					},
+				};
+			}
+			return { status: 201, body: { id: "sy-copy-new" } };
+		});
+		const onClose = vi.fn();
+		renderWithKernel(
+			<ImportSyllabusModal open onClose={onClose} classId="cl-1" />,
+		);
+
+		const dialog = await screen.findByRole("dialog");
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
+		);
+
+		const alert = await within(dialog).findByRole("alert");
+		expect(alert.textContent).toContain("Thứ Ba, 10/11/2026");
+		expect(alert.textContent).toContain("Thứ Tư, 11/11/2026");
+		expect(alert.textContent).toContain("Zoom");
+
+		// Phím Enter / submit form lúc đang ở bước xác nhận không gửi lại bước 1
+		fireEvent.submit(dialog.querySelector("form") as HTMLFormElement);
+		expect(server.writes).toHaveLength(1);
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Đồng ý ghi đè" }),
+		);
+
+		await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+		expect(server.writes).toEqual([
+			{
+				method: "POST",
+				path: "/api/classes/cl-1/curriculum/import",
+				body: { templateId: "sy-a" },
+			},
+			{
+				method: "POST",
+				path: "/api/classes/cl-1/curriculum/import",
+				body: {
+					templateId: "sy-a",
+					overwriteManualSessions: true,
+					overwriteHash: "hash-1",
+				},
+			},
+		]);
+		expect(toastSuccess).toHaveBeenCalledWith(
+			"Đã ghi đè buổi thủ công và nhập giáo trình.",
+		);
+		toastSuccess.mockRestore();
+	});
+
+	it("updates overwrite warning with fresh hash when Race B returns updated 409 on confirm, and resets on Back or template change", async () => {
+		let attempt = 0;
+		const server = startKernelServer(snapshot(), () => {
+			attempt += 1;
+			if (attempt === 1) {
+				return {
+					status: 409,
+					body: {
+						error: "Trùng ngày",
+						reason: "has-manual-sessions",
+						code: "MANUAL_SESSIONS_EXIST",
+						conflictingDates: ["2026-11-10"],
+						otherManualDates: [],
+						manualSessionCount: 1,
+						overwriteHash: "hash-1",
+					},
+				};
+			}
+			if (attempt === 2) {
+				return {
+					status: 409,
+					body: {
+						error: "Danh sách vừa thay đổi",
+						reason: "has-manual-sessions",
+						code: "MANUAL_SESSIONS_EXIST",
+						conflictingDates: ["2026-11-10"],
+						otherManualDates: ["2026-11-12"],
+						manualSessionCount: 2,
+						overwriteHash: "hash-2",
+					},
+				};
+			}
+			return { status: 201, body: { id: "sy-copy-new" } };
+		});
+		const onClose = vi.fn();
+		renderWithKernel(
+			<ImportSyllabusModal open onClose={onClose} classId="cl-1" />,
+		);
+
+		const dialog = await screen.findByRole("dialog");
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
+		);
+		await within(dialog).findByRole("button", { name: "Đồng ý ghi đè" });
+
+		// Nhấn Quay lại → hủy trạng thái xác nhận, quay về nút Nhập giáo trình
+		fireEvent.click(within(dialog).getByRole("button", { name: "Quay lại" }));
+		expect(
+			within(dialog).queryByRole("button", { name: "Đồng ý ghi đè" }),
+		).toBeNull();
+		expect(
+			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
+		).toBeTruthy();
+
+		// Trigger lại bước 1 rồi đổi template → hủy trạng thái xác nhận
+		attempt = 0;
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
+		);
+		await within(dialog).findByRole("button", { name: "Đồng ý ghi đè" });
+
+		fireEvent.change(within(dialog).getByRole("combobox"), {
+			target: { value: "sy-b" },
+		});
+		expect(
+			within(dialog).queryByRole("button", { name: "Đồng ý ghi đè" }),
+		).toBeNull();
+		expect(
+			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
+		).toBeTruthy();
+
+		// Quay lại template A, trigger lại bước 1 → nhận Race B ở lần xác nhận
+		attempt = 0;
+		fireEvent.change(within(dialog).getByRole("combobox"), {
+			target: { value: "sy-a" },
+		});
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
+		);
+		fireEvent.click(
+			await within(dialog).findByRole("button", { name: "Đồng ý ghi đè" }),
+		);
+
+		const refreshedAlert = await within(dialog).findByRole("alert");
+		expect(refreshedAlert.textContent).toContain("Thứ Năm, 12/11/2026");
+		expect(refreshedAlert.textContent).toContain("vừa thay đổi");
+
+		// Xác nhận lần 2 gửi đúng hash-2
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Đồng ý ghi đè" }),
+		);
+		await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+		expect(server.writes.at(-1)?.body).toEqual({
+			templateId: "sy-a",
+			overwriteManualSessions: true,
+			overwriteHash: "hash-2",
+		});
+	});
+
+	it("locks overwrite controls on committed refresh failure and fires success toast after reconcile", async () => {
+		const toastSuccess = vi
+			.spyOn(toast, "success")
+			.mockImplementation(() => "");
+		let attempt = 0;
+		const server = startKernelServer(snapshot(), (_req, srv) => {
+			attempt += 1;
+			if (attempt === 1) {
+				return {
+					status: 409,
+					body: {
+						error: "Trùng ngày",
+						reason: "has-manual-sessions",
+						code: "MANUAL_SESSIONS_EXIST",
+						conflictingDates: [],
+						otherManualDates: ["2026-11-11"],
+						manualSessionCount: 1,
+						overwriteHash: "hash-other",
+					},
+				};
+			}
+			srv.snapshotReply = () => ({ status: 503, body: {} });
+			return { status: 201, body: { id: "sy-copy-new" } };
+		});
+		const onClose = vi.fn();
+		renderWithKernel(
+			<ImportSyllabusModal open onClose={onClose} classId="cl-1" />,
+		);
+
+		const dialog = await screen.findByRole("dialog");
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
+		);
+		const alert = await within(dialog).findByRole("alert");
+		expect(alert.textContent).toContain("Thứ Tư, 11/11/2026");
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Đồng ý ghi đè" }),
+		);
+
+		const reloadButton = await within(dialog).findByRole("button", {
+			name: "Tải lại",
+		});
+		expect(
+			within(dialog).queryByRole("button", { name: "Đồng ý ghi đè" }),
+		).toBeNull();
+		expect(
+			(within(dialog).getByRole("combobox") as HTMLSelectElement).disabled,
+		).toBe(true);
+		expect(onClose).not.toHaveBeenCalled();
+		expect(toastSuccess).not.toHaveBeenCalled();
+
+		// Khi reconcile thành công → đóng modal và hiện toast ghi đè
+		server.snapshotReply = undefined;
+		fireEvent.click(reloadButton);
+		await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+		expect(toastSuccess).toHaveBeenCalledWith(
+			"Đã ghi đè buổi thủ công và nhập giáo trình.",
+		);
+		toastSuccess.mockRestore();
+	});
+
+	it("blocks overwrite action for TA role and for MANUAL_SESSIONS_COMPLETED / 422 errors", async () => {
+		const taSnap = snapshot();
+		taSnap.viewer = { role: "ta", canAccessFinance: false };
+		let nextReply: { status: number; body: unknown } = {
+			status: 409,
+			body: {
+				error: "Trùng ngày",
+				reason: "has-manual-sessions",
+				code: "MANUAL_SESSIONS_EXIST",
+				conflictingDates: ["2026-11-10"],
+				otherManualDates: [],
+				manualSessionCount: 1,
+				overwriteHash: "hash-ta",
+			},
+		};
+		startKernelServer(taSnap, () => nextReply);
+		renderWithKernel(
+			<ImportSyllabusModal open onClose={() => {}} classId="cl-1" />,
+		);
+
+		const dialog = await screen.findByRole("dialog");
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
+		);
+		const taAlert = await within(dialog).findByRole("alert");
+		expect(taAlert.textContent).toContain("giáo viên phụ trách");
+		expect(
+			within(dialog).queryByRole("button", { name: "Đồng ý ghi đè" }),
+		).toBeNull();
+
+		nextReply = {
+			status: 409,
+			body: {
+				error: "Đã điểm danh",
+				reason: "has-completed-manual-sessions",
+				code: "MANUAL_SESSIONS_COMPLETED",
+				completedDates: ["2026-11-10"],
+			},
+		};
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
+		);
+		const completedAlert = await within(dialog).findByRole("alert");
+		expect(completedAlert.textContent).toContain("Thứ Ba, 10/11/2026");
+		expect(completedAlert.textContent).toContain("điểm danh");
+		expect(
+			within(dialog).queryByRole("button", { name: "Đồng ý ghi đè" }),
+		).toBeNull();
+
+		nextReply = {
+			status: 422,
+			body: {
+				error: "Thiếu lịch học hợp lệ",
+				code: "CURRICULUM_INVALID_CLASS_SCHEDULE",
+			},
+		};
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
+		);
+		expect((await within(dialog).findByRole("alert")).textContent).toContain(
+			"lịch học trong tuần",
+		);
+	});
+
+	it("clears pending overwrite state on modal reopen and invalidates it when the confirmed template disappears from snapshot", async () => {
+		function Harness() {
+			const [open, setOpen] = useState(true);
+			return (
+				<div>
+					<button type="button" onClick={() => setOpen((v) => !v)}>
+						Toggle
+					</button>
+					<ImportSyllabusModal
+						open={open}
+						onClose={() => setOpen(false)}
+						classId="cl-1"
+					/>
+				</div>
+			);
+		}
+
+		startKernelServer(snapshot(), () => ({
+			status: 409,
+			body: {
+				error: "Trùng ngày",
+				reason: "has-manual-sessions",
+				code: "MANUAL_SESSIONS_EXIST",
+				conflictingDates: ["2026-11-10"],
+				otherManualDates: [],
+				manualSessionCount: 1,
+				overwriteHash: "hash-reopen",
+			},
+		}));
+		renderWithKernel(<Harness />);
+
+		let dialog = await screen.findByRole("dialog");
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
+		);
+		await within(dialog).findByRole("button", { name: "Đồng ý ghi đè" });
+
+		// Đóng rồi mở lại → xóa pendingOverwrite, trở về bước 1
+		fireEvent.click(screen.getByRole("button", { name: "Toggle" }));
+		fireEvent.click(screen.getByRole("button", { name: "Toggle" }));
+		dialog = await screen.findByRole("dialog");
+		expect(
+			within(dialog).queryByRole("button", { name: "Đồng ý ghi đè" }),
+		).toBeNull();
+		expect(
+			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
+		).toBeTruthy();
+
+		// Template bị chọn đổi sang khác sau khi đã vào bước xác nhận → vô hiệu activeOverwrite
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
+		);
+		await within(dialog).findByRole("button", { name: "Đồng ý ghi đè" });
+		fireEvent.change(within(dialog).getByRole("combobox"), {
+			target: { value: "sy-b" },
+		});
+		expect(
+			within(dialog).queryByRole("button", { name: "Đồng ý ghi đè" }),
+		).toBeNull();
 	});
 });

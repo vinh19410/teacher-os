@@ -14,6 +14,7 @@ export function mapClassAssignments(
 		due: row.due,
 		dueAt: row.dueAt ?? null,
 		sessionDate: row.sessionDate ?? null,
+		...(row.targetScope ? { targetScope: row.targetScope } : {}),
 		note: row.note,
 		createdAt: row.createdAt,
 		targets: row.targets.map((target) => ({

@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "d288e84f-62a5-4865-9fd6-eaae342883c5",
+  "id": "a2acf5bf-f29d-4eab-b76c-275dee4ade76",
   "prevId": "bdae74aa-9173-46df-961c-a0cdfb6b4d68",
   "tables": {
     "ai_grading_draft": {
@@ -1424,12 +1424,13 @@
           "notNull": false,
           "autoincrement": false
         },
-        "session_date": {
-          "name": "session_date",
+        "target_scope": {
+          "name": "target_scope",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'class'"
         },
         "created_at": {
           "name": "created_at",
@@ -1459,14 +1460,6 @@
           "name": "class_assignment_study_pack_idx",
           "columns": [
             "class_study_pack_id"
-          ],
-          "isUnique": false
-        },
-        "class_assignment_class_session_idx": {
-          "name": "class_assignment_class_session_idx",
-          "columns": [
-            "class_id",
-            "session_date"
           ],
           "isUnique": false
         }
@@ -3689,35 +3682,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
-        },
-        "category": {
-          "name": "category",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'lecture'"
-        },
-        "source_title": {
-          "name": "source_title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "source_page_start": {
-          "name": "source_page_start",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "source_page_end": {
-          "name": "source_page_end",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
           "autoincrement": false
         },
         "position": {

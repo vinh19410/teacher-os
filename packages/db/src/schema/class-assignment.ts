@@ -39,6 +39,7 @@ export const classAssignment = sqliteTable(
 		classStudyPackId: text("class_study_pack_id"),
 		/** Ngày buổi học (ISO yyyy-mm-dd) nếu bài tập được gắn với một buổi cụ thể; NULL = bài tập chung cấp lớp. */
 		sessionDate: text("session_date"),
+		targetScope: text("target_scope").notNull().default("class"),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),

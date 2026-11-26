@@ -167,10 +167,33 @@ export const classCreateSchema = z
 	.superRefine(refineClassFields);
 export type ClassCreate = z.infer<typeof classCreateSchema>;
 
+/**
+ * Mã lỗi trả về từ POST /api/classes/:id/curriculum/import để server và web
+ * dùng chung một nguồn chân lý.
+ */
+export const CURRICULUM_IMPORT_ERROR_CODES = {
+	MANUAL_SESSIONS_EXIST: "MANUAL_SESSIONS_EXIST",
+	MANUAL_SESSIONS_COMPLETED: "MANUAL_SESSIONS_COMPLETED",
+	CURRICULUM_EMPTY_TEMPLATE: "CURRICULUM_EMPTY_TEMPLATE",
+	CURRICULUM_TOO_MANY_LESSONS: "CURRICULUM_TOO_MANY_LESSONS",
+	CURRICULUM_TEMPLATE_TOO_LARGE: "CURRICULUM_TEMPLATE_TOO_LARGE",
+	CURRICULUM_ALREADY_EXISTS: "CURRICULUM_ALREADY_EXISTS",
+	CURRICULUM_MATERIAL_NOT_FOUND: "CURRICULUM_MATERIAL_NOT_FOUND",
+	CURRICULUM_INVALID_CLASS_SCHEDULE: "CURRICULUM_INVALID_CLASS_SCHEDULE",
+	CURRICULUM_HOLIDAY_SCAN_CAP: "CURRICULUM_HOLIDAY_SCAN_CAP",
+	CLASS_STATE_CHANGED: "CLASS_STATE_CHANGED",
+} as const;
+export type CurriculumImportErrorCode =
+	(typeof CURRICULUM_IMPORT_ERROR_CODES)[keyof typeof CURRICULUM_IMPORT_ERROR_CODES];
+
 /** Import a deep copy of a syllabus template into a class (issue #79). */
-export const importSyllabusSchema = z.object({
-	templateId: z.string().min(1),
-});
+export const importSyllabusSchema = z
+	.object({
+		templateId: z.string().min(1),
+		overwriteManualSessions: z.boolean().optional(),
+		overwriteHash: z.string().min(1).max(128).optional(),
+	})
+	.strict();
 export type ImportSyllabus = z.infer<typeof importSyllabusSchema>;
 
 /** Sync a class's curriculum copy from its linked template (or a replacement template when source was deleted). */
@@ -1585,6 +1608,10 @@ export type AssignmentTestPartsSet = z.infer<
 	typeof assignmentTestPartsSetSchema
 >;
 
+export const CLASS_ASSIGNMENT_TARGET_SCOPES = ["class", "selected"] as const;
+export type ClassAssignmentTargetScope =
+	(typeof CLASS_ASSIGNMENT_TARGET_SCOPES)[number];
+
 /**
  * Giao đề ngân hàng cho lớp (#208, #572). `due` là ISO yyyy-mm-dd; `dueTime`
  * tùy chọn là giờ 24h `HH:MM` theo múi giờ Việt Nam (mặc định `"23:59"` khi
@@ -1604,9 +1631,20 @@ export const classAssignmentCreateSchema = z
 			.regex(/^\d{4}-\d{2}-\d{2}$/)
 			.nullable()
 			.optional(),
+		targetScope: z.enum(CLASS_ASSIGNMENT_TARGET_SCOPES).optional(),
 	})
 	.strict();
 export type ClassAssignmentCreate = z.infer<typeof classAssignmentCreateSchema>;
+
+/** Bổ sung học viên đang học vào một lượt giao đề thường đã tồn tại (tối đa 100 HV/lần). */
+export const classAssignmentAddTargetsSchema = z
+	.object({
+		studentIds: z.array(z.string().trim().min(1)).min(1).max(100),
+	})
+	.strict();
+export type ClassAssignmentAddTargets = z.infer<
+	typeof classAssignmentAddTargetsSchema
+>;
 
 /** Feedback is teacher-authored and may contain sensitive education data. */
 export const commentBankCreateSchema = z
@@ -2233,6 +2271,8 @@ export interface KernelClassAssignmentRow {
 	due: string;
 	/** ISO datetime hạn nộp (UTC, tính từ giờ VN lúc giao); null trên dữ liệu cũ trước #572. */
 	dueAt?: string | null;
+	/** Phạm vi giao bài: cả lớp (tự bù học viên mới kích hoạt trước hạn) hay chỉ học viên đã chọn. */
+	targetScope?: ClassAssignmentTargetScope;
 	note: string;
 	/** Ngày buổi học (yyyy-mm-dd) gắn với lượt giao bài; null nếu giao chung cho lớp. */
 	sessionDate?: string | null;

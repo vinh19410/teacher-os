@@ -12,6 +12,7 @@ import {
 	hasPendingTodayAttendance,
 	lessonDayFromDate,
 	lessonsToday,
+	overdueUnsubmittedSummary,
 	parseTimeToMinutes,
 	resolveDashboardFocus,
 	sessionTimelineState,
@@ -1399,5 +1400,168 @@ describe("studentRiskDetails", () => {
 				className: null,
 			},
 		]);
+	});
+});
+
+describe("overdueUnsubmittedSummary", () => {
+	const s1 = student("s1");
+	const s2 = student("s2");
+	const s3 = student("s3");
+	const students = [s1, s2, s3];
+
+	test("returns zeros when there are no overdue unsubmitted assignments", () => {
+		expect(
+			overdueUnsubmittedSummary(
+				students,
+				[],
+				wednesday,
+				[{ id: "cl-1", status: "active", studentIds: ["s1"] }],
+				[
+					classAssignment({
+						id: "ca-upcoming",
+						due: "2026-08-20",
+						dueAt: null,
+						targets: [{ studentId: "s1", submittedAt: null, attemptId: null }],
+					}),
+				],
+				[legacyAssignment({ id: "leg-1", sid: "s1", status: "not-submitted" })],
+			),
+		).toEqual({ targets: 0, students: 0 });
+	});
+
+	test("counts multiple overdue unsubmitted targets for one student and across active classes", () => {
+		const classes: Pick<ClassGroup, "id" | "status" | "studentIds">[] = [
+			{ id: "cl-1", status: "active", studentIds: ["s1", "s2"] },
+			{ id: "cl-2", status: "active", studentIds: ["s2"] },
+		];
+		const classAssignments: ClassAssignment[] = [
+			classAssignment({
+				id: "ca-1",
+				classId: "cl-1",
+				due: "2026-08-18",
+				targets: [
+					{ studentId: "s1", submittedAt: null, attemptId: null },
+					{ studentId: "s2", submittedAt: null, attemptId: null },
+				],
+			}),
+			classAssignment({
+				id: "ca-2",
+				classId: "cl-2",
+				due: "2026-08-18",
+				targets: [{ studentId: "s1", submittedAt: null, attemptId: null }],
+			}),
+		];
+
+		expect(
+			overdueUnsubmittedSummary([s1], [], wednesday, classes, classAssignments),
+		).toEqual({ targets: 2, students: 1 });
+
+		expect(
+			overdueUnsubmittedSummary(
+				students,
+				[],
+				wednesday,
+				classes,
+				classAssignments,
+			),
+		).toEqual({ targets: 3, students: 2 });
+	});
+
+	test("excludes submitted targets, flip-first attemptId targets, paused classes, and unknown/demo students", () => {
+		const classes: Pick<ClassGroup, "id" | "status" | "studentIds">[] = [
+			{ id: "cl-active", status: "active", studentIds: ["s1", "s2"] },
+			{ id: "cl-paused", status: "paused", studentIds: ["s3"] },
+		];
+		const classAssignments: ClassAssignment[] = [
+			classAssignment({
+				id: "ca-active",
+				classId: "cl-active",
+				due: "2026-08-18",
+				targets: [
+					{ studentId: "s1", submittedAt: null, attemptId: null },
+					{
+						studentId: "s2",
+						submittedAt: "2026-08-19T02:00:00.000Z",
+						attemptId: "att-1",
+					},
+					{ studentId: "s3", submittedAt: null, attemptId: "att-flip" },
+					{
+						studentId: "demo-student:1",
+						submittedAt: null,
+						attemptId: null,
+					},
+					{ studentId: "orphan-st", submittedAt: null, attemptId: null },
+				],
+			}),
+			classAssignment({
+				id: "ca-paused",
+				classId: "cl-paused",
+				due: "2026-08-18",
+				targets: [{ studentId: "s3", submittedAt: null, attemptId: null }],
+			}),
+		];
+
+		expect(
+			overdueUnsubmittedSummary(
+				students,
+				[],
+				wednesday,
+				classes,
+				classAssignments,
+			),
+		).toEqual({ targets: 1, students: 1 });
+	});
+
+	test("includes legacy late assignments for valid non-paused-only students and excludes paused-only or unknown students", () => {
+		const classes: Pick<ClassGroup, "id" | "status" | "studentIds">[] = [
+			{ id: "cl-active", status: "active", studentIds: ["s1"] },
+			{ id: "cl-paused", status: "paused", studentIds: ["s3"] },
+		];
+		const legacy: Assignment[] = [
+			legacyAssignment({ id: "l-1", sid: "s1", status: "late" }),
+			legacyAssignment({ id: "l-2", sid: "s1", status: "late" }),
+			legacyAssignment({ id: "l-3", sid: "s3", status: "late" }),
+			legacyAssignment({ id: "l-4", sid: "demo-student:9", status: "late" }),
+			legacyAssignment({ id: "l-5", sid: "s2", status: "not-submitted" }),
+		];
+
+		expect(
+			overdueUnsubmittedSummary(students, [], wednesday, classes, [], legacy),
+		).toEqual({ targets: 2, students: 1 });
+	});
+
+	test("respects exact dueAt timestamps and Vietnam timezone midnight boundary", () => {
+		// 2026-08-19T18:00:00Z = 2026-08-20 01:00+07:00 (VN Thursday)
+		const vnThursdayEarly = new Date("2026-08-19T18:00:00Z");
+		const classAssignments: ClassAssignment[] = [
+			classAssignment({
+				id: "ca-date-yesterday-vn",
+				due: "2026-08-19",
+				dueAt: null,
+				targets: [{ studentId: "s1", submittedAt: null, attemptId: null }],
+			}),
+			classAssignment({
+				id: "ca-dueat-passed",
+				due: "2026-08-20",
+				dueAt: "2026-08-20T00:30:00+07:00",
+				targets: [{ studentId: "s2", submittedAt: null, attemptId: null }],
+			}),
+			classAssignment({
+				id: "ca-dueat-future",
+				due: "2026-08-20",
+				dueAt: "2026-08-20T09:00:00+07:00",
+				targets: [{ studentId: "s3", submittedAt: null, attemptId: null }],
+			}),
+		];
+
+		expect(
+			overdueUnsubmittedSummary(
+				students,
+				[],
+				vnThursdayEarly,
+				undefined,
+				classAssignments,
+			),
+		).toEqual({ targets: 2, students: 2 });
 	});
 });

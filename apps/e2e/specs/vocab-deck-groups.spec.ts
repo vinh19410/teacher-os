@@ -383,6 +383,69 @@ test.describe
 				dbVerifyClone.close();
 			}
 
+			// 4b) Return to /teacher/vocab hub -> default source filter ("independent") keeps bank decks separate from class clones
+			await page.goto(`${TEACHER_BASE_URL}/vocab`);
+			await expect(page.getByTestId("vocab-deck-source-filter")).toHaveValue(
+				"independent",
+			);
+			await expect(
+				page.getByTestId(`vocab-deck-row-${starterDeckId}`),
+			).toBeVisible();
+			await expect(
+				page.getByTestId(`vocab-deck-row-${bulkDeckIds[0]}`),
+			).toHaveCount(0);
+
+			// Filter by IELTS Foundation under default "Ngân hàng riêng" -> shows only 1 bank deck, not 40 class clones
+			await page
+				.getByTestId("vocab-deck-group-filter")
+				.selectOption(ieltsGroupId);
+			await expect(
+				page.getByTestId("vocab-deck-group-filter-count"),
+			).toContainText("1 / 2");
+			await expect(
+				page.getByTestId(`vocab-deck-row-${bulkDeckIds[0]}`),
+			).toHaveCount(0);
+
+			// Check 3 viewports + 320px reflow on /vocab with source + group filters visible
+			for (const vp of [
+				{ width: 1440, height: 900, name: "desktop-1440x900" },
+				{ width: 768, height: 1024, name: "tablet-768x1024" },
+				{ width: 375, height: 812, name: "mobile-375x812" },
+				{ width: 320, height: 640, name: "reflow-320x640" },
+			]) {
+				await page.setViewportSize({ width: vp.width, height: vp.height });
+				await page.waitForTimeout(250);
+				const metrics = await page.evaluate(() => ({
+					scrollWidth: document.documentElement.scrollWidth,
+					clientWidth: document.documentElement.clientWidth,
+				}));
+				expect(
+					metrics.scrollWidth <= metrics.clientWidth,
+					`/vocab no horizontal overflow at ${vp.name} (scrollWidth=${metrics.scrollWidth}, clientWidth=${metrics.clientWidth})`,
+				).toBe(true);
+			}
+			await page.setViewportSize({ width: 1440, height: 900 });
+
+			// Switch source filter to IELTS Source class -> shows its 20 class decks, hides bank deck
+			await page
+				.getByTestId("vocab-deck-source-filter")
+				.selectOption(`class:${sourceClassId}`);
+			await expect(
+				page.getByTestId(`vocab-deck-row-${bulkDeckIds[0]}`),
+			).toBeVisible();
+			await expect(
+				page.getByTestId(`vocab-deck-row-${starterDeckId}`),
+			).toHaveCount(0);
+
+			// Clear filters -> restores default "independent" bank view
+			await page.getByTestId("vocab-deck-group-filter-clear").click();
+			await expect(page.getByTestId("vocab-deck-source-filter")).toHaveValue(
+				"independent",
+			);
+			await expect(
+				page.getByTestId(`vocab-deck-row-${starterDeckId}`),
+			).toBeVisible();
+
 			// 5) Delete IELTS Foundation group via UI -> decks preserved with group_id = NULL
 			await page.getByTestId("vocab-manage-groups-btn").click();
 			await page.getByTestId(`vocab-group-delete-btn-${ieltsGroupId}`).click();
