@@ -509,7 +509,12 @@ export async function materializeScheduleForEnrollment(
 			meetingRows.filter((m) => m.joinUrl).map((m) => [m.date, m.joinUrl]),
 		);
 		for (const row of rows) {
-			if (row.date && !row.zoom) {
+			if (
+				row.date &&
+				!row.zoom &&
+				row.status !== "holiday" &&
+				row.status !== "cancelled"
+			) {
 				row.zoom = meetByDate.get(row.date) ?? "";
 			}
 		}
