@@ -296,4 +296,172 @@ describe("studentAssignmentRows (#317)", () => {
 		expect(rows[0]?.dueAt).toBe("2026-11-06T02:00:00.000Z");
 		expect(rows[2]?.dueAt).toBeNull();
 	});
+
+	test("propagates validated band and gradedAt for graded class targets including band 0", () => {
+		const data = makeData({
+			classAssignments: [
+				classAssignment({
+					id: "ca-hw2",
+					title: "Homework 2",
+					due: "2026-11-20",
+					targets: [
+						{
+							studentId: "s-1",
+							submittedAt: "2026-11-20T10:00:00.000Z",
+							attemptId: "att-2",
+							gradedAt: "2026-11-21T08:00:00.000Z",
+							band: 5.5,
+						},
+					],
+				}),
+				classAssignment({
+					id: "ca-hw3",
+					title: "Homework 3",
+					due: "2026-11-22",
+					targets: [
+						{
+							studentId: "s-1",
+							submittedAt: "2026-11-22T10:00:00.000Z",
+							attemptId: "att-3",
+							gradedAt: "2026-11-23T09:30:00.000Z",
+							band: 6.5,
+						},
+					],
+				}),
+				classAssignment({
+					id: "ca-zero",
+					title: "Zero Band Essay",
+					due: "2026-11-24",
+					targets: [
+						{
+							studentId: "s-1",
+							submittedAt: "2026-11-24T09:00:00.000Z",
+							attemptId: "att-0",
+							gradedAt: "2026-11-24T12:00:00.000Z",
+							band: 0,
+						},
+					],
+				}),
+			],
+		});
+
+		const rows = studentAssignmentRows(data, "s-1");
+		expect(
+			rows.map((r) => ({ id: r.id, band: r.band, gradedAt: r.gradedAt })),
+		).toEqual([
+			{ id: "ca-hw2", band: 5.5, gradedAt: "2026-11-21T08:00:00.000Z" },
+			{ id: "ca-hw3", band: 6.5, gradedAt: "2026-11-23T09:30:00.000Z" },
+			{ id: "ca-zero", band: 0, gradedAt: "2026-11-24T12:00:00.000Z" },
+		]);
+	});
+
+	test("coalesces omitted optional target grading fields and legacy grading rows to null", () => {
+		const scores = { task: 6.5, coherence: 6, lexical: 6, grammar: 6 };
+		const data = makeData({
+			classAssignments: [
+				classAssignment({
+					id: "ca-legacy-target",
+					due: "2026-11-25",
+					targets: [{ studentId: "s-1", submittedAt: null }],
+				}),
+			],
+			assignments: [
+				{
+					id: "a-1",
+					sid: "s-1",
+					title: "Legacy Writing",
+					type: "Task 2",
+					due: "2026-11-20",
+					status: "graded",
+					scores,
+				},
+			],
+		});
+
+		const rows = studentAssignmentRows(data, "s-1");
+		expect(rows[0]).toMatchObject({
+			kind: "grading",
+			scores,
+			band: null,
+			gradedAt: null,
+		});
+		expect(rows[1]?.band).toBeNull();
+		expect(rows[1]?.gradedAt).toBeNull();
+	});
+
+	test("normalizes malformed, incomplete, or out-of-range grades to null", () => {
+		const validGradedAt = "2026-11-21T08:00:00.000Z";
+		const invalidCases: Array<{
+			id: string;
+			band: number | null;
+			gradedAt: string | null;
+		}> = [
+			{ id: "ca-no-date", band: 6.5, gradedAt: null },
+			{ id: "ca-blank-date", band: 6.5, gradedAt: "   " },
+			{ id: "ca-invalid-date", band: 6.5, gradedAt: "not-a-date" },
+			{ id: "ca-no-band", band: null, gradedAt: validGradedAt },
+			{ id: "ca-nan", band: Number.NaN, gradedAt: validGradedAt },
+			{ id: "ca-inf", band: Number.POSITIVE_INFINITY, gradedAt: validGradedAt },
+			{ id: "ca-negative", band: -0.5, gradedAt: validGradedAt },
+			{ id: "ca-above-9", band: 9.5, gradedAt: validGradedAt },
+			{ id: "ca-bad-step", band: 6.3, gradedAt: validGradedAt },
+		];
+
+		const data = makeData({
+			classAssignments: invalidCases.map((c, idx) =>
+				classAssignment({
+					id: c.id,
+					due: `2026-11-${String(10 + idx).padStart(2, "0")}`,
+					targets: [
+						{
+							studentId: "s-1",
+							submittedAt: "2026-11-10T10:00:00.000Z",
+							attemptId: `att-${idx}`,
+							band: c.band,
+							gradedAt: c.gradedAt,
+						},
+					],
+				}),
+			),
+		});
+
+		const rows = studentAssignmentRows(data, "s-1");
+		expect(rows).toHaveLength(invalidCases.length);
+		for (const row of rows) {
+			expect(row.band).toBeNull();
+			expect(row.gradedAt).toBeNull();
+		}
+	});
+
+	test("isolates graded band per student when targets share one class assignment", () => {
+		const data = makeData({
+			classAssignments: [
+				classAssignment({
+					id: "ca-shared",
+					due: "2026-11-28",
+					targets: [
+						{
+							studentId: "s-other",
+							submittedAt: "2026-11-25T10:00:00.000Z",
+							attemptId: "att-other",
+							gradedAt: "2026-11-26T04:00:00.000Z",
+							band: 8.0,
+						},
+						{
+							studentId: "s-1",
+							submittedAt: "2026-11-25T11:00:00.000Z",
+							attemptId: "att-1",
+							gradedAt: null,
+							band: null,
+						},
+					],
+				}),
+			],
+		});
+
+		const rows = studentAssignmentRows(data, "s-1");
+		expect(rows).toHaveLength(1);
+		expect(rows[0]?.band).toBeNull();
+		expect(rows[0]?.gradedAt).toBeNull();
+	});
 });
