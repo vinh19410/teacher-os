@@ -810,6 +810,85 @@ describe("dashboard", () => {
 		});
 	});
 
+	it("surfaces overdue unsubmitted assignments on grading card and updates Hero summary when reminders are zero but risk students exist", async () => {
+		startRemindersServer(
+			snapshotFixture({
+				classes: [
+					classRow({ id: "cl-1", name: "IELTS Foundation", status: "active" }),
+				],
+				students: [studentRow({ id: "st-leah", name: "Leah" })],
+				enrollments: [
+					enrollmentRow({
+						id: "en-leah",
+						classId: "cl-1",
+						studentId: "st-leah",
+					}),
+				],
+				classAssignments: [
+					{
+						id: "ca-1",
+						classId: "cl-1",
+						promptId: "pr-1",
+						title: "Bài kiểm nhanh GrammarI",
+						due: "2026-10-05",
+						dueAt: null,
+						note: "",
+						createdAt: "2026-10-01T00:00:00.000Z",
+						targets: [
+							{
+								studentId: "st-leah",
+								submittedAt: null,
+								attemptId: null,
+								gradedAt: null,
+								band: null,
+							},
+						],
+					},
+					{
+						id: "ca-2",
+						classId: "cl-1",
+						promptId: "pr-2",
+						title: "Bài tập Vocabulary",
+						due: "2026-10-06",
+						dueAt: null,
+						note: "",
+						createdAt: "2026-10-01T00:00:00.000Z",
+						targets: [
+							{
+								studentId: "st-leah",
+								submittedAt: null,
+								attemptId: null,
+								gradedAt: null,
+								band: null,
+							},
+						],
+					},
+				],
+			}),
+			{
+				date: "2026-10-07",
+				attendance: { pending: 0, items: [] },
+				overdueGrading: { count: 0, writing: 0, speaking: 0 },
+				tuition: { students: 0, outstanding: 0 },
+			},
+		);
+		renderWithKernel(<Dashboard />);
+		const gradingCard = await screen.findByTestId("reminder-card-grading");
+		expect(
+			within(gradingCard).getByText("Không còn bài quá hạn chấm"),
+		).toBeTruthy();
+		expect(within(gradingCard).queryByText("Đã hoàn tất hôm nay")).toBeNull();
+		expect(
+			within(gradingCard).getByTestId(
+				"reminder-card-grading-overdue-unsubmitted",
+			).textContent,
+		).toContain("Còn 2 bài quá hạn chưa nộp (1 học viên)");
+
+		const heroSummary = screen.getByTestId("dashboard-hero-summary");
+		expect(heroSummary.textContent).toContain("Còn 1 học viên cần kiểm tra.");
+		expect(heroSummary.textContent).not.toContain("Mọi việc hôm nay đã xong.");
+	});
+
 	it("renders Lịch tháng above Cần kiểm tra, switches agenda on day click, navigates months, and returns focus on Hôm nay", async () => {
 		startRemindersServer(
 			snapshotFixture({

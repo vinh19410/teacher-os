@@ -175,7 +175,12 @@ const testAssignments: ClassAssignment[] = [
 	},
 ];
 
-let currentDataFixture = {
+let currentDataFixture: {
+	classAssignments: ClassAssignment[];
+	assignmentPrompts: AssignmentPrompt[];
+	students: Student[];
+	viewer?: { role: string; canAccessFinance: boolean };
+} = {
 	classAssignments: testAssignments,
 	assignmentPrompts: testPrompts,
 	students: testStudents,
@@ -206,7 +211,8 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("@/lib/data-store", () => ({
 	useData: () => ({
 		data: currentDataFixture,
-		studentById: (id: string) => testStudents.find((s) => s.id === id),
+		studentById: (id: string) =>
+			currentDataFixture.students.find((s) => s.id === id),
 	}),
 }));
 
@@ -598,5 +604,178 @@ describe("ClassAssignmentsTab (#208, #717)", () => {
 		expect(listHtml).toContain("+ Writing");
 		expect(listHtml).toContain('href="/grading/att-hyb-99"');
 		expect(listHtml).toContain("Chấm bài");
+	});
+
+	it("hiển thị phạm vi Giao X/Y HV và nút Giao bổ sung khi thiếu học viên đang học, ẩn khi đã đủ", () => {
+		const run = vi.fn().mockResolvedValue({ kind: "refreshed" });
+		const partialCa: ClassAssignment = {
+			id: "ca-partial",
+			classId: "cl-1",
+			promptId: "p-ready",
+			title: "Bài kiểm nhanh GrammarI",
+			due: "2026-09-12",
+			note: "",
+			createdAt: "2026-09-10T10:00:00.000Z",
+			targets: [{ studentId: "st-1", submittedAt: null }],
+		};
+		currentDataFixture = {
+			classAssignments: [partialCa],
+			assignmentPrompts: testPrompts,
+			students: testStudents,
+			viewer: { role: "teacher", canAccessFinance: true },
+		};
+
+		render(
+			<ClassAssignmentsTab
+				classGroup={testClass}
+				onOpenAssignModal={vi.fn()}
+				run={run}
+				isPending={() => false}
+				busy={false}
+			/>,
+		);
+
+		expect(screen.getAllByText(/0\/1 đã nộp/)).toHaveLength(2);
+		expect(screen.getByText(/Giao 1\/2 HV/)).toBeTruthy();
+		expect(screen.getByText(/Còn 1 học viên chưa được giao/)).toBeTruthy();
+		expect(screen.getByText(/Trần Thị B/)).toBeTruthy();
+
+		const addBtn = screen.getByRole("button", { name: "Giao bổ sung" });
+		fireEvent.click(addBtn);
+		expect(run).toHaveBeenCalledWith(
+			"add-targets-ca-partial",
+			{
+				type: "add-class-assignment-targets",
+				classId: "cl-1",
+				assignmentId: "ca-partial",
+				studentIds: ["st-2"],
+			},
+			expect.any(Function),
+		);
+		const formatToast = run.mock.calls[0]?.[2] as (res: {
+			kind: "refreshed";
+			added?: number;
+		}) => string;
+		expect(formatToast({ kind: "refreshed", added: 1 })).toBe(
+			"Đã giao bổ sung cho 1 học viên.",
+		);
+		expect(formatToast({ kind: "refreshed", added: 0 })).toBe(
+			"Học viên đã được giao bài này trước đó.",
+		);
+
+		// Khi đã giao đủ 2/2 HV active -> không hiện "Giao 2/2 HV" và không hiện nút "Giao bổ sung"
+		cleanup();
+		currentDataFixture = {
+			classAssignments: [
+				{
+					...partialCa,
+					targets: [
+						{ studentId: "st-1", submittedAt: null },
+						{ studentId: "st-2", submittedAt: null },
+					],
+				},
+			],
+			assignmentPrompts: testPrompts,
+			students: testStudents,
+			viewer: { role: "teacher", canAccessFinance: true },
+		};
+		render(
+			<ClassAssignmentsTab
+				classGroup={testClass}
+				onOpenAssignModal={vi.fn()}
+				run={run}
+				isPending={() => false}
+				busy={false}
+			/>,
+		);
+		expect(screen.queryByText(/Giao 2\/2 HV/)).toBeNull();
+		expect(screen.queryByRole("button", { name: /Giao bổ sung/ })).toBeNull();
+	});
+
+	it("cắt lô tối đa 100 học viên khi bấm Giao bổ sung trên lớp > 100 HV còn thiếu và ẩn nút với TA hoặc lớp paused", () => {
+		const run = vi.fn().mockResolvedValue({ kind: "refreshed" });
+		const manyStudents: Student[] = Array.from({ length: 106 }, (_, idx) => ({
+			...testStudents[0],
+			id: `st-m-${idx + 1}`,
+			name: `Học viên ${idx + 1}`,
+			avatar: "HV",
+		}));
+		const bigClass: ClassGroup = {
+			...testClass,
+			studentIds: manyStudents.map((s) => s.id),
+		};
+		const partialBig: ClassAssignment = {
+			id: "ca-big",
+			classId: bigClass.id,
+			promptId: "p-ready",
+			title: "Big Class Quiz",
+			due: "2030-01-10",
+			note: "",
+			createdAt: "2026-09-10T10:00:00.000Z",
+			targets: [{ studentId: "st-m-1", submittedAt: null }],
+		};
+		currentDataFixture = {
+			classAssignments: [partialBig],
+			assignmentPrompts: testPrompts,
+			students: manyStudents,
+			viewer: { role: "teacher", canAccessFinance: true },
+		};
+
+		const { rerender } = render(
+			<ClassAssignmentsTab
+				classGroup={bigClass}
+				onOpenAssignModal={vi.fn()}
+				run={run}
+				isPending={() => false}
+				busy={false}
+			/>,
+		);
+
+		expect(screen.getByText(/Giao 1\/106 HV/)).toBeTruthy();
+		const batchBtn = screen.getByRole("button", {
+			name: "Giao bổ sung (100 HV)",
+		});
+		fireEvent.click(batchBtn);
+		expect(run).toHaveBeenCalledTimes(1);
+		const dispatchedAction = run.mock.calls[0]?.[1] as {
+			type: string;
+			studentIds: string[];
+		};
+		expect(dispatchedAction.type).toBe("add-class-assignment-targets");
+		expect(dispatchedAction.studentIds).toHaveLength(100);
+		expect(dispatchedAction.studentIds[0]).toBe("st-m-2");
+		expect(dispatchedAction.studentIds[99]).toBe("st-m-101");
+
+		// TA role -> ẩn nút Giao bổ sung
+		currentDataFixture = {
+			...currentDataFixture,
+			viewer: { role: "ta", canAccessFinance: false },
+		};
+		rerender(
+			<ClassAssignmentsTab
+				classGroup={bigClass}
+				onOpenAssignModal={vi.fn()}
+				run={run}
+				isPending={() => false}
+				busy={false}
+			/>,
+		);
+		expect(screen.queryByRole("button", { name: /Giao bổ sung/ })).toBeNull();
+
+		// Paused class -> ẩn nút Giao bổ sung ngay cả với teacher
+		currentDataFixture = {
+			...currentDataFixture,
+			viewer: { role: "teacher", canAccessFinance: true },
+		};
+		rerender(
+			<ClassAssignmentsTab
+				classGroup={{ ...bigClass, status: "paused" }}
+				onOpenAssignModal={vi.fn()}
+				run={run}
+				isPending={() => false}
+				busy={false}
+			/>,
+		);
+		expect(screen.queryByRole("button", { name: /Giao bổ sung/ })).toBeNull();
 	});
 });

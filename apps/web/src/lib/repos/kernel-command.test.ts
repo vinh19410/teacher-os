@@ -1,7 +1,11 @@
 import type { AssignmentPromptCreate } from "@teacher-os/api/contracts";
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 
-import { kernelCommand } from "./kernel";
+import {
+	createKernelCommandBus,
+	kernelCommand,
+	postKernelCommand,
+} from "./kernel";
 
 /**
  * Issue #173: the report modal's write must map to POST /api/reports with
@@ -113,5 +117,94 @@ describe("kernelCommand update-class-status (#694)", () => {
 		expect(pauseReq.path).toBe("/api/classes/cl-1%2Fspecial/status");
 		expect(pauseReq.method ?? "POST").toBe("POST");
 		expect(pauseReq.body).toEqual({ status: "paused" });
+	});
+});
+
+describe("kernelCommand assign-class-prompt & add-class-assignment-targets", () => {
+	test("forwards optional targetScope on assign-class-prompt", () => {
+		const withScope = kernelCommand({
+			type: "assign-class-prompt",
+			payload: {
+				classId: "cl-1",
+				promptId: "p-1",
+				due: "2026-11-10",
+				dueTime: "23:59",
+				note: "",
+				studentIds: ["st-1", "st-2"],
+				targetScope: "class",
+			},
+		});
+		expect(withScope.path).toBe("/api/classes/cl-1/assignments");
+		expect(withScope.body).toEqual({
+			promptId: "p-1",
+			due: "2026-11-10",
+			dueTime: "23:59",
+			note: "",
+			studentIds: ["st-1", "st-2"],
+			targetScope: "class",
+		});
+
+		const withoutScope = kernelCommand({
+			type: "assign-class-prompt",
+			payload: {
+				classId: "cl-1",
+				promptId: "p-1",
+				due: "2026-11-10",
+				note: "",
+				studentIds: ["st-1"],
+			},
+		});
+		expect(withoutScope.body).not.toHaveProperty("targetScope");
+	});
+
+	test("maps add-class-assignment-targets to encoded POST .../targets with studentIds", () => {
+		const req = kernelCommand({
+			type: "add-class-assignment-targets",
+			classId: "cl-1/a",
+			assignmentId: "ca-1/b",
+			studentIds: ["st-2", "st-3"],
+		});
+		expect(req.path).toBe("/api/classes/cl-1%2Fa/assignments/ca-1%2Fb/targets");
+		expect(req.method ?? "POST").toBe("POST");
+		expect(req.body).toEqual({ studentIds: ["st-2", "st-3"] });
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	test("preserves added count from POST .../targets response through postKernelCommand and command bus", async () => {
+		vi.stubGlobal(
+			"fetch",
+			vi.fn().mockResolvedValue(
+				new Response(JSON.stringify({ id: "ca-1", added: 2 }), {
+					status: 200,
+					headers: { "content-type": "application/json" },
+				}),
+			),
+		);
+
+		const bus = createKernelCommandBus({
+			postCommand: (action) =>
+				postKernelCommand("http://localhost:8000", action),
+			refetch: async () => {},
+			onAuthLost: () => {},
+		});
+
+		const result = await bus.run({
+			type: "add-class-assignment-targets",
+			classId: "cl-1",
+			assignmentId: "ca-1",
+			studentIds: ["st-2", "st-3"],
+		});
+
+		expect(result).toEqual({
+			kind: "refreshed",
+			id: "ca-1",
+			added: 2,
+			updated: undefined,
+			skipped: undefined,
+			duplicates: undefined,
+		});
 	});
 });

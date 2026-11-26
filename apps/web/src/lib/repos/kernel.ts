@@ -210,7 +210,7 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 			};
 		case "assign-class-prompt":
 			// #208: classAssignmentCreateSchema is .strict() — the payload is
-			// the entire body (promptId, due, note, studentIds).
+			// the entire body (promptId, due, dueTime?, note, studentIds, targetScope?).
 			return {
 				path: `/api/classes/${action.payload.classId}/assignments`,
 				body: {
@@ -221,7 +221,15 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 						: {}),
 					note: action.payload.note,
 					studentIds: action.payload.studentIds,
+					...(action.payload.targetScope
+						? { targetScope: action.payload.targetScope }
+						: {}),
 				},
+			};
+		case "add-class-assignment-targets":
+			return {
+				path: `/api/classes/${encodeURIComponent(action.classId)}/assignments/${encodeURIComponent(action.assignmentId)}/targets`,
+				body: { studentIds: action.studentIds },
 			};
 		case "add-module":
 			return {
@@ -455,6 +463,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 export interface KernelCommandPayload {
 	updated?: number;
 	skipped?: number;
+	added?: number;
 	duplicates?: string[];
 	inviteEmailSent?: boolean;
 }
@@ -497,6 +506,7 @@ export interface KernelWriteEnvelope {
 	id?: string;
 	updated?: number;
 	skipped?: number;
+	added?: number;
 	duplicates?: string[];
 	inviteEmailSent?: boolean;
 }
@@ -510,6 +520,7 @@ function parseWriteEnvelope(json: unknown): KernelWriteEnvelope {
 	if (typeof record.id === "string") envelope.id = record.id;
 	if (typeof record.updated === "number") envelope.updated = record.updated;
 	if (typeof record.skipped === "number") envelope.skipped = record.skipped;
+	if (typeof record.added === "number") envelope.added = record.added;
 	if (
 		Array.isArray(record.duplicates) &&
 		record.duplicates.every((item): item is string => typeof item === "string")
@@ -841,11 +852,13 @@ export function createKernelCommandBus(
 					}
 				: { kind: "outcome-unknown", error };
 		}
-		const { id, updated, skipped, duplicates, inviteEmailSent } = envelope;
+		const { id, updated, skipped, added, duplicates, inviteEmailSent } =
+			envelope;
 		const payload: { id?: string } & KernelCommandPayload = {
 			id,
 			updated,
 			skipped,
+			...(added !== undefined ? { added } : {}),
 			duplicates,
 			...(inviteEmailSent !== undefined ? { inviteEmailSent } : {}),
 		};
