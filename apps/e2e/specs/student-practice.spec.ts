@@ -543,7 +543,7 @@ test.describe("Student practice catalog (#378 phase 10, #880, #883)", () => {
 		// lượt giao reading vẫn "Chưa nộp" (submit không stamp target).
 		await expect(body).toContainText(classQuizTitle);
 		await expect(body).not.toContainText(practiceTestTitle);
-		const row = body.getByRole("row").filter({
+		const row = body.getByRole("listitem").filter({
 			has: page.getByRole("link", {
 				name: `Làm bài: ${classQuizTitle}`,
 			}),

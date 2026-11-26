@@ -315,13 +315,15 @@ describe("ClassDetailView", () => {
 		expect(html.match(/IELTS Detail/g)).toHaveLength(1);
 	});
 
-	it("shows assignments table after switching to the assignments tab", () => {
+	it("shows assignments workspace after switching to the assignments tab", () => {
 		const utils = render(
 			<ClassDetailView detail={detail} todayISO={TODAY} now={NOW} />,
 		);
 		fireEvent.click(screen.getByRole("tab", { name: "Bài tập" }));
-		expect(screen.getByRole("table")).toBeTruthy();
-		expect(screen.getByText("Reading Practice 1")).toBeTruthy();
+		expect(screen.getByTestId("assignments-todo-strip")).toBeTruthy();
+		const items = screen.getAllByRole("listitem");
+		expect(items.length).toBeGreaterThanOrEqual(1);
+		expect(items[0]?.textContent).toContain("Reading Practice 1");
 		expect(screen.getByText("Chưa nộp")).toBeTruthy();
 		expect(
 			screen.getByRole("link", { name: "Làm bài: Reading Practice 1" }),
@@ -375,7 +377,7 @@ describe("ClassDetailView", () => {
 		expect(screen.queryByTestId("class-tab-classmates")).toBeNull();
 
 		fireEvent.click(screen.getByRole("tab", { name: "Bài tập" }));
-		expect(screen.getByRole("table")).toBeTruthy();
+		expect(screen.getByRole("group", { name: "Lọc bài tập" })).toBeTruthy();
 
 		fireEvent.click(screen.getByRole("tab", { name: "Hành trình học" }));
 		expect(

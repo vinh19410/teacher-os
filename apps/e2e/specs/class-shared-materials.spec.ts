@@ -302,8 +302,19 @@ test("class shared materials: teacher pick/upload/link, bank protection, student
 			)
 			.toBe(true);
 
-		// Đợi thumbnail PDF render rồi kiểm chứng 3 viewport + dark mode (Student).
-		await studentPage.waitForTimeout(600);
+		// Xem trước PDF on-demand: bấm "Xem trước <PDF_NAME>" mở dialog, bấm Escape đóng lại.
+		const previewBtn = studentPage.getByRole("button", {
+			name: `Xem trước ${PDF_NAME}`,
+		});
+		await expect(previewBtn).toBeVisible();
+		await previewBtn.click();
+		const previewDialog = studentPage.getByRole("dialog", { name: PDF_NAME });
+		await expect(previewDialog).toBeVisible({ timeout: 15_000 });
+		await studentPage.keyboard.press("Escape");
+		await expect(previewDialog).toBeHidden();
+		await expect(previewBtn).toBeFocused();
+
+		// Kiểm chứng 3 viewport + dark mode + 320px reflow (Student).
 		await verifyResponsiveAndCapture(
 			studentPage,
 			"914-student-shared-materials",

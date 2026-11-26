@@ -2,9 +2,21 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { StudentClassDetail } from "@teacher-os/api/contracts";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+	act,
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+	buildClassDetailSearch,
+	type ClassDetailSearchState,
+} from "./class-detail-helpers";
 import { ClassDetailView } from "./class-detail-view";
 
 vi.mock("@tanstack/react-router", () => ({
@@ -247,5 +259,207 @@ describe("ClassDetailView — shared class materials tab", () => {
 		fireEvent.click(screen.getByTestId("class-tab-materials"));
 
 		expect(await screen.findByTestId("class-materials-empty")).toBeTruthy();
+	});
+
+	it("jumps from Hành trình học 'Mở trong Bài tập' to Tab Bài tập and expands a graded assignment inside collapsed group", async () => {
+		const scrollSpy = vi.fn();
+		Element.prototype.scrollIntoView = scrollSpy;
+		const base = makeDetail("active");
+		const detailWithGraded: StudentClassDetail = {
+			...base,
+			assignments: [
+				{
+					id: "asg-graded-jump",
+					source: "class_assignment",
+					classId: "cls-1",
+					className: "IELTS Speaking",
+					title: "Speaking Part 2 Cue Card",
+					skill: "speaking",
+					due: "2026-11-28",
+					submittedAt: "2026-11-19T10:00:00Z",
+					gradedAt: "2026-11-20T01:00:00Z",
+					scores: { task: 6.5, coherence: 6.5, lexical: 6.5, grammar: 6.5 },
+					sessionDate: "2026-11-28",
+				},
+			],
+		};
+
+		renderWithQueryClient(detailWithGraded);
+		// Buổi tới (2026-11-28) mở sẵn và hiển thị bài tập gắn buổi
+		fireEvent.click(screen.getByRole("button", { name: "Mở trong Bài tập" }));
+
+		await waitFor(() => {
+			expect(
+				screen
+					.getByTestId("class-tab-assignments")
+					.getAttribute("aria-selected"),
+			).toBe("true");
+			const row = screen
+				.getByText("Speaking Part 2 Cue Card")
+				.closest("li") as HTMLElement;
+			const expandBtn = within(row).getByRole("button", { expanded: true });
+			expect(document.activeElement).toBe(expandBtn);
+			expect(row.textContent).toContain("Band 6.5");
+		});
+	});
+
+	it("preserves controlled Tab 3 deep-link search & clear URL sync on initial mount without dropping mq", async () => {
+		stubClassMaterialsFetch([
+			{
+				id: "m-1",
+				title: "Cambridge 18 Reading.pdf",
+				description: "",
+				kind: "file",
+				url: null,
+				mimeType: "application/pdf",
+				sizeBytes: 2048,
+				originalName: "cambridge-18.pdf",
+				position: 0,
+			},
+			{
+				id: "m-2",
+				title: "Audio Speaking Sample.mp3",
+				description: "",
+				kind: "media",
+				url: null,
+				mimeType: "audio/mpeg",
+				sizeBytes: 4096,
+				originalName: "speaking.mp3",
+				position: 1,
+			},
+		]);
+
+		let currentSearch: ClassDetailSearchState = {
+			tab: "materials",
+			mq: "cambridge",
+		};
+		const observed: ClassDetailSearchState[] = [];
+		const onSearchChange = vi.fn(
+			(updater: (prev: ClassDetailSearchState) => ClassDetailSearchState) => {
+				currentSearch = buildClassDetailSearch(updater(currentSearch));
+				observed.push(currentSearch);
+			},
+		);
+
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const detail = makeDetail("active");
+		const fixedNow = new Date("2026-11-26T10:00:00+07:00");
+		const { rerender } = render(
+			<QueryClientProvider client={qc}>
+				<ClassDetailView
+					detail={detail}
+					todayISO="2026-11-26"
+					now={fixedNow}
+					searchState={currentSearch}
+					onSearchChange={onSearchChange}
+				/>
+			</QueryClientProvider>,
+		);
+
+		expect(
+			(await screen.findAllByText("Cambridge 18 Reading.pdf")).length,
+		).toBeGreaterThan(0);
+
+		// Bấm nút xóa trên deep-link ?tab=materials&mq=cambridge phải đẩy xóa mq lên URL
+		fireEvent.click(
+			screen.getByRole("button", { name: "Xóa từ khóa tìm kiếm" }),
+		);
+		expect(onSearchChange).toHaveBeenCalledTimes(1);
+		expect(observed[0]).toEqual({ tab: "materials" });
+
+		// Rerender với searchState đã cập nhật rồi gõ từ khóa mới sau 300ms
+		rerender(
+			<QueryClientProvider client={qc}>
+				<ClassDetailView
+					detail={detail}
+					todayISO="2026-11-26"
+					now={fixedNow}
+					searchState={currentSearch}
+					onSearchChange={onSearchChange}
+				/>
+			</QueryClientProvider>,
+		);
+
+		vi.useFakeTimers();
+		try {
+			const input = screen.getByLabelText("Tìm tài liệu");
+			fireEvent.change(input, { target: { value: "audio" } });
+			await act(async () => {
+				vi.advanceTimersByTime(310);
+			});
+			expect(onSearchChange).toHaveBeenCalledTimes(2);
+			expect(observed[1]).toEqual({ tab: "materials", mq: "audio" });
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("keeps mk='all' when switching kind filter during debounce while async router state still holds previous mk", async () => {
+		stubClassMaterialsFetch([
+			{
+				id: "m-1",
+				title: "Cambridge Audio.mp3",
+				description: "",
+				kind: "media",
+				url: null,
+				mimeType: "audio/mpeg",
+				sizeBytes: 4096,
+				originalName: "cambridge.mp3",
+				position: 0,
+			},
+		]);
+
+		// Mô phỏng router chưa commit (prev.mk vẫn là "media" trong suốt cửa sổ 300ms)
+		const staleRouterState: ClassDetailSearchState = {
+			tab: "materials",
+			mk: "media",
+		};
+		const committed: ClassDetailSearchState[] = [];
+		const onSearchChange = vi.fn(
+			(updater: (prev: ClassDetailSearchState) => ClassDetailSearchState) => {
+				committed.push(buildClassDetailSearch(updater(staleRouterState)));
+			},
+		);
+
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={qc}>
+				<ClassDetailView
+					detail={makeDetail("active")}
+					todayISO="2026-11-26"
+					now={new Date("2026-11-26T10:00:00+07:00")}
+					searchState={staleRouterState}
+					onSearchChange={onSearchChange}
+				/>
+			</QueryClientProvider>,
+		);
+
+		expect(
+			(await screen.findAllByText("Cambridge Audio.mp3")).length,
+		).toBeGreaterThan(0);
+
+		vi.useFakeTimers();
+		try {
+			const input = screen.getByLabelText("Tìm tài liệu");
+			fireEvent.change(input, { target: { value: "cambridge" } });
+			await act(async () => {
+				vi.advanceTimersByTime(150);
+			});
+			// Đổi loại từ "Audio – Video" về "Tất cả" giữa cửa sổ debounce
+			fireEvent.click(screen.getByRole("button", { name: "Tất cả" }));
+			expect(committed[0]).toEqual({ tab: "materials" });
+
+			await act(async () => {
+				vi.advanceTimersByTime(200);
+			});
+			// Debounce nổ khi staleRouterState vẫn có mk="media" — phải giữ mk undefined ("Tất cả")
+			expect(committed[1]).toEqual({ tab: "materials", mq: "cambridge" });
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });

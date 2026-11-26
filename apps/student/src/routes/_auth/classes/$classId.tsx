@@ -1,9 +1,15 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
 import {
 	ACCOUNT_ERROR_CODES,
 	STUDENT_ERROR_CODES,
 } from "@teacher-os/api/contracts";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import { useCallback } from "react";
+import {
+	buildClassDetailSearch,
+	type ClassDetailSearchState,
+	parseClassDetailSearch,
+} from "@/components/class/class-detail-helpers";
 import {
 	ClassDetailView,
 	ClassNotFound,
@@ -15,11 +21,32 @@ import { isHttpError } from "@/lib/query-client";
 import { useStudentClassDetail, useStudentMe } from "@/lib/repos/student";
 
 export const Route = createFileRoute("/_auth/classes/$classId")({
+	validateSearch: (search: Record<string, unknown>): ClassDetailSearchState =>
+		parseClassDetailSearch(search),
 	component: StudentClassDetailPage,
 });
 
 function StudentClassDetailPage() {
 	const { classId } = Route.useParams();
+	const searchState = Route.useSearch();
+	const navigate = useNavigate();
+
+	const handleSearchChange = useCallback(
+		(updater: (prev: ClassDetailSearchState) => ClassDetailSearchState) => {
+			void navigate({
+				to: "/classes/$classId",
+				params: { classId },
+				search: (prev) =>
+					buildClassDetailSearch(
+						updater(parseClassDetailSearch(prev as Record<string, unknown>)),
+					),
+				replace: true,
+				resetScroll: false,
+			});
+		},
+		[classId, navigate],
+	);
+
 	const { session } = Route.useRouteContext();
 	const sessionEmail = session?.data?.user?.email;
 	const meQuery = useStudentMe();
@@ -84,9 +111,12 @@ function StudentClassDetailPage() {
 	return (
 		<StudentShell userName={me.student.name} userEmail={me.user.email}>
 			<ClassDetailView
+				key={classId}
 				detail={detailQuery.data}
 				todayISO={vietnamTodayISO(now)}
 				now={now}
+				searchState={searchState}
+				onSearchChange={handleSearchChange}
 			/>
 		</StudentShell>
 	);
