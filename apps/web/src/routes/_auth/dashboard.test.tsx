@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	classRow,
 	enrollmentRow,
+	invoiceRow,
 	type KernelServer,
 	lessonRow,
 	renderWithKernel,
@@ -53,6 +54,7 @@ let remindersLoads = 0;
 function startRemindersServer(
 	snapshot: KernelSnapshot,
 	remindersBody: unknown = REMINDERS_BODY,
+	remindersStatus = 200,
 ): KernelServer {
 	remindersLoads = 0;
 	return startKernelServer(snapshot, (req) => {
@@ -61,7 +63,7 @@ function startRemindersServer(
 			req.path.startsWith("/api/dashboard/reminders")
 		) {
 			remindersLoads += 1;
-			return { status: 200, body: remindersBody };
+			return { status: remindersStatus, body: remindersBody };
 		}
 		return undefined;
 	});
@@ -109,11 +111,11 @@ function section(heading: string): HTMLElement {
 }
 
 describe("dashboard", () => {
-	it("lists today's class sessions from the kernel, drops redundant KPI card, and keeps schedule read-only", async () => {
+	it("lists today's class sessions as read-only timeline with status pills, shows Hero summary with buổi dạy, and shows Toàn trung tâm stats", async () => {
 		startRemindersServer(
 			snapshotFixture({
 				classes: [
-					classRow({ id: "cl-1", name: "IELTS Writing tối" }),
+					classRow({ id: "cl-1", name: "IELTS Writing tối", mode: "Online" }),
 					classRow({ id: "cl-2", name: "Lớp đã hủy" }),
 				],
 				students: [studentRow({ id: "st-1" })],
@@ -122,7 +124,13 @@ describe("dashboard", () => {
 					enrollmentRow({ id: "en-2", classId: "cl-2" }),
 				],
 				lessons: [
-					lessonRow({ id: "a", day: 3, time: "19:00", topic: "Line chart" }),
+					lessonRow({
+						id: "a",
+						day: 3,
+						time: "19:00",
+						topic: "Line chart",
+						status: "upcoming",
+					}),
 					lessonRow({
 						id: "b",
 						classId: "cl-2",
@@ -132,8 +140,14 @@ describe("dashboard", () => {
 						status: "cancelled",
 					}),
 					lessonRow({ id: "c", day: 5, time: "18:00", topic: "Bar chart" }),
-					// Lesson without topic — meta must not end with a dangling ·.
-					lessonRow({ id: "d", day: 3, time: "08:00", topic: "" }),
+					// Past session (08:00–09:30 < 10:00) without topic and completed — shows "Đã điểm danh" pill.
+					lessonRow({
+						id: "d",
+						day: 3,
+						time: "08:00",
+						topic: "",
+						status: "completed",
+					}),
 				],
 			}),
 		);
@@ -141,9 +155,11 @@ describe("dashboard", () => {
 		await screen.findByRole("heading", { name: "Lịch hôm nay" });
 		const today = section("Lịch hôm nay");
 		expect(today.textContent).toContain("19:00");
+		expect(today.textContent).toContain("20:30");
 		expect(today.textContent).toContain("IELTS Writing tối");
 		expect(today.textContent).toContain("Line chart");
 		expect(today.textContent).not.toContain("Lớp đã hủy");
+		expect(within(today).getByText("Đã điểm danh")).toBeTruthy();
 		// Friday's session is "upcoming this week", not "today".
 		expect(screen.getByText(/Bar chart/)).toBeTruthy();
 		// Meta joins only non-empty parts, in both variants.
@@ -151,20 +167,99 @@ describe("dashboard", () => {
 		expect(within(today).getByText("90' · 1:1")).toBeTruthy();
 		// Read-only schedule — check-in lives on class/schedule/attendance.
 		expect(screen.queryByRole("button", { name: /Điểm danh/ })).toBeNull();
-		// Redundant KPI card and filler subtexts are removed.
+		// Hero summary uses "buổi dạy" (never "ca dạy") so daily-attendance E2E stays clean.
+		const heroSummary = screen.getByTestId("dashboard-hero-summary");
+		expect(heroSummary.textContent).toContain("Hôm nay có 2 buổi dạy");
+		expect(heroSummary.textContent).toContain("còn 1 buổi");
+		expect(heroSummary.textContent).not.toContain("ca dạy");
+		// Focus Card shows the next session today (19:00).
+		const focus = screen.getByTestId("dashboard-focus-card");
+		expect(focus.getAttribute("data-state")).toBe("next");
+		expect(focus.textContent).toContain("Ca dạy tiếp theo");
+		expect(focus.textContent).toContain("IELTS Writing tối");
+		// Org stats live in Toàn trung tâm section; redundant KPI & filler subtexts absent.
 		expect(screen.queryByText("Buổi học hôm nay")).toBeNull();
-		expect(screen.getByText("Tổng học viên")).toBeTruthy();
-		expect(screen.getByText("Bài tập chưa có điểm")).toBeTruthy();
-		expect(screen.getByText("Còn phải thu")).toBeTruthy();
+		const orgStats = section("Toàn trung tâm");
+		expect(within(orgStats).getByText("Tổng học viên")).toBeTruthy();
+		expect(within(orgStats).getByText("Bài tập chưa có điểm")).toBeTruthy();
+		expect(within(orgStats).getByText("Còn phải thu")).toBeTruthy();
+		// When org outstanding is 0đ, do not show misleading "học viên đến hạn" hint.
+		expect(within(orgStats).queryByText(/học viên đến hạn/)).toBeNull();
 		expect(screen.queryByText("trên tổng bài đã giao")).toBeNull();
 		expect(screen.queryByText(/hóa đơn/)).toBeNull();
 		expect(screen.queryByText(/cần kiểm tra$/)).toBeNull();
 	});
 
-	it("flags only missed check-in and overdue assignment in Cần kiểm tra, shows explicit remaining unit or Chưa có gói", async () => {
+	it("shows live Focus Card progressbar during active session and 'Chưa điểm danh' pill on unattended past session", async () => {
+		// 10:30 ICT: 08:00–09:30 is past (upcoming → Chưa điểm danh), 10:00–11:30 is live.
+		vi.setSystemTime(new Date("2026-10-07T10:30:00+07:00"));
 		startRemindersServer(
 			snapshotFixture({
-				classes: [classRow({ id: "cl-1" })],
+				classes: [
+					classRow({ id: "cl-1", name: "IELTS Sáng", mode: "Offline" }),
+					classRow({ id: "cl-2", name: "IELTS Live 10h", mode: "Online" }),
+				],
+				students: [studentRow({ id: "st-1" })],
+				enrollments: [
+					enrollmentRow({ id: "en-1", classId: "cl-1" }),
+					enrollmentRow({ id: "en-2", classId: "cl-2" }),
+				],
+				lessons: [
+					lessonRow({
+						id: "l-past",
+						classId: "cl-1",
+						enrollmentId: "en-1",
+						day: 3,
+						date: "2026-10-07",
+						time: "08:00",
+						dur: 90,
+						status: "upcoming",
+					}),
+					lessonRow({
+						id: "l-live",
+						classId: "cl-2",
+						enrollmentId: "en-2",
+						day: 3,
+						date: "2026-10-07",
+						time: "10:00",
+						dur: 90,
+						status: "upcoming",
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<Dashboard />);
+		const focus = await screen.findByTestId("dashboard-focus-card");
+		expect(focus.getAttribute("data-state")).toBe("live");
+		expect(within(focus).getByText("Đang dạy")).toBeTruthy();
+		expect(within(focus).getByText("IELTS Live 10h")).toBeTruthy();
+		expect(within(focus).getByText("Còn 1 giờ")).toBeTruthy();
+		const bar = within(focus).getByRole("progressbar", {
+			name: "Tiến độ ca dạy",
+		});
+		expect(bar.getAttribute("aria-valuenow")).toBe("33");
+
+		const today = section("Lịch hôm nay");
+		expect(within(today).getByText("Chưa điểm danh")).toBeTruthy();
+		expect(within(today).getByText("Đang dạy")).toBeTruthy();
+	});
+
+	it("flags only missed check-in and overdue assignment in Cần kiểm tra, shows explicit remaining unit or Chưa có gói, and opens accessible StudentRiskDrawer with real filtered data", async () => {
+		startRemindersServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						name: "IELTS Foundation K12",
+						status: "active",
+					}),
+					classRow({ id: "cl-paused", name: "Lớp Tạm Dừng", status: "paused" }),
+					classRow({
+						id: "cl-invited",
+						name: "Lớp Đang Mời",
+						status: "active",
+					}),
+				],
 				students: [
 					studentRow({ id: "st-1", name: "Vắng mặt" }),
 					studentRow({ id: "st-2", name: "Quên điểm danh" }),
@@ -172,10 +267,27 @@ describe("dashboard", () => {
 					studentRow({ id: "st-4", name: "Ổn định" }),
 				],
 				enrollments: [
-					enrollmentRow({ id: "en-1", studentId: "st-1" }),
-					enrollmentRow({ id: "en-2", studentId: "st-2" }),
-					enrollmentRow({ id: "en-3", studentId: "st-3" }),
-					enrollmentRow({ id: "en-4", studentId: "st-4" }),
+					enrollmentRow({ id: "en-1", classId: "cl-1", studentId: "st-1" }),
+					enrollmentRow({
+						id: "en-2",
+						classId: "cl-1",
+						studentId: "st-2",
+						status: "active",
+					}),
+					enrollmentRow({
+						id: "en-2-p",
+						classId: "cl-paused",
+						studentId: "st-2",
+						status: "active",
+					}),
+					enrollmentRow({
+						id: "en-2-i",
+						classId: "cl-invited",
+						studentId: "st-2",
+						status: "invited",
+					}),
+					enrollmentRow({ id: "en-3", classId: "cl-1", studentId: "st-3" }),
+					enrollmentRow({ id: "en-4", classId: "cl-1", studentId: "st-4" }),
 				],
 				packages: [
 					{
@@ -183,7 +295,7 @@ describe("dashboard", () => {
 						studentId: "st-2",
 						enrollmentId: "en-2",
 						classId: "cl-1",
-						total: 24,
+						total: 2,
 						price: 4_800_000,
 						mode: "Online",
 						start: "2026-09-01",
@@ -236,6 +348,17 @@ describe("dashboard", () => {
 						],
 					},
 				],
+				assignments: [
+					{
+						id: "leg-1",
+						studentId: "st-3",
+						title: "Legacy Essay",
+						type: "Writing",
+						due: "",
+						status: "late",
+						scores: null,
+					},
+				],
 			}),
 		);
 		renderWithKernel(<Dashboard />);
@@ -244,10 +367,11 @@ describe("dashboard", () => {
 				.textContent ?? "",
 		);
 		const rowOf = (name: string) =>
-			within(risk).getByText(name).closest("tr") as HTMLElement;
+			within(risk).getByText(name).closest("button") as HTMLButtonElement;
 
 		expect(rowOf("Quên điểm danh").textContent).toContain("Chưa điểm danh");
-		expect(rowOf("Quên điểm danh").textContent).toContain("còn 24 buổi");
+		expect(rowOf("Quên điểm danh").textContent).toContain("còn 2 buổi");
+		expect(rowOf("Quên điểm danh").textContent).toContain("sắp hết gói");
 
 		expect(rowOf("Trễ bài tập").textContent).toContain("Bài tập trễ hạn");
 		expect(rowOf("Trễ bài tập").textContent).toContain("Chưa có gói");
@@ -256,27 +380,129 @@ describe("dashboard", () => {
 		expect(within(risk).queryByText("Vắng mặt")).toBeNull();
 		expect(within(risk).queryByText("Ổn định")).toBeNull();
 		expect(within(risk).queryByText("Miss check-in")).toBeNull();
+
+		// Open StudentRiskDrawer for st-2: shows active class only (never paused/invited).
+		const triggerBtn = rowOf("Quên điểm danh");
+		fireEvent.click(triggerBtn);
+		const drawer = screen.getByRole("dialog", { name: "Chi tiết học viên" });
+		expect(drawer.textContent).toContain("Quên điểm danh");
+		expect(drawer.textContent).toContain("IELTS Foundation K12");
+		expect(drawer.textContent).not.toContain("Lớp Tạm Dừng");
+		expect(drawer.textContent).not.toContain("Lớp Đang Mời");
+		expect(drawer.textContent).toContain("còn 2/2 buổi");
+		expect(drawer.textContent).toContain("Buổi 06/10");
+		const profileLink = within(drawer).getByRole("link", {
+			name: /Mở hồ sơ học viên/,
+		});
+		expect(profileLink.getAttribute("href")).toBe("/students/st-2");
+
+		// Focus trap wraps cleanly in JSDOM: initial focus on Close icon button, Shift+Tab wraps to profileLink.
+		const closeIconBtn = within(drawer).getByRole("button", {
+			name: "Đóng chi tiết học viên",
+		});
+		expect(within(drawer).getByRole("button", { name: "Đóng" })).toBeTruthy();
+		expect(document.activeElement).toBe(closeIconBtn);
+		fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+		expect(document.activeElement).toBe(profileLink);
+		fireEvent.keyDown(document, { key: "Tab" });
+		expect(document.activeElement).toBe(closeIconBtn);
+
+		// Focus trap pulls focus back into drawer when activeElement escapes outside (e.g., after ⌘K closes or clicking background).
+		triggerBtn.focus();
+		expect(document.activeElement).toBe(triggerBtn);
+		fireEvent.keyDown(document, { key: "Tab" });
+		expect(document.activeElement).toBe(closeIconBtn);
+		triggerBtn.focus();
+		fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+		expect(document.activeElement).toBe(profileLink);
+
+		// Guard: Escape with defaultPrevented must NOT close drawer.
+		const preventedEsc = new KeyboardEvent("keydown", {
+			key: "Escape",
+			bubbles: true,
+			cancelable: true,
+		});
+		preventedEsc.preventDefault();
+		fireEvent(document, preventedEsc);
 		expect(
-			within(risk).queryByText("Học viên rủi ro: vắng mặt hoặc miss check-in"),
+			screen.getByRole("dialog", { name: "Chi tiết học viên" }),
+		).toBeTruthy();
+
+		// Guard: Escape while a higher dialog (e.g. ⌘K CommandDialog portal) is open must NOT close drawer.
+		const higherPortal = document.createElement("div");
+		higherPortal.setAttribute("data-base-ui-portal", "");
+		const higherDialog = document.createElement("div");
+		higherDialog.setAttribute("role", "dialog");
+		higherDialog.setAttribute("data-open", "");
+		higherPortal.appendChild(higherDialog);
+		document.body.appendChild(higherPortal);
+		try {
+			fireEvent.keyDown(document, { key: "Escape" });
+			expect(
+				screen.getByRole("dialog", { name: "Chi tiết học viên" }),
+			).toBeTruthy();
+		} finally {
+			higherPortal.remove();
+		}
+
+		// Escape closes drawer and returns focus to trigger button.
+		fireEvent.keyDown(document, { key: "Escape" });
+		expect(
+			screen.queryByRole("dialog", { name: "Chi tiết học viên" }),
 		).toBeNull();
+		expect(document.activeElement).toBe(triggerBtn);
+
+		// Open drawer for st-3 (legacy due: "" must never render "/").
+		fireEvent.click(rowOf("Trễ bài tập"));
+		const drawer3 = screen.getByRole("dialog", { name: "Chi tiết học viên" });
+		expect(drawer3.textContent).toContain("Writing Task 2");
+		expect(drawer3.textContent).toContain("05/10");
+		expect(drawer3.textContent).toContain("Legacy Essay");
+		expect(drawer3.textContent).not.toContain("hạn nộp /");
 	});
 
-	it("hides financial KPI and tuition reminder card when viewer lacks finance access", async () => {
+	it("hides financial KPI, tuition reminder card, and excludes tuition from Hero openTasks when viewer lacks finance access", async () => {
 		startRemindersServer(
 			snapshotFixture({
 				classes: [classRow({ id: "cl-1", name: "IELTS Writing tối" })],
 				students: [studentRow({ id: "st-1" })],
+				invoices: [
+					invoiceRow({ id: "inv-1", amount: 1_500_000, status: "unpaid" }),
+				],
 				viewer: { role: "ta", canAccessFinance: false },
 			}),
-			// Even if reminders payload carries tuition, UI must fail closed.
-			REMINDERS_BODY,
+			// Even if reminders payload carries tuition while attendance & grading are 0, UI must fail closed.
+			{
+				date: "2026-10-07",
+				attendance: { pending: 0, items: [] },
+				overdueGrading: { count: 0, writing: 0, speaking: 0 },
+				tuition: { students: 3, outstanding: 1_500_000 },
+			},
 		);
 		renderWithKernel(<Dashboard />);
-		await screen.findByText("1 ca dạy");
+		const attendanceCard = await screen.findByTestId(
+			"reminder-card-attendance",
+		);
+		expect(attendanceCard.textContent).toContain("Đã hoàn tất hôm nay");
 		expect(screen.getByText("Tổng học viên")).toBeTruthy();
-		expect(screen.getByTestId("reminder-card-attendance")).toBeTruthy();
 		expect(screen.queryByText("Còn phải thu")).toBeNull();
 		expect(screen.queryByTestId("reminder-card-tuition")).toBeNull();
+		// Hero summary must NOT leak tuition tasks into openTasks count.
+		const heroSummary = screen.getByTestId("dashboard-hero-summary");
+		expect(heroSummary.textContent).toContain("Mọi việc hôm nay đã xong.");
+		expect(heroSummary.textContent).not.toContain("1 việc");
+	});
+
+	it("shows alert error box with Retry button when reminders API fails without faking 'Mọi việc hôm nay đã xong.'", async () => {
+		startRemindersServer(snapshotFixture(), { error: "boom" }, 500);
+		renderWithKernel(<Dashboard />);
+		const alertBox = await screen.findByRole("alert");
+		expect(alertBox.textContent).toContain("Không tải được bộ đếm nhắc việc.");
+		expect(
+			within(alertBox).getByRole("button", { name: "Thử lại" }),
+		).toBeTruthy();
+		const heroSummary = screen.getByTestId("dashboard-hero-summary");
+		expect(heroSummary.textContent).not.toContain("Mọi việc hôm nay đã xong.");
 	});
 
 	it("shows an empty org honestly with teacher-facing wording — no demo names, dates or money", async () => {
@@ -287,6 +513,9 @@ describe("dashboard", () => {
 			screen.getByText("Không có buổi dạy sắp tới trong tuần."),
 		).toBeTruthy();
 		expect(screen.getByText("Không có học viên cần kiểm tra.")).toBeTruthy();
+		const focus = screen.getByTestId("dashboard-focus-card");
+		expect(focus.getAttribute("data-state")).toBe("empty");
+		expect(focus.textContent).toContain("Chưa có ca dạy sắp tới");
 		const text = view.container.textContent ?? "";
 		for (const demo of [
 			"cô Lan",
@@ -298,27 +527,44 @@ describe("dashboard", () => {
 			"6.2tr",
 			"2.0tr",
 			"Tuần này",
+			"Phòng 201",
 		]) {
 			expect(text).not.toContain(demo);
 		}
 		expect(text).toContain("Cô Hạnh");
 	});
 
-	it("hiển thị khu vực Việc cần làm hôm nay gọn gàng với 3 thẻ thứ tự 1, 2, 3 từ reminders API", async () => {
+	it("hiển thị khu vực Việc cần làm hôm nay gọn gàng với 3 thẻ thứ tự 1, 2, 3 từ reminders API và hint Còn phải thu khi có công nợ", async () => {
 		startRemindersServer(
 			snapshotFixture({
 				classes: [classRow({ id: "cl-1", name: "IELTS Writing tối" })],
+				students: [studentRow({ id: "st-1" })],
+				invoices: [
+					invoiceRow({ id: "inv-1", amount: 1_500_000, status: "unpaid" }),
+				],
 			}),
 		);
 		renderWithKernel(<Dashboard />);
-		// Chờ nội dung thật từ /api/dashboard/reminders tải xong thay vì heading tĩnh.
-		expect(await screen.findByText("1 ca dạy")).toBeTruthy();
+		const attendanceCard = await screen.findByTestId(
+			"reminder-card-attendance",
+		);
 		expect(
 			screen.getByRole("heading", { name: "Việc cần làm hôm nay" }),
 		).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Làm mới" })).toBeTruthy();
-		expect(screen.getByText("2 bài")).toBeTruthy();
-		expect(screen.getByText("3 học viên")).toBeTruthy();
+		expect(
+			within(attendanceCard).getByTestId("reminder-card-count").textContent,
+		).toBe("1 ca dạy");
+		expect(
+			within(screen.getByTestId("reminder-card-grading")).getByTestId(
+				"reminder-card-count",
+			).textContent,
+		).toBe("2 bài");
+		expect(
+			within(screen.getByTestId("reminder-card-tuition")).getByTestId(
+				"reminder-card-count",
+			).textContent,
+		).toBe("3 học viên");
 		// CTA thẻ điểm danh dẫn đúng hợp đồng URL.
 		const link = screen
 			.getByRole("link", {
@@ -327,6 +573,9 @@ describe("dashboard", () => {
 			.getAttribute("href");
 		expect(link).toContain("date=2026-10-07");
 		expect(link).toContain("status=pending");
+		// Org stats hint appears when outstanding > 0 and dueStudentsCount > 0.
+		const orgStats = section("Toàn trung tâm");
+		expect(orgStats.textContent).toContain("trong đó 3 học viên đến hạn");
 	});
 
 	it("refetch reminders khi kernel snapshot refresh — exact prefix không tự phủ", async () => {
@@ -341,7 +590,7 @@ describe("dashboard", () => {
 				<KernelRefreshProbe />
 			</>,
 		);
-		await screen.findByText("1 ca dạy");
+		await screen.findByTestId("reminder-card-attendance");
 		// Chờ counter ổn định (fetch mount theo key dataUpdatedAt đã lắng).
 		await vi.waitFor(() => {
 			expect(remindersLoads).toBeGreaterThanOrEqual(1);
@@ -463,12 +712,97 @@ describe("dashboard", () => {
 		expect(within(risk).queryByText("Minh Tâm")).toBeNull();
 	});
 
-	it("pins PageHead date kicker to Asia/Ho_Chi_Minh across UTC midnight boundary", async () => {
+	it("pins date kicker to Asia/Ho_Chi_Minh across UTC midnight boundary", async () => {
 		// 18:00Z on 2026-10-07 = 01:00+07:00 on Thursday 2026-10-08 in Vietnam.
 		vi.setSystemTime(new Date("2026-10-07T18:00:00Z"));
 		startRemindersServer(snapshotFixture());
 		renderWithKernel(<Dashboard />);
 		await screen.findByText("Không có buổi dạy hôm nay.");
 		expect(screen.getByText(/Thứ Năm, 8 tháng 10, 2026/i)).toBeTruthy();
+	});
+
+	it("closes StudentRiskDrawer, clears stale selection, and returns focus to risk heading when student clears risk after refresh", async () => {
+		const server = startRemindersServer(
+			snapshotFixture({
+				classes: [classRow({ id: "cl-1", name: "IELTS Writing" })],
+				students: [studentRow({ id: "st-2", name: "Quên điểm danh" })],
+				enrollments: [
+					enrollmentRow({ id: "en-2", classId: "cl-1", studentId: "st-2" }),
+				],
+				lessons: [
+					lessonRow({
+						id: "b",
+						enrollmentId: "en-2",
+						day: 2,
+						date: "2026-10-06",
+						status: "upcoming",
+					}),
+				],
+			}),
+		);
+		renderWithKernel(
+			<>
+				<Dashboard />
+				<KernelRefreshProbe />
+			</>,
+		);
+		const risk = section(
+			(await screen.findByRole("heading", { name: "Cần kiểm tra" }))
+				.textContent ?? "",
+		);
+		const trigger = within(risk)
+			.getByText("Quên điểm danh")
+			.closest("button") as HTMLButtonElement;
+		fireEvent.click(trigger);
+		expect(
+			screen.getByRole("dialog", { name: "Chi tiết học viên" }),
+		).toBeTruthy();
+
+		// Student clears risk → refresh kernel → drawer closes and focus falls back to heading.
+		server.snapshot.lessons[0] = {
+			...server.snapshot.lessons[0],
+			status: "completed",
+		};
+		fireEvent.click(screen.getByText("probe-refresh-kernel"));
+		await vi.waitFor(() => {
+			expect(
+				screen.queryByRole("dialog", { name: "Chi tiết học viên" }),
+			).toBeNull();
+		});
+		expect(document.activeElement).toBe(
+			screen.getByRole("heading", { name: "Cần kiểm tra" }),
+		);
+
+		// If risk returns later, drawer must NOT zombie-reopen without user click.
+		server.snapshot.lessons[0] = {
+			...server.snapshot.lessons[0],
+			status: "upcoming",
+		};
+		fireEvent.click(screen.getByText("probe-refresh-kernel"));
+		await screen.findByText("Quên điểm danh");
+		expect(
+			screen.queryByRole("dialog", { name: "Chi tiết học viên" }),
+		).toBeNull();
+	});
+
+	it("refetches reminders when Vietnam date rolls over midnight on visibilitychange", async () => {
+		startRemindersServer(snapshotFixture());
+		renderWithKernel(<Dashboard />);
+		await screen.findByTestId("reminder-card-attendance");
+		await vi.waitFor(() => {
+			expect(remindersLoads).toBeGreaterThanOrEqual(1);
+		});
+		const loadsBefore = remindersLoads;
+
+		// Advance clock past VN midnight (2026-10-08 00:05 ICT) and trigger visibilitychange.
+		vi.setSystemTime(new Date("2026-10-08T00:05:00+07:00"));
+		Object.defineProperty(document, "hidden", {
+			configurable: true,
+			value: false,
+		});
+		document.dispatchEvent(new Event("visibilitychange"));
+		await vi.waitFor(() => {
+			expect(remindersLoads).toBeGreaterThan(loadsBefore);
+		});
 	});
 });
