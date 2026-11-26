@@ -13,6 +13,7 @@ import type { BankHubContext } from "./lib/bank-hub/bank-hub-client";
 import type { ExamExtractor } from "./lib/exam-import/extractor";
 import type { MediaStore } from "./lib/media-store";
 import type { PlacementAiGrader } from "./lib/placement-ai/grader";
+import type { RecordingStore } from "./lib/recording-store";
 import { createAdminMeRoutes } from "./lib/require-admin";
 import type { ZoomClient, ZoomConfig } from "./lib/zoom/zoom-client";
 import { redactResetToken } from "./log-redaction";
@@ -56,6 +57,13 @@ export {
 	type StoredMedia,
 	type StoredMediaMeta,
 } from "./lib/media-store";
+export type {
+	RecordingByteRange,
+	RecordingPutResult,
+	RecordingStore,
+	StoredRecording,
+	StoredRecordingMeta,
+} from "./lib/recording-store";
 
 export interface KernelCtx {
 	orgId: string;
@@ -94,6 +102,12 @@ export interface AppDeps {
 	 * MATERIALS_DISABLED; link và metadata vẫn hoạt động.
 	 */
 	getMaterialsStore?(): MediaStore | undefined;
+	/**
+	 * Kho video recording buổi học Zoom (bucket `recordings`, vòng đời 90 ngày) —
+	 * R2 ở production, đĩa ở e2e. Vắng mặt → route phát video trả 503
+	 * RECORDINGS_DISABLED và sync fallback về link chia sẻ Zoom.
+	 */
+	getRecordingStore?(): RecordingStore | undefined;
 	/**
 	 * Plan #413: allowlist email admin (binding ADMIN_EMAILS đã parse; so
 	 * khớp lowercase trong requireAdmin). Rỗng = không ai là admin.
