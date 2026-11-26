@@ -867,12 +867,10 @@ describe("session lecture/homework materials, assignment sessionDate & student s
 		await db.insert(schema.organization).values({
 			id: "org-2",
 			name: "Other Org",
-			slug: "other-org",
 		});
 		await db.insert(schema.student).values({
 			id: "stu-org-2",
 			orgId: "org-2",
-			userId: "u-stu-1",
 			name: "Minh Org2",
 			email: "minh@student.local",
 		});

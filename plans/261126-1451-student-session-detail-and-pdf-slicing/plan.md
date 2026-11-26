@@ -1,7 +1,7 @@
 ---
 title: "Gộp tab Hành trình học & Giáo trình, trang chi tiết buổi học, cắt bài giảng PDF và bài tập theo buổi"
 description: "Gộp tab Hành trình học + Giáo trình trên trang lớp học viên thành 1 tab có thể bấm từng buổi vào trang chi tiết gồm Bài giảng (cắt PDF từ sách gốc bằng pdf-lib) và Bài tập buổi học (file/link upload trước/sau buổi + bài tập tương tác gắn buổi)."
-status: pending
+status: completed
 priority: P1
 effort: "1d"
 tags: [student, web, materials, syllabus, assignments, pdf-lib]
@@ -31,21 +31,21 @@ Hợp nhất hai tab **Hành trình học** và **Giáo trình** ở cổng họ
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [DB Schema, Migration & Shared Contracts](./phase-01-start.md) | Pending |
-| 2 | [Server API Routes, Curriculum Mapping & Date-Move Sync](./phase-02-server-api-and-sync.md) | Pending |
-| 3 | [PDF Slicer Engine (pdf-lib) & Teacher Class UI](./phase-03-pdf-slicer-and-teacher-ui.md) | Pending |
-| 4 | [Student Merged Journey Tab & Session Detail Page](./phase-04-student-merged-journey-and-session-detail.md) | Pending |
-| 5 | [E2E Specs, 3-Viewport Light/Dark Verification & Polish](./phase-05-tests-e2e-and-visual-verification.md) | Pending |
+| 1 | [DB Schema, Migration & Shared Contracts](./phase-01-start.md) | Done |
+| 2 | [Server API Routes, Curriculum Mapping & Date-Move Sync](./phase-02-server-api-and-sync.md) | Done |
+| 3 | [PDF Slicer Engine (pdf-lib) & Teacher Class UI](./phase-03-pdf-slicer-and-teacher-ui.md) | Done |
+| 4 | [Student Merged Journey Tab & Session Detail Page](./phase-04-student-merged-journey-and-session-detail.md) | Done |
+| 5 | [E2E Specs, 3-Viewport Light/Dark Verification & Polish](./phase-05-tests-e2e-and-visual-verification.md) | Done |
 
 ## Acceptance Criteria
 
-- [ ] Migration Drizzle mới chạy sạch trên SQLite/libsql: thêm `category` (`lecture`|`homework`, default `lecture`), `source_title`, `source_page_start`, `source_page_end` trên `lesson_material`, và `session_date` (kèm index) trên `class_assignment`.
-- [ ] API tài liệu buổi hỗ trợ phân loại `lecture`/`homework` (attach, upload file kèm query/title/source range, create link, patch category) trước và sau buổi học (chặn buổi `holiday` 409); `POST /api/classes/:id/assignments` hỗ trợ `sessionDate` tùy chọn và đồng bộ ngày khi dời buổi (`moveDate`), nghỉ lễ (`holidays.ts`), đổi ngày khai giảng (`class-start-date-reschedule.ts`), hoặc xóa buổi (set null).
-- [ ] `GET /api/student/classes/:classId` trả kèm cấu trúc `syllabus` + metadata module/mục tiêu/đếm bài giảng & bài tập cho từng buổi; `GET /api/student/classes/:classId/sessions/:date` trả đầy đủ chi tiết buổi (IDOR 404, ẩn cột teacher-only, tôn trọng `visibleAssignmentFilter`).
-- [ ] Công cụ cắt PDF bằng `pdf-lib` (lazy-load) cho phép giáo viên chọn sách PDF từ Tài liệu chung / Ngân hàng / máy tính, nhập khoảng trang cho 1 hoặc nhiều buổi, cắt ra file PDF con đúng số trang (có thông báo lỗi rõ khi PDF mã hóa hoặc khoảng trang sai) và gắn làm Bài giảng.
-- [ ] Trang chi tiết lớp giáo viên hỗ trợ quản lý riêng **Bài giảng** và **Bài tập buổi học** (upload file/link trước hoặc sau buổi + giao bài từ Ngân hàng đề gắn vào buổi đó) và nút **Cắt sách theo buổi**.
-- [ ] Trang chi tiết lớp học viên chỉ còn 3 tab (`Hành trình học` | `Bài tập` | `Tài liệu chung`); tab `Hành trình học` nhóm buổi theo Module giáo trình kèm tiến độ (hoặc timeline phẳng khi không có giáo trình), bấm mỗi buổi mở `/classes/$classId/sessions/$date` hiển thị Bài giảng (xem trước PDF + badge trang sách gốc + tải) và Bài tập của buổi (tương tác + file upload).
-- [ ] Toàn bộ gates local pass (`pnpm exec biome check .`, `pnpm check-types`, `pnpm test`, spec E2E liên quan bao gồm `student-session-detail`, `student-classmates`, `student-class-detail`, `class-shared-materials`, `material-upload-student`, `material-bank`, `material-multi-upload`), kèm screenshot 3 viewport (`1440×900`, `768×1024`, `375×812`) light + dark mode. <!-- Red-Team RT-7 -->
+- [x] Migration Drizzle mới chạy sạch trên SQLite/libsql: thêm `category` (`lecture`|`homework`, default `lecture`), `source_title`, `source_page_start`, `source_page_end` trên `lesson_material`, và `session_date` (kèm index) trên `class_assignment`.
+- [x] API tài liệu buổi hỗ trợ phân loại `lecture`/`homework` (attach, upload file kèm query/title/source range, create link, patch category) trước và sau buổi học (chặn buổi `holiday` 409); `POST /api/classes/:id/assignments` hỗ trợ `sessionDate` tùy chọn và đồng bộ ngày khi dời buổi (`moveDate`), nghỉ lễ (`holidays.ts`), đổi ngày khai giảng (`class-start-date-reschedule.ts`), hoặc xóa buổi (set null).
+- [x] `GET /api/student/classes/:classId` trả kèm cấu trúc `syllabus` + metadata module/mục tiêu/đếm bài giảng & bài tập cho từng buổi; `GET /api/student/classes/:classId/sessions/:date` trả đầy đủ chi tiết buổi (IDOR 404, ẩn cột teacher-only, tôn trọng `visibleAssignmentFilter`).
+- [x] Công cụ cắt PDF bằng `pdf-lib` (lazy-load) cho phép giáo viên chọn sách PDF từ Tài liệu chung / Ngân hàng / máy tính, nhập khoảng trang cho 1 hoặc nhiều buổi, cắt ra file PDF con đúng số trang (có thông báo lỗi rõ khi PDF mã hóa hoặc khoảng trang sai) và gắn làm Bài giảng.
+- [x] Trang chi tiết lớp giáo viên hỗ trợ quản lý riêng **Bài giảng** và **Bài tập buổi học** (upload file/link trước hoặc sau buổi + giao bài từ Ngân hàng đề gắn vào buổi đó) và nút **Cắt sách theo buổi**.
+- [x] Trang chi tiết lớp học viên chỉ còn 3 tab (`Hành trình học` | `Bài tập` | `Tài liệu chung`); tab `Hành trình học` nhóm buổi theo Module giáo trình kèm tiến độ (hoặc timeline phẳng khi không có giáo trình), bấm mỗi buổi mở `/classes/$classId/sessions/$date` hiển thị Bài giảng (xem trước PDF + badge trang sách gốc + tải) và Bài tập của buổi (tương tác + file upload).
+- [x] Toàn bộ gates local pass (`pnpm exec biome check .`, `pnpm check-types`, `pnpm test`, spec E2E liên quan bao gồm `student-session-detail`, `student-classmates`, `student-class-detail`, `class-shared-materials`, `material-upload-student`, `material-bank`, `material-multi-upload`), kèm screenshot 3 viewport (`1440×900`, `768×1024`, `375×812`) light + dark mode. <!-- Red-Team RT-7 -->
 
 ## Validation Log
 
