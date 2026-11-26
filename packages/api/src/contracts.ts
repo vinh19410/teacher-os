@@ -219,8 +219,10 @@ export const classStatusResponseSchema = z
 export type ClassStatusResponse = z.infer<typeof classStatusResponseSchema>;
 
 export const CLASS_ERROR_CODES = {
-	/** Lớp đã có buổi học thực tế (lesson hoặc class_session) — không được đổi lịch, ngày khai giảng hoặc số buổi. */
+	/** Lớp đã có buổi học thực tế (lesson hoặc class_session) — không được đổi lịch học trong tuần hoặc số buổi. */
 	SCHEDULE_LOCKED: "CLASS_SCHEDULE_LOCKED",
+	/** Lớp đã bắt đầu học hoặc lịch không thể tự động tính lại — không được đổi ngày khai giảng. */
+	START_DATE_LOCKED: "CLASS_START_DATE_LOCKED",
 	/** Lớp đang tạm dừng — chặn tuyển sinh mới và thao tác ghi giảng dạy (#694). */
 	CLASS_PAUSED: "CLASS_PAUSED",
 	/** Phiên bản thông báo khai giảng đã thay đổi bởi thao tác đồng thời khác. */

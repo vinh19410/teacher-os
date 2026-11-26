@@ -1,4 +1,5 @@
 import { renderClassOpeningEmail } from "@teacher-os/api/class-opening-email";
+import type { StartDateLockReason } from "@teacher-os/api/class-start-date";
 import {
 	CLASS_ERROR_CODES,
 	CLASS_OPENING_NOTE_MAX_LENGTH,
@@ -50,6 +51,9 @@ export interface ConfirmOpeningModalProps {
 	onClose: () => void;
 	cls: ClassGroup;
 	hasRealSessions: boolean;
+	isManual?: boolean;
+	startDateLocked?: boolean;
+	startDateLockReason?: StartDateLockReason | null;
 	roster: OpeningRosterEntry[];
 	orgName?: string;
 	onConfirmed: () => Promise<void>;
@@ -61,6 +65,7 @@ const REFRESH_REQUIRED_ERROR_CODES = new Set<string>([
 	CLASS_ERROR_CODES.OPENING_VERSION_CONFLICT,
 	CLASS_ERROR_CODES.CLASS_PAUSED,
 	CLASS_ERROR_CODES.SCHEDULE_LOCKED,
+	CLASS_ERROR_CODES.START_DATE_LOCKED,
 ]);
 
 function formatConfirmedTimestamp(iso: string): string {
@@ -147,6 +152,9 @@ export function ConfirmOpeningModal({
 	onClose,
 	cls,
 	hasRealSessions,
+	isManual,
+	startDateLocked,
+	startDateLockReason = null,
 	roster,
 	orgName,
 	onConfirmed,
@@ -229,11 +237,15 @@ export function ConfirmOpeningModal({
 				: "all"
 			: sendMode;
 
+	const isManualMode = isManual ?? cls.schedulingMode === "manual";
+	const effectiveStartDateLocked = startDateLocked ?? hasRealSessions;
 	const startDateReadOnly =
-		hasRealSessions || (isAlreadyConfirmed && effectiveSendMode === "new_only");
+		effectiveStartDateLocked ||
+		(isAlreadyConfirmed && effectiveSendMode === "new_only");
 
 	const todayVN = vietnamTodayISO();
 	const trimmedStartDate = startDate.trim();
+	const startDateChanged = trimmedStartDate !== cls.startDate.trim();
 	const startDateInputValue = isValidIsoCalendarDate(trimmedStartDate)
 		? trimmedStartDate
 		: "";
@@ -487,7 +499,9 @@ export function ConfirmOpeningModal({
 							help={
 								isLegacyStartDate
 									? `Ngày hiện tại (${cls.startDate}) chưa theo định dạng dd/mm/yyyy — vui lòng chọn lại ngày khai giảng.`
-									: undefined
+									: hasRealSessions && !isManualMode && startDateChanged
+										? "Lịch các buổi học chưa diễn ra của lớp sẽ tự động cập nhật theo ngày khai giảng mới."
+										: undefined
 							}
 						>
 							<DatePickerInput
@@ -521,8 +535,11 @@ export function ConfirmOpeningModal({
 								data-testid="opening-date-locked-note"
 								className="rounded-md border border-border bg-muted/50 px-3 py-2 text-muted-foreground text-xs"
 							>
-								{hasRealSessions
-									? "Lớp đã có buổi học thực tế nên ngày khai giảng được giữ cố định theo lịch học."
+								{effectiveStartDateLocked
+									? startDateLockReason === "legacy-undated" ||
+										startDateLockReason === "invalid-schedule"
+										? "Lớp dùng lịch định dạng cũ hoặc đã điều chỉnh buổi lẻ nên ngày khai giảng được giữ cố định."
+										: "Lớp đã bắt đầu học nên ngày khai giảng được giữ cố định."
 									: 'Chọn "Gửi thông báo cập nhật cho cả lớp" nếu cần thay đổi ngày khai giảng.'}
 							</p>
 						</div>

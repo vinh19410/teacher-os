@@ -32,6 +32,9 @@ function defaultErrorMessage(status: number, code?: string): string {
 	if (code === CLASS_ERROR_CODES.SCHEDULE_LOCKED) {
 		return "Lớp đã có buổi học thực tế nên không thể đổi ngày khai giảng.";
 	}
+	if (code === CLASS_ERROR_CODES.START_DATE_LOCKED) {
+		return "Lớp đã bắt đầu học nên không thể đổi ngày khai giảng.";
+	}
 	return "Không thể chốt khai giảng. Vui lòng thử lại.";
 }
 

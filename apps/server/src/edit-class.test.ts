@@ -1,9 +1,10 @@
 import { fileURLToPath } from "node:url";
-import { createClient } from "@libsql/client";
+import { createClient, type InArgs, type InStatement } from "@libsql/client";
 import {
 	CLASS_ERROR_CODES,
 	type KernelSnapshot,
 } from "@teacher-os/api/contracts";
+import { parseStoredSchedule, skeletonOf } from "@teacher-os/api/skeleton";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import {
 	session as authSession,
@@ -15,6 +16,7 @@ import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { describe, expect, test } from "vitest";
 import { buildApp, type Db } from "./app";
+import type { ZoomClient, ZoomMeetingInput } from "./lib/zoom/zoom-client";
 
 const CORS_ORIGIN = "http://localhost:8001";
 const MIGRATIONS_DIR = fileURLToPath(
@@ -29,8 +31,55 @@ function futureMondayISO(minDaysAhead = 7): string {
 	return candidate;
 }
 
-async function setupTestApp() {
+function expectedSkeletonDates(
+	scheduleJson: string,
+	startISO: string,
+	total: number,
+): string[] {
+	const parsed = parseStoredSchedule(scheduleJson);
+	if (!parsed) throw new Error("invalid schedule");
+	const skeleton = skeletonOf(parsed, startISO, total);
+	if (!skeleton) throw new Error("invalid skeleton");
+	return [...skeleton.values()].flat().sort((a, b) => a.localeCompare(b));
+}
+
+function countArgs(args?: InArgs): number {
+	if (!args) return 0;
+	return Array.isArray(args) ? args.length : Object.keys(args).length;
+}
+
+function countBindParams(
+	stmt: InStatement | [string, InArgs?],
+	args?: InArgs,
+): number {
+	if (typeof stmt === "string") {
+		return countArgs(args);
+	}
+	if (Array.isArray(stmt)) {
+		return countArgs(stmt[1]);
+	}
+	return countArgs(stmt.args);
+}
+
+async function setupTestApp(options?: { getZoomClient?: () => ZoomClient }) {
 	const client = createClient({ url: "file::memory:" });
+	let maxBoundParams = 0;
+	const origExecute = client.execute.bind(client);
+	const origBatch = client.batch.bind(client);
+	client.execute = async (stmt: InStatement, args?: InArgs) => {
+		const count = countBindParams(stmt, args);
+		if (count > maxBoundParams) maxBoundParams = count;
+		return typeof stmt === "string"
+			? origExecute(stmt, args)
+			: origExecute(stmt);
+	};
+	client.batch = async (stmts, mode) => {
+		for (const stmt of stmts) {
+			const count = countBindParams(stmt);
+			if (count > maxBoundParams) maxBoundParams = count;
+		}
+		return origBatch(stmts, mode);
+	};
 	const libsql = drizzle(client, { schema });
 	await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
 	const db = libsql as unknown as Db;
@@ -64,6 +113,7 @@ async function setupTestApp() {
 		corsOrigin: CORS_ORIGIN,
 		getSessionUser,
 		authHandler: () => new Response("auth stub", { status: 404 }),
+		getZoomClient: options?.getZoomClient,
 	});
 
 	async function insertUser(
@@ -85,6 +135,39 @@ async function setupTestApp() {
 			userId,
 		});
 		return { id: userId, token };
+	}
+
+	async function getOrgIdForUser(userId: string): Promise<string> {
+		const [mem] = await libsql
+			.select({ orgId: schema.membership.orgId })
+			.from(schema.membership)
+			.where(eq(schema.membership.userId, userId))
+			.limit(1);
+		if (!mem) throw new Error("org not bootstrapped");
+		return mem.orgId;
+	}
+
+	async function addTaToTeacherOrg(
+		teacherUserId: string,
+		taName = "TA User",
+	): Promise<{ id: string; token: string }> {
+		const orgId = await getOrgIdForUser(teacherUserId);
+		const ta = await insertUser(taName, "teacher");
+		await libsql.insert(schema.membership).values({
+			id: crypto.randomUUID(),
+			orgId,
+			userId: ta.id,
+			role: "ta",
+		});
+		return ta;
+	}
+
+	function resetMaxBoundParams() {
+		maxBoundParams = 0;
+	}
+
+	function getMaxBoundParams() {
+		return maxBoundParams;
 	}
 
 	function call(
@@ -213,6 +296,10 @@ async function setupTestApp() {
 		libsql,
 		app,
 		insertUser,
+		getOrgIdForUser,
+		addTaToTeacherOrg,
+		resetMaxBoundParams,
+		getMaxBoundParams,
 		call,
 		kernel,
 		createAutoClass,
@@ -622,13 +709,13 @@ describe("PATCH /api/classes/:id (Issue #693)", () => {
 		).toBe(todayVN);
 	});
 
-	test("5. returns 409 CLASS_SCHEDULE_LOCKED and leaves DB unchanged when changing schedule, startDate, or sessionsTotal after lesson or class_session exists", async () => {
+	test("5. locks schedule and sessionsTotal once real sessions exist (409 CLASS_SCHEDULE_LOCKED) and locks startDate once class has started (409 CLASS_START_DATE_LOCKED)", async () => {
 		const t = await setupTestApp();
 		const teacher = await t.insertUser("Teacher Lock");
 		const startMonday = futureMondayISO(7);
 		const nextStart = addDaysISO(startMonday, 14);
 
-		// (a) Class with materialized lesson rows
+		// (a) Auto class with materialized upcoming lessons: schedule and sessionsTotal stay locked (409 CLASS_SCHEDULE_LOCKED)
 		const autoClassId = await t.createAutoClass(teacher.token, {
 			name: "Locked Auto Class",
 			schedule: { days: [0, 2], start: "19:00", end: "20:30" },
@@ -658,8 +745,13 @@ describe("PATCH /api/classes/:id (Issue #693)", () => {
 				...baseAuto,
 				schedule: { days: [1, 3], start: "19:00", end: "20:30" },
 			},
-			{ ...baseAuto, startDate: nextStart },
 			{ ...baseAuto, sessionsTotal: 10 },
+			// Combining schedule + startDate still rejects atomically with CLASS_SCHEDULE_LOCKED
+			{
+				...baseAuto,
+				schedule: { days: [1, 3], start: "19:00", end: "20:30" },
+				startDate: nextStart,
+			},
 		]) {
 			const res = await t.call(teacher.token, `/api/classes/${autoClassId}`, {
 				method: "PATCH",
@@ -668,6 +760,39 @@ describe("PATCH /api/classes/:id (Issue #693)", () => {
 			expect(res.status).toBe(409);
 			expect(await res.json()).toMatchObject({
 				code: CLASS_ERROR_CODES.SCHEDULE_LOCKED,
+			});
+		}
+
+		// Once any lesson has started (completed / absent / attendance / attendanceNote / manual cancelled), changing startDate returns 409 CLASS_START_DATE_LOCKED
+		const firstLessons = await t.libsql
+			.select()
+			.from(schema.lesson)
+			.where(eq(schema.lesson.classId, autoClassId));
+		const firstLessonId = firstLessons[0]?.id ?? "";
+		expect(firstLessonId).toBeTruthy();
+
+		const startedMutations: Array<Partial<typeof schema.lesson.$inferInsert>> =
+			[
+				{ status: "completed", attendance: null, attendanceNote: null },
+				{ status: "absent", attendance: null, attendanceNote: null },
+				{ status: "upcoming", attendance: "present", attendanceNote: null },
+				{ status: "upcoming", attendance: null, attendanceNote: "Đi muộn" },
+				{ status: "cancelled", attendance: null, attendanceNote: null },
+			];
+
+		for (const patch of startedMutations) {
+			await t.libsql
+				.update(schema.lesson)
+				.set(patch)
+				.where(eq(schema.lesson.id, firstLessonId));
+
+			const res = await t.call(teacher.token, `/api/classes/${autoClassId}`, {
+				method: "PATCH",
+				body: { ...baseAuto, startDate: nextStart },
+			});
+			expect(res.status).toBe(409);
+			expect(await res.json()).toMatchObject({
+				code: CLASS_ERROR_CODES.START_DATE_LOCKED,
 			});
 		}
 
@@ -680,7 +805,7 @@ describe("PATCH /api/classes/:id (Issue #693)", () => {
 			sessionsTotal: 6,
 		});
 
-		// (b) Manual class with class_session row (even 0 enrollments / 0 lessons)
+		// (b) Manual class with class_session row: schedule & sessionsTotal stay locked (409 CLASS_SCHEDULE_LOCKED)
 		const manualClassId = await t.createAutoClass(teacher.token, {
 			name: "Locked Manual Class",
 			schedule: { days: [0], start: "18:00", end: "19:30" },
@@ -706,7 +831,6 @@ describe("PATCH /api/classes/:id (Issue #693)", () => {
 				...baseAuto,
 				schedule: { days: [1], start: "18:00", end: "19:30" },
 			},
-			{ ...baseAuto, startDate: nextStart },
 			{ ...baseAuto, sessionsTotal: 5 },
 		]) {
 			const res = await t.call(teacher.token, `/api/classes/${manualClassId}`, {
@@ -1042,5 +1166,1189 @@ describe("PATCH /api/classes/:id (Issue #693)", () => {
 				);
 			expect(clsRow).toBeDefined();
 		}
+	});
+
+	test("8. reschedules unstarted auto class with active students (overlapping shift, past original startDate, silent notifications, and late enrollment parity)", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher Unstarted Auto");
+		const startMonday = futureMondayISO(7);
+		const schedule = { days: [0, 2], start: "19:00", end: "20:30" };
+		const scheduleJson = JSON.stringify(schedule);
+
+		const classId = await t.createAutoClass(teacher.token, {
+			name: "IELTS Unstarted Auto",
+			schedule,
+			sessionsTotal: 4,
+			startDate: startMonday,
+		});
+
+		for (const idx of [1, 2]) {
+			const res = await t.call(teacher.token, "/api/students", {
+				body: {
+					name: `HV Auto ${idx}`,
+					email: `hv-auto-${idx}@test.local`,
+					classId,
+					activateNow: true,
+				},
+			});
+			expect(res.status).toBe(201);
+		}
+
+		const beforeLessons = await t.libsql
+			.select()
+			.from(schema.lesson)
+			.where(eq(schema.lesson.classId, classId));
+		expect(beforeLessons).toHaveLength(8);
+		// Author custom topic and zoom on session 1 to verify preservation across date remap
+		await t.libsql
+			.update(schema.lesson)
+			.set({ topic: "Orientation Day", zoom: "https://zoom.us/j/custom1" })
+			.where(
+				and(
+					eq(schema.lesson.classId, classId),
+					eq(schema.lesson.date, startMonday),
+				),
+			);
+		const idsBefore = new Set(beforeLessons.map((l) => l.id));
+
+		// Shift into an overlapping range (Wednesday of the same week -> overlaps Wed & next Mon/Wed)
+		const overlapStart = addDaysISO(startMonday, 2);
+		const patchOverlap = await t.call(
+			teacher.token,
+			`/api/classes/${classId}`,
+			{
+				method: "PATCH",
+				body: {
+					name: "IELTS Unstarted Auto",
+					type: "ielts",
+					level: "Band 6.0",
+					skills: ["Writing", "Speaking"],
+					mode: "Online",
+					startDate: overlapStart,
+				},
+			},
+		);
+		expect(patchOverlap.status).toBe(200);
+
+		const expectedOverlapDates = expectedSkeletonDates(
+			scheduleJson,
+			overlapStart,
+			4,
+		);
+		const afterOverlap = await t.libsql
+			.select()
+			.from(schema.lesson)
+			.where(eq(schema.lesson.classId, classId));
+		expect(afterOverlap).toHaveLength(8);
+		expect(new Set(afterOverlap.map((l) => l.id))).toEqual(idsBefore);
+		expect([...new Set(afterOverlap.map((l) => l.date))].sort()).toEqual(
+			expectedOverlapDates,
+		);
+		const movedSession1 = afterOverlap.filter((l) => l.date === overlapStart);
+		expect(movedSession1).toHaveLength(2);
+		expect(
+			movedSession1.every(
+				(l) =>
+					l.topic === "Orientation Day" &&
+					l.zoom === "https://zoom.us/j/custom1" &&
+					l.day === 3,
+			),
+		).toBe(true);
+
+		// Silent edit: no schedule_changed or class_opening_confirmed notification emitted
+		const notifs = await t.libsql
+			.select()
+			.from(schema.notificationRecord)
+			.where(eq(schema.notificationRecord.refId, classId));
+		expect(notifs).toHaveLength(0);
+
+		// Simulate delayed opening where old startDate is already in the past but 0 lessons started
+		const pastStart = addDaysISO(vietnamTodayISO(), -5);
+		await t.libsql
+			.update(schema.classTable)
+			.set({ startDate: pastStart })
+			.where(eq(schema.classTable.id, classId));
+		const nextStart = addDaysISO(startMonday, 14);
+		const patchFromPast = await t.call(
+			teacher.token,
+			`/api/classes/${classId}`,
+			{
+				method: "PATCH",
+				body: {
+					name: "IELTS Unstarted Auto",
+					type: "ielts",
+					level: "Band 6.0",
+					skills: ["Writing", "Speaking"],
+					mode: "Online",
+					startDate: nextStart,
+				},
+			},
+		);
+		expect(patchFromPast.status).toBe(200);
+
+		// 3rd student activated AFTER startDate change must get the exact same dates as students 1 & 2
+		const lateStudentRes = await t.call(teacher.token, "/api/students", {
+			body: {
+				name: "HV Auto 3",
+				email: "hv-auto-3@test.local",
+				classId,
+				activateNow: true,
+			},
+		});
+		expect(lateStudentRes.status).toBe(201);
+		const allLessonsAfter3 = await t.libsql
+			.select()
+			.from(schema.lesson)
+			.where(eq(schema.lesson.classId, classId));
+		expect(allLessonsAfter3).toHaveLength(12);
+		const expectedFinalDates = expectedSkeletonDates(
+			scheduleJson,
+			nextStart,
+			4,
+		);
+		const byEnrollment = new Map<string, string[]>();
+		for (const row of allLessonsAfter3) {
+			const list = byEnrollment.get(row.enrollmentId) ?? [];
+			list.push(row.date ?? "");
+			byEnrollment.set(row.enrollmentId, list);
+		}
+		expect(byEnrollment.size).toBe(3);
+		for (const dates of byEnrollment.values()) {
+			expect(dates.sort()).toEqual(expectedFinalDates);
+		}
+	});
+
+	test("9. remaps lesson_material and Zoom class_session_meeting on overlapping shifts and handles 0-lesson Online auto-provisioned Zoom classes", async () => {
+		let createdSeq = 0;
+		const updatedZoomCalls: Array<{
+			meetingId: string;
+			input: ZoomMeetingInput;
+		}> = [];
+		const deletedZoomIds: string[] = [];
+		const mockZoom: ZoomClient = {
+			async createMeeting() {
+				createdSeq += 1;
+				return {
+					meetingId: `zm-${createdSeq}`,
+					joinUrl: `https://zoom.us/j/${createdSeq}`,
+				};
+			},
+			async updateMeeting(meetingId, input) {
+				updatedZoomCalls.push({ meetingId, input });
+			},
+			async deleteMeeting(meetingId) {
+				deletedZoomIds.push(meetingId);
+			},
+			async getRecording() {
+				return { status: "missing" };
+			},
+		};
+
+		const t = await setupTestApp({ getZoomClient: () => mockZoom });
+		const teacher = await t.insertUser("Teacher Zoom Mat");
+		const startMonday = futureMondayISO(7);
+		const schedule = { days: [0, 2], start: "19:00", end: "20:30" };
+
+		// (a) Auto class with active student, lesson_material, and Zoom meetings on overlapping dates
+		const classId = await t.createAutoClass(teacher.token, {
+			name: "Zoom Overlap Class",
+			mode: "Online",
+			schedule,
+			sessionsTotal: 4,
+			startDate: startMonday,
+		});
+		const orgId = await t.getOrgIdForUser(teacher.id);
+
+		const enrollRes = await t.call(teacher.token, "/api/students", {
+			body: {
+				name: "HV Zoom",
+				email: "hv-zoom@test.local",
+				classId,
+				activateNow: true,
+			},
+		});
+		expect(enrollRes.status).toBe(201);
+
+		const matId = crypto.randomUUID();
+		await t.libsql.insert(schema.material).values({
+			id: matId,
+			orgId,
+			title: "Slide Buổi 1-2",
+			kind: "link",
+			url: "https://example.com/slides",
+			createdBy: teacher.id,
+		});
+		const wedSameWeek = addDaysISO(startMonday, 2);
+		await t.libsql.insert(schema.lessonMaterial).values([
+			{ orgId, classId, date: startMonday, materialId: matId, position: 0 },
+			{ orgId, classId, date: wedSameWeek, materialId: matId, position: 0 },
+		]);
+
+		updatedZoomCalls.length = 0;
+		deletedZoomIds.length = 0;
+
+		const patchRes = await t.call(teacher.token, `/api/classes/${classId}`, {
+			method: "PATCH",
+			body: {
+				name: "Zoom Overlap Class",
+				type: "ielts",
+				level: "Band 6.0",
+				skills: ["Writing", "Speaking"],
+				mode: "Online",
+				startDate: wedSameWeek,
+			},
+		});
+		expect(patchRes.status).toBe(200);
+
+		const nextMon = addDaysISO(startMonday, 7);
+		const nextWed = addDaysISO(startMonday, 9);
+		const movedMats = await t.libsql
+			.select({ date: schema.lessonMaterial.date })
+			.from(schema.lessonMaterial)
+			.where(eq(schema.lessonMaterial.classId, classId));
+		expect(movedMats.map((m) => m.date).sort()).toEqual([wedSameWeek, nextMon]);
+
+		const movedMeetings = await t.libsql
+			.select({
+				date: schema.classSessionMeeting.date,
+				zoomMeetingId: schema.classSessionMeeting.zoomMeetingId,
+			})
+			.from(schema.classSessionMeeting)
+			.where(eq(schema.classSessionMeeting.classId, classId));
+		expect(movedMeetings.map((m) => m.date).sort()).toEqual([
+			wedSameWeek,
+			nextMon,
+			nextWed,
+			addDaysISO(startMonday, 14),
+		]);
+		expect(updatedZoomCalls).toHaveLength(4);
+		expect(updatedZoomCalls.map((c) => c.input.dateISO).sort()).toEqual([
+			wedSameWeek,
+			nextMon,
+			nextWed,
+			addDaysISO(startMonday, 14),
+		]);
+
+		// (b) 0-lesson Online auto class with 5 auto-provisioned Zoom meetings:
+		// simultaneous schedule + sessionsTotal shrink (5 -> 3) + startDate + sessionPackage sync
+		const zeroClassId = await t.createAutoClass(teacher.token, {
+			name: "Zero Lesson Auto Zoom",
+			mode: "Online",
+			schedule,
+			sessionsTotal: 5,
+			startDate: startMonday,
+		});
+		// Seed a 0-lesson sessionPackage to verify syncPackageTotal runs in Branch B too
+		const dummyStudentId = crypto.randomUUID();
+		const dummyEnrId = crypto.randomUUID();
+		await t.libsql.insert(schema.student).values({
+			id: dummyStudentId,
+			orgId,
+			name: "HV Legacy Pkg",
+		});
+		await t.libsql.insert(schema.enrollment).values({
+			id: dummyEnrId,
+			orgId,
+			classId: zeroClassId,
+			studentId: dummyStudentId,
+			status: "invited",
+		});
+		await t.libsql.insert(schema.sessionPackage).values({
+			id: crypto.randomUUID(),
+			orgId,
+			studentId: dummyStudentId,
+			enrollmentId: dummyEnrId,
+			total: 5,
+			price: 0,
+			mode: "Online",
+			start: "01/12",
+			expiry: "",
+			status: "active",
+		});
+
+		updatedZoomCalls.length = 0;
+		deletedZoomIds.length = 0;
+		const shiftedStart = addDaysISO(startMonday, 14);
+		const shrinkRes = await t.call(
+			teacher.token,
+			`/api/classes/${zeroClassId}`,
+			{
+				method: "PATCH",
+				body: {
+					name: "Zero Lesson Auto Zoom",
+					type: "ielts",
+					level: "Band 6.0",
+					skills: ["Writing", "Speaking"],
+					mode: "Online",
+					schedule: { days: [1, 3], start: "18:00", end: "19:30" },
+					sessionsTotal: 3,
+					startDate: shiftedStart,
+				},
+			},
+		);
+		expect(shrinkRes.status).toBe(200);
+		const remainingZeroMeetings = await t.libsql
+			.select()
+			.from(schema.classSessionMeeting)
+			.where(eq(schema.classSessionMeeting.classId, zeroClassId));
+		expect(remainingZeroMeetings).toHaveLength(3);
+		expect(updatedZoomCalls).toHaveLength(3);
+		expect(updatedZoomCalls.every((c) => c.input.time === "18:00")).toBe(true);
+		expect(deletedZoomIds).toHaveLength(2);
+		const [syncedPkg] = await t.libsql
+			.select({ total: schema.sessionPackage.total })
+			.from(schema.sessionPackage)
+			.where(eq(schema.sessionPackage.enrollmentId, dummyEnrId));
+		expect(syncedPkg?.total).toBe(3);
+
+		// Clearing startDate to "" on 0-lesson Online class succeeds (200) and cleans remaining Zoom meetings
+		deletedZoomIds.length = 0;
+		const clearRes = await t.call(
+			teacher.token,
+			`/api/classes/${zeroClassId}`,
+			{
+				method: "PATCH",
+				body: {
+					name: "Zero Lesson Auto Zoom",
+					type: "ielts",
+					level: "Band 6.0",
+					skills: ["Writing", "Speaking"],
+					mode: "Online",
+					startDate: "",
+				},
+			},
+		);
+		expect(clearRes.status).toBe(200);
+		expect(deletedZoomIds).toHaveLength(3);
+		expect(
+			await t.libsql
+				.select()
+				.from(schema.classSessionMeeting)
+				.where(eq(schema.classSessionMeeting.classId, zeroClassId)),
+		).toHaveLength(0);
+	});
+
+	test("10. unwinds chained holiday shifts & holiday-cancelled makeups cleanly without ghost lessons and cleans Zoom on newly hit holiday cancels", async () => {
+		let createdSeq = 0;
+		const deletedZoomIds: string[] = [];
+		const updatedZoomCalls: Array<{
+			meetingId: string;
+			input: ZoomMeetingInput;
+		}> = [];
+		const mockZoom: ZoomClient = {
+			async createMeeting() {
+				createdSeq += 1;
+				return {
+					meetingId: `zm-h-${createdSeq}`,
+					joinUrl: `https://zoom.us/j/h${createdSeq}`,
+				};
+			},
+			async updateMeeting(meetingId, input) {
+				updatedZoomCalls.push({ meetingId, input });
+			},
+			async deleteMeeting(meetingId) {
+				deletedZoomIds.push(meetingId);
+			},
+			async getRecording() {
+				return { status: "missing" };
+			},
+		};
+
+		const t = await setupTestApp({ getZoomClient: () => mockZoom });
+		const teacher = await t.insertUser("Teacher Holiday Chain");
+		const startMonday = futureMondayISO(7);
+		const schedule = { days: [0, 2], start: "19:00", end: "20:30" };
+
+		// Class with 2 sessions: Mon1 (startMonday), Wed1 (startMonday+2)
+		const classId = await t.createAutoClass(teacher.token, {
+			name: "Holiday Chain Class",
+			mode: "Online",
+			schedule,
+			sessionsTotal: 2,
+			startDate: startMonday,
+		});
+		const orgId = await t.getOrgIdForUser(teacher.id);
+
+		const sRes = await t.call(teacher.token, "/api/students", {
+			body: {
+				name: "HV Holiday",
+				email: "hv-holiday@test.local",
+				classId,
+				activateNow: true,
+			},
+		});
+		expect(sRes.status).toBe(201);
+
+		// Create holiday chain:
+		// H1 (shift): Mon1 -> Mon2 (startMonday+7)
+		// H2 (shift): Mon2 -> Wed2 (startMonday+9)
+		// H3 (cancel): Wed2 cancelled AND future target date (startMonday+14) cancelled
+		const mon2 = addDaysISO(startMonday, 7);
+		const wed2 = addDaysISO(startMonday, 9);
+		const mon3 = addDaysISO(startMonday, 14);
+		const wed3 = addDaysISO(startMonday, 16);
+
+		const h1Id = crypto.randomUUID();
+		const h2Id = crypto.randomUUID();
+		const h3Id = crypto.randomUUID();
+		const hNewCancelId = crypto.randomUUID();
+		const sameTs = new Date();
+		await t.libsql.insert(schema.organizationHoliday).values([
+			{
+				id: h1Id,
+				orgId,
+				name: "Nghỉ lễ 1",
+				fromDate: startMonday,
+				toDate: startMonday,
+				scope: "org",
+				mode: "shift",
+				createdByUserId: teacher.id,
+				createdAt: sameTs,
+			},
+			{
+				id: h2Id,
+				orgId,
+				name: "Nghỉ lễ 2",
+				fromDate: mon2,
+				toDate: mon2,
+				scope: "org",
+				mode: "shift",
+				createdByUserId: teacher.id,
+				createdAt: sameTs,
+			},
+			{
+				id: h3Id,
+				orgId,
+				name: "Nghỉ hủy 3",
+				fromDate: wed2,
+				toDate: wed2,
+				scope: "org",
+				mode: "cancel",
+				createdByUserId: teacher.id,
+				createdAt: sameTs,
+			},
+			{
+				id: hNewCancelId,
+				orgId,
+				name: "Nghỉ hủy tuần 3",
+				fromDate: mon3,
+				toDate: mon3,
+				scope: "org",
+				mode: "cancel",
+				createdByUserId: teacher.id,
+				createdAt: sameTs,
+			},
+		]);
+
+		// Simulate chained shifts + cancelled tip makeup in DB (with reverse UUID order to prove topological sort)
+		const [existingEnr] = await t.libsql
+			.select({ id: schema.enrollment.id })
+			.from(schema.enrollment)
+			.where(eq(schema.enrollment.classId, classId));
+		const enrId = existingEnr?.id ?? "";
+		await t.libsql
+			.update(schema.lesson)
+			.set({ status: "holiday", zoom: "" })
+			.where(
+				and(
+					eq(schema.lesson.classId, classId),
+					eq(schema.lesson.date, startMonday),
+				),
+			);
+		await t.libsql.insert(schema.lesson).values([
+			{
+				id: crypto.randomUUID(),
+				orgId,
+				classId,
+				enrollmentId: enrId,
+				day: 1,
+				time: "19:00",
+				dur: 90,
+				date: mon2,
+				status: "holiday",
+				topic: "",
+				zoom: "",
+			},
+			{
+				id: crypto.randomUUID(),
+				orgId,
+				classId,
+				enrollmentId: enrId,
+				day: 3,
+				time: "19:00",
+				dur: 90,
+				date: wed2,
+				status: "cancelled",
+				topic: "",
+				zoom: "",
+			},
+		]);
+		await t.libsql.insert(schema.holidaySessionShift).values([
+			{
+				id: "0000-tip-first",
+				orgId,
+				holidayId: h2Id,
+				classId,
+				originalDate: mon2,
+				makeupDate: wed2,
+				createdAt: sameTs,
+			},
+			{
+				id: "zzzz-root-second",
+				orgId,
+				holidayId: h1Id,
+				classId,
+				originalDate: startMonday,
+				makeupDate: mon2,
+				createdAt: sameTs,
+			},
+		]);
+		await t.libsql.insert(schema.holidaySessionCancel).values({
+			id: crypto.randomUUID(),
+			orgId,
+			holidayId: h3Id,
+			classId,
+			date: wed2,
+			createdAt: sameTs,
+		});
+		// Move session 1's Zoom meeting to wed2 so unwind must bring it back, then newCancel on mon3 must cancel it
+		await t.libsql
+			.update(schema.classSessionMeeting)
+			.set({ date: wed2 })
+			.where(
+				and(
+					eq(schema.classSessionMeeting.classId, classId),
+					eq(schema.classSessionMeeting.date, startMonday),
+				),
+			);
+
+		deletedZoomIds.length = 0;
+		updatedZoomCalls.length = 0;
+
+		// Shift startDate to mon3 -> Session 1 lands on mon3 (hits hNewCancelId cancel), Session 2 lands on wed3 (upcoming)
+		const res = await t.call(teacher.token, `/api/classes/${classId}`, {
+			method: "PATCH",
+			body: {
+				name: "Holiday Chain Class",
+				type: "ielts",
+				level: "Band 6.0",
+				skills: ["Writing", "Speaking"],
+				mode: "Online",
+				startDate: mon3,
+			},
+		});
+		expect(res.status).toBe(200);
+
+		const lessonsAfter = await t.libsql
+			.select()
+			.from(schema.lesson)
+			.where(eq(schema.lesson.classId, classId));
+		// Exactly 2 sessions (NO ghost lessons from mon2 or wed2!)
+		expect(lessonsAfter).toHaveLength(2);
+		const byDate = new Map(lessonsAfter.map((l) => [l.date, l]));
+		expect(byDate.get(mon3)?.status).toBe("cancelled");
+		expect(byDate.get(mon3)?.zoom).toBe("");
+		expect(byDate.get(wed3)?.status).toBe("upcoming");
+		expect(byDate.get(wed3)?.zoom).toContain("https://zoom.us/j/h");
+
+		// Old shifts gone; only hNewCancelId cancel exists on mon3
+		expect(
+			await t.libsql
+				.select()
+				.from(schema.holidaySessionShift)
+				.where(eq(schema.holidaySessionShift.classId, classId)),
+		).toHaveLength(0);
+		const cancelsAfter = await t.libsql
+			.select()
+			.from(schema.holidaySessionCancel)
+			.where(eq(schema.holidaySessionCancel.classId, classId));
+		expect(cancelsAfter.map((c) => c.date)).toEqual([mon3]);
+
+		// Zoom meeting that landed on cancelled mon3 was cleared & deleted on Zoom API; wed3 meeting updated
+		const [mon3Meeting] = await t.libsql
+			.select()
+			.from(schema.classSessionMeeting)
+			.where(
+				and(
+					eq(schema.classSessionMeeting.classId, classId),
+					eq(schema.classSessionMeeting.date, mon3),
+				),
+			);
+		expect(mon3Meeting?.zoomMeetingId).toBeNull();
+		expect(mon3Meeting?.joinUrl).toBe("");
+		expect(deletedZoomIds).toHaveLength(1);
+		expect(updatedZoomCalls.map((c) => c.input.dateISO)).toEqual([wed3]);
+	});
+
+	test("11. updates startDate metadata on unstarted manual class without modifying manual class_session or lesson dates", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher Manual StartDate");
+		const startMonday = futureMondayISO(7);
+		const sessionDate = addDaysISO(startMonday, 2);
+		const nextStart = addDaysISO(startMonday, 14);
+
+		const manualId = await t.createAutoClass(teacher.token, {
+			name: "Manual Unstarted",
+			schedulingMode: "manual",
+			startDate: startMonday,
+		});
+		const csRes = await t.call(
+			teacher.token,
+			`/api/classes/${manualId}/sessions`,
+			{
+				body: {
+					date: sessionDate,
+					time: "18:00",
+					dur: 90,
+					topic: "Buổi thủ công 1",
+				},
+			},
+		);
+		expect(csRes.status).toBe(201);
+		const stRes = await t.call(teacher.token, "/api/students", {
+			body: {
+				name: "HV Manual",
+				email: "hv-manual@test.local",
+				classId: manualId,
+				activateNow: true,
+			},
+		});
+		expect(stRes.status).toBe(201);
+
+		const patchRes = await t.call(teacher.token, `/api/classes/${manualId}`, {
+			method: "PATCH",
+			body: {
+				name: "Manual Unstarted",
+				type: "ielts",
+				level: "Band 6.0",
+				skills: ["Writing", "Speaking"],
+				mode: "Online",
+				startDate: nextStart,
+			},
+		});
+		expect(patchRes.status).toBe(200);
+
+		const snap = await t.kernel(teacher.token);
+		expect(snap.classes.find((c) => c.id === manualId)?.startDate).toBe(
+			nextStart,
+		);
+		const csRows = await t.libsql
+			.select({ date: schema.classSession.date })
+			.from(schema.classSession)
+			.where(eq(schema.classSession.classId, manualId));
+		expect(csRows.map((r) => r.date)).toEqual([sessionDate]);
+		const lessonRows = await t.libsql
+			.select({ date: schema.lesson.date })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.classId, manualId));
+		expect(lessonRows.map((r) => r.date)).toEqual([sessionDate]);
+
+		// Once manual lesson is marked completed -> startDate locks with 409 CLASS_START_DATE_LOCKED
+		await t.libsql
+			.update(schema.lesson)
+			.set({ status: "completed" })
+			.where(eq(schema.lesson.classId, manualId));
+		const lockedRes = await t.call(teacher.token, `/api/classes/${manualId}`, {
+			method: "PATCH",
+			body: {
+				name: "Manual Unstarted",
+				type: "ielts",
+				level: "Band 6.0",
+				skills: ["Writing", "Speaking"],
+				mode: "Online",
+				startDate: addDaysISO(nextStart, 7),
+			},
+		});
+		expect(lockedRes.status).toBe(409);
+		expect(await lockedRes.json()).toMatchObject({
+			code: CLASS_ERROR_CODES.START_DATE_LOCKED,
+		});
+	});
+
+	test("12. enforces empty startDate (400), past startDate (400), legacy undated (409), diverged enrollments (409), and TA role forbidden (403)", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher Guards");
+		const startMonday = futureMondayISO(7);
+		const nextStart = addDaysISO(startMonday, 14);
+
+		const classId = await t.createAutoClass(teacher.token, {
+			name: "Guarded Auto Class",
+			schedule: { days: [0, 2], start: "19:00", end: "20:30" },
+			sessionsTotal: 2,
+			startDate: startMonday,
+		});
+		const ta = await t.addTaToTeacherOrg(teacher.id);
+
+		const st1Res = await t.call(teacher.token, "/api/students", {
+			body: {
+				name: "HV Guard 1",
+				email: "hv-guard-1@test.local",
+				classId,
+				activateNow: true,
+			},
+		});
+		expect(st1Res.status).toBe(201);
+
+		const base = {
+			name: "Guarded Auto Class",
+			type: "ielts",
+			level: "Band 6.0",
+			skills: ["Writing", "Speaking"],
+			mode: "Online",
+		};
+
+		// TA cannot change startDate -> 403 FORBIDDEN
+		const taRes = await t.call(ta.token, `/api/classes/${classId}`, {
+			method: "PATCH",
+			body: { ...base, startDate: nextStart },
+		});
+		expect(taRes.status).toBe(403);
+		expect(await taRes.json()).toMatchObject({ code: "FORBIDDEN" });
+
+		// Empty startDate on auto class with lessons -> 400
+		const emptyRes = await t.call(teacher.token, `/api/classes/${classId}`, {
+			method: "PATCH",
+			body: { ...base, startDate: "" },
+		});
+		expect(emptyRes.status).toBe(400);
+
+		// Past startDate -> 400
+		const pastRes = await t.call(teacher.token, `/api/classes/${classId}`, {
+			method: "PATCH",
+			body: { ...base, startDate: addDaysISO(vietnamTodayISO(), -1) },
+		});
+		expect(pastRes.status).toBe(400);
+
+		// Diverged enrollments after moveDate + activating 2nd student -> 409 CLASS_START_DATE_LOCKED
+		const movedDate = addDaysISO(startMonday, 1);
+		const moveRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/sessions/${startMonday}/edit`,
+			{ body: { moveDate: movedDate } },
+		);
+		expect(moveRes.status).toBe(200);
+		const st2Res = await t.call(teacher.token, "/api/students", {
+			body: {
+				name: "HV Guard 2",
+				email: "hv-guard-2@test.local",
+				classId,
+				activateNow: true,
+			},
+		});
+		expect(st2Res.status).toBe(201);
+
+		const divergedRes = await t.call(teacher.token, `/api/classes/${classId}`, {
+			method: "PATCH",
+			body: { ...base, startDate: nextStart },
+		});
+		expect(divergedRes.status).toBe(409);
+		expect(await divergedRes.json()).toMatchObject({
+			code: CLASS_ERROR_CODES.START_DATE_LOCKED,
+		});
+
+		// Legacy undated lesson (date: null) -> 409 CLASS_START_DATE_LOCKED
+		const legacyClassId = await t.createAutoClass(teacher.token, {
+			name: "Legacy Undated Class",
+			schedule: { days: [0], start: "19:00", end: "20:30" },
+			sessionsTotal: 2,
+			startDate: startMonday,
+		});
+		await t.call(teacher.token, "/api/students", {
+			body: {
+				name: "HV Legacy",
+				email: "hv-legacy@test.local",
+				classId: legacyClassId,
+				activateNow: true,
+			},
+		});
+		await t.libsql
+			.update(schema.lesson)
+			.set({ date: null })
+			.where(eq(schema.lesson.classId, legacyClassId));
+		const legacyRes = await t.call(
+			teacher.token,
+			`/api/classes/${legacyClassId}`,
+			{
+				method: "PATCH",
+				body: { ...base, name: "Legacy Undated Class", startDate: nextStart },
+			},
+		);
+		expect(legacyRes.status).toBe(409);
+		expect(await legacyRes.json()).toMatchObject({
+			code: CLASS_ERROR_CODES.START_DATE_LOCKED,
+		});
+	});
+
+	test("13. allows rescheduling paused unstarted class via PATCH without applying new org holidays created while paused", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher Paused Reschedule");
+		const startMonday = futureMondayISO(7);
+		const nextStart = addDaysISO(startMonday, 14);
+
+		const classId = await t.createAutoClass(teacher.token, {
+			name: "Paused Unstarted Class",
+			schedule: { days: [0, 2], start: "19:00", end: "20:30" },
+			sessionsTotal: 2,
+			startDate: startMonday,
+		});
+		const orgId = await t.getOrgIdForUser(teacher.id);
+		await t.call(teacher.token, "/api/students", {
+			body: {
+				name: "HV Paused",
+				email: "hv-paused@test.local",
+				classId,
+				activateNow: true,
+			},
+		});
+
+		// Pause the class
+		const pauseRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/status`,
+			{ body: { status: "paused" } },
+		);
+		expect(pauseRes.status).toBe(200);
+
+		// Create an org holiday covering nextStart while the class is paused
+		await t.libsql.insert(schema.organizationHoliday).values({
+			id: crypto.randomUUID(),
+			orgId,
+			name: "Nghỉ lễ khi lớp đang tạm dừng",
+			fromDate: nextStart,
+			toDate: nextStart,
+			scope: "org",
+			mode: "shift",
+			createdByUserId: teacher.id,
+		});
+
+		const patchRes = await t.call(teacher.token, `/api/classes/${classId}`, {
+			method: "PATCH",
+			body: {
+				name: "Paused Unstarted Class",
+				type: "ielts",
+				level: "Band 6.0",
+				skills: ["Writing", "Speaking"],
+				mode: "Online",
+				startDate: nextStart,
+			},
+		});
+		expect(patchRes.status).toBe(200);
+
+		// Lessons moved cleanly to [nextStart, nextStart+2], and NO holiday shift was newly applied to the paused class
+		const lessons = await t.libsql
+			.select({ date: schema.lesson.date, status: schema.lesson.status })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.classId, classId));
+		expect(lessons).toHaveLength(2);
+		expect(lessons.every((l) => l.status === "upcoming")).toBe(true);
+		expect(lessons.map((l) => l.date).sort()).toEqual([
+			nextStart,
+			addDaysISO(nextStart, 2),
+		]);
+		expect(
+			await t.libsql
+				.select()
+				.from(schema.holidaySessionShift)
+				.where(eq(schema.holidaySessionShift.classId, classId)),
+		).toHaveLength(0);
+	});
+
+	test("14. handles 52-session class with holiday shift, materials, and Zoom meetings while keeping every SQL statement <= 100 bound parameters", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher 52 Sessions");
+		const startMonday = futureMondayISO(7);
+		const schedule = { days: [0, 2], start: "19:00", end: "20:30" };
+		const scheduleJson = JSON.stringify(schedule);
+
+		const classId = await t.createAutoClass(teacher.token, {
+			name: "Max 52 Sessions Class",
+			schedule,
+			sessionsTotal: 52,
+			startDate: startMonday,
+		});
+		const orgId = await t.getOrgIdForUser(teacher.id);
+
+		await t.call(teacher.token, "/api/students", {
+			body: {
+				name: "HV 52",
+				email: "hv-52@test.local",
+				classId,
+				activateNow: true,
+			},
+		});
+
+		// Seed materials and meetings across all 52 dates to stress-test every chunked statement
+		const initialDates = expectedSkeletonDates(scheduleJson, startMonday, 52);
+		const matId = crypto.randomUUID();
+		await t.libsql.insert(schema.material).values({
+			id: matId,
+			orgId,
+			title: "Tài liệu 52 buổi",
+			kind: "link",
+			url: "https://example.com/52",
+			createdBy: teacher.id,
+		});
+		for (const d of initialDates) {
+			await t.libsql.insert(schema.lessonMaterial).values({
+				orgId,
+				classId,
+				date: d,
+				materialId: matId,
+				position: 0,
+			});
+			await t.libsql.insert(schema.classSessionMeeting).values({
+				id: crypto.randomUUID(),
+				orgId,
+				classId,
+				date: d,
+				joinUrl: `https://zoom.us/j/${d}`,
+			});
+		}
+
+		// Add a holiday on date 0 so unwind + re-apply also execute under 52 sessions
+		const hId = crypto.randomUUID();
+		const nextStart = addDaysISO(startMonday, 7);
+		await t.libsql.insert(schema.organizationHoliday).values({
+			id: hId,
+			orgId,
+			name: "Lễ test 52",
+			fromDate: startMonday,
+			toDate: startMonday,
+			scope: "org",
+			mode: "shift",
+			createdByUserId: teacher.id,
+		});
+		const [enr] = await t.libsql
+			.select({ id: schema.enrollment.id })
+			.from(schema.enrollment)
+			.where(eq(schema.enrollment.classId, classId));
+		const extraMakeup = addDaysISO(initialDates[51] ?? startMonday, 5);
+		await t.libsql
+			.update(schema.lesson)
+			.set({ status: "holiday" })
+			.where(
+				and(
+					eq(schema.lesson.classId, classId),
+					eq(schema.lesson.date, startMonday),
+				),
+			);
+		await t.libsql.insert(schema.lesson).values({
+			id: crypto.randomUUID(),
+			orgId,
+			classId,
+			enrollmentId: enr?.id ?? "",
+			day: 1,
+			time: "19:00",
+			dur: 90,
+			date: extraMakeup,
+			status: "upcoming",
+			topic: "",
+			zoom: "",
+		});
+		await t.libsql.insert(schema.holidaySessionShift).values({
+			id: crypto.randomUUID(),
+			orgId,
+			holidayId: hId,
+			classId,
+			originalDate: startMonday,
+			makeupDate: extraMakeup,
+		});
+
+		t.resetMaxBoundParams();
+		const res = await t.call(teacher.token, `/api/classes/${classId}`, {
+			method: "PATCH",
+			body: {
+				name: "Max 52 Sessions Class",
+				type: "ielts",
+				level: "Band 6.0",
+				skills: ["Writing", "Speaking"],
+				mode: "Online",
+				startDate: nextStart,
+			},
+		});
+		expect(res.status).toBe(200);
+		expect(t.getMaxBoundParams()).toBeGreaterThan(0);
+		expect(t.getMaxBoundParams()).toBeLessThanOrEqual(100);
+
+		const expectedNewDates = expectedSkeletonDates(scheduleJson, nextStart, 52);
+		const lessonsAfter = await t.libsql
+			.select({ date: schema.lesson.date })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.classId, classId));
+		expect(lessonsAfter.map((l) => l.date).sort()).toEqual(expectedNewDates);
+		const matsAfter = await t.libsql
+			.select({ date: schema.lessonMaterial.date })
+			.from(schema.lessonMaterial)
+			.where(eq(schema.lessonMaterial.classId, classId));
+		expect(matsAfter.map((m) => m.date).sort()).toEqual(expectedNewDates);
+		const meetingsAfter = await t.libsql
+			.select({ date: schema.classSessionMeeting.date })
+			.from(schema.classSessionMeeting)
+			.where(eq(schema.classSessionMeeting.classId, classId));
+		expect(meetingsAfter.map((m) => m.date).sort()).toEqual(expectedNewDates);
+	});
+
+	test("15. clears resurrected stale lesson.zoom after holiday-shift unwind and survives concurrent activation CAS retry", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher Unwind Race");
+		const startMonday = futureMondayISO(14);
+		const mon3 = addDaysISO(startMonday, 14);
+		const mon4 = addDaysISO(startMonday, 21);
+
+		// Part A: holiday row still carries stale lesson.zoom while makeup meeting joinUrl was cleared to ""
+		const classId = await t.createAutoClass(teacher.token, {
+			name: "Stale Zoom Unwind",
+			schedule: { days: [0], start: "19:00", end: "20:30" },
+			startDate: startMonday,
+			sessionsTotal: 2,
+		});
+		const orgId = await t.getOrgIdForUser(teacher.id);
+		await t.call(teacher.token, "/api/students", {
+			body: {
+				name: "HV Unwind 1",
+				email: "hv-unwind-1@test.local",
+				classId,
+				activateNow: true,
+			},
+		});
+		const [enr1Row] = await t.libsql
+			.select({ id: schema.enrollment.id })
+			.from(schema.enrollment)
+			.where(eq(schema.enrollment.classId, classId));
+		const enr1 = enr1Row?.id ?? "";
+		expect(enr1).toBeTruthy();
+
+		const holId = crypto.randomUUID();
+		await t.libsql.insert(schema.organizationHoliday).values({
+			id: holId,
+			orgId,
+			name: "Lễ 1",
+			fromDate: startMonday,
+			toDate: startMonday,
+			scope: "classes",
+			mode: "shift",
+			createdByUserId: teacher.id,
+		});
+		await t.libsql.insert(schema.organizationHolidayClass).values({
+			id: crypto.randomUUID(),
+			holidayId: holId,
+			classId,
+		});
+		// Simulate shifted session where old holiday lesson retained dead zoom URL and makeup meeting was cleared
+		await t.libsql
+			.update(schema.lesson)
+			.set({ status: "holiday", zoom: "https://zoom.us/j/dead-old-link" })
+			.where(
+				and(
+					eq(schema.lesson.classId, classId),
+					eq(schema.lesson.date, startMonday),
+				),
+			);
+		await t.libsql.insert(schema.lesson).values({
+			id: crypto.randomUUID(),
+			orgId,
+			classId,
+			enrollmentId: enr1,
+			day: 1,
+			time: "19:00",
+			dur: 90,
+			date: mon3,
+			status: "upcoming",
+			topic: "",
+			zoom: "",
+		});
+		await t.libsql.insert(schema.holidaySessionShift).values({
+			id: crypto.randomUUID(),
+			orgId,
+			holidayId: holId,
+			classId,
+			originalDate: startMonday,
+			makeupDate: mon3,
+		});
+		await t.libsql.insert(schema.classSessionMeeting).values({
+			id: crypto.randomUUID(),
+			orgId,
+			classId,
+			date: mon3,
+			zoomMeetingId: "",
+			joinUrl: "",
+		});
+
+		const unwindRes = await t.call(teacher.token, `/api/classes/${classId}`, {
+			method: "PATCH",
+			body: {
+				name: "Stale Zoom Unwind",
+				type: "ielts",
+				level: "Band 6.0",
+				skills: ["Writing", "Speaking"],
+				mode: "Online",
+				startDate: mon4,
+			},
+		});
+		expect(unwindRes.status).toBe(200);
+		const lessonsAfterUnwind = await t.libsql
+			.select({ date: schema.lesson.date, zoom: schema.lesson.zoom })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.classId, classId));
+		const byDate = new Map(lessonsAfterUnwind.map((r) => [r.date, r.zoom]));
+		// Must NOT resurrect "https://zoom.us/j/dead-old-link"
+		expect(byDate.get(mon4)).toBe("");
+
+		// Part B: Concurrent PATCH startDate-only vs enrollment activation keeps all enrollments aligned
+		const createSt2 = await t.call(teacher.token, "/api/students", {
+			body: {
+				name: "HV Race 2",
+				email: "hv-race-2@test.local",
+				classId,
+				activateNow: false,
+			},
+		});
+		expect(createSt2.status).toBe(201);
+		const enrs = await t.libsql
+			.select({ id: schema.enrollment.id })
+			.from(schema.enrollment)
+			.where(eq(schema.enrollment.classId, classId));
+		const enr2 = enrs.find((e) => e.id !== enr1)?.id ?? "";
+		expect(enr2).toBeTruthy();
+
+		const mon5 = addDaysISO(mon4, 7);
+		const [patchRes, acceptRes] = await Promise.all([
+			t.call(teacher.token, `/api/classes/${classId}`, {
+				method: "PATCH",
+				body: {
+					name: "Stale Zoom Unwind",
+					type: "ielts",
+					level: "Band 6.0",
+					skills: ["Writing", "Speaking"],
+					mode: "Online",
+					startDate: mon5,
+				},
+			}),
+			t.call(teacher.token, `/api/enrollments/${enr2}/accept`, {
+				method: "POST",
+				body: {},
+			}),
+		]);
+		expect(patchRes.status).toBe(200);
+		expect(acceptRes.status).toBe(200);
+
+		const finalLessons = await t.libsql
+			.select({
+				enrollmentId: schema.lesson.enrollmentId,
+				date: schema.lesson.date,
+			})
+			.from(schema.lesson)
+			.where(eq(schema.lesson.classId, classId));
+		const enr1Dates = finalLessons
+			.filter((r) => r.enrollmentId === enr1)
+			.map((r) => r.date)
+			.sort();
+		const enr2Dates = finalLessons
+			.filter((r) => r.enrollmentId === enr2)
+			.map((r) => r.date)
+			.sort();
+		const expectedFinal = [mon5, addDaysISO(mon5, 7)];
+		expect(enr1Dates).toEqual(expectedFinal);
+		expect(enr2Dates).toEqual(expectedFinal);
 	});
 });
