@@ -7,16 +7,18 @@ import {
 	InlineDocumentPreview,
 	isPreviewableDocumentMime,
 } from "@teacher-os/ui/components/document-preview/inline-document-preview";
-import { Download, X } from "lucide-react";
+import { Download, Eye, Loader2, X } from "lucide-react";
 import {
 	lazy,
 	Suspense,
+	useCallback,
 	useEffect,
 	useRef,
 	useState,
 	useSyncExternalStore,
 } from "react";
 import { createPortal } from "react-dom";
+import { cn } from "@/lib/cn";
 import { isHttpError } from "@/lib/query-client";
 import {
 	classMaterialFileUrl,
@@ -25,7 +27,10 @@ import {
 	getActiveStudentOrgId,
 	lessonMaterialFileUrl,
 } from "@/lib/repos/student";
-import { subscribeActiveStudentOrg } from "@/lib/student-org-storage";
+import {
+	ACTIVE_STUDENT_USER_KEY,
+	subscribeActiveStudentOrg,
+} from "@/lib/student-org-storage";
 
 const BlobDocumentView = lazy(() =>
 	import("@teacher-os/ui/components/document-preview/blob-document-view").then(
@@ -66,19 +71,23 @@ function StudentPreviewDialog({
 	blobUrl,
 	downloadUrl,
 	onClose,
+	returnFocusTo,
 }: {
 	title: string;
 	mimeType: string;
 	blobUrl: string;
 	downloadUrl: string;
 	onClose: () => void;
+	returnFocusTo?: HTMLElement | null;
 }) {
 	const dialogRef = useRef<HTMLDivElement>(null);
 	const closeButtonRef = useRef<HTMLButtonElement>(null);
 	const previouslyFocused = useRef<HTMLElement | null>(null);
+	const returnFocusToRef = useRef<HTMLElement | null>(returnFocusTo ?? null);
 	const onCloseRef = useRef(onClose);
 	useEffect(() => {
 		onCloseRef.current = onClose;
+		returnFocusToRef.current = returnFocusTo ?? null;
 	});
 
 	useEffect(() => {
@@ -115,7 +124,10 @@ function StudentPreviewDialog({
 		document.addEventListener("keydown", onKeyDown);
 		return () => {
 			document.removeEventListener("keydown", onKeyDown);
-			previouslyFocused.current?.focus();
+			const target = [returnFocusToRef.current, previouslyFocused.current].find(
+				(el): el is HTMLElement => Boolean(el?.isConnected),
+			);
+			target?.focus();
 		};
 	}, []);
 
@@ -297,5 +309,218 @@ export function StudentClassMaterialPreview({
 				fetchClassMaterialBlobUrl(classId, material.id, signal)
 			}
 		/>
+	);
+}
+
+/**
+ * Nút "Xem trước" on-demand cho PDF/ảnh trên tab Tài liệu chung:
+ * chỉ tải blob khi học viên bấm, giữ nguyên cơ chế tự hồi phục 403
+ * STUDENT_ORG_MISMATCH trong pha loading, đóng & thu hồi blob URL trên mọi
+ * thay đổi org/logout khi dialog đang mở, và khôi phục focus khi đóng.
+ */
+export function StudentClassMaterialPreviewButton({
+	material,
+	classId,
+}: {
+	material: StudentClassMaterialView;
+	classId: string;
+}) {
+	const activeOrgId = useSyncExternalStore(
+		subscribeActiveStudentOrg,
+		getActiveStudentOrgId,
+		getActiveStudentOrgId,
+	);
+	const mimeType = isPreviewableDocumentMime(material.kind, material.mimeType);
+
+	const [status, setStatus] = useState<"idle" | "loading" | "ready" | "error">(
+		"idle",
+	);
+	const [blobUrl, setBlobUrl] = useState<string | null>(null);
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+	const triggerRef = useRef<HTMLButtonElement | null>(null);
+	const controllerRef = useRef<AbortController | null>(null);
+	const blobUrlRef = useRef<string | null>(null);
+	const inFlightRef = useRef(false);
+	const mountedRef = useRef(true);
+	const prevOrgRef = useRef<string | null>(activeOrgId);
+	const prevKeyRef = useRef(`${classId}:${material.id}`);
+
+	const revokeCurrentBlob = useCallback(() => {
+		if (blobUrlRef.current) {
+			URL.revokeObjectURL(blobUrlRef.current);
+			blobUrlRef.current = null;
+		}
+	}, []);
+
+	const abortAndRevoke = useCallback(() => {
+		controllerRef.current?.abort();
+		controllerRef.current = null;
+		inFlightRef.current = false;
+		revokeCurrentBlob();
+	}, [revokeCurrentBlob]);
+
+	const handleClose = useCallback(() => {
+		abortAndRevoke();
+		setBlobUrl(null);
+		setStatus("idle");
+		setErrorMessage(null);
+	}, [abortAndRevoke]);
+
+	useEffect(() => {
+		mountedRef.current = true;
+		return () => {
+			mountedRef.current = false;
+			abortAndRevoke();
+		};
+	}, [abortAndRevoke]);
+
+	useEffect(() => {
+		const nextKey = `${classId}:${material.id}`;
+		if (prevKeyRef.current === nextKey) return;
+		prevKeyRef.current = nextKey;
+		handleClose();
+	}, [classId, material.id, handleClose]);
+
+	// Khi tab khác đăng xuất hoặc đổi tài khoản học viên (`ACTIVE_STUDENT_USER_KEY`
+	// đổi/bị xóa hoặc storage clear): hủy fetch đang chạy, đóng modal và thu hồi
+	// blob URL ngay lập tức — tách biệt hoàn toàn với 403 STUDENT_ORG_MISMATCH.
+	useEffect(() => {
+		if (
+			typeof window === "undefined" ||
+			typeof window.addEventListener !== "function"
+		) {
+			return;
+		}
+		const onStorage = (event: StorageEvent) => {
+			if (event.key === null || event.key === ACTIVE_STUDENT_USER_KEY) {
+				handleClose();
+			}
+		};
+		window.addEventListener("storage", onStorage);
+		return () => {
+			window.removeEventListener("storage", onStorage);
+		};
+	}, [handleClose]);
+
+	useEffect(() => {
+		const prevOrg = prevOrgRef.current;
+		if (prevOrg === activeOrgId) return;
+		prevOrgRef.current = activeOrgId;
+
+		// Dialog đang mở: đóng & thu hồi blob trên mọi thay đổi org (gồm org -> null).
+		if (status === "ready") {
+			handleClose();
+			return;
+		}
+
+		// Đang tải: chỉ hủy khi người dùng chuyển giữa hai org khác rỗng; cho phép
+		// cả `org-stale -> null` (403 self-heal) lẫn `null -> org-real` (hydrate
+		// useStudentTeam) hoàn tất lượt tải hợp lệ.
+		if (
+			status === "loading" &&
+			prevOrg !== null &&
+			activeOrgId !== null &&
+			prevOrg !== activeOrgId
+		) {
+			handleClose();
+		}
+	}, [activeOrgId, status, handleClose]);
+
+	if (!mimeType) return null;
+
+	const downloadUrl = classMaterialFileUrl(classId, material.id, true);
+
+	const handleOpen = async () => {
+		if (inFlightRef.current) return;
+		inFlightRef.current = true;
+		const controller = new AbortController();
+		controllerRef.current = controller;
+		setErrorMessage(null);
+		setStatus("loading");
+
+		try {
+			const nextUrl = await fetchClassMaterialBlobUrl(
+				classId,
+				material.id,
+				controller.signal,
+			);
+			if (controller.signal.aborted || !mountedRef.current) {
+				URL.revokeObjectURL(nextUrl);
+				return;
+			}
+			revokeCurrentBlob();
+			blobUrlRef.current = nextUrl;
+			setBlobUrl(nextUrl);
+			setStatus("ready");
+		} catch (err) {
+			if (
+				controller.signal.aborted ||
+				!mountedRef.current ||
+				(err instanceof DOMException && err.name === "AbortError")
+			) {
+				return;
+			}
+			setErrorMessage(formatStudentMaterialError(err));
+			setStatus("error");
+		} finally {
+			if (controllerRef.current === controller) {
+				controllerRef.current = null;
+				inFlightRef.current = false;
+			}
+		}
+	};
+
+	return (
+		<>
+			<button
+				ref={triggerRef}
+				type="button"
+				aria-label={`Xem trước ${material.title}`}
+				aria-busy={status === "loading" || undefined}
+				onClick={() => {
+					void handleOpen();
+				}}
+				className={cn(
+					buttonVariants({ variant: "outline", size: "sm" }),
+					"cursor-pointer",
+				)}
+			>
+				{status === "loading" ? (
+					<>
+						<Loader2
+							aria-hidden="true"
+							className="size-3.5 animate-spin motion-reduce:animate-none"
+						/>
+						Đang tải…
+					</>
+				) : (
+					<>
+						<Eye aria-hidden="true" className="size-3.5" />
+						Xem trước
+					</>
+				)}
+			</button>
+
+			{status === "error" && errorMessage && (
+				<p
+					role="alert"
+					className="order-last basis-full text-destructive text-xs"
+				>
+					{errorMessage}
+				</p>
+			)}
+
+			{status === "ready" && blobUrl && (
+				<StudentPreviewDialog
+					title={material.title}
+					mimeType={mimeType}
+					blobUrl={blobUrl}
+					downloadUrl={downloadUrl}
+					onClose={handleClose}
+					returnFocusTo={triggerRef.current}
+				/>
+			)}
+		</>
 	);
 }
