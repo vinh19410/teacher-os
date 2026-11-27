@@ -39,10 +39,13 @@ import {
 import { isRollbackableConstraintError } from "../routes/holidays";
 import { isManualClass } from "./class-mode";
 import { findClassCurriculum } from "./syllabus-curriculum";
-import type {
-	ZoomRescheduleDeletedMeeting,
-	ZoomRescheduleMovedMeeting,
-	ZoomRescheduleSyncPlan,
+import {
+	hasLiveR2Recording,
+	liveR2RecordingSql,
+	nonLiveR2RecordingSql,
+	type ZoomRescheduleDeletedMeeting,
+	type ZoomRescheduleMovedMeeting,
+	type ZoomRescheduleSyncPlan,
 } from "./zoom/session-zoom-service";
 
 const SHIFT_PREFIX_LEN = SHIFT_DATE_PREFIX.length;
@@ -69,6 +72,7 @@ export interface ApplyClassStartDateChangeInput {
 	classId: string;
 	nextStartDate: string;
 	todayVN: string;
+	now?: Date;
 	/** Các cột cập nhật bổ sung trên `class` trong cùng Statement 0 CAS. */
 	classFieldPatch: Partial<typeof classTable.$inferInsert>;
 	/** Giá trị schedule/sessionsTotal sau ghi (khi đổi đồng thời trên lớp 0 buổi). */
@@ -103,6 +107,7 @@ export type ApplyClassStartDateResult =
 				| "start-date-locked"
 				| "empty-start-date"
 				| "holiday-scan-cap"
+				| "recording-locked"
 				| "conflict";
 			reason?: StartDateLockReason;
 	  };
@@ -124,6 +129,7 @@ interface PlannedNewCancel {
 const EMPTY_ZOOM_PLAN: ZoomRescheduleSyncPlan = {
 	movedMeetings: [],
 	deletedZoomMeetingIds: [],
+	deletedRecordingKeys: [],
 };
 
 function buildMaterialMovePair(
@@ -173,6 +179,7 @@ function buildMeetingMovePair(
 	classId: string,
 	fromDate: string,
 	toDate: string,
+	nowMs: number,
 ): [BatchItem<"sqlite">, BatchItem<"sqlite">] {
 	return [
 		db
@@ -182,6 +189,7 @@ function buildMeetingMovePair(
 					eq(classSessionMeeting.orgId, orgId),
 					eq(classSessionMeeting.classId, classId),
 					eq(classSessionMeeting.date, toDate),
+					nonLiveR2RecordingSql(nowMs),
 					sql`EXISTS (SELECT 1 FROM ${classSessionMeeting} src WHERE src.org_id = ${orgId} AND src.class_id = ${classId} AND src.date = ${fromDate})`,
 				),
 			),
@@ -196,6 +204,98 @@ function buildMeetingMovePair(
 				),
 			),
 	];
+}
+
+function computeMaterializedHolidayChanges(params: {
+	classId: string;
+	className: string;
+	effectiveNewSchedule: string;
+	newScheduleParsed: { days: number[]; start: string; end: string };
+	newBaseDates: ReadonlyArray<string>;
+	applicableHolidays: ReadonlyArray<
+		Awaited<ReturnType<typeof loadClassHolidays>>[number]
+	>;
+	todayVN: string;
+}):
+	| { ok: true; newShifts: PlannedNewShift[]; newCancels: PlannedNewCancel[] }
+	| { ok: false; error: "holiday-scan-cap" } {
+	const newShifts: PlannedNewShift[] = [];
+	const newCancels: PlannedNewCancel[] = [];
+	const dur = scheduleDurationMinutes(params.newScheduleParsed);
+	const datesByName = new Map<string, string>();
+	for (const holiday of params.applicableHolidays) {
+		for (let d = holiday.fromDate; d <= holiday.toDate; d = addDaysISO(d, 1)) {
+			if (!datesByName.has(d)) datesByName.set(d, holiday.name);
+		}
+	}
+	let virtualRows: Array<{
+		date: string | null;
+		status: string;
+		enrollmentId: string;
+	}> = params.newBaseDates.map((date) => ({
+		date,
+		status: "upcoming",
+		enrollmentId: "__virtual__",
+	}));
+
+	try {
+		for (const holiday of params.applicableHolidays) {
+			const planned = planHolidayShift({
+				range: {
+					fromDate: holiday.fromDate,
+					toDate: holiday.toDate,
+				},
+				classes: [
+					{
+						id: params.classId,
+						name: params.className,
+						schedule: params.effectiveNewSchedule,
+						lessons: virtualRows,
+					},
+				],
+				existingHolidayDates: new Map([[params.classId, datesByName]]),
+				todayISO: params.todayVN,
+				mode: holiday.mode,
+			});
+			for (const shift of planned.shifts) {
+				newShifts.push({
+					holidayId: holiday.id,
+					originalDate: shift.originalDate,
+					makeupDate: shift.makeupDate,
+					weekday: isoToLessonWeekday(shift.makeupDate),
+					time: params.newScheduleParsed.start,
+					dur,
+				});
+				const nextVirtual = virtualRows.map((row) => ({ ...row }));
+				const makeups: typeof virtualRows = [];
+				for (const row of nextVirtual) {
+					if (row.date !== shift.originalDate) continue;
+					row.status = "holiday";
+					makeups.push({
+						date: shift.makeupDate,
+						status: "upcoming",
+						enrollmentId: row.enrollmentId,
+					});
+				}
+				virtualRows = [...nextVirtual, ...makeups];
+			}
+			for (const cancel of planned.cancellations) {
+				newCancels.push({
+					holidayId: holiday.id,
+					date: cancel.date,
+				});
+				for (const row of virtualRows) {
+					if (row.date === cancel.date && row.status === "upcoming") {
+						row.status = "cancelled";
+					}
+				}
+			}
+		}
+	} catch {
+		return { ok: false, error: "holiday-scan-cap" };
+	}
+
+	return { ok: true, newShifts, newCancels };
 }
 
 function buildSyncPackageStatement(
@@ -243,6 +343,8 @@ export async function applyClassStartDateChange(
 	input: ApplyClassStartDateChangeInput,
 ): Promise<ApplyClassStartDateResult> {
 	const { db, orgId, classId, nextStartDate, todayVN } = input;
+	const now = input.now ?? new Date();
+	const nowMs = now.getTime();
 
 	for (let attempt = 1; attempt <= 3; attempt += 1) {
 		const [cls] = await db
@@ -333,6 +435,8 @@ export async function applyClassStartDateChange(
 					joinUrl: classSessionMeeting.joinUrl,
 					zoomMeetingId: classSessionMeeting.zoomMeetingId,
 					recordingUrl: classSessionMeeting.recordingUrl,
+					recordingStorageKey: classSessionMeeting.recordingStorageKey,
+					recordingExpiresAt: classSessionMeeting.recordingExpiresAt,
 				})
 				.from(classSessionMeeting)
 				.where(
@@ -458,6 +562,13 @@ export async function applyClassStartDateChange(
 				? sql` AND ${classTable.openingAnnouncementVersion} = ${input.expectedOpeningVersion}`
 				: sql``;
 
+		const initialRecordingKeyCount = meetingRows.filter(
+			(m) => m.recordingStorageKey !== null,
+		).length;
+		const initialLiveRecordingCount = meetingRows.filter((m) =>
+			hasLiveR2Recording(m, now),
+		).length;
+
 		const casGuardSql = sql`(
 			${classTable.startDate} = ${cls.startDate}
 			AND ${classTable.schedule} = ${cls.schedule}
@@ -471,6 +582,8 @@ export async function applyClassStartDateChange(
 			AND (SELECT count(*) FROM ${holidaySessionShift} WHERE ${holidaySessionShift.orgId} = ${orgId} AND ${holidaySessionShift.classId} = ${classId}) = ${shifts.length}
 			AND (SELECT count(*) FROM ${holidaySessionCancel} WHERE ${holidaySessionCancel.orgId} = ${orgId} AND ${holidaySessionCancel.classId} = ${classId}) = ${cancels.length}
 			AND (SELECT count(*) FROM ${classSessionMeeting} WHERE ${classSessionMeeting.orgId} = ${orgId} AND ${classSessionMeeting.classId} = ${classId}) = ${meetingRows.length}
+			AND (SELECT count(*) FROM ${classSessionMeeting} WHERE ${classSessionMeeting.orgId} = ${orgId} AND ${classSessionMeeting.classId} = ${classId} AND ${classSessionMeeting.recordingStorageKey} IS NOT NULL) = ${initialRecordingKeyCount}
+			AND (SELECT count(*) FROM ${classSessionMeeting} WHERE ${classSessionMeeting.orgId} = ${orgId} AND ${classSessionMeeting.classId} = ${classId} AND ${liveR2RecordingSql(nowMs)}) = ${initialLiveRecordingCount}
 			AND (SELECT count(*) FROM ${lessonMaterial} WHERE ${lessonMaterial.orgId} = ${orgId} AND ${lessonMaterial.classId} = ${classId}) = ${materialCount}
 			AND (SELECT count(*) FROM ${classAssignment} WHERE ${classAssignment.orgId} = ${orgId} AND ${classAssignment.classId} = ${classId} AND ${classAssignment.sessionDate} IS NOT NULL) = ${sessionLinkedAssignmentCount}
 			AND (
@@ -598,84 +711,41 @@ export async function applyClassStartDateChange(
 				applicableHolidays.length > 0 &&
 				plan.newScheduleParsed
 			) {
-				const parsed = plan.newScheduleParsed;
-				const dur = scheduleDurationMinutes(parsed);
-				const datesByName = new Map<string, string>();
-				for (const holiday of applicableHolidays) {
-					for (
-						let d = holiday.fromDate;
-						d <= holiday.toDate;
-						d = addDaysISO(d, 1)
-					) {
-						if (!datesByName.has(d)) datesByName.set(d, holiday.name);
-					}
+				const holidayPlanResult = computeMaterializedHolidayChanges({
+					classId,
+					className: input.classFieldPatch.name ?? cls.name,
+					effectiveNewSchedule,
+					newScheduleParsed: plan.newScheduleParsed,
+					newBaseDates: plan.newBaseDates,
+					applicableHolidays,
+					todayVN,
+				});
+				if (!holidayPlanResult.ok) {
+					return holidayPlanResult;
 				}
-				let virtualRows: Array<{
-					date: string | null;
-					status: string;
-					enrollmentId: string;
-				}> = plan.newBaseDates.map((date) => ({
-					date,
-					status: "upcoming",
-					enrollmentId: "__virtual__",
-				}));
+				newShifts.push(...holidayPlanResult.newShifts);
+				newCancels.push(...holidayPlanResult.newCancels);
+			}
 
-				try {
-					for (const holiday of applicableHolidays) {
-						const planned = planHolidayShift({
-							range: {
-								fromDate: holiday.fromDate,
-								toDate: holiday.toDate,
-							},
-							classes: [
-								{
-									id: classId,
-									name: input.classFieldPatch.name ?? cls.name,
-									schedule: effectiveNewSchedule,
-									lessons: virtualRows,
-								},
-							],
-							existingHolidayDates: new Map([[classId, datesByName]]),
-							todayISO: todayVN,
-							mode: holiday.mode,
-						});
-						for (const shift of planned.shifts) {
-							newShifts.push({
-								holidayId: holiday.id,
-								originalDate: shift.originalDate,
-								makeupDate: shift.makeupDate,
-								weekday: isoToLessonWeekday(shift.makeupDate),
-								time: parsed.start,
-								dur,
-							});
-							const nextVirtual = virtualRows.map((row) => ({ ...row }));
-							const makeups: typeof virtualRows = [];
-							for (const row of nextVirtual) {
-								if (row.date !== shift.originalDate) continue;
-								row.status = "holiday";
-								makeups.push({
-									date: shift.makeupDate,
-									status: "upcoming",
-									enrollmentId: row.enrollmentId,
-								});
-							}
-							virtualRows = [...nextVirtual, ...makeups];
-						}
-						for (const cancel of planned.cancellations) {
-							newCancels.push({
-								holidayId: holiday.id,
-								date: cancel.date,
-							});
-							for (const row of virtualRows) {
-								if (row.date === cancel.date && row.status === "upcoming") {
-									row.status = "cancelled";
-								}
-							}
-						}
-					}
-				} catch {
-					return { ok: false, error: "holiday-scan-cap" };
+			// Mô phỏng chính xác hành trình Zoom meeting & kiểm tra khóa ghi hình R2 TRƯỚC khi dựng/chạy batch
+			if (meetingRows.length > 0) {
+				const simResult = simulateZoomSyncPlan({
+					meetings: meetingRows,
+					now,
+					planMode: plan.mode,
+					unwindShiftsDesc: plan.unwindShiftsDesc,
+					mappings: plan.mappings,
+					surplusOldDates: plan.surplusOldDates,
+					newShifts,
+					newCancels,
+					lessonRows,
+					newScheduleParsed: plan.newScheduleParsed,
+					scheduleChanged: effectiveNewSchedule !== cls.schedule,
+				});
+				if (!simResult.ok) {
+					return simResult;
 				}
+				zoomSyncPlan = simResult.zoomSyncPlan;
 			}
 
 			// Step A (materialized): hoàn tác `cancels` TRƯỚC, rồi hoàn tác `shifts` theo thứ tự topological
@@ -719,6 +789,7 @@ export async function applyClassStartDateChange(
 								classId,
 								shift.makeupDate,
 								shift.originalDate,
+								nowMs,
 							),
 						);
 					}
@@ -800,12 +871,21 @@ export async function applyClassStartDateChange(
 					if (meetingRows.length > 0) {
 						statements.push(
 							db
+								.update(classTable)
+								.set({
+									startDate: sql`CASE WHEN NOT EXISTS (SELECT 1 FROM ${classSessionMeeting} WHERE ${classSessionMeeting.orgId} = ${orgId} AND ${classSessionMeeting.classId} = ${classId} AND ${inArray(classSessionMeeting.date, chunk)} AND ${liveR2RecordingSql(nowMs)}) THEN ${nextStartDate} ELSE NULL END`,
+								})
+								.where(
+									and(eq(classTable.id, classId), eq(classTable.orgId, orgId)),
+								),
+							db
 								.delete(classSessionMeeting)
 								.where(
 									and(
 										eq(classSessionMeeting.orgId, orgId),
 										eq(classSessionMeeting.classId, classId),
 										inArray(classSessionMeeting.date, chunk),
+										nonLiveR2RecordingSql(nowMs),
 									),
 								),
 						);
@@ -951,6 +1031,7 @@ export async function applyClassStartDateChange(
 							and(
 								eq(classSessionMeeting.orgId, orgId),
 								eq(classSessionMeeting.classId, classId),
+								nonLiveR2RecordingSql(nowMs),
 								sql`substr(${classSessionMeeting.date}, 1, ${SHIFT_PREFIX_LEN}) != ${SHIFT_DATE_PREFIX}`,
 								sql`EXISTS (
 									SELECT 1 FROM ${classSessionMeeting} src
@@ -1141,6 +1222,7 @@ export async function applyClassStartDateChange(
 								classId,
 								shift.originalDate,
 								shift.makeupDate,
+								nowMs,
 							),
 						);
 					}
@@ -1225,21 +1307,7 @@ export async function applyClassStartDateChange(
 				}
 			}
 
-			// Mô phỏng chính xác hành trình Zoom meeting theo đúng 1-1 thứ tự SQL Steps A -> B -> C
-			if (meetingRows.length > 0) {
-				zoomSyncPlan = simulateZoomSyncPlan({
-					meetings: meetingRows,
-					planMode: plan.mode,
-					unwindShiftsDesc: plan.unwindShiftsDesc,
-					mappings: plan.mappings,
-					surplusOldDates: plan.surplusOldDates,
-					newShifts,
-					newCancels,
-					lessonRows,
-					newScheduleParsed: plan.newScheduleParsed,
-					scheduleChanged: effectiveNewSchedule !== cls.schedule,
-				});
-			}
+			// Step D: `simulateZoomSyncPlan` đã chạy sớm ở trên trước khi dựng batch.
 		}
 
 		if (statements.length > MAX_BATCH_STATEMENTS) {
@@ -1255,7 +1323,10 @@ export async function applyClassStartDateChange(
 			}
 			return { ok: true, updatedRow, zoomSyncPlan };
 		} catch (err: unknown) {
-			if (!isRollbackableConstraintError(err)) {
+			const isConstraintErr =
+				isRollbackableConstraintError(err) ||
+				(err instanceof Error && isRollbackableConstraintError(err.cause));
+			if (!isConstraintErr) {
 				throw err;
 			}
 
@@ -1264,9 +1335,11 @@ export async function applyClassStartDateChange(
 					db
 						.select({
 							id: classTable.id,
+							name: classTable.name,
 							status: classTable.status,
 							schedule: classTable.schedule,
 							sessionsTotal: classTable.sessionsTotal,
+							startDate: classTable.startDate,
 							schedulingMode: classTable.schedulingMode,
 							syllabusId: classTable.syllabusId,
 							openingAnnouncementVersion: classTable.openingAnnouncementVersion,
@@ -1345,6 +1418,99 @@ export async function applyClassStartDateChange(
 				};
 			}
 			if (attempt >= 3) {
+				if (!manualAfter) {
+					const [meetingsAfter, allHolidaysAfter] = await Promise.all([
+						db
+							.select({
+								date: classSessionMeeting.date,
+								zoomMeetingId: classSessionMeeting.zoomMeetingId,
+								recordingStorageKey: classSessionMeeting.recordingStorageKey,
+								recordingExpiresAt: classSessionMeeting.recordingExpiresAt,
+							})
+							.from(classSessionMeeting)
+							.where(
+								and(
+									eq(classSessionMeeting.orgId, orgId),
+									eq(classSessionMeeting.classId, classId),
+								),
+							),
+						loadClassHolidays(db, orgId, classId),
+					]);
+					if (meetingsAfter.length > 0) {
+						const effectiveNewScheduleAfter =
+							input.nextSchedule ?? latestCls.schedule;
+						const effectiveNewSessionsTotalAfter =
+							input.nextSessionsTotal ?? latestCls.sessionsTotal;
+						const planAfter = planUnstartedStartDateShift({
+							oldSchedule: latestCls.schedule,
+							newSchedule: effectiveNewScheduleAfter,
+							oldStartDate: latestCls.startDate,
+							newStartDate: nextStartDate,
+							oldSessionsTotal: latestCls.sessionsTotal,
+							newSessionsTotal: effectiveNewSessionsTotalAfter,
+							existingLessonDates: lessonAfter
+								.filter((row): row is typeof row & { date: string } =>
+									Boolean(row.date),
+								)
+								.map((row) => ({ date: row.date, status: row.status })),
+							existingShifts: shiftsAfter,
+						});
+						if (planAfter.ok) {
+							const applicableHolidaysAfter =
+								latestCls.status === "active"
+									? allHolidaysAfter
+									: (() => {
+											const existingIds = new Set([
+												...shiftsAfter.map((s) => s.holidayId),
+												...cancelsAfter.map((c) => c.holidayId),
+											]);
+											return allHolidaysAfter.filter((h) =>
+												existingIds.has(h.id),
+											);
+										})();
+							let newShiftsAfter: PlannedNewShift[] = [];
+							let newCancelsAfter: PlannedNewCancel[] = [];
+							if (
+								planAfter.mode === "materialized" &&
+								applicableHolidaysAfter.length > 0 &&
+								planAfter.newScheduleParsed
+							) {
+								const holidayAfterResult = computeMaterializedHolidayChanges({
+									classId,
+									className: String(
+										input.classFieldPatch.name ?? latestCls.name,
+									),
+									effectiveNewSchedule: effectiveNewScheduleAfter,
+									newScheduleParsed: planAfter.newScheduleParsed,
+									newBaseDates: planAfter.newBaseDates,
+									applicableHolidays: applicableHolidaysAfter,
+									todayVN,
+								});
+								if (holidayAfterResult.ok) {
+									newShiftsAfter = holidayAfterResult.newShifts;
+									newCancelsAfter = holidayAfterResult.newCancels;
+								}
+							}
+							const simAfter = simulateZoomSyncPlan({
+								meetings: meetingsAfter,
+								now,
+								planMode: planAfter.mode,
+								unwindShiftsDesc: planAfter.unwindShiftsDesc,
+								mappings: planAfter.mappings,
+								surplusOldDates: planAfter.surplusOldDates,
+								newShifts: newShiftsAfter,
+								newCancels: newCancelsAfter,
+								lessonRows: [],
+								newScheduleParsed: planAfter.newScheduleParsed,
+								scheduleChanged:
+									effectiveNewScheduleAfter !== latestCls.schedule,
+							});
+							if (!simAfter.ok) {
+								return simAfter;
+							}
+						}
+					}
+				}
 				return { ok: false, error: "conflict" };
 			}
 		}
@@ -1357,7 +1523,10 @@ function simulateZoomSyncPlan(input: {
 	meetings: ReadonlyArray<{
 		date: string;
 		zoomMeetingId: string | null;
+		recordingStorageKey: string | null;
+		recordingExpiresAt: Date | null;
 	}>;
+	now: Date;
 	planMode: "projected" | "materialized";
 	unwindShiftsDesc: ReadonlyArray<{
 		originalDate: string;
@@ -1375,9 +1544,13 @@ function simulateZoomSyncPlan(input: {
 	}>;
 	newScheduleParsed: { start: string; end: string } | null;
 	scheduleChanged: boolean;
-}): ZoomRescheduleSyncPlan {
+}):
+	| { ok: true; zoomSyncPlan: ZoomRescheduleSyncPlan }
+	| { ok: false; error: "recording-locked" } {
 	type SimEntry = {
 		zoomMeetingId: string | null;
+		recordingStorageKey: string | null;
+		recordingExpiresAt: Date | null;
 		initialDate: string;
 		time: string;
 		dur: number;
@@ -1416,6 +1589,8 @@ function simulateZoomSyncPlan(input: {
 		const lessonMeta = metaByInitialDate.get(m.date);
 		sim.set(m.date, {
 			zoomMeetingId: m.zoomMeetingId,
+			recordingStorageKey: m.recordingStorageKey,
+			recordingExpiresAt: m.recordingExpiresAt,
 			initialDate: m.date,
 			time:
 				input.planMode === "projected"
@@ -1430,12 +1605,34 @@ function simulateZoomSyncPlan(input: {
 	}
 
 	const deletedZoomMeetingIds: ZoomRescheduleDeletedMeeting[] = [];
-	const recordDeleted = (entry: SimEntry | undefined, dateISO: string) => {
-		if (entry?.zoomMeetingId) {
+	const deletedRecordingKeys: string[] = [];
+	let blockedByLiveRecording = false;
+
+	const recordDestroyed = (entry: SimEntry | undefined, dateISO: string) => {
+		if (!entry) return;
+		if (hasLiveR2Recording(entry, input.now)) {
+			blockedByLiveRecording = true;
+			return;
+		}
+		if (entry.zoomMeetingId) {
 			deletedZoomMeetingIds.push({
 				zoomMeetingId: entry.zoomMeetingId,
 				dateISO,
 			});
+		}
+		if (entry.recordingStorageKey) {
+			deletedRecordingKeys.push(entry.recordingStorageKey);
+		}
+	};
+
+	const recordCancelled = (entry: SimEntry | undefined, dateISO: string) => {
+		if (!entry) return;
+		if (entry.zoomMeetingId) {
+			deletedZoomMeetingIds.push({
+				zoomMeetingId: entry.zoomMeetingId,
+				dateISO,
+			});
+			entry.zoomMeetingId = null;
 		}
 	};
 
@@ -1444,7 +1641,7 @@ function simulateZoomSyncPlan(input: {
 		for (const shift of input.unwindShiftsDesc) {
 			const src = sim.get(shift.makeupDate);
 			if (!src) continue;
-			recordDeleted(sim.get(shift.originalDate), shift.originalDate);
+			recordDestroyed(sim.get(shift.originalDate), shift.originalDate);
 			sim.delete(shift.makeupDate);
 			sim.set(shift.originalDate, src);
 		}
@@ -1453,7 +1650,7 @@ function simulateZoomSyncPlan(input: {
 	// Step B: xóa phần dư projected
 	if (input.planMode === "projected") {
 		for (const oldDate of input.surplusOldDates) {
-			recordDeleted(sim.get(oldDate), oldDate);
+			recordDestroyed(sim.get(oldDate), oldDate);
 			sim.delete(oldDate);
 		}
 	}
@@ -1468,7 +1665,7 @@ function simulateZoomSyncPlan(input: {
 			moving.push({ newDate: mapping.newDate, entry });
 		}
 		for (const { newDate, entry } of moving) {
-			recordDeleted(sim.get(newDate), newDate);
+			recordDestroyed(sim.get(newDate), newDate);
 			sim.set(newDate, entry);
 		}
 	}
@@ -1478,7 +1675,7 @@ function simulateZoomSyncPlan(input: {
 		for (const shift of input.newShifts) {
 			const src = sim.get(shift.originalDate);
 			if (!src) continue;
-			recordDeleted(sim.get(shift.makeupDate), shift.makeupDate);
+			recordDestroyed(sim.get(shift.makeupDate), shift.makeupDate);
 			sim.delete(shift.originalDate);
 			sim.set(shift.makeupDate, {
 				...src,
@@ -1487,9 +1684,12 @@ function simulateZoomSyncPlan(input: {
 			});
 		}
 		for (const cancel of input.newCancels) {
-			recordDeleted(sim.get(cancel.date), cancel.date);
-			sim.delete(cancel.date);
+			recordCancelled(sim.get(cancel.date), cancel.date);
 		}
+	}
+
+	if (blockedByLiveRecording) {
+		return { ok: false, error: "recording-locked" };
 	}
 
 	const movedMeetings: ZoomRescheduleMovedMeeting[] = [];
@@ -1506,5 +1706,12 @@ function simulateZoomSyncPlan(input: {
 		}
 	}
 
-	return { movedMeetings, deletedZoomMeetingIds };
+	return {
+		ok: true,
+		zoomSyncPlan: {
+			movedMeetings,
+			deletedZoomMeetingIds,
+			deletedRecordingKeys: [...new Set(deletedRecordingKeys)],
+		},
+	};
 }

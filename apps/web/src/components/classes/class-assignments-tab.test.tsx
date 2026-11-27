@@ -193,6 +193,7 @@ vi.mock("@tanstack/react-router", () => ({
 		params?: Record<string, string>;
 		search?: Record<string, string>;
 		className?: string;
+		"aria-label"?: string;
 	}) => {
 		const searchStr = props.search
 			? `?${new URLSearchParams(props.search).toString()}`
@@ -201,6 +202,7 @@ vi.mock("@tanstack/react-router", () => ({
 			<a
 				href={`${props.to.replace("$attemptId", props.params?.attemptId ?? "")}${searchStr}`}
 				className={props.className}
+				aria-label={props["aria-label"]}
 			>
 				{props.children}
 			</a>
@@ -303,7 +305,7 @@ describe("ClassAssignmentsTab (#208, #717)", () => {
 		expect(onOpenAssignModal).toHaveBeenCalledTimes(1);
 	});
 
-	it("shows grade links only for submitted writing/speaking targets", () => {
+	it("shows grade links for submitted writing/speaking and 'Xem bài làm' link for submitted auto-graded targets", () => {
 		const caGrade: ClassAssignment = {
 			id: "ca-grade",
 			classId: "cl-1",
@@ -345,26 +347,79 @@ describe("ClassAssignmentsTab (#208, #717)", () => {
 					gradedAt: null,
 					band: null,
 				},
+				{
+					studentId: "st-2",
+					submittedAt: null,
+					attemptId: null,
+					gradedAt: null,
+					band: null,
+				},
+			],
+		};
+		const caMissingPromptGraded: ClassAssignment = {
+			id: "ca-lib-graded",
+			classId: "cl-1",
+			promptId: "p-missing-library",
+			title: "Writing Library Graded",
+			due: "2030-01-07",
+			note: "",
+			createdAt: "2026-09-20T08:00:00.000Z",
+			targets: [
+				{
+					studentId: "st-1",
+					submittedAt: "2026-09-20T13:00:00.000Z",
+					attemptId: "att-4",
+					gradedAt: "2026-09-21T09:00:00.000Z",
+					band: 7.0,
+				},
 			],
 		};
 		currentDataFixture = {
-			classAssignments: [...testAssignments, caGrade, caRead],
+			classAssignments: [
+				...testAssignments,
+				caGrade,
+				caRead,
+				caMissingPromptGraded,
+			],
 			assignmentPrompts: testPrompts,
 			students: testStudents,
 		};
 
-		const html = renderToStaticMarkup(
+		render(
 			<ClassAssignmentsTab
 				classGroup={testClass}
 				onOpenAssignModal={vi.fn()}
+				assignmentsFocus
 			/>,
 		);
 
-		expect(html).toContain('href="/grading/att-1"');
-		expect(html).toContain("Chấm bài");
-		expect(html).toContain("Đã chấm · Band 6.5");
-		expect(html).toContain('href="/grading/att-2"');
-		expect(html).not.toContain("/grading/att-3");
+		expect(
+			screen
+				.getByRole("link", { name: "Chấm bài của Nguyễn Văn A" })
+				.getAttribute("href"),
+		).toBe("/grading/att-1?from=class");
+		expect(screen.getByText("Đã chấm · Band 6.5")).toBeTruthy();
+		expect(
+			screen
+				.getAllByRole("link", { name: "Xem / sửa điểm" })[0]
+				?.getAttribute("href"),
+		).toBe("/grading/att-2?from=class");
+
+		const autoReviewLink = screen.getByRole("link", {
+			name: "Xem bài làm của Nguyễn Văn A",
+		});
+		expect(autoReviewLink.getAttribute("href")).toBe(
+			"/grading/att-3?from=class",
+		);
+		expect(autoReviewLink.textContent).toBe("Xem bài làm");
+
+		// Missing promptRow (e.g. libraryRef) with existing band+gradedAt keeps TargetGradeActions
+		expect(screen.getByText("Đã chấm · Band 7.0")).toBeTruthy();
+		expect(
+			screen
+				.getAllByRole("link", { name: "Xem / sửa điểm" })
+				.some((a) => a.getAttribute("href") === "/grading/att-4?from=class"),
+		).toBe(true);
 	});
 
 	it("assignmentsFocus opens every accordion item", () => {
@@ -602,7 +657,7 @@ describe("ClassAssignmentsTab (#208, #717)", () => {
 			/>,
 		);
 		expect(listHtml).toContain("+ Writing");
-		expect(listHtml).toContain('href="/grading/att-hyb-99"');
+		expect(listHtml).toContain('href="/grading/att-hyb-99?from=class"');
 		expect(listHtml).toContain("Chấm bài");
 	});
 
@@ -1015,7 +1070,11 @@ describe("ClassAssignmentsTab (#208, #717)", () => {
 		expect(mcqOk.textContent).toContain("Tự chấm · 3/3");
 		expect(mcqOk.textContent).toContain("Tự chấm · 0/3");
 		expect(mcqOk.textContent).not.toContain("Đã nộp");
-		expect(mcqOk.querySelector('a[href*="/grading/"]')).toBeNull();
+		expect(mcqOk.textContent).not.toContain("Chấm bài");
+		expect(mcqOk.textContent).toContain("Xem bài làm");
+		expect(
+			mcqOk.querySelector('a[href="/grading/att-g-1?from=class"]'),
+		).not.toBeNull();
 
 		const mcqLate = bodyOf("ca-mcq-late");
 		expect(mcqLate.textContent).toContain("Đã nộp · trễ hạn");
@@ -1046,7 +1105,7 @@ describe("ClassAssignmentsTab (#208, #717)", () => {
 		const libGradable = bodyOf("ca-lib-gradable");
 		expect(libGradable.textContent).toContain("Chấm bài");
 		expect(
-			libGradable.querySelector('a[href="/grading/att-lib-1"]'),
+			libGradable.querySelector('a[href="/grading/att-lib-1?from=class"]'),
 		).not.toBeNull();
 	});
 

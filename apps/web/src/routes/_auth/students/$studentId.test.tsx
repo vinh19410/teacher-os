@@ -935,7 +935,14 @@ describe("student detail", () => {
 			const headers = screen
 				.getAllByRole("columnheader")
 				.map((th) => th.textContent?.trim());
-			expect(headers).toEqual(["Bài tập", "Loại", "Hạn", "Điểm", "Trạng thái"]);
+			expect(headers).toEqual([
+				"Bài tập",
+				"Loại",
+				"Hạn",
+				"Điểm",
+				"Trạng thái",
+				"",
+			]);
 
 			expect(rowCellsByTitle("Grammar quick check 3/3").slice(3, 5)).toEqual([
 				"3/3",
@@ -964,6 +971,115 @@ describe("student detail", () => {
 				"Band 6.5 · 2/3",
 				"Đã chấm",
 			]);
+		});
+
+		it("opens submitted auto-graded and manual rows on click or Enter without nested Link, ignores unsubmitted rows, and honors ?tab=assign (#978)", async () => {
+			vi.useFakeTimers({ toFake: ["Date"] });
+			vi.setSystemTime(FIXED_NOW);
+			vi.unstubAllGlobals();
+			startKernelServer(
+				snapshotFixture({
+					classes: [classRow({ id: "cl-1", name: "IELTS Foundation" })],
+					students: [studentRow({ id: "st-1", name: "Grok Test Student" })],
+					assignmentPrompts: [
+						promptRow({ id: "pr-writing", skill: "writing" }),
+						promptRow({ id: "pr-grammar", skill: "grammar", part: "tenses" }),
+					],
+					classAssignments: [
+						classAssignmentRow({
+							id: "ca-grammar",
+							promptId: "pr-grammar",
+							title: "Grammar quick check",
+							due: "2026-11-30",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: "2026-11-26T08:29:00.000Z",
+									attemptId: "att-grammar",
+									gradedAt: null,
+									band: null,
+								},
+							],
+						}),
+						classAssignmentRow({
+							id: "ca-writing-graded",
+							promptId: "pr-writing",
+							title: "Writing Graded",
+							due: "2026-11-29",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: "2026-11-25T10:00:00.000Z",
+									attemptId: "att-w-graded",
+									gradedAt: "2026-11-25T12:00:00.000Z",
+									band: 6.5,
+								},
+							],
+						}),
+						classAssignmentRow({
+							id: "ca-unsubmitted",
+							promptId: "pr-grammar",
+							title: "Grammar unsubmitted",
+							due: "2026-12-05",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: null,
+									attemptId: null,
+									gradedAt: null,
+									band: null,
+								},
+							],
+						}),
+					],
+				}),
+				notFoundPlacementHandler,
+			);
+			routerState.params = { studentId: "st-1" };
+			routerState.search = { tab: "assign" };
+			renderWithKernel(<StudentDetail />);
+
+			expect(await screen.findByText("Grammar quick check")).toBeTruthy();
+
+			const grammarRow = screen
+				.getByText("Grammar quick check")
+				.closest("tr") as HTMLTableRowElement;
+			expect(grammarRow.textContent).toContain("Xem bài làm");
+			expect(within(grammarRow).queryByRole("link")).toBeNull();
+			fireEvent.click(grammarRow);
+			expect(routerState.navigate).toHaveBeenCalledWith({
+				to: "/grading/$attemptId",
+				params: { attemptId: "att-grammar" },
+				search: { from: "student" },
+			});
+
+			routerState.navigate.mockClear();
+			fireEvent.keyDown(grammarRow, { key: "Enter" });
+			expect(routerState.navigate).toHaveBeenCalledWith({
+				to: "/grading/$attemptId",
+				params: { attemptId: "att-grammar" },
+				search: { from: "student" },
+			});
+
+			routerState.navigate.mockClear();
+			const writingRow = screen
+				.getByText("Writing Graded")
+				.closest("tr") as HTMLTableRowElement;
+			expect(writingRow.textContent).toContain("Xem / sửa điểm");
+			fireEvent.click(writingRow);
+			expect(routerState.navigate).toHaveBeenCalledWith({
+				to: "/grading/$attemptId",
+				params: { attemptId: "att-w-graded" },
+				search: { from: "student" },
+			});
+
+			routerState.navigate.mockClear();
+			const openRow = screen
+				.getByText("Grammar unsubmitted")
+				.closest("tr") as HTMLTableRowElement;
+			expect(openRow.getAttribute("tabindex")).toBeNull();
+			fireEvent.click(openRow);
+			expect(routerState.navigate).not.toHaveBeenCalled();
 		});
 	});
 });

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { RECORDING_ERROR_CODES } from "@teacher-os/api/contracts";
 import {
 	cleanup,
 	fireEvent,
@@ -183,6 +184,36 @@ describe("HolidayUndoDialog (TOS-13 phase 3)", () => {
 		);
 		expect(screen.getByTestId("holiday-undo-error").textContent).toContain(
 			"Kỳ nghỉ đã bắt đầu",
+		);
+		expect(onClose).not.toHaveBeenCalled();
+	});
+
+	it("409 RECORDING_LOCKED hiện thông báo lỗi video recording và giữ nguyên hộp thoại mở", async () => {
+		const onClose = vi.fn();
+		repos.deleteHoliday.mockRejectedValueOnce(
+			Object.assign(new Error(RECORDING_ERROR_CODES.LOCKED), {
+				holidayErrorCode: RECORDING_ERROR_CODES.LOCKED,
+				status: 409,
+			}),
+		);
+
+		render(
+			<HolidayUndoDialog
+				holiday={SHIFT_HOLIDAY}
+				onClose={onClose}
+				onUndone={vi.fn()}
+			/>,
+		);
+
+		fireEvent.click(screen.getByTestId("holiday-undo-confirm"));
+		await waitFor(() =>
+			expect(screen.getByTestId("holiday-undo-error")).toBeTruthy(),
+		);
+		expect(screen.getByTestId("holiday-undo-error").textContent).toContain(
+			"video recording",
+		);
+		expect(toast.error).toHaveBeenCalledWith(
+			expect.stringContaining("video recording"),
 		);
 		expect(onClose).not.toHaveBeenCalled();
 	});

@@ -27,6 +27,10 @@ export interface StudentAssignmentRow {
 	/** class row: true khi đã nộp (`submittedAt != null || attemptId != null`,
 	 * gồm cả flip-first); grading row: false. */
 	submitted: boolean;
+	/** class row: attemptId để mở /grading/$attemptId (null khi chưa nộp); grading row: null. */
+	attemptId: string | null;
+	/** class row: true nếu bài cần chấm tay (Writing/Speaking/Hybrid); grading row: false. */
+	gradable: boolean;
 	/** class row: Band tổng IELTS hợp lệ (0–9, bước 0.5) đi kèm gradedAt hợp lệ;
 	 * null khi chưa chấm hoặc dữ liệu không hợp lệ; grading row: null. */
 	band: number | null;
@@ -79,16 +83,22 @@ export function studentAssignmentRows(
 			? (SKILL_LABELS.get(prompt.skill) ?? null)
 			: null;
 		const className = data.classes.find((c) => c.id === ca.classId)?.name ?? "";
-		const gradable =
+		const promptGradable =
 			typeof ca.hasGradableTask === "boolean"
 				? ca.hasGradableTask
 				: prompt
 					? hasGradableTask(prompt)
-					: false;
+					: null;
 		for (const target of ca.targets) {
 			if (target.studentId !== studentId) continue;
-			const submitted = target.submittedAt !== null || target.attemptId != null;
+			const attemptId =
+				typeof target.attemptId === "string" &&
+				target.attemptId.trim().length > 0
+					? target.attemptId
+					: null;
+			const submitted = target.submittedAt !== null || attemptId !== null;
 			const hasGrade = submitted && hasValidGradedBand(target);
+			const gradable = promptGradable ?? hasGrade;
 			const objective = submitted
 				? normalizeObjectiveScore(target.correctCount, target.totalQuestions)
 				: null;
@@ -103,6 +113,8 @@ export function studentAssignmentRows(
 				dueAt: ca.dueAt ?? null,
 				submittedAt: target.submittedAt,
 				submitted,
+				attemptId,
+				gradable,
 				band: hasGrade ? target.band : null,
 				gradedAt: hasGrade ? target.gradedAt : null,
 				correctCount: objective?.correctCount ?? null,
@@ -127,6 +139,8 @@ export function studentAssignmentRows(
 			dueAt: null,
 			submittedAt: null,
 			submitted: false,
+			attemptId: null,
+			gradable: false,
 			band: null,
 			gradedAt: null,
 			correctCount: null,

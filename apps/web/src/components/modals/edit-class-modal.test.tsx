@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
 
-import { CLASS_ERROR_CODES } from "@teacher-os/api/contracts";
+import {
+	CLASS_ERROR_CODES,
+	RECORDING_ERROR_CODES,
+} from "@teacher-os/api/contracts";
 import {
 	addDaysISO,
 	formatViDateDisplay,
@@ -1002,6 +1005,49 @@ describe("EditClassModal", () => {
 			expect(startDateInput.disabled).toBe(true);
 			expect(startDateInput.value).toBe(formatViDateDisplay(futureDate));
 		});
+	});
+
+	it("maps 409 RECORDING_LOCKED to dedicated message and refreshes snapshot", async () => {
+		const cls = makeClassGroup({ startDate: futureDate });
+		const server = startKernelServer(snapshotFixture(), () => ({
+			status: 409,
+			body: {
+				error: "Buổi học đang có video ghi hình",
+				code: RECORDING_ERROR_CODES.LOCKED,
+				reason: "recording-locked",
+			},
+		}));
+		const onClose = vi.fn();
+		renderWithKernel(
+			<EditClassModal
+				open
+				onClose={onClose}
+				cls={cls}
+				hasRealSessions
+				isManual={false}
+				startDateLocked={false}
+				startDateLockReason={null}
+				canEditStartDate
+				existingClasses={[cls]}
+			/>,
+		);
+		const dialog = await screen.findByRole("dialog");
+		expect(server.snapshotLoads).toBe(1);
+
+		const startDateInput = within(dialog).getByLabelText(
+			"Ngày khai giảng",
+		) as HTMLInputElement;
+		fireEvent.change(startDateInput, {
+			target: { value: formatViDateDisplay(laterFutureDate) },
+		});
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Lưu thay đổi" }),
+		);
+
+		const alert = await within(dialog).findByRole("alert");
+		expect(alert.textContent).toContain("video recording");
+		await waitFor(() => expect(server.snapshotLoads).toBeGreaterThanOrEqual(2));
+		expect(onClose).not.toHaveBeenCalled();
 	});
 
 	it("resets submitBlocked/notice when reopened on the same class after 5xx error and validates invalid time/date & empty legacy mode", async () => {

@@ -11,7 +11,7 @@ import {
 	normalizeObjectiveScore,
 } from "@teacher-os/api/lib/objective-score";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	fmtDue,
 	fmtDueDisplay,
@@ -46,7 +46,24 @@ import {
 	studentTuitionSummary,
 } from "@/lib/tuition-from-kernel";
 
+export type StudentDetailTab = "profile" | "history" | "tuition" | "assign";
+
+export function validateStudentDetailSearch(input: { tab?: string }): {
+	tab?: StudentDetailTab;
+} {
+	return {
+		tab:
+			input.tab === "profile" ||
+			input.tab === "history" ||
+			input.tab === "tuition" ||
+			input.tab === "assign"
+				? input.tab
+				: undefined,
+	};
+}
+
 export const Route = createFileRoute("/_auth/students/$studentId")({
+	validateSearch: validateStudentDetailSearch,
 	component: StudentDetailRoute,
 	notFoundComponent: () => (
 		<Card variant="white" className="mx-auto mt-16 max-w-md text-center">
@@ -144,6 +161,17 @@ function assignmentRowCells(
 			fmtDueDisplay(row.due, row.dueAt),
 			scoreCell,
 			statusCell,
+			row.attemptId ? (
+				<span className="whitespace-nowrap font-medium text-primary text-xs">
+					{row.gradable || graded
+						? graded
+							? "Xem / sửa điểm"
+							: "Chấm bài"
+						: "Xem bài làm"}
+				</span>
+			) : (
+				""
+			),
 		];
 	}
 	return [
@@ -168,17 +196,25 @@ function assignmentRowCells(
 			: row.gradingStatus === "late"
 				? "Trễ"
 				: "Chưa nộp",
+		"",
 	];
 }
 
 function StudentDetailRoute() {
 	const { studentId } = Route.useParams();
+	const search = Route.useSearch();
 	const navigate = useNavigate();
 	const { studentById } = useStudents();
 	const { data, refresh } = useData();
 	const student = studentById(studentId);
-	const [tab, setTab] = useState("profile");
+	const [tab, setTab] = useState<string>(() => search.tab ?? "profile");
 	const [reportOpen, setReportOpen] = useState(false);
+
+	useEffect(() => {
+		if (search.tab) {
+			setTab(search.tab);
+		}
+	}, [search.tab]);
 
 	if (!student) {
 		throw notFound();
@@ -433,9 +469,18 @@ function StudentDetailRoute() {
 			{tab === "assign" && (
 				<Card variant="white" className="p-0">
 					<DataTable
-						headers={["Bài tập", "Loại", "Hạn", "Điểm", "Trạng thái"]}
+						headers={["Bài tập", "Loại", "Hạn", "Điểm", "Trạng thái", ""]}
 						rows={assignments.map((row) => ({
-							onClick: undefined,
+							onClick:
+								row.kind === "class" && row.attemptId
+									? () => {
+											void navigate({
+												to: "/grading/$attemptId",
+												params: { attemptId: row.attemptId as string },
+												search: { from: "student" },
+											});
+										}
+									: undefined,
 							cells: assignmentRowCells(row, todayVN, nowMs),
 						}))}
 					/>
