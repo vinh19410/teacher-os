@@ -538,8 +538,18 @@ test.describe("Student practice catalog (#378 phase 10, #880, #883)", () => {
 		await signIn(page);
 		await page.goto(`${STUDENT_BASE_URL}/classes/${fixture.classId}`);
 		const body = page.locator("main");
+		// Bài tập giao tay không thuộc bộ đề tự học hiện ở TodoBanner và /assignments,
+		// không lọt đề practice; RingStat giữ tổng bài của lớp.
+		await expect(body).toContainText("Bạn còn 1 bài chưa làm");
+		await expect(body).toContainText("0/1");
+		await expect(body).not.toContainText(practiceTestTitle);
+
 		await body.getByTestId("class-tab-assignments").click();
-		// Đề practice không bao giờ xuất hiện trong danh sách bài tập lớp;
+		await expect(body.getByText("Chưa có bộ đề tự học")).toBeVisible();
+		await body.getByRole("link", { name: "Xem tất cả bài tập" }).click();
+		await expect(page).toHaveURL(`${STUDENT_BASE_URL}/assignments`);
+
+		// Đề practice không bao giờ xuất hiện trong danh sách bài tập;
 		// lượt giao reading vẫn "Chưa nộp" (submit không stamp target).
 		await expect(body).toContainText(classQuizTitle);
 		await expect(body).not.toContainText(practiceTestTitle);

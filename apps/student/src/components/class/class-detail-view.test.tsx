@@ -8,7 +8,6 @@ import {
 	fireEvent,
 	render,
 	screen,
-	waitFor,
 	within,
 } from "@testing-library/react";
 import type { ReactNode } from "react";
@@ -294,46 +293,106 @@ describe("ClassDetailView — shared class materials tab", () => {
 		expect(await screen.findByTestId("class-materials-empty")).toBeTruthy();
 	});
 
-	it("jumps from Hành trình học 'Mở trong Bài tập' to Tab Bài tập and expands a graded assignment inside collapsed group", async () => {
-		const scrollSpy = vi.fn();
-		Element.prototype.scrollIntoView = scrollSpy;
+	it("TodoBanner bỏ qua bộ đề tự học tương lai nhưng giữ homework tương lai, RingStat đếm cả gradedAt != null mà giữ mẫu số Band trung bình, Hành trình học mở quiz trực tiếp và Tab Bài tập chỉ hiện bộ đề tự học", async () => {
 		const base = makeDetail("active");
-		const detailWithGraded: StudentClassDetail = {
+		const detailWithMixedAssignments: StudentClassDetail = {
 			...base,
 			assignments: [
 				{
-					id: "asg-graded-jump",
+					id: "hw-future",
 					source: "class_assignment",
 					classId: "cls-1",
 					className: "IELTS Speaking",
-					title: "Speaking Part 2 Cue Card",
-					skill: "speaking",
-					due: "2026-11-28",
-					submittedAt: "2026-11-19T10:00:00Z",
-					gradedAt: "2026-11-20T01:00:00Z",
-					scores: { task: 6.5, coherence: 6.5, lexical: 6.5, grammar: 6.5 },
+					title: "Homework Reading buổi tới",
+					skill: "reading",
+					due: "2026-12-01",
+					submittedAt: null,
+					gradedAt: null,
+					scores: null,
 					sessionDate: "2026-11-28",
+					classStudyPackId: null,
+				},
+				{
+					id: "sp-future",
+					source: "class_assignment",
+					classId: "cls-1",
+					className: "IELTS Speaking",
+					title: "Study Pack Ngày 2 tương lai",
+					skill: "listening",
+					due: "2026-11-27",
+					submittedAt: null,
+					gradedAt: null,
+					scores: null,
+					classStudyPackId: "csp-1",
+					studyPackTitle: "Daily Pack",
+					studyPackStatus: "active",
+					studyPackDayIndex: 2,
+					studyPackPosition: 0,
+				},
+				{
+					id: "sp-graded-noscores",
+					source: "class_assignment",
+					classId: "cls-1",
+					className: "IELTS Speaking",
+					title: "Study Pack Speaking đã chấm",
+					skill: "speaking",
+					due: "2026-11-20",
+					submittedAt: null,
+					gradedAt: "2026-11-25T10:00:00Z",
+					scores: null,
+					classStudyPackId: "csp-1",
+					studyPackTitle: "Daily Pack",
+					studyPackStatus: "active",
+					studyPackDayIndex: 1,
+					studyPackPosition: 0,
+				},
+				{
+					id: "hw-graded-writing",
+					source: "class_assignment",
+					classId: "cls-1",
+					className: "IELTS Speaking",
+					title: "Writing có band",
+					skill: "writing",
+					due: "2026-11-20",
+					submittedAt: "2026-11-20T09:00:00Z",
+					gradedAt: "2026-11-21T09:00:00Z",
+					scores: { task: 7, coherence: 7, lexical: 7, grammar: 7 },
+					classStudyPackId: null,
 				},
 			],
 		};
 
-		renderWithQueryClient(detailWithGraded);
-		// Buổi tới (2026-11-28) mở sẵn và hiển thị bài tập gắn buổi
-		fireEvent.click(screen.getByRole("button", { name: "Mở trong Bài tập" }));
+		renderWithQueryClient(detailWithMixedAssignments);
 
-		await waitFor(() => {
-			expect(
-				screen
-					.getByTestId("class-tab-assignments")
-					.getAttribute("aria-selected"),
-			).toBe("true");
-			const row = screen
-				.getByText("Speaking Part 2 Cue Card")
-				.closest("li") as HTMLElement;
-			const expandBtn = within(row).getByRole("button", { expanded: true });
-			expect(document.activeElement).toBe(expandBtn);
-			expect(row.textContent).toContain("Band 6.5");
-		});
+		// TodoBanner chỉ đếm 1 bài (hw-future), KHÔNG đếm sp-future hay sp-graded-noscores
+		const banner = screen.getByRole("region", { name: "Việc cần làm" });
+		expect(banner.textContent).toContain(
+			"Bạn còn 1 bài chưa làm trong IELTS Speaking",
+		);
+		expect(
+			within(banner)
+				.getByRole("link", { name: "Làm ngay" })
+				.getAttribute("href"),
+		).toBe("/learn/quizzes/hw-future");
+
+		// RingStat Bài tập đếm 2/4 (sp-graded-noscores + hw-graded-writing), Band trung bình giữ mẫu số 1
+		expect(screen.getByText("2/4")).toBeTruthy();
+		expect(screen.getByText("Trên 1 bài đã chấm")).toBeTruthy();
+
+		// Hành trình học có link 1-click trực tiếp tới quiz, không có nút "Mở trong Bài tập"
+		expect(
+			screen.queryByRole("button", { name: "Mở trong Bài tập" }),
+		).toBeNull();
+		expect(
+			screen
+				.getByRole("link", { name: "Làm bài: Homework Reading buổi tới" })
+				.getAttribute("href"),
+		).toBe("/learn/quizzes/hw-future");
+
+		// Tab Bài tập chỉ hiển thị bài thuộc bộ đề tự học (ẩn hw-future và hw-graded-writing)
+		fireEvent.click(screen.getByTestId("class-tab-assignments"));
+		expect(screen.getByText("Study Pack Ngày 2 tương lai")).toBeTruthy();
+		expect(screen.queryByText("Homework Reading buổi tới")).toBeNull();
 	});
 
 	it("preserves controlled Tab 3 deep-link search & clear URL sync on initial mount without dropping mq", async () => {

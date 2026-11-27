@@ -1,4 +1,7 @@
-import type { StudentClassLesson } from "@teacher-os/api/contracts";
+import type {
+	StudentAssignment,
+	StudentClassLesson,
+} from "@teacher-os/api/contracts";
 import type { StudentClassMaterialView } from "@teacher-os/api/material-contracts";
 import { describe, expect, it } from "vitest";
 import {
@@ -8,8 +11,11 @@ import {
 	formatMaterialTypeLabel,
 	formatSessionCountdown,
 	formatZoomOpenAtLabel,
+	isClassAssignmentDueNow,
+	isStudyPackUpcoming,
 	normalizeVietnameseSearch,
 	parseClassDetailSearch,
+	resolveAssignmentExpectedDateISO,
 } from "./class-detail-helpers";
 
 function makeLesson(
@@ -367,5 +373,99 @@ describe("buildSessionNumberByDate", () => {
 		expect(map.has("2026-11-04")).toBe(false);
 		expect(map.get("2026-11-06")).toBe(2);
 		expect(map.size).toBe(2);
+	});
+});
+
+function makeAssignment(
+	overrides: Partial<StudentAssignment> & { id: string },
+): StudentAssignment {
+	return {
+		source: "class_assignment",
+		classId: "c1",
+		className: "IELTS",
+		title: "Test assignment",
+		skill: "reading",
+		due: "2026-11-26",
+		submittedAt: null,
+		gradedAt: null,
+		scores: null,
+		...overrides,
+	};
+}
+
+describe("resolveAssignmentExpectedDateISO, isStudyPackUpcoming, isClassAssignmentDueNow", () => {
+	it("resolves trimmed valid due first and safely falls back to VN date of availableAt/dueAt without throwing", () => {
+		expect(
+			resolveAssignmentExpectedDateISO(
+				makeAssignment({ id: "a1", due: " 2026-11-25 " }),
+			),
+		).toBe("2026-11-25");
+
+		// 17:00Z = 00:00+07:00 ngày hôm sau theo giờ VN
+		expect(
+			resolveAssignmentExpectedDateISO(
+				makeAssignment({
+					id: "a2",
+					due: "",
+					availableAt: "2026-11-24T17:00:00.000Z",
+				}),
+			),
+		).toBe("2026-11-25");
+
+		expect(
+			resolveAssignmentExpectedDateISO(
+				makeAssignment({
+					id: "a3",
+					due: "invalid",
+					availableAt: "not-a-date",
+					dueAt: "2026-11-26T10:00:00.000Z",
+				}),
+			),
+		).toBe("2026-11-26");
+
+		expect(
+			resolveAssignmentExpectedDateISO(
+				makeAssignment({
+					id: "a4",
+					due: "",
+					availableAt: "bad",
+					dueAt: "also-bad",
+				}),
+			),
+		).toBeNull();
+	});
+
+	it("marks future study-pack assignments as upcoming while manual homework always counts as due-now", () => {
+		const manualFuture = makeAssignment({
+			id: "m-1",
+			due: "2026-12-01",
+			classStudyPackId: null,
+		});
+		const packPast = makeAssignment({
+			id: "p-1",
+			due: "2026-11-19",
+			classStudyPackId: "csp-1",
+		});
+		const packToday = makeAssignment({
+			id: "p-2",
+			due: "2026-11-20",
+			classStudyPackId: "csp-1",
+		});
+		const packFuture = makeAssignment({
+			id: "p-3",
+			due: "2026-11-21",
+			classStudyPackId: "csp-1",
+		});
+
+		expect(isStudyPackUpcoming(manualFuture, "2026-11-20")).toBe(false);
+		expect(isClassAssignmentDueNow(manualFuture, "2026-11-20")).toBe(true);
+
+		expect(isStudyPackUpcoming(packPast, "2026-11-20")).toBe(false);
+		expect(isStudyPackUpcoming(packToday, "2026-11-20")).toBe(false);
+		expect(isStudyPackUpcoming(packFuture, "2026-11-20")).toBe(true);
+
+		expect(isClassAssignmentDueNow(packPast, "2026-11-20")).toBe(true);
+		expect(isClassAssignmentDueNow(packToday, "2026-11-20")).toBe(true);
+		expect(isClassAssignmentDueNow(packFuture, "2026-11-20")).toBe(false);
 	});
 });

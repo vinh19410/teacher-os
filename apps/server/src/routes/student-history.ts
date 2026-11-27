@@ -37,7 +37,7 @@ import {
 } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { Db } from "../app";
-import { visibleAssignmentFilter } from "../lib/assignment-visibility";
+import { accessibleAssignmentFilter } from "../lib/assignment-visibility";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
 import {
 	createStudentGuard,
@@ -232,6 +232,7 @@ async function attemptRows(
 	studentId: string,
 	orgId: string,
 	window: { start: Date; end: Date },
+	now: Date = new Date(),
 ): Promise<AttemptSourceRow[]> {
 	const submittedRange = and(
 		eq(quizAttempt.status, "submitted"),
@@ -309,7 +310,7 @@ async function attemptRows(
 					inArray(assignmentPrompt.skill, [...HISTORY_SKILLS]),
 					isNotNull(assignmentPrompt.writingPart),
 				),
-				visibleAssignmentFilter(new Date()),
+				accessibleAssignmentFilter(now),
 				submittedRange,
 			),
 		)
@@ -412,6 +413,7 @@ function mergeHistory(
 export function studentHistoryRoutes(deps: HistoryRouteDeps) {
 	const router = new Hono<StudentEnv>();
 	const requireStudent = createStudentGuard(deps);
+	const getNow = () => (deps.now ? deps.now() : new Date());
 
 	// use(path) của Hono chỉ khớp đúng path — đăng ký cả hai dạng như route
 	// invoices (student.ts) để guard phủ /history và mọi path con.
@@ -432,7 +434,9 @@ export function studentHistoryRoutes(deps: HistoryRouteDeps) {
 		}
 		const { start, end } = vietnamWindowUtc(`${ym}-01`, 31);
 		const merged = mergeHistory(
-			(await attemptRows(db, s.id, orgId, { start, end })).map(attemptToEntry),
+			(await attemptRows(db, s.id, orgId, { start, end }, getNow())).map(
+				attemptToEntry,
+			),
 			await vocabDayGroups(db, s.id, { start, end }),
 		);
 		const days: HistoryDay[] = [...merged.days.entries()]
@@ -458,7 +462,9 @@ export function studentHistoryRoutes(deps: HistoryRouteDeps) {
 		const monday = mondayOfISO(rawMonday);
 		const { start, end } = vietnamWindowUtc(monday, 7);
 		const merged = mergeHistory(
-			(await attemptRows(db, s.id, orgId, { start, end })).map(attemptToEntry),
+			(await attemptRows(db, s.id, orgId, { start, end }, getNow())).map(
+				attemptToEntry,
+			),
 			await vocabDayGroups(db, s.id, { start, end }),
 		);
 
@@ -525,7 +531,9 @@ export function studentHistoryRoutes(deps: HistoryRouteDeps) {
 		// không có bảng chung nên SQL offset một mình không trộn được.
 		const window = vietnamWindowUtc("2020-01-01", 365 * 30);
 		const merged = mergeHistory(
-			(await attemptRows(db, s.id, orgId, window)).map(attemptToEntry),
+			(await attemptRows(db, s.id, orgId, window, getNow())).map(
+				attemptToEntry,
+			),
 			await vocabDayGroups(db, s.id, window),
 		);
 		const filtered =

@@ -100,7 +100,7 @@ import { bodyLimit } from "hono/body-limit";
 import type { Db } from "../app";
 import type { AiGrader } from "../lib/ai-grading/grader";
 import { scheduleAiGrading } from "../lib/ai-grading/run-grading";
-import { visibleAssignmentFilter } from "../lib/assignment-visibility";
+import { accessibleAssignmentFilter } from "../lib/assignment-visibility";
 import { mediaObjectResponse, toQuizAttemptMedia } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
 import {
@@ -988,6 +988,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				testId: quizAttempt.testId,
 				assignmentId: classAssignment.id,
 				availableAt: classAssignment.availableAt,
+				classStudyPackId: classAssignment.classStudyPackId,
 				skill: assignmentPrompt.skill,
 				promptType: assignmentPrompt.type,
 				writingPart: assignmentPrompt.writingPart,
@@ -1036,7 +1037,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		}
 		if (
 			!row.assignmentId ||
-			(row.availableAt !== null &&
+			(row.classStudyPackId === null &&
+				row.availableAt !== null &&
 				row.availableAt.getTime() > getNow().getTime())
 		) {
 			return undefined;
@@ -1149,6 +1151,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			db,
 			orgId,
 			s.id,
+			undefined,
+			now,
+			{ mode: "overview" },
 		);
 
 		const gradingRows = await db
@@ -1266,7 +1271,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 						eq(classSessionMeeting.classId, row.id),
 					),
 				),
-			loadClassAssignmentItems(db, orgId, s.id, row.id, now),
+			loadClassAssignmentItems(db, orgId, s.id, row.id, now, {
+				mode: "class_detail",
+			}),
 			loadClassCurriculumSummary(db, orgId, row.id),
 			db
 				.select({
@@ -1487,7 +1494,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					asc(lessonMaterial.createdAt),
 					asc(material.id),
 				),
-			loadClassAssignmentItems(db, orgId, s.id, row.id, now),
+			loadClassAssignmentItems(db, orgId, s.id, row.id, now, {
+				mode: "session_detail",
+			}),
 		]);
 
 		const dateRows = allLessonRows.filter((l) => l.date === date);
@@ -2356,7 +2365,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				and(
 					eq(classAssignment.id, assignmentId),
 					eq(classAssignment.orgId, orgId),
-					visibleAssignmentFilter(getNow()),
+					accessibleAssignmentFilter(getNow()),
 				),
 			);
 		if (!row) {
@@ -2499,7 +2508,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				and(
 					eq(classAssignment.id, assignmentId),
 					eq(classAssignment.orgId, orgId),
-					visibleAssignmentFilter(getNow()),
+					accessibleAssignmentFilter(getNow()),
 				),
 			)
 			.limit(1);
@@ -2555,7 +2564,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				and(
 					eq(classAssignment.id, assignmentId),
 					eq(classAssignment.orgId, orgId),
-					visibleAssignmentFilter(getNow()),
+					accessibleAssignmentFilter(getNow()),
 				),
 			);
 		if (!target) {
@@ -3246,7 +3255,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 							// `?? ""` chỉ để thu hẹp kiểu.
 							eq(classAssignment.id, attempt.assignmentId ?? ""),
 							eq(classAssignment.orgId, orgId),
-							visibleAssignmentFilter(getNow()),
+							accessibleAssignmentFilter(getNow()),
 						),
 					));
 		if (attempt.mode !== "practice" && header.length === 0) {
