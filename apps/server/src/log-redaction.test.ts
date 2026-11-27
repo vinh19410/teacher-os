@@ -27,4 +27,11 @@ describe("redactResetToken", () => {
 		const other = "<-- GET /api/auth/verify-email?token=keep";
 		expect(redactResetToken(other)).toBe(other);
 	});
+
+	it("masks MCP personal access tokens", () => {
+		const line = "Authorization: Bearer tos_mcp_AbCdEf1234567890_xyz";
+		expect(redactResetToken(line)).toBe(
+			"Authorization: Bearer tos_mcp_[redacted]",
+		);
+	});
 });
