@@ -277,15 +277,19 @@ describe("ClassDetailView", () => {
 		expect(html).not.toContain("Tiến độ khóa học");
 		expect(html).toContain("Cô Lan");
 		expect(html).toContain('href="mailto:lan@example.com"');
-		// JourneySummitCard vẫn hiển thị mục tiêu band và tiến độ buổi.
-		expect(html).toContain("Band 6.5");
-		expect(html).toContain("2/5 buổi");
+		// Cả ClassInfoCard và Hành trình học đều không còn JourneySummitCard / Band 6.5 / 2/5 buổi.
+		expect(html).not.toContain("Band 6.5");
+		expect(html).not.toContain("2/5 buổi");
 		// Tab mặc định = Hành trình học (Buổi học).
 		expect(html).toContain("Buổi học");
 		// ClassInfoCard không còn cụm footer dư (thời lượng tháng, giờ lặp, "Buổi tới: ...").
 		expect(html).not.toContain("Buổi tới:");
 		expect(html).not.toMatch(/\d+\s*tháng/);
-		// Hành trình học vẫn giữ thẻ Buổi tiếp theo & badge Buổi tới cho l4 (12/03).
+		// Hành trình học vẫn giữ thẻ Buổi tiếp theo & badge Buổi tới cho l4 (12/03), không còn JourneySummitCard.
+		expect(html).not.toContain("Đích đến của bạn");
+		expect(html).not.toContain("chặng đã vượt");
+		expect(html).not.toContain("Về đích dự kiến");
+		expect(html).not.toContain('role="progressbar"');
 		expect(html).toContain("Buổi tiếp theo");
 		expect(html).toContain("Thứ Năm, 12/03");
 		expect(html.match(/>Buổi tới</g)).toHaveLength(1);
@@ -360,7 +364,9 @@ describe("ClassDetailView", () => {
 		const utils = render(
 			<ClassDetailView detail={withSyllabus} todayISO={TODAY} now={NOW} />,
 		);
-		expect(screen.getByText("IELTS Reading Intensive")).toBeTruthy();
+		expect(screen.queryByTestId("journey-syllabus-header")).toBeNull();
+		expect(screen.queryByText("Đích đến của bạn")).toBeNull();
+		expect(screen.queryByText("IELTS Reading Intensive")).toBeNull();
 		expect(screen.getByText("Module 1: Skimming")).toBeTruthy();
 		expect(screen.getByText("1/1 buổi")).toBeTruthy();
 		expect(screen.getByText("Module 2: Scanning")).toBeTruthy();

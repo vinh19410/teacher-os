@@ -13,6 +13,10 @@ Quy ước khi cập nhật:
 ## 2026-11-27
 
 ### Added
+- **MCP Server từ xa (`/mcp`) và trang quản lý mã truy cập cá nhân (`PAT`) cho Claude Desktop để soạn đề 6 kỹ năng & Full Test (`packages/db`, `packages/api`, `apps/server`, `apps/web`, `docs/claude-desktop-mcp.md`):**
+  - Thêm bảng `mcp_token` (migration `0099`, prefix `tos_mcp_`, hash SHA-256, tối đa 10 mã/giáo viên, hạn mặc định 90 ngày, redact log tự động) và bộ API `/api/mcp-tokens` kèm service dùng chung `assignment-service.ts` giữ nguyên khóa chỉnh sửa (`CONTENT_LOCKED`, `WRITING_SECTION_LOCKED`, `PARTS_LOCKED`).
+  - Mở endpoint Streamable HTTP `POST/GET/DELETE /mcp` (`@modelcontextprotocol/server` v2 stateless) với 10 tool soạn/cập nhật/xem đề 6 kỹ năng & Full Test (mặc định `draft`, tự hạ `draft` khi thiếu media ở Reading diagram / Listening / map, không có tool xoá), 1 resource catalog, 2 prompt mẫu; siết fail-closed auth (`role = 'teacher'`, `TEACHER_EMAILS`, `emailVerified`, `canPublishGrade`), kiểm tra `Origin`, và giới hạn body `512 KiB`.
+  - Thêm thẻ **Kết nối Claude Desktop (MCP)** tại `/teacher/profile` tạo/thu hồi mã, che secret mặc định một lần duy nhất, sao chép `claude_desktop_config.json`, và hướng dẫn cài đặt 3 bước tại `docs/claude-desktop-mcp.md` (#1029).
 - **Reup cloud recording Zoom lên bucket R2 private, tự xoá sau 90 ngày và phát ngay trong app (`packages/db`, `packages/api`, `packages/infra`, `apps/server`, `apps/web`, `apps/student`):** cron `*/10` và nút `Đồng bộ recording` tải 1 file MP4 chính sang bucket `recordings` (migration `0098`), commit D1 xong mới đưa bản gốc Zoom vào Trash; lỗi tải thì giữ link Zoom dự phòng (#994).
 
 ### Fixed
@@ -26,7 +30,8 @@ Quy ước khi cập nhật:
 - **Bảo vệ recording trước khi phát hành (#994):** không cho gán link tay (kể cả để trống) khi video R2 còn hạn (`409 RECORDING_LOCKED`, ẩn nút `Gán link tay`); không Trash bản gốc Zoom khi buổi có nhiều đoạn MP4; email nhắc hạn 06:00 (giờ VN) chạy trước lượt đồng bộ recording. Phần còn lại theo dõi ở #1015 và #1016.
 
 ### Removed
-- **Gỡ 2 mục dư thừa `Khoá` và `Số buổi đã học` khỏi thẻ thông tin chung của lớp (`ClassInfoCard`) trên `/student/classes/$classId` (`apps/student`, `apps/e2e`, `DESIGN.md`):** thu gọn lưới `<dl>` còn tối đa 4 mục (`Lịch`, `Hình thức`, `Giáo viên` + `mailto:`, `Khai giảng`), dọn props thừa (`held`, `totalSessions`) và icon imports (`BookOpen`, `ClipboardCheck`), giữ nguyên vòng `RingStat` và `JourneySummitCard`, đồng thời sửa `fileURLToPath` cho đường dẫn worktree UTF-8 + bổ sung `classMeta?` allowlist trong `helpers-quiz.ts` và cập nhật `DESIGN.md` (#1023).
+- **Gỡ thẻ đích đến `JourneySummitCard` (`"Đích đến của bạn"`, bộ đếm chặng đã vượt và thanh tiến độ) ở đầu tab `Hành trình học` trên trang chi tiết lớp học viên (`apps/student`, `apps/e2e`, `DESIGN.md`):** tab bắt đầu thẳng bằng thẻ `JourneyNextStopHero` (`"Buổi tiếp theo"`) và `"Lộ trình chinh phục"`, tránh trùng lặp tiến độ buổi học với vòng `RingStat` phía trên (#1027).
+- **Gỡ 2 mục dư thừa `Khoá` và `Số buổi đã học` khỏi thẻ thông tin chung của lớp (`ClassInfoCard`) trên `/student/classes/$classId` (`apps/student`, `apps/e2e`, `DESIGN.md`):** thu gọn lưới `<dl>` còn tối đa 4 mục (`Lịch`, `Hình thức`, `Giáo viên` + `mailto:`, `Khai giảng`), dọn props thừa (`held`, `totalSessions`) và icon imports (`BookOpen`, `ClipboardCheck`), giữ nguyên vòng `RingStat`, đồng thời sửa `fileURLToPath` cho đường dẫn worktree UTF-8 + bổ sung `classMeta?` allowlist trong `helpers-quiz.ts` và cập nhật `DESIGN.md` (#1023).
 
 ## 2026-11-26
 
