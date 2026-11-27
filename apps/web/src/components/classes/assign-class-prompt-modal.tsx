@@ -14,7 +14,7 @@ import { ClozeStemText } from "@teacher-os/ui/components/assignments/cloze-stem"
 import { OptionBankList } from "@teacher-os/ui/components/assignments/option-bank-list";
 import { PinOverlay } from "@teacher-os/ui/components/assignments/pin-overlay";
 import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
-import { Check, ChevronDown, Search, X } from "lucide-react";
+import { Check, ChevronDown, Minus, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -35,6 +35,7 @@ import {
 import { StatusTag } from "@/components/assignments/status-tag";
 import { KernelSubmitNotice } from "@/components/modals/kernel-submit-notice";
 import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import {
@@ -293,6 +294,14 @@ export function AssignClassPromptModal({
 	const allSelectableSelected =
 		maxSelectableCount > 0 &&
 		visibleSelectedStudentIds.length === maxSelectableCount;
+	const isPartiallySelected =
+		visibleSelectedStudentIds.length > 0 && !allSelectableSelected;
+	const selectAllRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		if (selectAllRef.current) {
+			selectAllRef.current.indeterminate = isPartiallySelected;
+		}
+	}, [isPartiallySelected]);
 	const willAssignWholeClass =
 		allSelectableSelected && enrolledStudents.length <= MAX_STUDENTS_PER_ASSIGN;
 	const isReassign = promptOk && previousAssignment !== null;
@@ -867,25 +876,44 @@ export function AssignClassPromptModal({
 					</div>
 
 					{/* Danh sách học viên nhận bài */}
-					<div className="flex flex-col gap-2">
+					<fieldset
+						aria-labelledby="assignment-students-heading"
+						className="flex min-w-0 flex-col gap-2 border-0 p-0"
+					>
 						<div className="flex flex-wrap items-center justify-between gap-2">
-							<div className="flex items-center gap-1.5">
-								<h4 className="font-semibold text-[15px] tracking-tight">
-									Học viên nhận bài
-								</h4>
+							<h4
+								id="assignment-students-heading"
+								className="font-semibold text-[15px] tracking-tight"
+							>
+								Học viên nhận bài
+							</h4>
+							<div
+								aria-live="polite"
+								aria-atomic="true"
+								className="flex flex-wrap items-center gap-1.5"
+							>
 								<span className="text-muted-foreground text-xs tabular-nums">
 									({visibleSelectedStudentIds.length}/{enrolledStudents.length})
 								</span>
+								{enrolledStudents.length > 0 && (
+									<Badge
+										data-testid="assign-students-scope-badge"
+										variant={
+											willAssignWholeClass
+												? "default"
+												: visibleSelectedStudentIds.length === 0
+													? "warn"
+													: "outline"
+										}
+									>
+										{willAssignWholeClass
+											? "Cả lớp"
+											: visibleSelectedStudentIds.length === 0
+												? "Chưa chọn"
+												: "Chọn lọc"}
+									</Badge>
+								)}
 							</div>
-							{enrolledStudents.length > 0 && (
-								<button
-									type="button"
-									onClick={handleToggleAllStudents}
-									className="rounded-xs font-medium text-muted-foreground text-xs outline-none hover:text-foreground focus-visible:shadow-[var(--focus-ring)]"
-								>
-									{allSelectableSelected ? "Bỏ chọn tất cả" : "Chọn tất cả"}
-								</button>
-							)}
 						</div>
 
 						{enrolledStudents.length > MAX_STUDENTS_PER_ASSIGN && (
@@ -927,52 +955,98 @@ export function AssignClassPromptModal({
 								)}
 							</div>
 						) : (
-							<div className="flex max-h-52 flex-col divide-y divide-border overflow-y-auto rounded-lg border border-border bg-card">
-								{enrolledStudents.map((s) => {
-									const isChecked = visibleSelectedStudentIds.includes(s.id);
-									const isDisabled =
-										!isChecked &&
-										visibleSelectedStudentIds.length >= MAX_STUDENTS_PER_ASSIGN;
-									return (
-										<label
-											key={s.id}
-											className={cn(
-												"flex items-center gap-3 p-3 transition-colors",
-												isDisabled
-													? "cursor-not-allowed opacity-50"
-													: "cursor-pointer hover:bg-muted/50",
-											)}
-										>
+							<div className="overflow-hidden rounded-lg border border-border bg-card">
+								<div className="flex flex-wrap items-center justify-between gap-2 border-border border-b bg-muted/40 px-3 py-2.5">
+									<label className="flex cursor-pointer select-none items-center gap-3 font-medium text-foreground text-sm">
+										<span className="relative inline-flex size-4 shrink-0 items-center justify-center">
 											<input
+												ref={selectAllRef}
 												type="checkbox"
-												checked={isChecked}
-												disabled={isDisabled}
-												onChange={(e) =>
-													handleStudentToggle(s.id, e.target.checked)
-												}
-												className="peer sr-only"
-											/>
-											<span
-												aria-hidden="true"
+												checked={allSelectableSelected}
+												aria-checked={isPartiallySelected ? "mixed" : undefined}
+												onChange={handleToggleAllStudents}
 												className={cn(
-													"grid size-4 shrink-0 place-items-center rounded-sm border transition-colors peer-focus-visible:shadow-[var(--focus-ring)]",
-													isChecked
-														? "border-primary bg-primary text-primary-foreground"
-														: "border-input bg-background",
+													"size-4 shrink-0 cursor-pointer appearance-none rounded-sm border outline-none transition-colors focus-visible:shadow-[var(--focus-ring)] forced-colors:appearance-auto",
+													allSelectableSelected || isPartiallySelected
+														? "border-primary bg-primary"
+														: "border-input bg-background dark:bg-input/30",
+												)}
+											/>
+											{allSelectableSelected ? (
+												<Check
+													aria-hidden="true"
+													className="pointer-events-none absolute size-3 text-primary-foreground forced-colors:hidden"
+												/>
+											) : isPartiallySelected ? (
+												<Minus
+													aria-hidden="true"
+													className="pointer-events-none absolute size-3 text-primary-foreground forced-colors:hidden"
+												/>
+											) : null}
+										</span>
+										<span>Chọn tất cả</span>
+									</label>
+									<span className="text-muted-foreground text-xs">
+										{allSelectableSelected
+											? "Bấm để bỏ chọn hết"
+											: "Bấm để chọn tất cả"}
+									</span>
+								</div>
+								<div className="flex max-h-52 flex-col divide-y divide-border overflow-y-auto">
+									{enrolledStudents.map((s) => {
+										const isChecked = visibleSelectedStudentIds.includes(s.id);
+										const isDisabled =
+											!isChecked &&
+											visibleSelectedStudentIds.length >=
+												MAX_STUDENTS_PER_ASSIGN;
+										return (
+											<label
+												key={s.id}
+												className={cn(
+													"flex items-center gap-3 p-3 transition-colors",
+													isDisabled
+														? "cursor-not-allowed opacity-50"
+														: "cursor-pointer hover:bg-muted/50",
 												)}
 											>
-												{isChecked && <Check className="size-3" />}
-											</span>
-											<Avatar text={s.avatar} size="sm" />
-											<span className="min-w-0 truncate font-medium text-foreground text-sm">
-												{s.name}
-											</span>
-										</label>
-									);
-								})}
+												<span className="relative inline-flex size-4 shrink-0 items-center justify-center">
+													<input
+														type="checkbox"
+														checked={isChecked}
+														disabled={isDisabled}
+														onChange={(e) =>
+															handleStudentToggle(s.id, e.target.checked)
+														}
+														className={cn(
+															"size-4 shrink-0 appearance-none rounded-sm border outline-none transition-colors focus-visible:shadow-[var(--focus-ring)] forced-colors:appearance-auto",
+															isDisabled
+																? "cursor-not-allowed"
+																: "cursor-pointer",
+															isChecked
+																? "border-primary bg-primary"
+																: "border-input bg-background dark:bg-input/30",
+														)}
+													/>
+													{isChecked && (
+														<Check
+															aria-hidden="true"
+															className="pointer-events-none absolute size-3 text-primary-foreground forced-colors:hidden"
+														/>
+													)}
+												</span>
+												<span aria-hidden="true" className="shrink-0">
+													<Avatar text={s.avatar} size="sm" />
+												</span>
+												<span className="min-w-0 truncate font-medium text-foreground text-sm">
+													{s.name}
+												</span>
+											</label>
+										);
+									})}
+								</div>
 							</div>
 						)}
-					</div>
+					</fieldset>
 				</div>
 			</div>
 		</Modal>
