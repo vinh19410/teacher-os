@@ -768,6 +768,211 @@ describe("student detail", () => {
 			]);
 		});
 
+		it("renames Band column to Điểm and renders auto-graded X/Y (incl. 0/N, late, flip-first) and hybrid scores (#977)", async () => {
+			vi.useFakeTimers({ toFake: ["Date"] });
+			vi.setSystemTime(FIXED_NOW);
+			vi.unstubAllGlobals();
+			startKernelServer(
+				snapshotFixture({
+					classes: [classRow({ id: "cl-1", name: "IELTS Foundation 5.5" })],
+					students: [studentRow({ id: "st-1", name: "Grok Test Student" })],
+					assignmentPrompts: [
+						promptRow({
+							id: "pr-grammar",
+							skill: "grammar",
+							part: "g1",
+							type: "mcq",
+						}),
+						promptRow({
+							id: "pr-hybrid",
+							skill: "grammar",
+							part: "g1",
+							type: "mcq",
+							writing: {
+								part: "task2",
+								type: "opinion",
+								prompt: "<p>Discuss technology.</p>",
+							},
+						}),
+						promptRow({ id: "pr-writing", skill: "writing" }),
+					],
+					classAssignments: [
+						classAssignmentRow({
+							id: "ca-mcq-3",
+							promptId: "pr-grammar",
+							hasGradableTask: false,
+							title: "Grammar quick check 3/3",
+							due: "2026-11-30",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: "2026-11-25T10:00:00.000Z",
+									attemptId: "att-g3",
+									gradedAt: null,
+									band: null,
+									correctCount: 3,
+									totalQuestions: 3,
+								},
+							],
+						}),
+						classAssignmentRow({
+							id: "ca-mcq-0",
+							promptId: "pr-grammar",
+							hasGradableTask: false,
+							title: "Grammar zero score",
+							due: "2026-11-30",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: "2026-11-25T10:00:00.000Z",
+									attemptId: "att-g0",
+									gradedAt: null,
+									band: null,
+									correctCount: 0,
+									totalQuestions: 3,
+								},
+							],
+						}),
+						classAssignmentRow({
+							id: "ca-mcq-late",
+							promptId: "pr-grammar",
+							hasGradableTask: false,
+							title: "Grammar late 2/3",
+							due: "2026-11-20",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: "2026-11-22T10:00:00.000Z",
+									attemptId: "att-glate",
+									gradedAt: null,
+									band: null,
+									correctCount: 2,
+									totalQuestions: 3,
+								},
+							],
+						}),
+						classAssignmentRow({
+							id: "ca-mcq-flip",
+							promptId: "pr-grammar",
+							hasGradableTask: false,
+							title: "Grammar flip-first",
+							due: "2026-11-20",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: null,
+									attemptId: "att-gflip",
+									gradedAt: null,
+									band: null,
+									correctCount: 3,
+									totalQuestions: 3,
+								},
+							],
+						}),
+						classAssignmentRow({
+							id: "ca-hybrid-awaiting",
+							promptId: "pr-hybrid",
+							hasGradableTask: true,
+							title: "Hybrid awaiting Writing",
+							due: "2026-11-30",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: "2026-11-25T10:00:00.000Z",
+									attemptId: "att-ha",
+									gradedAt: null,
+									band: null,
+									correctCount: 2,
+									totalQuestions: 3,
+								},
+							],
+						}),
+						classAssignmentRow({
+							id: "ca-hybrid-flip",
+							promptId: "pr-hybrid",
+							hasGradableTask: true,
+							title: "Hybrid flip-first past due",
+							due: "2026-11-20",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: null,
+									attemptId: "att-hflip",
+									gradedAt: null,
+									band: null,
+									correctCount: 2,
+									totalQuestions: 3,
+								},
+							],
+						}),
+						classAssignmentRow({
+							id: "ca-hybrid-graded",
+							promptId: "pr-hybrid",
+							hasGradableTask: true,
+							title: "Hybrid graded",
+							due: "2026-11-30",
+							targets: [
+								{
+									studentId: "st-1",
+									submittedAt: "2026-11-25T10:00:00.000Z",
+									attemptId: "att-hg",
+									gradedAt: "2026-11-25T12:00:00.000Z",
+									band: 6.5,
+									correctCount: 2,
+									totalQuestions: 3,
+								},
+							],
+						}),
+					],
+				}),
+				notFoundPlacementHandler,
+			);
+			routerState.params = { studentId: "st-1" };
+			renderWithKernel(<StudentDetail />);
+
+			fireEvent.click(await screen.findByRole("tab", { name: "Bài tập" }));
+
+			const headers = screen
+				.getAllByRole("columnheader")
+				.map((th) => th.textContent?.trim());
+			expect(headers).toEqual([
+				"Bài tập",
+				"Loại",
+				"Hạn",
+				"Điểm",
+				"Trạng thái",
+				"",
+			]);
+
+			expect(rowCellsByTitle("Grammar quick check 3/3").slice(3, 5)).toEqual([
+				"3/3",
+				"Tự chấm",
+			]);
+			expect(rowCellsByTitle("Grammar zero score").slice(3, 5)).toEqual([
+				"0/3",
+				"Tự chấm",
+			]);
+			expect(rowCellsByTitle("Grammar late 2/3").slice(3, 5)).toEqual([
+				"2/3",
+				"Tự chấm · trễ hạn",
+			]);
+			expect(rowCellsByTitle("Grammar flip-first").slice(3, 5)).toEqual([
+				"3/3",
+				"Tự chấm",
+			]);
+			expect(rowCellsByTitle("Hybrid awaiting Writing").slice(3, 5)).toEqual([
+				"2/3",
+				"Đã nộp",
+			]);
+			expect(rowCellsByTitle("Hybrid flip-first past due").slice(3, 5)).toEqual(
+				["2/3", "Đã nộp"],
+			);
+			expect(rowCellsByTitle("Hybrid graded").slice(3, 5)).toEqual([
+				"Band 6.5 · 2/3",
+				"Đã chấm",
+			]);
+		});
+
 		it("opens submitted auto-graded and manual rows on click or Enter without nested Link, ignores unsubmitted rows, and honors ?tab=assign (#978)", async () => {
 			vi.useFakeTimers({ toFake: ["Date"] });
 			vi.setSystemTime(FIXED_NOW);

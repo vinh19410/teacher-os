@@ -583,7 +583,7 @@ function ClassDetailRoute() {
 							classId={cls.id}
 						/>
 					) : (
-						<div className="grid gap-6 xl:grid-cols-2 xl:items-start">
+						<div className="grid grid-cols-1 gap-6 xl:grid-cols-2 xl:items-start [&>*]:min-w-0">
 							<ClassSessionsSection
 								cls={cls}
 								lessons={classLessonsForClass}

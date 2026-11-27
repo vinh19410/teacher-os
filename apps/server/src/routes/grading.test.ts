@@ -2690,6 +2690,560 @@ describe("TOS-33 (#481) — vai TA, publish version, ai-retry", () => {
 	});
 });
 
+describe("Snapshot objective score (#977)", () => {
+	let app: ReturnType<typeof buildApp>;
+	let libsql: Db;
+
+	const THREE_QUESTIONS = JSON.stringify([
+		{ stem: "Q1", opts: ["a", "b"], answer: "A", alts: "", pin: null },
+		{ stem: "Q2", opts: ["a", "b"], answer: "B", alts: "", pin: null },
+		{ stem: "Q3", opts: ["a", "b"], answer: "A", alts: "", pin: null },
+	]);
+	const TWO_QUESTIONS = JSON.stringify([
+		{ stem: "Q1", opts: ["a", "b"], answer: "A", alts: "", pin: null },
+		{ stem: "Q2", opts: ["a", "b"], answer: "B", alts: "", pin: null },
+	]);
+
+	beforeAll(async () => {
+		const client = createClient({ url: "file::memory:" });
+		const db = drizzle(client, { schema });
+		await migrate(db, { migrationsFolder: MIGRATIONS_DIR });
+		libsql = db as unknown as Db;
+
+		await libsql.insert(schema.organization).values([
+			{ id: "org-obj", name: "Obj Academy" },
+			{ id: "org-obj-2", name: "Other Academy" },
+		]);
+		await libsql.insert(schema.user).values({
+			id: "t-1",
+			name: "Cô Lan",
+			email: "lan-obj@test.local",
+			role: "teacher",
+		});
+		await libsql.insert(schema.membership).values({
+			id: "mem-obj",
+			orgId: "org-obj",
+			userId: "t-1",
+			role: "teacher",
+		});
+		await libsql.insert(schema.student).values([
+			{
+				id: "st-obj-1",
+				orgId: "org-obj",
+				name: "Grok Test Student",
+				email: "grok@test.local",
+				phone: "0901000001",
+			},
+			{
+				id: "demo-student:org-obj",
+				orgId: "org-obj",
+				name: "Demo Student",
+				email: "demo@test.local",
+				phone: "0901000099",
+			},
+		]);
+		await libsql.insert(schema.classTable).values({
+			id: "cl-obj",
+			orgId: "org-obj",
+			name: "IELTS Foundation 5.5",
+			level: "IELTS 5.5",
+			mode: "Online",
+			schedule: "T2 19:00",
+			sessionsDone: 0,
+			sessionsTotal: 12,
+			status: "active",
+		});
+		await libsql.insert(schema.assignmentPrompt).values([
+			{
+				id: "pr-grammar",
+				orgId: "org-obj",
+				task: "g1",
+				genre: "",
+				skill: "grammar",
+				part: "g1",
+				type: "mcq",
+				title: "Grammar quick check",
+				prompt: "",
+				questions: THREE_QUESTIONS,
+				optionBank: "[]",
+				note: "",
+				status: "ready",
+			},
+			{
+				id: "pr-reading",
+				orgId: "org-obj",
+				task: "p1",
+				genre: "",
+				skill: "reading",
+				part: "p1",
+				type: "mcq",
+				title: "Reading zero score",
+				prompt: "",
+				questions: THREE_QUESTIONS,
+				optionBank: "[]",
+				note: "",
+				status: "ready",
+			},
+			{
+				id: "pr-writing",
+				orgId: "org-obj",
+				task: "task2",
+				genre: "essay",
+				skill: "writing",
+				part: "task2",
+				type: "opinion",
+				title: "Writing Task 2",
+				prompt: "<p>Write an essay.</p>",
+				questions: "[]",
+				optionBank: "[]",
+				note: "",
+				status: "ready",
+			},
+			{
+				id: "pr-hybrid",
+				orgId: "org-obj",
+				task: "g1",
+				genre: "",
+				skill: "grammar",
+				part: "g1",
+				type: "mcq",
+				title: "Hybrid Grammar + Writing",
+				prompt: "",
+				questions: TWO_QUESTIONS,
+				optionBank: "[]",
+				note: "",
+				status: "ready",
+				writingPart: "task2",
+				writingType: "opinion",
+				writingPrompt: "<p>Discuss both views.</p>",
+			},
+			{
+				id: "pr-lib-writing",
+				orgId: "org-obj",
+				task: "task2",
+				genre: "essay",
+				skill: "writing",
+				part: "task2",
+				type: "opinion",
+				title: "Library Materialized Writing",
+				prompt: "<p>Library essay.</p>",
+				questions: "[]",
+				optionBank: "[]",
+				note: "",
+				status: "ready",
+				libraryRef: "lib-ref-1",
+			},
+		]);
+
+		const caSpecs: Array<{
+			id: string;
+			promptId: string;
+			title: string;
+			submittedAt: string | null;
+			includeDemo?: boolean;
+		}> = [
+			{
+				id: "ca-grammar-3",
+				promptId: "pr-grammar",
+				title: "Grammar 3/3",
+				submittedAt: "2026-11-26T08:29:00.000Z",
+				includeDemo: true,
+			},
+			{
+				id: "ca-reading-0",
+				promptId: "pr-reading",
+				title: "Reading 0/3",
+				submittedAt: "2026-11-26T08:30:00.000Z",
+			},
+			{
+				id: "ca-writing-0",
+				promptId: "pr-writing",
+				title: "Writing pure",
+				submittedAt: "2026-11-26T08:31:00.000Z",
+			},
+			{
+				id: "ca-writing-legacy-q",
+				promptId: "pr-writing",
+				title: "Writing with stale questions",
+				submittedAt: "2026-11-26T08:31:30.000Z",
+			},
+			{
+				id: "ca-hybrid",
+				promptId: "pr-hybrid",
+				title: "Hybrid Grammar + Writing",
+				submittedAt: "2026-11-26T08:32:00.000Z",
+			},
+			{
+				id: "ca-bad-json",
+				promptId: "pr-grammar",
+				title: "Corrupt JSON",
+				submittedAt: "2026-11-26T08:33:00.000Z",
+			},
+			{
+				id: "ca-object-json",
+				promptId: "pr-grammar",
+				title: "Non-array JSON",
+				submittedAt: "2026-11-26T08:34:00.000Z",
+			},
+			{
+				id: "ca-non-obj-array",
+				promptId: "pr-grammar",
+				title: "Array of non-objects",
+				submittedAt: "2026-11-26T08:35:00.000Z",
+			},
+			{
+				id: "ca-mixed-array",
+				promptId: "pr-grammar",
+				title: "Array with 1 valid object + null",
+				submittedAt: "2026-11-26T08:36:00.000Z",
+			},
+			{
+				id: "ca-overflow-count",
+				promptId: "pr-grammar",
+				title: "Correct > total",
+				submittedAt: "2026-11-26T08:37:00.000Z",
+			},
+			{
+				id: "ca-flip-first",
+				promptId: "pr-grammar",
+				title: "Flip-first quiz",
+				submittedAt: null,
+			},
+			{
+				id: "ca-lib-writing",
+				promptId: "pr-lib-writing",
+				title: "Library Writing",
+				submittedAt: "2026-11-26T08:38:00.000Z",
+			},
+		];
+
+		for (const item of caSpecs) {
+			await libsql.insert(schema.classAssignment).values({
+				id: item.id,
+				orgId: "org-obj",
+				classId: "cl-obj",
+				promptId: item.promptId,
+				title: item.title,
+				due: "2026-11-30",
+			});
+			await libsql.insert(schema.classAssignmentTarget).values({
+				id: `cat-${item.id}`,
+				orgId: "org-obj",
+				assignmentId: item.id,
+				studentId: "st-obj-1",
+				submittedAt: item.submittedAt,
+			});
+			if (item.includeDemo) {
+				await libsql.insert(schema.classAssignmentTarget).values({
+					id: `cat-${item.id}-demo`,
+					orgId: "org-obj",
+					assignmentId: item.id,
+					studentId: "demo-student:org-obj",
+					submittedAt: item.submittedAt,
+				});
+			}
+		}
+
+		await libsql.insert(schema.quizAttempt).values([
+			{
+				id: "att-grammar-3",
+				orgId: "org-obj",
+				assignmentId: "ca-grammar-3",
+				studentId: "st-obj-1",
+				status: "submitted",
+				questionsSnapshot: THREE_QUESTIONS,
+				correctCount: 3,
+				submittedAt: new Date("2026-11-26T08:29:00.000Z"),
+			},
+			{
+				id: "att-grammar-3-demo",
+				orgId: "org-obj",
+				assignmentId: "ca-grammar-3",
+				studentId: "demo-student:org-obj",
+				status: "submitted",
+				questionsSnapshot: THREE_QUESTIONS,
+				correctCount: 3,
+				submittedAt: new Date("2026-11-26T08:29:00.000Z"),
+			},
+			{
+				id: "att-reading-0",
+				orgId: "org-obj",
+				assignmentId: "ca-reading-0",
+				studentId: "st-obj-1",
+				status: "submitted",
+				questionsSnapshot: THREE_QUESTIONS,
+				correctCount: 0,
+				submittedAt: new Date("2026-11-26T08:30:00.000Z"),
+			},
+			{
+				id: "att-writing-0",
+				orgId: "org-obj",
+				assignmentId: "ca-writing-0",
+				studentId: "st-obj-1",
+				status: "submitted",
+				questionsSnapshot: "[]",
+				correctCount: 0,
+				essay: "Essay body",
+				submittedAt: new Date("2026-11-26T08:31:00.000Z"),
+			},
+			{
+				id: "att-writing-legacy-q",
+				orgId: "org-obj",
+				assignmentId: "ca-writing-legacy-q",
+				studentId: "st-obj-1",
+				status: "submitted",
+				questionsSnapshot: THREE_QUESTIONS,
+				correctCount: 0,
+				essay: "Essay body",
+				submittedAt: new Date("2026-11-26T08:31:30.000Z"),
+			},
+			{
+				id: "att-hybrid",
+				orgId: "org-obj",
+				assignmentId: "ca-hybrid",
+				studentId: "st-obj-1",
+				status: "submitted",
+				questionsSnapshot: TWO_QUESTIONS,
+				correctCount: 1,
+				essay: "Hybrid essay body",
+				gradeScores: { task: 6, coherence: 6.5, lexical: 6, grammar: 6.5 },
+				gradedAt: new Date("2026-11-26T10:00:00.000Z"),
+				submittedAt: new Date("2026-11-26T08:32:00.000Z"),
+			},
+			{
+				id: "att-bad-json",
+				orgId: "org-obj",
+				assignmentId: "ca-bad-json",
+				studentId: "st-obj-1",
+				status: "submitted",
+				questionsSnapshot: "{bad-json",
+				correctCount: 1,
+				submittedAt: new Date("2026-11-26T08:33:00.000Z"),
+			},
+			{
+				id: "att-object-json",
+				orgId: "org-obj",
+				assignmentId: "ca-object-json",
+				studentId: "st-obj-1",
+				status: "submitted",
+				questionsSnapshot: '{"a":1}',
+				correctCount: 1,
+				submittedAt: new Date("2026-11-26T08:34:00.000Z"),
+			},
+			{
+				id: "att-non-obj-array",
+				orgId: "org-obj",
+				assignmentId: "ca-non-obj-array",
+				studentId: "st-obj-1",
+				status: "submitted",
+				questionsSnapshot: "[null, 123]",
+				correctCount: 0,
+				submittedAt: new Date("2026-11-26T08:35:00.000Z"),
+			},
+			{
+				id: "att-mixed-array",
+				orgId: "org-obj",
+				assignmentId: "ca-mixed-array",
+				studentId: "st-obj-1",
+				status: "submitted",
+				questionsSnapshot: JSON.stringify([
+					{ stem: "Q1", opts: ["a"], answer: "A", alts: "", pin: null },
+					null,
+				]),
+				correctCount: 1,
+				submittedAt: new Date("2026-11-26T08:36:00.000Z"),
+			},
+			{
+				id: "att-overflow-count",
+				orgId: "org-obj",
+				assignmentId: "ca-overflow-count",
+				studentId: "st-obj-1",
+				status: "submitted",
+				questionsSnapshot: THREE_QUESTIONS,
+				correctCount: 5,
+				submittedAt: new Date("2026-11-26T08:37:00.000Z"),
+			},
+			{
+				id: "att-flip-first",
+				orgId: "org-obj",
+				assignmentId: "ca-flip-first",
+				studentId: "st-obj-1",
+				status: "submitted",
+				questionsSnapshot: THREE_QUESTIONS,
+				correctCount: 2,
+				submittedAt: new Date("2026-11-26T09:15:00.000Z"),
+			},
+		]);
+
+		// Cross-tenant row in org-obj-2 to lock orgId isolation on prompt joins.
+		await libsql.insert(schema.student).values({
+			id: "st-obj-other",
+			orgId: "org-obj-2",
+			name: "Other Org Student",
+			email: "other@test.local",
+			phone: "0901000002",
+		});
+		await libsql.insert(schema.classTable).values({
+			id: "cl-obj-other",
+			orgId: "org-obj-2",
+			name: "Other Org Class",
+			level: "IELTS 6.0",
+			mode: "Online",
+			schedule: "T4 19:00",
+			sessionsDone: 0,
+			sessionsTotal: 12,
+			status: "active",
+		});
+		await libsql.insert(schema.assignmentPrompt).values({
+			id: "pr-grammar-other",
+			orgId: "org-obj-2",
+			task: "g1",
+			genre: "",
+			skill: "grammar",
+			part: "g1",
+			type: "mcq",
+			title: "Other Org Grammar",
+			prompt: "",
+			questions: THREE_QUESTIONS,
+			optionBank: "[]",
+			note: "",
+			status: "ready",
+		});
+		await libsql.insert(schema.classAssignment).values({
+			id: "ca-other-org",
+			orgId: "org-obj-2",
+			classId: "cl-obj-other",
+			promptId: "pr-grammar-other",
+			title: "Other Org Quiz",
+			due: "2026-11-30",
+		});
+		await libsql.insert(schema.classAssignmentTarget).values({
+			id: "cat-other-org",
+			orgId: "org-obj-2",
+			assignmentId: "ca-other-org",
+			studentId: "st-obj-other",
+			submittedAt: "2026-11-26T08:40:00.000Z",
+		});
+		await libsql.insert(schema.quizAttempt).values({
+			id: "att-other-org",
+			orgId: "org-obj-2",
+			assignmentId: "ca-other-org",
+			studentId: "st-obj-other",
+			status: "submitted",
+			questionsSnapshot: THREE_QUESTIONS,
+			correctCount: 3,
+			submittedAt: new Date("2026-11-26T08:40:00.000Z"),
+		});
+
+		app = buildApp({
+			getDb: () => libsql,
+			corsOrigin: CORS_ORIGINS,
+			getSessionUser: sessionFor,
+			authHandler: () => new Response("auth OK"),
+		});
+	});
+
+	test("projects validated objective scores, hasGradableTask (incl. libraryRef), submittedAt fallback, and filters demo-student", async () => {
+		const res = await app.request("/api/kernel", { headers: TEACHER });
+		expect(res.status).toBe(200);
+		const snapshot = (await res.json()) as {
+			assignmentPrompts: Array<{ id: string }>;
+			classAssignments: Array<{
+				id: string;
+				hasGradableTask?: boolean;
+				targets: Array<{
+					studentId: string;
+					submittedAt: string | null;
+					attemptId: string | null;
+					gradedAt: string | null;
+					band: number | null;
+					correctCount?: number | null;
+					totalQuestions?: number | null;
+				}>;
+			}>;
+		};
+
+		const byId = (id: string) =>
+			snapshot.classAssignments.find((ca) => ca.id === id);
+
+		// Pure MCQ 3/3 + demo-student filtered out
+		const grammar3 = byId("ca-grammar-3");
+		expect(grammar3?.hasGradableTask).toBe(false);
+		expect(grammar3?.targets).toHaveLength(1);
+		expect(grammar3?.targets[0]).toMatchObject({
+			studentId: "st-obj-1",
+			attemptId: "att-grammar-3",
+			band: null,
+			gradedAt: null,
+			correctCount: 3,
+			totalQuestions: 3,
+		});
+
+		// Pure MCQ 0/3 preserves zero score
+		expect(byId("ca-reading-0")?.targets[0]).toMatchObject({
+			correctCount: 0,
+			totalQuestions: 3,
+		});
+
+		// Pure Writing (0 + "[]" and stale questionsSnapshot) never emits 0/0 or fake quiz score
+		expect(byId("ca-writing-0")?.hasGradableTask).toBe(true);
+		expect(byId("ca-writing-0")?.targets[0]).toMatchObject({
+			correctCount: null,
+			totalQuestions: null,
+		});
+		expect(byId("ca-writing-legacy-q")?.targets[0]).toMatchObject({
+			correctCount: null,
+			totalQuestions: null,
+		});
+
+		// Hybrid Grammar + Writing returns both objective score and graded band
+		const hybrid = byId("ca-hybrid");
+		expect(hybrid?.hasGradableTask).toBe(true);
+		expect(hybrid?.targets[0]).toMatchObject({
+			correctCount: 1,
+			totalQuestions: 2,
+			band: 6.5,
+		});
+		expect(hybrid?.targets[0]?.gradedAt).toBeTruthy();
+
+		// Corrupt JSON, non-array JSON, non-object array, and correctCount > totalQuestions → null
+		for (const badId of [
+			"ca-bad-json",
+			"ca-object-json",
+			"ca-non-obj-array",
+			"ca-overflow-count",
+		]) {
+			expect(byId(badId)?.targets[0]).toMatchObject({
+				correctCount: null,
+				totalQuestions: null,
+			});
+		}
+
+		// Mixed array [validObj, null] counts only object elements (parity with parseQuizQuestions)
+		expect(byId("ca-mixed-array")?.targets[0]).toMatchObject({
+			correctCount: 1,
+			totalQuestions: 1,
+		});
+
+		// Flip-first falls back to quizAttempt.submittedAt ISO string
+		expect(byId("ca-flip-first")?.targets[0]).toMatchObject({
+			attemptId: "att-flip-first",
+			submittedAt: "2026-11-26T09:15:00.000Z",
+			correctCount: 2,
+			totalQuestions: 3,
+		});
+
+		// Library materialized prompt absent from snapshot.assignmentPrompts still carries hasGradableTask: true
+		expect(
+			snapshot.assignmentPrompts.some((p) => p.id === "pr-lib-writing"),
+		).toBe(false);
+		expect(byId("ca-lib-writing")?.hasGradableTask).toBe(true);
+
+		// Cross-tenant assignment from org-obj-2 must never leak into org-obj snapshot
+		expect(byId("ca-other-org")).toBeUndefined();
+	});
+});
+
 describe("teacher auto-graded submission review & v2 queue (/api/grading #978)", () => {
 	let app: ReturnType<typeof buildApp>;
 	let libsql: Db;

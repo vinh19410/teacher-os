@@ -833,4 +833,360 @@ describe("ClassAssignmentsTab (#208, #717)", () => {
 		);
 		expect(screen.queryByRole("button", { name: /Giao bổ sung/ })).toBeNull();
 	});
+
+	it("renders Tự chấm · X/Y for pure auto-graded quizzes (incl. 0/N, late, flip-first), Trắc nghiệm · X/Y for hybrid, and skips invalid/unsubmitted (#977)", () => {
+		const grammarPrompt: AssignmentPrompt = {
+			id: "p-grammar",
+			skill: "grammar",
+			part: "g1",
+			type: "mcq",
+			task: "g1",
+			genre: "",
+			title: "Grammar quick check",
+			band: "5.5",
+			source: "",
+			prompt: "",
+			questions: [],
+			note: "",
+			status: "ready",
+			createdAt: "2026-11-20T08:00:00.000Z",
+		};
+		const hybridPrompt: AssignmentPrompt = {
+			id: "p-hybrid-977",
+			skill: "grammar",
+			part: "g1",
+			type: "mcq",
+			task: "g1",
+			genre: "",
+			title: "Hybrid Grammar + Writing",
+			band: "6.5",
+			source: "",
+			prompt: "",
+			questions: [],
+			note: "",
+			status: "ready",
+			writing: {
+				part: "task2",
+				type: "opinion",
+				prompt: "<p>Discuss both views.</p>",
+			},
+			createdAt: "2026-11-20T09:00:00.000Z",
+		};
+
+		const assignments: ClassAssignment[] = [
+			// Pure MCQ on-time 3/3 and 0/3
+			{
+				id: "ca-mcq-ok",
+				classId: "cl-1",
+				promptId: "p-grammar",
+				title: "Grammar 3/3 & 0/3",
+				due: "2030-11-30",
+				note: "",
+				createdAt: "2026-11-26T10:00:00.000Z",
+				targets: [
+					{
+						studentId: "st-1",
+						submittedAt: "2026-11-26T08:29:00.000Z",
+						attemptId: "att-g-1",
+						gradedAt: null,
+						band: null,
+						correctCount: 3,
+						totalQuestions: 3,
+					},
+					{
+						studentId: "st-2",
+						submittedAt: "2026-11-26T08:30:00.000Z",
+						attemptId: "att-g-2",
+						gradedAt: null,
+						band: null,
+						correctCount: 0,
+						totalQuestions: 3,
+					},
+				],
+			},
+			// Pure MCQ late 2/3
+			{
+				id: "ca-mcq-late",
+				classId: "cl-1",
+				promptId: "p-grammar",
+				title: "Grammar Late 2/3",
+				due: "2026-11-20",
+				note: "",
+				createdAt: "2026-11-19T10:00:00.000Z",
+				targets: [
+					{
+						studentId: "st-1",
+						submittedAt: "2026-11-22T08:00:00.000Z",
+						attemptId: "att-g-late",
+						gradedAt: null,
+						band: null,
+						correctCount: 2,
+						totalQuestions: 3,
+					},
+				],
+			},
+			// Pure MCQ invalid/missing score + unsubmitted with stray garbage score
+			{
+				id: "ca-mcq-fallback",
+				classId: "cl-1",
+				promptId: "p-grammar",
+				title: "Grammar Fallback & Unsubmitted",
+				due: "2030-11-30",
+				note: "",
+				createdAt: "2026-11-18T10:00:00.000Z",
+				targets: [
+					{
+						studentId: "st-1",
+						submittedAt: "2026-11-26T08:00:00.000Z",
+						attemptId: "att-g-bad",
+						gradedAt: null,
+						band: null,
+						correctCount: 4,
+						totalQuestions: 3,
+					},
+					{
+						studentId: "st-2",
+						submittedAt: null,
+						attemptId: null,
+						gradedAt: null,
+						band: null,
+						correctCount: 2,
+						totalQuestions: 3,
+					},
+				],
+			},
+			// Pure MCQ flip-first past due (submittedAt: null, attemptId present)
+			{
+				id: "ca-mcq-flip",
+				classId: "cl-1",
+				promptId: "p-grammar",
+				title: "Grammar Flip-First",
+				due: "2020-01-01",
+				note: "",
+				createdAt: "2026-11-17T10:00:00.000Z",
+				targets: [
+					{
+						studentId: "st-1",
+						submittedAt: null,
+						attemptId: "att-g-flip",
+						gradedAt: null,
+						band: null,
+						correctCount: 3,
+						totalQuestions: 3,
+					},
+				],
+			},
+			// Hybrid: st-1 awaiting Writing (flip-first past due), st-2 graded Band 6.5
+			{
+				id: "ca-hybrid-977",
+				classId: "cl-1",
+				promptId: "p-hybrid-977",
+				title: "Hybrid 2/3",
+				due: "2020-01-01",
+				note: "",
+				createdAt: "2026-11-16T10:00:00.000Z",
+				targets: [
+					{
+						studentId: "st-1",
+						submittedAt: null,
+						attemptId: "att-h-flip",
+						gradedAt: null,
+						band: null,
+						correctCount: 2,
+						totalQuestions: 3,
+					},
+					{
+						studentId: "st-2",
+						submittedAt: "2026-11-26T08:00:00.000Z",
+						attemptId: "att-h-graded",
+						gradedAt: "2026-11-26T10:00:00.000Z",
+						band: 6.5,
+						correctCount: 2,
+						totalQuestions: 3,
+					},
+				],
+			},
+			// Writing with invalid band (9.5) + libraryRef assignment missing from assignmentPrompts
+			{
+				id: "ca-invalid-band",
+				classId: "cl-1",
+				promptId: "p-writing",
+				title: "Writing Invalid Band",
+				due: "2030-11-30",
+				note: "",
+				createdAt: "2026-11-15T10:00:00.000Z",
+				targets: [
+					{
+						studentId: "st-1",
+						submittedAt: "2026-11-26T08:00:00.000Z",
+						attemptId: "att-bad-band",
+						gradedAt: "2026-11-26T10:00:00.000Z",
+						band: 9.5,
+					},
+				],
+			},
+			{
+				id: "ca-lib-gradable",
+				classId: "cl-1",
+				promptId: "p-not-in-prompts",
+				hasGradableTask: true,
+				title: "Library Gradable Essay",
+				due: "2030-11-30",
+				note: "",
+				createdAt: "2026-11-14T10:00:00.000Z",
+				targets: [
+					{
+						studentId: "st-1",
+						submittedAt: "2026-11-26T08:00:00.000Z",
+						attemptId: "att-lib-1",
+						gradedAt: null,
+						band: null,
+					},
+				],
+			},
+		];
+
+		currentDataFixture = {
+			classAssignments: assignments,
+			assignmentPrompts: [...testPrompts, grammarPrompt, hybridPrompt],
+			students: testStudents,
+		};
+
+		const { container } = render(
+			<ClassAssignmentsTab
+				classGroup={testClass}
+				onOpenAssignModal={vi.fn()}
+				assignmentsFocus
+			/>,
+		);
+
+		const bodyOf = (id: string) => {
+			const el = container.querySelector(`#assign-body-${id}`);
+			if (!el) throw new Error(`Missing body for ${id}`);
+			return el;
+		};
+
+		const mcqOk = bodyOf("ca-mcq-ok");
+		expect(mcqOk.textContent).toContain("Tự chấm · 3/3");
+		expect(mcqOk.textContent).toContain("Tự chấm · 0/3");
+		expect(mcqOk.textContent).not.toContain("Đã nộp");
+		expect(mcqOk.textContent).not.toContain("Chấm bài");
+		expect(mcqOk.textContent).toContain("Xem bài làm");
+		expect(
+			mcqOk.querySelector('a[href="/grading/att-g-1?from=class"]'),
+		).not.toBeNull();
+
+		const mcqLate = bodyOf("ca-mcq-late");
+		expect(mcqLate.textContent).toContain("Đã nộp · trễ hạn");
+		expect(mcqLate.textContent).toContain("Tự chấm · 2/3");
+
+		const mcqFallback = bodyOf("ca-mcq-fallback");
+		expect(mcqFallback.textContent).toContain("Đã nộp");
+		expect(mcqFallback.textContent).toContain("Chưa nộp");
+		expect(mcqFallback.textContent).not.toContain("Tự chấm");
+
+		const mcqFlip = bodyOf("ca-mcq-flip");
+		expect(mcqFlip.textContent).toContain("Tự chấm · 3/3");
+		expect(mcqFlip.textContent).not.toContain("Chưa có bài nộp");
+		expect(mcqFlip.textContent).not.toContain("Chưa nộp · quá hạn");
+
+		const hybrid = bodyOf("ca-hybrid-977");
+		expect(hybrid.textContent).toContain("Trắc nghiệm · 2/3");
+		expect(hybrid.textContent).toContain("Chấm bài");
+		expect(hybrid.textContent).toContain("Đã chấm · Band 6.5");
+		expect(hybrid.textContent).not.toContain("Tự chấm");
+		expect(hybrid.textContent).not.toContain("Chưa có bài nộp");
+		expect(hybrid.textContent).not.toContain("Chưa nộp · quá hạn");
+
+		const badBand = bodyOf("ca-invalid-band");
+		expect(badBand.textContent).toContain("Chấm bài");
+		expect(badBand.textContent).not.toContain("Band 9.5");
+
+		const libGradable = bodyOf("ca-lib-gradable");
+		expect(libGradable.textContent).toContain("Chấm bài");
+		expect(
+			libGradable.querySelector('a[href="/grading/att-lib-1?from=class"]'),
+		).not.toBeNull();
+	});
+
+	it("defaultOpenIds skips newer auto-graded quiz and opens older pending gradable assignment (#977)", () => {
+		const grammarPrompt: AssignmentPrompt = {
+			id: "p-grammar-only",
+			skill: "grammar",
+			part: "g1",
+			type: "mcq",
+			task: "g1",
+			genre: "",
+			title: "Grammar Auto",
+			band: "5.5",
+			source: "",
+			prompt: "",
+			questions: [],
+			note: "",
+			status: "ready",
+			createdAt: "2026-11-20T08:00:00.000Z",
+		};
+		currentDataFixture = {
+			classAssignments: [
+				{
+					id: "ca-newer-mcq",
+					classId: "cl-1",
+					promptId: "p-grammar-only",
+					hasGradableTask: false,
+					title: "Bài MCQ tự chấm mới hơn",
+					due: "2030-11-30",
+					note: "",
+					createdAt: "2026-11-26T12:00:00.000Z",
+					targets: [
+						{
+							studentId: "st-1",
+							submittedAt: "2026-11-26T12:30:00.000Z",
+							attemptId: "att-mcq",
+							gradedAt: null,
+							band: null,
+							correctCount: 3,
+							totalQuestions: 3,
+						},
+					],
+				},
+				{
+					id: "ca-older-writing",
+					classId: "cl-1",
+					promptId: "p-writing",
+					hasGradableTask: true,
+					title: "Bài Writing chờ chấm cũ hơn",
+					due: "2030-11-30",
+					note: "",
+					createdAt: "2026-11-25T12:00:00.000Z",
+					targets: [
+						{
+							studentId: "st-1",
+							submittedAt: "2026-11-25T13:00:00.000Z",
+							attemptId: "att-w-pending",
+							gradedAt: null,
+							band: null,
+						},
+					],
+				},
+			],
+			assignmentPrompts: [...testPrompts, grammarPrompt],
+			students: testStudents,
+		};
+
+		render(
+			<ClassAssignmentsTab
+				classGroup={testClass}
+				onOpenAssignModal={vi.fn()}
+			/>,
+		);
+
+		const mcqBtn = screen.getByRole("button", {
+			name: /Bài MCQ tự chấm mới hơn/,
+		});
+		const writingBtn = screen.getByRole("button", {
+			name: /Bài Writing chờ chấm cũ hơn/,
+		});
+		expect(mcqBtn.getAttribute("aria-expanded")).toBe("false");
+		expect(writingBtn.getAttribute("aria-expanded")).toBe("true");
+	});
 });

@@ -1,6 +1,9 @@
+import { hasGradableTask } from "@teacher-os/api/lib/ielts-band";
+import { hasValidGradedBand } from "@teacher-os/api/lib/objective-score";
 import { evaluateAssignmentDeadline } from "@teacher-os/api/vietnam-date";
 import type {
 	Assignment,
+	AssignmentPrompt,
 	ClassAssignment,
 	ClassGroup,
 	Lesson,
@@ -336,6 +339,54 @@ export function overdueUnsubmittedSummary(
 	}
 
 	return { targets, students: affectedStudents.size };
+}
+
+/**
+ * Đếm số lượt nộp bài tự luận (`Writing & Speaking`, gồm cả hybrid `+ Writing`)
+ * giao lớp đang mở đã nộp nhưng chưa có điểm Band hợp lệ (#977).
+ * Loại trừ triệt để bài trắc nghiệm tự chấm, bài chưa nộp, lớp `paused`,
+ * học viên ngoài danh sách `students` hợp lệ, và bảng legacy `assignments`
+ * (vốn chỉ lưu `"not-submitted" | "late" | "graded"`).
+ */
+export function ungradedAssignmentsCount(
+	students: readonly Pick<Student, "id">[],
+	classes: readonly Pick<ClassGroup, "id" | "status">[] | undefined,
+	classAssignments: readonly Pick<
+		ClassAssignment,
+		"classId" | "promptId" | "hasGradableTask" | "targets"
+	>[],
+	assignmentPrompts: readonly Pick<
+		AssignmentPrompt,
+		"id" | "skill" | "writing"
+	>[],
+): number {
+	const validStudentIds = new Set(students.map((student) => student.id));
+	if (validStudentIds.size === 0) return 0;
+
+	const pausedIds = pausedClassIdSet(classes);
+	const promptById = new Map(
+		assignmentPrompts.map((prompt) => [prompt.id, prompt]),
+	);
+
+	let count = 0;
+	for (const ca of classAssignments) {
+		if (pausedIds?.has(ca.classId)) continue;
+		const gradable =
+			typeof ca.hasGradableTask === "boolean"
+				? ca.hasGradableTask
+				: (() => {
+						const prompt = promptById.get(ca.promptId);
+						return prompt ? hasGradableTask(prompt) : false;
+					})();
+		if (!gradable) continue;
+		for (const target of ca.targets) {
+			if (!validStudentIds.has(target.studentId)) continue;
+			if (target.submittedAt == null && target.attemptId == null) continue;
+			if (hasValidGradedBand(target)) continue;
+			count += 1;
+		}
+	}
+	return count;
 }
 
 export function formatDashboardLead(now: Date, todayCount: number): string {

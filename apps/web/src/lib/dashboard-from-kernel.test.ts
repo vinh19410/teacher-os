@@ -17,11 +17,13 @@ import {
 	resolveDashboardFocus,
 	sessionTimelineState,
 	studentRiskDetails,
+	ungradedAssignmentsCount,
 	upcomingLessonsThisWeek,
 	vietnamNowMinutes,
 } from "./dashboard-from-kernel";
 import type {
 	Assignment,
+	AssignmentPrompt,
 	ClassAssignment,
 	ClassGroup,
 	Lesson,
@@ -1563,5 +1565,211 @@ describe("overdueUnsubmittedSummary", () => {
 				classAssignments,
 			),
 		).toEqual({ targets: 2, students: 2 });
+	});
+});
+
+describe("ungradedAssignmentsCount (#977)", () => {
+	const students: Pick<Student, "id">[] = [{ id: "s1" }, { id: "s2" }];
+	const classes: Pick<ClassGroup, "id" | "status">[] = [
+		{ id: "cl-active", status: "active" },
+		{ id: "cl-paused", status: "paused" },
+	];
+	const prompts: Pick<AssignmentPrompt, "id" | "skill" | "writing">[] = [
+		{ id: "pr-grammar", skill: "grammar" },
+		{ id: "pr-writing", skill: "writing" },
+		{ id: "pr-speaking", skill: "speaking" },
+		{
+			id: "pr-hybrid",
+			skill: "grammar",
+			writing: { part: "task2", type: "opinion", prompt: "<p>Essay</p>" },
+		},
+	];
+
+	test("counts only submitted ungraded gradable class targets on active classes and excludes auto-graded quizzes, unsubmitted, paused, and unknown students", () => {
+		const classAssignments: ClassAssignment[] = [
+			// Pure MCQ auto-graded 3/3 → excluded (0)
+			classAssignment({
+				id: "ca-mcq",
+				classId: "cl-active",
+				promptId: "pr-grammar",
+				hasGradableTask: false,
+				targets: [
+					{
+						studentId: "s1",
+						submittedAt: "2026-11-26T08:00:00.000Z",
+						attemptId: "att-mcq",
+						gradedAt: null,
+						band: null,
+						correctCount: 3,
+						totalQuestions: 3,
+					},
+				],
+			}),
+			// Submitted Writing awaiting grade → +1
+			// Submitted Writing already graded (band 6.5) → excluded
+			classAssignment({
+				id: "ca-writing",
+				classId: "cl-active",
+				promptId: "pr-writing",
+				targets: [
+					{
+						studentId: "s1",
+						submittedAt: "2026-11-26T08:00:00.000Z",
+						attemptId: "att-w1",
+						gradedAt: null,
+						band: null,
+					},
+					{
+						studentId: "s2",
+						submittedAt: "2026-11-26T08:00:00.000Z",
+						attemptId: "att-w2",
+						gradedAt: "2026-11-26T10:00:00.000Z",
+						band: 6.5,
+					},
+				],
+			}),
+			// Submitted Hybrid with objective 3/3 but Writing ungraded → +1; graded Hybrid → excluded
+			classAssignment({
+				id: "ca-hybrid",
+				classId: "cl-active",
+				promptId: "pr-hybrid",
+				targets: [
+					{
+						studentId: "s1",
+						submittedAt: "2026-11-26T08:00:00.000Z",
+						attemptId: "att-h1",
+						gradedAt: null,
+						band: null,
+						correctCount: 3,
+						totalQuestions: 3,
+					},
+					{
+						studentId: "s2",
+						submittedAt: "2026-11-26T08:00:00.000Z",
+						attemptId: "att-h2",
+						gradedAt: "2026-11-26T10:00:00.000Z",
+						band: 0,
+						correctCount: 2,
+						totalQuestions: 3,
+					},
+				],
+			}),
+			// Malformed band (9.5) on submitted Speaking → still counts (+1)
+			// Flip-first submitted Speaking (submittedAt null, attemptId present) → counts (+1)
+			classAssignment({
+				id: "ca-speaking-edge",
+				classId: "cl-active",
+				promptId: "pr-speaking",
+				targets: [
+					{
+						studentId: "s1",
+						submittedAt: "2026-11-26T08:00:00.000Z",
+						attemptId: "att-s1",
+						gradedAt: "2026-11-26T10:00:00.000Z",
+						band: 9.5,
+					},
+					{
+						studentId: "s2",
+						submittedAt: null,
+						attemptId: "att-s2-flip",
+						gradedAt: null,
+						band: null,
+					},
+				],
+			}),
+			// Library prompt missing from assignmentPrompts but server set hasGradableTask: true → +1
+			classAssignment({
+				id: "ca-lib",
+				classId: "cl-active",
+				promptId: "pr-missing-lib",
+				hasGradableTask: true,
+				targets: [
+					{
+						studentId: "s1",
+						submittedAt: "2026-11-26T08:00:00.000Z",
+						attemptId: "att-lib",
+						gradedAt: null,
+						band: null,
+					},
+				],
+			}),
+			// Unsubmitted Writing, paused class Writing, unknown/demo student, unknown prompt without flag → all excluded
+			classAssignment({
+				id: "ca-unsubmitted",
+				classId: "cl-active",
+				promptId: "pr-writing",
+				targets: [
+					{
+						studentId: "s1",
+						submittedAt: null,
+						attemptId: null,
+						gradedAt: null,
+						band: null,
+					},
+					{
+						studentId: "demo-student:org-1",
+						submittedAt: "2026-11-26T08:00:00.000Z",
+						attemptId: "att-demo",
+						gradedAt: null,
+						band: null,
+					},
+				],
+			}),
+			classAssignment({
+				id: "ca-paused",
+				classId: "cl-paused",
+				promptId: "pr-writing",
+				targets: [
+					{
+						studentId: "s1",
+						submittedAt: "2026-11-26T08:00:00.000Z",
+						attemptId: "att-p",
+						gradedAt: null,
+						band: null,
+					},
+				],
+			}),
+			classAssignment({
+				id: "ca-unknown-prompt",
+				classId: "cl-active",
+				promptId: "pr-deleted",
+				targets: [
+					{
+						studentId: "s1",
+						submittedAt: "2026-11-26T08:00:00.000Z",
+						attemptId: "att-u",
+						gradedAt: null,
+						band: null,
+					},
+				],
+			}),
+		];
+
+		expect(
+			ungradedAssignmentsCount(students, classes, classAssignments, prompts),
+		).toBe(5);
+	});
+
+	test("returns 0 when students list is empty or only auto-graded quizzes exist", () => {
+		const mcqOnly: ClassAssignment[] = [
+			classAssignment({
+				id: "ca-mcq",
+				classId: "cl-active",
+				promptId: "pr-grammar",
+				targets: [
+					{
+						studentId: "s1",
+						submittedAt: "2026-11-26T08:00:00.000Z",
+						attemptId: "att-mcq",
+						correctCount: 3,
+						totalQuestions: 3,
+					},
+				],
+			}),
+		];
+		expect(ungradedAssignmentsCount([], classes, mcqOnly, prompts)).toBe(0);
+		expect(ungradedAssignmentsCount(students, classes, mcqOnly, prompts)).toBe(
+			0,
+		);
 	});
 });
