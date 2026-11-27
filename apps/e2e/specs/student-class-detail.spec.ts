@@ -188,16 +188,16 @@ test.describe("Student class card & class detail page", () => {
 		await expect(summitCard).toContainText("Band 6.5");
 		await expect(summitCard).toContainText("1/4 buổi");
 
+		// Keyboard Tab từ nút "Nhắn giáo viên" tới link mailto trong ClassInfoCard
+		await page.getByRole("link", { name: "Nhắn giáo viên" }).focus();
+		await page.keyboard.press("Tab");
+		await expect(mailtoLink).toBeFocused();
+
 		if (process.env.CAPTURE_POT === "1") {
 			const reportsDir = fileURLToPath(
 				new URL("../../../plans/reports/", import.meta.url),
 			);
 			const prefix = process.env.POT_PREFIX?.trim() || "class-info";
-
-			// Keyboard Tab từ nút "Nhắn giáo viên" tới link mailto trong ClassInfoCard
-			await page.getByRole("link", { name: "Nhắn giáo viên" }).focus();
-			await page.keyboard.press("Tab");
-			await expect(mailtoLink).toBeFocused();
 
 			// Desktop Light (1440×900)
 			await page.setViewportSize({ width: 1440, height: 900 });

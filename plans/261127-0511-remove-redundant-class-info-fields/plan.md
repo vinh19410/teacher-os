@@ -43,8 +43,8 @@ Sau khi gỡ 2 mục này, `ClassInfoCard` còn tối đa 4 mục (`Lịch`, `H�
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: Remove redundant items and dead props from ClassInfoCard (TDD)](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: E2E Coverage, Verification, Visual Audit, POT & Docs](./phase-02-verification-visual-docs.md) | Pending |
+| 1 | [Phase 1: Remove redundant items and dead props from ClassInfoCard (TDD)](./phase-01-start.md) | Completed |
+| 2 | [Phase 2: E2E Coverage, Verification, Visual Audit, POT & Docs](./phase-02-verification-visual-docs.md) | Completed |
 
 ## Success Criteria
 
