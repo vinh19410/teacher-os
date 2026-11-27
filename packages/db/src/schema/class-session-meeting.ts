@@ -37,10 +37,25 @@ export const classSessionMeeting = sqliteTable(
 		zoomMeetingId: text("zoom_meeting_id"),
 		recordingPassword: text("recording_password"),
 		recordingUrl: text("recording_url").notNull().default(""),
-		/** `none | pending | ready | failed` */
+		/** `none | pending | ready | failed | expired` */
 		recordingStatus: text("recording_status").notNull().default("none"),
 		recordingError: text("recording_error"),
 		recordingSyncedAt: integer("recording_synced_at", { mode: "timestamp_ms" }),
+		/** Key object trong bucket R2 private `recordings` — tuyệt đối không lộ ra client. */
+		recordingStorageKey: text("recording_storage_key"),
+		recordingSizeBytes: integer("recording_size_bytes"),
+		recordingMimeType: text("recording_mime_type"),
+		recordingUploadedAt: integer("recording_uploaded_at", {
+			mode: "timestamp_ms",
+		}),
+		/** Thời điểm tự động xóa khỏi R2 (recordingUploadedAt + 90 ngày). */
+		recordingExpiresAt: integer("recording_expires_at", {
+			mode: "timestamp_ms",
+		}),
+		/** Trạng thái dọn bản gốc trên Zoom Cloud (`none | pending | trashed | failed`). */
+		recordingZoomTrashStatus: text("recording_zoom_trash_status")
+			.notNull()
+			.default("none"),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),
@@ -58,6 +73,9 @@ export const classSessionMeeting = sqliteTable(
 		index("class_session_meeting_recording_idx").on(
 			table.recordingStatus,
 			table.date,
+		),
+		index("class_session_meeting_recording_expires_idx").on(
+			table.recordingExpiresAt,
 		),
 	],
 );

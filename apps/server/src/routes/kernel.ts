@@ -14,6 +14,7 @@ import type {
 import {
 	addManualSessionSchema,
 	CLASS_ERROR_CODES,
+	classAssignmentAddTargetsSchema,
 	classAssignmentCreateSchema,
 	classConfirmOpeningSchema,
 	classCreateSchema,
@@ -80,7 +81,18 @@ import {
 	syllabusLesson,
 	syllabusModule,
 } from "@teacher-os/db/schema/syllabus";
-import { and, desc, eq, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
+import {
+	and,
+	desc,
+	eq,
+	inArray,
+	isNull,
+	lte,
+	ne,
+	notLike,
+	or,
+	sql,
+} from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
@@ -129,6 +141,7 @@ import {
 	gradePlacementSubmissionResponse,
 	retryPlacementSubmissionAiResponse,
 } from "../lib/placement-submission-service";
+import type { RecordingStore } from "../lib/recording-store";
 import { requireFinanceRole } from "../lib/require-finance-role";
 import {
 	buildImportBatch,
@@ -183,6 +196,7 @@ export function kernelRoutes(deps: {
 	getMediaStore?(): MediaStore | undefined;
 	getLibraryAudioStore?(): MediaStore | undefined;
 	getMaterialsStore?(): MediaStore | undefined;
+	getRecordingStore?(): RecordingStore | undefined;
 	leadOrgId?: string;
 	teacherEmails?: string[];
 	corsOrigin?: string | string[];
@@ -537,7 +551,10 @@ export function kernelRoutes(deps: {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
 		return c.json(
-			await loadSnapshot(deps.getDb(), ctx.orgId, { role: ctx.role }),
+			await loadSnapshot(deps.getDb(), ctx.orgId, {
+				role: ctx.role,
+				...(deps.now ? { now: deps.now() } : {}),
+			}),
 		);
 	});
 
@@ -603,7 +620,7 @@ export function kernelRoutes(deps: {
 
 		const studentId = crypto.randomUUID();
 		const enrollmentId = cls ? crypto.randomUUID() : undefined;
-		const now = new Date();
+		const now = deps.now ? deps.now() : new Date();
 		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
 			db.insert(student).values({
 				id: studentId,
@@ -753,7 +770,7 @@ export function kernelRoutes(deps: {
 				}
 			};
 			if (input.activateNow) {
-				const act = await activateEnrollment(db, ctx.orgId, enrollmentId);
+				const act = await activateEnrollment(db, ctx.orgId, enrollmentId, now);
 				if (!act.ok) {
 					await cleanupCreatedStudentAndEnrollment();
 					if (act.error === "class-paused") {
@@ -1761,7 +1778,8 @@ export function kernelRoutes(deps: {
 			throw err;
 		}
 		if (input.activateNow === true) {
-			const act = await activateEnrollment(db, ctx.orgId, enrollmentId);
+			const now = deps.now ? deps.now() : new Date();
+			const act = await activateEnrollment(db, ctx.orgId, enrollmentId, now);
 			if (!act.ok) {
 				await db
 					.delete(enrollment)
@@ -1824,7 +1842,8 @@ export function kernelRoutes(deps: {
 		const db = deps.getDb();
 		const enrollmentId = c.req.param("enrollmentId");
 
-		const result = await activateEnrollment(db, ctx.orgId, enrollmentId);
+		const now = deps.now ? deps.now() : new Date();
+		const result = await activateEnrollment(db, ctx.orgId, enrollmentId, now);
 		if (result.ok) {
 			return c.json({ ok: true });
 		}
@@ -1882,6 +1901,9 @@ export function kernelRoutes(deps: {
 	kernel.post("/classes/:id/assignments", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
+		if (ctx.role !== undefined && !canPublishGrade(ctx.role)) {
+			return c.json({ error: "forbidden", code: "FORBIDDEN" }, 403);
+		}
 		const body = await readBody(c, classAssignmentCreateSchema);
 		if (!body.ok) return body.response;
 		const input = body.data;
@@ -1891,6 +1913,67 @@ export function kernelRoutes(deps: {
 		const cls = await findClass(db, classId, ctx.orgId);
 		if (!cls) {
 			return c.json({ error: "class not found" }, 404);
+		}
+		let validSessionDate: string | null = null;
+		if (input.sessionDate != null) {
+			const parsedSessionDate = parseStartDateStrict(input.sessionDate);
+			if (!parsedSessionDate) {
+				return c.json(
+					{ error: "invalid session date", reason: "invalid-session" },
+					400,
+				);
+			}
+			const sessionLessons = await db
+				.select({ status: lesson.status })
+				.from(lesson)
+				.where(
+					and(
+						eq(lesson.orgId, ctx.orgId),
+						eq(lesson.classId, classId),
+						eq(lesson.date, parsedSessionDate),
+					),
+				);
+			const hasActiveLesson = sessionLessons.some(
+				(row) => row.status !== "holiday" && row.status !== "cancelled",
+			);
+			let hasActiveManualSession = false;
+			if (!hasActiveLesson) {
+				const [csRow] = await db
+					.select({ id: classSession.id })
+					.from(classSession)
+					.where(
+						and(
+							eq(classSession.orgId, ctx.orgId),
+							eq(classSession.classId, classId),
+							eq(classSession.date, parsedSessionDate),
+						),
+					)
+					.limit(1);
+				if (
+					csRow &&
+					!sessionLessons.some((row) => row.status === "cancelled")
+				) {
+					const [shiftRow] = await db
+						.select({ id: holidaySessionShift.id })
+						.from(holidaySessionShift)
+						.where(
+							and(
+								eq(holidaySessionShift.orgId, ctx.orgId),
+								eq(holidaySessionShift.classId, classId),
+								eq(holidaySessionShift.originalDate, parsedSessionDate),
+							),
+						)
+						.limit(1);
+					hasActiveManualSession = !shiftRow;
+				}
+			}
+			if (!hasActiveLesson && !hasActiveManualSession) {
+				return c.json(
+					{ error: "invalid session date", reason: "invalid-session" },
+					400,
+				);
+			}
+			validSessionDate = parsedSessionDate;
 		}
 		const [prompt] = await db
 			.select({
@@ -1940,6 +2023,7 @@ export function kernelRoutes(deps: {
 					eq(enrollment.classId, classId),
 					eq(enrollment.orgId, ctx.orgId),
 					eq(enrollment.status, "active"),
+					notLike(enrollment.studentId, "demo-student:%"),
 				),
 			);
 		const roster = new Set(rosterRows.map((row) => row.studentId));
@@ -1961,28 +2045,122 @@ export function kernelRoutes(deps: {
 		}
 
 		const assignmentId = crypto.randomUUID();
+		// Guard SQL nguyên tử chống TOCTOU khi holiday shift / xoá / huỷ buổi chen ngang giữa lúc kiểm và lúc ghi.
+		const guardedTitle = validSessionDate
+			? sql<string>`CASE WHEN (
+					EXISTS (
+						SELECT 1 FROM ${lesson}
+						WHERE ${lesson.orgId} = ${ctx.orgId}
+							AND ${lesson.classId} = ${classId}
+							AND ${lesson.date} = ${validSessionDate}
+							AND ${lesson.status} NOT IN ('holiday', 'cancelled')
+					)
+					OR (
+						EXISTS (
+							SELECT 1 FROM ${classSession}
+							WHERE ${classSession.orgId} = ${ctx.orgId}
+								AND ${classSession.classId} = ${classId}
+								AND ${classSession.date} = ${validSessionDate}
+						)
+						AND NOT EXISTS (
+							SELECT 1 FROM ${holidaySessionShift}
+							WHERE ${holidaySessionShift.orgId} = ${ctx.orgId}
+								AND ${holidaySessionShift.classId} = ${classId}
+								AND ${holidaySessionShift.originalDate} = ${validSessionDate}
+						)
+						AND NOT EXISTS (
+							SELECT 1 FROM ${lesson}
+							WHERE ${lesson.orgId} = ${ctx.orgId}
+								AND ${lesson.classId} = ${classId}
+								AND ${lesson.date} = ${validSessionDate}
+								AND ${lesson.status} = 'cancelled'
+						)
+					)
+				) THEN ${prompt.title} ELSE NULL END`
+			: prompt.title;
+		const targetInsertChunkSize = 15;
+		const resolvedTargetScope =
+			input.targetScope === "selected"
+				? "selected"
+				: input.targetScope === "class"
+					? roster.size <= 100
+						? "class"
+						: "selected"
+					: input.studentIds.length === roster.size
+						? "class"
+						: "selected";
+		const effectiveStudentIds =
+			resolvedTargetScope === "class" && input.targetScope === "class"
+				? [...roster]
+				: input.studentIds;
+
+		const targetInsertStatements: BatchItem<"sqlite">[] = [];
+		for (
+			let i = 0;
+			i < effectiveStudentIds.length;
+			i += targetInsertChunkSize
+		) {
+			const chunk = effectiveStudentIds.slice(i, i + targetInsertChunkSize);
+			targetInsertStatements.push(
+				db
+					.insert(classAssignmentTarget)
+					.values(
+						chunk.map((studentId) => ({
+							id: `cat_ca_${assignmentId}_${studentId}`,
+							orgId: ctx.orgId,
+							assignmentId,
+							studentId,
+							submittedAt: null,
+						})),
+					)
+					.onConflictDoNothing(),
+			);
+		}
+
 		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
 			db.insert(classAssignment).values({
 				id: assignmentId,
 				orgId: ctx.orgId,
 				classId,
 				promptId: prompt.id,
-				title: prompt.title,
+				title: guardedTitle,
 				due: input.due,
 				dueAt: dueAtDate,
 				note: input.note,
+				sessionDate: validSessionDate,
+				targetScope: resolvedTargetScope,
 			}),
-			...input.studentIds.map((studentId) =>
-				db.insert(classAssignmentTarget).values({
-					id: crypto.randomUUID(),
-					orgId: ctx.orgId,
-					assignmentId,
-					studentId,
-					submittedAt: null,
-				}),
-			),
+			...targetInsertStatements,
 		];
-		await db.batch(statements);
+		try {
+			await db.batch(statements);
+		} catch (err) {
+			if (validSessionDate && isRollbackableConstraintError(err)) {
+				return c.json(
+					{
+						error: "session no longer available",
+						reason: "invalid-session",
+					},
+					409,
+				);
+			}
+			throw err;
+		}
+
+		// Standalone catch-up after db.batch (drizzle-orm/d1 cannot prepare SQLiteRaw
+		// inside batch): closes the TOCTOU window if a student activated concurrently.
+		let catchUpStudentIds: string[] = [];
+		if (resolvedTargetScope === "class") {
+			const catchUpRows = await db.all<{ student_id: string }>(
+				sql`INSERT OR IGNORE INTO ${classAssignmentTarget} (id, org_id, assignment_id, student_id, submitted_at) SELECT 'cat_ca_' || ${assignmentId} || '_' || ${enrollment.studentId}, ${ctx.orgId}, ${assignmentId}, ${enrollment.studentId}, NULL FROM ${enrollment} WHERE ${enrollment.orgId} = ${ctx.orgId} AND ${enrollment.classId} = ${classId} AND ${enrollment.status} = 'active' AND ${enrollment.studentId} NOT LIKE 'demo-student:%' RETURNING student_id`,
+			);
+			catchUpStudentIds = catchUpRows
+				.map((row) => row.student_id)
+				.filter((id): id is string => typeof id === "string");
+		}
+		const notifiedStudentIds = [
+			...new Set([...effectiveStudentIds, ...catchUpStudentIds]),
+		];
 		await notify(
 			ctx.orgId,
 			assignmentPublishedEvents({
@@ -1990,10 +2168,169 @@ export function kernelRoutes(deps: {
 				title: prompt.title,
 				due: input.due,
 				dueAt: dueAtDate.toISOString(),
-				studentIds: input.studentIds,
+				studentIds: notifiedStudentIds,
 			}),
 		);
 		return c.json({ id: assignmentId } satisfies CreatedResponse, 201);
+	});
+
+	kernel.post("/classes/:id/assignments/:assignmentId/targets", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		if (ctx.role !== undefined && !canPublishGrade(ctx.role)) {
+			return c.json({ error: "forbidden" }, 403);
+		}
+		const body = await readBody(c, classAssignmentAddTargetsSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+		const classId = c.req.param("id");
+		const assignmentId = c.req.param("assignmentId");
+
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found" }, 404);
+		}
+		if (cls.status !== "active") {
+			return classPausedResponse(c);
+		}
+
+		const [ca] = await db
+			.select({
+				id: classAssignment.id,
+				title: classAssignment.title,
+				due: classAssignment.due,
+				dueAt: classAssignment.dueAt,
+			})
+			.from(classAssignment)
+			.where(
+				and(
+					eq(classAssignment.id, assignmentId),
+					eq(classAssignment.classId, classId),
+					eq(classAssignment.orgId, ctx.orgId),
+					isNull(classAssignment.classStudyPackId),
+				),
+			);
+		if (!ca) {
+			return c.json({ error: "assignment not found" }, 404);
+		}
+
+		if (new Set(input.studentIds).size !== input.studentIds.length) {
+			return c.json({ error: "duplicate student ids" }, 400);
+		}
+
+		const rosterRows = await db
+			.select({ studentId: enrollment.studentId })
+			.from(enrollment)
+			.where(
+				and(
+					eq(enrollment.classId, classId),
+					eq(enrollment.orgId, ctx.orgId),
+					eq(enrollment.status, "active"),
+					notLike(enrollment.studentId, "demo-student:%"),
+				),
+			);
+		const roster = new Set(rosterRows.map((row) => row.studentId));
+		if (input.studentIds.some((sid) => !roster.has(sid))) {
+			return c.json({ error: "student not enrolled" }, 400);
+		}
+
+		const guardClassActive = db
+			.update(classAssignment)
+			.set({
+				classId: sql`CASE WHEN EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${classId} AND ${classTable.orgId} = ${ctx.orgId} AND ${classTable.status} = 'active') THEN ${classAssignment.classId} ELSE NULL END`,
+			})
+			.where(
+				and(
+					eq(classAssignment.id, assignmentId),
+					eq(classAssignment.orgId, ctx.orgId),
+					eq(classAssignment.classId, classId),
+				),
+			);
+
+		const targetInsertChunkSize = 15;
+		const insertChunks: BatchItem<"sqlite">[] = [];
+		for (let i = 0; i < input.studentIds.length; i += targetInsertChunkSize) {
+			const chunk = input.studentIds.slice(i, i + targetInsertChunkSize);
+			insertChunks.push(
+				db
+					.insert(classAssignmentTarget)
+					.values(
+						chunk.map((studentId) => ({
+							id: `cat_ca_${assignmentId}_${studentId}`,
+							orgId: ctx.orgId,
+							assignmentId,
+							studentId,
+							submittedAt: null,
+						})),
+					)
+					.onConflictDoNothing()
+					.returning({ studentId: classAssignmentTarget.studentId }),
+			);
+		}
+
+		const upgradeScopeStmt = db
+			.update(classAssignment)
+			.set({ targetScope: "class" })
+			.where(
+				and(
+					eq(classAssignment.id, assignmentId),
+					eq(classAssignment.orgId, ctx.orgId),
+					eq(classAssignment.classId, classId),
+					isNull(classAssignment.classStudyPackId),
+					sql`NOT EXISTS (SELECT 1 FROM ${enrollment} e WHERE e.org_id = ${ctx.orgId} AND e.class_id = ${classId} AND e.status = 'active' AND e.student_id NOT LIKE 'demo-student:%' AND NOT EXISTS (SELECT 1 FROM ${classAssignmentTarget} t WHERE t.org_id = ${ctx.orgId} AND t.assignment_id = ${assignmentId} AND t.student_id = e.student_id))`,
+				),
+			);
+
+		let batchResults: unknown[];
+		try {
+			batchResults = await db.batch([
+				guardClassActive,
+				...insertChunks,
+				upgradeScopeStmt,
+			]);
+		} catch (err) {
+			const isConstraintErr =
+				isRollbackableConstraintError(err) ||
+				(err instanceof Error && isRollbackableConstraintError(err.cause));
+			if (isConstraintErr) {
+				const clsAfter = await findClass(db, classId, ctx.orgId);
+				if (!clsAfter) {
+					return c.json({ error: "class not found" }, 404);
+				}
+				if (clsAfter.status !== "active") {
+					return classPausedResponse(c);
+				}
+			}
+			throw err;
+		}
+
+		const actuallyAddedIds: string[] = [];
+		for (let i = 1; i <= insertChunks.length; i++) {
+			const rows = batchResults[i] as Array<{ studentId: string }> | undefined;
+			if (Array.isArray(rows)) {
+				for (const row of rows) {
+					if (typeof row.studentId === "string") {
+						actuallyAddedIds.push(row.studentId);
+					}
+				}
+			}
+		}
+
+		if (actuallyAddedIds.length > 0) {
+			await notify(
+				ctx.orgId,
+				assignmentPublishedEvents({
+					classAssignmentId: assignmentId,
+					title: ca.title,
+					due: ca.due,
+					dueAt: ca.dueAt ? ca.dueAt.toISOString() : undefined,
+					studentIds: actuallyAddedIds,
+				}),
+			);
+		}
+
+		return c.json({ id: assignmentId, added: actuallyAddedIds.length });
 	});
 
 	kernel.get("/classes", async (c) => {
@@ -3646,6 +3983,17 @@ export function kernelRoutes(deps: {
 									bucketMoved,
 								),
 							),
+						db
+							.update(classAssignment)
+							.set({ sessionDate: moveDateISO })
+							.where(
+								and(
+									eq(classAssignment.orgId, ctx.orgId),
+									eq(classAssignment.classId, classId),
+									eq(classAssignment.sessionDate, dateISO),
+									bucketMoved,
+								),
+							),
 					];
 					const [updatedRows] = await db.batch(statements);
 					rows = updatedRows as Array<{ id: string }>;
@@ -4121,6 +4469,16 @@ export function kernelRoutes(deps: {
 						eq(lessonMaterial.orgId, ctx.orgId),
 						eq(lessonMaterial.classId, classId),
 						eq(lessonMaterial.date, dateISO),
+					),
+				),
+			db
+				.update(classAssignment)
+				.set({ sessionDate: null })
+				.where(
+					and(
+						eq(classAssignment.orgId, ctx.orgId),
+						eq(classAssignment.classId, classId),
+						eq(classAssignment.sessionDate, dateISO),
 					),
 				),
 		);

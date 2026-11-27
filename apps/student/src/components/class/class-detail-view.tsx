@@ -8,16 +8,22 @@ import {
 	ArrowLeft,
 	ArrowRight,
 	BookOpen,
-	Check,
 	CircleCheck,
-	CircleDashed,
 	ClipboardCheck,
 	MessageSquare,
 	Pin,
 	Target,
 } from "lucide-react";
-import { useState } from "react";
-import { ClassAssignmentTable } from "@/components/class/class-assignment-table";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ClassAssignmentsTab } from "@/components/class/class-assignments-tab";
+import {
+	type AssignmentTabFilter,
+	buildClassDetailSearch,
+	type ClassDetailSearchState,
+	type ClassTabId,
+	type JourneyFilter,
+	type MaterialKindFilter,
+} from "@/components/class/class-detail-helpers";
 import { ClassInfoCard } from "@/components/class/class-info-card";
 import { ClassLessonList } from "@/components/class/class-lesson-list";
 import { ClassMaterialsTab } from "@/components/class/class-materials-tab";
@@ -47,14 +53,11 @@ function BackHomeLink({ children }: { children: string }) {
 	);
 }
 
-const CLASS_TABS = [
+const CLASS_TABS: readonly { id: ClassTabId; label: string }[] = [
 	{ id: "journey", label: "Hành trình học" },
 	{ id: "assignments", label: "Bài tập" },
-	{ id: "syllabus", label: "Giáo trình" },
 	{ id: "materials", label: "Tài liệu chung" },
-] as const;
-
-type ClassTabId = (typeof CLASS_TABS)[number]["id"];
+];
 
 const CLASS_STATUS_LABEL: Record<string, string> = {
 	active: "Đang học",
@@ -161,85 +164,134 @@ function TodoBanner({
 	);
 }
 
-/** Tab "Giáo trình": các chủ đề của lớp theo thứ tự buổi học, tick chủ đề đã
- * hoàn thành (mọi buổi của chủ đề đều `completed`). Buổi `holiday` (TOS-11)
- * không diễn ra — loại khỏi progress để chủ đề không bị khoá "chưa xong". */
-function SyllabusTab({ detail }: { detail: StudentClassDetail }) {
-	const topics = new Map<string, { total: number; completed: number }>();
-	for (const lesson of detail.lessons) {
-		if (lesson.status === "holiday") continue;
-		const topic = lesson.topic || "Chưa có chủ đề";
-		const entry = topics.get(topic) ?? { total: 0, completed: 0 };
-		entry.total += 1;
-		if (lesson.status === "completed") entry.completed += 1;
-		topics.set(topic, entry);
-	}
-
-	if (topics.size === 0) {
-		return (
-			<div className="rounded-xl border bg-card p-6 shadow-sm">
-				<p className="text-muted-foreground text-sm">
-					Giáo trình sẽ hiển thị theo chủ đề từng buổi học.
-				</p>
-			</div>
-		);
-	}
-
-	return (
-		<div className="rounded-xl border bg-card text-card-foreground shadow-sm">
-			<ul className="divide-y">
-				{[...topics.entries()].map(([topic, progress]) => {
-					const done = progress.completed >= progress.total;
-					return (
-						<li
-							key={topic}
-							className="flex items-center gap-3 px-5 py-3 text-sm"
-						>
-							{done ? (
-								<span
-									aria-hidden="true"
-									className="grid size-5 flex-none place-items-center rounded-full bg-primary text-primary-foreground"
-								>
-									<Check className="size-3" />
-								</span>
-							) : (
-								<CircleDashed
-									aria-hidden="true"
-									className="size-5 flex-none text-muted-foreground"
-								/>
-							)}
-							<span
-								className={cn(
-									"min-w-0 flex-1 truncate",
-									!done && "text-muted-foreground",
-								)}
-							>
-								{topic}
-							</span>
-							<span className="text-muted-foreground text-sm tabular-nums">
-								{progress.completed}/{progress.total} buổi
-							</span>
-						</li>
-					);
-				})}
-			</ul>
-		</div>
-	);
-}
-
 export function ClassDetailView({
 	detail,
 	todayISO,
 	now,
+	searchState,
+	onSearchChange,
 }: {
 	detail: StudentClassDetail;
 	todayISO: string;
 	now: Date;
+	searchState?: ClassDetailSearchState;
+	onSearchChange?: (
+		updater: (prev: ClassDetailSearchState) => ClassDetailSearchState,
+	) => void;
 }) {
 	const cls = detail.class;
 	const teacher = cls.teacher;
 	const teacherEmail = teacher?.email.trim() ?? "";
-	const [tab, setTab] = useState<ClassTabId>("journey");
+	const [localSearch, setLocalSearch] = useState<ClassDetailSearchState>({});
+	const [focusedAssignmentId, setFocusedAssignmentId] = useState<string | null>(
+		null,
+	);
+	const effectiveSearch = searchState ?? localSearch;
+	const tab: ClassTabId = effectiveSearch.tab ?? "journey";
+	// Giữ trạng thái điều hướng dự kiến đồng bộ để timer debounce Tab 3 không
+	// hủy nhầm lượt đổi tab/lọc loại đang chờ `_auth.beforeLoad`.
+	const pendingSearchRef = useRef<ClassDetailSearchState>(effectiveSearch);
+	const prevClassIdRef = useRef(cls.id);
+
+	useEffect(() => {
+		pendingSearchRef.current = effectiveSearch;
+	}, [effectiveSearch]);
+
+	useEffect(() => {
+		if (prevClassIdRef.current === cls.id) return;
+		prevClassIdRef.current = cls.id;
+		setLocalSearch({});
+		setFocusedAssignmentId(null);
+		pendingSearchRef.current = searchState ?? {};
+	}, [cls.id, searchState]);
+
+	const updateSearch = useCallback(
+		(updater: (prev: ClassDetailSearchState) => ClassDetailSearchState) => {
+			pendingSearchRef.current = buildClassDetailSearch(
+				updater(pendingSearchRef.current),
+			);
+			if (onSearchChange) {
+				onSearchChange(updater);
+			} else {
+				setLocalSearch((prev) => buildClassDetailSearch(updater(prev)));
+			}
+		},
+		[onSearchChange],
+	);
+
+	const handleTabChange = useCallback(
+		(nextId: string) => {
+			const nextTab = nextId as ClassTabId;
+			setFocusedAssignmentId(null);
+			updateSearch(() => (nextTab === "journey" ? {} : { tab: nextTab }));
+		},
+		[updateSearch],
+	);
+
+	const handleJourneyFilterChange = useCallback(
+		(next: JourneyFilter) => {
+			updateSearch((prev) => ({
+				...prev,
+				tab: "journey",
+				jf: next,
+			}));
+		},
+		[updateSearch],
+	);
+
+	const handleAssignmentsFilterChange = useCallback(
+		(next: AssignmentTabFilter) => {
+			updateSearch((prev) => ({
+				...prev,
+				tab: "assignments",
+				af: next,
+			}));
+		},
+		[updateSearch],
+	);
+
+	const handleOpenAssignmentFromJourney = useCallback(
+		(assignmentId: string) => {
+			setFocusedAssignmentId(assignmentId);
+			updateSearch(() => ({ tab: "assignments" }));
+		},
+		[updateSearch],
+	);
+
+	const handleAssignmentFocusHandled = useCallback(() => {
+		setFocusedAssignmentId(null);
+	}, []);
+
+	const handleMaterialKindChange = useCallback(
+		(next: MaterialKindFilter) => {
+			updateSearch((prev) => ({
+				...prev,
+				tab: "materials",
+				mk: next,
+			}));
+		},
+		[updateSearch],
+	);
+
+	const handleMaterialQueryChange = useCallback(
+		(next: string) => {
+			if ((pendingSearchRef.current.tab ?? "journey") !== "materials") {
+				return;
+			}
+			const pendingKind = pendingSearchRef.current.mk;
+			updateSearch((prev) => {
+				if ((prev.tab ?? "journey") !== "materials") return prev;
+				return {
+					...prev,
+					tab: "materials",
+					mk: pendingKind,
+					mq: next,
+				};
+			});
+		},
+		[updateSearch],
+	);
+
 	const stats = computeRingStats(detail);
 	const statusLabel = CLASS_STATUS_LABEL[cls.status] ?? cls.status;
 	const isPaused = cls.status === "paused";
@@ -294,8 +346,6 @@ export function ClassDetailView({
 
 			<ClassInfoCard
 				detail={detail}
-				todayISO={todayISO}
-				now={now}
 				held={stats.held}
 				totalSessions={stats.totalSessions}
 			/>
@@ -342,7 +392,7 @@ export function ClassDetailView({
 			<Tabs
 				tabs={CLASS_TABS}
 				active={tab}
-				onChange={(id) => setTab(id as ClassTabId)}
+				onChange={handleTabChange}
 				ariaLabel="Mục của lớp học"
 				testIdPrefix="class-tab"
 			/>
@@ -353,22 +403,42 @@ export function ClassDetailView({
 						<h2 className="sr-only">Buổi học</h2>
 						<ClassLessonList
 							classId={cls.id}
+							classLevel={cls.level}
+							className={cls.name}
 							isPaused={isPaused}
 							lessons={detail.lessons}
+							syllabus={detail.syllabus}
+							assignments={detail.assignments}
 							todayISO={todayISO}
 							now={now}
+							filter={effectiveSearch.jf ?? "all"}
+							onFilterChange={handleJourneyFilterChange}
+							onOpenAssignment={handleOpenAssignmentFromJourney}
 						/>
 					</section>
 				)}
 				{tab === "assignments" && (
-					<ClassAssignmentTable
+					<ClassAssignmentsTab
+						classId={cls.id}
 						assignments={detail.assignments}
+						lessons={detail.lessons}
 						todayISO={todayISO}
 						nowMs={now.getTime()}
+						filter={effectiveSearch.af ?? "all"}
+						onFilterChange={handleAssignmentsFilterChange}
+						focusedAssignmentId={focusedAssignmentId}
+						onFocusHandled={handleAssignmentFocusHandled}
 					/>
 				)}
-				{tab === "syllabus" && <SyllabusTab detail={detail} />}
-				{tab === "materials" && <ClassMaterialsTab classId={cls.id} />}
+				{tab === "materials" && (
+					<ClassMaterialsTab
+						classId={cls.id}
+						kindFilter={effectiveSearch.mk ?? "all"}
+						query={effectiveSearch.mq ?? ""}
+						onKindFilterChange={handleMaterialKindChange}
+						onQueryChange={handleMaterialQueryChange}
+					/>
+				)}
 			</div>
 		</>
 	);

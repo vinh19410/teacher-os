@@ -4,6 +4,7 @@ import type {
 	AssignmentTestCreate,
 	AssignmentTestPartsSet,
 	AssignmentTestUpdate,
+	ClassAssignmentTargetScope,
 	ClassStatus,
 	ClassType,
 	InvoicePaymentCreate,
@@ -92,9 +93,18 @@ export type KernelAction =
 				promptId: string;
 				due: string;
 				dueTime?: string;
+				sessionDate?: string | null;
 				note?: string;
 				studentIds: string[];
+				targetScope?: ClassAssignmentTargetScope;
 			};
+	  }
+	| {
+			/** Giao bổ sung học viên đang học vào lượt giao đề thường đã có */
+			type: "add-class-assignment-targets";
+			classId: string;
+			assignmentId: string;
+			studentIds: string[];
 	  }
 	| {
 			/** Weekly parent report (#173): "sent" requires content server-side;

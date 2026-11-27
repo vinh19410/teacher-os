@@ -6,6 +6,7 @@ import {
 	ZOOM_RECORDING_SYNC_CRON,
 } from "./notifications/daily-deadline-reminder";
 import { resolveMailer } from "./notifications/emit";
+import type { RecordingStore } from "./recording-store";
 import { runRecordingSyncCron } from "./zoom/session-zoom-service";
 import type { ZoomConfig } from "./zoom/zoom-client";
 
@@ -17,6 +18,7 @@ export interface ScheduledControllerLike {
 export interface ScheduledDispatchDeps {
 	db: Db;
 	zoom: ZoomConfig;
+	getRecordingStore?: () => RecordingStore | undefined;
 	getMailer: () => Mailer | undefined;
 	studentOrigin?: string;
 	now?: () => Date;
@@ -61,9 +63,9 @@ async function executeDailyReminder(
 /**
  * Điều phối Cloudflare Cron Triggers theo `controller.cron`:
  * - `"*\/10 * * * *"` (trigger duy nhất trên Worker để giữ dưới giới hạn 5 cron của
- *   Cloudflare Workers Free): luôn chạy đồng bộ cloud recording Zoom, và khi
- *   thời điểm thuộc cửa sổ 23:00–23:09 UTC (06:00 VN) thì chạy thêm nhắc hạn
- *   bài tập hằng ngày (cô lập lỗi giữa hai tác vụ).
+ *   Cloudflare Workers Free): khi thời điểm thuộc cửa sổ 23:00–23:09 UTC
+ *   (06:00 VN) thì chạy nhắc hạn bài tập hằng ngày trước, rồi luôn chạy đồng bộ
+ *   cloud recording Zoom (cô lập lỗi giữa hai tác vụ).
  * - `"0 23 * * *"` → giữ nhánh tương thích cho gọi thủ công/test.
  * - Biểu thức lạ → ghi cảnh báo, không ném lỗi và không chạy nhầm job nào.
  */
@@ -80,24 +82,35 @@ export async function dispatchScheduledCron(
 		const now =
 			deps.now ?? (() => new Date(controller.scheduledTime ?? Date.now()));
 		const runZoomSync = deps.runZoomSync ?? runRecordingSyncCron;
-		let zoomError: unknown;
+		const recordingStore = deps.getRecordingStore?.();
+		// Nhắc hạn chạy TRƯỚC: mỗi ngày chỉ có một tick, còn việc tải video có thể
+		// làm runtime huỷ cả lượt chạy (không bắt được bằng try/catch).
+		let reminderError: unknown;
+		if (isDailyDeadlineReminderWindow(now())) {
+			try {
+				await executeDailyReminder(controller, deps);
+			} catch (error) {
+				reminderError = error;
+				console.error("[cron] daily deadline reminder failed:", error);
+			}
+		}
+
 		try {
 			await runZoomSync({
 				db: deps.db,
 				zoom: deps.zoom,
+				...(recordingStore ? { recordingStore } : {}),
 				...(deps.now ? { now: deps.now } : {}),
 			});
 		} catch (error) {
-			zoomError = error;
 			console.error("[cron] Zoom recording sync failed:", error);
+			if (reminderError === undefined) {
+				throw error;
+			}
 		}
 
-		if (isDailyDeadlineReminderWindow(now())) {
-			await executeDailyReminder(controller, deps);
-		}
-
-		if (zoomError !== undefined) {
-			throw zoomError;
+		if (reminderError !== undefined) {
+			throw reminderError;
 		}
 		return;
 	}

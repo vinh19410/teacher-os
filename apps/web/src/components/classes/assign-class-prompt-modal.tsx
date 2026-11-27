@@ -59,10 +59,17 @@ export interface AssignedPromptResult {
 	baselineIds: ReadonlySet<string>;
 }
 
+export interface AssignClassSessionOption {
+	dateISO: string;
+	label: string;
+}
+
 export interface AssignClassPromptModalProps {
 	open: boolean;
 	onClose: () => void;
 	classGroup: ClassGroup;
+	sessions?: readonly AssignClassSessionOption[];
+	defaultSessionDate?: string | null;
 	onAssigned?: (info: AssignedPromptResult) => void;
 	onRequestAddStudent?: () => void;
 }
@@ -101,6 +108,8 @@ export function AssignClassPromptModal({
 	open,
 	onClose,
 	classGroup,
+	sessions = [],
+	defaultSessionDate = null,
 	onAssigned,
 	onRequestAddStudent,
 }: AssignClassPromptModalProps) {
@@ -140,6 +149,13 @@ export function AssignClassPromptModal({
 	const [dueTouched, setDueTouched] = useState(false);
 	const [dueTimeTouched, setDueTimeTouched] = useState(false);
 	const [formResetKey, setFormResetKey] = useState(0);
+	const safeDefaultSessionDate =
+		defaultSessionDate && sessions.some((s) => s.dateISO === defaultSessionDate)
+			? defaultSessionDate
+			: "";
+	const [selectedSessionDate, setSelectedSessionDate] = useState<string>(
+		() => safeDefaultSessionDate,
+	);
 	const [note, setNote] = useState("");
 	const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>(() =>
 		enrolledStudents.map((s) => s.id).slice(0, MAX_STUDENTS_PER_ASSIGN),
@@ -166,13 +182,14 @@ export function AssignClassPromptModal({
 			setDueTouched(false);
 			setDueTimeTouched(false);
 			setFormResetKey((k) => k + 1);
+			setSelectedSessionDate(safeDefaultSessionDate);
 			setNote("");
 			setSelectedStudentIds(
 				enrolledStudents.map((s) => s.id).slice(0, MAX_STUDENTS_PER_ASSIGN),
 			);
 		}
 		wasOpenRef.current = open;
-	}, [open, enrolledStudents]);
+	}, [open, enrolledStudents, safeDefaultSessionDate]);
 
 	const allReadyPrompts = useMemo(() => {
 		return (data.assignmentPrompts ?? []).filter((p) => p.status === "ready");
@@ -276,6 +293,8 @@ export function AssignClassPromptModal({
 	const allSelectableSelected =
 		maxSelectableCount > 0 &&
 		visibleSelectedStudentIds.length === maxSelectableCount;
+	const willAssignWholeClass =
+		allSelectableSelected && enrolledStudents.length <= MAX_STUDENTS_PER_ASSIGN;
 	const isReassign = promptOk && previousAssignment !== null;
 	const canSubmit = promptOk && dueOk && studentsOk;
 
@@ -409,8 +428,10 @@ export function AssignClassPromptModal({
 				promptId: assignMeta.promptId,
 				due,
 				dueTime,
+				...(selectedSessionDate ? { sessionDate: selectedSessionDate } : {}),
 				note: note.trim(),
 				studentIds: visibleSelectedStudentIds,
+				targetScope: willAssignWholeClass ? "class" : "selected",
 			},
 		});
 
@@ -797,6 +818,33 @@ export function AssignClassPromptModal({
 						</div>
 					)}
 
+					{/* Gắn với buổi học cụ thể (không bắt buộc) */}
+					{sessions.length > 0 && (
+						<div className="flex flex-col gap-1.5">
+							<label
+								htmlFor="assignment-session-select"
+								className="font-medium text-foreground text-xs"
+							>
+								Gắn với buổi học (không bắt buộc)
+							</label>
+							<select
+								id="assignment-session-select"
+								value={selectedSessionDate}
+								onChange={(e) => setSelectedSessionDate(e.target.value)}
+								className={cn(inputCls, "bg-background")}
+							>
+								<option value="">
+									Không gắn buổi cụ thể (chỉ hiện ở mục Bài tập)
+								</option>
+								{sessions.map((s) => (
+									<option key={s.dateISO} value={s.dateISO}>
+										{s.label}
+									</option>
+								))}
+							</select>
+						</div>
+					)}
+
 					{/* Lời nhắn cho học viên */}
 					<div className="flex flex-col gap-1.5">
 						<label
@@ -844,6 +892,17 @@ export function AssignClassPromptModal({
 							<p className="text-muted-foreground text-xs">
 								Mỗi lượt giao tối đa 100 học viên.
 							</p>
+						)}
+
+						{(classGroup.invitedStudentIds?.length ?? 0) > 0 && (
+							<div
+								data-testid="assign-modal-invited-notice"
+								className="rounded-md border border-warn/40 bg-warn-soft p-3 text-foreground text-xs leading-relaxed"
+							>
+								{willAssignWholeClass
+									? `Còn ${classGroup.invitedStudentIds.length} học viên đang chờ xác nhận — sẽ tự nhận bài khi kích hoạt trước hạn nộp.`
+									: `Còn ${classGroup.invitedStudentIds.length} học viên đang chờ xác nhận — đang giao chọn lọc nên sẽ không tự nhận bài khi kích hoạt.`}
+							</div>
 						)}
 
 						{enrolledStudents.length === 0 ? (

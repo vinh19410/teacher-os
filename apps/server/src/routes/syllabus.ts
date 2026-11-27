@@ -841,6 +841,8 @@ export function syllabusRoutes(deps: ZoomRouteDeps) {
 					zoomMeetingId: classSessionMeeting.zoomMeetingId,
 					joinUrl: classSessionMeeting.joinUrl,
 					recordingUrl: classSessionMeeting.recordingUrl,
+					recordingStorageKey: classSessionMeeting.recordingStorageKey,
+					recordingStatus: classSessionMeeting.recordingStatus,
 				})
 				.from(classSessionMeeting)
 				.where(
@@ -849,8 +851,16 @@ export function syllabusRoutes(deps: ZoomRouteDeps) {
 						eq(classSessionMeeting.classId, classId),
 					),
 				);
+			const hasPreservedRecording = (meeting: {
+				recordingUrl: string;
+				recordingStorageKey: string | null;
+				recordingStatus: string;
+			}) =>
+				meeting.recordingUrl.trim() !== "" ||
+				meeting.recordingStorageKey !== null ||
+				meeting.recordingStatus === "expired";
 			const existingRecordingCount = existingMeetings.filter(
-				(meeting) => meeting.recordingUrl.trim() !== "",
+				hasPreservedRecording,
 			).length;
 
 			const zoomSyncPlan: ZoomRescheduleSyncPlan = {
@@ -879,7 +889,7 @@ export function syllabusRoutes(deps: ZoomRouteDeps) {
 						dateISO: meeting.date,
 					});
 				}
-				if (meeting.recordingUrl.trim() !== "") {
+				if (hasPreservedRecording(meeting)) {
 					meetingDatesToClearJoin.push(meeting.date);
 				} else {
 					meetingDatesToDelete.push(meeting.date);
@@ -911,14 +921,14 @@ export function syllabusRoutes(deps: ZoomRouteDeps) {
 
 			// CAS nguyên tử chạy TRƯỚC mọi câu DELETE để chống race điểm danh,
 			// moveDate, thêm/xóa buổi thủ công, đổi startDate/schedule/status,
-			// đổi số bài template, đồng bộ recordingUrl hoặc tạo phòng Zoom mới đồng thời.
+			// đổi số bài template, đồng bộ recording (URL ngoài, R2 hoặc expired) hoặc tạo phòng Zoom mới đồng thời.
 			statements.push(
 				db
 					.update(classTable)
 					.set({
 						syllabusId: copyId,
 						sessionsTotal: lessonCount,
-						schedulingMode: sql`CASE WHEN ${classTable.startDate} = ${cls.startDate} AND ${classTable.schedule} = ${cls.schedule} AND ${classTable.status} = ${cls.status} AND NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${classId} AND (${lesson.status} IN ('completed', 'absent') OR ${lesson.attendance} IS NOT NULL OR (${lesson.attendanceNote} IS NOT NULL AND ${lesson.attendanceNote} != ''))) AND (SELECT count(*) FROM ${classSession} WHERE ${classSession.orgId} = ${ctx.orgId} AND ${classSession.classId} = ${classId}) = ${existingCs.length}${firstChunkExactMatchSql} AND (SELECT count(*) FROM ${classSessionMeeting} WHERE ${classSessionMeeting.orgId} = ${ctx.orgId} AND ${classSessionMeeting.classId} = ${classId}) = ${existingMeetings.length} AND (SELECT count(*) FROM ${classSessionMeeting} WHERE ${classSessionMeeting.orgId} = ${ctx.orgId} AND ${classSessionMeeting.classId} = ${classId} AND trim(${classSessionMeeting.recordingUrl}) != '') = ${existingRecordingCount} AND (SELECT count(*) FROM ${syllabusLesson} INNER JOIN ${syllabusModule} ON ${syllabusModule.id} = ${syllabusLesson.moduleId} WHERE ${syllabusLesson.orgId} = ${ctx.orgId} AND ${syllabusModule.orgId} = ${ctx.orgId} AND ${syllabusModule.syllabusId} = ${tpl.id}) = ${lessonCount} THEN 'auto' ELSE NULL END`,
+						schedulingMode: sql`CASE WHEN ${classTable.startDate} = ${cls.startDate} AND ${classTable.schedule} = ${cls.schedule} AND ${classTable.status} = ${cls.status} AND NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${classId} AND (${lesson.status} IN ('completed', 'absent') OR ${lesson.attendance} IS NOT NULL OR (${lesson.attendanceNote} IS NOT NULL AND ${lesson.attendanceNote} != ''))) AND (SELECT count(*) FROM ${classSession} WHERE ${classSession.orgId} = ${ctx.orgId} AND ${classSession.classId} = ${classId}) = ${existingCs.length}${firstChunkExactMatchSql} AND (SELECT count(*) FROM ${classSessionMeeting} WHERE ${classSessionMeeting.orgId} = ${ctx.orgId} AND ${classSessionMeeting.classId} = ${classId}) = ${existingMeetings.length} AND (SELECT count(*) FROM ${classSessionMeeting} WHERE ${classSessionMeeting.orgId} = ${ctx.orgId} AND ${classSessionMeeting.classId} = ${classId} AND (trim(${classSessionMeeting.recordingUrl}) != '' OR ${classSessionMeeting.recordingStorageKey} IS NOT NULL OR ${classSessionMeeting.recordingStatus} = 'expired')) = ${existingRecordingCount} AND (SELECT count(*) FROM ${syllabusLesson} INNER JOIN ${syllabusModule} ON ${syllabusModule.id} = ${syllabusLesson.moduleId} WHERE ${syllabusLesson.orgId} = ${ctx.orgId} AND ${syllabusModule.orgId} = ${ctx.orgId} AND ${syllabusModule.syllabusId} = ${tpl.id}) = ${lessonCount} THEN 'auto' ELSE NULL END`,
 					})
 					.where(
 						and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)),
@@ -990,7 +1000,7 @@ export function syllabusRoutes(deps: ZoomRouteDeps) {
 								eq(classSessionMeeting.orgId, ctx.orgId),
 								eq(classSessionMeeting.classId, classId),
 								inArray(classSessionMeeting.date, chunk),
-								sql`trim(${classSessionMeeting.recordingUrl}) = ''`,
+								sql`trim(${classSessionMeeting.recordingUrl}) = '' AND ${classSessionMeeting.recordingStorageKey} IS NULL AND ${classSessionMeeting.recordingStatus} != 'expired'`,
 							),
 						),
 				);
@@ -1005,7 +1015,7 @@ export function syllabusRoutes(deps: ZoomRouteDeps) {
 						.set({
 							zoomMeetingId: null,
 							joinUrl: "",
-							recordingStatus: "ready",
+							recordingStatus: sql`CASE WHEN ${classSessionMeeting.recordingStatus} = 'expired' THEN 'expired' ELSE 'ready' END`,
 						})
 						.where(
 							and(

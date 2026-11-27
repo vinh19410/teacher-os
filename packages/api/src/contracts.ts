@@ -2,7 +2,10 @@ import { z } from "zod";
 import type { KernelEventRow } from "./event-contracts";
 import { isBandStep } from "./lib/ielts-band";
 import { CLOZE_MARKER_SOURCE } from "./lib/infer-question-types";
-import type { SyllabusBankMaterialRef } from "./material-contracts";
+import type {
+	StudentLessonMaterialView,
+	SyllabusBankMaterialRef,
+} from "./material-contracts";
 import { isEmptyRichText, richTextField } from "./rich-text";
 
 export * from "./event-contracts";
@@ -1605,6 +1608,10 @@ export type AssignmentTestPartsSet = z.infer<
 	typeof assignmentTestPartsSetSchema
 >;
 
+export const CLASS_ASSIGNMENT_TARGET_SCOPES = ["class", "selected"] as const;
+export type ClassAssignmentTargetScope =
+	(typeof CLASS_ASSIGNMENT_TARGET_SCOPES)[number];
+
 /**
  * Giao đề ngân hàng cho lớp (#208, #572). `due` là ISO yyyy-mm-dd; `dueTime`
  * tùy chọn là giờ 24h `HH:MM` theo múi giờ Việt Nam (mặc định `"23:59"` khi
@@ -1618,9 +1625,26 @@ export const classAssignmentCreateSchema = z
 		dueTime: z.string().regex(TIME_REGEX).optional(),
 		note: z.string().trim().max(2000).default(""),
 		studentIds: z.array(z.string().trim().min(1)).min(1).max(100),
+		/** Ngày buổi học (yyyy-mm-dd) nếu gắn bài tập vào buổi cụ thể; null/vắng = bài tập chung của lớp. */
+		sessionDate: z
+			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/)
+			.nullable()
+			.optional(),
+		targetScope: z.enum(CLASS_ASSIGNMENT_TARGET_SCOPES).optional(),
 	})
 	.strict();
 export type ClassAssignmentCreate = z.infer<typeof classAssignmentCreateSchema>;
+
+/** Bổ sung học viên đang học vào một lượt giao đề thường đã tồn tại (tối đa 100 HV/lần). */
+export const classAssignmentAddTargetsSchema = z
+	.object({
+		studentIds: z.array(z.string().trim().min(1)).min(1).max(100),
+	})
+	.strict();
+export type ClassAssignmentAddTargets = z.infer<
+	typeof classAssignmentAddTargetsSchema
+>;
 
 /** Feedback is teacher-authored and may contain sensitive education data. */
 export const commentBankCreateSchema = z
@@ -2247,7 +2271,11 @@ export interface KernelClassAssignmentRow {
 	due: string;
 	/** ISO datetime hạn nộp (UTC, tính từ giờ VN lúc giao); null trên dữ liệu cũ trước #572. */
 	dueAt?: string | null;
+	/** Phạm vi giao bài: cả lớp (tự bù học viên mới kích hoạt trước hạn) hay chỉ học viên đã chọn. */
+	targetScope?: ClassAssignmentTargetScope;
 	note: string;
+	/** Ngày buổi học (yyyy-mm-dd) gắn với lượt giao bài; null nếu giao chung cho lớp. */
+	sessionDate?: string | null;
 	createdAt: string;
 	targets: Array<{
 		studentId: string;
@@ -2599,6 +2627,8 @@ export const studentAssignmentSchema = z.object({
 	dueAt: z.string().nullable().optional(),
 	/** #574: đề tự chấm có kèm phần Writing chờ giáo viên chấm. */
 	hasWriting: z.boolean().optional(),
+	/** Ngày buổi học (yyyy-mm-dd) gắn với bài tập nếu giáo viên chọn buổi; null/vắng = bài tập cấp lớp. */
+	sessionDate: z.string().nullable().optional(),
 });
 export type StudentAssignment = z.infer<typeof studentAssignmentSchema>;
 
@@ -2612,13 +2642,35 @@ export const studentOverviewSchema = z.object({
 });
 export type StudentOverview = z.infer<typeof studentOverviewSchema>;
 
+export const RECORDING_RETENTION_DAYS = 90;
+
 export const RECORDING_STATUSES = [
 	"none",
 	"pending",
 	"ready",
 	"failed",
+	"expired",
 ] as const;
 export type RecordingStatus = (typeof RECORDING_STATUSES)[number];
+
+export const RECORDING_SOURCES = ["r2", "external"] as const;
+export type RecordingSource = (typeof RECORDING_SOURCES)[number];
+
+export const RECORDING_ZOOM_TRASH_STATUSES = [
+	"none",
+	"pending",
+	"trashed",
+	"failed",
+] as const;
+export type RecordingZoomTrashStatus =
+	(typeof RECORDING_ZOOM_TRASH_STATUSES)[number];
+
+export const RECORDING_ERROR_CODES = {
+	DISABLED: "RECORDINGS_DISABLED",
+	EXPIRED: "RECORDING_EXPIRED",
+	NOT_FOUND: "RECORDING_NOT_FOUND",
+	LOCKED: "RECORDING_LOCKED",
+} as const;
 
 /** Buổi học của chính học viên trong lớp (GET /api/student/classes/:classId). */
 export const studentClassLessonSchema = z.object({
@@ -2636,6 +2688,18 @@ export const studentClassLessonSchema = z.object({
 	recordingUrl: z.string().nullable().optional(),
 	recordingPassword: z.string().nullable().optional(),
 	recordingStatus: z.enum(RECORDING_STATUSES).optional(),
+	recordingSource: z.enum(RECORDING_SOURCES).optional(),
+	recordingExpiresAt: z.string().nullable().optional(),
+	hasRecordingVideo: z.boolean().optional(),
+	/** Metadata giáo trình ánh xạ theo buổi N ↔ bài N (optional cho tương thích ngược). */
+	moduleId: z.string().nullable().optional(),
+	moduleTitle: z.string().nullable().optional(),
+	syllabusTitle: z.string().nullable().optional(),
+	objectives: z.string().nullable().optional(),
+	lessonKind: z.string().nullable().optional(),
+	lectureCount: z.number().int().min(0).optional(),
+	homeworkCount: z.number().int().min(0).optional(),
+	assignmentCount: z.number().int().min(0).optional(),
 });
 export type StudentClassLesson = z.infer<typeof studentClassLessonSchema>;
 
@@ -2653,12 +2717,88 @@ export type StudentScheduleResponse = z.infer<
 	typeof studentScheduleResponseSchema
 >;
 
+export const studentClassSyllabusModuleSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	description: z.string(),
+});
+export type StudentClassSyllabusModule = z.infer<
+	typeof studentClassSyllabusModuleSchema
+>;
+
+export const studentClassSyllabusSummarySchema = z.object({
+	name: z.string(),
+	description: z.string(),
+	modules: z.array(studentClassSyllabusModuleSchema),
+});
+export type StudentClassSyllabusSummary = z.infer<
+	typeof studentClassSyllabusSummarySchema
+>;
+
 export const studentClassDetailSchema = z.object({
 	class: studentClassSchema.extend({ startDate: z.string() }),
 	lessons: z.array(studentClassLessonSchema),
 	assignments: z.array(studentAssignmentSchema),
+	/** Cấu trúc giáo trình gắn với lớp (null = lớp chưa gắn giáo trình; optional cho tương thích server cũ). */
+	syllabus: studentClassSyllabusSummarySchema.nullable().optional(),
 });
 export type StudentClassDetail = z.infer<typeof studentClassDetailSchema>;
+
+/** Whitelist trường giáo trình an toàn cho học viên (không có ghi chú nội bộ hay trạng thái giáo viên). */
+export const studentSessionCurriculumSchema = z.object({
+	syllabusName: z.string(),
+	moduleId: z.string(),
+	moduleTitle: z.string(),
+	title: z.string(),
+	objectives: z.string(),
+	kind: z.string(),
+});
+export type StudentSessionCurriculum = z.infer<
+	typeof studentSessionCurriculumSchema
+>;
+
+/** Shape runtime của tài liệu buổi trong response chi tiết buổi (khớp `StudentLessonMaterialView`, không tạo vòng import runtime với `material-contracts.ts`). */
+const studentSessionMaterialItemSchema: z.ZodType<StudentLessonMaterialView> =
+	z.object({
+		id: z.string(),
+		title: z.string(),
+		description: z.string(),
+		kind: z.enum(["file", "link", "media"]),
+		url: z.string().nullable(),
+		mimeType: z.string().nullable(),
+		sizeBytes: z.number().nullable(),
+		originalName: z.string().nullable(),
+		position: z.number().int(),
+		category: z.enum(["lecture", "homework"]).optional(),
+		sourceTitle: z.string().nullable().optional(),
+		sourcePageStart: z.number().int().nullable().optional(),
+		sourcePageEnd: z.number().int().nullable().optional(),
+	});
+
+/** Chi tiết một buổi học của học viên (GET /api/student/classes/:classId/sessions/:date). */
+export const studentSessionDetailResponseSchema = z.object({
+	class: z.object({
+		id: z.string(),
+		name: z.string(),
+		level: z.string(),
+		mode: z.string(),
+		status: z.enum(CLASS_STATUSES).catch("active"),
+		teacher: studentTeacherSchema.nullable().catch(null),
+	}),
+	session: studentClassLessonSchema.extend({
+		sessionNumber: z.number().int().min(1).nullable(),
+		totalTeachingSessions: z.number().int().min(0),
+	}),
+	curriculum: studentSessionCurriculumSchema.nullable(),
+	lectures: z.array(studentSessionMaterialItemSchema),
+	homeworkMaterials: z.array(studentSessionMaterialItemSchema),
+	assignments: z.array(studentAssignmentSchema),
+	prevSessionDate: z.string().nullable(),
+	nextSessionDate: z.string().nullable(),
+});
+export type StudentSessionDetailResponse = z.infer<
+	typeof studentSessionDetailResponseSchema
+>;
 
 /** Roster "Bạn cùng lớp" — CHỈ tên + chữ tắt, không bao giờ trả
  * email/band/học phí/điểm (quy ước quyền riêng lớp học #378). */
@@ -5604,6 +5744,12 @@ export interface KernelSessionMeetingRow {
 	recordingStatus: RecordingStatus | string;
 	recordingError: string | null;
 	recordingSyncedAt: string | null;
+	recordingSource?: RecordingSource | null;
+	hasRecordingVideo?: boolean;
+	recordingSizeBytes?: number | null;
+	recordingUploadedAt?: string | null;
+	recordingExpiresAt?: string | null;
+	recordingZoomTrashStatus?: RecordingZoomTrashStatus | string;
 }
 
 export const ZOOM_ERROR_CODES = {
@@ -5640,6 +5786,10 @@ export const sessionRecordingSyncResponseSchema = z.object({
 	status: z.enum(RECORDING_STATUSES),
 	recordingUrl: z.string(),
 	recordingPassword: z.string().nullable().optional(),
+	recordingSource: z.enum(RECORDING_SOURCES).nullable().optional(),
+	hasRecordingVideo: z.boolean().optional(),
+	recordingExpiresAt: z.string().nullable().optional(),
+	recordingZoomTrashStatus: z.enum(RECORDING_ZOOM_TRASH_STATUSES).optional(),
 	syncedAt: z.string().nullable(),
 	message: z.string().nullable().optional(),
 });

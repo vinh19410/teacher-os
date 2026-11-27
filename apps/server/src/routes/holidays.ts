@@ -14,6 +14,7 @@ import {
 } from "@teacher-os/api/holiday-plan";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { classTable } from "@teacher-os/db/schema/class";
+import { classAssignment } from "@teacher-os/db/schema/class-assignment";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import { lessonMaterial } from "@teacher-os/db/schema/material";
@@ -408,6 +409,16 @@ function shiftStatements(
 					eq(lessonMaterial.date, shift.originalDate),
 				),
 			),
+		db
+			.update(classAssignment)
+			.set({ sessionDate: shift.makeupDate })
+			.where(
+				and(
+					eq(classAssignment.orgId, orgId),
+					eq(classAssignment.classId, shift.classId),
+					eq(classAssignment.sessionDate, shift.originalDate),
+				),
+			),
 	];
 }
 
@@ -463,6 +474,7 @@ export function holidayRoutes(deps: {
 	zoom?: AppDeps["zoom"];
 	zoomFetch?: AppDeps["zoomFetch"];
 	getZoomClient?: AppDeps["getZoomClient"];
+	getRecordingStore?: AppDeps["getRecordingStore"];
 }) {
 	const holiday = new Hono<Env>();
 
@@ -967,6 +979,16 @@ export function holidayRoutes(deps: {
 							eq(lessonMaterial.orgId, ctx.orgId),
 							eq(lessonMaterial.classId, shift.classId),
 							eq(lessonMaterial.date, shift.makeupDate),
+						),
+					),
+				db
+					.update(classAssignment)
+					.set({ sessionDate: shift.originalDate })
+					.where(
+						and(
+							eq(classAssignment.orgId, ctx.orgId),
+							eq(classAssignment.classId, shift.classId),
+							eq(classAssignment.sessionDate, shift.makeupDate),
 						),
 					),
 				db

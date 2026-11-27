@@ -28,6 +28,7 @@
 		"dompurify": "catalog:",
 		"dotenv": "catalog:",
 		"lucide-react": "catalog:",
+		"pdf-lib": "^1.17.1",
 		"pdfjs-dist": "^6.4.299",
 		"pdfmake": "^0.3.14",
 		"react": "catalog:",

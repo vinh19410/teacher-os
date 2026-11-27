@@ -14,6 +14,8 @@ import {
 	type ClassMaterialListResponse,
 	type ClassMaterialView,
 	checkMaterialUpload,
+	type LessonMaterialCategory,
+	type LessonMaterialLinkCreateInput,
 	type LessonMaterialView,
 	MATERIAL_ERROR_CODES,
 	type MaterialErrorCode,
@@ -33,6 +35,7 @@ import { canWriteMaterials } from "@teacher-os/auth/role";
 import { isPreviewableContentType } from "@teacher-os/ui/components/document-preview/inline-document-preview";
 import { useCallback, useSyncExternalStore } from "react";
 import { HttpError } from "@/lib/kernel-load-state";
+import { reauth } from "@/lib/reauth";
 import { getApiBaseUrl } from "./api-base-url";
 import { kernelQueryKey } from "./kernel";
 
@@ -226,6 +229,8 @@ export function materialErrorMessage(error: unknown): string {
 			// đã-shift còn buổi manual — case sau detach chủ ý còn 200 nên
 			// copy không được khẳng định "không gỡ được".
 			return "Buổi này là buổi nghỉ lễ đã dời lịch — không gắn tài liệu được.";
+		case "INVALID_PAGE_RANGE":
+			return "Khoảng trang sách không hợp lệ — trang bắt đầu phải nhỏ hơn hoặc bằng trang kết thúc.";
 		default:
 			break;
 	}
@@ -456,6 +461,35 @@ export async function fetchMaterialFileBlobUrl(
 	return URL.createObjectURL(await res.blob());
 }
 
+/**
+ * Tải byte PDF của một tài liệu trong ngân hàng/tài liệu chung để cắt trang
+ * phía trình duyệt (pdf-lib). Kiểm Content-Type là `application/pdf` và xử lý
+ * 401 qua `reauth()` trước khi ném lỗi.
+ */
+export async function fetchMaterialFileBytes(
+	id: string,
+	signal?: AbortSignal,
+	baseUrl: string = getApiBaseUrl(),
+): Promise<Uint8Array> {
+	const res = await fetch(
+		`${baseUrl}/api/materials/${encodeURIComponent(id)}/file`,
+		{ credentials: "include", signal },
+	);
+	if (!res.ok) {
+		if (res.status === 401) reauth();
+		throw await toMaterialError(res);
+	}
+	const ct = (res.headers.get("content-type") ?? "")
+		.split(";")[0]
+		?.trim()
+		.toLowerCase();
+	if (ct !== "application/pdf") {
+		void res.body?.cancel().catch(() => {});
+		throw new MaterialRequestError(415, "UNSUPPORTED_FILE_TYPE");
+	}
+	return new Uint8Array(await res.arrayBuffer());
+}
+
 // ---- Tài liệu của buổi học ----
 
 function sessionPath(classId: string, date: string): string {
@@ -484,14 +518,34 @@ export async function fetchSessionMaterials(
 	return body;
 }
 
+export interface AttachSessionMaterialOptions {
+	category?: LessonMaterialCategory;
+	sourceTitle?: string | null;
+	sourcePageStart?: number | null;
+	sourcePageEnd?: number | null;
+}
+
 export async function attachSessionMaterial(
 	classId: string,
 	date: string,
 	materialId: string,
+	options?: AttachSessionMaterialOptions,
 ): Promise<LessonMaterialView> {
+	const payload: Record<string, unknown> = { materialId };
+	// Chỉ gửi thêm trường khi khác mặc định để giữ tương thích rolling deploy (.strict()).
+	if (options?.category && options.category !== "lecture") {
+		payload.category = options.category;
+	}
+	if (options?.sourceTitle) {
+		payload.sourceTitle = options.sourceTitle;
+	}
+	if (options?.sourcePageStart != null && options?.sourcePageEnd != null) {
+		payload.sourcePageStart = options.sourcePageStart;
+		payload.sourcePageEnd = options.sourcePageEnd;
+	}
 	const body = await request<{ item: LessonMaterialView }>(
 		sessionPath(classId, date),
-		jsonInit("POST", { materialId }),
+		jsonInit("POST", payload),
 	);
 	return body.item;
 }
@@ -501,10 +555,53 @@ export async function uploadSessionMaterial(input: {
 	date: string;
 	file: File;
 	mimeType: string;
+	category?: LessonMaterialCategory;
+	title?: string;
+	sourceTitle?: string;
+	pageStart?: number;
+	pageEnd?: number;
 }): Promise<LessonMaterialView> {
+	const search = new URLSearchParams();
+	if (input.category && input.category !== "lecture") {
+		search.set("category", input.category);
+	}
+	const title = input.title?.trim();
+	if (title) search.set("title", title);
+	const sourceTitle = input.sourceTitle?.trim();
+	if (sourceTitle) search.set("sourceTitle", sourceTitle);
+	if (input.pageStart != null && input.pageEnd != null) {
+		search.set("pageStart", String(input.pageStart));
+		search.set("pageEnd", String(input.pageEnd));
+	}
+	const query = search.toString();
 	const body = await request<{ item: LessonMaterialView }>(
-		`${sessionPath(input.classId, input.date)}/files`,
+		`${sessionPath(input.classId, input.date)}/files${query ? `?${query}` : ""}`,
 		uploadInit(input.file, input.mimeType),
+	);
+	return body.item;
+}
+
+export async function createSessionMaterialLink(
+	classId: string,
+	date: string,
+	input: LessonMaterialLinkCreateInput,
+): Promise<LessonMaterialView> {
+	const body = await request<{ item: LessonMaterialView }>(
+		`${sessionPath(classId, date)}/links`,
+		jsonInit("POST", input),
+	);
+	return body.item;
+}
+
+export async function updateSessionMaterialCategory(
+	classId: string,
+	date: string,
+	materialId: string,
+	category: LessonMaterialCategory,
+): Promise<LessonMaterialView> {
+	const body = await request<{ item: LessonMaterialView }>(
+		`${sessionPath(classId, date)}/${encodeURIComponent(materialId)}`,
+		jsonInit("PATCH", { category }),
 	);
 	return body.item;
 }

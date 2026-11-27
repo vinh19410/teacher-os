@@ -15,6 +15,25 @@ export function isMaterialKind(value: string): value is MaterialKind {
 	return (MATERIAL_KINDS as readonly string[]).includes(value);
 }
 
+/** Phân loại tài liệu trên buổi học: Bài giảng (`lecture`) hoặc Bài tập buổi học (`homework`). */
+export const LESSON_MATERIAL_CATEGORIES = ["lecture", "homework"] as const;
+export type LessonMaterialCategory =
+	(typeof LESSON_MATERIAL_CATEGORIES)[number];
+
+export function isLessonMaterialCategory(
+	value: string,
+): value is LessonMaterialCategory {
+	return (LESSON_MATERIAL_CATEGORIES as readonly string[]).includes(value);
+}
+
+export const MATERIAL_SOURCE_TITLE_MAX = 200;
+export const MATERIAL_PAGE_MAX = 10_000;
+
+/** Chặn ký tự điều khiển và bidi override (vd U+202E) trong tên hiển thị / tên thư mục / tên sách. */
+export function hasControlOrBidiChars(value: string): boolean {
+	return /[\p{Cc}\p{Cf}]/u.test(value);
+}
+
 /** Trần dung lượng tài liệu (PDF, ảnh, Office). */
 export const MATERIAL_DOC_MAX_BYTES = 25 * 1024 * 1024;
 /**
@@ -357,9 +376,22 @@ const folderNameSchema = z
 	.trim()
 	.min(1)
 	.max(MATERIAL_FOLDER_NAME_MAX)
-	.refine((name) => !/[\p{Cc}\p{Cf}]/u.test(name), {
+	.refine((name) => !hasControlOrBidiChars(name), {
 		message: "folder name contains control characters",
 	});
+
+const materialSourceTitleSchema = z
+	.string()
+	.trim()
+	.min(1)
+	.max(MATERIAL_SOURCE_TITLE_MAX)
+	.refine((title) => !hasControlOrBidiChars(title), {
+		message: "source title contains control characters",
+	});
+
+const materialPageNumberSchema = z.number().int().min(1).max(MATERIAL_PAGE_MAX);
+
+export const lessonMaterialCategorySchema = z.enum(LESSON_MATERIAL_CATEGORIES);
 
 export const materialFolderCreateSchema = z
 	.object({
@@ -413,10 +445,47 @@ export const materialUpdateSchema = z
 export type MaterialUpdateInput = z.infer<typeof materialUpdateSchema>;
 
 export const lessonMaterialAttachSchema = z
-	.object({ materialId: idSchema })
-	.strict();
+	.object({
+		materialId: idSchema,
+		category: lessonMaterialCategorySchema.default("lecture"),
+		sourceTitle: materialSourceTitleSchema.nullable().optional(),
+		sourcePageStart: materialPageNumberSchema.nullable().optional(),
+		sourcePageEnd: materialPageNumberSchema.nullable().optional(),
+	})
+	.strict()
+	.refine(
+		(v) =>
+			(v.sourcePageStart == null && v.sourcePageEnd == null) ||
+			(v.sourcePageStart != null &&
+				v.sourcePageEnd != null &&
+				v.sourcePageStart <= v.sourcePageEnd),
+		{ message: "invalid page range" },
+	);
 export type LessonMaterialAttachInput = z.infer<
 	typeof lessonMaterialAttachSchema
+>;
+
+export const lessonMaterialUpdateSchema = z
+	.object({
+		category: lessonMaterialCategorySchema,
+	})
+	.strict();
+export type LessonMaterialUpdateInput = z.infer<
+	typeof lessonMaterialUpdateSchema
+>;
+
+export const lessonMaterialLinkCreateSchema = z
+	.object({
+		title: materialTitleSchema.refine((t) => !hasControlOrBidiChars(t), {
+			message: "title contains control characters",
+		}),
+		description: materialDescriptionSchema.default(""),
+		url: materialUrlSchema,
+		category: lessonMaterialCategorySchema.default("lecture"),
+	})
+	.strict();
+export type LessonMaterialLinkCreateInput = z.infer<
+	typeof lessonMaterialLinkCreateSchema
 >;
 
 export const classMaterialAttachSchema = z
@@ -458,6 +527,7 @@ export const MATERIAL_ERROR_CODES = [
 	"UNSUPPORTED_FILE_TYPE",
 	"MATERIALS_DISABLED",
 	"SESSION_HOLIDAY",
+	"INVALID_PAGE_RANGE",
 ] as const;
 export type MaterialErrorCode = (typeof MATERIAL_ERROR_CODES)[number];
 
@@ -493,6 +563,10 @@ export interface MaterialView {
 export interface LessonMaterialView extends MaterialView {
 	position: number;
 	attachedAt: string;
+	category?: LessonMaterialCategory;
+	sourceTitle?: string | null;
+	sourcePageStart?: number | null;
+	sourcePageEnd?: number | null;
 }
 
 /** Tài liệu chung gắn ở cấp lớp học (app giáo viên). */
@@ -505,17 +579,24 @@ export interface ClassMaterialView extends MaterialView {
  * Tài liệu buổi học cho học viên — chỉ đọc, không có cột teacher-only
  * (object key, người tạo, thư mục, số buổi dùng).
  */
-export interface StudentLessonMaterialView {
-	id: string;
-	title: string;
-	description: string;
-	kind: MaterialKind;
-	url: string | null;
-	mimeType: string | null;
-	sizeBytes: number | null;
-	originalName: string | null;
-	position: number;
-}
+export const studentLessonMaterialViewSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	description: z.string(),
+	kind: z.enum(MATERIAL_KINDS),
+	url: z.string().nullable(),
+	mimeType: z.string().nullable(),
+	sizeBytes: z.number().nullable(),
+	originalName: z.string().nullable(),
+	position: z.number().int(),
+	category: lessonMaterialCategorySchema.optional(),
+	sourceTitle: z.string().nullable().optional(),
+	sourcePageStart: z.number().int().nullable().optional(),
+	sourcePageEnd: z.number().int().nullable().optional(),
+});
+export type StudentLessonMaterialView = z.infer<
+	typeof studentLessonMaterialViewSchema
+>;
 
 /**
  * Tài liệu chung cấp lớp cho học viên — chỉ đọc, cùng projection an toàn
@@ -536,10 +617,10 @@ export interface StudentClassMaterialView {
 
 /**
  * Tham chiếu tài liệu ngân hàng gắn trên một bài học giáo trình (issue #655,
- * template hoặc bản copy của lớp) — cùng projection an toàn như view học
- * viên: không objectKey, không createdBy, không usageCount.
+ * template hoặc bản copy của lớp) — tách khỏi `StudentLessonMaterialView` vì
+ * `syllabus_lesson_material` không có cột phân loại buổi học hay khoảng trang.
  */
-export type SyllabusBankMaterialRef = StudentLessonMaterialView;
+export type SyllabusBankMaterialRef = StudentClassMaterialView;
 
 export interface MaterialFolderListResponse {
 	folders: MaterialFolderView[];

@@ -31,10 +31,7 @@ import {
 	ClassDetailView,
 	ClassNotFound,
 } from "@/components/class/class-detail-view";
-import {
-	ClassInfoCard,
-	computeCourseMonths,
-} from "@/components/class/class-info-card";
+import { ClassInfoCard } from "@/components/class/class-info-card";
 import {
 	ClassLessonList,
 	findNextLessonId,
@@ -279,20 +276,21 @@ describe("ClassDetailView", () => {
 		expect(html).toContain('href="mailto:lan@example.com"');
 		// Tab mặc định = Hành trình học (Buổi học).
 		expect(html).toContain("Buổi học");
-		// Tổng quan đồng bộ: "Buổi tới" là l4 (12/03), không phải buổi đã kết thúc.
-		expect(html).toContain("Buổi tới: Thứ Năm, 12/03");
+		// ClassInfoCard không còn cụm footer dư (thời lượng tháng, giờ lặp, "Buổi tới: ...").
+		expect(html).not.toContain("Buổi tới:");
+		expect(html).not.toMatch(/\d+\s*tháng/);
+		// Hành trình học vẫn giữ thẻ Buổi tiếp theo & badge Buổi tới cho l4 (12/03).
+		expect(html).toContain("Buổi tiếp theo");
+		expect(html).toContain("Thứ Năm, 12/03");
+		expect(html.match(/>Buổi tới</g)).toHaveLength(1);
 		// Ring stats.
 		expect(html).toContain("Chuyên cần");
 		expect(html).toContain("Band trung bình");
-		// Tabs: gồm 4 tab (ẩn tab "Bạn cùng lớp").
-		for (const label of [
-			"Hành trình học",
-			"Bài tập",
-			"Giáo trình",
-			"Tài liệu chung",
-		]) {
+		// Tabs: gồm 3 tab sau khi gộp Giáo trình vào Hành trình học.
+		for (const label of ["Hành trình học", "Bài tập", "Tài liệu chung"]) {
 			expect(html).toContain(label);
 		}
+		expect(html).not.toContain("class-tab-syllabus");
 		expect(html).not.toContain("Bạn cùng lớp");
 		expect(html).not.toContain("class-tab-classmates");
 		expect(html).toContain('href="/"');
@@ -319,13 +317,15 @@ describe("ClassDetailView", () => {
 		expect(html.match(/IELTS Detail/g)).toHaveLength(1);
 	});
 
-	it("shows assignments table after switching to the assignments tab", () => {
+	it("shows assignments workspace after switching to the assignments tab", () => {
 		const utils = render(
 			<ClassDetailView detail={detail} todayISO={TODAY} now={NOW} />,
 		);
 		fireEvent.click(screen.getByRole("tab", { name: "Bài tập" }));
-		expect(screen.getByRole("table")).toBeTruthy();
-		expect(screen.getByText("Reading Practice 1")).toBeTruthy();
+		expect(screen.getByTestId("assignments-todo-strip")).toBeTruthy();
+		const items = screen.getAllByRole("listitem");
+		expect(items.length).toBeGreaterThanOrEqual(1);
+		expect(items[0]?.textContent).toContain("Reading Practice 1");
 		expect(screen.getByText("Chưa nộp")).toBeTruthy();
 		expect(
 			screen.getByRole("link", { name: "Làm bài: Reading Practice 1" }),
@@ -333,19 +333,35 @@ describe("ClassDetailView", () => {
 		utils.unmount();
 	});
 
-	it("shows syllabus topics with Check and CircleDashed icons on syllabus tab", () => {
+	it("shows syllabus module progress directly inside the merged Hành trình học tab", () => {
+		const withSyllabus: StudentClassDetail = {
+			...detail,
+			syllabus: {
+				name: "IELTS Reading Intensive",
+				description: "",
+				modules: [
+					{ id: "m1", title: "Module 1: Skimming", description: "" },
+					{ id: "m2", title: "Module 2: Scanning", description: "" },
+				],
+			},
+			lessons: detail.lessons.map((l, idx) => ({
+				...l,
+				moduleId: idx === 0 ? "m1" : "m2",
+				moduleTitle: idx === 0 ? "Module 1: Skimming" : "Module 2: Scanning",
+			})),
+		};
 		const utils = render(
-			<ClassDetailView detail={detail} todayISO={TODAY} now={NOW} />,
+			<ClassDetailView detail={withSyllabus} todayISO={TODAY} now={NOW} />,
 		);
-		fireEvent.click(screen.getByRole("tab", { name: "Giáo trình" }));
-		expect(screen.getByText("Reading Skimming")).toBeTruthy();
+		expect(screen.getByText("IELTS Reading Intensive")).toBeTruthy();
+		expect(screen.getByText("Module 1: Skimming")).toBeTruthy();
 		expect(screen.getByText("1/1 buổi")).toBeTruthy();
-		expect(screen.getByText("Chưa có chủ đề")).toBeTruthy();
+		expect(screen.getByText("Module 2: Scanning")).toBeTruthy();
 		expect(screen.getByText("0/4 buổi")).toBeTruthy();
 		utils.unmount();
 	});
 
-	it("hides the classmates tab, switches across the remaining tabs, and never calls useClassmates", () => {
+	it("hides classmates and syllabus tabs, switches across the 3 remaining tabs, and never calls useClassmates", () => {
 		const useClassmatesSpy = vi.spyOn(repos, "useClassmates");
 		const utils = render(
 			<ClassDetailView detail={detail} todayISO={TODAY} now={NOW} />,
@@ -355,17 +371,15 @@ describe("ClassDetailView", () => {
 		expect(tabs.map((tab) => tab.textContent)).toEqual([
 			"Hành trình học",
 			"Bài tập",
-			"Giáo trình",
 			"Tài liệu chung",
 		]);
+		expect(screen.queryByRole("tab", { name: "Giáo trình" })).toBeNull();
+		expect(screen.queryByTestId("class-tab-syllabus")).toBeNull();
 		expect(screen.queryByRole("tab", { name: "Bạn cùng lớp" })).toBeNull();
 		expect(screen.queryByTestId("class-tab-classmates")).toBeNull();
 
 		fireEvent.click(screen.getByRole("tab", { name: "Bài tập" }));
-		expect(screen.getByRole("table")).toBeTruthy();
-
-		fireEvent.click(screen.getByRole("tab", { name: "Giáo trình" }));
-		expect(screen.getByText("Reading Skimming")).toBeTruthy();
+		expect(screen.getByRole("group", { name: "Lọc bài tập" })).toBeTruthy();
 
 		fireEvent.click(screen.getByRole("tab", { name: "Hành trình học" }));
 		expect(
@@ -396,25 +410,65 @@ describe("ClassInfoCard", () => {
 		cleanup();
 	});
 
-	it("omits the Buổi tới footer line when every upcoming lesson has already ended", () => {
-		const endedOnly: StudentClassDetail = {
+	it("renders class metadata without the redundant summary footer for active classes", () => {
+		const html = renderToStaticMarkup(
+			<ClassInfoCard detail={detail} held={2} totalSessions={5} />,
+		);
+		expect(html).toContain("Band 6.5");
+		expect(html).toContain("T3 &amp; T6 · 19:00–20:30");
+		expect(html).toContain("Online");
+		expect(html).toContain("Cô Lan");
+		expect(html).toContain('href="mailto:lan@example.com"');
+		expect(html).toContain("2/5 buổi");
+		expect(html).toContain("Chủ Nhật, 01/03/2099");
+		expect(html).not.toContain("Buổi tới:");
+		expect(html).not.toMatch(/\d+\s*tháng/);
+		expect(html.match(/19:00–20:30/g)).toHaveLength(1);
+		expect(html).not.toContain("border-t");
+	});
+
+	it("formats structured JSON schedule once without duplicating the time range in a footer", () => {
+		const jsonScheduleDetail: StudentClassDetail = {
 			...detail,
-			lessons: [
-				lesson({ id: "d1", date: "2099-03-08", status: "completed" }),
-				// 08:00 + 90' đã qua ở 12:00 giờ VN — không được chọn làm "Buổi tới".
-				lesson({ id: "d2", date: "2099-03-10", time: "08:00", dur: 90 }),
-			],
+			class: {
+				...detail.class,
+				schedule: '{"days":[1,4],"start":"19:00","end":"20:30"}',
+			},
 		};
 		const html = renderToStaticMarkup(
-			<ClassInfoCard
-				detail={endedOnly}
-				todayISO={TODAY}
-				now={NOW}
-				held={1}
-				totalSessions={2}
-			/>,
+			<ClassInfoCard detail={jsonScheduleDetail} held={2} totalSessions={5} />,
 		);
+		expect(html).toContain("T3 &amp; T6 · 19:00–20:30");
+		expect(html.match(/19:00–20:30/g)).toHaveLength(1);
 		expect(html).not.toContain("Buổi tới:");
+		expect(html).not.toMatch(/\d+\s*tháng/);
+		expect(html).not.toContain("border-t");
+	});
+
+	it("renders gracefully when optional fields are empty, teacher is missing, and lessons are undated", () => {
+		const sparseDetail: StudentClassDetail = {
+			...detail,
+			class: {
+				...detail.class,
+				level: "",
+				schedule: "",
+				mode: "",
+				startDate: "",
+				teacher: null,
+			},
+			lessons: [lesson({ id: "u1", date: null })],
+		};
+		const html = renderToStaticMarkup(
+			<ClassInfoCard detail={sparseDetail} held={0} totalSessions={0} />,
+		);
+		expect(html).toContain("Chưa có thông tin giáo viên.");
+		expect(html).toContain("0/0 buổi");
+		expect(html).not.toContain("Khoá");
+		expect(html).not.toContain("Lịch");
+		expect(html).not.toContain("Hình thức");
+		expect(html).not.toContain("Khai giảng");
+		expect(html).not.toContain("Buổi tới:");
+		expect(html).not.toContain("border-t");
 	});
 });
 
@@ -427,21 +481,7 @@ describe("ClassNotFound", () => {
 	});
 });
 
-describe("computeCourseMonths & ClassAssignmentTable", () => {
-	it("returns null for legacy classes without dates or invalid startDate and computes months when valid", () => {
-		expect(
-			computeCourseMonths("", [lesson({ id: "l1", date: "2099-03-10" })]),
-		).toBeNull();
-		expect(
-			computeCourseMonths("2099-03-01", [lesson({ id: "l1", date: null })]),
-		).toBeNull();
-		expect(
-			computeCourseMonths("2099-03-01", [
-				lesson({ id: "l1", date: "2099-05-05" }),
-			]),
-		).toBe(2);
-	});
-
+describe("ClassAssignmentTable", () => {
 	it("renders empty state when class has no assignments and handles graded/submitted/overdue rows", () => {
 		const emptyHtml = renderToStaticMarkup(
 			<ClassAssignmentTable assignments={[]} todayISO={TODAY} />,

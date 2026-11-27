@@ -666,6 +666,34 @@
       "when": 1795650000000,
       "tag": "0094_backfill_reading_library_collection_and_part",
       "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "6",
+      "when": 1795660000000,
+      "tag": "0095_class_assignment_target_scope",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "6",
+      "when": 1795660001000,
+      "tag": "0096_backfill_class_assignment_targets",
+      "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "6",
+      "when": 1795713683983,
+      "tag": "0097_session_materials_and_assignment_date",
+      "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "6",
+      "when": 1795715099414,
+      "tag": "0098_yummy_the_twelve",
+      "breakpoints": true
     }
   ]
 }

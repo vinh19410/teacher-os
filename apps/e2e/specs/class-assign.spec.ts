@@ -2,11 +2,14 @@ import { mkdirSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import {
 	fillRichEditor,
+	isoInDaysFromTodayVN,
 	seedStudent,
+	seedUserViaE2e,
 	selectWritingTask2,
 	signUpViaApi,
+	vnWeekdayMon0,
 } from "./helpers";
-import { API_ORIGIN, WEB_ORIGIN } from "./origins";
+import { API_ORIGIN, LMS_ORIGIN, WEB_ORIGIN } from "./origins";
 
 /**
  * Issue #208 / #717 — Giao bài trên lớp:
@@ -510,4 +513,222 @@ test("#572 (en-US locale): dd/mm/yyyy typing without segment jump, calendar popo
 	} finally {
 		await context.close();
 	}
+});
+
+test("late activation auto-backfills class assignment (0/1 → 0/2 + Student Portal 200), overdue unsubmitted warns on dashboard grading card, and supplemental assign adds late joiner", async ({
+	page,
+	browser,
+	request,
+}) => {
+	const CLASS_NAME = "E2E Lớp Backfill & Chấm bài";
+	const STUDENT_1 = "Leah Học viên 1";
+	const STUDENT_2 = "Alex Học viên 2";
+	const STUDENT_3 = "Maya Học viên 3";
+	const PROMPT_TITLE = "Bài kiểm nhanh GrammarI";
+	const DAY_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"] as const;
+	// Pick tomorrow's Vietnam weekday so today has 0 pending attendance sessions (openTasks === 0).
+	const tomorrowWeekdayLabel =
+		DAY_LABELS[vnWeekdayMon0(isoInDaysFromTodayVN(1))];
+
+	const teacherEmail = await signUpViaApi(page);
+	const st2Email = `alex-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@student.local`;
+	await seedStudent({ teacherEmail, name: STUDENT_1 });
+	await seedStudent({
+		teacherEmail,
+		name: STUDENT_2,
+		email: st2Email,
+		onboarded: true,
+	});
+	await seedStudent({ teacherEmail, name: STUDENT_3 });
+	await seedUserViaE2e(request, {
+		email: st2Email,
+		name: STUDENT_2,
+		role: "student",
+		emailVerified: true,
+	});
+
+	// 1. Create class scheduled on a non-today Vietnam weekday
+	await page.getByText("Lớp học", { exact: true }).first().click();
+	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
+	const classDialog = page.getByRole("dialog");
+	await classDialog.getByLabel("Tên lớp *").fill(CLASS_NAME);
+	await classDialog
+		.getByRole("button", { name: "Writing", exact: true })
+		.click();
+	await classDialog
+		.getByRole("button", { name: tomorrowWeekdayLabel, exact: true })
+		.click();
+	await classDialog
+		.getByRole("button", { name: "Tạo lớp", exact: true })
+		.click();
+	await expect(classDialog).toBeHidden();
+
+	// 2. Enroll HV1 (active) and HV2 (stays invited)
+	await page.getByText(CLASS_NAME).click();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
+	let enrollDialog = page.getByRole("dialog");
+	await enrollDialog.getByRole("option", { name: STUDENT_1 }).click();
+	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
+	await expect(enrollDialog).toBeHidden();
+
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	const confirmModal = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+	await expect(confirmModal).toBeVisible();
+	await confirmModal.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal).toBeHidden();
+	await expect(page.getByText("Đang học")).toBeVisible();
+
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
+	enrollDialog = page.getByRole("dialog");
+	await enrollDialog.getByRole("option", { name: STUDENT_2 }).click();
+	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
+	await expect(enrollDialog).toBeHidden();
+
+	// 3. Create 1 ready prompt
+	await page.goto("/teacher/assignments/new");
+	await selectWritingTask2(page);
+	await page.getByLabel("Tiêu đề").fill(PROMPT_TITLE);
+	await fillRichEditor(
+		page,
+		"Nội dung đề",
+		"Complete the grammar review and write a short paragraph.",
+	);
+	await page.getByRole("button", { name: "Lưu vào ngân hàng" }).first().click();
+	await expect(
+		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
+	).toBeVisible();
+
+	// 4. Open class -> Assign prompt -> verify invited student notice -> initially 0/1 đã nộp
+	await page.goto("/teacher/classes");
+	await page.getByText(CLASS_NAME).click();
+	await page
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
+		.click();
+	await page.getByRole("button", { name: "Giao bài tập", exact: true }).click();
+	const assignDialog = page.getByRole("dialog", {
+		name: new RegExp(`Giao bài tập · ${CLASS_NAME}`),
+	});
+	await expect(assignDialog).toBeVisible();
+	await expect(
+		assignDialog.getByTestId("assign-modal-invited-notice"),
+	).toContainText(
+		"Còn 1 học viên đang chờ xác nhận — sẽ tự nhận bài khi kích hoạt trước hạn nộp.",
+	);
+
+	await assignDialog
+		.getByRole("button", { name: new RegExp(PROMPT_TITLE) })
+		.click();
+	const createResPromise = page.waitForResponse(
+		(r) =>
+			r.url().includes("/api/classes/") &&
+			r.url().endsWith("/assignments") &&
+			r.request().method() === "POST",
+	);
+	await assignDialog
+		.getByRole("button", { name: "Giao bài tập", exact: true })
+		.click();
+	const createRes = await createResPromise;
+	expect(createRes.status()).toBe(201);
+	const { id: assignmentId } = (await createRes.json()) as { id: string };
+	await expect(assignDialog).toBeHidden();
+	await expect(page.locator("#assigned-list")).toContainText("0/1 đã nộp");
+
+	// 5. Activate HV2 -> denominator auto-updates to 0/2 đã nộp & HV2 opens quiz with 200
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal).toBeVisible();
+	await confirmModal.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal).toBeHidden();
+
+	await page
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
+		.click();
+	await expect(page.locator("#assigned-list")).toContainText("0/2 đã nộp");
+	await expect(page.locator("#assigned-list")).toContainText(STUDENT_1);
+	await expect(page.locator("#assigned-list")).toContainText(STUDENT_2);
+
+	const studentContext = await browser.newContext({ baseURL: LMS_ORIGIN });
+	try {
+		const signInRes = await studentContext.request.post(
+			`${API_ORIGIN}/api/auth/sign-in/email`,
+			{
+				headers: {
+					"Content-Type": "application/json",
+					Origin: LMS_ORIGIN,
+				},
+				data: {
+					email: st2Email,
+					password: "password-8chars",
+				},
+			},
+		);
+		expect(signInRes.status()).toBe(200);
+
+		const quizRes = await studentContext.request.get(
+			`${API_ORIGIN}/api/student/assignments/${assignmentId}/quiz`,
+			{ headers: { Origin: LMS_ORIGIN } },
+		);
+		expect(quizRes.status()).toBe(200);
+	} finally {
+		await studentContext.close();
+	}
+
+	// 6. Shift due_at into the past -> verify Dashboard Card 2 & Hero summary
+	const shiftRes = await request.post(`${API_ORIGIN}/__e2e/study-pack-shift`, {
+		data: {
+			assignmentId,
+			dueAtMs: Date.now() - 60_000,
+		},
+	});
+	expect(shiftRes.ok()).toBe(true);
+
+	await page.goto("/teacher/dashboard");
+	const gradingCard = page.getByTestId("reminder-card-grading");
+	await expect(gradingCard).toBeVisible();
+	await expect(gradingCard).toContainText("Không còn bài quá hạn chấm");
+	await expect(gradingCard).not.toContainText("Đã hoàn tất hôm nay");
+	await expect(
+		gradingCard.getByTestId("reminder-card-grading-overdue-unsubmitted"),
+	).toContainText("Còn 2 bài quá hạn chưa nộp (2 học viên)");
+
+	const heroSummary = page.getByTestId("dashboard-hero-summary");
+	await expect(heroSummary).toContainText("Còn 2 học viên cần kiểm tra.");
+	await expect(heroSummary).not.toContainText("Mọi việc hôm nay đã xong.");
+
+	// 7. Enroll & activate HV3 AFTER deadline -> shows "Giao 2/3 HV" + "Giao bổ sung" -> click -> 0/3 đã nộp
+	await page.goto("/teacher/classes");
+	await page.getByText(CLASS_NAME).click();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
+	enrollDialog = page.getByRole("dialog");
+	await enrollDialog.getByRole("option", { name: STUDENT_3 }).click();
+	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
+	await expect(enrollDialog).toBeHidden();
+
+	await page.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal).toBeVisible();
+	await confirmModal.getByRole("button", { name: "Kích hoạt" }).click();
+	await expect(confirmModal).toBeHidden();
+
+	await page
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
+		.click();
+	const assignedList = page.locator("#assigned-list");
+	await expect(assignedList).toContainText("0/2 đã nộp");
+	await expect(assignedList).toContainText("Giao 2/3 HV");
+	await expect(assignedList).toContainText("Còn 1 học viên chưa được giao");
+	const addTargetsBtn = assignedList.getByRole("button", {
+		name: "Giao bổ sung",
+	});
+	await expect(addTargetsBtn).toBeVisible();
+	await addTargetsBtn.click();
+
+	await expect(assignedList).toContainText("0/3 đã nộp");
+	await expect(assignedList).toContainText(STUDENT_3);
+	await expect(
+		assignedList.getByRole("button", { name: "Giao bổ sung" }),
+	).toHaveCount(0);
 });

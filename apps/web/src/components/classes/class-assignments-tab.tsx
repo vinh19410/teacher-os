@@ -5,6 +5,7 @@ import {
 	isGradableSkill,
 } from "@teacher-os/api/lib/ielts-band";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import { canPublishGrade } from "@teacher-os/auth/role";
 import { BookOpen, ChevronDown, Headphones, Mic, PenLine } from "lucide-react";
 import {
 	type ComponentType,
@@ -24,9 +25,13 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Section } from "@/components/ui/section";
 import { Tag } from "@/components/ui/tag";
+import { formatSessionDate } from "@/lib/class-sessions";
 import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
 import type { ClassAssignment, ClassGroup } from "@/lib/mock-data";
+import type { DirectKernelAction } from "@/lib/use-direct-kernel-action";
+
+const MAX_SUPPLEMENT_BATCH = 100;
 
 export interface LastAssignedTarget {
 	assignedId?: string;
@@ -42,6 +47,9 @@ export interface ClassAssignmentsTabProps {
 	lastAssignedNonce?: number;
 	/** Định danh mục tiêu vừa giao (hoặc baseline trước POST) để chờ đúng snapshot mới (#717). */
 	lastAssignedTarget?: LastAssignedTarget;
+	run?: DirectKernelAction["run"];
+	isPending?: DirectKernelAction["isPending"];
+	busy?: boolean;
 }
 
 /** Icon kỹ năng cho header accordion bài đã giao (#391, design SKILL_ICON);
@@ -108,10 +116,17 @@ export function ClassAssignmentsTab({
 	assignmentsFocus = false,
 	lastAssignedNonce = 0,
 	lastAssignedTarget,
+	run,
+	isPending,
+	busy = false,
 }: ClassAssignmentsTabProps) {
 	const { data, studentById } = useData();
 	const effectiveNowMs = Date.now();
 	const todayVN = vietnamTodayISO(new Date(effectiveNowMs));
+	const canSupplement =
+		Boolean(run) &&
+		classGroup.status !== "paused" &&
+		(data.viewer?.role === undefined || canPublishGrade(data.viewer.role));
 
 	// Bài đã giao cho lớp này, sắp mới nhất lên đầu
 	const classAssignments = useMemo(() => {
@@ -259,6 +274,26 @@ export function ClassAssignmentsTab({
 							ca.targets.length > 0
 								? Math.round((doneCount / ca.targets.length) * 100)
 								: 0;
+						const targetIds = new Set(ca.targets.map((t) => t.studentId));
+						const activeStudentIds = classGroup.studentIds;
+						const missingActiveStudentIds = activeStudentIds.filter(
+							(id) => !targetIds.has(id),
+						);
+						const activeTargetedCount =
+							activeStudentIds.length - missingActiveStudentIds.length;
+						const missingPreviewNames = missingActiveStudentIds
+							.slice(0, 3)
+							.map((id) => studentById(id)?.name ?? id);
+						const extraMissingCount = Math.max(
+							0,
+							missingActiveStudentIds.length - missingPreviewNames.length,
+						);
+						const supplementBatchIds = missingActiveStudentIds.slice(
+							0,
+							MAX_SUPPLEMENT_BATCH,
+						);
+						const addTargetsKey = `add-targets-${ca.id}`;
+						const addingTargets = isPending?.(addTargetsKey) ?? false;
 
 						return (
 							<article
@@ -291,9 +326,17 @@ export function ClassAssignmentsTab({
 											>
 												{doneCount}/{ca.targets.length} đã nộp
 											</span>
+											{missingActiveStudentIds.length > 0 && (
+												<span className="tabular-nums">
+													{` · Giao ${activeTargetedCount}/${activeStudentIds.length} HV`}
+												</span>
+											)}
 										</span>
 									</span>
 									<span className="flex flex-wrap items-center gap-2 pl-12 sm:shrink-0 sm:pl-0">
+										{ca.sessionDate && (
+											<Tag>Buổi {formatSessionDate(ca.sessionDate)}</Tag>
+										)}
 										{promptRow?.writing != null && <Tag>+ Writing</Tag>}
 										<StatusTag tone={rollup.tone}>{rollup.label}</StatusTag>
 									</span>
@@ -354,6 +397,64 @@ export function ClassAssignmentsTab({
 												</div>
 											);
 										})}
+										{missingActiveStudentIds.length > 0 && (
+											<div
+												data-testid={`assign-missing-students-${ca.id}`}
+												className="flex flex-wrap items-center justify-between gap-2 bg-muted/40 px-4 py-2.5 text-xs"
+											>
+												<div className="min-w-0 flex-1 text-muted-foreground">
+													<span className="font-medium text-foreground">
+														{`Còn ${missingActiveStudentIds.length} học viên chưa được giao`}
+													</span>
+													{missingPreviewNames.length > 0 && (
+														<span className="break-words">
+															{`: ${missingPreviewNames.join(", ")}${extraMissingCount > 0 ? ` và +${extraMissingCount} HV khác` : ""}`}
+														</span>
+													)}
+												</div>
+												{canSupplement && run && (
+													<Button
+														type="button"
+														variant="outline"
+														size="sm"
+														className="shrink-0"
+														disabled={busy || addingTargets}
+														onClick={() =>
+															void run(
+																addTargetsKey,
+																{
+																	type: "add-class-assignment-targets",
+																	classId: classGroup.id,
+																	assignmentId: ca.id,
+																	studentIds: supplementBatchIds,
+																},
+																(result) => {
+																	if (
+																		result.kind === "refreshed" ||
+																		result.kind === "committed"
+																	) {
+																		if (result.added === 0) {
+																			return "Học viên đã được giao bài này trước đó.";
+																		}
+																		if (typeof result.added === "number") {
+																			return `Đã giao bổ sung cho ${result.added} học viên.`;
+																		}
+																	}
+																	return `Đã giao bổ sung cho ${supplementBatchIds.length} học viên.`;
+																},
+															)
+														}
+													>
+														{addingTargets
+															? "Đang giao…"
+															: missingActiveStudentIds.length >
+																	MAX_SUPPLEMENT_BATCH
+																? `Giao bổ sung (${MAX_SUPPLEMENT_BATCH} HV)`
+																: "Giao bổ sung"}
+													</Button>
+												)}
+											</div>
+										)}
 									</div>
 								)}
 							</article>

@@ -17,6 +17,7 @@ import {
 	quizAnswerPatchSchema,
 	quizAttemptActionSchema,
 	quizEssayPatchSchema,
+	RECORDING_ERROR_CODES,
 	STORED_EXAM_INTERESTS,
 	STUDENT_ERROR_CODES,
 	STUDENT_INVITATION_ERROR_CODES,
@@ -28,6 +29,7 @@ import {
 	type StudentQuizGroup,
 	type StudentScheduleLesson,
 	type StudentScheduleResponse,
+	type StudentSessionDetailResponse,
 	type StudentZoomJoinError,
 	type StudentZoomJoinResponse,
 	studentOnboardingPayloadSchema,
@@ -49,6 +51,11 @@ import {
 	quizMediaExtensionMatches,
 	sanitizeMediaFileName,
 } from "@teacher-os/api/lib/quiz-media";
+import {
+	isLessonMaterialCategory,
+	isMaterialKind,
+	type StudentLessonMaterialView,
+} from "@teacher-os/api/material-contracts";
 import { parseStartDateStrict } from "@teacher-os/api/skeleton";
 import {
 	evaluateZoomJoinWindow,
@@ -67,6 +74,8 @@ import {
 	enrollment,
 	invoice,
 	lesson,
+	lessonMaterial,
+	material,
 	notificationRecord,
 	organization,
 	quizAttempt,
@@ -104,6 +113,9 @@ import {
 	toPlainAnnotation,
 } from "../lib/quiz-annotation";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
+import type { RecordingStore } from "../lib/recording-store";
+import { recordingVideoResponse } from "../lib/recording-video-response";
+import { loadClassCurriculumSummary } from "../lib/session-curriculum-materials";
 import { serveStudyPackAudio } from "../lib/study-pack-audio";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
@@ -135,6 +147,8 @@ export interface StudentRouteDeps {
 	fetchExternalAudio?: typeof fetch;
 	/** #814: kho audio R2 dùng chung cho study-pack prompts. */
 	getLibraryAudioStore?(): MediaStore | undefined;
+	/** Kho video recording buổi học Zoom (bucket R2 private `recordings`). */
+	getRecordingStore?(): RecordingStore | undefined;
 	/** Allowlist email giáo viên để định tuyến auto-join single-org (#716). */
 	teacherEmails?: string[];
 	/** Đồng hồ server có thể inject cho test/E2E (mặc định `() => new Date()`). */
@@ -824,7 +838,12 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	router.use("/me", requireStudent);
 	router.use("/overview", requireStudent);
 	router.use("/classes/:classId", requireStudent);
+	router.use("/classes/:classId/sessions/:date", requireStudent);
 	router.use("/classes/:classId/sessions/:date/zoom-join", requireStudent);
+	router.use(
+		"/classes/:classId/sessions/:date/recording/video",
+		requireStudent,
+	);
 	router.use("/onboarding", requireStudent);
 	router.use("/enrollments/:enrollmentId/accept", requireStudent);
 
@@ -1189,65 +1208,151 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		if (!row) return c.json({ error: "class not found" }, 404);
 
 		const now = deps.now ? deps.now() : new Date();
-		const [teacher, nextSession, lessonRows, meetingRows, assignments] =
-			await Promise.all([
-				loadOrgTeacher(db, orgId),
-				row.status === "active"
-					? loadNextSession(db, orgId, row.id, now, row.enrollmentId)
-					: Promise.resolve(null),
-				// Lọc theo enrollment (không theo lớp) để trạng thái riêng như
-				// "vắng" là của chính học viên. `date` null theo cả lớp nên không
-				// cần NULLS LAST; lớp legacy được sắp lại bởi orderStudentLessons.
-				db
-					.select({
-						id: lesson.id,
-						date: lesson.date,
-						day: lesson.day,
-						time: lesson.time,
-						dur: lesson.dur,
-						status: lesson.status,
-						topic: lesson.topic,
-						zoom: lesson.zoom,
-					})
-					.from(lesson)
-					.where(
-						and(
-							eq(lesson.orgId, orgId),
-							eq(lesson.enrollmentId, row.enrollmentId),
-						),
-					)
-					.orderBy(
-						asc(lesson.date),
-						asc(lesson.day),
-						asc(lesson.time),
-						asc(lesson.id),
+		const [
+			teacher,
+			nextSession,
+			lessonRows,
+			meetingRows,
+			assignments,
+			curriculumSummary,
+			directMaterialRows,
+		] = await Promise.all([
+			loadOrgTeacher(db, orgId),
+			row.status === "active"
+				? loadNextSession(db, orgId, row.id, now, row.enrollmentId)
+				: Promise.resolve(null),
+			// Lọc theo enrollment (không theo lớp) để trạng thái riêng như
+			// "vắng" là của chính học viên. `date` null theo cả lớp nên không
+			// cần NULLS LAST; lớp legacy được sắp lại bởi orderStudentLessons.
+			db
+				.select({
+					id: lesson.id,
+					date: lesson.date,
+					day: lesson.day,
+					time: lesson.time,
+					dur: lesson.dur,
+					status: lesson.status,
+					topic: lesson.topic,
+					zoom: lesson.zoom,
+				})
+				.from(lesson)
+				.where(
+					and(
+						eq(lesson.orgId, orgId),
+						eq(lesson.enrollmentId, row.enrollmentId),
 					),
-				db
-					.select({
-						classId: classSessionMeeting.classId,
-						date: classSessionMeeting.date,
-						joinUrl: classSessionMeeting.joinUrl,
-						recordingUrl: classSessionMeeting.recordingUrl,
-						recordingPassword: classSessionMeeting.recordingPassword,
-						recordingStatus: classSessionMeeting.recordingStatus,
-					})
-					.from(classSessionMeeting)
-					.where(
-						and(
-							eq(classSessionMeeting.orgId, orgId),
-							eq(classSessionMeeting.classId, row.id),
-						),
+				)
+				.orderBy(
+					asc(lesson.date),
+					asc(lesson.day),
+					asc(lesson.time),
+					asc(lesson.id),
+				),
+			db
+				.select({
+					classId: classSessionMeeting.classId,
+					date: classSessionMeeting.date,
+					joinUrl: classSessionMeeting.joinUrl,
+					recordingUrl: classSessionMeeting.recordingUrl,
+					recordingPassword: classSessionMeeting.recordingPassword,
+					recordingStatus: classSessionMeeting.recordingStatus,
+					recordingStorageKey: classSessionMeeting.recordingStorageKey,
+					recordingExpiresAt: classSessionMeeting.recordingExpiresAt,
+				})
+				.from(classSessionMeeting)
+				.where(
+					and(
+						eq(classSessionMeeting.orgId, orgId),
+						eq(classSessionMeeting.classId, row.id),
 					),
-				loadClassAssignmentItems(db, orgId, s.id, row.id),
-			]);
+				),
+			loadClassAssignmentItems(db, orgId, s.id, row.id, now),
+			loadClassCurriculumSummary(db, orgId, row.id),
+			db
+				.select({
+					date: lessonMaterial.date,
+					materialId: lessonMaterial.materialId,
+					category: lessonMaterial.category,
+				})
+				.from(lessonMaterial)
+				.where(
+					and(
+						eq(lessonMaterial.orgId, orgId),
+						eq(lessonMaterial.classId, row.id),
+					),
+				),
+		]);
+
+		const directByDate = new Map<
+			string,
+			{ lectures: Set<string>; homework: Set<string> }
+		>();
+		for (const item of directMaterialRows) {
+			const bucket = directByDate.get(item.date) ?? {
+				lectures: new Set<string>(),
+				homework: new Set<string>(),
+			};
+			if (item.category === "homework") {
+				bucket.homework.add(item.materialId);
+			} else {
+				bucket.lectures.add(item.materialId);
+			}
+			directByDate.set(item.date, bucket);
+		}
+
+		const assignmentCountByDate = new Map<string, number>();
+		for (const item of assignments) {
+			if (!item.sessionDate) continue;
+			assignmentCountByDate.set(
+				item.sessionDate,
+				(assignmentCountByDate.get(item.sessionDate) ?? 0) + 1,
+			);
+		}
 
 		const meetingByDate = new Map(meetingRows.map((m) => [m.date, m]));
-		const lessons = lessonRows.map((l) =>
-			toStudentClassLessonWithMeeting(
+		const lessons = lessonRows.map((l) => {
+			const base = toStudentClassLessonWithMeeting(
 				l,
 				l.date ? meetingByDate.get(l.date) : undefined,
-			),
-		);
+				now,
+			);
+			const isInactive = l.status === "holiday" || l.status === "cancelled";
+			const curr =
+				l.date && l.status !== "holiday"
+					? curriculumSummary.byDate.get(l.date)
+					: undefined;
+			let lectureCount = 0;
+			let homeworkCount = 0;
+			if (!isInactive && l.date) {
+				const direct = directByDate.get(l.date);
+				const lectureIds = new Set<string>(direct?.lectures ?? []);
+				const homeworkIds = direct?.homework ?? new Set<string>();
+				for (const bankId of curr?.bankMaterialIds ?? []) {
+					if (!homeworkIds.has(bankId)) lectureIds.add(bankId);
+				}
+				lectureCount = lectureIds.size;
+				homeworkCount = homeworkIds.size;
+			}
+			const assignmentCount =
+				l.date && l.status !== "holiday"
+					? (assignmentCountByDate.get(l.date) ?? 0)
+					: 0;
+			return {
+				...base,
+				...(curr
+					? {
+							moduleId: curr.moduleId,
+							moduleTitle: curr.moduleTitle,
+							syllabusTitle: curr.title,
+							objectives: curr.objectives,
+							lessonKind: curr.kind,
+						}
+					: {}),
+				lectureCount,
+				homeworkCount,
+				assignmentCount,
+			};
+		});
 
 		const response: StudentClassDetail = {
 			class: {
@@ -1256,6 +1361,311 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			},
 			lessons: orderStudentLessons(lessons),
 			assignments,
+			syllabus: curriculumSummary.syllabus,
+		};
+		return c.json(response);
+	});
+
+	/**
+	 * GET /api/student/classes/:classId/sessions/:date
+	 *
+	 * Chi tiết một buổi học của học viên: thông tin buổi, mục tiêu giáo trình,
+	 * Bài giảng (tài liệu direct `lecture` + tài liệu giáo trình đã dedupe),
+	 * Bài tập buổi học (tài liệu direct `homework` + bài tập tương tác gắn buổi)
+	 * và điều hướng buổi trước/sau trong chính enrollment hiện tại.
+	 */
+	router.get("/classes/:classId/sessions/:date", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const classId = c.req.param("classId");
+		const date = parseStartDateStrict(c.req.param("date") ?? "");
+		if (!date) return c.json({ error: "session not found" }, 404);
+		const db = deps.getDb();
+
+		const [row] = await db
+			.select({ ...studentClassColumns })
+			.from(enrollment)
+			.innerJoin(classTable, eq(enrollment.classId, classTable.id))
+			.where(
+				and(
+					eq(enrollment.orgId, orgId),
+					eq(enrollment.studentId, s.id),
+					eq(enrollment.classId, classId),
+					eq(enrollment.status, "active"),
+				),
+			)
+			.limit(1);
+		if (!row) return c.json({ error: "session not found" }, 404);
+
+		const now = deps.now ? deps.now() : new Date();
+		const [
+			teacher,
+			allLessonRows,
+			meetingRows,
+			curriculumSummary,
+			directMaterialRows,
+			allAssignments,
+		] = await Promise.all([
+			loadOrgTeacher(db, orgId),
+			db
+				.select({
+					id: lesson.id,
+					date: lesson.date,
+					day: lesson.day,
+					time: lesson.time,
+					dur: lesson.dur,
+					status: lesson.status,
+					topic: lesson.topic,
+					zoom: lesson.zoom,
+				})
+				.from(lesson)
+				.where(
+					and(
+						eq(lesson.orgId, orgId),
+						eq(lesson.enrollmentId, row.enrollmentId),
+					),
+				)
+				.orderBy(
+					asc(lesson.date),
+					asc(lesson.day),
+					asc(lesson.time),
+					asc(lesson.id),
+				),
+			db
+				.select({
+					classId: classSessionMeeting.classId,
+					date: classSessionMeeting.date,
+					joinUrl: classSessionMeeting.joinUrl,
+					recordingUrl: classSessionMeeting.recordingUrl,
+					recordingPassword: classSessionMeeting.recordingPassword,
+					recordingStatus: classSessionMeeting.recordingStatus,
+					recordingStorageKey: classSessionMeeting.recordingStorageKey,
+					recordingExpiresAt: classSessionMeeting.recordingExpiresAt,
+				})
+				.from(classSessionMeeting)
+				.where(
+					and(
+						eq(classSessionMeeting.orgId, orgId),
+						eq(classSessionMeeting.classId, row.id),
+						eq(classSessionMeeting.date, date),
+					),
+				)
+				.limit(1),
+			loadClassCurriculumSummary(db, orgId, row.id),
+			db
+				.select({
+					id: material.id,
+					title: material.title,
+					description: material.description,
+					kind: material.kind,
+					url: material.url,
+					mimeType: material.mimeType,
+					sizeBytes: material.sizeBytes,
+					originalName: material.originalName,
+					position: lessonMaterial.position,
+					category: lessonMaterial.category,
+					sourceTitle: lessonMaterial.sourceTitle,
+					sourcePageStart: lessonMaterial.sourcePageStart,
+					sourcePageEnd: lessonMaterial.sourcePageEnd,
+				})
+				.from(lessonMaterial)
+				.innerJoin(
+					material,
+					and(
+						eq(material.id, lessonMaterial.materialId),
+						eq(material.orgId, orgId),
+					),
+				)
+				.where(
+					and(
+						eq(lessonMaterial.orgId, orgId),
+						eq(lessonMaterial.classId, row.id),
+						eq(lessonMaterial.date, date),
+					),
+				)
+				.orderBy(
+					asc(lessonMaterial.position),
+					asc(lessonMaterial.createdAt),
+					asc(material.id),
+				),
+			loadClassAssignmentItems(db, orgId, s.id, row.id, now),
+		]);
+
+		const dateRows = allLessonRows.filter((l) => l.date === date);
+		if (dateRows.length === 0) {
+			return c.json({ error: "session not found" }, 404);
+		}
+
+		// Khi cùng ngày có nhiều ca, ưu tiên buổi đang hoạt động thay vì holiday/cancelled.
+		const primaryRow =
+			dateRows.find(
+				(r) => r.status !== "holiday" && r.status !== "cancelled",
+			) ?? dateRows[0];
+		if (!primaryRow) {
+			return c.json({ error: "session not found" }, 404);
+		}
+		const isInactive = dateRows.every(
+			(r) => r.status === "holiday" || r.status === "cancelled",
+		);
+		const isAllHoliday = dateRows.every((r) => r.status === "holiday");
+
+		// Tính buổi trước / buổi sau chỉ trên các ngày non-holiday thuộc chính enrollment này (dedupe).
+		const byDate = new Map<string, typeof allLessonRows>();
+		for (const item of allLessonRows) {
+			if (!item.date) continue;
+			const bucket = byDate.get(item.date) ?? [];
+			bucket.push(item);
+			byDate.set(item.date, bucket);
+		}
+		const teachingDates = [...byDate.keys()]
+			.sort()
+			.filter(
+				(d) => !(byDate.get(d) ?? []).every((r) => r.status === "holiday"),
+			);
+		const currentIndex = teachingDates.indexOf(date);
+		const sessionNumber = currentIndex >= 0 ? currentIndex + 1 : null;
+		let prevSessionDate: string | null = null;
+		let nextSessionDate: string | null = null;
+		for (const d of teachingDates) {
+			if (d < date) prevSessionDate = d;
+			else if (d > date && nextSessionDate === null) nextSessionDate = d;
+		}
+
+		const currEntry = !isAllHoliday
+			? curriculumSummary.byDate.get(date)
+			: undefined;
+
+		let lectures: StudentLessonMaterialView[] = [];
+		let homeworkMaterials: StudentLessonMaterialView[] = [];
+		if (!isInactive) {
+			const directViews: StudentLessonMaterialView[] = directMaterialRows.map(
+				(r) => ({
+					id: r.id,
+					title: r.title,
+					description: r.description,
+					kind: isMaterialKind(r.kind) ? r.kind : "file",
+					url: r.url,
+					mimeType: r.mimeType,
+					sizeBytes: r.sizeBytes,
+					originalName: r.originalName,
+					position: r.position,
+					category: isLessonMaterialCategory(r.category)
+						? r.category
+						: "lecture",
+					sourceTitle: r.sourceTitle ?? null,
+					sourcePageStart: r.sourcePageStart ?? null,
+					sourcePageEnd: r.sourcePageEnd ?? null,
+				}),
+			);
+			const directLectures = directViews.filter(
+				(item) => item.category !== "homework",
+			);
+			homeworkMaterials = directViews.filter(
+				(item) => item.category === "homework",
+			);
+			const directIds = new Set(directViews.map((item) => item.id));
+			const extraCurriculumIds = (currEntry?.bankMaterialIds ?? []).filter(
+				(id) => !directIds.has(id),
+			);
+			let curriculumMaterials: StudentLessonMaterialView[] = [];
+			if (extraCurriculumIds.length > 0) {
+				const bankRows = await db
+					.select({
+						id: material.id,
+						title: material.title,
+						description: material.description,
+						kind: material.kind,
+						url: material.url,
+						mimeType: material.mimeType,
+						sizeBytes: material.sizeBytes,
+						originalName: material.originalName,
+					})
+					.from(material)
+					.where(
+						and(
+							eq(material.orgId, orgId),
+							inArray(material.id, extraCurriculumIds),
+						),
+					);
+				const byId = new Map(bankRows.map((rowItem) => [rowItem.id, rowItem]));
+				curriculumMaterials = extraCurriculumIds.flatMap((id, idx) => {
+					const m = byId.get(id);
+					if (!m) return [];
+					return [
+						{
+							id: m.id,
+							title: m.title,
+							description: m.description,
+							kind: isMaterialKind(m.kind) ? m.kind : "file",
+							url: m.url,
+							mimeType: m.mimeType,
+							sizeBytes: m.sizeBytes,
+							originalName: m.originalName,
+							position: idx,
+							category: "lecture" as const,
+							sourceTitle: null,
+							sourcePageStart: null,
+							sourcePageEnd: null,
+						},
+					];
+				});
+			}
+			lectures = [...directLectures, ...curriculumMaterials];
+		}
+
+		const sessionAssignments = isAllHoliday
+			? []
+			: allAssignments.filter((item) => item.sessionDate === date);
+		const curriculum =
+			currEntry && curriculumSummary.syllabus
+				? {
+						syllabusName: curriculumSummary.syllabus.name,
+						moduleId: currEntry.moduleId,
+						moduleTitle: currEntry.moduleTitle,
+						title: currEntry.title,
+						objectives: currEntry.objectives,
+						kind: currEntry.kind,
+					}
+				: null;
+
+		const meeting = meetingRows[0];
+		const baseLesson = toStudentClassLessonWithMeeting(
+			primaryRow,
+			meeting,
+			now,
+		);
+
+		const response: StudentSessionDetailResponse = {
+			class: {
+				id: row.id,
+				name: row.name,
+				level: row.level,
+				mode: row.mode,
+				status: row.status === "paused" ? "paused" : "active",
+				teacher,
+			},
+			session: {
+				...baseLesson,
+				...(currEntry
+					? {
+							moduleId: currEntry.moduleId,
+							moduleTitle: currEntry.moduleTitle,
+							syllabusTitle: currEntry.title,
+							objectives: currEntry.objectives,
+							lessonKind: currEntry.kind,
+						}
+					: {}),
+				lectureCount: lectures.length,
+				homeworkCount: homeworkMaterials.length,
+				assignmentCount: sessionAssignments.length,
+				sessionNumber,
+				totalTeachingSessions: teachingDates.length,
+			},
+			curriculum,
+			lectures,
+			homeworkMaterials,
+			assignments: sessionAssignments,
+			prevSessionDate,
+			nextSessionDate,
 		};
 		return c.json(response);
 	});
@@ -1488,6 +1898,174 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	});
 
 	/**
+	 * GET /api/student/classes/:classId/sessions/:date/recording/video
+	 *
+	 * Phát stream video recording từ kho R2 (hỗ trợ `Range: bytes=` trả 206).
+	 * Chỉ cho phép học viên có enrollment `active` ở lớp đó và có buổi học
+	 * cùng ngày không bị `cancelled`/`holiday`. Trả 410 khi đã hết hạn 90 ngày.
+	 */
+	router.get("/classes/:classId/sessions/:date/recording/video", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const classId = c.req.param("classId") ?? "";
+		const date = parseStartDateStrict(c.req.param("date") ?? "");
+		if (!date) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{ error: "Ngày buổi học không hợp lệ.", reason: "invalid-date" },
+				400,
+			);
+		}
+
+		const store = deps.getRecordingStore?.();
+		if (!store) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Chưa cấu hình kho lưu trữ recording.",
+					code: RECORDING_ERROR_CODES.DISABLED,
+				},
+				503,
+			);
+		}
+
+		const db = deps.getDb();
+		const [enr] = await db
+			.select({ id: enrollment.id })
+			.from(enrollment)
+			.innerJoin(classTable, eq(enrollment.classId, classTable.id))
+			.where(
+				and(
+					eq(enrollment.orgId, orgId),
+					eq(classTable.orgId, orgId),
+					eq(enrollment.studentId, s.id),
+					eq(enrollment.classId, classId),
+					eq(enrollment.status, "active"),
+				),
+			)
+			.limit(1);
+
+		if (!enr) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Không tìm thấy recording.",
+					code: RECORDING_ERROR_CODES.NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		const lessonRows = await db
+			.select({ id: lesson.id, status: lesson.status })
+			.from(lesson)
+			.where(
+				and(
+					eq(lesson.orgId, orgId),
+					eq(lesson.enrollmentId, enr.id),
+					eq(lesson.classId, classId),
+					eq(lesson.date, date),
+				),
+			);
+
+		const hasActiveLesson = lessonRows.some(
+			(r) => r.status !== "cancelled" && r.status !== "holiday",
+		);
+		if (!hasActiveLesson) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Không tìm thấy recording.",
+					code: RECORDING_ERROR_CODES.NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		const [meeting] = await db
+			.select({
+				recordingStatus: classSessionMeeting.recordingStatus,
+				recordingStorageKey: classSessionMeeting.recordingStorageKey,
+				recordingMimeType: classSessionMeeting.recordingMimeType,
+				recordingSizeBytes: classSessionMeeting.recordingSizeBytes,
+				recordingExpiresAt: classSessionMeeting.recordingExpiresAt,
+			})
+			.from(classSessionMeeting)
+			.where(
+				and(
+					eq(classSessionMeeting.orgId, orgId),
+					eq(classSessionMeeting.classId, classId),
+					eq(classSessionMeeting.date, date),
+				),
+			)
+			.limit(1);
+
+		if (!meeting) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Không tìm thấy recording.",
+					code: RECORDING_ERROR_CODES.NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		const now = getNow();
+		const isExpired =
+			meeting.recordingStatus === "expired" ||
+			Boolean(
+				meeting.recordingStorageKey &&
+					meeting.recordingExpiresAt &&
+					meeting.recordingExpiresAt.getTime() <= now.getTime(),
+			);
+		if (isExpired) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Recording đã hết hạn lưu trữ (90 ngày).",
+					code: RECORDING_ERROR_CODES.EXPIRED,
+				},
+				410,
+			);
+		}
+
+		if (!meeting.recordingStorageKey) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Buổi học chưa có video recording lưu trữ.",
+					code: RECORDING_ERROR_CODES.NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		const response = await recordingVideoResponse(
+			store,
+			{
+				storageKey: meeting.recordingStorageKey,
+				mimeType: meeting.recordingMimeType,
+				sizeBytes: meeting.recordingSizeBytes,
+				fileName: `recording-${date}.mp4`,
+			},
+			{ rangeHeader: c.req.header("Range") },
+		);
+
+		if (!response) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Không tìm thấy file video recording trong kho lưu trữ.",
+					code: RECORDING_ERROR_CODES.NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		return response;
+	});
+
+	/**
 	 * GET /api/student/schedule (#584)
 	 *
 	 * Lịch học gộp của tất cả các lớp mà học viên đang tham gia (enrollment active)
@@ -1573,6 +2151,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					recordingUrl: classSessionMeeting.recordingUrl,
 					recordingPassword: classSessionMeeting.recordingPassword,
 					recordingStatus: classSessionMeeting.recordingStatus,
+					recordingStorageKey: classSessionMeeting.recordingStorageKey,
+					recordingExpiresAt: classSessionMeeting.recordingExpiresAt,
 				})
 				.from(classSessionMeeting)
 				.where(
@@ -1612,6 +2192,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					toStudentClassLessonWithMeeting(
 						l,
 						l.date ? meetingByKey.get(`${classRow.id}|${l.date}`) : undefined,
+						now,
 					),
 				),
 			);
@@ -1721,7 +2302,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			return c.json({ error: "enrollment not found" }, 404);
 		}
 
-		const result = await activateEnrollment(db, orgId, enrollmentId);
+		const result = await activateEnrollment(db, orgId, enrollmentId, getNow());
 		if (result.ok) {
 			return c.json({ ok: true });
 		}

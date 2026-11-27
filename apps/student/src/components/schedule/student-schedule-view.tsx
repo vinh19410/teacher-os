@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import type {
-	StudentClass,
-	StudentScheduleLesson,
+import {
+	RECORDING_RETENTION_DAYS,
+	type StudentClass,
+	type StudentScheduleLesson,
 } from "@teacher-os/api/contracts";
 import { formatSchedule } from "@teacher-os/api/format-schedule";
 import {
@@ -9,6 +10,10 @@ import {
 	vietnamTodayISO,
 } from "@teacher-os/api/vietnam-date";
 import { buttonVariants } from "@teacher-os/ui/components/button";
+import {
+	formatRecordingExpiryVN,
+	RecordingPlayerModal,
+} from "@teacher-os/ui/components/recording-player-modal";
 import {
 	Check,
 	CircleDashed,
@@ -19,12 +24,17 @@ import {
 	UserRound,
 	X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { RecordingPassword } from "@/components/class/recording-password";
 import { ZoomJoinButton } from "@/components/class/zoom-join-button";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
+import {
+	getActiveStudentOrgId,
+	studentSessionRecordingVideoUrl,
+} from "@/lib/repos/student";
+import { subscribeActiveStudentOrg } from "@/lib/student-org-storage";
 import {
 	formatVietnamDateFromISO,
 	VI_DAY_NAMES,
@@ -118,6 +128,18 @@ export function StudentScheduleView({
 }: StudentScheduleViewProps) {
 	const [currentNow] = useState(() => now ?? new Date());
 	const todayISO = vietnamTodayISO(currentNow);
+	useSyncExternalStore(
+		subscribeActiveStudentOrg,
+		getActiveStudentOrgId,
+		getActiveStudentOrgId,
+	);
+	const [activeRecording, setActiveRecording] = useState<{
+		classId: string;
+		date: string;
+		title: string;
+		subtitle: string;
+		expiresAt: string | null;
+	} | null>(null);
 
 	const [internalTab, setInternalTab] = useState<ScheduleTab>("upcoming");
 	const activeTab = controlledTab ?? internalTab;
@@ -556,16 +578,36 @@ export function StudentScheduleView({
 										const canShowRecording =
 											lesson.status !== "cancelled" &&
 											lesson.status !== "holiday";
-										const showRecordingLink =
-											canShowRecording && Boolean(lesson.recordingUrl);
+										const hasR2Video =
+											canShowRecording &&
+											lesson.date != null &&
+											Boolean(lesson.hasRecordingVideo) &&
+											lesson.recordingStatus !== "expired";
+										const showExternalRecordingLink =
+											canShowRecording &&
+											!hasR2Video &&
+											Boolean(lesson.recordingUrl);
+										const showExpiredRecording =
+											canShowRecording &&
+											!hasR2Video &&
+											!lesson.recordingUrl &&
+											lesson.recordingStatus === "expired";
 										const showPendingRecording =
+											!hasR2Video &&
 											!lesson.recordingUrl &&
 											lesson.recordingStatus === "pending" &&
 											(isEnded ||
 												lesson.status === "completed" ||
 												lesson.status === "absent");
+										const recordingExpiryLabel = hasR2Video
+											? formatRecordingExpiryVN(lesson.recordingExpiresAt)
+											: null;
 										const hasActions =
-											showZoomLink || showRecordingLink || showPendingRecording;
+											showZoomLink ||
+											hasR2Video ||
+											showExternalRecordingLink ||
+											showExpiredRecording ||
+											showPendingRecording;
 
 										return (
 											<div
@@ -663,11 +705,22 @@ export function StudentScheduleView({
 																	nowMs={now?.getTime()}
 																/>
 															)}
-															{showRecordingLink && lesson.recordingUrl && (
-																<a
-																	href={lesson.recordingUrl}
-																	target="_blank"
-																	rel="noopener noreferrer"
+															{hasR2Video && lesson.date && (
+																<button
+																	type="button"
+																	onClick={() => {
+																		if (!lesson.date) return;
+																		setActiveRecording({
+																			classId: lesson.classId,
+																			date: lesson.date,
+																			title: lesson.topic
+																				? `${lesson.className} — ${lesson.topic}`
+																				: `Recording — ${lesson.className}`,
+																			subtitle: `${lessonWeekdayOrDate(lesson)} · ${lesson.time}`,
+																			expiresAt:
+																				lesson.recordingExpiresAt ?? null,
+																		});
+																	}}
 																	className={cn(
 																		buttonVariants({
 																			variant: "outline",
@@ -681,15 +734,50 @@ export function StudentScheduleView({
 																		className="size-3.5"
 																	/>
 																	Xem recording
-																</a>
+																</button>
 															)}
-															{showRecordingLink &&
+															{hasR2Video && recordingExpiryLabel && (
+																<span className="text-muted-foreground text-xs tabular-nums">
+																	Lưu đến {recordingExpiryLabel}
+																</span>
+															)}
+															{showExternalRecordingLink &&
+																lesson.recordingUrl && (
+																	<a
+																		href={lesson.recordingUrl}
+																		target="_blank"
+																		rel="noopener noreferrer"
+																		className={cn(
+																			buttonVariants({
+																				variant: "outline",
+																				size: "sm",
+																			}),
+																			"max-w-full whitespace-normal text-center focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-0",
+																		)}
+																	>
+																		<PlayCircle
+																			aria-hidden="true"
+																			className="size-3.5"
+																		/>
+																		Xem recording
+																	</a>
+																)}
+															{showExternalRecordingLink &&
 																lesson.recordingUrl &&
 																lesson.recordingPassword && (
 																	<RecordingPassword
 																		password={lesson.recordingPassword}
 																	/>
 																)}
+															{showExpiredRecording && (
+																<Badge
+																	variant="outline"
+																	className="text-muted-foreground"
+																>
+																	Recording đã hết hạn (
+																	{RECORDING_RETENTION_DAYS} ngày)
+																</Badge>
+															)}
 															{showPendingRecording && (
 																<Badge
 																	variant="outline"
@@ -713,6 +801,19 @@ export function StudentScheduleView({
 						)}
 					</section>
 				</>
+			)}
+			{activeRecording !== null && (
+				<RecordingPlayerModal
+					open={true}
+					onClose={() => setActiveRecording(null)}
+					title={activeRecording.title}
+					subtitle={activeRecording.subtitle}
+					videoUrl={studentSessionRecordingVideoUrl(
+						activeRecording.classId,
+						activeRecording.date,
+					)}
+					expiresAt={activeRecording.expiresAt}
+				/>
 			)}
 		</div>
 	);

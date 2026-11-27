@@ -1,12 +1,15 @@
 import {
+	RECORDING_ERROR_CODES,
 	sessionRecordingUpdateSchema,
 	ZOOM_ERROR_CODES,
 } from "@teacher-os/api/contracts";
 import { parseStartDateStrict } from "@teacher-os/api/skeleton";
 import { classTable } from "@teacher-os/db/schema/class";
+import { classSessionMeeting } from "@teacher-os/db/schema/class-session-meeting";
 import { and, eq } from "drizzle-orm";
 import { type Context, Hono, type Next } from "hono";
 import type { AppDeps, KernelCtx } from "../app";
+import { recordingVideoResponse } from "../lib/recording-video-response";
 import {
 	bulkCreateMeetingsForClass,
 	ensureSessionMeeting,
@@ -21,7 +24,13 @@ import {
 
 export type ZoomRouteDeps = Pick<
 	AppDeps,
-	"getDb" | "runInBackground" | "zoom" | "zoomFetch" | "getZoomClient"
+	| "getDb"
+	| "runInBackground"
+	| "zoom"
+	| "zoomFetch"
+	| "getZoomClient"
+	| "getRecordingStore"
+	| "now"
 >;
 
 export function zoomDepsFrom(deps: ZoomRouteDeps): ZoomServiceDeps {
@@ -30,6 +39,9 @@ export function zoomDepsFrom(deps: ZoomRouteDeps): ZoomServiceDeps {
 		zoom: deps.zoom,
 		fetchFn: deps.zoomFetch,
 		getZoomClient: deps.getZoomClient,
+		recordingStore: deps.getRecordingStore?.(),
+		runInBackground: deps.runInBackground,
+		now: deps.now,
 	};
 }
 
@@ -264,20 +276,160 @@ export function zoomMeetingRoutes(deps: AppDeps) {
 				);
 			}
 
-			const updated = await updateSessionRecordingManual(db, {
-				orgId: ctx.orgId,
-				classId,
-				dateISO,
-				recordingUrl: parsed.data.recordingUrl,
-			});
+			const updated = await updateSessionRecordingManual(
+				db,
+				{
+					orgId: ctx.orgId,
+					classId,
+					dateISO,
+					recordingUrl: parsed.data.recordingUrl,
+				},
+				{
+					recordingStore: deps.getRecordingStore?.(),
+					runInBackground: deps.runInBackground,
+					now: deps.now,
+				},
+			);
+			if (!updated) {
+				return c.json(
+					{
+						error:
+							"Buổi học đang có video lưu trên hệ thống nên không gán link tay được.",
+						code: RECORDING_ERROR_CODES.LOCKED,
+					},
+					409,
+				);
+			}
 			return c.json({
 				status: updated.status,
 				recordingUrl: updated.recordingUrl,
-				syncedAt: new Date().toISOString(),
+				recordingSource: updated.recordingUrl ? "external" : null,
+				hasRecordingVideo: false,
+				recordingExpiresAt: null,
+				syncedAt: updated.syncedAt,
 				message: null,
 			});
 		},
 	);
+
+	router.get("/classes/:classId/sessions/:date/recording/video", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) {
+			c.header("Cache-Control", "no-store");
+			return c.json({ error: "unauthorized" }, 401);
+		}
+		const classId = c.req.param("classId") ?? "";
+		const dateISO = parseStartDateStrict(c.req.param("date") ?? "");
+		if (!dateISO) {
+			c.header("Cache-Control", "no-store");
+			return c.json({ error: "invalid date", reason: "invalid-date" }, 400);
+		}
+		const db = deps.getDb();
+		const [cls] = await db
+			.select({ id: classTable.id })
+			.from(classTable)
+			.where(and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)))
+			.limit(1);
+		if (!cls) {
+			c.header("Cache-Control", "no-store");
+			return c.json({ error: "class not found" }, 404);
+		}
+
+		const store = deps.getRecordingStore?.();
+		if (!store) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Chưa cấu hình kho lưu trữ recording.",
+					code: RECORDING_ERROR_CODES.DISABLED,
+				},
+				503,
+			);
+		}
+
+		const [meeting] = await db
+			.select({
+				recordingStatus: classSessionMeeting.recordingStatus,
+				recordingStorageKey: classSessionMeeting.recordingStorageKey,
+				recordingMimeType: classSessionMeeting.recordingMimeType,
+				recordingSizeBytes: classSessionMeeting.recordingSizeBytes,
+				recordingExpiresAt: classSessionMeeting.recordingExpiresAt,
+			})
+			.from(classSessionMeeting)
+			.where(
+				and(
+					eq(classSessionMeeting.orgId, ctx.orgId),
+					eq(classSessionMeeting.classId, classId),
+					eq(classSessionMeeting.date, dateISO),
+				),
+			)
+			.limit(1);
+
+		if (!meeting) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Không tìm thấy recording.",
+					code: RECORDING_ERROR_CODES.NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		const now = deps.now ? deps.now() : new Date();
+		const isExpired =
+			meeting.recordingStatus === "expired" ||
+			Boolean(
+				meeting.recordingStorageKey &&
+					meeting.recordingExpiresAt &&
+					meeting.recordingExpiresAt.getTime() <= now.getTime(),
+			);
+		if (isExpired) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Recording đã hết hạn lưu trữ (90 ngày).",
+					code: RECORDING_ERROR_CODES.EXPIRED,
+				},
+				410,
+			);
+		}
+
+		if (!meeting.recordingStorageKey) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Buổi học chưa có video recording lưu trữ.",
+					code: RECORDING_ERROR_CODES.NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		const response = await recordingVideoResponse(
+			store,
+			{
+				storageKey: meeting.recordingStorageKey,
+				mimeType: meeting.recordingMimeType,
+				sizeBytes: meeting.recordingSizeBytes,
+				fileName: `recording-${dateISO}.mp4`,
+			},
+			{ rangeHeader: c.req.header("Range") },
+		);
+
+		if (!response) {
+			c.header("Cache-Control", "no-store");
+			return c.json(
+				{
+					error: "Không tìm thấy file video recording trong kho lưu trữ.",
+					code: RECORDING_ERROR_CODES.NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		return response;
+	});
 
 	return router;
 }
