@@ -690,6 +690,13 @@ function isDailyQuotaError(err: unknown): boolean {
 	);
 }
 
+function isFatalZoomConfigError(err: unknown): boolean {
+	return (
+		err instanceof ZoomIntegrationError &&
+		err.code === ZOOM_ERROR_CODES.INVALID_CONFIG
+	);
+}
+
 export async function autoProvisionMeetingsForNewClass(
 	deps: ZoomServiceDeps,
 	input: {
@@ -719,6 +726,16 @@ export async function autoProvisionMeetingsForNewClass(
 				err.code === ZOOM_ERROR_CODES.NOT_CONFIGURED
 			) {
 				// Chưa cấu hình Zoom — dừng ngay không lặp vô ích.
+				return;
+			}
+			if (isFatalZoomConfigError(err)) {
+				console.warn(
+					"[zoom] auto-provision stopped: invalid Zoom configuration",
+					{
+						classId: input.classId,
+						date: occ.date,
+					},
+				);
 				return;
 			}
 			if (isDailyQuotaError(err)) {
@@ -837,9 +854,9 @@ export async function bulkCreateMeetingsForClass(
 	// Kiểm tra cấu hình Zoom một lần ngay đầu để trả 503 gọn thay vì lỗi từng buổi.
 	resolveZoomClient(deps);
 
-	let quotaReached = false;
+	let stopRemaining = false;
 	for (const dateISO of sortedDates) {
-		if (quotaReached) {
+		if (stopRemaining) {
 			skipped += 1;
 			continue;
 		}
@@ -864,7 +881,9 @@ export async function bulkCreateMeetingsForClass(
 				date: dateISO,
 				message: err instanceof Error ? err.message : "Lỗi tạo Zoom",
 			});
-			if (isDailyQuotaError(err)) quotaReached = true;
+			if (isDailyQuotaError(err) || isFatalZoomConfigError(err)) {
+				stopRemaining = true;
+			}
 		}
 	}
 

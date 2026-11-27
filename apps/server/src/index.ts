@@ -127,7 +127,7 @@ const zoomConfig = {
 	accountId: env.ZOOM_ACCOUNT_ID,
 	clientId: env.ZOOM_CLIENT_ID,
 	clientSecret: env.ZOOM_CLIENT_SECRET,
-	hostUser: env.ZOOM_HOST_USER || "me",
+	hostUser: env.ZOOM_HOST_USER?.trim() || "me",
 };
 
 // Base URL học viên trên domain LMS hợp nhất cho link tuyệt đối trong email.

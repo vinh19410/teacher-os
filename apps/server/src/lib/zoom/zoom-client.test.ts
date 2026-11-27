@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	createZoomClient,
 	type FetchFn,
+	isZoomConfigured,
 	ZoomIntegrationError,
 	type ZoomMeetingInput,
 } from "./zoom-client";
@@ -586,5 +587,113 @@ describe("createZoomClient", () => {
 		);
 		const trashInit = fn.mock.calls[1]?.[1] as RequestInit | undefined;
 		expect(trashInit?.method).toBe("DELETE");
+	});
+
+	it("isZoomConfigured trả false khi thông tin cấu hình toàn khoảng trắng", () => {
+		expect(
+			isZoomConfigured({
+				accountId: "   ",
+				clientId: "cid",
+				clientSecret: "sec",
+			}),
+		).toBe(false);
+		expect(
+			isZoomConfigured({
+				accountId: " acc ",
+				clientId: " cid ",
+				clientSecret: " sec ",
+			}),
+		).toBe(true);
+	});
+
+	it("createMeeting từ chối hostUser sai định dạng với 503 ZOOM_INVALID_CONFIG và 0 lần gọi fetch", async () => {
+		for (const badHost of ["Ms My", "MsMy", "Ms My <teacher@example.com>"]) {
+			const fn = mockFetch();
+			const client = createZoomClient({ ...cfg(), hostUser: badHost }, fn);
+			await expect(client.createMeeting(input)).rejects.toMatchObject({
+				code: "ZOOM_INVALID_CONFIG",
+				status: 503,
+				message: expect.stringContaining("ZOOM_HOST_USER"),
+			});
+			expect(fn).not.toHaveBeenCalled();
+		}
+	});
+
+	it("createMeeting chuẩn hoá email có khoảng trắng, Zoom User ID hợp lệ và 'ME' -> 'me'", async () => {
+		const emailFn = mockFetch(token(), created());
+		await createZoomClient(
+			{ ...cfg(), hostUser: "  teacher@example.com  " },
+			emailFn,
+		).createMeeting(input);
+		expect(String(emailFn.mock.calls[1]?.[0])).toBe(
+			"https://api.zoom.us/v2/users/teacher%40example.com/meetings",
+		);
+
+		const idFn = mockFetch(token(), created());
+		await createZoomClient(
+			{ ...cfg(), hostUser: "KdFLUcR-azSHB8_1234567" },
+			idFn,
+		).createMeeting(input);
+		expect(String(idFn.mock.calls[1]?.[0])).toBe(
+			"https://api.zoom.us/v2/users/KdFLUcR-azSHB8_1234567/meetings",
+		);
+
+		const meFn = mockFetch(token(), created());
+		await createZoomClient({ ...cfg(), hostUser: " ME " }, meFn).createMeeting(
+			input,
+		);
+		expect(String(meFn.mock.calls[1]?.[0])).toBe(
+			"https://api.zoom.us/v2/users/me/meetings",
+		);
+	});
+
+	it("createMeeting ánh xạ Zoom 404/1001 sang 502 ZOOM_INVALID_CONFIG nhưng updateMeeting 404/3001 giữ ZOOM_API_ERROR", async () => {
+		const create404Fn = mockFetch(
+			token(),
+			json(
+				{ code: 1001, message: "User does not exist: ghost@example.com." },
+				404,
+			),
+		);
+		await expect(
+			createZoomClient(
+				{ ...cfg(), hostUser: "ghost@example.com" },
+				create404Fn,
+			).createMeeting(input),
+		).rejects.toMatchObject({
+			code: "ZOOM_INVALID_CONFIG",
+			status: 502,
+			message: expect.stringContaining("ZOOM_HOST_USER"),
+		});
+
+		const update404Fn = mockFetch(
+			token(),
+			json({ code: 3001, message: "Meeting does not exist: 999." }, 404),
+		);
+		await expect(
+			createZoomClient(
+				{ ...cfg(), hostUser: "teacher@example.com" },
+				update404Fn,
+			).updateMeeting("999", input),
+		).rejects.toMatchObject({
+			code: "ZOOM_API_ERROR",
+			status: 502,
+			message: "Zoom API lỗi 404: Meeting does not exist: 999.",
+		});
+	});
+
+	it("getRecording, updateMeeting và deleteMeeting vẫn hoạt động dù hostUser sai định dạng", async () => {
+		const fn = mockFetch(
+			token(),
+			new Response(null, { status: 204 }),
+			json({ message: "not found" }, 404),
+			new Response(null, { status: 204 }),
+		);
+		const client = createZoomClient({ ...cfg(), hostUser: "Ms My" }, fn);
+		await expect(client.updateMeeting("123", input)).resolves.toBeUndefined();
+		await expect(client.getRecording("123")).resolves.toEqual({
+			status: "missing",
+		});
+		await expect(client.deleteMeeting("123")).resolves.toBeUndefined();
 	});
 });
