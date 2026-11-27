@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { expect, type Page, test } from "@playwright/test";
 import {
 	addDaysISO,
@@ -47,6 +48,12 @@ test.beforeAll(async ({ browser }) => {
 		studentEmail,
 		teacher: { name: teacherName, email: teacherEmail },
 		invitedClassName,
+		classMeta: {
+			level: "Band 6.5",
+			mode: "Online",
+			schedule: '{"days":[1,4],"start":"19:00","end":"20:30"}',
+			startDate: "2026-12-15",
+		},
 		lessons: [
 			{
 				// Quá hạn 2 ngày mà chưa ai check-in → badge "Đã kết thúc" (#393).
@@ -197,18 +204,128 @@ test.describe("Student class card & class detail page", () => {
 		).toBeVisible();
 		const infoCard = page.getByRole("region", { name: "Thông tin lớp học" });
 		await expect(infoCard).toBeVisible();
+		await expect(infoCard).toContainText("Lịch");
+		await expect(infoCard).toContainText("T3 & T6 · 19:00–20:30");
+		await expect(infoCard).toContainText("Hình thức");
+		await expect(infoCard).toContainText("Online");
+		await expect(infoCard).toContainText("Giáo viên");
 		await expect(infoCard).toContainText(teacherName);
-		await expect(
-			infoCard.getByRole("link", { name: teacherEmail }),
-		).toHaveAttribute("href", `mailto:${teacherEmail}`);
+		const mailtoLink = infoCard.getByRole("link", { name: teacherEmail });
+		await expect(mailtoLink).toHaveAttribute("href", `mailto:${teacherEmail}`);
+		await expect(infoCard).toContainText("Khai giảng");
+		await expect(infoCard).toContainText("Thứ Ba, 15/12/2026");
+		await expect(infoCard).not.toContainText("Khoá");
+		await expect(infoCard).not.toContainText("Band 6.5");
+		await expect(infoCard).not.toContainText("Số buổi đã học");
+		await expect(infoCard).not.toContainText(/\d+\/\d+\s*buổi/);
 		await expect(infoCard).not.toContainText("Buổi tới:");
 		await expect(infoCard).not.toContainText("18:30");
 		await expect(infoCard).not.toContainText(/\d+\s*tháng/);
 
-		const lessons = page
-			.locator("section")
-			.filter({ has: page.getByRole("heading", { name: "Buổi học" }) })
-			.locator("li");
+		// Khẳng định dữ liệu buổi học thật vẫn hiện tại RingStat
+		// (tránh negative false-pass khi gỡ mục khỏi ClassInfoCard & JourneySummitCard).
+		const sessionsRing = page
+			.getByText("Buổi đã diễn ra", { exact: true })
+			.locator("..");
+		await expect(sessionsRing).toContainText("1/4");
+		await expect(sessionsRing).toContainText("Buổi học");
+
+		// Keyboard Tab từ nút "Nhắn giáo viên" tới link mailto trong ClassInfoCard
+		await page.getByRole("link", { name: "Nhắn giáo viên" }).focus();
+		await page.keyboard.press("Tab");
+		await expect(mailtoLink).toBeFocused();
+
+		if (process.env.CAPTURE_POT === "1") {
+			const reportsDir = fileURLToPath(
+				new URL("../../../plans/reports/", import.meta.url),
+			);
+			const prefix = process.env.POT_PREFIX?.trim() || "class-info";
+
+			// Desktop Light (1440×900)
+			await page.setViewportSize({ width: 1440, height: 900 });
+			await page.waitForTimeout(150);
+			expect(
+				await page.evaluate(
+					() =>
+						document.documentElement.scrollWidth >
+						document.documentElement.clientWidth,
+				),
+			).toBe(false);
+			await page.screenshot({
+				path: `${reportsDir}${prefix}-class-info-card-desktop.png`,
+				fullPage: false,
+			});
+
+			// Bật Dark mode qua ThemeToggle & reload kiểm chứng localStorage.theme
+			const themeSwitch = page.getByRole("switch", { name: "Giao diện tối" });
+			await themeSwitch.click();
+			await expect(themeSwitch).toHaveAttribute("aria-checked", "true");
+			await page.reload();
+			await expect(
+				page.getByRole("region", { name: "Thông tin lớp học" }),
+			).toBeVisible();
+			const darkState = await page.evaluate(() => ({
+				hasDarkClass: document.documentElement.classList.contains("dark"),
+				storedTheme: localStorage.getItem("theme"),
+			}));
+			expect(darkState).toEqual({ hasDarkClass: true, storedTheme: "dark" });
+			await page.waitForTimeout(150);
+			await page.screenshot({
+				path: `${reportsDir}${prefix}-class-info-card-dark.png`,
+				fullPage: false,
+			});
+
+			// Tắt Dark mode trở lại Light cho ảnh Tablet & Mobile
+			await page.getByRole("switch", { name: "Giao diện tối" }).click();
+			await expect(
+				page.getByRole("switch", { name: "Giao diện tối" }),
+			).toHaveAttribute("aria-checked", "false");
+
+			for (const [w, h, suffix] of [
+				[768, 1024, "tablet"],
+				[375, 812, "mobile"],
+			] as const) {
+				await page.setViewportSize({ width: w, height: h });
+				await page.waitForTimeout(150);
+				expect(
+					await page.evaluate(
+						() =>
+							document.documentElement.scrollWidth >
+							document.documentElement.clientWidth,
+					),
+				).toBe(false);
+				await page.screenshot({
+					path: `${reportsDir}${prefix}-class-info-card-${suffix}.png`,
+					fullPage: false,
+				});
+			}
+
+			// Kiểm chứng 320px reflow không tràn ngang
+			await page.setViewportSize({ width: 320, height: 812 });
+			await page.waitForTimeout(150);
+			expect(
+				await page.evaluate(
+					() =>
+						document.documentElement.scrollWidth >
+						document.documentElement.clientWidth,
+				),
+			).toBe(false);
+
+			await page.setViewportSize({ width: 1440, height: 900 });
+		}
+
+		const lessonSection = page.locator("section").filter({
+			has: page.getByRole("heading", { name: "Buổi học", exact: true }),
+		});
+		await expect(
+			lessonSection.getByTestId("journey-syllabus-header"),
+		).toHaveCount(0);
+		await expect(lessonSection.getByText("Đích đến của bạn")).toHaveCount(0);
+		await expect(lessonSection.getByRole("progressbar")).toHaveCount(0);
+		await expect(lessonSection.getByTestId("journey-next-hero")).toBeVisible();
+		await expect(lessonSection.getByText("Lộ trình chinh phục")).toBeVisible();
+
+		const lessons = lessonSection.locator("li");
 		await expect(lessons).toHaveCount(4);
 		// Buổi upcoming đã qua giờ kết thúc (chưa ai check-in) → "Đã kết thúc".
 		await expect(lessons.nth(0)).toContainText("Đã kết thúc");
@@ -396,10 +513,12 @@ test.describe("Student class card & class detail page", () => {
 		await expect(nav.getByRole("link", { name: "Tổng quan" })).toBeFocused();
 		await page.keyboard.press("Tab");
 		await expect(nav.getByRole("link", { name: "Lớp học" })).toBeFocused();
-		const screenshots = new URL(
-			"../../../plans/261019-0648-student-portal-nav-menu/screenshots/",
-			import.meta.url,
-		).pathname;
+		const screenshots = fileURLToPath(
+			new URL(
+				"../../../plans/261019-0648-student-portal-nav-menu/screenshots/",
+				import.meta.url,
+			),
+		);
 		for (const [w, h, name] of [
 			[1440, 900, "student-nav-1440"],
 			[768, 1024, "student-nav-768"],

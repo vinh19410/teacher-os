@@ -160,7 +160,7 @@ export function parsePin(raw: unknown): { x: number; y: number } | null {
 		: null;
 }
 
-function parseQuestions(
+export function parseQuestions(
 	raw: string,
 	rowId: string,
 ): KernelSnapshot["assignmentPrompts"][number]["questions"] {
@@ -221,7 +221,7 @@ function parseQuestions(
 /** Phase-02 FR7 — same guard style as parseQuestions: legacy rows carry the
  * `"[]"` column default; corrupted JSON or non-string items fall back to []
  * so the snapshot shape stays `string[]`. */
-function parseOptionBank(
+export function parseOptionBank(
 	raw: string,
 	rowId: string,
 ): KernelSnapshot["assignmentPrompts"][number]["optionBank"] {

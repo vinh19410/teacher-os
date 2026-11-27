@@ -368,11 +368,7 @@ export function ClassDetailView({
 				</div>
 			)}
 
-			<ClassInfoCard
-				detail={detail}
-				held={stats.held}
-				totalSessions={stats.totalSessions}
-			/>
+			<ClassInfoCard detail={detail} />
 
 			{/* Dải Ring số liệu (design StudentClassDetail): tiến độ vòng tròn
 			 * cho buổi học, chuyên cần, bài tập, band trung bình. */}
@@ -427,8 +423,6 @@ export function ClassDetailView({
 						<h2 className="sr-only">Buổi học</h2>
 						<ClassLessonList
 							classId={cls.id}
-							classLevel={cls.level}
-							className={cls.name}
 							isPaused={isPaused}
 							lessons={detail.lessons}
 							syllabus={detail.syllabus}

@@ -39,6 +39,10 @@ vi.mock("@/components/payments/bank-link-panel", () => ({
 	BankLinkPanel: () => <section data-testid="bank-link-panel" />,
 }));
 
+vi.mock("@/components/profile/mcp-token-card", () => ({
+	McpTokenCard: () => <section data-testid="mcp-token-card" />,
+}));
+
 import { Route } from "./profile";
 
 const Profile = (Route as unknown as { component: () => React.ReactNode })

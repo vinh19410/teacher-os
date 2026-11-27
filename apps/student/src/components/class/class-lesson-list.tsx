@@ -44,7 +44,6 @@ import {
 	scrollElementToCenterAndFocus,
 } from "@/components/class/class-detail-helpers";
 import { JourneyNextStopHero } from "@/components/class/journey-next-stop-hero";
-import { JourneySummitCard } from "@/components/class/journey-summit-card";
 import { RecordingPassword } from "@/components/class/recording-password";
 import { ZoomJoinButton } from "@/components/class/zoom-join-button";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
@@ -226,12 +225,7 @@ interface ModuleGroup {
 	description?: string;
 	items: IndexedLesson[];
 	completedCount: number;
-	heldCount: number;
 	teachingCount: number;
-}
-
-function isModuleCleared(group: ModuleGroup): boolean {
-	return group.teachingCount > 0 && group.heldCount >= group.teachingCount;
 }
 
 function toModuleGroup(
@@ -242,15 +236,11 @@ function toModuleGroup(
 ): ModuleGroup {
 	let teachingCount = 0;
 	let completedCount = 0;
-	let heldCount = 0;
 	for (const { lesson } of items) {
 		if (lesson.status === "holiday") continue;
 		teachingCount += 1;
 		if (lesson.status === "completed") {
 			completedCount += 1;
-			heldCount += 1;
-		} else if (lesson.status === "absent") {
-			heldCount += 1;
 		}
 	}
 	return {
@@ -259,7 +249,6 @@ function toModuleGroup(
 		description,
 		items,
 		completedCount,
-		heldCount,
 		teachingCount,
 	};
 }
@@ -1116,8 +1105,6 @@ function LessonRow({
 
 export function ClassLessonList({
 	classId,
-	classLevel,
-	className,
 	isPaused = false,
 	lessons,
 	syllabus,
@@ -1129,8 +1116,6 @@ export function ClassLessonList({
 	onFilterChange,
 }: {
 	classId: string;
-	classLevel?: string;
-	className?: string;
 	isPaused?: boolean;
 	lessons: StudentClassLesson[];
 	syllabus?: StudentClassSyllabusSummary | null;
@@ -1292,16 +1277,10 @@ export function ClassLessonList({
 	}
 
 	const teachingLessons = lessons.filter((l) => l.status !== "holiday");
-	const totalTeachingCount = teachingLessons.length;
 	const heldCount = teachingLessons.filter(
 		(l) => l.status === "completed" || l.status === "absent",
 	).length;
-	const datedLessons = teachingLessons.filter((l) => l.date != null);
-	const hasDatedLessons = datedLessons.length > 0;
-	const lastDatedISO = datedLessons.reduce<string | null>(
-		(max, l) => (l.date && (max == null || l.date > max) ? l.date : max),
-		null,
-	);
+	const hasDatedLessons = teachingLessons.some((l) => l.date != null);
 
 	// Đánh số, chia module và xác định pivot TRƯỚC khi áp bộ lọc.
 	const allIndexed = buildIndexedLessons(
@@ -1323,10 +1302,6 @@ export function ClassLessonList({
 		useModuleGrouping && syllabus
 			? groupLessonsByModules(allIndexed, syllabus)
 			: null;
-	const namedGroups = allGroups
-		? allGroups.filter((g) => g.id !== "__extra__")
-		: [];
-	const clearedModulesCount = namedGroups.filter(isModuleCleared).length;
 
 	const visibleGroups = allGroups
 		? allGroups
@@ -1379,19 +1354,6 @@ export function ClassLessonList({
 
 	return (
 		<div className="space-y-5">
-			<JourneySummitCard
-				classLevel={classLevel}
-				className={className}
-				syllabus={syllabus}
-				useModuleGrouping={useModuleGrouping}
-				heldCount={heldCount}
-				totalTeachingCount={totalTeachingCount}
-				clearedModulesCount={clearedModulesCount}
-				totalModulesCount={namedGroups.length}
-				nextTeachingIndex={nextEntry?.teachingIndex ?? null}
-				lastDatedISO={lastDatedISO}
-			/>
-
 			<JourneyNextStopHero
 				classId={classId}
 				nextLesson={nextEntry?.lesson ?? null}

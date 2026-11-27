@@ -24,6 +24,7 @@ import { creditRoutes } from "./routes/credits";
 import { examImportRoutes } from "./routes/exam-imports";
 import { githubWebhookRoutes } from "./routes/github-webhooks";
 import { kernelRoutes } from "./routes/kernel";
+import { mcpRoutes } from "./routes/mcp";
 import { publicLeadRoutes } from "./routes/public-leads";
 import { publicLibraryImagesRoutes } from "./routes/public-library-images";
 import { publicPayRoutes } from "./routes/public-pay";
@@ -446,6 +447,7 @@ export function buildApp(deps: AppDeps) {
 	// không credentials) nên path này phải ĐI QUA không đụng middleware dưới.
 	app.use("/*", async (c, next) => {
 		if (
+			c.req.path === "/mcp" ||
 			c.req.path === "/public/leads" ||
 			c.req.path.startsWith("/public/leads/") ||
 			c.req.path === "/public/placement-test" ||
@@ -485,6 +487,9 @@ export function buildApp(deps: AppDeps) {
 	// Readiness probe: mounted outside /api/* so the bootstrap middleware and
 	// Better Auth never run — it answers purely from the D1 schema catalog.
 	app.get("/readyz", readinessRoute(deps));
+	// Remote Streamable HTTP MCP endpoint: mounted outside /api/* and global
+	// cookie CORS so Bearer PAT auth + explicit Origin checks govern access.
+	app.route("/mcp", mcpRoutes(deps));
 	app.route("/api/student", studentRoutes(deps));
 	// Bạn cùng lớp (#378): sub-app cùng mount point, route riêng
 	// /classes/:classId/classmates — guard tạo từ chung createStudentGuard.

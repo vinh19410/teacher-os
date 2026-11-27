@@ -21,6 +21,7 @@
 		"compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server"
 	},
 	"dependencies": {
+		"@modelcontextprotocol/server": "^2.4.0",
 		"@teacher-os/api": "workspace:*",
 		"@teacher-os/auth": "workspace:*",
 		"@teacher-os/db": "workspace:*",
@@ -35,6 +36,7 @@
 	"devDependencies": {
 		"@cloudflare/workers-types": "catalog:",
 		"@libsql/client": "catalog:",
+		"@modelcontextprotocol/client": "^2.4.0",
 		"@teacher-os/config": "workspace:*",
 		"@types/node": "catalog:",
 		"tsdown": "^0.22.14",

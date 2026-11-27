@@ -280,25 +280,36 @@ describe("ClassDetailView", () => {
 		// Banner việc cần làm khi còn bài class_assignment chưa nộp.
 		expect(html).toContain("Bạn còn 1 bài chưa làm trong IELTS Detail");
 		expect(html).toContain('href="/learn/quizzes/ca-9"');
-		// Thẻ thông tin lớp (dl).
-		expect(html).toContain("Band 6.5");
+		// Thẻ thông tin lớp (dl) chỉ giữ 4 mục: Lịch, Hình thức, Giáo viên, Khai giảng.
+		expect(html).toContain("Lịch");
+		expect(html).toContain("T3 &amp; T6 · 19:00–20:30");
+		expect(html).toContain("Hình thức");
+		expect(html).toContain("Online");
 		expect(html).toContain("Khai giảng");
 		expect(html).toContain("Chủ Nhật, 01/03/2099");
-		expect(html).toContain("Số buổi đã học");
-		expect(html).toContain("2/5 buổi");
+		expect(html).not.toContain("Khoá");
+		expect(html).not.toContain("Số buổi đã học");
 		expect(html).not.toContain("Tiến độ khóa học");
 		expect(html).toContain("Cô Lan");
 		expect(html).toContain('href="mailto:lan@example.com"');
+		// Cả ClassInfoCard và Hành trình học đều không còn JourneySummitCard / Band 6.5 / 2/5 buổi.
+		expect(html).not.toContain("Band 6.5");
+		expect(html).not.toContain("2/5 buổi");
 		// Tab mặc định = Hành trình học (Buổi học).
 		expect(html).toContain("Buổi học");
 		// ClassInfoCard không còn cụm footer dư (thời lượng tháng, giờ lặp, "Buổi tới: ...").
 		expect(html).not.toContain("Buổi tới:");
 		expect(html).not.toMatch(/\d+\s*tháng/);
-		// Hành trình học vẫn giữ thẻ Buổi tiếp theo & badge Buổi tới cho l4 (12/03).
+		// Hành trình học vẫn giữ thẻ Buổi tiếp theo & badge Buổi tới cho l4 (12/03), không còn JourneySummitCard.
+		expect(html).not.toContain("Đích đến của bạn");
+		expect(html).not.toContain("chặng đã vượt");
+		expect(html).not.toContain("Về đích dự kiến");
+		expect(html).not.toContain('role="progressbar"');
 		expect(html).toContain("Buổi tiếp theo");
 		expect(html).toContain("Thứ Năm, 12/03");
 		expect(html.match(/>Buổi tới</g)).toHaveLength(1);
-		// Ring stats.
+		// Ring stats (nhãn "Buổi đã diễn ra" viết hoa phân biệt với JourneySummitCard).
+		expect(html).toContain("Buổi đã diễn ra");
 		expect(html).toContain("Chuyên cần");
 		expect(html).toContain("Band trung bình");
 		// Tabs: gồm 3 tab sau khi gộp Giáo trình vào Hành trình học.
@@ -369,7 +380,9 @@ describe("ClassDetailView", () => {
 		const utils = render(
 			<ClassDetailView detail={withSyllabus} todayISO={TODAY} now={NOW} />,
 		);
-		expect(screen.getByText("IELTS Reading Intensive")).toBeTruthy();
+		expect(screen.queryByTestId("journey-syllabus-header")).toBeNull();
+		expect(screen.queryByText("Đích đến của bạn")).toBeNull();
+		expect(screen.queryByText("IELTS Reading Intensive")).toBeNull();
 		expect(screen.getByText("Module 1: Skimming")).toBeTruthy();
 		expect(screen.getByText("1/1 buổi")).toBeTruthy();
 		expect(screen.getByText("Module 2: Scanning")).toBeTruthy();
@@ -426,24 +439,28 @@ describe("ClassInfoCard", () => {
 		cleanup();
 	});
 
-	it("renders class metadata without the redundant summary footer for active classes", () => {
-		const html = renderToStaticMarkup(
-			<ClassInfoCard detail={detail} held={2} totalSessions={5} />,
-		);
-		expect(html).toContain("Band 6.5");
+	it("renders 4 class metadata items without Khoá, Số buổi đã học, or summary footer", () => {
+		const html = renderToStaticMarkup(<ClassInfoCard detail={detail} />);
+		expect(html).toContain("Lịch");
 		expect(html).toContain("T3 &amp; T6 · 19:00–20:30");
+		expect(html).toContain("Hình thức");
 		expect(html).toContain("Online");
+		expect(html).toContain("Giáo viên");
 		expect(html).toContain("Cô Lan");
 		expect(html).toContain('href="mailto:lan@example.com"');
-		expect(html).toContain("2/5 buổi");
+		expect(html).toContain("Khai giảng");
 		expect(html).toContain("Chủ Nhật, 01/03/2099");
+		expect(html).not.toContain("Khoá");
+		expect(html).not.toContain("Band 6.5");
+		expect(html).not.toContain("Số buổi đã học");
+		expect(html).not.toMatch(/\d+\/\d+\s*buổi/);
 		expect(html).not.toContain("Buổi tới:");
 		expect(html).not.toMatch(/\d+\s*tháng/);
 		expect(html.match(/19:00–20:30/g)).toHaveLength(1);
 		expect(html).not.toContain("border-t");
 	});
 
-	it("formats structured JSON schedule once without duplicating the time range in a footer", () => {
+	it("formats structured JSON schedule once without duplicating the time range or redundant fields", () => {
 		const jsonScheduleDetail: StudentClassDetail = {
 			...detail,
 			class: {
@@ -452,10 +469,14 @@ describe("ClassInfoCard", () => {
 			},
 		};
 		const html = renderToStaticMarkup(
-			<ClassInfoCard detail={jsonScheduleDetail} held={2} totalSessions={5} />,
+			<ClassInfoCard detail={jsonScheduleDetail} />,
 		);
 		expect(html).toContain("T3 &amp; T6 · 19:00–20:30");
 		expect(html.match(/19:00–20:30/g)).toHaveLength(1);
+		expect(html).not.toContain("Khoá");
+		expect(html).not.toContain("Band 6.5");
+		expect(html).not.toContain("Số buổi đã học");
+		expect(html).not.toMatch(/\d+\/\d+\s*buổi/);
 		expect(html).not.toContain("Buổi tới:");
 		expect(html).not.toMatch(/\d+\s*tháng/);
 		expect(html).not.toContain("border-t");
@@ -474,12 +495,11 @@ describe("ClassInfoCard", () => {
 			},
 			lessons: [lesson({ id: "u1", date: null })],
 		};
-		const html = renderToStaticMarkup(
-			<ClassInfoCard detail={sparseDetail} held={0} totalSessions={0} />,
-		);
+		const html = renderToStaticMarkup(<ClassInfoCard detail={sparseDetail} />);
 		expect(html).toContain("Chưa có thông tin giáo viên.");
-		expect(html).toContain("0/0 buổi");
 		expect(html).not.toContain("Khoá");
+		expect(html).not.toContain("Số buổi đã học");
+		expect(html).not.toContain("0/0 buổi");
 		expect(html).not.toContain("Lịch");
 		expect(html).not.toContain("Hình thức");
 		expect(html).not.toContain("Khai giảng");

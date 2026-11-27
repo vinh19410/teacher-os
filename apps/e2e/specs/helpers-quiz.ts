@@ -10,6 +10,7 @@
  * one target row for the student — the minimum surface the student portal
  * overview and the quiz endpoints read.
  */
+import { fileURLToPath } from "node:url";
 import { type Client, createClient } from "@libsql/client";
 import { addDaysISO, vietnamTodayISO } from "./helpers";
 
@@ -101,7 +102,7 @@ export interface QuizFixture {
 
 function openDb(): Client {
 	const c = createClient({
-		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
+		url: `file:${fileURLToPath(new URL("../local.db", import.meta.url))}`,
 	});
 	return c;
 }
@@ -122,6 +123,13 @@ export async function seedQuizFixture(opts: {
 	invitedClassName?: string;
 	/** Optional study pack assigned to the seeded class. */
 	studyPack?: QuizSeedStudyPack;
+	/** Optional class metadata overrides; omitted fields keep SQLite schema defaults. */
+	classMeta?: {
+		level?: string;
+		mode?: string;
+		schedule?: string;
+		startDate?: string;
+	};
 }): Promise<QuizFixture> {
 	const db = openDb();
 	await db.execute("PRAGMA busy_timeout = 5000;");
@@ -138,9 +146,28 @@ export async function seedQuizFixture(opts: {
 				args: [orgId, opts.orgName, now],
 			});
 		}
+		const classCols = ["id", "org_id", "name", "created_at"];
+		const classArgs: (string | number)[] = [
+			classId,
+			orgId,
+			opts.className,
+			now,
+		];
+		const optionalMeta: readonly [string, string | undefined][] = [
+			["level", opts.classMeta?.level],
+			["mode", opts.classMeta?.mode],
+			["schedule", opts.classMeta?.schedule],
+			["start_date", opts.classMeta?.startDate],
+		];
+		for (const [col, val] of optionalMeta) {
+			if (val !== undefined) {
+				classCols.push(col);
+				classArgs.push(val);
+			}
+		}
 		await db.execute({
-			sql: "INSERT INTO class (id, org_id, name, created_at) VALUES (?,?,?,?)",
-			args: [classId, orgId, opts.className, now],
+			sql: `INSERT INTO class (${classCols.join(", ")}) VALUES (${classCols.map(() => "?").join(",")})`,
+			args: classArgs,
 		});
 		// onboarding_completed_at is set so the verified student lands straight
 		// on the overview instead of the wizard (wizard is not under test).

@@ -180,6 +180,7 @@ import { gradingRoutes } from "./grading";
 import { holidayRoutes, isRollbackableConstraintError } from "./holidays";
 import { leadRoutes } from "./leads";
 import { materialRoutes } from "./materials";
+import { mcpTokenRoutes } from "./mcp-tokens";
 import { notificationLogRoutes } from "./notification-logs";
 import { paymentTransactionRoutes } from "./payment-transactions";
 import { placementTestRoutes } from "./placement-test";
@@ -5739,6 +5740,7 @@ export function kernelRoutes(deps: {
 	kernel.route("/", studyPackRoutes(deps));
 	kernel.route("/", materialRoutes(deps));
 	kernel.route("/assignments", assignmentRoutes(deps));
+	kernel.route("/mcp-tokens", mcpTokenRoutes(deps));
 	kernel.route("/reports", reportRoutes(deps));
 	kernel.route("/notifs", notifRoutes(deps));
 	kernel.route("/comment-bank", commentBankRoutes(deps));
