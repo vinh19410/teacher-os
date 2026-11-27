@@ -121,16 +121,16 @@ export function extractDateISO(submittedAt: string): string {
 
 /**
  * Rollup trạng thái cấp bài giao (v2):
- * - Đã nộp hết (ok) nếu tất cả target đã có submittedAt
+ * - Đã nộp hết (ok) nếu tất cả target đã nộp (`submittedAt !== null || attemptId != null`)
  * - Quá hạn (danger) nếu chưa đủ && due < today
  * - Đang mở (neutral) còn lại
- * Guard 0-target → Đang mở (red-team F2).
+ * Guard 0-target → Đang mở.
  */
 export function rollupStatus(
 	assignment: {
 		due: string;
 		dueAt?: string | null;
-		targets: Array<{ submittedAt: string | null }>;
+		targets: Array<{ submittedAt: string | null; attemptId?: string | null }>;
 	},
 	todayISO: string,
 	nowMs?: number,
@@ -139,7 +139,7 @@ export function rollupStatus(
 		return { label: "Đang mở", tone: "neutral" };
 	}
 	const submittedCount = assignment.targets.filter(
-		(t) => t.submittedAt !== null,
+		(t) => t.submittedAt !== null || t.attemptId != null,
 	).length;
 	if (submittedCount === assignment.targets.length) {
 		return { label: "Đã nộp hết", tone: "ok" };

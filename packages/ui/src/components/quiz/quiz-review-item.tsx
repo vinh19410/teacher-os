@@ -24,6 +24,10 @@ export interface QuizReviewInfo {
 	explanation?: string;
 	/** Nhãn tập đáp án hợp lệ (UI-only) cho câu thuộc nhóm chấm không thứ tự. */
 	answerSetKey?: string;
+	/** Nhãn đứng trước đáp án đã chọn khi sai (mặc định: "Bạn trả lời"). */
+	answerLabel?: string;
+	/** Nhãn badge trên lựa chọn sai (mặc định: "Bạn chọn"). */
+	selectedMarkLabel?: string;
 }
 
 /** Nội dung disclosure "Giải thích": giải thích riêng của câu (#358) nếu có,
@@ -114,7 +118,7 @@ export function QuizReviewItem({ info }: { info: QuizReviewInfo }) {
 			</p>
 			{info.verdict === "wrong" && info.answer !== null && (
 				<p className="mt-1 text-muted-foreground">
-					Bạn trả lời:{" "}
+					{info.answerLabel ?? "Bạn trả lời"}:{" "}
 					<span className="font-mono text-verdict-wrong line-through">
 						{info.answer}
 					</span>

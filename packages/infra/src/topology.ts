@@ -275,3 +275,41 @@ export function resolveStudentPracticeEnabled(
 		`Invalid STUDENT_PRACTICE_ENABLED value "${raw}" (expected "true", "false", or empty)`,
 	);
 }
+
+const ZOOM_EMAIL_LOCAL_REGEX =
+	/^[A-Za-z0-9!#$%&'*+_~-]+(?:\.[A-Za-z0-9!#$%&'*+_~-]+)*$/;
+const ZOOM_EMAIL_DOMAIN_LABEL_REGEX =
+	/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/;
+const ZOOM_USER_ID_REGEX = /^[A-Za-z0-9_-]{16,64}$/;
+
+function isValidZoomEmail(value: string): boolean {
+	if (value.length > 254) return false;
+	const atIndex = value.indexOf("@");
+	if (atIndex <= 0 || atIndex !== value.lastIndexOf("@")) return false;
+	const local = value.slice(0, atIndex);
+	const domain = value.slice(atIndex + 1);
+	if (local.length > 64 || !ZOOM_EMAIL_LOCAL_REGEX.test(local)) return false;
+	const labels = domain.split(".");
+	if (labels.length < 2) return false;
+	const tld = labels[labels.length - 1] ?? "";
+	if (tld.length < 2) return false;
+	return labels.every((label) => ZOOM_EMAIL_DOMAIN_LABEL_REGEX.test(label));
+}
+
+/**
+ * Chuẩn hoá và kiểm tra `ZOOM_HOST_USER` trước khi deploy (`packages/infra/alchemy.run.ts`).
+ * Zoom `/v2/users/{userId}/meetings` chấp nhận `"me"` (chủ tài khoản), email tài khoản Zoom,
+ * hoặc Zoom User ID — tên hiển thị (vd `"Ms My"`) sẽ bị Zoom từ chối với 404/1001.
+ */
+export function resolveZoomHostUser(raw: string | undefined): string {
+	const value = (raw ?? "").trim();
+	if (value === "" || value.toLowerCase() === "me") {
+		return "me";
+	}
+	if (isValidZoomEmail(value) || ZOOM_USER_ID_REGEX.test(value)) {
+		return value;
+	}
+	throw new Error(
+		`Invalid ZOOM_HOST_USER value "${raw}": expected "me", a Zoom account email, or a Zoom User ID (not a display name).`,
+	);
+}

@@ -42,9 +42,15 @@ export function OrgStatsSection({
 				</div>
 				<div className="flex items-center justify-between gap-4 py-4">
 					<dt className="text-muted-foreground text-sm">
-						Bài tập chưa có điểm
+						<span className="block">Bài tập chưa có điểm</span>
+						<span className="mt-0.5 block text-muted-foreground text-xs">
+							Writing &amp; Speaking giao lớp chờ chấm
+						</span>
 					</dt>
-					<dd className="whitespace-nowrap font-mono font-semibold text-xl tabular-nums tracking-tight">
+					<dd
+						data-testid="org-stats-ungraded-count"
+						className="whitespace-nowrap font-mono font-semibold text-xl tabular-nums tracking-tight"
+					>
 						{ungradedCount}
 					</dd>
 				</div>

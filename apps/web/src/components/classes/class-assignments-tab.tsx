@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router";
+import { formatBand, hasGradableTask } from "@teacher-os/api/lib/ielts-band";
 import {
-	formatBand,
-	hasGradableTask,
-	isGradableSkill,
-} from "@teacher-os/api/lib/ielts-band";
+	formatObjectiveScore,
+	hasValidGradedBand,
+	normalizeObjectiveScore,
+} from "@teacher-os/api/lib/objective-score";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { canPublishGrade } from "@teacher-os/auth/role";
 import { BookOpen, ChevronDown, Headphones, Mic, PenLine } from "lucide-react";
@@ -28,7 +29,11 @@ import { Tag } from "@/components/ui/tag";
 import { formatSessionDate } from "@/lib/class-sessions";
 import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
-import type { ClassAssignment, ClassGroup } from "@/lib/mock-data";
+import type {
+	AssignmentPrompt,
+	ClassAssignment,
+	ClassGroup,
+} from "@/lib/mock-data";
 import type { DirectKernelAction } from "@/lib/use-direct-kernel-action";
 
 const MAX_SUPPLEMENT_BATCH = 100;
@@ -71,6 +76,23 @@ const GRADE_LINK_BUTTON_CLASS = buttonVariants({
 	size: "sm",
 });
 
+function isTargetSubmitted(
+	target: ClassAssignment["targets"][number],
+): boolean {
+	return target.submittedAt !== null || target.attemptId != null;
+}
+
+function isAssignmentGradable(
+	ca: ClassAssignment,
+	prompts?: readonly AssignmentPrompt[],
+): boolean {
+	if (typeof ca.hasGradableTask === "boolean") {
+		return ca.hasGradableTask;
+	}
+	const promptRow = prompts?.find((p) => p.id === ca.promptId);
+	return promptRow ? hasGradableTask(promptRow) : false;
+}
+
 /** Phần chấm tay (#319) của một target đã nộp đề Writing/Speaking: đã chấm
  * → tag band + link sửa điểm; chưa chấm → nút "Chấm bài". Target chưa có
  * attempt (chưa nộp) không render gì. */
@@ -82,7 +104,7 @@ function TargetGradeActions({
 	studentName: string;
 }) {
 	if (!target.attemptId) return null;
-	if (target.band != null && target.gradedAt) {
+	if (hasValidGradedBand(target)) {
 		return (
 			<>
 				<StatusTag tone="ok">
@@ -91,6 +113,7 @@ function TargetGradeActions({
 				<Link
 					to="/grading/$attemptId"
 					params={{ attemptId: target.attemptId }}
+					search={{ from: "class" }}
 					className="rounded-xs font-medium text-primary text-xs outline-none hover:text-primary focus-visible:shadow-[var(--focus-ring)]"
 				>
 					Xem / sửa điểm
@@ -102,6 +125,7 @@ function TargetGradeActions({
 		<Link
 			to="/grading/$attemptId"
 			params={{ attemptId: target.attemptId }}
+			search={{ from: "class" }}
 			aria-label={`Chấm bài của ${studentName}`}
 			className={GRADE_LINK_BUTTON_CLASS}
 		>
@@ -144,14 +168,14 @@ export function ClassAssignmentsTab({
 		if (assignmentsFocus) {
 			return new Set(classAssignments.map((ca) => ca.id));
 		}
-		const firstPending = classAssignments.find((ca) =>
-			ca.targets.some(
-				(t) => t.submittedAt !== null && !(t.band != null && t.gradedAt),
-			),
+		const firstPending = classAssignments.find(
+			(ca) =>
+				isAssignmentGradable(ca, data.assignmentPrompts) &&
+				ca.targets.some((t) => isTargetSubmitted(t) && !hasValidGradedBand(t)),
 		);
 		const first = firstPending ?? classAssignments[0];
 		return first ? new Set([first.id]) : new Set<string>();
-	}, [classAssignments, assignmentsFocus]);
+	}, [classAssignments, assignmentsFocus, data.assignmentPrompts]);
 
 	const [userOpenIds, setUserOpenIds] = useState<Set<string> | null>(null);
 	const newestId = classAssignments[0]?.id;
@@ -207,7 +231,7 @@ export function ClassAssignmentsTab({
 		0,
 	);
 	const doneTargetsCount = classAssignments.reduce(
-		(acc, ca) => acc + ca.targets.filter((t) => t.submittedAt !== null).length,
+		(acc, ca) => acc + ca.targets.filter((t) => isTargetSubmitted(t)).length,
 		0,
 	);
 	const summaryText =
@@ -258,16 +282,14 @@ export function ClassAssignmentsTab({
 				<div id="assigned-list" className="flex flex-col gap-2">
 					{classAssignments.map((ca) => {
 						const rollup = rollupStatus(ca, todayVN, effectiveNowMs);
-						const doneCount = ca.targets.filter(
-							(t) => t.submittedAt !== null,
+						const doneCount = ca.targets.filter((t) =>
+							isTargetSubmitted(t),
 						).length;
 						const promptRow = data.assignmentPrompts?.find(
 							(p) => p.id === ca.promptId,
 						);
 						const skill = promptRow?.skill ?? "";
-						const gradable = promptRow
-							? hasGradableTask(promptRow)
-							: isGradableSkill(skill);
+						const gradable = isAssignmentGradable(ca, data.assignmentPrompts);
 						const SkillIcon = SKILL_ICON[skill] ?? BookOpen;
 						const open = (userOpenIds ?? defaultOpenIds).has(ca.id);
 						const pctDone =
@@ -369,30 +391,82 @@ export function ClassAssignmentsTab({
 												todayVN,
 												{ dueAt: ca.dueAt, nowMs: effectiveNowMs },
 											);
+											const submitted = isTargetSubmitted(target);
+											const objective = submitted
+												? normalizeObjectiveScore(
+														target.correctCount,
+														target.totalQuestions,
+													)
+												: null;
+											const effectiveSub =
+												submitted && target.submittedAt === null
+													? { label: "Đã nộp" as const, tone: "ok" as const }
+													: sub;
+											const showManualGrade =
+												gradable || hasValidGradedBand(target);
 											return (
 												<div
 													key={target.studentId}
 													className="sub-row flex flex-col gap-2 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between"
 												>
-													<div className="flex min-w-0 items-center gap-2.5">
+													<div className="flex min-w-0 items-center gap-2.5 sm:min-w-[10rem]">
 														<Avatar text={s?.avatar ?? "??"} size="sm" />
 														<strong className="truncate font-medium text-foreground text-sm">
 															{s?.name ?? target.studentId}
 														</strong>
 													</div>
-													<div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:justify-end sm:gap-3">
-														<span className="text-muted-foreground text-xs">
-															{target.submittedAt
-																? fmtWhen(target.submittedAt)
-																: "Chưa có bài nộp"}
-														</span>
-														<StatusTag tone={sub.tone}>{sub.label}</StatusTag>
-														{gradable && (
+													<div className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-initial sm:justify-end sm:gap-3">
+														{(target.submittedAt !== null ||
+															!submitted ||
+															(!gradable && objective !== null)) && (
+															<span className="text-muted-foreground text-xs">
+																{target.submittedAt
+																	? fmtWhen(target.submittedAt)
+																	: submitted
+																		? "Đã nộp"
+																		: "Chưa có bài nộp"}
+															</span>
+														)}
+														{!gradable && objective !== null ? (
+															<>
+																{effectiveSub.label === "Đã nộp · trễ hạn" && (
+																	<StatusTag tone="warn">
+																		Đã nộp · trễ hạn
+																	</StatusTag>
+																)}
+																<StatusTag tone="ok" className="tabular-nums">
+																	{`Tự chấm · ${formatObjectiveScore(objective)}`}
+																</StatusTag>
+															</>
+														) : (
+															<StatusTag tone={effectiveSub.tone}>
+																{effectiveSub.label}
+															</StatusTag>
+														)}
+														{gradable && objective !== null && (
+															<StatusTag
+																tone="neutral"
+																className="tabular-nums"
+															>
+																{`Trắc nghiệm · ${formatObjectiveScore(objective)}`}
+															</StatusTag>
+														)}
+														{showManualGrade ? (
 															<TargetGradeActions
 																target={target}
 																studentName={s?.name ?? target.studentId}
 															/>
-														)}
+														) : target.attemptId ? (
+															<Link
+																to="/grading/$attemptId"
+																params={{ attemptId: target.attemptId }}
+																search={{ from: "class" }}
+																aria-label={`Xem bài làm của ${s?.name ?? target.studentId}`}
+																className={GRADE_LINK_BUTTON_CLASS}
+															>
+																Xem bài làm
+															</Link>
+														) : null}
 													</div>
 												</div>
 											);

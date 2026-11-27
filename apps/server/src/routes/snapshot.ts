@@ -12,6 +12,11 @@ import {
 } from "@teacher-os/api/contracts";
 import { sanitizeAnswerSetKeys } from "@teacher-os/api/lib/grade-quiz";
 import {
+	AUTO_GRADABLE_SKILLS,
+	hasGradableTask,
+} from "@teacher-os/api/lib/ielts-band";
+import { normalizeObjectiveScore } from "@teacher-os/api/lib/objective-score";
+import {
 	isMaterialKind,
 	type SyllabusBankMaterialRef,
 } from "@teacher-os/api/material-contracts";
@@ -57,7 +62,7 @@ import {
 	vocabSuggestion,
 	vocabWord,
 } from "@teacher-os/db/schema/vocab";
-import { and, asc, desc, eq, isNull, notLike } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, notLike, sql } from "drizzle-orm";
 import type { Db } from "../app";
 import { isOpeningStudentNotified } from "../lib/notifications/templates";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
@@ -155,7 +160,7 @@ export function parsePin(raw: unknown): { x: number; y: number } | null {
 		: null;
 }
 
-function parseQuestions(
+export function parseQuestions(
 	raw: string,
 	rowId: string,
 ): KernelSnapshot["assignmentPrompts"][number]["questions"] {
@@ -216,7 +221,7 @@ function parseQuestions(
 /** Phase-02 FR7 — same guard style as parseQuestions: legacy rows carry the
  * `"[]"` column default; corrupted JSON or non-string items fall back to []
  * so the snapshot shape stays `string[]`. */
-function parseOptionBank(
+export function parseOptionBank(
 	raw: string,
 	rowId: string,
 ): KernelSnapshot["assignmentPrompts"][number]["optionBank"] {
@@ -520,9 +525,31 @@ export async function loadSnapshot(
 	// #208: headers BEFORE targets, strictly sequential — a write landing
 	// between the two reads can only orphan targets (dropped below), never
 	// emit a header with `targets: []` (red-team F10).
+	// #977: leftJoin assignmentPrompt (không lọc libraryRef) với projection tường
+	// minh để tính hasGradableTask ngay cả khi prompt được materialize từ thư viện.
 	const classAssignmentRows = await db
-		.select()
+		.select({
+			id: classAssignment.id,
+			classId: classAssignment.classId,
+			promptId: classAssignment.promptId,
+			title: classAssignment.title,
+			due: classAssignment.due,
+			dueAt: classAssignment.dueAt,
+			targetScope: classAssignment.targetScope,
+			note: classAssignment.note,
+			sessionDate: classAssignment.sessionDate,
+			createdAt: classAssignment.createdAt,
+			promptSkill: assignmentPrompt.skill,
+			promptWritingPart: assignmentPrompt.writingPart,
+		})
 		.from(classAssignment)
+		.leftJoin(
+			assignmentPrompt,
+			and(
+				eq(assignmentPrompt.id, classAssignment.promptId),
+				eq(assignmentPrompt.orgId, orgId),
+			),
+		)
 		.where(
 			and(
 				eq(classAssignment.orgId, orgId),
@@ -547,19 +574,43 @@ export async function loadSnapshot(
 				isNull(classAssignment.classStudyPackId),
 			),
 		)
-		.where(eq(classAssignmentTarget.orgId, orgId));
-	// Trạng thái chấm theo target: chỉ attempt đã nộp của LUỢT GIAO, chỉ 5
-	// cột nhẹ (không kéo essay/answers/snapshot đề). Phase 10 (#378): attempt
-	// `mode='practice'` không gắn target và không được lọt bảng điểm lớp —
-	// không lọc sẽ sinh key "null:<studentId>" rác trong attemptByTarget.
+		.where(
+			and(
+				eq(classAssignmentTarget.orgId, orgId),
+				notLike(classAssignmentTarget.studentId, "demo-student:%"),
+			),
+		);
+	// Trạng thái chấm theo target: chỉ attempt đã nộp của LUỢT GIAO, không kéo
+	// essay/answers/questionsSnapshot về Node.js. Phase 10 (#378): attempt
+	// `mode='practice'` không gắn target và không được lọt bảng điểm lớp.
 	// #533: loại trừ bài bộ đề tự học (`isNull(classAssignment.classStudyPackId)`) ở tầng SQL.
+	// #977: chỉ đánh giá JSON1 trên kỹ năng tự chấm và đếm phần tử `type = 'object'`
+	// để khớp 100% `parseQuizQuestions` mà không đọc overflow page bài Writing/Speaking.
 	const submittedAttemptRows = await db
 		.select({
 			id: quizAttempt.id,
 			assignmentId: quizAttempt.assignmentId,
 			studentId: quizAttempt.studentId,
+			submittedAt: quizAttempt.submittedAt,
 			gradeScores: quizAttempt.gradeScores,
 			gradedAt: quizAttempt.gradedAt,
+			correctCount: quizAttempt.correctCount,
+			totalQuestions: sql<number>`CASE
+				WHEN ${inArray(assignmentPrompt.skill, [...AUTO_GRADABLE_SKILLS])} THEN
+					CASE
+						WHEN ${quizAttempt.questionsSnapshot} IN ('', '[]') THEN 0
+						WHEN json_valid(${quizAttempt.questionsSnapshot}) = 1 THEN
+							CASE
+								WHEN json_type(${quizAttempt.questionsSnapshot}) = 'array' THEN
+									(SELECT COUNT(*) FROM json_each(${quizAttempt.questionsSnapshot}) AS je WHERE je.type = 'object')
+								ELSE 0
+							END
+						ELSE 0
+					END
+				ELSE 0
+			END`
+				.mapWith(Number)
+				.as("total_questions"),
 		})
 		.from(quizAttempt)
 		.innerJoin(
@@ -570,11 +621,19 @@ export async function loadSnapshot(
 				isNull(classAssignment.classStudyPackId),
 			),
 		)
+		.innerJoin(
+			assignmentPrompt,
+			and(
+				eq(assignmentPrompt.id, classAssignment.promptId),
+				eq(assignmentPrompt.orgId, orgId),
+			),
+		)
 		.where(
 			and(
 				eq(quizAttempt.orgId, orgId),
 				eq(quizAttempt.status, "submitted"),
 				eq(quizAttempt.mode, "assignment"),
+				notLike(quizAttempt.studentId, "demo-student:%"),
 			),
 		);
 	const attemptByTarget = new Map(
@@ -601,12 +660,19 @@ export async function loadSnapshot(
 					gradedAt: attempt.gradedAt,
 				})
 			: null;
+		const objective = attempt
+			? normalizeObjectiveScore(attempt.correctCount, attempt.totalQuestions)
+			: null;
 		list.push({
 			studentId: target.studentId,
-			submittedAt: target.submittedAt,
+			submittedAt:
+				target.submittedAt ??
+				(attempt?.submittedAt ? attempt.submittedAt.toISOString() : null),
 			attemptId: attempt?.id ?? null,
 			gradedAt: graded?.gradedAt ?? null,
 			band: graded?.band ?? null,
+			correctCount: objective?.correctCount ?? null,
+			totalQuestions: objective?.totalQuestions ?? null,
 		});
 		targetsByAssignment.set(target.assignmentId, list);
 	}
@@ -902,6 +968,10 @@ export async function loadSnapshot(
 			due: row.due,
 			dueAt: row.dueAt ? row.dueAt.toISOString() : null,
 			targetScope: row.targetScope === "selected" ? "selected" : "class",
+			hasGradableTask: hasGradableTask({
+				skill: row.promptSkill,
+				writingPart: row.promptWritingPart,
+			}),
 			note: row.note,
 			sessionDate: row.sessionDate ?? null,
 			createdAt: row.createdAt.toISOString(),

@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
 
-import { CLASS_ERROR_CODES } from "@teacher-os/api/contracts";
+import {
+	CLASS_ERROR_CODES,
+	RECORDING_ERROR_CODES,
+} from "@teacher-os/api/contracts";
 import {
 	addDaysISO,
 	formatViDateDisplay,
@@ -945,6 +948,41 @@ describe("ConfirmOpeningModal", () => {
 		expect(alert.textContent).toBe(
 			"Lớp đã bắt đầu học nên không thể đổi ngày khai giảng.",
 		);
+		expect(onConfirmed).toHaveBeenCalledTimes(1);
+		expect(onClose).not.toHaveBeenCalled();
+	});
+
+	it("shows fallback copy and refreshes snapshot on 409 RECORDING_LOCKED", async () => {
+		const fetchMock = vi.fn(async () =>
+			jsonResponse(409, {
+				code: RECORDING_ERROR_CODES.LOCKED,
+			}),
+		);
+		vi.stubGlobal("fetch", fetchMock);
+		const onConfirmed = vi.fn(async () => undefined);
+		const onClose = vi.fn();
+
+		render(
+			<ConfirmOpeningModal
+				open
+				onClose={onClose}
+				cls={makeClassGroup({ id: "cl-r2" })}
+				hasRealSessions
+				isManual={false}
+				startDateLocked={false}
+				startDateLockReason={null}
+				roster={makeDefaultRoster().slice(0, 2)}
+				onConfirmed={onConfirmed}
+			/>,
+		);
+
+		fireEvent.change(screen.getByLabelText(/Ngày khai giảng/), {
+			target: { value: formatViDateDisplay(laterFutureDate) },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Chốt & gửi 2 email" }));
+
+		const alert = await screen.findByRole("alert");
+		expect(alert.textContent).toContain("video recording");
 		expect(onConfirmed).toHaveBeenCalledTimes(1);
 		expect(onClose).not.toHaveBeenCalled();
 	});

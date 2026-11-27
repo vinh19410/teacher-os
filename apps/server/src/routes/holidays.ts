@@ -6,6 +6,7 @@ import {
 	type HolidayPreview,
 	holidayApplySchema,
 	holidayDraftSchema,
+	RECORDING_ERROR_CODES,
 } from "@teacher-os/api/contracts";
 import {
 	type PlannedCancellation,
@@ -15,6 +16,7 @@ import {
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { classTable } from "@teacher-os/db/schema/class";
 import { classAssignment } from "@teacher-os/db/schema/class-assignment";
+import { classSessionMeeting } from "@teacher-os/db/schema/class-session-meeting";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import { lessonMaterial } from "@teacher-os/db/schema/material";
@@ -36,7 +38,11 @@ import {
 } from "../lib/notifications/emit";
 import { holidayCreatedEvents } from "../lib/notifications/templates";
 import {
-	syncZoomOnSessionCancelOrDelete,
+	deleteRecordingObjectBestEffort,
+	deleteZoomMeetingBestEffort,
+	hasLiveR2Recording,
+	liveR2RecordingSql,
+	nonLiveR2RecordingSql,
 	syncZoomOnSessionEdit,
 } from "../lib/zoom/session-zoom-service";
 import { runZoomSyncTask, zoomDepsFrom } from "./zoom-meeting";
@@ -319,9 +325,10 @@ function shiftStatements(
 	orgId: string,
 	holidayId: string,
 	shift: PlannedShift,
+	nowMs: number,
 ) {
-	const guard = sql`CASE WHEN (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.originalDate} AND ${lesson.status} = 'upcoming') = ${shift.enrollmentIds.length} AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.makeupDate}) = 0 AND (SELECT count(*) FROM ${holidaySessionShift} WHERE ${holidaySessionShift.classId} = ${shift.classId} AND ${holidaySessionShift.makeupDate} = ${shift.makeupDate}) = 0 AND EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${shift.classId} AND ${classTable.orgId} = ${orgId} AND ${classTable.status} = 'active') THEN ${shift.originalDate} ELSE NULL END`;
-	return [
+	const guard = sql`CASE WHEN (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.originalDate} AND ${lesson.status} = 'upcoming') = ${shift.enrollmentIds.length} AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.makeupDate}) = 0 AND (SELECT count(*) FROM ${holidaySessionShift} WHERE ${holidaySessionShift.classId} = ${shift.classId} AND ${holidaySessionShift.makeupDate} = ${shift.makeupDate}) = 0 AND EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${shift.classId} AND ${classTable.orgId} = ${orgId} AND ${classTable.status} = 'active') AND NOT EXISTS (SELECT 1 FROM ${classSessionMeeting} WHERE ${classSessionMeeting.orgId} = ${orgId} AND ${classSessionMeeting.classId} = ${shift.classId} AND ${classSessionMeeting.date} = ${shift.makeupDate} AND ${liveR2RecordingSql(nowMs)}) THEN ${shift.originalDate} ELSE NULL END`;
+	const stmts = [
 		db.insert(holidaySessionShift).values({
 			id: crypto.randomUUID(),
 			orgId,
@@ -419,7 +426,33 @@ function shiftStatements(
 					eq(classAssignment.sessionDate, shift.originalDate),
 				),
 			),
-	];
+		db
+			.delete(classSessionMeeting)
+			.where(
+				and(
+					eq(classSessionMeeting.orgId, orgId),
+					eq(classSessionMeeting.classId, shift.classId),
+					eq(classSessionMeeting.date, shift.makeupDate),
+					nonLiveR2RecordingSql(nowMs),
+					sql`EXISTS (SELECT 1 FROM ${classSessionMeeting} src WHERE src.org_id = ${orgId} AND src.class_id = ${shift.classId} AND src.date = ${shift.originalDate})`,
+				),
+			)
+			.returning({
+				zoomMeetingId: classSessionMeeting.zoomMeetingId,
+				recordingStorageKey: classSessionMeeting.recordingStorageKey,
+			}),
+		db
+			.update(classSessionMeeting)
+			.set({ date: shift.makeupDate })
+			.where(
+				and(
+					eq(classSessionMeeting.orgId, orgId),
+					eq(classSessionMeeting.classId, shift.classId),
+					eq(classSessionMeeting.date, shift.originalDate),
+				),
+			),
+	] as const;
+	return { stmts, deleteMeetingOffset: stmts.length - 2 };
 }
 
 /** Áp dụng một cancellation trong batch (TOS-13 D1): guard INSERT-CASE biến
@@ -443,7 +476,7 @@ function cancelStatements(
 		}),
 		db
 			.update(lesson)
-			.set({ status: "cancelled" })
+			.set({ status: "cancelled", zoom: "" })
 			.where(
 				and(
 					eq(lesson.orgId, orgId),
@@ -452,7 +485,83 @@ function cancelStatements(
 					eq(lesson.status, "upcoming"),
 				),
 			),
+		db
+			.update(classSessionMeeting)
+			.set({
+				zoomMeetingId: null,
+				joinUrl: "",
+				recordingStatus: sql`CASE WHEN ${classSessionMeeting.recordingStorageKey} IS NOT NULL OR ${classSessionMeeting.recordingStatus} = 'expired' THEN ${classSessionMeeting.recordingStatus} WHEN ${classSessionMeeting.recordingUrl} != '' THEN 'ready' ELSE 'none' END`,
+			})
+			.where(
+				and(
+					eq(classSessionMeeting.orgId, orgId),
+					eq(classSessionMeeting.classId, cancellation.classId),
+					eq(classSessionMeeting.date, cancellation.date),
+				),
+			),
 	];
+}
+
+async function loadMeetingsForClassDatePairs(
+	db: Db,
+	orgId: string,
+	pairs: ReadonlyArray<{ classId: string; date: string }>,
+) {
+	const byKey = new Map<
+		string,
+		{
+			zoomMeetingId: string | null;
+			recordingStorageKey: string | null;
+			recordingExpiresAt: Date | null;
+		}
+	>();
+	if (pairs.length === 0) return byKey;
+	const wantedKeys = new Set(pairs.map((p) => `${p.classId}|${p.date}`));
+	const classIds = [...new Set(pairs.map((p) => p.classId))];
+	for (let i = 0; i < classIds.length; i += D1_IN_ARRAY_CHUNK) {
+		const slice = classIds.slice(i, i + D1_IN_ARRAY_CHUNK);
+		const rows = await db
+			.select({
+				classId: classSessionMeeting.classId,
+				date: classSessionMeeting.date,
+				zoomMeetingId: classSessionMeeting.zoomMeetingId,
+				recordingStorageKey: classSessionMeeting.recordingStorageKey,
+				recordingExpiresAt: classSessionMeeting.recordingExpiresAt,
+			})
+			.from(classSessionMeeting)
+			.where(
+				and(
+					eq(classSessionMeeting.orgId, orgId),
+					inArray(classSessionMeeting.classId, slice),
+				),
+			);
+		for (const row of rows) {
+			const k = `${row.classId}|${row.date}`;
+			if (wantedKeys.has(k)) {
+				byKey.set(k, row);
+			}
+		}
+	}
+	return byKey;
+}
+
+async function findLiveR2Collision(
+	db: Db,
+	orgId: string,
+	pairs: ReadonlyArray<{ classId: string; targetDate: string }>,
+	now: Date,
+): Promise<boolean> {
+	if (pairs.length === 0) return false;
+	const byKey = await loadMeetingsForClassDatePairs(
+		db,
+		orgId,
+		pairs.map((p) => ({ classId: p.classId, date: p.targetDate })),
+	);
+	for (const p of pairs) {
+		const row = byKey.get(`${p.classId}|${p.targetDate}`);
+		if (row && hasLiveR2Recording(row, now)) return true;
+	}
+	return false;
 }
 
 /** Lỗi constraint (UNIQUE/NOT NULL) từ guard CASE — batch đã rollback sạch,
@@ -475,6 +584,7 @@ export function holidayRoutes(deps: {
 	zoomFetch?: AppDeps["zoomFetch"];
 	getZoomClient?: AppDeps["getZoomClient"];
 	getRecordingStore?: AppDeps["getRecordingStore"];
+	now?: AppDeps["now"];
 }) {
 	const holiday = new Hono<Env>();
 
@@ -585,6 +695,57 @@ export function holidayRoutes(deps: {
 				409,
 			);
 		}
+		const now = deps.now ? deps.now() : new Date();
+		const nowMs = now.getTime();
+		if (
+			input.mode === "shift" &&
+			(await findLiveR2Collision(
+				db,
+				ctx.orgId,
+				plan.shifts.map((s) => ({
+					classId: s.classId,
+					targetDate: s.makeupDate,
+				})),
+				now,
+			))
+		) {
+			return c.json(
+				{
+					error:
+						"Ngày học bù đang có video recording lưu trên hệ thống nên không thể áp dụng kỳ nghỉ dời buổi.",
+					code: RECORDING_ERROR_CODES.LOCKED,
+					reason: "recording-locked",
+				},
+				409,
+			);
+		}
+
+		const cancelledZoomTargets: Array<{
+			classId: string;
+			zoomMeetingId: string;
+			dateISO: string;
+		}> = [];
+		if (input.mode === "cancel" && plan.cancellations.length > 0) {
+			const cancelMeetings = await loadMeetingsForClassDatePairs(
+				db,
+				ctx.orgId,
+				plan.cancellations.map((cancel) => ({
+					classId: cancel.classId,
+					date: cancel.date,
+				})),
+			);
+			for (const cancel of plan.cancellations) {
+				const m = cancelMeetings.get(`${cancel.classId}|${cancel.date}`);
+				if (m?.zoomMeetingId) {
+					cancelledZoomTargets.push({
+						classId: cancel.classId,
+						zoomMeetingId: m.zoomMeetingId,
+						dateISO: cancel.date,
+					});
+				}
+			}
+		}
+
 		const holidayId = crypto.randomUUID();
 		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
 			db.insert(organizationHoliday).values({
@@ -610,6 +771,11 @@ export function holidayRoutes(deps: {
 				);
 			}
 		}
+		const shiftMeetingDeleteEntries: Array<{
+			idx: number;
+			classId: string;
+			targetDate: string;
+		}> = [];
 		if (input.mode === "cancel") {
 			for (const cancellation of plan.cancellations) {
 				statements.push(
@@ -618,7 +784,19 @@ export function holidayRoutes(deps: {
 			}
 		} else {
 			for (const shift of plan.shifts) {
-				statements.push(...shiftStatements(db, ctx.orgId, holidayId, shift));
+				const { stmts, deleteMeetingOffset } = shiftStatements(
+					db,
+					ctx.orgId,
+					holidayId,
+					shift,
+					nowMs,
+				);
+				shiftMeetingDeleteEntries.push({
+					idx: statements.length + deleteMeetingOffset,
+					classId: shift.classId,
+					targetDate: shift.makeupDate,
+				});
+				statements.push(...stmts);
 			}
 		}
 		if (input.notify) {
@@ -646,12 +824,38 @@ export function holidayRoutes(deps: {
 				422,
 			);
 		}
+		let batchResults: unknown[];
 		try {
-			await db.batch(statements);
+			batchResults = await db.batch(statements);
 		} catch (err: unknown) {
 			// Guard CASE (C1) hoặc unique makeup (C3) vi phạm → rollback toàn
 			// batch, DB sạch — client phải tải lại preview và thử lại.
-			if (isRollbackableConstraintError(err)) {
+			const isConstraintErr =
+				isRollbackableConstraintError(err) ||
+				(err instanceof Error && isRollbackableConstraintError(err.cause));
+			if (isConstraintErr) {
+				if (
+					input.mode === "shift" &&
+					(await findLiveR2Collision(
+						db,
+						ctx.orgId,
+						plan.shifts.map((s) => ({
+							classId: s.classId,
+							targetDate: s.makeupDate,
+						})),
+						now,
+					))
+				) {
+					return c.json(
+						{
+							error:
+								"Ngày học bù đang có video recording lưu trên hệ thống nên không thể áp dụng kỳ nghỉ dời buổi.",
+							code: RECORDING_ERROR_CODES.LOCKED,
+							reason: "recording-locked",
+						},
+						409,
+					);
+				}
 				if (input.scope === "classes") {
 					const targetIds = [...new Set(input.classIds)];
 					const currentClasses: Array<{ id: string; status: string }> = [];
@@ -691,21 +895,61 @@ export function holidayRoutes(deps: {
 			cancelledCount: plan.cancellations.length,
 			classCount: plan.preview.affectedClassCount,
 		};
+		const deletedZoomTargets: Array<{
+			classId: string;
+			dateISO: string;
+			zoomMeetingId: string;
+		}> = [];
+		for (const entry of shiftMeetingDeleteEntries) {
+			const deletedRows =
+				(batchResults[entry.idx] as
+					| Array<{
+							zoomMeetingId: string | null;
+							recordingStorageKey: string | null;
+					  }>
+					| undefined) ?? [];
+			for (const row of deletedRows) {
+				if (row.recordingStorageKey) {
+					await deleteRecordingObjectBestEffort(
+						deps.getRecordingStore?.(),
+						row.recordingStorageKey,
+						{
+							classId: entry.classId,
+							date: entry.targetDate,
+							reason: "holiday-shift-overwrite",
+						},
+						deps.runInBackground,
+					);
+				}
+				if (row.zoomMeetingId) {
+					deletedZoomTargets.push({
+						classId: entry.classId,
+						dateISO: entry.targetDate,
+						zoomMeetingId: row.zoomMeetingId,
+					});
+				}
+			}
+		}
 		await runZoomSyncTask(deps, async () => {
 			const gDeps = zoomDepsFrom(deps);
+			for (const target of deletedZoomTargets) {
+				await deleteZoomMeetingBestEffort(gDeps, target.zoomMeetingId, {
+					classId: target.classId,
+					date: target.dateISO,
+				});
+			}
 			for (const shift of plan.shifts) {
 				await syncZoomOnSessionEdit(gDeps, {
 					orgId: ctx.orgId,
 					classId: shift.classId,
-					oldDateISO: shift.originalDate,
+					oldDateISO: shift.makeupDate,
 					newDateISO: shift.makeupDate,
 				});
 			}
-			for (const cancel of plan.cancellations) {
-				await syncZoomOnSessionCancelOrDelete(gDeps, {
-					orgId: ctx.orgId,
+			for (const cancel of cancelledZoomTargets) {
+				await deleteZoomMeetingBestEffort(gDeps, cancel.zoomMeetingId, {
 					classId: cancel.classId,
-					dateISO: cancel.date,
+					date: cancel.dateISO,
 				});
 			}
 		});
@@ -914,9 +1158,34 @@ export function holidayRoutes(deps: {
 			);
 		}
 
-		// D5: 1 batch nguyên tử — gộp toàn bộ điều kiện guard vào 1 câu UPDATE
-		// trên `organization_holiday` ở đầu batch (nếu lệch biến `name` NOT NULL
-		// thành NULL → rollback toàn batch).
+		const now = deps.now ? deps.now() : new Date();
+		const nowMs = now.getTime();
+		if (
+			await findLiveR2Collision(
+				db,
+				ctx.orgId,
+				shiftCounts.map(({ shift }) => ({
+					classId: shift.classId,
+					targetDate: shift.originalDate,
+				})),
+				now,
+			)
+		) {
+			return c.json(
+				{
+					error:
+						"Ngày học gốc đang có video recording lưu trên hệ thống nên không thể hoàn tác kỳ nghỉ.",
+					code: RECORDING_ERROR_CODES.LOCKED,
+					reason: "recording-locked",
+				},
+				409,
+			);
+		}
+
+		// D5: 1 batch nguyên tử — chia nhỏ các guard điều kiện (tối đa 6 phần
+		// tử/câu để mỗi câu <= 70 binds, dưới trần 100 binds của D1) cộng thêm
+		// 1 câu CAS 4-bind chặn R2 live trên ngày gốc (nếu lệch biến `name`
+		// NOT NULL thành NULL → rollback toàn batch).
 		const guardParts = [
 			sql`(SELECT count(*) FROM ${holidaySessionShift} WHERE ${holidaySessionShift.holidayId} = ${holidayId}) = ${shifts.length}`,
 			sql`(SELECT count(*) FROM ${holidaySessionCancel} WHERE ${holidaySessionCancel.holidayId} = ${holidayId}) = ${cancels.length}`,
@@ -929,21 +1198,48 @@ export function holidayRoutes(deps: {
 					sql`(SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${cancel.classId} AND ${lesson.date} = ${cancel.date} AND ${lesson.status} = 'cancelled') = ${cancelledCount} AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${cancel.classId} AND ${lesson.date} = ${cancel.date} AND ${lesson.status} != 'cancelled') = 0`,
 			),
 		];
-		const combinedGuard = sql.join(guardParts, sql` AND `);
+		const GUARD_CHUNK_SIZE = 6;
+		const guardCasStatements: BatchItem<"sqlite">[] = [];
+		for (let i = 0; i < guardParts.length; i += GUARD_CHUNK_SIZE) {
+			const chunkGuard = sql.join(
+				guardParts.slice(i, i + GUARD_CHUNK_SIZE),
+				sql` AND `,
+			);
+			guardCasStatements.push(
+				db
+					.update(organizationHoliday)
+					.set({
+						name: sql`CASE WHEN ${chunkGuard} THEN ${organizationHoliday.name} ELSE NULL END`,
+					})
+					.where(
+						and(
+							eq(organizationHoliday.id, holidayId),
+							eq(organizationHoliday.orgId, ctx.orgId),
+						),
+					),
+			);
+		}
+		const recordingGuardCas: BatchItem<"sqlite"> = db
+			.update(organizationHoliday)
+			.set({
+				name: sql`CASE WHEN NOT EXISTS (SELECT 1 FROM ${holidaySessionShift} hss INNER JOIN ${classSessionMeeting} ON ${classSessionMeeting.orgId} = ${ctx.orgId} AND ${classSessionMeeting.classId} = hss.class_id AND ${classSessionMeeting.date} = hss.original_date WHERE hss.org_id = ${ctx.orgId} AND hss.holiday_id = ${holidayId} AND ${liveR2RecordingSql(nowMs)}) THEN ${organizationHoliday.name} ELSE NULL END`,
+			})
+			.where(
+				and(
+					eq(organizationHoliday.id, holidayId),
+					eq(organizationHoliday.orgId, ctx.orgId),
+				),
+			);
 
 		const undoStatements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
-			db
-				.update(organizationHoliday)
-				.set({
-					name: sql`CASE WHEN ${combinedGuard} THEN ${organizationHoliday.name} ELSE NULL END`,
-				})
-				.where(
-					and(
-						eq(organizationHoliday.id, holidayId),
-						eq(organizationHoliday.orgId, ctx.orgId),
-					),
-				),
+			recordingGuardCas,
+			...guardCasStatements,
 		];
+		const undoMeetingDeleteEntries: Array<{
+			idx: number;
+			classId: string;
+			targetDate: string;
+		}> = [];
 		for (const { shift } of shiftCounts) {
 			// #645: hoàn tác shift không xoá sạch tài liệu ở ngày bù mà DỜI
 			// NGƯỢC toàn bộ về ngày gốc. Bản trùng materialId với ngày gốc bị
@@ -1010,6 +1306,38 @@ export function holidayRoutes(deps: {
 							eq(lesson.classId, shift.classId),
 							eq(lesson.date, shift.originalDate),
 							eq(lesson.status, "holiday"),
+						),
+					),
+			);
+			undoMeetingDeleteEntries.push({
+				idx: undoStatements.length,
+				classId: shift.classId,
+				targetDate: shift.originalDate,
+			});
+			undoStatements.push(
+				db
+					.delete(classSessionMeeting)
+					.where(
+						and(
+							eq(classSessionMeeting.orgId, ctx.orgId),
+							eq(classSessionMeeting.classId, shift.classId),
+							eq(classSessionMeeting.date, shift.originalDate),
+							nonLiveR2RecordingSql(nowMs),
+							sql`EXISTS (SELECT 1 FROM ${classSessionMeeting} src WHERE src.org_id = ${ctx.orgId} AND src.class_id = ${shift.classId} AND src.date = ${shift.makeupDate})`,
+						),
+					)
+					.returning({
+						zoomMeetingId: classSessionMeeting.zoomMeetingId,
+						recordingStorageKey: classSessionMeeting.recordingStorageKey,
+					}),
+				db
+					.update(classSessionMeeting)
+					.set({ date: shift.originalDate })
+					.where(
+						and(
+							eq(classSessionMeeting.orgId, ctx.orgId),
+							eq(classSessionMeeting.classId, shift.classId),
+							eq(classSessionMeeting.date, shift.makeupDate),
 						),
 					),
 			);
@@ -1081,10 +1409,35 @@ export function holidayRoutes(deps: {
 				422,
 			);
 		}
+		let undoResults: unknown[];
 		try {
-			await db.batch(undoStatements);
+			undoResults = await db.batch(undoStatements);
 		} catch (err: unknown) {
-			if (isRollbackableConstraintError(err)) {
+			const isConstraintErr =
+				isRollbackableConstraintError(err) ||
+				(err instanceof Error && isRollbackableConstraintError(err.cause));
+			if (isConstraintErr) {
+				if (
+					await findLiveR2Collision(
+						db,
+						ctx.orgId,
+						shiftCounts.map(({ shift }) => ({
+							classId: shift.classId,
+							targetDate: shift.originalDate,
+						})),
+						now,
+					)
+				) {
+					return c.json(
+						{
+							error:
+								"Ngày học gốc đang có video recording lưu trên hệ thống nên không thể hoàn tác kỳ nghỉ.",
+							code: RECORDING_ERROR_CODES.LOCKED,
+							reason: "recording-locked",
+						},
+						409,
+					);
+				}
 				return c.json(
 					{
 						error: HOLIDAY_ERROR_CODES.MAKEUP_TOUCHED,
@@ -1097,13 +1450,55 @@ export function holidayRoutes(deps: {
 			throw err;
 		}
 
+		const undoDeletedZoomTargets: Array<{
+			classId: string;
+			dateISO: string;
+			zoomMeetingId: string;
+		}> = [];
+		for (const entry of undoMeetingDeleteEntries) {
+			const deletedRows =
+				(undoResults[entry.idx] as
+					| Array<{
+							zoomMeetingId: string | null;
+							recordingStorageKey: string | null;
+					  }>
+					| undefined) ?? [];
+			for (const row of deletedRows) {
+				if (row.recordingStorageKey) {
+					await deleteRecordingObjectBestEffort(
+						deps.getRecordingStore?.(),
+						row.recordingStorageKey,
+						{
+							classId: entry.classId,
+							date: entry.targetDate,
+							reason: "holiday-undo-overwrite",
+						},
+						deps.runInBackground,
+					);
+				}
+				if (row.zoomMeetingId) {
+					undoDeletedZoomTargets.push({
+						classId: entry.classId,
+						dateISO: entry.targetDate,
+						zoomMeetingId: row.zoomMeetingId,
+					});
+				}
+			}
+		}
+
 		await runZoomSyncTask(deps, async () => {
 			const gDeps = zoomDepsFrom(deps);
+			for (const target of undoDeletedZoomTargets) {
+				await deleteZoomMeetingBestEffort(gDeps, target.zoomMeetingId, {
+					classId: target.classId,
+					date: target.dateISO,
+				});
+			}
 			for (const { shift } of shiftCounts) {
 				await syncZoomOnSessionEdit(gDeps, {
 					orgId: ctx.orgId,
 					classId: shift.classId,
-					oldDateISO: shift.makeupDate,
+					oldDateISO: shift.originalDate,
 					newDateISO: shift.originalDate,
 				});
 			}

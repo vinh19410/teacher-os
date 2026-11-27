@@ -8,10 +8,11 @@
  *   bị điểm danh hoặc thay đổi.
  * - 422 `holiday-started`: hiển thị thông báo "Kỳ nghỉ đã bắt đầu".
  */
-import type {
-	KernelHolidayCancelRow,
-	KernelHolidayShiftRow,
-	KernelHolidaySummary,
+import {
+	type KernelHolidayCancelRow,
+	type KernelHolidayShiftRow,
+	type KernelHolidaySummary,
+	RECORDING_ERROR_CODES,
 } from "@teacher-os/api/contracts";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -140,6 +141,13 @@ export function HolidayUndoDialog({
 			} else if (code === "holiday-started") {
 				setErrorMessage("Kỳ nghỉ đã bắt đầu — không thể hoàn tác.");
 				toast.error("Kỳ nghỉ đã bắt đầu — không thể hoàn tác.");
+			} else if (code === RECORDING_ERROR_CODES.LOCKED) {
+				setErrorMessage(
+					"Không thể hoàn tác vì buổi học bị ghi đè đang có video recording còn hạn lưu trữ.",
+				);
+				toast.error(
+					"Không thể hoàn tác vì buổi học bị ghi đè đang có video recording còn hạn lưu trữ.",
+				);
 			} else if (status === 404) {
 				toast.error("Kỳ nghỉ không còn tồn tại.");
 				onClose();

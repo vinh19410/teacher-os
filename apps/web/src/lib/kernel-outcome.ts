@@ -1,4 +1,7 @@
-import { CLASS_ERROR_CODES } from "@teacher-os/api/contracts";
+import {
+	CLASS_ERROR_CODES,
+	RECORDING_ERROR_CODES,
+} from "@teacher-os/api/contracts";
 import { toast } from "sonner";
 import type { KernelAction } from "./data-actions";
 import { isHttpError } from "./kernel-load-state";
@@ -18,12 +21,25 @@ export const FUTURE_SESSION_MESSAGE = "Chưa tới ngày học — chưa thể �
 export const CLASS_PAUSED_MESSAGE =
 	"Lớp đang tạm dừng — mở lại lớp để tiếp tục thao tác này.";
 
+/** Server refused a destructive session op because a live R2 recording exists (409 `RECORDING_LOCKED`). */
+export const RECORDING_LOCKED_MESSAGE =
+	"Không thể thực hiện vì buổi học hoặc ngày đích đang có video recording còn hạn lưu trữ.";
+
 function isClassPaused(result: KernelCommandResult): boolean {
 	if (result.kind !== "definite-failure" || result.status !== 409) return false;
 	return (
 		result.code === CLASS_ERROR_CODES.CLASS_PAUSED ||
 		(isHttpError(result.error) &&
 			result.error.code === CLASS_ERROR_CODES.CLASS_PAUSED)
+	);
+}
+
+function isRecordingLocked(result: KernelCommandResult): boolean {
+	if (result.kind !== "definite-failure" || result.status !== 409) return false;
+	return (
+		result.code === RECORDING_ERROR_CODES.LOCKED ||
+		(isHttpError(result.error) &&
+			result.error.code === RECORDING_ERROR_CODES.LOCKED)
 	);
 }
 
@@ -67,6 +83,13 @@ export function planDirectOutcome(
 				return {
 					toastKind: "error",
 					message: CLASS_PAUSED_MESSAGE,
+					reconcile: "heal-409",
+				};
+			}
+			if (isRecordingLocked(result)) {
+				return {
+					toastKind: "error",
+					message: RECORDING_LOCKED_MESSAGE,
 					reconcile: "heal-409",
 				};
 			}
@@ -162,6 +185,9 @@ export function occurrenceSummary(
 	if (result.kind === "definite-failure") {
 		if (isClassPaused(result)) {
 			return { kind: "error", message: CLASS_PAUSED_MESSAGE };
+		}
+		if (isRecordingLocked(result)) {
+			return { kind: "error", message: RECORDING_LOCKED_MESSAGE };
 		}
 		if (isFutureSession(result)) {
 			return { kind: "error", message: FUTURE_SESSION_MESSAGE };

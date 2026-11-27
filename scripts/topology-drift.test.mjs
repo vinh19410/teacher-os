@@ -584,3 +584,33 @@ test("server Worker declares a single */10 cron trigger and multiplexes daily de
 		"apps/server/src/lib/scheduled.ts must multiplex daily deadline reminders during the 23:00 UTC window of */10 * * * *",
 	);
 });
+
+test("deploy workflows pass ZOOM_HOST_USER and alchemy.run.ts validates via resolveZoomHostUser", () => {
+	for (const workflow of [
+		"../.github/workflows/deploy.yml",
+		"../.github/workflows/deploy-staging.yml",
+	]) {
+		const content = read(workflow);
+		const deployStep = content
+			.split("- name: Deploy to Cloudflare")[1]
+			?.split("- name:")[0];
+		assert.ok(deployStep, `Deploy to Cloudflare step found in ${workflow}`);
+		assert.match(
+			deployStep,
+			/^\s*ZOOM_HOST_USER:\s*\$\{\{\s*vars\.ZOOM_HOST_USER\s*\}\}\s*$/m,
+			`${workflow} Deploy step must pass ZOOM_HOST_USER from vars.ZOOM_HOST_USER`,
+		);
+	}
+
+	const run = read("../packages/infra/alchemy.run.ts");
+	assert.match(
+		run,
+		/resolveZoomHostUser\(/,
+		"packages/infra/alchemy.run.ts must validate ZOOM_HOST_USER via resolveZoomHostUser",
+	);
+	assert.doesNotMatch(
+		run,
+		/Config\.String\(\s*["']ZOOM_HOST_USER["']\s*\)/,
+		"packages/infra/alchemy.run.ts must not bypass resolveZoomHostUser with raw Config.String('ZOOM_HOST_USER')",
+	);
+});

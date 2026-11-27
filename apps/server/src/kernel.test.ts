@@ -6655,6 +6655,8 @@ describe("class assignment give flow (#208)", () => {
 					attemptId: null,
 					gradedAt: null,
 					band: null,
+					correctCount: null,
+					totalQuestions: null,
 				},
 				{
 					studentId: studentIdA2,
@@ -6662,6 +6664,8 @@ describe("class assignment give flow (#208)", () => {
 					attemptId: null,
 					gradedAt: null,
 					band: null,
+					correctCount: null,
+					totalQuestions: null,
 				},
 			]),
 		);

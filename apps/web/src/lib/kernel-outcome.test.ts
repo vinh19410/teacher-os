@@ -2,7 +2,10 @@
  * Decision table for direct-action outcomes: every KernelCommandResult maps
  * to a truthful toast + reconcile policy. Pure — no toast import needed here.
  */
-import { CLASS_ERROR_CODES } from "@teacher-os/api/contracts";
+import {
+	CLASS_ERROR_CODES,
+	RECORDING_ERROR_CODES,
+} from "@teacher-os/api/contracts";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 const toastMock = vi.hoisted(() => ({
@@ -176,5 +179,22 @@ describe("class-paused rejection (409 CLASS_PAUSED)", () => {
 		expect(toastMock.error).toHaveBeenCalledTimes(1);
 		expect(toastMock.error).toHaveBeenCalledWith(CLASS_PAUSED_MESSAGE);
 		expect(toastMock.info).not.toHaveBeenCalled();
+	});
+});
+
+describe("recording-locked rejection (409 RECORDING_LOCKED)", () => {
+	test("occurrenceSummary maps RECORDING_LOCKED to Vietnamese error message via code even when reason is overwritten", () => {
+		const recordingLocked = {
+			kind: "definite-failure" as const,
+			status: 409,
+			code: RECORDING_ERROR_CODES.LOCKED,
+			error: new HttpError(409, "Buổi học đang có video", {
+				code: RECORDING_ERROR_CODES.LOCKED,
+			}),
+			reason: "Buổi học đang có video",
+		};
+		const res = occurrenceSummary(recordingLocked, "Đã xóa buổi học.");
+		expect(res.kind).toBe("error");
+		expect(res.message).toContain("video recording");
 	});
 });

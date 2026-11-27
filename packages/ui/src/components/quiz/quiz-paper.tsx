@@ -232,6 +232,9 @@ function QuizMcqManyCard({
 	const reviewInfos = questions
 		.map((q) => review?.[q.q])
 		.filter((info): info is QuizReviewInfo => Boolean(info));
+	const selectedMarkLabel =
+		reviewInfos.find((info) => info.selectedMarkLabel)?.selectedMarkLabel ??
+		"Bạn chọn";
 	const clusterVerdict: QuizVerdict | null =
 		reviewMode && reviewInfos.length > 0
 			? reviewInfos.every((info) => info.verdict === "correct")
@@ -430,7 +433,7 @@ function QuizMcqManyCard({
 										className="size-3"
 									/>
 									{reviewStyle.mark === "check" && "Đúng"}
-									{reviewStyle.mark === "you" && "Bạn chọn"}
+									{reviewStyle.mark === "you" && selectedMarkLabel}
 									{reviewStyle.mark === "key" && "Đáp án đúng"}
 								</span>
 							)}

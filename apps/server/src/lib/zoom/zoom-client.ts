@@ -78,7 +78,39 @@ export interface ZoomConfig {
 }
 
 export function isZoomConfigured(cfg: ZoomConfig | undefined): boolean {
-	return Boolean(cfg?.accountId && cfg.clientId && cfg.clientSecret);
+	return Boolean(
+		cfg?.accountId?.trim() &&
+			cfg?.clientId?.trim() &&
+			cfg?.clientSecret?.trim(),
+	);
+}
+
+const ZOOM_EMAIL_LOCAL_REGEX =
+	/^[A-Za-z0-9!#$%&'*+_~-]+(?:\.[A-Za-z0-9!#$%&'*+_~-]+)*$/;
+const ZOOM_EMAIL_DOMAIN_LABEL_REGEX =
+	/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/;
+const ZOOM_USER_ID_REGEX = /^[A-Za-z0-9_-]{16,64}$/;
+
+function isValidZoomEmail(value: string): boolean {
+	if (value.length > 254) return false;
+	const atIndex = value.indexOf("@");
+	if (atIndex <= 0 || atIndex !== value.lastIndexOf("@")) return false;
+	const local = value.slice(0, atIndex);
+	const domain = value.slice(atIndex + 1);
+	if (local.length > 64 || !ZOOM_EMAIL_LOCAL_REGEX.test(local)) return false;
+	const labels = domain.split(".");
+	if (labels.length < 2) return false;
+	const tld = labels[labels.length - 1] ?? "";
+	if (tld.length < 2) return false;
+	return labels.every((label) => ZOOM_EMAIL_DOMAIN_LABEL_REGEX.test(label));
+}
+
+function isValidRuntimeZoomHostUser(value: string): boolean {
+	return (
+		value.toLowerCase() === "me" ||
+		isValidZoomEmail(value) ||
+		ZOOM_USER_ID_REGEX.test(value)
+	);
 }
 
 const TOKEN_URL = "https://zoom.us/oauth/token";
@@ -201,16 +233,27 @@ function selectPrimaryMp4File(
 
 const tokenCache = new Map<string, { token: string; expiresAt: number }>();
 
-async function readErrorMessage(res: Response, text: string): Promise<string> {
+function parseZoomError(
+	res: Response,
+	text: string,
+): { code?: number; message: string } {
+	let code: number | undefined;
+	let message = "";
 	try {
-		const parsed = JSON.parse(text) as { message?: unknown };
+		const parsed = JSON.parse(text) as { code?: unknown; message?: unknown };
+		if (typeof parsed.code === "number" && Number.isFinite(parsed.code)) {
+			code = parsed.code;
+		}
 		if (typeof parsed.message === "string" && parsed.message) {
-			return parsed.message;
+			message = parsed.message;
 		}
 	} catch {
 		// body không phải JSON
 	}
-	return text.slice(0, 200) || res.statusText;
+	return {
+		...(code !== undefined ? { code } : {}),
+		message: message || text.slice(0, 200) || res.statusText,
+	};
 }
 
 export function createZoomClient(
@@ -224,10 +267,13 @@ export function createZoomClient(
 			503,
 		);
 	}
-	const accountId = cfg.accountId as string;
-	const clientId = cfg.clientId as string;
-	const clientSecret = cfg.clientSecret as string;
-	const hostUser = encodeURIComponent(cfg.hostUser || "me");
+	const accountId = (cfg.accountId as string).trim();
+	const clientId = (cfg.clientId as string).trim();
+	const clientSecret = (cfg.clientSecret as string).trim();
+	const rawHostUser = cfg.hostUser?.trim() || "me";
+	const normalizedHostUser =
+		rawHostUser.toLowerCase() === "me" ? "me" : rawHostUser;
+	const hostUser = encodeURIComponent(normalizedHostUser);
 	const cacheKey = `${accountId}:${clientId}`;
 
 	async function getToken(): Promise<string> {
@@ -243,7 +289,7 @@ export function createZoomClient(
 			},
 		});
 		if (!res.ok) {
-			const msg = await readErrorMessage(res, await res.text());
+			const msg = parseZoomError(res, await res.text()).message;
 			throw new ZoomIntegrationError(
 				ZOOM_ERROR_CODES.API_ERROR,
 				`Zoom API lỗi ${res.status}: ${msg}`,
@@ -279,11 +325,12 @@ export function createZoomClient(
 		});
 	}
 
-	// Trả về Response; 404 do caller tự xử lý, các lỗi khác ném ở đây.
+	// Trả về Response; 404 do caller tự xử lý khi allow404=true, các lỗi khác ném ở đây.
 	async function zoomFetch(
 		path: string,
 		init: RequestInit,
 		allow404 = false,
+		opts?: { mapUserNotFoundToInvalidConfig?: boolean },
 	): Promise<Response> {
 		let res = await send(path, init);
 		if (res.status === 401) {
@@ -306,9 +353,27 @@ export function createZoomClient(
 				429,
 			);
 		}
+		const parsedErr = parseZoomError(res, text);
+		if (
+			opts?.mapUserNotFoundToInvalidConfig &&
+			res.status === 404 &&
+			(parsedErr.code === 1001 ||
+				/user does not exist/i.test(parsedErr.message))
+		) {
+			console.warn("[zoom] host user does not exist on Zoom", {
+				status: res.status,
+				zoomCode: parsedErr.code,
+				message: parsedErr.message,
+			});
+			throw new ZoomIntegrationError(
+				ZOOM_ERROR_CODES.INVALID_CONFIG,
+				'Tài khoản Zoom host (ZOOM_HOST_USER) không tồn tại trên Zoom. Liên hệ quản trị để kiểm tra lại "me", email tài khoản Zoom hoặc Zoom User ID (không dùng tên hiển thị).',
+				502,
+			);
+		}
 		throw new ZoomIntegrationError(
 			ZOOM_ERROR_CODES.API_ERROR,
-			`Zoom API lỗi ${res.status}: ${await readErrorMessage(res, text)}`,
+			`Zoom API lỗi ${res.status}: ${parsedErr.message}`,
 			502,
 		);
 	}
@@ -333,10 +398,22 @@ export function createZoomClient(
 
 	return {
 		async createMeeting(input) {
-			const res = await zoomFetch(`/users/${hostUser}/meetings`, {
-				method: "POST",
-				body: meetingBody(input),
-			});
+			if (!isValidRuntimeZoomHostUser(normalizedHostUser)) {
+				throw new ZoomIntegrationError(
+					ZOOM_ERROR_CODES.INVALID_CONFIG,
+					'Cấu hình ZOOM_HOST_USER không hợp lệ. Liên hệ quản trị để đặt "me", email tài khoản Zoom hoặc Zoom User ID (không dùng tên hiển thị).',
+					503,
+				);
+			}
+			const res = await zoomFetch(
+				`/users/${hostUser}/meetings`,
+				{
+					method: "POST",
+					body: meetingBody(input),
+				},
+				false,
+				{ mapUserNotFoundToInvalidConfig: true },
+			);
 			const body = (await res.json()) as { id: number; join_url: string };
 			return { meetingId: String(body.id), joinUrl: body.join_url };
 		},
@@ -511,7 +588,7 @@ export function createZoomClient(
 				}
 				throw new ZoomIntegrationError(
 					ZOOM_ERROR_CODES.API_ERROR,
-					`Tải recording từ Zoom lỗi ${finalRes.status}: ${await readErrorMessage(finalRes, text)}`,
+					`Tải recording từ Zoom lỗi ${finalRes.status}: ${parseZoomError(finalRes, text).message}`,
 					502,
 				);
 			}

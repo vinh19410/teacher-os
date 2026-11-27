@@ -5,6 +5,7 @@ import {
 	CLASS_OPENING_NOTE_MAX_LENGTH,
 	type ClassConfirmOpeningResponse,
 	type ClassOpeningSendMode,
+	RECORDING_ERROR_CODES,
 } from "@teacher-os/api/contracts";
 import {
 	formatViDateDisplay,
@@ -66,6 +67,7 @@ const REFRESH_REQUIRED_ERROR_CODES = new Set<string>([
 	CLASS_ERROR_CODES.CLASS_PAUSED,
 	CLASS_ERROR_CODES.SCHEDULE_LOCKED,
 	CLASS_ERROR_CODES.START_DATE_LOCKED,
+	RECORDING_ERROR_CODES.LOCKED,
 ]);
 
 function formatConfirmedTimestamp(iso: string): string {

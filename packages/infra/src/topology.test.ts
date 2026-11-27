@@ -8,6 +8,7 @@ import {
 	resolveLeadOrigins,
 	resolveStudentPracticeEnabled,
 	resolveTeacherEmails,
+	resolveZoomHostUser,
 } from "./topology";
 
 describe("resolveDomainTopology", () => {
@@ -342,6 +343,49 @@ describe("resolveStudentPracticeEnabled", () => {
 			expect(() =>
 				resolveStudentPracticeEnabled(invalid, "staging.teacheros.io.vn"),
 			).toThrow(/Invalid STUDENT_PRACTICE_ENABLED/);
+		}
+	});
+});
+
+describe("resolveZoomHostUser", () => {
+	test("accepts and trims valid Zoom account emails and User IDs", () => {
+		expect(resolveZoomHostUser("teacher@example.com")).toBe(
+			"teacher@example.com",
+		);
+		expect(resolveZoomHostUser("  teacher+zoom@example.com  ")).toBe(
+			"teacher+zoom@example.com",
+		);
+		expect(resolveZoomHostUser("KdFLUcR-azSHB8_1234567")).toBe(
+			"KdFLUcR-azSHB8_1234567",
+		);
+		expect(resolveZoomHostUser("25f9c0dc-9feb-4766-a7de-70e6bb4f1276")).toBe(
+			"25f9c0dc-9feb-4766-a7de-70e6bb4f1276",
+		);
+	});
+
+	test("normalizes empty, whitespace, and 'me' variants to 'me'", () => {
+		for (const raw of [undefined, "", "   ", "me", "ME", " me "]) {
+			expect(resolveZoomHostUser(raw)).toBe("me");
+		}
+	});
+
+	test("rejects display names and malformed values fail-loud", () => {
+		for (const bad of [
+			"Ms My",
+			"MsMy",
+			"Admin",
+			"Ms My <teacher@example.com>",
+			"a@b",
+			"a@.b.com",
+			"a@b..com",
+			"a@-b.com",
+			".a@gmail.com",
+			"a.@gmail.com",
+			"a..b@gmail.com",
+			"foo/bar",
+			"teacher@example.com extra",
+		]) {
+			expect(() => resolveZoomHostUser(bad)).toThrow(/Invalid ZOOM_HOST_USER/);
 		}
 	});
 });

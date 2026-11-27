@@ -12,6 +12,7 @@ import {
 	type HolidayMode,
 	type HolidayPreview,
 	holidayDraftSchema,
+	RECORDING_ERROR_CODES,
 } from "@teacher-os/api/contracts";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -25,6 +26,8 @@ import { HolidayPreviewTable } from "./holiday-preview-table";
 
 const CLASS_PAUSED_HOLIDAY_MESSAGE =
 	"Lớp đang tạm dừng — không thể áp dụng lịch nghỉ cho lớp này.";
+const RECORDING_LOCKED_HOLIDAY_MESSAGE =
+	"Có buổi học đang chứa video recording còn hạn lưu trữ nên không thể áp dụng lịch nghỉ này.";
 
 function holidayErrorCodeOf(cause: unknown): string {
 	if (
@@ -275,6 +278,8 @@ export function HolidayModal({
 				setPreviewError(CLASS_PAUSED_HOLIDAY_MESSAGE);
 				toast.error(CLASS_PAUSED_HOLIDAY_MESSAGE);
 				onRefreshClasses?.();
+			} else if (code === RECORDING_ERROR_CODES.LOCKED) {
+				toast.error(RECORDING_LOCKED_HOLIDAY_MESSAGE);
 			} else {
 				toast.error("Không áp dụng được lịch nghỉ. Thử lại.");
 			}

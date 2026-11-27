@@ -26,6 +26,7 @@ import {
 	resolveDashboardFocus,
 	sessionTimelineState,
 	studentRiskDetails,
+	ungradedAssignmentsCount,
 	upcomingLessonsThisWeek,
 	vietnamNowMinutes,
 } from "@/lib/dashboard-from-kernel";
@@ -168,7 +169,12 @@ function DashboardRoute() {
 		month: "long",
 		year: "numeric",
 	});
-	const ungraded = data.assignments.filter((a) => a.status !== "graded").length;
+	const ungraded = ungradedAssignmentsCount(
+		data.students,
+		data.classes,
+		data.classAssignments,
+		data.assignmentPrompts,
+	);
 
 	const selectedRiskIssues = selectedRiskRow
 		? studentRiskDetails(

@@ -4,9 +4,14 @@ import {
 	notFound,
 	useNavigate,
 } from "@tanstack/react-router";
-import { formatBand, isBandStep } from "@teacher-os/api/lib/ielts-band";
+import { formatBand } from "@teacher-os/api/lib/ielts-band";
+import {
+	formatObjectiveScore,
+	hasValidGradedBand,
+	normalizeObjectiveScore,
+} from "@teacher-os/api/lib/objective-score";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	fmtDue,
 	fmtDueDisplay,
@@ -41,7 +46,24 @@ import {
 	studentTuitionSummary,
 } from "@/lib/tuition-from-kernel";
 
+export type StudentDetailTab = "profile" | "history" | "tuition" | "assign";
+
+export function validateStudentDetailSearch(input: { tab?: string }): {
+	tab?: StudentDetailTab;
+} {
+	return {
+		tab:
+			input.tab === "profile" ||
+			input.tab === "history" ||
+			input.tab === "tuition" ||
+			input.tab === "assign"
+				? input.tab
+				: undefined,
+	};
+}
+
 export const Route = createFileRoute("/_auth/students/$studentId")({
+	validateSearch: validateStudentDetailSearch,
 	component: StudentDetailRoute,
 	notFoundComponent: () => (
 		<Card variant="white" className="mx-auto mt-16 max-w-md text-center">
@@ -77,32 +99,56 @@ const STATUS_VARIANT: Record<
 	absent: "danger",
 };
 
-function hasGradedBand(
-	row: StudentAssignmentRow,
-): row is StudentAssignmentRow & { band: number; gradedAt: string } {
-	return (
-		row.band !== null &&
-		isBandStep(row.band) &&
-		row.gradedAt !== null &&
-		row.gradedAt.trim().length > 0 &&
-		Number.isFinite(Date.parse(row.gradedAt))
-	);
-}
-
-/** Cells tab Bài tập theo nhánh kind: class row hiển thị plain text, Band đã chấm
- * (khớp /teacher/grading) và StatusTag; grading row giữ hành vi legacy cũ. */
+/** Cells tab Bài tập theo nhánh kind: class row hiển thị plain text, điểm tự
+ * chấm X/Y hoặc Band đã chấm (khớp /teacher/grading) và StatusTag; grading row
+ * giữ hành vi legacy cũ. */
 function assignmentRowCells(
 	row: StudentAssignmentRow,
 	todayVN: string,
 	nowMs: number,
 ) {
 	if (row.kind === "class") {
-		const graded = hasGradedBand(row);
+		const graded = hasValidGradedBand(row);
+		const objective = normalizeObjectiveScore(
+			row.correctCount,
+			row.totalQuestions,
+		);
 		const status = studentSubmissionStatus(
 			{ submittedAt: row.submittedAt },
 			row.due,
 			todayVN,
 			{ dueAt: row.dueAt, nowMs },
+		);
+		const effectiveStatus =
+			row.submitted && row.submittedAt === null
+				? { label: "Đã nộp" as const, tone: "ok" as const }
+				: status;
+		const scoreCell =
+			graded && objective !== null ? (
+				<span className="font-semibold text-primary tabular-nums">
+					{`Band ${formatBand(row.band)} · ${formatObjectiveScore(objective)}`}
+				</span>
+			) : graded ? (
+				<span className="font-semibold text-primary tabular-nums">
+					{formatBand(row.band)}
+				</span>
+			) : objective !== null ? (
+				<span className="font-semibold text-primary tabular-nums">
+					{formatObjectiveScore(objective)}
+				</span>
+			) : (
+				"—"
+			);
+		const statusCell = graded ? (
+			<StatusTag tone="ok">Đã chấm</StatusTag>
+		) : objective !== null && !row.hasGradableTask ? (
+			effectiveStatus.label === "Đã nộp · trễ hạn" ? (
+				<StatusTag tone="warn">Tự chấm · trễ hạn</StatusTag>
+			) : (
+				<StatusTag tone="ok">Tự chấm</StatusTag>
+			)
+		) : (
+			<StatusTag tone={effectiveStatus.tone}>{effectiveStatus.label}</StatusTag>
 		);
 		return [
 			<div className="flex flex-col gap-0.5">
@@ -113,17 +159,18 @@ function assignmentRowCells(
 			</div>,
 			row.typeLabel ?? "—",
 			fmtDueDisplay(row.due, row.dueAt),
-			graded ? (
-				<span className="font-semibold text-primary tabular-nums">
-					{formatBand(row.band)}
+			scoreCell,
+			statusCell,
+			row.attemptId ? (
+				<span className="whitespace-nowrap font-medium text-primary text-xs">
+					{row.gradable || graded
+						? graded
+							? "Xem / sửa điểm"
+							: "Chấm bài"
+						: "Xem bài làm"}
 				</span>
 			) : (
-				"—"
-			),
-			graded ? (
-				<StatusTag tone="ok">Đã chấm</StatusTag>
-			) : (
-				<StatusTag tone={status.tone}>{status.label}</StatusTag>
+				""
 			),
 		];
 	}
@@ -149,17 +196,25 @@ function assignmentRowCells(
 			: row.gradingStatus === "late"
 				? "Trễ"
 				: "Chưa nộp",
+		"",
 	];
 }
 
 function StudentDetailRoute() {
 	const { studentId } = Route.useParams();
+	const search = Route.useSearch();
 	const navigate = useNavigate();
 	const { studentById } = useStudents();
 	const { data, refresh } = useData();
 	const student = studentById(studentId);
-	const [tab, setTab] = useState("profile");
+	const [tab, setTab] = useState<string>(() => search.tab ?? "profile");
 	const [reportOpen, setReportOpen] = useState(false);
+
+	useEffect(() => {
+		if (search.tab) {
+			setTab(search.tab);
+		}
+	}, [search.tab]);
 
 	if (!student) {
 		throw notFound();
@@ -414,9 +469,18 @@ function StudentDetailRoute() {
 			{tab === "assign" && (
 				<Card variant="white" className="p-0">
 					<DataTable
-						headers={["Bài tập", "Loại", "Hạn", "Band", "Trạng thái"]}
+						headers={["Bài tập", "Loại", "Hạn", "Điểm", "Trạng thái", ""]}
 						rows={assignments.map((row) => ({
-							onClick: undefined,
+							onClick:
+								row.kind === "class" && row.attemptId
+									? () => {
+											void navigate({
+												to: "/grading/$attemptId",
+												params: { attemptId: row.attemptId as string },
+												search: { from: "student" },
+											});
+										}
+									: undefined,
 							cells: assignmentRowCells(row, todayVN, nowMs),
 						}))}
 					/>

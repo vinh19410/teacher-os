@@ -12,6 +12,7 @@ import {
 	resolveLeadOrigins,
 	resolveStudentPracticeEnabled,
 	resolveTeacherEmails,
+	resolveZoomHostUser,
 } from "./src/topology.ts";
 
 config({ path: "./.env" });
@@ -171,6 +172,11 @@ const studentPracticeEnabled = resolveStudentPracticeEnabled(
 	process.env.APP_DOMAIN,
 );
 
+// Zoom Server-to-Server OAuth (#1031): chuẩn hóa và chặn fail-loud
+// ZOOM_HOST_USER sai định dạng (vd tên hiển thị "Ms My"); chấp nhận "me",
+// email tài khoản Zoom Pro, hoặc Zoom User ID.
+const zoomHostUser = resolveZoomHostUser(process.env.ZOOM_HOST_USER);
+
 // Alchemy's default date moves with each release. Pinning it keeps runtime
 // behavior changes out of Alchemy upgrades, so bumping it stays its own decision.
 const WORKER_COMPATIBILITY_DATE = "2026-03-17";
@@ -277,9 +283,7 @@ export const server = Cloudflare.Worker("server", {
 		ZOOM_CLIENT_SECRET: Config.String("ZOOM_CLIENT_SECRET").pipe(
 			Config.withDefault(""),
 		),
-		ZOOM_HOST_USER: Config.String("ZOOM_HOST_USER").pipe(
-			Config.withDefault("me"),
-		),
+		ZOOM_HOST_USER: zoomHostUser,
 		AUTH_ASSUME_EMAIL_VERIFIED: assumeEmailVerified ? "true" : "",
 		MAILER_IMPL: Config.String("MAILER_IMPL").pipe(Config.withDefault("log")),
 		MAIL_FROM: Config.String("MAIL_FROM").pipe(

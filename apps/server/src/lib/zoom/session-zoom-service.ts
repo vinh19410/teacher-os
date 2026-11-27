@@ -35,6 +35,7 @@ import {
 	lte,
 	ne,
 	or,
+	sql,
 } from "drizzle-orm";
 import type { Db } from "../../app";
 import type { RecordingPutResult, RecordingStore } from "../recording-store";
@@ -86,6 +87,32 @@ function isStorageExpired(
 	);
 }
 
+export function hasLiveR2Recording(
+	row: {
+		recordingStorageKey: string | null | undefined;
+		recordingExpiresAt: Date | null | undefined;
+	},
+	now: Date,
+): boolean {
+	return Boolean(
+		row.recordingStorageKey &&
+			!isStorageExpired(row.recordingStorageKey, row.recordingExpiresAt, now),
+	);
+}
+
+/**
+ * Điều kiện SQL khớp dòng `class_session_meeting` có video R2 còn hạn.
+ * Luôn truyền `nowMs` dạng số nguyên ms (`now.getTime()`) để khớp cột `timestamp_ms`.
+ */
+export function liveR2RecordingSql(nowMs: number) {
+	return sql`(${classSessionMeeting.recordingStorageKey} IS NOT NULL AND (${classSessionMeeting.recordingExpiresAt} IS NULL OR ${classSessionMeeting.recordingExpiresAt} > ${nowMs}))`;
+}
+
+/** Điều kiện SQL khớp dòng `class_session_meeting` không có R2 hoặc đã hết hạn lưu trữ. */
+export function nonLiveR2RecordingSql(nowMs: number) {
+	return sql`(${classSessionMeeting.recordingStorageKey} IS NULL OR (${classSessionMeeting.recordingExpiresAt} IS NOT NULL AND ${classSessionMeeting.recordingExpiresAt} <= ${nowMs}))`;
+}
+
 function normalizeTrashStatus(
 	raw: string | null | undefined,
 ): RecordingZoomTrashStatus {
@@ -100,7 +127,7 @@ function normalizeTrashStatus(
 	return "none";
 }
 
-async function deleteRecordingObjectBestEffort(
+export async function deleteRecordingObjectBestEffort(
 	store: RecordingStore | undefined,
 	key: string | null | undefined,
 	context: Record<string, unknown>,
@@ -663,6 +690,13 @@ function isDailyQuotaError(err: unknown): boolean {
 	);
 }
 
+function isFatalZoomConfigError(err: unknown): boolean {
+	return (
+		err instanceof ZoomIntegrationError &&
+		err.code === ZOOM_ERROR_CODES.INVALID_CONFIG
+	);
+}
+
 export async function autoProvisionMeetingsForNewClass(
 	deps: ZoomServiceDeps,
 	input: {
@@ -692,6 +726,16 @@ export async function autoProvisionMeetingsForNewClass(
 				err.code === ZOOM_ERROR_CODES.NOT_CONFIGURED
 			) {
 				// Chưa cấu hình Zoom — dừng ngay không lặp vô ích.
+				return;
+			}
+			if (isFatalZoomConfigError(err)) {
+				console.warn(
+					"[zoom] auto-provision stopped: invalid Zoom configuration",
+					{
+						classId: input.classId,
+						date: occ.date,
+					},
+				);
 				return;
 			}
 			if (isDailyQuotaError(err)) {
@@ -810,9 +854,9 @@ export async function bulkCreateMeetingsForClass(
 	// Kiểm tra cấu hình Zoom một lần ngay đầu để trả 503 gọn thay vì lỗi từng buổi.
 	resolveZoomClient(deps);
 
-	let quotaReached = false;
+	let stopRemaining = false;
 	for (const dateISO of sortedDates) {
-		if (quotaReached) {
+		if (stopRemaining) {
 			skipped += 1;
 			continue;
 		}
@@ -837,18 +881,21 @@ export async function bulkCreateMeetingsForClass(
 				date: dateISO,
 				message: err instanceof Error ? err.message : "Lỗi tạo Zoom",
 			});
-			if (isDailyQuotaError(err)) quotaReached = true;
+			if (isDailyQuotaError(err) || isFatalZoomConfigError(err)) {
+				stopRemaining = true;
+			}
 		}
 	}
 
 	return { created, skipped, failed, errors };
 }
 
-async function deleteZoomMeetingBestEffort(
+export async function deleteZoomMeetingBestEffort(
 	deps: ZoomServiceDeps,
 	zoomMeetingId: string,
 	context: { classId: string; date: string },
 ): Promise<void> {
+	if (!isZoomConfigured(deps.zoom) && !deps.getZoomClient) return;
 	try {
 		await resolveZoomClient(deps).deleteMeeting(zoomMeetingId);
 	} catch (err) {
@@ -869,6 +916,8 @@ export async function syncZoomOnSessionEdit(
 		zoom?: string;
 	},
 ): Promise<void> {
+	const now = deps.now ? deps.now() : new Date();
+	const nowMs = now.getTime();
 	const [meeting] = await deps.db
 		.select()
 		.from(classSessionMeeting)
@@ -896,32 +945,78 @@ export async function syncZoomOnSessionEdit(
 				),
 			)
 			.limit(1);
-		if (target?.zoomMeetingId) {
-			await deleteZoomMeetingBestEffort(deps, target.zoomMeetingId, {
-				classId: input.classId,
-				date: input.newDateISO,
-			});
+		if (target && hasLiveR2Recording(target, now)) {
+			console.warn(
+				"[zoom] refused to overwrite live R2 recording on session move",
+				{
+					classId: input.classId,
+					oldDateISO: input.oldDateISO,
+					newDateISO: input.newDateISO,
+				},
+			);
+			return;
 		}
-		await deps.db
+		const deletedTargets = await deps.db
 			.delete(classSessionMeeting)
 			.where(
 				and(
 					eq(classSessionMeeting.orgId, input.orgId),
 					eq(classSessionMeeting.classId, input.classId),
 					eq(classSessionMeeting.date, input.newDateISO),
+					ne(classSessionMeeting.id, meeting.id),
+					nonLiveR2RecordingSql(nowMs),
+					sql`EXISTS (SELECT 1 FROM ${classSessionMeeting} src WHERE src.id = ${meeting.id} AND src.date = ${input.oldDateISO})`,
 				),
-			);
-		if (target?.recordingStorageKey) {
-			await deleteRecordingObjectBestEffort(
-				deps.recordingStore,
-				target.recordingStorageKey,
-				{
+			)
+			.returning({
+				id: classSessionMeeting.id,
+				zoomMeetingId: classSessionMeeting.zoomMeetingId,
+				recordingStorageKey: classSessionMeeting.recordingStorageKey,
+			});
+		if (deletedTargets.length === 0) {
+			const [racedTarget] = await deps.db
+				.select({ id: classSessionMeeting.id })
+				.from(classSessionMeeting)
+				.where(
+					and(
+						eq(classSessionMeeting.orgId, input.orgId),
+						eq(classSessionMeeting.classId, input.classId),
+						eq(classSessionMeeting.date, input.newDateISO),
+						ne(classSessionMeeting.id, meeting.id),
+					),
+				)
+				.limit(1);
+			if (racedTarget) {
+				console.warn(
+					"[zoom] refused to overwrite raced live R2 recording on session move",
+					{
+						classId: input.classId,
+						oldDateISO: input.oldDateISO,
+						newDateISO: input.newDateISO,
+					},
+				);
+				return;
+			}
+		}
+		for (const dt of deletedTargets) {
+			if (dt.zoomMeetingId) {
+				await deleteZoomMeetingBestEffort(deps, dt.zoomMeetingId, {
 					classId: input.classId,
 					date: input.newDateISO,
-					reason: "session-move-overwrite",
-				},
-				deps.runInBackground,
-			);
+				});
+			}
+			if (dt.recordingStorageKey) {
+				await deleteRecordingObjectBestEffort(
+					deps.recordingStore,
+					dt.recordingStorageKey,
+					{
+						classId: input.classId,
+						date: input.newDateISO,
+						reason: "session-move-overwrite",
+					},
+					deps.runInBackground,
+				);
+			}
 		}
 		updatePatch.date = input.newDateISO;
 	}
@@ -959,6 +1054,7 @@ export async function syncZoomOnSessionEdit(
 	}
 
 	if (!meeting.zoomMeetingId || detachedFromSystemMeeting) return;
+	if (!isZoomConfigured(deps.zoom) && !deps.getZoomClient) return;
 
 	const timing = await resolveOccurrenceTiming(
 		deps.db,
@@ -996,6 +1092,8 @@ export async function syncZoomOnSessionCancelOrDelete(
 		deleteMeetingRow?: boolean;
 	},
 ): Promise<void> {
+	const now = deps.now ? deps.now() : new Date();
+	const nowMs = now.getTime();
 	const [meeting] = await deps.db
 		.select()
 		.from(classSessionMeeting)
@@ -1010,7 +1108,10 @@ export async function syncZoomOnSessionCancelOrDelete(
 
 	if (!meeting) return;
 
-	if (meeting.zoomMeetingId) {
+	if (
+		meeting.zoomMeetingId &&
+		(isZoomConfigured(deps.zoom) || Boolean(deps.getZoomClient))
+	) {
 		try {
 			const client = resolveZoomClient(deps);
 			await client.deleteMeeting(meeting.zoomMeetingId);
@@ -1023,35 +1124,13 @@ export async function syncZoomOnSessionCancelOrDelete(
 		}
 	}
 
-	if (input.deleteMeetingRow) {
-		await deps.db
-			.delete(classSessionMeeting)
-			.where(eq(classSessionMeeting.id, meeting.id));
-		if (meeting.recordingStorageKey) {
-			await deleteRecordingObjectBestEffort(
-				deps.recordingStore,
-				meeting.recordingStorageKey,
-				{
-					classId: input.classId,
-					date: input.dateISO,
-					reason: "session-delete",
-				},
-				deps.runInBackground,
-			);
-		}
-	} else {
-		const nextRecordingStatus =
-			meeting.recordingStorageKey || meeting.recordingStatus === "expired"
-				? meeting.recordingStatus
-				: meeting.recordingUrl
-					? "ready"
-					: "none";
+	const softDetach = async () => {
 		await deps.db
 			.update(classSessionMeeting)
 			.set({
 				zoomMeetingId: null,
 				joinUrl: "",
-				recordingStatus: nextRecordingStatus,
+				recordingStatus: sql`CASE WHEN ${classSessionMeeting.recordingStorageKey} IS NOT NULL OR ${classSessionMeeting.recordingStatus} = 'expired' THEN ${classSessionMeeting.recordingStatus} WHEN ${classSessionMeeting.recordingUrl} != '' THEN 'ready' ELSE 'none' END`,
 			})
 			.where(eq(classSessionMeeting.id, meeting.id));
 		await mirrorJoinUrlToSessionRows(
@@ -1060,6 +1139,39 @@ export async function syncZoomOnSessionCancelOrDelete(
 			input.classId,
 			input.dateISO,
 			"",
+		);
+	};
+
+	if (!input.deleteMeetingRow || hasLiveR2Recording(meeting, now)) {
+		await softDetach();
+		return;
+	}
+
+	const deleted = await deps.db
+		.delete(classSessionMeeting)
+		.where(
+			and(eq(classSessionMeeting.id, meeting.id), nonLiveR2RecordingSql(nowMs)),
+		)
+		.returning({
+			id: classSessionMeeting.id,
+			recordingStorageKey: classSessionMeeting.recordingStorageKey,
+		});
+	if (deleted.length === 0) {
+		// Race: video R2 còn hạn vừa được commit giữa lúc đọc và xoá → soft-detach để giữ nguyên.
+		await softDetach();
+		return;
+	}
+	const deletedKey = deleted[0]?.recordingStorageKey;
+	if (deletedKey) {
+		await deleteRecordingObjectBestEffort(
+			deps.recordingStore,
+			deletedKey,
+			{
+				classId: input.classId,
+				date: input.dateISO,
+				reason: "session-delete",
+			},
+			deps.runInBackground,
 		);
 	}
 }
@@ -1080,6 +1192,7 @@ export interface ZoomRescheduleDeletedMeeting {
 export interface ZoomRescheduleSyncPlan {
 	movedMeetings: ZoomRescheduleMovedMeeting[];
 	deletedZoomMeetingIds: ZoomRescheduleDeletedMeeting[];
+	deletedRecordingKeys?: string[];
 }
 
 /**

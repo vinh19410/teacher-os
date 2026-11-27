@@ -18,6 +18,8 @@ import {
 	runRecordingExpiryCron,
 	runRecordingSyncCron,
 	syncRecordingForOccurrence,
+	syncZoomOnSessionCancelOrDelete,
+	syncZoomOnSessionEdit,
 } from "../lib/zoom/session-zoom-service";
 import { type ZoomClient, ZoomIntegrationError } from "../lib/zoom/zoom-client";
 
@@ -158,7 +160,17 @@ function createMemoryRecordingStore(): MemoryRecordingStore {
 
 function createApp(
 	zoomClient?: ZoomClient,
-	opts?: { recordingStore?: RecordingStore; now?: () => Date },
+	opts?: {
+		recordingStore?: RecordingStore;
+		now?: () => Date;
+		zoom?: {
+			accountId?: string;
+			clientId?: string;
+			clientSecret?: string;
+			hostUser?: string;
+		};
+		zoomFetch?: typeof fetch;
+	},
 ) {
 	return buildApp({
 		getDb: () => db,
@@ -205,6 +217,8 @@ function createApp(
 		},
 		authHandler: async () => new Response(null, { status: 404 }),
 		...(zoomClient ? { getZoomClient: () => zoomClient } : {}),
+		...(opts?.zoom ? { zoom: opts.zoom } : {}),
+		...(opts?.zoomFetch ? { zoomFetch: opts.zoomFetch } : {}),
 		...(opts?.recordingStore
 			? { getRecordingStore: () => opts.recordingStore }
 			: {}),
@@ -453,6 +467,89 @@ describe("Tạo Zoom meeting", () => {
 			skipped: 19,
 			failed: 1,
 		});
+		expect(attempts).toBe(2);
+	});
+
+	test("lỗi cấu hình ZOOM_HOST_USER trả 503 ZOOM_INVALID_CONFIG với 0 request mạng và auto-provision/bulk dừng ngay sau 1 lần lỗi", async () => {
+		let fetchCalls = 0;
+		const appInvalidHost = createApp(undefined, {
+			zoom: {
+				accountId: "acc",
+				clientId: "cid",
+				clientSecret: "sec",
+				hostUser: "Ms My",
+			},
+			zoomFetch: async () => {
+				fetchCalls += 1;
+				return new Response(null, { status: 500 });
+			},
+		});
+		const manualClassId = await createManualOnlineClass(
+			appInvalidHost,
+			"Invalid Host Manual",
+		);
+		const date = futureDate(5);
+		await addManualSession(appInvalidHost, manualClassId, date, "");
+		const createRes = await appInvalidHost.request(
+			`/api/classes/${manualClassId}/sessions/${date}/zoom`,
+			{ method: "POST", headers: TEACHER_HEADERS, body: "{}" },
+		);
+		expect(createRes.status).toBe(503);
+		expect(await createRes.json()).toMatchObject({
+			code: "ZOOM_INVALID_CONFIG",
+			error: expect.stringContaining("ZOOM_HOST_USER"),
+		});
+		expect(fetchCalls).toBe(0);
+
+		const fake = createFakeZoom();
+		let attempts = 0;
+		const invalidConfigClient: ZoomClient = {
+			...fake.client,
+			async createMeeting() {
+				attempts += 1;
+				throw new ZoomIntegrationError(
+					ZOOM_ERROR_CODES.INVALID_CONFIG,
+					"Cấu hình ZOOM_HOST_USER không hợp lệ.",
+					503,
+				);
+			},
+		};
+		const app = createApp(invalidConfigClient);
+		const res = await app.request("/api/classes", {
+			method: "POST",
+			headers: TEACHER_HEADERS,
+			body: JSON.stringify({
+				name: "Invalid Host Auto",
+				skills: ["Speaking"],
+				mode: "Online",
+				schedulingMode: "auto",
+				schedule: { days: [0, 2], start: "10:00", end: "11:30" },
+				startDate: futureDate(1),
+				sessionsTotal: 20,
+			}),
+		});
+		expect(res.status).toBe(201);
+		const { id: classId } = (await res.json()) as { id: string };
+		// autoProvisionMeetingsForNewClass dừng ngay sau 1 lần gặp ZOOM_INVALID_CONFIG.
+		expect(attempts).toBe(1);
+
+		const bulk = await app.request(`/api/classes/${classId}/zoom/bulk`, {
+			method: "POST",
+			headers: TEACHER_HEADERS,
+			body: "{}",
+		});
+		expect(bulk.status).toBe(200);
+		expect(await bulk.json()).toMatchObject({
+			created: 0,
+			skipped: 19,
+			failed: 1,
+			errors: [
+				{
+					message: "Cấu hình ZOOM_HOST_USER không hợp lệ.",
+				},
+			],
+		});
+		// bulkCreateMeetingsForClass cũng dừng ngay sau 1 lần gặp ZOOM_INVALID_CONFIG.
 		expect(attempts).toBe(2);
 	});
 
@@ -1311,20 +1408,41 @@ describe("Recording và cron", () => {
 		);
 		expect(m1After?.recordingZoomTrashStatus).toBe("none");
 
-		// Xoá buổi d2 → xoá object k2.
+		// Xoá buổi d2 khi video R2 còn hạn → bị chặn 409 RECORDING_LOCKED, giữ nguyên buổi & object k2.
+		const blockedDel = await app.request(
+			`/api/classes/${classId}/sessions/${d2}`,
+			{
+				method: "DELETE",
+				headers: TEACHER_HEADERS,
+			},
+		);
+		expect(blockedDel.status).toBe(409);
+		expect(await blockedDel.json()).toMatchObject({
+			code: RECORDING_ERROR_CODES.LOCKED,
+		});
+		expect(store.objects.has(k2 ?? "")).toBe(true);
+		expect((await meetingRow(classId, d2))?.recordingStorageKey).toBe(k2);
+
+		// Video d2 đã quá hạn → xoá buổi thành công và xoá object k2.
+		await db
+			.update(schema.classSessionMeeting)
+			.set({ recordingExpiresAt: new Date(0) })
+			.where(eq(schema.classSessionMeeting.recordingStorageKey, k2 ?? ""));
 		const delRes = await app.request(`/api/classes/${classId}/sessions/${d2}`, {
 			method: "DELETE",
 			headers: TEACHER_HEADERS,
 		});
 		expect(delRes.status).toBe(200);
 		expect(store.objects.has(k2 ?? "")).toBe(false);
+		expect(await meetingRow(classId, d2)).toBeUndefined();
 
-		// Dời buổi đè lên ngày đích đang có object R2 → xoá object R2 của ngày bị đè.
+		// Dời buổi đè lên ngày đích đang có object R2 còn hạn → bị chặn 409 RECORDING_LOCKED, giữ nguyên object & meeting ngày bị đè.
 		const d3 = futureDate(7);
 		const d4 = futureDate(8);
 		await addManualSession(app, classId, d3, "");
+		const overwrittenKey = `org-1/${classId}/${d4}/overwritten.mp4`;
 		await store.putStream(
-			`org-1/${classId}/${d4}/overwritten.mp4`,
+			overwrittenKey,
 			new ReadableStream({
 				start(c) {
 					c.enqueue(new Uint8Array([9, 8, 7, 6]));
@@ -1341,10 +1459,30 @@ describe("Recording và cron", () => {
 			joinUrl: `${ZOOM_JOIN_PREFIX}888`,
 			zoomMeetingId: "888",
 			recordingStatus: "ready",
-			recordingStorageKey: `org-1/${classId}/${d4}/overwritten.mp4`,
+			recordingStorageKey: overwrittenKey,
 			recordingSizeBytes: 4,
 			recordingMimeType: "video/mp4",
 		});
+		const blockedMoveRes = await app.request(
+			`/api/classes/${classId}/sessions/${d3}/edit`,
+			{
+				method: "POST",
+				headers: TEACHER_HEADERS,
+				body: JSON.stringify({ moveDate: d4 }),
+			},
+		);
+		expect(blockedMoveRes.status).toBe(409);
+		expect(await blockedMoveRes.json()).toMatchObject({
+			code: RECORDING_ERROR_CODES.LOCKED,
+		});
+		expect(store.objects.has(overwrittenKey)).toBe(true);
+		expect(await meetingRow(classId, d3)).toBeTruthy();
+
+		// Đánh dấu object ở d4 đã quá hạn → dời buổi đè thành công và xoá object R2 cũ.
+		await db
+			.update(schema.classSessionMeeting)
+			.set({ recordingExpiresAt: new Date(0) })
+			.where(eq(schema.classSessionMeeting.id, "m-overwritten-r2"));
 		const moveRes = await app.request(
 			`/api/classes/${classId}/sessions/${d3}/edit`,
 			{
@@ -1354,9 +1492,9 @@ describe("Recording và cron", () => {
 			},
 		);
 		expect(moveRes.status).toBe(200);
-		expect(store.objects.has(`org-1/${classId}/${d4}/overwritten.mp4`)).toBe(
-			false,
-		);
+		expect(store.objects.has(overwrittenKey)).toBe(false);
+		expect(await meetingRow(classId, d3)).toBeUndefined();
+		expect((await meetingRow(classId, d4))?.id).not.toBe("m-overwritten-r2");
 	});
 });
 
@@ -2206,5 +2344,316 @@ describe("Bảo vệ route Zoom", () => {
 		expect(store.objects.size).toBe(0);
 		expect(store.deletedKeys).toHaveLength(1);
 		expect(baseFake.calls.filter((c) => c.method === "trash")).toHaveLength(0);
+	});
+});
+
+describe("Bảo vệ R2 recording khi xoá buổi (Path 1)", () => {
+	test("DELETE session bị chặn 409 RECORDING_LOCKED khi còn hạn (kể cả expiry=null) và dọn R2 hết hạn kể cả khi chưa bật Zoom", async () => {
+		const store = createMemoryRecordingStore();
+		const fixedNow = new Date("2026-12-01T10:00:00Z");
+		const appNoZoom = createApp(undefined, {
+			recordingStore: store,
+			now: () => fixedNow,
+		});
+		const classId = await createManualOnlineClass(appNoZoom, "No Zoom Delete");
+		const dLiveNullExp = futureDate(5);
+		const dExpired = futureDate(6);
+		await addManualSession(appNoZoom, classId, dLiveNullExp, "");
+		await addManualSession(appNoZoom, classId, dExpired, "");
+
+		const kLive = `org-1/${classId}/${dLiveNullExp}/live.mp4`;
+		const kExpired = `org-1/${classId}/${dExpired}/expired.mp4`;
+		for (const k of [kLive, kExpired]) {
+			await store.putStream(
+				k,
+				new ReadableStream({
+					start(c) {
+						c.enqueue(new Uint8Array([1, 2, 3, 4]));
+						c.close();
+					},
+				}),
+				{ contentType: "video/mp4" },
+			);
+		}
+		await db.insert(schema.classSessionMeeting).values([
+			{
+				id: "m-del-live-null-exp",
+				orgId: "org-1",
+				classId,
+				date: dLiveNullExp,
+				joinUrl: `${ZOOM_JOIN_PREFIX}101`,
+				zoomMeetingId: "101",
+				recordingStatus: "ready",
+				recordingStorageKey: kLive,
+				recordingExpiresAt: null,
+			},
+			{
+				id: "m-del-expired",
+				orgId: "org-1",
+				classId,
+				date: dExpired,
+				joinUrl: `${ZOOM_JOIN_PREFIX}102`,
+				zoomMeetingId: "102",
+				recordingStatus: "ready",
+				recordingStorageKey: kExpired,
+				recordingExpiresAt: fixedNow, // <= now => hết hạn
+			},
+		]);
+
+		const blocked = await appNoZoom.request(
+			`/api/classes/${classId}/sessions/${dLiveNullExp}`,
+			{ method: "DELETE", headers: TEACHER_HEADERS },
+		);
+		expect(blocked.status).toBe(409);
+		expect(await blocked.json()).toMatchObject({
+			code: RECORDING_ERROR_CODES.LOCKED,
+		});
+		expect(store.objects.has(kLive)).toBe(true);
+		expect(await meetingRow(classId, dLiveNullExp)).toBeTruthy();
+
+		// Hết hạn + !isZoomEnabled vẫn xoá được row và dọn object R2.
+		const allowed = await appNoZoom.request(
+			`/api/classes/${classId}/sessions/${dExpired}`,
+			{ method: "DELETE", headers: TEACHER_HEADERS },
+		);
+		expect(allowed.status).toBe(200);
+		expect(store.objects.has(kExpired)).toBe(false);
+		expect(await meetingRow(classId, dExpired)).toBeUndefined();
+	});
+
+	test("syncZoomOnSessionCancelOrDelete(deleteMeetingRow=true) soft-detach khi còn R2 live, xoá khi hết hạn, và cancel luôn soft-detach", async () => {
+		const fake = createFakeZoom();
+		const store = createMemoryRecordingStore();
+		const fixedNow = new Date("2026-12-01T10:00:00Z");
+		const app = createApp(fake.client, {
+			recordingStore: store,
+			now: () => fixedNow,
+		});
+		const classId = await createManualOnlineClass(app, "Service Delete Guard");
+		const dLive = futureDate(5);
+		const dExpired = futureDate(6);
+		const dCancel = futureDate(7);
+		await addManualSession(app, classId, dLive, "");
+		await addManualSession(app, classId, dExpired, "");
+		await addManualSession(app, classId, dCancel, "");
+
+		const kLive = `org-1/${classId}/${dLive}/live.mp4`;
+		const kExp = `org-1/${classId}/${dExpired}/exp.mp4`;
+		for (const k of [kLive, kExp]) {
+			await store.putStream(
+				k,
+				new ReadableStream({
+					start(c) {
+						c.enqueue(new Uint8Array([5, 6, 7, 8]));
+						c.close();
+					},
+				}),
+				{ contentType: "video/mp4" },
+			);
+		}
+		await db
+			.update(schema.classSessionMeeting)
+			.set({
+				recordingStatus: "ready",
+				recordingStorageKey: kLive,
+				recordingExpiresAt: new Date(fixedNow.getTime() + 60_000),
+			})
+			.where(
+				and(
+					eq(schema.classSessionMeeting.classId, classId),
+					eq(schema.classSessionMeeting.date, dLive),
+				),
+			);
+		await db
+			.update(schema.classSessionMeeting)
+			.set({
+				recordingStatus: "ready",
+				recordingStorageKey: kExp,
+				recordingExpiresAt: new Date(fixedNow.getTime() - 1_000),
+			})
+			.where(
+				and(
+					eq(schema.classSessionMeeting.classId, classId),
+					eq(schema.classSessionMeeting.date, dExpired),
+				),
+			);
+
+		await syncZoomOnSessionCancelOrDelete(
+			{
+				db,
+				getZoomClient: () => fake.client,
+				recordingStore: store,
+				now: () => fixedNow,
+			},
+			{ orgId: "org-1", classId, dateISO: dLive, deleteMeetingRow: true },
+		);
+		const liveAfter = await meetingRow(classId, dLive);
+		expect(liveAfter?.recordingStorageKey).toBe(kLive);
+		expect(liveAfter?.recordingStatus).toBe("ready");
+		expect(liveAfter?.zoomMeetingId).toBeNull();
+		expect(liveAfter?.joinUrl).toBe("");
+		expect(store.objects.has(kLive)).toBe(true);
+
+		await syncZoomOnSessionCancelOrDelete(
+			{
+				db,
+				getZoomClient: () => fake.client,
+				recordingStore: store,
+				now: () => fixedNow,
+			},
+			{ orgId: "org-1", classId, dateISO: dExpired, deleteMeetingRow: true },
+		);
+		expect(await meetingRow(classId, dExpired)).toBeUndefined();
+		expect(store.objects.has(kExp)).toBe(false);
+
+		await syncZoomOnSessionCancelOrDelete(
+			{
+				db,
+				getZoomClient: () => fake.client,
+				recordingStore: store,
+				now: () => fixedNow,
+			},
+			{ orgId: "org-1", classId, dateISO: dCancel, deleteMeetingRow: false },
+		);
+		const cancelAfter = await meetingRow(classId, dCancel);
+		expect(cancelAfter).toBeTruthy();
+		expect(cancelAfter?.zoomMeetingId).toBeNull();
+		expect(cancelAfter?.joinUrl).toBe("");
+	});
+
+	test("dời buổi nguồn có R2 live sang ngày trống hoặc ngày có R2 hết hạn thành công kể cả khi chưa bật Zoom", async () => {
+		const store = createMemoryRecordingStore();
+		const fixedNow = new Date("2026-12-01T10:00:00Z");
+		const appNoZoom = createApp(undefined, {
+			recordingStore: store,
+			now: () => fixedNow,
+		});
+		const classId = await createManualOnlineClass(appNoZoom, "No Zoom Move");
+		const dSrc = futureDate(5);
+		const dEmpty = futureDate(6);
+		const dExpiredDest = futureDate(7);
+		await addManualSession(appNoZoom, classId, dSrc, "");
+
+		const srcKey = `org-1/${classId}/${dSrc}/src.mp4`;
+		const expDestKey = `org-1/${classId}/${dExpiredDest}/exp-dest.mp4`;
+		for (const k of [srcKey, expDestKey]) {
+			await store.putStream(
+				k,
+				new ReadableStream({
+					start(c) {
+						c.enqueue(new Uint8Array([1, 3, 5, 7]));
+						c.close();
+					},
+				}),
+				{ contentType: "video/mp4" },
+			);
+		}
+		await db.insert(schema.classSessionMeeting).values([
+			{
+				id: "m-src-live",
+				orgId: "org-1",
+				classId,
+				date: dSrc,
+				joinUrl: "",
+				recordingStatus: "ready",
+				recordingStorageKey: srcKey,
+				recordingExpiresAt: new Date(fixedNow.getTime() + 86_400_000),
+			},
+			{
+				id: "m-dest-exp",
+				orgId: "org-1",
+				classId,
+				date: dExpiredDest,
+				joinUrl: "",
+				recordingStatus: "ready",
+				recordingStorageKey: expDestKey,
+				recordingExpiresAt: new Date(fixedNow.getTime() - 1000),
+			},
+		]);
+
+		// Dời sang ngày trống
+		const moveEmpty = await appNoZoom.request(
+			`/api/classes/${classId}/sessions/${dSrc}/edit`,
+			{
+				method: "POST",
+				headers: TEACHER_HEADERS,
+				body: JSON.stringify({ moveDate: dEmpty }),
+			},
+		);
+		expect(moveEmpty.status).toBe(200);
+		expect((await meetingRow(classId, dEmpty))?.recordingStorageKey).toBe(
+			srcKey,
+		);
+		expect(await meetingRow(classId, dSrc)).toBeUndefined();
+
+		// Dời tiếp đè lên ngày có R2 hết hạn → thành công và xoá object hết hạn
+		const moveExp = await appNoZoom.request(
+			`/api/classes/${classId}/sessions/${dEmpty}/edit`,
+			{
+				method: "POST",
+				headers: TEACHER_HEADERS,
+				body: JSON.stringify({ moveDate: dExpiredDest }),
+			},
+		);
+		expect(moveExp.status).toBe(200);
+		expect(store.objects.has(expDestKey)).toBe(false);
+		expect(store.objects.has(srcKey)).toBe(true);
+		expect((await meetingRow(classId, dExpiredDest))?.recordingStorageKey).toBe(
+			srcKey,
+		);
+	});
+
+	test("syncZoomOnSessionEdit từ chối ghi đè khi ngày đích có video R2 còn hạn", async () => {
+		const fake = createFakeZoom();
+		const store = createMemoryRecordingStore();
+		const fixedNow = new Date("2026-12-01T10:00:00Z");
+		const app = createApp(fake.client, {
+			recordingStore: store,
+			now: () => fixedNow,
+		});
+		const classId = await createManualOnlineClass(app, "Service Move Guard");
+		const dOld = futureDate(5);
+		const dNew = futureDate(6);
+		await addManualSession(app, classId, dOld, "");
+
+		const destKey = `org-1/${classId}/${dNew}/dest-live.mp4`;
+		await store.putStream(
+			destKey,
+			new ReadableStream({
+				start(c) {
+					c.enqueue(new Uint8Array([2, 4, 6, 8]));
+					c.close();
+				},
+			}),
+			{ contentType: "video/mp4" },
+		);
+		await db.insert(schema.classSessionMeeting).values({
+			id: "m-dest-live-svc",
+			orgId: "org-1",
+			classId,
+			date: dNew,
+			joinUrl: `${ZOOM_JOIN_PREFIX}999`,
+			zoomMeetingId: "999",
+			recordingStatus: "ready",
+			recordingStorageKey: destKey,
+			recordingExpiresAt: new Date(fixedNow.getTime() + 60_000),
+		});
+
+		await syncZoomOnSessionEdit(
+			{
+				db,
+				getZoomClient: () => fake.client,
+				recordingStore: store,
+				now: () => fixedNow,
+			},
+			{ orgId: "org-1", classId, oldDateISO: dOld, newDateISO: dNew },
+		);
+
+		expect((await meetingRow(classId, dNew))?.id).toBe("m-dest-live-svc");
+		expect((await meetingRow(classId, dOld))?.id).toBeTruthy();
+		expect(store.objects.has(destKey)).toBe(true);
+		expect(
+			fake.calls.some((c) => c.method === "delete" && c.meetingId === "999"),
+		).toBe(false);
 	});
 });

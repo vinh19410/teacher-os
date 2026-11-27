@@ -34,6 +34,7 @@ import {
 	lessonStatusForAttendance,
 	MAX_EMAIL_ATTEMPTS,
 	occurrenceEditSchema,
+	RECORDING_ERROR_CODES,
 	resendStudentInviteSchema,
 	STUDENT_INVITATION_ERROR_CODES,
 	sessionAttendanceSaveSchema,
@@ -63,6 +64,7 @@ import {
 	classAssignmentTarget,
 } from "@teacher-os/db/schema/class-assignment";
 import { classSession } from "@teacher-os/db/schema/class-session";
+import { classSessionMeeting } from "@teacher-os/db/schema/class-session-meeting";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
@@ -153,7 +155,12 @@ import {
 } from "../lib/syllabus-curriculum";
 import {
 	autoProvisionMeetingsForNewClass,
+	deleteRecordingObjectBestEffort,
+	deleteZoomMeetingBestEffort,
 	ensureSessionMeeting,
+	hasLiveR2Recording,
+	liveR2RecordingSql,
+	nonLiveR2RecordingSql,
 	syncZoomMeetingsAfterReschedule,
 	syncZoomOnSessionCancelOrDelete,
 	syncZoomOnSessionEdit,
@@ -173,6 +180,7 @@ import { gradingRoutes } from "./grading";
 import { holidayRoutes, isRollbackableConstraintError } from "./holidays";
 import { leadRoutes } from "./leads";
 import { materialRoutes } from "./materials";
+import { mcpTokenRoutes } from "./mcp-tokens";
 import { notificationLogRoutes } from "./notification-logs";
 import { paymentTransactionRoutes } from "./payment-transactions";
 import { placementTestRoutes } from "./placement-test";
@@ -2753,6 +2761,7 @@ export function kernelRoutes(deps: {
 				classId,
 				nextStartDate,
 				todayVN,
+				now,
 				classFieldPatch: {
 					name: input.name,
 					type: input.type,
@@ -2798,6 +2807,16 @@ export function kernelRoutes(deps: {
 						return startDateLockedResponse(c);
 					case "class-paused":
 						return classPausedResponse(c);
+					case "recording-locked":
+						return c.json(
+							{
+								error:
+									"Buổi học đang có video ghi hình còn hạn lưu trữ nên chưa thể đổi ngày khai giảng.",
+								code: RECORDING_ERROR_CODES.LOCKED,
+								reason: "recording-locked",
+							},
+							409,
+						);
 					default:
 						return c.json(
 							{
@@ -2821,6 +2840,27 @@ export function kernelRoutes(deps: {
 						plan: rescheduled.zoomSyncPlan,
 					}),
 				);
+			}
+
+			const recordingStore = deps.getRecordingStore?.();
+			if (
+				recordingStore &&
+				rescheduled.zoomSyncPlan.deletedRecordingKeys &&
+				rescheduled.zoomSyncPlan.deletedRecordingKeys.length > 0
+			) {
+				for (const storageKey of rescheduled.zoomSyncPlan
+					.deletedRecordingKeys) {
+					await deleteRecordingObjectBestEffort(
+						recordingStore,
+						storageKey,
+						{
+							orgId: ctx.orgId,
+							classId,
+							reason: "class-start-date-reschedule",
+						},
+						deps.runInBackground,
+					);
+				}
 			}
 
 			return c.json({ ok: true });
@@ -3081,6 +3121,7 @@ export function kernelRoutes(deps: {
 				classId,
 				nextStartDate: effectiveStartDate,
 				todayVN: vietnamTodayISO(now),
+				now,
 				classFieldPatch: {
 					openingConfirmedAt: now,
 					openingNote: effectiveNote,
@@ -3116,6 +3157,16 @@ export function kernelRoutes(deps: {
 							},
 							422,
 						);
+					case "recording-locked":
+						return c.json(
+							{
+								error:
+									"Buổi học đang có video ghi hình còn hạn lưu trữ nên chưa thể đổi ngày khai giảng.",
+								code: RECORDING_ERROR_CODES.LOCKED,
+								reason: "recording-locked",
+							},
+							409,
+						);
 					default:
 						return c.json(
 							{
@@ -3140,6 +3191,27 @@ export function kernelRoutes(deps: {
 						plan: rescheduled.zoomSyncPlan,
 					}),
 				);
+			}
+
+			const recordingStore = deps.getRecordingStore?.();
+			if (
+				recordingStore &&
+				rescheduled.zoomSyncPlan.deletedRecordingKeys &&
+				rescheduled.zoomSyncPlan.deletedRecordingKeys.length > 0
+			) {
+				for (const storageKey of rescheduled.zoomSyncPlan
+					.deletedRecordingKeys) {
+					await deleteRecordingObjectBestEffort(
+						recordingStore,
+						storageKey,
+						{
+							orgId: ctx.orgId,
+							classId,
+							reason: "confirm-opening-reschedule",
+						},
+						deps.runInBackground,
+					);
+				}
 			}
 
 			confirmedAt = rescheduled.updatedRow.openingConfirmedAt ?? now;
@@ -3810,6 +3882,8 @@ export function kernelRoutes(deps: {
 			moveDateISO = parseStartDateStrict(body.data.moveDate);
 			if (!moveDateISO) return invalidDateResponse(c);
 		}
+		const now = deps.now ? deps.now() : new Date();
+		const nowMs = now.getTime();
 
 		// Collision pre-check (reduces races, does not eliminate them — RT6):
 		// the destination bucket must be empty unless it IS this bucket.
@@ -3829,6 +3903,32 @@ export function kernelRoutes(deps: {
 			if (dest.total > 0 || destCs.length > 0) {
 				return c.json(
 					{ error: "destination date occupied", reason: "date-occupied" },
+					409,
+				);
+			}
+			const [destMeeting] = await db
+				.select({
+					id: classSessionMeeting.id,
+					recordingStorageKey: classSessionMeeting.recordingStorageKey,
+					recordingExpiresAt: classSessionMeeting.recordingExpiresAt,
+				})
+				.from(classSessionMeeting)
+				.where(
+					and(
+						eq(classSessionMeeting.orgId, ctx.orgId),
+						eq(classSessionMeeting.classId, classId),
+						eq(classSessionMeeting.date, moveDateISO),
+					),
+				)
+				.limit(1);
+			if (destMeeting && hasLiveR2Recording(destMeeting, now)) {
+				return c.json(
+					{
+						error:
+							"Ngày đích đang có video recording lưu trên hệ thống — hãy chọn ngày khác.",
+						code: RECORDING_ERROR_CODES.LOCKED,
+						reason: "recording-locked",
+					},
 					409,
 				);
 			}
@@ -3905,6 +4005,10 @@ export function kernelRoutes(deps: {
 
 		try {
 			let rows: Array<{ id: string }>;
+			let overwrittenMeetings: Array<{
+				zoomMeetingId: string | null;
+				recordingStorageKey: string | null;
+			}> = [];
 			if (moveDateISO && moveDateISO !== dateISO) {
 				// C2: dời lesson, class_session và kéo `holiday_session_shift.makeupDate` trong
 				// CÙNG một db.batch nguyên tử để không bao giờ lệch trạng thái.
@@ -3923,13 +4027,26 @@ export function kernelRoutes(deps: {
 					),
 				);
 				try {
+					// CAS guard đặt tại index 0 để chặn cả 2 race: lớp `auto` dời
+					// đồng thời vào cùng ngày đích và video R2 live vừa xuất hiện
+					// ở ngày đích; `occurrenceUpdate` đứng ở index 1.
 					const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+						db
+							.update(classTable)
+							.set({
+								name: sql`CASE WHEN EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${classId} AND ${lesson.date} = ${moveDateISO}) OR EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.orgId} = ${ctx.orgId} AND ${classSession.classId} = ${classId} AND ${classSession.date} = ${moveDateISO}) OR EXISTS (SELECT 1 FROM ${classSessionMeeting} WHERE ${classSessionMeeting.orgId} = ${ctx.orgId} AND ${classSessionMeeting.classId} = ${classId} AND ${classSessionMeeting.date} = ${moveDateISO} AND ${liveR2RecordingSql(nowMs)}) THEN NULL ELSE ${classTable.name} END`,
+							})
+							.where(
+								and(
+									eq(classTable.id, classId),
+									eq(classTable.orgId, ctx.orgId),
+								),
+							),
 						occurrenceUpdate(db, classId, dateISO, ctx.orgId, set, false),
-						// #658: class_session phải dời TRƯỚC các câu lessonMaterial —
+						// #658: class_session phải dời TRƯỚC các câu lessonMaterial/meeting —
 						// `bucketMoved` nhìn thấy class_session ở đích qua subquery
 						// đánh giá từng câu trong batch (buổi manual 0 học viên
-						// không có dòng lesson để báo hiệu đích). Phần tử [0] giữ
-						// nguyên — `updatedRows` lấy từ kết quả phần tử đầu.
+						// không có dòng lesson để báo hiệu đích).
 						...(existingClassSession.length > 0
 							? [
 									db
@@ -3995,10 +4112,74 @@ export function kernelRoutes(deps: {
 								),
 							),
 					];
-					const [updatedRows] = await db.batch(statements);
-					rows = updatedRows as Array<{ id: string }>;
+					const destMeetingDeleteIdx = statements.length;
+					statements.push(
+						db
+							.delete(classSessionMeeting)
+							.where(
+								and(
+									eq(classSessionMeeting.orgId, ctx.orgId),
+									eq(classSessionMeeting.classId, classId),
+									eq(classSessionMeeting.date, moveDateISO),
+									bucketMoved,
+									nonLiveR2RecordingSql(nowMs),
+									sql`exists (select 1 from ${classSessionMeeting} src where src.org_id = ${ctx.orgId} and src.class_id = ${classId} and src.date = ${dateISO})`,
+								),
+							)
+							.returning({
+								zoomMeetingId: classSessionMeeting.zoomMeetingId,
+								recordingStorageKey: classSessionMeeting.recordingStorageKey,
+							}),
+						db
+							.update(classSessionMeeting)
+							.set({ date: moveDateISO })
+							.where(
+								and(
+									eq(classSessionMeeting.orgId, ctx.orgId),
+									eq(classSessionMeeting.classId, classId),
+									eq(classSessionMeeting.date, dateISO),
+									bucketMoved,
+								),
+							),
+					);
+					const batchResults = await db.batch(statements);
+					rows = batchResults[1] as Array<{ id: string }>;
+					overwrittenMeetings =
+						(batchResults[destMeetingDeleteIdx] as
+							| typeof overwrittenMeetings
+							| undefined) ?? [];
 				} catch (shiftCause) {
-					if (isRollbackableConstraintError(shiftCause)) {
+					const isConstraintErr =
+						isRollbackableConstraintError(shiftCause) ||
+						(shiftCause instanceof Error &&
+							isRollbackableConstraintError(shiftCause.cause));
+					if (isConstraintErr) {
+						const [destAfter] = await db
+							.select({
+								id: classSessionMeeting.id,
+								recordingStorageKey: classSessionMeeting.recordingStorageKey,
+								recordingExpiresAt: classSessionMeeting.recordingExpiresAt,
+							})
+							.from(classSessionMeeting)
+							.where(
+								and(
+									eq(classSessionMeeting.orgId, ctx.orgId),
+									eq(classSessionMeeting.classId, classId),
+									eq(classSessionMeeting.date, moveDateISO),
+								),
+							)
+							.limit(1);
+						if (destAfter && hasLiveR2Recording(destAfter, now)) {
+							return c.json(
+								{
+									error:
+										"Ngày đích đang có video recording lưu trên hệ thống — hãy chọn ngày khác.",
+									code: RECORDING_ERROR_CODES.LOCKED,
+									reason: "recording-locked",
+								},
+								409,
+							);
+						}
 						return c.json(
 							{
 								error: "destination date occupied",
@@ -4080,12 +4261,37 @@ export function kernelRoutes(deps: {
 					}),
 				);
 			}
+			for (const om of overwrittenMeetings) {
+				if (om.recordingStorageKey) {
+					await deleteRecordingObjectBestEffort(
+						deps.getRecordingStore?.(),
+						om.recordingStorageKey,
+						{
+							classId,
+							date: moveDateISO ?? dateISO,
+							reason: "session-move-overwrite",
+						},
+						deps.runInBackground,
+					);
+				}
+				if (om.zoomMeetingId) {
+					const meetingIdToDelete = om.zoomMeetingId;
+					const targetDate = moveDateISO ?? dateISO;
+					await runZoomSyncTask(deps, () =>
+						deleteZoomMeetingBestEffort(zoomDepsFrom(deps), meetingIdToDelete, {
+							classId,
+							date: targetDate,
+						}),
+					);
+				}
+			}
+			const effectiveDateISO = moveDateISO ?? dateISO;
 			await runZoomSyncTask(deps, () =>
 				syncZoomOnSessionEdit(zoomDepsFrom(deps), {
 					orgId: ctx.orgId,
 					classId,
-					oldDateISO: dateISO,
-					newDateISO: moveDateISO ?? dateISO,
+					oldDateISO: effectiveDateISO,
+					newDateISO: effectiveDateISO,
 					time: body.data.time,
 					dur: body.data.dur,
 					topic: body.data.topic,
@@ -4097,7 +4303,10 @@ export function kernelRoutes(deps: {
 				skipped: Math.max(0, before.total - rows.length),
 			} satisfies OccurrenceMutationResponse);
 		} catch (cause) {
-			if (isRollbackableConstraintError(cause)) {
+			const isConstraintErr =
+				isRollbackableConstraintError(cause) ||
+				(cause instanceof Error && isRollbackableConstraintError(cause.cause));
+			if (isConstraintErr) {
 				return c.json(
 					{ error: "destination date occupied", reason: "date-occupied" },
 					409,
@@ -4450,6 +4659,35 @@ export function kernelRoutes(deps: {
 			);
 		}
 
+		const now = deps.now ? deps.now() : new Date();
+		const nowMs = now.getTime();
+		const [existingMeeting] = await db
+			.select({
+				id: classSessionMeeting.id,
+				recordingStorageKey: classSessionMeeting.recordingStorageKey,
+				recordingExpiresAt: classSessionMeeting.recordingExpiresAt,
+			})
+			.from(classSessionMeeting)
+			.where(
+				and(
+					eq(classSessionMeeting.orgId, ctx.orgId),
+					eq(classSessionMeeting.classId, classId),
+					eq(classSessionMeeting.date, dateISO),
+				),
+			)
+			.limit(1);
+		if (existingMeeting && hasLiveR2Recording(existingMeeting, now)) {
+			return c.json(
+				{
+					error:
+						"Buổi học đang có video recording lưu trên hệ thống nên không thể xóa buổi.",
+					code: RECORDING_ERROR_CODES.LOCKED,
+					reason: "recording-locked",
+				},
+				409,
+			);
+		}
+
 		const deleteStatements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
 			db
 				.delete(classSession)
@@ -4502,11 +4740,28 @@ export function kernelRoutes(deps: {
 				.update(classTable)
 				.set({
 					sessionsTotal: sql`(SELECT count(*) FROM class_session WHERE class_id = ${classId} AND org_id = ${ctx.orgId})`,
-					schedulingMode: sql`CASE WHEN EXISTS (SELECT 1 FROM ${syllabus} WHERE ${syllabus.classId} = ${classId} AND ${syllabus.orgId} = ${ctx.orgId}) THEN NULL ELSE ${classTable.schedulingMode} END`,
+					schedulingMode: sql`CASE WHEN EXISTS (SELECT 1 FROM ${syllabus} WHERE ${syllabus.classId} = ${classId} AND ${syllabus.orgId} = ${ctx.orgId}) OR EXISTS (SELECT 1 FROM ${classSessionMeeting} WHERE ${classSessionMeeting.orgId} = ${ctx.orgId} AND ${classSessionMeeting.classId} = ${classId} AND ${classSessionMeeting.date} = ${dateISO} AND ${liveR2RecordingSql(nowMs)}) THEN NULL ELSE ${classTable.schedulingMode} END`,
 				})
 				.where(
 					and(eq(classTable.orgId, ctx.orgId), eq(classTable.id, classId)),
 				),
+		);
+		const meetingDeleteIdx = deleteStatements.length;
+		deleteStatements.push(
+			db
+				.delete(classSessionMeeting)
+				.where(
+					and(
+						eq(classSessionMeeting.orgId, ctx.orgId),
+						eq(classSessionMeeting.classId, classId),
+						eq(classSessionMeeting.date, dateISO),
+						nonLiveR2RecordingSql(nowMs),
+					),
+				)
+				.returning({
+					zoomMeetingId: classSessionMeeting.zoomMeetingId,
+					recordingStorageKey: classSessionMeeting.recordingStorageKey,
+				}),
 		);
 
 		const activeEnrollments = await db
@@ -4535,31 +4790,82 @@ export function kernelRoutes(deps: {
 			);
 		}
 
+		let batchResults: unknown[];
 		try {
-			await db.batch(deleteStatements);
+			batchResults = await db.batch(deleteStatements);
 		} catch (err) {
-			if (
-				isRollbackableConstraintError(err) &&
-				(await findClassCurriculum(db, classId, ctx.orgId))
-			) {
-				return c.json(
-					{
-						error: "cannot delete session from class with syllabus",
-						reason: "class-has-syllabus",
-					},
-					409,
-				);
+			const isConstraintErr =
+				isRollbackableConstraintError(err) ||
+				(err instanceof Error && isRollbackableConstraintError(err.cause));
+			if (isConstraintErr) {
+				if (await findClassCurriculum(db, classId, ctx.orgId)) {
+					return c.json(
+						{
+							error: "cannot delete session from class with syllabus",
+							reason: "class-has-syllabus",
+						},
+						409,
+					);
+				}
+				const [afterMeeting] = await db
+					.select({
+						id: classSessionMeeting.id,
+						recordingStorageKey: classSessionMeeting.recordingStorageKey,
+						recordingExpiresAt: classSessionMeeting.recordingExpiresAt,
+					})
+					.from(classSessionMeeting)
+					.where(
+						and(
+							eq(classSessionMeeting.orgId, ctx.orgId),
+							eq(classSessionMeeting.classId, classId),
+							eq(classSessionMeeting.date, dateISO),
+						),
+					)
+					.limit(1);
+				if (afterMeeting && hasLiveR2Recording(afterMeeting, now)) {
+					return c.json(
+						{
+							error:
+								"Buổi học đang có video recording lưu trên hệ thống nên không thể xóa buổi.",
+							code: RECORDING_ERROR_CODES.LOCKED,
+							reason: "recording-locked",
+						},
+						409,
+					);
+				}
 			}
 			throw err;
 		}
-		await runZoomSyncTask(deps, () =>
-			syncZoomOnSessionCancelOrDelete(zoomDepsFrom(deps), {
-				orgId: ctx.orgId,
-				classId,
-				dateISO,
-				deleteMeetingRow: true,
-			}),
-		);
+		const deletedMeetings =
+			(batchResults[meetingDeleteIdx] as
+				| Array<{
+						zoomMeetingId: string | null;
+						recordingStorageKey: string | null;
+				  }>
+				| undefined) ?? [];
+		for (const deletedMeeting of deletedMeetings) {
+			if (deletedMeeting.recordingStorageKey) {
+				await deleteRecordingObjectBestEffort(
+					deps.getRecordingStore?.(),
+					deletedMeeting.recordingStorageKey,
+					{
+						classId,
+						date: dateISO,
+						reason: "session-delete",
+					},
+					deps.runInBackground,
+				);
+			}
+			if (deletedMeeting.zoomMeetingId) {
+				const meetingIdToDelete = deletedMeeting.zoomMeetingId;
+				await runZoomSyncTask(deps, () =>
+					deleteZoomMeetingBestEffort(zoomDepsFrom(deps), meetingIdToDelete, {
+						classId,
+						date: dateISO,
+					}),
+				);
+			}
+		}
 		return c.json({ ok: true, deleted: true, date: dateISO });
 	});
 
@@ -5434,6 +5740,7 @@ export function kernelRoutes(deps: {
 	kernel.route("/", studyPackRoutes(deps));
 	kernel.route("/", materialRoutes(deps));
 	kernel.route("/assignments", assignmentRoutes(deps));
+	kernel.route("/mcp-tokens", mcpTokenRoutes(deps));
 	kernel.route("/reports", reportRoutes(deps));
 	kernel.route("/notifs", notifRoutes(deps));
 	kernel.route("/comment-bank", commentBankRoutes(deps));

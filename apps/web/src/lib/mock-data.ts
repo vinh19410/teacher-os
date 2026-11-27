@@ -126,6 +126,7 @@ export interface ClassAssignment {
 	dueAt?: string | null;
 	sessionDate?: string | null;
 	targetScope?: ClassAssignmentTargetScope;
+	hasGradableTask?: boolean;
 	note: string;
 	createdAt: string;
 	targets: Array<{
@@ -135,6 +136,8 @@ export interface ClassAssignment {
 		attemptId?: string | null;
 		gradedAt?: string | null;
 		band?: number | null;
+		correctCount?: number | null;
+		totalQuestions?: number | null;
 	}>;
 }
 

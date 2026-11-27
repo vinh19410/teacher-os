@@ -1,10 +1,14 @@
-import type { TeacherSubmission } from "@teacher-os/api/contracts";
+import type {
+	TeacherAutoSubmission,
+	TeacherSubmission,
+} from "@teacher-os/api/contracts";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { HttpError } from "@/lib/kernel-load-state";
 import {
 	fetchGradingQueue,
 	fetchSubmission,
 	fetchSubmissionMediaObjectUrl,
+	gradingAudioUrl,
 	gradingQueryKey,
 	gradingQueueQueryKey,
 	gradingQueueQueryOptions,
@@ -62,16 +66,71 @@ afterEach(() => {
 });
 
 describe("grading repo (#319)", () => {
-	test("fetchSubmission GET với credentials include và parse payload", async () => {
+	test("fetchSubmission GET với ?v=2, credentials include và parse cả TeacherSubmission lẫn TeacherAutoSubmission", async () => {
 		const stub = stubFetchOnce(() =>
 			Response.json(validSubmission, { status: 200 }),
 		);
 		const data = await fetchSubmission("att 1", BASE);
 		stub.restore();
-		expect(stub.url()).toBe(`${BASE}/api/grading/att%201`);
+		expect(stub.url()).toBe(`${BASE}/api/grading/att%201?v=2`);
 		expect(stub.init()?.credentials).toBe("include");
 		expect(data.title).toBe("Writing Task 2");
 		expect(data.student.name).toBe("Minh Tran");
+
+		const autoSubmission: TeacherAutoSubmission = {
+			kind: "auto",
+			attemptId: "att-mc-1",
+			classAssignmentId: "ca-1",
+			classId: "class-1",
+			className: "IELTS Foundation",
+			title: "Grammar quick check",
+			due: "2026-11-30",
+			student: { id: "s-1", name: "Grok Test Student" },
+			skill: "grammar",
+			part: "",
+			startedAt: "2026-11-26T08:25:00.000Z",
+			submittedAt: "2026-11-26T08:29:00.000Z",
+			correctCount: 3,
+			wrongCount: 0,
+			skippedCount: 0,
+			totalCount: 3,
+			items: [{ verdict: "correct", key: "A", answer: "A" }],
+			detail: {
+				skill: "grammar",
+				type: "mcq",
+				band: "5.5",
+				intro: "",
+				prompt: "<p>Choose</p>",
+				passage: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				imageUrl: "",
+				optionBank: [],
+				note: "",
+			},
+			questions: [
+				{
+					stem: "Q1",
+					opts: ["A", "B", "C", "D"],
+					type: "mcq",
+					pin: null,
+					key: "A",
+					alts: "",
+					verdict: "correct",
+					answer: "A",
+				},
+			],
+		};
+		const stubAuto = stubFetchOnce(() =>
+			Response.json(autoSubmission, { status: 200 }),
+		);
+		const parsedAuto = await fetchSubmission("att-mc-1", BASE);
+		stubAuto.restore();
+		expect("kind" in parsedAuto && parsedAuto.kind).toBe("auto");
+		expect(gradingAudioUrl("att/1", BASE)).toBe(
+			`${BASE}/api/grading/att%2F1/audio`,
+		);
 	});
 
 	test("fetchSubmission ném HttpError(status) khi response lỗi", async () => {
@@ -171,12 +230,47 @@ describe("grading repo (#319)", () => {
 		);
 		const queue = await fetchGradingQueue(BASE);
 		stub.restore();
-		expect(stub.url()).toBe(`${BASE}/api/grading`);
+		expect(stub.url()).toBe(`${BASE}/api/grading?includeAuto=1`);
 		expect(stub.init()?.credentials).toBe("include");
 		expect(queue.items).toHaveLength(1);
 		expect(queue.items[0]?.className).toBe("Luyện tập");
 		expect(gradingQueueQueryOptions(BASE).queryKey).toEqual(
 			gradingQueueQueryKey,
 		);
+	});
+
+	test("fetchGradingQueue parses auto-graded items with autoScore (#978)", async () => {
+		const stub = stubFetchOnce(() =>
+			Response.json(
+				{
+					items: [
+						{
+							attemptId: "att-mc-1",
+							mode: "assignment",
+							classId: "cl-1",
+							className: "IELTS 5.5",
+							title: "Grammar quick check",
+							due: "2026-11-30",
+							student: { id: "s-1", name: "Grok Test Student" },
+							skill: "grammar",
+							part: "",
+							submittedAt: "2026-11-26T08:29:00.000Z",
+							grade: null,
+							aiStatus: null,
+							aiGradingMode: null,
+							autoScore: { correctCount: 3, totalCount: 3 },
+						},
+					],
+				},
+				{ status: 200 },
+			),
+		);
+		const queue = await fetchGradingQueue(BASE);
+		stub.restore();
+		expect(queue.items[0]?.skill).toBe("grammar");
+		expect(queue.items[0]?.autoScore).toEqual({
+			correctCount: 3,
+			totalCount: 3,
+		});
 	});
 });

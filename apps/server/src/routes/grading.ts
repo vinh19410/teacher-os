@@ -8,13 +8,17 @@ import {
 	essayAnnotationCreateSchema,
 	essayAnnotationPatchSchema,
 	type GradingQueueItem,
+	type GradingQueueItemV2,
 	type GradingQueueResponse,
+	type GradingQueueV2Response,
 	isAiGradingMode,
 	isAiGradingRetryableError,
 	isAiGradingStatus,
 	QUIZ_ANNOTATIONS_MAX,
 	quizGradeInputSchema,
+	type TeacherAutoSubmission,
 	type TeacherSubmission,
+	teacherAutoSubmissionSchema,
 } from "@teacher-os/api/contracts";
 import {
 	isValidAnnotationSpan,
@@ -22,8 +26,10 @@ import {
 } from "@teacher-os/api/lib/essay-annotations";
 import { essayToPlain, plainToRaw } from "@teacher-os/api/lib/essay-plain";
 import {
+	AUTO_GRADABLE_SKILLS,
 	essayTaskOf,
 	type GradableSkill,
+	isAutoGradableSkill,
 	isGradableSkill,
 } from "@teacher-os/api/lib/ielts-band";
 import { canPublishGrade, canReviewGrade } from "@teacher-os/auth/role";
@@ -45,6 +51,7 @@ import {
 	eq,
 	inArray,
 	isNotNull,
+	isNull,
 	ne,
 	or,
 	sql,
@@ -73,7 +80,17 @@ import {
 	toPlainAnnotation,
 } from "../lib/quiz-annotation";
 import { parseGradeScores, toQuizAttemptGrade } from "../lib/quiz-grade";
-import { parseQuizQuestions } from "./student";
+import {
+	buildQuizReviewEvaluation,
+	parseStudentQuizGroups,
+} from "../lib/quiz-review";
+import { serveStudyPackAudio } from "../lib/study-pack-audio";
+import {
+	fillExplanationsFromCurrent,
+	parseQuizAnswers,
+	parseQuizOptionBank,
+	parseQuizQuestions,
+} from "./student";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type GradingContext = Context<Env>;
@@ -126,17 +143,53 @@ function toAiStatus(value: string | null): AiGradingStatus | null {
 export async function loadGradingQueue(
 	db: Db,
 	orgId: string,
+	branchLimit?: number,
+): Promise<GradingQueueItem[]>;
+export async function loadGradingQueue(
+	db: Db,
+	orgId: string,
+	branchLimit: number,
+	opts: { includeAuto: true },
+): Promise<GradingQueueItemV2[]>;
+export async function loadGradingQueue(
+	db: Db,
+	orgId: string,
+	branchLimit?: number,
+	opts?: { includeAuto?: boolean },
+): Promise<GradingQueueItem[] | GradingQueueItemV2[]>;
+export async function loadGradingQueue(
+	db: Db,
+	orgId: string,
 	branchLimit: number = GRADING_QUEUE_BRANCH_LIMIT,
-): Promise<GradingQueueItem[]> {
-	// POST /grade luôn ghi đủ 4 tiêu chí kèm gradedAt; chuẩn "đã chấm" ở tầng
-	// ứng dụng vẫn đi qua toQuizAttemptGrade bên dưới.
-	const gradedOrderExpr = sql<number>`case when ${quizAttempt.gradeScores} is not null and ${quizAttempt.gradedAt} is not null then 1 else 0 end`;
+	opts?: { includeAuto?: boolean },
+): Promise<GradingQueueItem[] | GradingQueueItemV2[]> {
+	const includeAuto = opts?.includeAuto === true;
+	const allSkills: readonly string[] = [
+		"writing",
+		"speaking",
+		...AUTO_GRADABLE_SKILLS,
+	];
+
+	// 2-bucket order (#383, #978):
+	// Bucket 0 = Chờ chấm tay (Writing/Speaking/Hybrid chưa có gradeScores + gradedAt)
+	// Bucket 1 = Đã chấm + Tự chấm (strictly sau Chờ chấm để không bao giờ bị cắt bởi branchLimit)
+	const assignmentOrderExpr = includeAuto
+		? sql<number>`case when (${inArray(assignmentPrompt.skill, ["writing", "speaking"])} or ${isNotNull(assignmentPrompt.writingPart)}) and (${quizAttempt.gradeScores} is null or ${quizAttempt.gradedAt} is null) then 0 else 1 end`
+		: sql<number>`case when ${quizAttempt.gradeScores} is not null and ${quizAttempt.gradedAt} is not null then 1 else 0 end`;
+	const practiceOrderExpr = includeAuto
+		? sql<number>`case when ${inArray(assignmentTest.skill, ["writing", "speaking"])} and (${quizAttempt.gradeScores} is null or ${quizAttempt.gradedAt} is null) then 0 else 1 end`
+		: sql<number>`case when ${quizAttempt.gradeScores} is not null and ${quizAttempt.gradedAt} is not null then 1 else 0 end`;
+	const questionCountExpr = includeAuto
+		? sql<number>`case when json_valid(${quizAttempt.questionsSnapshot}) = 1 then case when json_type(${quizAttempt.questionsSnapshot}) = 'array' then (select count(*) from json_each(${quizAttempt.questionsSnapshot}) where type = 'object') else 0 end else 0 end`
+		: sql<number>`0`;
 
 	const [assignmentRows, practiceRows] = await Promise.all([
 		db
 			.select({
 				id: quizAttempt.id,
 				submittedAt: quizAttempt.submittedAt,
+				correctCount: quizAttempt.correctCount,
+				totalCount: questionCountExpr,
 				gradeScores: quizAttempt.gradeScores,
 				gradeFeedback: quizAttempt.gradeFeedback,
 				gradedAt: quizAttempt.gradedAt,
@@ -159,6 +212,7 @@ export async function loadGradingQueue(
 				and(
 					eq(classAssignment.id, quizAttempt.assignmentId),
 					eq(classAssignment.orgId, orgId),
+					isNull(classAssignment.classStudyPackId),
 				),
 			)
 			.innerJoin(
@@ -184,14 +238,16 @@ export async function loadGradingQueue(
 					eq(quizAttempt.orgId, orgId),
 					eq(quizAttempt.status, "submitted"),
 					eq(quizAttempt.mode, "assignment"),
-					or(
-						inArray(assignmentPrompt.skill, ["writing", "speaking"]),
-						isNotNull(assignmentPrompt.writingPart),
-					),
+					includeAuto
+						? inArray(assignmentPrompt.skill, [...allSkills])
+						: or(
+								inArray(assignmentPrompt.skill, ["writing", "speaking"]),
+								isNotNull(assignmentPrompt.writingPart),
+							),
 				),
 			)
 			.orderBy(
-				asc(gradedOrderExpr),
+				asc(assignmentOrderExpr),
 				desc(quizAttempt.submittedAt),
 				desc(quizAttempt.id),
 			)
@@ -201,6 +257,8 @@ export async function loadGradingQueue(
 				id: quizAttempt.id,
 				testId: quizAttempt.testId,
 				submittedAt: quizAttempt.submittedAt,
+				correctCount: quizAttempt.correctCount,
+				totalCount: questionCountExpr,
 				gradeScores: quizAttempt.gradeScores,
 				gradeFeedback: quizAttempt.gradeFeedback,
 				gradedAt: quizAttempt.gradedAt,
@@ -229,11 +287,14 @@ export async function loadGradingQueue(
 					eq(quizAttempt.orgId, orgId),
 					eq(quizAttempt.status, "submitted"),
 					eq(quizAttempt.mode, "practice"),
-					inArray(assignmentTest.skill, ["writing", "speaking"]),
+					inArray(
+						assignmentTest.skill,
+						includeAuto ? [...allSkills] : ["writing", "speaking"],
+					),
 				),
 			)
 			.orderBy(
-				asc(gradedOrderExpr),
+				asc(practiceOrderExpr),
 				desc(quizAttempt.submittedAt),
 				desc(quizAttempt.id),
 			)
@@ -272,61 +333,113 @@ export async function loadGradingQueue(
 		}
 	}
 
-	const items: GradingQueueItem[] = [];
+	const items: GradingQueueItemV2[] = [];
 	for (const row of assignmentRows) {
 		const hybridWriting = essayTaskOf(row)?.hybrid === true;
 		const effectiveSkill = hybridWriting ? "writing" : row.skill;
-		if (!isGradableSkill(effectiveSkill)) continue;
-		items.push({
-			attemptId: row.id,
-			mode: "assignment",
-			classId: row.classId,
-			className: row.className,
-			title: row.title,
-			due: row.due,
-			student: { id: row.studentId, name: row.studentName },
-			skill: effectiveSkill,
-			part: hybridWriting ? (row.writingPart ?? "") : (row.part ?? ""),
-			submittedAt: row.submittedAt ? row.submittedAt.toISOString() : "",
-			grade: toQuizAttemptGrade(row),
-			aiStatus: toAiStatus(row.aiStatus),
-			aiGradingMode:
-				row.aiGradingMode !== null && isAiGradingMode(row.aiGradingMode)
-					? row.aiGradingMode
-					: null,
-		});
+		if (isGradableSkill(effectiveSkill)) {
+			items.push({
+				attemptId: row.id,
+				mode: "assignment",
+				classId: row.classId,
+				className: row.className,
+				title: row.title,
+				due: row.due,
+				student: { id: row.studentId, name: row.studentName },
+				skill: effectiveSkill,
+				part: hybridWriting ? (row.writingPart ?? "") : (row.part ?? ""),
+				submittedAt: row.submittedAt ? row.submittedAt.toISOString() : "",
+				grade: toQuizAttemptGrade(row),
+				aiStatus: toAiStatus(row.aiStatus),
+				aiGradingMode:
+					row.aiGradingMode !== null && isAiGradingMode(row.aiGradingMode)
+						? row.aiGradingMode
+						: null,
+			});
+			continue;
+		}
+		if (includeAuto && isAutoGradableSkill(row.skill)) {
+			items.push({
+				attemptId: row.id,
+				mode: "assignment",
+				classId: row.classId,
+				className: row.className,
+				title: row.title,
+				due: row.due,
+				student: { id: row.studentId, name: row.studentName },
+				skill: row.skill,
+				part: row.part ?? "",
+				submittedAt: row.submittedAt ? row.submittedAt.toISOString() : "",
+				grade: null,
+				aiStatus: null,
+				aiGradingMode: null,
+				autoScore:
+					row.correctCount !== null
+						? {
+								correctCount: Math.max(0, row.correctCount),
+								totalCount: Math.max(0, Number(row.totalCount ?? 0)),
+							}
+						: null,
+			});
+		}
 	}
 	for (const row of practiceRows) {
-		if (!isGradableSkill(row.skill)) continue;
-		items.push({
-			attemptId: row.id,
-			mode: "practice",
-			classId: "",
-			className: "Luyện tập",
-			title: row.title,
-			due: "",
-			student: { id: row.studentId, name: row.studentName },
-			skill: row.skill,
-			part: (row.testId ? firstPartByTestId[row.testId] : undefined) ?? "",
-			submittedAt: row.submittedAt ? row.submittedAt.toISOString() : "",
-			grade: toQuizAttemptGrade(row),
-			aiStatus: toAiStatus(row.aiStatus),
-			aiGradingMode:
-				row.aiGradingMode !== null && isAiGradingMode(row.aiGradingMode)
-					? row.aiGradingMode
-					: null,
-		});
+		if (isGradableSkill(row.skill)) {
+			items.push({
+				attemptId: row.id,
+				mode: "practice",
+				classId: "",
+				className: "Luyện tập",
+				title: row.title,
+				due: "",
+				student: { id: row.studentId, name: row.studentName },
+				skill: row.skill,
+				part: (row.testId ? firstPartByTestId[row.testId] : undefined) ?? "",
+				submittedAt: row.submittedAt ? row.submittedAt.toISOString() : "",
+				grade: toQuizAttemptGrade(row),
+				aiStatus: toAiStatus(row.aiStatus),
+				aiGradingMode:
+					row.aiGradingMode !== null && isAiGradingMode(row.aiGradingMode)
+						? row.aiGradingMode
+						: null,
+			});
+			continue;
+		}
+		if (includeAuto && isAutoGradableSkill(row.skill)) {
+			items.push({
+				attemptId: row.id,
+				mode: "practice",
+				classId: "",
+				className: "Luyện tập",
+				title: row.title,
+				due: "",
+				student: { id: row.studentId, name: row.studentName },
+				skill: row.skill,
+				part: (row.testId ? firstPartByTestId[row.testId] : undefined) ?? "",
+				submittedAt: row.submittedAt ? row.submittedAt.toISOString() : "",
+				grade: null,
+				aiStatus: null,
+				aiGradingMode: null,
+				autoScore:
+					row.correctCount !== null
+						? {
+								correctCount: Math.max(0, row.correctCount),
+								totalCount: Math.max(0, Number(row.totalCount ?? 0)),
+							}
+						: null,
+			});
+		}
 	}
 
 	items.sort((a, b) => {
-		const aGraded = a.grade !== null ? 1 : 0;
-		const bGraded = b.grade !== null ? 1 : 0;
-		if (aGraded !== bGraded) return aGraded - bGraded;
+		const aBucket = isGradableSkill(a.skill) && a.grade === null ? 0 : 1;
+		const bBucket = isGradableSkill(b.skill) && b.grade === null ? 0 : 1;
+		if (aBucket !== bBucket) return aBucket - bBucket;
 		const subCmp = b.submittedAt.localeCompare(a.submittedAt);
 		if (subCmp !== 0) return subCmp;
 		return b.attemptId.localeCompare(a.attemptId);
 	});
-	return items;
+	return includeAuto ? items : (items as GradingQueueItem[]);
 }
 type GradableAttemptRow = {
 	id: string;
@@ -372,6 +485,8 @@ type GradableAttemptRow = {
 export function gradingRoutes(deps: {
 	getDb(): Db;
 	getMediaStore?(): MediaStore | undefined;
+	getLibraryAudioStore?(): MediaStore | undefined;
+	fetchExternalAudio?: typeof fetch;
 	/** #454 phase 3: phát grade_returned sau khi chấm thành công. */
 	mailer?: Parameters<typeof emitNotifications>[0]["mailer"];
 	runInBackground?: Parameters<typeof emitNotifications>[0]["runInBackground"];
@@ -724,6 +839,17 @@ export function gradingRoutes(deps: {
 		// Dọn lười draft `ai_processing` treo (TOS-30) — mở hàng chờ là cơ
 		// hội giải tỏa Credit giữ bởi runner chết.
 		await releaseStaleGradings(db, ctx.orgId);
+		const includeAuto = c.req.query("includeAuto") === "1";
+		if (includeAuto) {
+			const items = await loadGradingQueue(
+				db,
+				ctx.orgId,
+				GRADING_QUEUE_BRANCH_LIMIT,
+				{ includeAuto: true },
+			);
+			const response: GradingQueueV2Response = { items };
+			return c.json(response);
+		}
 		const items = await loadGradingQueue(db, ctx.orgId);
 		const response: GradingQueueResponse = { items };
 		return c.json(response);
@@ -943,18 +1069,299 @@ export function gradingRoutes(deps: {
 		return c.json({ ok: true });
 	});
 
+	async function loadAutoGradableAttempt(
+		db: Db,
+		attemptId: string,
+		orgId: string,
+	): Promise<
+		{ error: 404 | 409 | 400 } | { submission: TeacherAutoSubmission }
+	> {
+		const [base] = await db
+			.select({
+				id: quizAttempt.id,
+				status: quizAttempt.status,
+				mode: quizAttempt.mode,
+				testId: quizAttempt.testId,
+				assignmentId: quizAttempt.assignmentId,
+				questionsSnapshot: quizAttempt.questionsSnapshot,
+				answers: quizAttempt.answers,
+				startedAt: quizAttempt.startedAt,
+				submittedAt: quizAttempt.submittedAt,
+				studentId: student.id,
+				studentName: student.name,
+			})
+			.from(quizAttempt)
+			.innerJoin(
+				student,
+				and(eq(student.id, quizAttempt.studentId), eq(student.orgId, orgId)),
+			)
+			.where(and(eq(quizAttempt.id, attemptId), eq(quizAttempt.orgId, orgId)));
+		if (!base) return { error: 404 };
+		if (base.status !== "submitted") return { error: 409 };
+
+		const practice = base.mode === "practice";
+		let skill = "";
+		let part = "";
+		let classId = "";
+		let classAssignmentId = "";
+		let className = "";
+		let title = "";
+		let due = "";
+		let promptType = "";
+		let band = "";
+		let level = "";
+		let intro = "";
+		let prompt = "";
+		let passage = "";
+		let cueTopic = "";
+		let cuePoints = "";
+		let audioName = "";
+		let hasAudio = false;
+		let imageUrl = "";
+		let optionBank: string[] = [];
+		let note = "";
+		let transcript = "";
+		let groups: ReturnType<typeof parseStudentQuizGroups> = [];
+		let currentQuestions: ReturnType<typeof parseQuizQuestions> = [];
+
+		if (practice) {
+			const [testRow] = await db
+				.select({
+					id: assignmentTest.id,
+					title: assignmentTest.title,
+					skill: assignmentTest.skill,
+				})
+				.from(assignmentTest)
+				.where(
+					and(
+						eq(assignmentTest.id, base.testId ?? ""),
+						eq(assignmentTest.orgId, orgId),
+					),
+				)
+				.limit(1);
+			if (!testRow || !isAutoGradableSkill(testRow.skill)) {
+				return { error: 400 };
+			}
+			const partRows = await db
+				.select({
+					part: assignmentTestPart.part,
+					promptId: assignmentPrompt.id,
+					type: assignmentPrompt.type,
+					band: assignmentPrompt.band,
+					level: assignmentPrompt.level,
+					intro: assignmentPrompt.intro,
+					prompt: assignmentPrompt.prompt,
+					passage: assignmentPrompt.passage,
+					cueTopic: assignmentPrompt.cueTopic,
+					cuePoints: assignmentPrompt.cuePoints,
+					audioName: assignmentPrompt.audioName,
+					audioUrl: assignmentPrompt.audioUrl,
+					audioKey: assignmentPrompt.audioKey,
+					imageUrl: assignmentPrompt.imageUrl,
+					optionBank: assignmentPrompt.optionBank,
+					note: assignmentPrompt.note,
+					transcript: assignmentPrompt.transcript,
+					groups: assignmentPrompt.groups,
+					questions: assignmentPrompt.questions,
+				})
+				.from(assignmentTestPart)
+				.innerJoin(
+					assignmentPrompt,
+					and(
+						eq(assignmentPrompt.id, assignmentTestPart.promptId),
+						eq(assignmentPrompt.orgId, orgId),
+					),
+				)
+				.where(eq(assignmentTestPart.testId, testRow.id))
+				.orderBy(asc(assignmentTestPart.position));
+			const header = partRows[0];
+			skill = testRow.skill;
+			part = header?.part ?? "";
+			className = "Luyện tập";
+			title = testRow.title;
+			promptType = header?.type ?? "";
+			band = header?.band ?? "7.0";
+			level = header?.level ?? "";
+			intro = header?.intro ?? "";
+			prompt = header?.prompt ?? "";
+			passage = header?.passage ?? "";
+			cueTopic = header?.cueTopic ?? "";
+			cuePoints = header?.cuePoints ?? "";
+			audioName = header?.audioName ?? "";
+			hasAudio = Boolean(header?.audioUrl || header?.audioKey);
+			imageUrl = header?.imageUrl ?? "";
+			optionBank = header ? parseQuizOptionBank(header.optionBank) : [];
+			note = header?.note ?? "";
+			transcript = header?.transcript ?? "";
+			groups =
+				partRows.length === 1 ? parseStudentQuizGroups(header?.groups) : [];
+			currentQuestions = partRows.flatMap((row) =>
+				parseQuizQuestions(row.questions, row.promptId),
+			);
+		} else {
+			const [header] = await db
+				.select({
+					caId: classAssignment.id,
+					classId: classAssignment.classId,
+					title: classAssignment.title,
+					due: classAssignment.due,
+					className: classTable.name,
+					promptId: assignmentPrompt.id,
+					skill: assignmentPrompt.skill,
+					part: assignmentPrompt.part,
+					type: assignmentPrompt.type,
+					band: assignmentPrompt.band,
+					level: assignmentPrompt.level,
+					intro: assignmentPrompt.intro,
+					prompt: assignmentPrompt.prompt,
+					passage: assignmentPrompt.passage,
+					cueTopic: assignmentPrompt.cueTopic,
+					cuePoints: assignmentPrompt.cuePoints,
+					audioName: assignmentPrompt.audioName,
+					audioUrl: assignmentPrompt.audioUrl,
+					audioKey: assignmentPrompt.audioKey,
+					imageUrl: assignmentPrompt.imageUrl,
+					optionBank: assignmentPrompt.optionBank,
+					note: assignmentPrompt.note,
+					transcript: assignmentPrompt.transcript,
+					groups: assignmentPrompt.groups,
+					questions: assignmentPrompt.questions,
+					writingPart: assignmentPrompt.writingPart,
+				})
+				.from(classAssignment)
+				.innerJoin(
+					assignmentPrompt,
+					and(
+						eq(assignmentPrompt.id, classAssignment.promptId),
+						eq(assignmentPrompt.orgId, orgId),
+					),
+				)
+				.innerJoin(
+					classTable,
+					and(
+						eq(classTable.id, classAssignment.classId),
+						eq(classTable.orgId, orgId),
+					),
+				)
+				.where(
+					and(
+						eq(classAssignment.id, base.assignmentId ?? ""),
+						eq(classAssignment.orgId, orgId),
+					),
+				)
+				.limit(1);
+			if (
+				!header ||
+				essayTaskOf(header) !== null ||
+				!isAutoGradableSkill(header.skill)
+			) {
+				return { error: 400 };
+			}
+			skill = header.skill;
+			part = header.part ?? "";
+			classId = header.classId;
+			classAssignmentId = header.caId;
+			className = header.className;
+			title = header.title;
+			due = header.due;
+			promptType = header.type ?? "";
+			band = header.band ?? "7.0";
+			level = header.level ?? "";
+			intro = header.intro ?? "";
+			prompt = header.prompt ?? "";
+			passage = header.passage ?? "";
+			cueTopic = header.cueTopic ?? "";
+			cuePoints = header.cuePoints ?? "";
+			audioName = header.audioName ?? "";
+			hasAudio = Boolean(header.audioUrl || header.audioKey);
+			imageUrl = header.imageUrl ?? "";
+			optionBank = parseQuizOptionBank(header.optionBank);
+			note = header.note ?? "";
+			transcript = header.transcript ?? "";
+			groups = parseStudentQuizGroups(header.groups);
+			currentQuestions = parseQuizQuestions(header.questions, header.promptId);
+		}
+
+		if (!isAutoGradableSkill(skill)) return { error: 400 };
+		const snapshotQuestions = parseQuizQuestions(
+			base.questionsSnapshot,
+			base.id,
+		);
+		const reviewQuestions = snapshotQuestions.some(
+			(question) => question.explanation,
+		)
+			? snapshotQuestions
+			: fillExplanationsFromCurrent(snapshotQuestions, currentQuestions);
+		const answers = parseQuizAnswers(base.answers);
+		const evaluated = buildQuizReviewEvaluation({
+			questions: reviewQuestions,
+			answers,
+			promptType,
+			isPractice: practice,
+		});
+
+		const payload = teacherAutoSubmissionSchema.parse({
+			kind: "auto",
+			attemptId: base.id,
+			classAssignmentId,
+			classId,
+			className,
+			title,
+			due,
+			student: { id: base.studentId, name: base.studentName },
+			skill,
+			part,
+			startedAt: base.startedAt.toISOString(),
+			submittedAt: base.submittedAt ? base.submittedAt.toISOString() : "",
+			...(practice ? { practice: true as const } : {}),
+			correctCount: evaluated.grade.correctCount,
+			wrongCount: evaluated.grade.wrongCount,
+			skippedCount: evaluated.grade.skippedCount,
+			totalCount: evaluated.grade.totalCount,
+			items: evaluated.items,
+			detail: {
+				skill,
+				type: promptType,
+				band,
+				...(level ? { level } : {}),
+				intro,
+				prompt,
+				passage,
+				cueTopic,
+				cuePoints,
+				audioName,
+				...(hasAudio ? { hasAudio: true } : {}),
+				imageUrl,
+				optionBank,
+				note,
+			},
+			...(groups.length > 0 ? { groups } : {}),
+			...(transcript ? { transcript } : {}),
+			questions: evaluated.questions,
+		});
+		return { submission: payload };
+	}
+
 	routes.get("/:attemptId", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
 		const db = deps.getDb();
+		const attemptId = c.req.param("attemptId");
 		// Sweep trước khi trả — badge draft không hiện trạng `ai_processing` ma.
 		await releaseStaleGradings(db, ctx.orgId);
-		const loaded = await loadGradableAttempt(
-			db,
-			c.req.param("attemptId"),
-			ctx.orgId,
-		);
-		if ("error" in loaded) return errorResponse(c, loaded.error);
+		const loaded = await loadGradableAttempt(db, attemptId, ctx.orgId);
+		if ("error" in loaded) {
+			if (loaded.error === 400 && c.req.query("v") === "2") {
+				const autoLoaded = await loadAutoGradableAttempt(
+					db,
+					attemptId,
+					ctx.orgId,
+				);
+				if ("error" in autoLoaded) return errorResponse(c, autoLoaded.error);
+				return c.json(autoLoaded.submission);
+			}
+			return errorResponse(c, loaded.error);
+		}
 		const annotations =
 			loaded.skill === "writing"
 				? await loadEssayAnnotations(db, loaded.row.id, ctx.orgId)
@@ -964,6 +1371,99 @@ export function gradingRoutes(deps: {
 		return c.json({
 			...toSubmission(loaded.row, loaded.skill, annotations),
 			aiDraft,
+		});
+	});
+
+	/**
+	 * GET /api/grading/:attemptId/audio — phát file nghe Listening khi giáo viên
+	 * xem lại bài làm tự chấm (#978), hỗ trợ cả assignment lẫn practice.
+	 */
+	routes.get("/:attemptId/audio", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const db = deps.getDb();
+		const [base] = await db
+			.select({
+				id: quizAttempt.id,
+				status: quizAttempt.status,
+				mode: quizAttempt.mode,
+				testId: quizAttempt.testId,
+				assignmentId: quizAttempt.assignmentId,
+			})
+			.from(quizAttempt)
+			.where(
+				and(
+					eq(quizAttempt.id, c.req.param("attemptId")),
+					eq(quizAttempt.orgId, ctx.orgId),
+				),
+			)
+			.limit(1);
+		if (!base) return errorResponse(c, 404);
+		if (base.status !== "submitted") return errorResponse(c, 409);
+
+		const [row] =
+			base.mode === "practice"
+				? await db
+						.select({
+							audioUrl: assignmentPrompt.audioUrl,
+							audioKey: assignmentPrompt.audioKey,
+							audioName: assignmentPrompt.audioName,
+						})
+						.from(assignmentTest)
+						.innerJoin(
+							assignmentTestPart,
+							eq(assignmentTestPart.testId, assignmentTest.id),
+						)
+						.innerJoin(
+							assignmentPrompt,
+							and(
+								eq(assignmentPrompt.id, assignmentTestPart.promptId),
+								eq(assignmentPrompt.orgId, ctx.orgId),
+							),
+						)
+						.where(
+							and(
+								eq(assignmentTest.id, base.testId ?? ""),
+								eq(assignmentTest.orgId, ctx.orgId),
+							),
+						)
+						.orderBy(asc(assignmentTestPart.position))
+						.limit(1)
+				: await db
+						.select({
+							audioUrl: assignmentPrompt.audioUrl,
+							audioKey: assignmentPrompt.audioKey,
+							audioName: assignmentPrompt.audioName,
+						})
+						.from(classAssignment)
+						.innerJoin(
+							assignmentPrompt,
+							and(
+								eq(assignmentPrompt.id, classAssignment.promptId),
+								eq(assignmentPrompt.orgId, ctx.orgId),
+							),
+						)
+						.where(
+							and(
+								eq(classAssignment.id, base.assignmentId ?? ""),
+								eq(classAssignment.orgId, ctx.orgId),
+							),
+						)
+						.limit(1);
+
+		if (!row || (!row.audioUrl && !row.audioKey)) {
+			return c.json({ error: "audio not found" }, 404);
+		}
+		return serveStudyPackAudio({
+			audioKey: row.audioKey,
+			audioUrl: row.audioUrl,
+			audioName: row.audioName,
+			rangeHeader: c.req.header("Range"),
+			ifNoneMatch: c.req.header("If-None-Match"),
+			cacheControl: "private, no-cache",
+			vary: "Cookie",
+			getLibraryAudioStore: deps.getLibraryAudioStore,
+			fetchExternalAudio: deps.fetchExternalAudio,
 		});
 	});
 
