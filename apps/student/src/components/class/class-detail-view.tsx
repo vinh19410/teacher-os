@@ -399,8 +399,6 @@ export function ClassDetailView({
 						<h2 className="sr-only">Buổi học</h2>
 						<ClassLessonList
 							classId={cls.id}
-							classLevel={cls.level}
-							className={cls.name}
 							isPaused={isPaused}
 							lessons={detail.lessons}
 							syllabus={detail.syllabus}

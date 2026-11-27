@@ -818,6 +818,7 @@ describe("ClassLessonList — gộp giáo trình & link chi tiết buổi", () =
 			/>,
 		);
 		expect(screen.queryByTestId("journey-syllabus-header")).toBeNull();
+		expect(screen.queryByTestId("journey-module-m1")).toBeNull();
 		expect(screen.queryByRole("link")).toBeNull();
 	});
 });
@@ -841,12 +842,10 @@ function assignment(
 }
 
 describe("ClassLessonList — redesign Hành trình học", () => {
-	test("Summit card nhất quán tiến độ held (completed + absent), loại __extra__ khỏi chặng, giữ exact syllabus.name và hiện ETA", () => {
-		render(
+	test("gỡ JourneySummitCard (Đích đến của bạn / chặng đã vượt / progressbar), bắt đầu thẳng bằng Buổi tiếp theo và Lộ trình chinh phục", () => {
+		const { rerender } = render(
 			<ClassLessonList
 				classId="c1"
-				classLevel="IELTS 6.5"
-				className="IELTS Intensive K24"
 				syllabus={{
 					name: "IELTS Reading Intensive",
 					description: "Rèn tốc độ đọc hiểu học thuật",
@@ -889,19 +888,72 @@ describe("ClassLessonList — redesign Hành trình học", () => {
 			/>,
 		);
 
-		const header = screen.getByTestId("journey-syllabus-header");
-		expect(within(header).getByText("IELTS 6.5")).toBeTruthy();
-		// exact match (không lặp) cho class-detail.test.tsx:352
-		expect(screen.getByText("IELTS Reading Intensive")).toBeTruthy();
-		expect(within(header).getByText("1/2")).toBeTruthy();
-		expect(within(header).getByText("chặng đã vượt")).toBeTruthy();
-		expect(header.textContent).toContain("50% hành trình");
-		expect(header.textContent).toContain("Về đích dự kiến");
-		expect(header.textContent).toContain("30/11/2026");
+		expect(screen.queryByTestId("journey-syllabus-header")).toBeNull();
+		expect(screen.queryByText("Đích đến của bạn")).toBeNull();
+		expect(screen.queryByText(/chặng đã vượt/)).toBeNull();
+		expect(screen.queryByText(/buổi đã diễn ra/)).toBeNull();
+		expect(screen.queryByText(/% hành trình/)).toBeNull();
+		expect(screen.queryByText(/Về đích dự kiến/)).toBeNull();
+		expect(screen.queryByText(/Hoàn thành ngày/)).toBeNull();
+		expect(screen.queryByRole("progressbar")).toBeNull();
 
-		const progressbar = within(header).getByRole("progressbar");
-		expect(progressbar.getAttribute("aria-valuenow")).toBe("2");
-		expect(progressbar.getAttribute("aria-valuemax")).toBe("4");
+		expect(screen.getByTestId("journey-next-hero").textContent).toContain(
+			"Buổi tiếp theo",
+		);
+		expect(screen.getByText("Lộ trình chinh phục")).toBeTruthy();
+		// completedCount không tính absent -> m1 hiển thị 1/2 buổi.
+		expect(screen.getByTestId("journey-module-m1").textContent).toContain(
+			"1/2 buổi",
+		);
+		expect(screen.getByTestId("journey-module-m2").textContent).toContain(
+			"0/1 buổi",
+		);
+		expect(
+			screen.getByTestId("journey-module-__extra__").textContent,
+		).toContain("Buổi học bổ sung");
+
+		// Trạng thái tạm dừng cũng không render JourneySummitCard.
+		rerender(
+			<ClassLessonList
+				classId="c1"
+				isPaused={true}
+				lessons={[
+					lesson({
+						id: "l-paused",
+						date: "2026-11-24",
+						status: "upcoming",
+						topic: "Buổi đang hoãn",
+					}),
+				]}
+				todayISO={TODAY}
+				now={NOW}
+			/>,
+		);
+		expect(screen.queryByText("Đích đến của bạn")).toBeNull();
+		expect(screen.queryByRole("progressbar")).toBeNull();
+
+		// Trạng thái hoàn thành toàn bộ lộ trình vẫn hiện thẻ Hoàn thành, không hiện JourneySummitCard.
+		rerender(
+			<ClassLessonList
+				classId="c1"
+				lessons={[
+					lesson({
+						id: "l-done",
+						date: "2026-11-10",
+						status: "completed",
+						topic: "Buổi cuối",
+					}),
+				]}
+				todayISO={TODAY}
+				now={NOW}
+			/>,
+		);
+		expect(screen.queryByText("Đích đến của bạn")).toBeNull();
+		expect(screen.queryByText(/Hoàn thành ngày/)).toBeNull();
+		expect(screen.queryByRole("progressbar")).toBeNull();
+		expect(
+			screen.getByText("Bạn đã đi hết lộ trình — chúc thi tốt!"),
+		).toBeTruthy();
 	});
 
 	test("Next Stop Hero hiển thị đếm ngược, gợi ý mở Zoom cùng ngày/khác ngày và thẻ hoàn thành khi hết buổi", () => {
@@ -1173,7 +1225,7 @@ describe("ClassLessonList — redesign Hành trình học", () => {
 		expect(within(newLi).getByRole("button", { expanded: false })).toBeTruthy();
 	});
 
-	test("lớp legacy (date null) không ghép nhầm bài tập có sessionDate=null và ẩn ETA", () => {
+	test("lớp legacy (date null) không ghép nhầm bài tập có sessionDate=null", () => {
 		const { container } = render(
 			<ClassLessonList
 				classId="c-legacy"
@@ -1201,7 +1253,6 @@ describe("ClassLessonList — redesign Hành trình học", () => {
 		const expandBtn = within(li).queryByRole("button", { expanded: false });
 		if (expandBtn) fireEvent.click(expandBtn);
 		expect(screen.queryByText("Bài tập không ngày")).toBeNull();
-		expect(screen.queryByText(/Về đích dự kiến/)).toBeNull();
 	});
 
 	test("khi nextId dịch chuyển giữa phiên trên cùng classId thì giữ nguyên RecordingPlayerModal đang mở và buổi đã mở tay", () => {
