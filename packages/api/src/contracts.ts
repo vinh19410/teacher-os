@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { KernelEventRow } from "./event-contracts";
-import { isBandStep } from "./lib/ielts-band";
+import { AUTO_GRADABLE_SKILLS, isBandStep } from "./lib/ielts-band";
 import { CLOZE_MARKER_SOURCE } from "./lib/infer-question-types";
 import type {
 	StudentLessonMaterialView,
@@ -3289,6 +3289,36 @@ export const gradingQueueResponseSchema = z
 	.strict();
 export type GradingQueueResponse = z.infer<typeof gradingQueueResponseSchema>;
 
+export const gradingQueueAutoScoreSchema = z
+	.object({
+		correctCount: z.number().int().min(0),
+		totalCount: z.number().int().min(0),
+	})
+	.strict();
+export type GradingQueueAutoScore = z.infer<typeof gradingQueueAutoScoreSchema>;
+
+/**
+ * GET /api/grading?includeAuto=1 — dòng hàng chờ mở rộng gồm cả 6 kỹ năng (#978).
+ * Giữ `gradingQueueItemSchema` v1 nguyên vẹn để tránh vỡ deploy skew `.strict()`.
+ */
+export const gradingQueueItemV2Schema = gradingQueueItemSchema
+	.omit({ skill: true })
+	.extend({
+		skill: z.enum(["writing", "speaking", ...AUTO_GRADABLE_SKILLS]),
+		autoScore: gradingQueueAutoScoreSchema.nullable().optional(),
+	})
+	.strict();
+export type GradingQueueItemV2 = z.infer<typeof gradingQueueItemV2Schema>;
+
+export const gradingQueueV2ResponseSchema = z
+	.object({
+		items: z.array(gradingQueueItemV2Schema),
+	})
+	.strict();
+export type GradingQueueV2Response = z.infer<
+	typeof gradingQueueV2ResponseSchema
+>;
+
 /** Một ca học chưa điểm danh — lớp dated có `date` (yyyy-mm-dd), lớp legacy bỏ qua `date`. */
 export const dashboardReminderItemSchema = z
 	.object({
@@ -3565,6 +3595,78 @@ export const quizAttemptDetailSchema = quizAttemptSummarySchema
 	})
 	.strict();
 export type QuizAttemptDetail = z.infer<typeof quizAttemptDetailSchema>;
+
+/** Câu hỏi trong payload xem bài tự chấm phía giáo viên (`GET /api/grading/:attemptId?v=2`, #978). */
+export const teacherAutoSubmissionQuestionSchema = studentQuizQuestionSchema
+	.extend({
+		key: z.string(),
+		alts: z.string(),
+		verdict: z.enum(QUIZ_VERDICTS),
+		answer: z.string().nullable(),
+		explanation: z.string().optional(),
+	})
+	.strict();
+export type TeacherAutoSubmissionQuestion = z.infer<
+	typeof teacherAutoSubmissionQuestionSchema
+>;
+
+/** Paper chrome dựng `QuizPaper mode="review"` cho bài tự chấm phía giáo viên (#978). */
+export const teacherAutoSubmissionDetailSchema = z
+	.object({
+		skill: z.enum(AUTO_GRADABLE_SKILLS),
+		type: z.string(),
+		band: z.string(),
+		level: z.string().optional(),
+		intro: z.string(),
+		prompt: z.string(),
+		passage: z.string(),
+		cueTopic: z.string(),
+		cuePoints: z.string(),
+		audioName: z.string(),
+		hasAudio: z.boolean().optional(),
+		imageUrl: z.string(),
+		optionBank: z.array(z.string()),
+		note: z.string(),
+	})
+	.strict();
+export type TeacherAutoSubmissionDetail = z.infer<
+	typeof teacherAutoSubmissionDetailSchema
+>;
+
+/** GET /api/grading/:attemptId?v=2 — bài nộp tự chấm (Reading/Listening/Grammar/Vocab) cho giáo viên xem lại (#978). */
+export const teacherAutoSubmissionSchema = z
+	.object({
+		kind: z.literal("auto"),
+		attemptId: z.string(),
+		classAssignmentId: z.string(),
+		classId: z.string(),
+		className: z.string(),
+		title: z.string(),
+		due: z.string(),
+		student: z.object({ id: z.string(), name: z.string() }).strict(),
+		skill: z.enum(AUTO_GRADABLE_SKILLS),
+		part: z.string(),
+		startedAt: z.string(),
+		submittedAt: z.string(),
+		practice: z.literal(true).optional(),
+		correctCount: z.number().int().min(0),
+		wrongCount: z.number().int().min(0),
+		skippedCount: z.number().int().min(0),
+		totalCount: z.number().int().min(0),
+		items: z.array(quizAttemptItemSchema),
+		detail: teacherAutoSubmissionDetailSchema,
+		groups: z.array(studentQuizGroupSchema).optional(),
+		transcript: z.string().optional(),
+		questions: z.array(teacherAutoSubmissionQuestionSchema),
+	})
+	.strict();
+export type TeacherAutoSubmission = z.infer<typeof teacherAutoSubmissionSchema>;
+
+export const teacherAttemptReviewSchema = z.union([
+	teacherSubmissionSchema,
+	teacherAutoSubmissionSchema,
+]);
+export type TeacherAttemptReview = z.infer<typeof teacherAttemptReviewSchema>;
 
 /**
  * Student Invitation & Multi-Org Contracts (Phase 2).

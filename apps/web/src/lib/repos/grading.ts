@@ -7,14 +7,14 @@ import {
 	type EssayAnnotationCreate,
 	type EssayAnnotationPatch,
 	essayAnnotationSchema,
-	type GradingQueueResponse,
-	gradingQueueResponseSchema,
+	type GradingQueueV2Response,
+	gradingQueueV2ResponseSchema,
 	QUIZ_MEDIA_TYPES,
 	type QuizAttemptGrade,
 	type QuizGradeInput,
 	quizAttemptGradeSchema,
-	type TeacherSubmission,
-	teacherSubmissionSchema,
+	type TeacherAttemptReview,
+	teacherAttemptReviewSchema,
 } from "@teacher-os/api/contracts";
 import { normalizeMediaType } from "@teacher-os/api/lib/quiz-media";
 import { HttpError } from "@/lib/kernel-load-state";
@@ -60,9 +60,14 @@ async function gradingFetch(
 export async function fetchGradingQueue(
 	baseUrl: string = getApiBaseUrl(),
 	signal?: AbortSignal,
-): Promise<GradingQueueResponse> {
-	const res = await gradingFetch("", { signal }, "load grading queue", baseUrl);
-	return gradingQueueResponseSchema.parse(await res.json());
+): Promise<GradingQueueV2Response> {
+	const res = await gradingFetch(
+		"?includeAuto=1",
+		{ signal },
+		"load grading queue",
+		baseUrl,
+	);
+	return gradingQueueV2ResponseSchema.parse(await res.json());
 }
 
 export function gradingQueueQueryOptions(baseUrl = getApiBaseUrl()) {
@@ -76,14 +81,22 @@ export async function fetchSubmission(
 	attemptId: string,
 	baseUrl: string = getApiBaseUrl(),
 	signal?: AbortSignal,
-): Promise<TeacherSubmission> {
+): Promise<TeacherAttemptReview> {
 	const res = await gradingFetch(
-		`/${encodeURIComponent(attemptId)}`,
+		`/${encodeURIComponent(attemptId)}?v=2`,
 		{ signal },
 		"load submission",
 		baseUrl,
 	);
-	return teacherSubmissionSchema.parse(await res.json());
+	return teacherAttemptReviewSchema.parse(await res.json());
+}
+
+/** URL phát trực tiếp file nghe của bài Listening cho giáo viên xem lại (#978). */
+export function gradingAudioUrl(
+	attemptId: string,
+	baseUrl: string = getApiBaseUrl(),
+): string {
+	return `${baseUrl}/api/grading/${encodeURIComponent(attemptId)}/audio`;
 }
 
 export async function saveGrade(

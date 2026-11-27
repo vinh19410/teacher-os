@@ -292,7 +292,8 @@ export function QuizQuestionItem({
 											}
 											className="size-3"
 										/>
-										{rv.mark === "you" && "Bạn chọn"}
+										{rv.mark === "you" &&
+											(review?.selectedMarkLabel ?? "Bạn chọn")}
 										{rv.mark === "key" && "Đáp án đúng"}
 									</span>
 								)}
