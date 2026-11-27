@@ -325,6 +325,14 @@ test("#998: giáo viên cắt PDF sách gốc & giao bài theo buổi → học 
 	const studentPage = await studentContext.newPage();
 	try {
 		await studentPage.setViewportSize({ width: 1440, height: 900 });
+		// Spec khác chạy chung DB có thể đã publish bài test đầu vào (#748), khi đó
+		// modal nhắc làm bài che dashboard: đóng nó ngay khi nó chặn thao tác.
+		await studentPage.addLocatorHandler(
+			studentPage.getByTestId("placement-prompt-modal"),
+			async (modal) => {
+				await modal.getByRole("button", { name: "Để sau" }).click();
+			},
+		);
 		await studentPage.goto(`${LMS_ORIGIN}/login`);
 		await studentPage.locator("#tab-signup").click();
 		await studentPage.locator("#signup-name").fill(studentName);
