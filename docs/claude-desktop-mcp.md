@@ -8,7 +8,7 @@ Tài liệu hướng dẫn giáo viên kết nối **Claude Desktop** với hệ
 
 - Đã cài **Claude Desktop** (macOS hoặc Windows).
 - Đã cài **Node.js ≥ 20** (để chạy lệnh cầu nối `npx -y mcp-remote`). Kiểm tra nhanh bằng `node -v` trong Terminal / Command Prompt.
-- Có tài khoản giáo viên hợp lệ trên Teacher OS (môi trường beta/staging: `https://lms.staging.teacheros.io.vn`).
+- Có tài khoản giáo viên hợp lệ trên Teacher OS (production: `https://lms.msmy.io.vn`; môi trường beta/staging: `https://lms.staging.teacheros.io.vn`).
 
 ## 2. Tạo mã kết nối & cấu hình Claude Desktop
 

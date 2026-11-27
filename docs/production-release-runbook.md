@@ -1055,3 +1055,11 @@ gọi cùng endpoint phải 403 `ACCOUNT_NOT_ADMIN`.
 - **`0096` gán bù cả bài đã quá hạn (chủ đích):** migration không lọc theo thời điểm hiện tại, nên bài đã qua hạn cũng nhận target chưa nộp; số "quá hạn chưa nộp" trên dashboard giáo viên có thể tăng ngay sau deploy. Báo trước cho giáo viên.
 - **Trước khi merge vào `main`:** `0096` ghi hàng loạt trên mọi org — export D1 (`wrangler d1 export … --remote`) hoặc ghi bookmark Time Travel trước khi merge, và rehearse trên staging. Bucket `recordings` (binding `RECORDINGS`, xem bảng binding ở "Admin console go-live") được tạo cùng deploy; khi `dry_run` kiểm plan không replace/delete bucket này. Bổ sung scope Trash cloud recording cho app Zoom trước khi deploy (README "Zoom (Server-to-Server OAuth)"); thiếu scope thì bản gốc vẫn nằm trên Zoom và cron thử lại Trash mỗi giờ (#1004).
 - **Rollback:** không lùi riêng Worker về bản trước `0095`. `0095`, `0097`, `0098` thêm cột vào bảng đã có, mà `/readyz` (`apps/server/src/routes/readiness.ts`) so khớp **chính xác** tổng số cột của các bảng trong bundle, nên Worker cũ trên D1 đã migrate sẽ trả `503`. Không `DROP` tay cột/index và không xoá tay target đã gán bù (`d1_migrations` đã ghi nhận); ưu tiên forward-fix, chỉ dùng export/Time Travel khi cần khôi phục dữ liệu `0096`. Không xoá bucket `recordings`: recording đã bị Trash trên Zoom thì bản R2 là bản duy nhất app còn phát được.
+
+## Token MCP cho Claude Desktop (migration 0099) — issue #1029
+
+- **Hình dạng migration:** `0099` chỉ tạo bảng `mcp_token` và hai index `mcp_token_hash_uq`, `mcp_token_user_org_idx` (additive, không sửa dữ liệu cũ). Nguồn sự thật là `packages/db/src/migrations/0099_daffy_gressill.sql`.
+- **Trước khi merge vào `main`:** export D1 (`wrangler d1 export … --remote`) hoặc ghi bookmark Time Travel.
+- **Vận hành token:** đăng xuất hoặc đặt lại mật khẩu không thu hồi token MCP, và giáo viên được chọn token không hết hạn. Khi nghi lộ token, thu hồi tại `/teacher/profile`; gỡ email khỏi `TEACHER_EMAILS` cũng chặn token ở request kế tiếp. Hướng dẫn kết nối: `docs/claude-desktop-mcp.md`.
+- **Sau deploy:** kiểm `/readyz` trả `200`, tạo thử một lịch Zoom và xem log có `ZOOM_INVALID_CONFIG` hay không (`ZOOM_HOST_USER`).
+- **Rollback:** chỉ thêm bảng mới; ưu tiên forward-fix, không `DROP` tay bảng đã ghi trong `d1_migrations`.
