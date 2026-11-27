@@ -31,10 +31,7 @@ import {
 	ClassDetailView,
 	ClassNotFound,
 } from "@/components/class/class-detail-view";
-import {
-	ClassInfoCard,
-	computeCourseMonths,
-} from "@/components/class/class-info-card";
+import { ClassInfoCard } from "@/components/class/class-info-card";
 import {
 	ClassLessonList,
 	findNextLessonId,
@@ -279,8 +276,13 @@ describe("ClassDetailView", () => {
 		expect(html).toContain('href="mailto:lan@example.com"');
 		// Tab mặc định = Hành trình học (Buổi học).
 		expect(html).toContain("Buổi học");
-		// Tổng quan đồng bộ: "Buổi tới" là l4 (12/03), không phải buổi đã kết thúc.
-		expect(html).toContain("Buổi tới: Thứ Năm, 12/03");
+		// ClassInfoCard không còn cụm footer dư (thời lượng tháng, giờ lặp, "Buổi tới: ...").
+		expect(html).not.toContain("Buổi tới:");
+		expect(html).not.toMatch(/\d+\s*tháng/);
+		// Hành trình học vẫn giữ thẻ Buổi tiếp theo & badge Buổi tới cho l4 (12/03).
+		expect(html).toContain("Buổi tiếp theo");
+		expect(html).toContain("Thứ Năm, 12/03");
+		expect(html.match(/>Buổi tới</g)).toHaveLength(1);
 		// Ring stats.
 		expect(html).toContain("Chuyên cần");
 		expect(html).toContain("Band trung bình");
@@ -408,25 +410,65 @@ describe("ClassInfoCard", () => {
 		cleanup();
 	});
 
-	it("omits the Buổi tới footer line when every upcoming lesson has already ended", () => {
-		const endedOnly: StudentClassDetail = {
+	it("renders class metadata without the redundant summary footer for active classes", () => {
+		const html = renderToStaticMarkup(
+			<ClassInfoCard detail={detail} held={2} totalSessions={5} />,
+		);
+		expect(html).toContain("Band 6.5");
+		expect(html).toContain("T3 &amp; T6 · 19:00–20:30");
+		expect(html).toContain("Online");
+		expect(html).toContain("Cô Lan");
+		expect(html).toContain('href="mailto:lan@example.com"');
+		expect(html).toContain("2/5 buổi");
+		expect(html).toContain("Chủ Nhật, 01/03/2099");
+		expect(html).not.toContain("Buổi tới:");
+		expect(html).not.toMatch(/\d+\s*tháng/);
+		expect(html.match(/19:00–20:30/g)).toHaveLength(1);
+		expect(html).not.toContain("border-t");
+	});
+
+	it("formats structured JSON schedule once without duplicating the time range in a footer", () => {
+		const jsonScheduleDetail: StudentClassDetail = {
 			...detail,
-			lessons: [
-				lesson({ id: "d1", date: "2099-03-08", status: "completed" }),
-				// 08:00 + 90' đã qua ở 12:00 giờ VN — không được chọn làm "Buổi tới".
-				lesson({ id: "d2", date: "2099-03-10", time: "08:00", dur: 90 }),
-			],
+			class: {
+				...detail.class,
+				schedule: '{"days":[1,4],"start":"19:00","end":"20:30"}',
+			},
 		};
 		const html = renderToStaticMarkup(
-			<ClassInfoCard
-				detail={endedOnly}
-				todayISO={TODAY}
-				now={NOW}
-				held={1}
-				totalSessions={2}
-			/>,
+			<ClassInfoCard detail={jsonScheduleDetail} held={2} totalSessions={5} />,
 		);
+		expect(html).toContain("T3 &amp; T6 · 19:00–20:30");
+		expect(html.match(/19:00–20:30/g)).toHaveLength(1);
 		expect(html).not.toContain("Buổi tới:");
+		expect(html).not.toMatch(/\d+\s*tháng/);
+		expect(html).not.toContain("border-t");
+	});
+
+	it("renders gracefully when optional fields are empty, teacher is missing, and lessons are undated", () => {
+		const sparseDetail: StudentClassDetail = {
+			...detail,
+			class: {
+				...detail.class,
+				level: "",
+				schedule: "",
+				mode: "",
+				startDate: "",
+				teacher: null,
+			},
+			lessons: [lesson({ id: "u1", date: null })],
+		};
+		const html = renderToStaticMarkup(
+			<ClassInfoCard detail={sparseDetail} held={0} totalSessions={0} />,
+		);
+		expect(html).toContain("Chưa có thông tin giáo viên.");
+		expect(html).toContain("0/0 buổi");
+		expect(html).not.toContain("Khoá");
+		expect(html).not.toContain("Lịch");
+		expect(html).not.toContain("Hình thức");
+		expect(html).not.toContain("Khai giảng");
+		expect(html).not.toContain("Buổi tới:");
+		expect(html).not.toContain("border-t");
 	});
 });
 
@@ -439,21 +481,7 @@ describe("ClassNotFound", () => {
 	});
 });
 
-describe("computeCourseMonths & ClassAssignmentTable", () => {
-	it("returns null for legacy classes without dates or invalid startDate and computes months when valid", () => {
-		expect(
-			computeCourseMonths("", [lesson({ id: "l1", date: "2099-03-10" })]),
-		).toBeNull();
-		expect(
-			computeCourseMonths("2099-03-01", [lesson({ id: "l1", date: null })]),
-		).toBeNull();
-		expect(
-			computeCourseMonths("2099-03-01", [
-				lesson({ id: "l1", date: "2099-05-05" }),
-			]),
-		).toBe(2);
-	});
-
+describe("ClassAssignmentTable", () => {
 	it("renders empty state when class has no assignments and handles graded/submitted/overdue rows", () => {
 		const emptyHtml = renderToStaticMarkup(
 			<ClassAssignmentTable assignments={[]} todayISO={TODAY} />,

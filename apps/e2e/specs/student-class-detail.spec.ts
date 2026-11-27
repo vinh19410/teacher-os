@@ -148,9 +148,15 @@ test.describe("Student class card & class detail page", () => {
 		await expect(
 			page.getByRole("heading", { level: 1, name: className }),
 		).toBeVisible();
+		const infoCard = page.getByRole("region", { name: "Thông tin lớp học" });
+		await expect(infoCard).toBeVisible();
+		await expect(infoCard).toContainText(teacherName);
 		await expect(
-			page.getByRole("link", { name: teacherEmail }),
+			infoCard.getByRole("link", { name: teacherEmail }),
 		).toHaveAttribute("href", `mailto:${teacherEmail}`);
+		await expect(infoCard).not.toContainText("Buổi tới:");
+		await expect(infoCard).not.toContainText("18:30");
+		await expect(infoCard).not.toContainText(/\d+\s*tháng/);
 
 		const lessons = page
 			.locator("section")
