@@ -364,9 +364,18 @@ test("#998: giáo viên cắt PDF sách gốc & giao bài theo buổi → học 
 			"Bài tập",
 			"Tài liệu chung",
 		]);
+		const lessonSection = studentPage.locator("section").filter({
+			has: studentPage.getByRole("heading", {
+				name: "Buổi học",
+				exact: true,
+			}),
+		});
 		await expect(
-			studentPage.getByTestId("journey-syllabus-header"),
-		).toContainText(`Giáo trình IELTS Writing ${stamp}`);
+			lessonSection.getByTestId("journey-syllabus-header"),
+		).toHaveCount(0);
+		await expect(lessonSection.getByText("Đích đến của bạn")).toHaveCount(0);
+		await expect(lessonSection.getByRole("progressbar")).toHaveCount(0);
+		await expect(lessonSection.getByTestId("journey-next-hero")).toBeVisible();
 		await expect(
 			studentPage.getByText("Module 1: Nền tảng Task 2"),
 		).toBeVisible();

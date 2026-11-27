@@ -175,18 +175,13 @@ test.describe("Student class card & class detail page", () => {
 		await expect(infoCard).not.toContainText("18:30");
 		await expect(infoCard).not.toContainText(/\d+\s*tháng/);
 
-		// Khẳng định dữ liệu thật vẫn hiện tại RingStat và JourneySummitCard
-		// (chứng minh DB có level & buổi học, tránh negative false-pass).
+		// Khẳng định dữ liệu buổi học thật vẫn hiện tại RingStat
+		// (tránh negative false-pass khi gỡ mục khỏi ClassInfoCard & JourneySummitCard).
 		const sessionsRing = page
 			.getByText("Buổi đã diễn ra", { exact: true })
 			.locator("..");
 		await expect(sessionsRing).toContainText("1/4");
 		await expect(sessionsRing).toContainText("Buổi học");
-		const summitCard = page
-			.getByText("Đích đến của bạn", { exact: true })
-			.locator("xpath=ancestor::div[contains(@class,'rounded-xl')][1]");
-		await expect(summitCard).toContainText("Band 6.5");
-		await expect(summitCard).toContainText("1/4 buổi");
 
 		// Keyboard Tab từ nút "Nhắn giáo viên" tới link mailto trong ClassInfoCard
 		await page.getByRole("link", { name: "Nhắn giáo viên" }).focus();
@@ -272,10 +267,18 @@ test.describe("Student class card & class detail page", () => {
 			await page.setViewportSize({ width: 1440, height: 900 });
 		}
 
-		const lessons = page
-			.locator("section")
-			.filter({ has: page.getByRole("heading", { name: "Buổi học" }) })
-			.locator("li");
+		const lessonSection = page.locator("section").filter({
+			has: page.getByRole("heading", { name: "Buổi học", exact: true }),
+		});
+		await expect(
+			lessonSection.getByTestId("journey-syllabus-header"),
+		).toHaveCount(0);
+		await expect(lessonSection.getByText("Đích đến của bạn")).toHaveCount(0);
+		await expect(lessonSection.getByRole("progressbar")).toHaveCount(0);
+		await expect(lessonSection.getByTestId("journey-next-hero")).toBeVisible();
+		await expect(lessonSection.getByText("Lộ trình chinh phục")).toBeVisible();
+
+		const lessons = lessonSection.locator("li");
 		await expect(lessons).toHaveCount(4);
 		// Buổi upcoming đã qua giờ kết thúc (chưa ai check-in) → "Đã kết thúc".
 		await expect(lessons.nth(0)).toContainText("Đã kết thúc");

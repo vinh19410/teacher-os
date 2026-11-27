@@ -150,11 +150,10 @@ describe("ClassDetailView — lớp tạm dừng (#694)", () => {
 		expect(within(sessionsRing).getByText("1/2")).toBeTruthy();
 		expect(within(sessionsRing).getByText("Buổi học")).toBeTruthy();
 
-		const summitCard = screen
-			.getByText("Đích đến của bạn")
-			.closest("div.rounded-xl") as HTMLElement;
-		expect(within(summitCard).getByText("IELTS 6.5")).toBeTruthy();
-		expect(within(summitCard).getByText("1/2 buổi")).toBeTruthy();
+		expect(screen.queryByText("Đích đến của bạn")).toBeNull();
+		expect(screen.queryByText("IELTS 6.5")).toBeNull();
+		expect(screen.queryByText("1/2 buổi")).toBeNull();
+		expect(screen.queryByRole("progressbar")).toBeNull();
 
 		expect(screen.getByTestId("journey-next-hero").textContent).toContain(
 			"Buổi tiếp theo",
@@ -248,8 +247,11 @@ describe("ClassDetailView — shared class materials tab", () => {
 		};
 
 		renderWithQueryClient(withSyllabus);
-		expect(screen.getByTestId("journey-syllabus-header").textContent).toContain(
-			"IELTS Speaking Pro",
+		expect(screen.queryByTestId("journey-syllabus-header")).toBeNull();
+		expect(screen.queryByText("Đích đến của bạn")).toBeNull();
+		expect(screen.queryByRole("progressbar")).toBeNull();
+		expect(screen.getByTestId("journey-next-hero").textContent).toContain(
+			"Buổi tiếp theo",
 		);
 		const modRegion = screen.getByTestId("journey-module-mod-1");
 		expect(modRegion.textContent).toContain("Module 1: Part 1 Mastery");
