@@ -168,6 +168,34 @@ test.beforeAll(async ({ browser }) => {
 				passage: "",
 				questions: [],
 			},
+			{
+				title: "Grammar tự chấm: quick check 3 câu",
+				skill: "grammar",
+				part: "g1",
+				type: "mcq",
+				note: "",
+				passage: "",
+				questions: [
+					{
+						stem: "She ___ to school every day.",
+						opts: ["goes", "go", "going", "gone"],
+						answer: "A",
+						alts: "",
+					},
+					{
+						stem: "They ___ the report yesterday.",
+						opts: ["finish", "finished", "finishing", "finishes"],
+						answer: "B",
+						alts: "",
+					},
+					{
+						stem: "We have lived here ___ 2020.",
+						opts: ["for", "from", "since", "at"],
+						answer: "C",
+						alts: "",
+					},
+				],
+			},
 		],
 	});
 	writingAttemptId = await seedSubmittedEssay({
@@ -587,5 +615,225 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 		await expect(review).toContainText("7.0");
 		await expect(review).toContainText("Bố cục mạch lạc, từ vựng tự nhiên.");
 		await sc.close();
+	});
+
+	test("student submits auto-graded MCQ quiz → teacher sees 3/3 in class panel, student Bài tập tab (Điểm column), and Dashboard excludes it from ungraded count (#977)", async ({
+		browser,
+	}) => {
+		test.setTimeout(
+			process.env.CAPTURE_POT_ISSUE === "977" ? 180_000 : 120_000,
+		);
+		const quizTitle = "Grammar tự chấm: quick check 3 câu";
+
+		async function capturePotSurface(
+			page: Page,
+			slug: string,
+			focusLocator?: ReturnType<Page["locator"]>,
+		): Promise<void> {
+			const potDir = new URL("../../../plans/reports", import.meta.url)
+				.pathname;
+			mkdirSync(potDir, { recursive: true });
+			const potViewports: Array<[string, number, number]> = [
+				["desktop", 1440, 900],
+				["tablet", 768, 1024],
+				["phone", 375, 812],
+				["reflow-320", 320, 812],
+			];
+			try {
+				for (const theme of ["light", "dark"] as const) {
+					await page.evaluate((t) => {
+						localStorage.setItem("theme", t);
+						document.documentElement.classList.toggle("dark", t === "dark");
+					}, theme);
+					for (const [label, width, height] of potViewports) {
+						await page.setViewportSize({ width, height });
+						if (focusLocator) {
+							await focusLocator.scrollIntoViewIfNeeded();
+						}
+						const metrics = await page.evaluate(() => {
+							const de = document.documentElement;
+							const overflow = de.scrollWidth > de.clientWidth;
+							const offenders: string[] = [];
+							if (overflow) {
+								for (const el of document.querySelectorAll("*")) {
+									const rect = el.getBoundingClientRect();
+									if (rect.width > 0 && rect.right > de.clientWidth + 0.5) {
+										const cls =
+											typeof el.className === "string"
+												? el.className.trim().slice(0, 60)
+												: "";
+										offenders.push(
+											`${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ""}${cls ? `.${cls.replace(/\s+/g, ".")}` : ""}(right=${Math.round(rect.right)})`,
+										);
+										if (offenders.length >= 6) break;
+									}
+								}
+							}
+							return {
+								overflow,
+								scrollWidth: de.scrollWidth,
+								clientWidth: de.clientWidth,
+								innerWidth: window.innerWidth,
+								offenders,
+							};
+						});
+						expect(
+							metrics.overflow,
+							`${slug} overflow at ${label} (${width}x${height}) ${theme}: scrollWidth=${metrics.scrollWidth}, clientWidth=${metrics.clientWidth}, innerWidth=${metrics.innerWidth}, offenders=${JSON.stringify(metrics.offenders)}`,
+						).toBe(false);
+						if (label !== "reflow-320") {
+							await page.screenshot({
+								path: `${potDir}/977-${slug}-${label}-${theme}.png`,
+								animations: "disabled",
+							});
+						}
+					}
+				}
+			} finally {
+				await page.evaluate(() => {
+					localStorage.setItem("theme", "light");
+					document.documentElement.classList.remove("dark");
+				});
+				await page.setViewportSize({ width: 1280, height: 720 });
+			}
+		}
+
+		// 1) Học viên làm và nộp bài trắc nghiệm Grammar 3 câu (đúng cả 3/3).
+		const sc = await browser.newContext();
+		const sp = await sc.newPage();
+		await signIn(sp);
+		await openPaper(sp, quizTitle);
+
+		const progress = sp.getByTestId("navigator-progress");
+		await expect(progress).toHaveText("Đã trả lời 0/3 câu");
+		await sp.locator('[data-question="0"] label', { hasText: "goes" }).click();
+		await sp
+			.locator('[data-question="1"] label', { hasText: "finished" })
+			.click();
+		await sp.locator('[data-question="2"] label', { hasText: "since" }).click();
+		await expect(progress).toHaveText("Đã trả lời 3/3 câu");
+		await expect(sp.getByTestId("save-state")).toHaveAttribute(
+			"data-state",
+			"saved",
+		);
+
+		await sp.getByRole("button", { name: "Nộp bài" }).click();
+		await expect(sp).toHaveURL(/\/learn\/quizzes\/attempt\//, {
+			timeout: 30_000,
+		});
+		await expect(sp.getByTestId("attempt-correct-count")).toHaveText("3");
+		await expect(sp.getByText("trên tổng 3 câu")).toBeVisible();
+		await sc.close();
+
+		// 2) Giáo viên mở chi tiết lớp (không gắn ?tab=assignments) → kiểm chứng panel bài tập lớp.
+		await teacherPage.goto(`${TEACHER_BASE_URL}/classes/${fixture.classId}`);
+		await expect(teacherPage.locator("#assigned-list")).toBeVisible();
+		const quizItem = teacherPage.locator("article.assign-item", {
+			hasText: quizTitle,
+		});
+		await expect(quizItem).toBeVisible();
+		const quizToggle = quizItem.locator("button[aria-expanded]").first();
+		const wasExpanded =
+			(await quizToggle.getAttribute("aria-expanded")) === "true";
+		if (process.env.CAPTURE_POT_ISSUE === "977") {
+			await quizToggle.focus();
+			await expect(quizToggle).toBeFocused();
+			await teacherPage.keyboard.press("Enter");
+			await expect(quizToggle).toHaveAttribute(
+				"aria-expanded",
+				wasExpanded ? "false" : "true",
+			);
+			if (wasExpanded) {
+				await teacherPage.keyboard.press("Enter");
+				await expect(quizToggle).toHaveAttribute("aria-expanded", "true");
+			}
+		} else if (!wasExpanded) {
+			await quizToggle.click();
+			await expect(quizToggle).toHaveAttribute("aria-expanded", "true");
+		}
+		await expect(quizItem).toContainText("Tự chấm · 3/3");
+		await expect(quizItem).not.toContainText("Chấm bài");
+		await expect(quizItem.locator('a[href*="/grading/"]')).toHaveCount(0);
+		if (process.env.CAPTURE_POT_ISSUE === "977") {
+			await capturePotSurface(teacherPage, "class-assignments", quizItem);
+		}
+
+		// 3) Điều hướng SPA sang chi tiết học viên → tab Bài tập → kiểm chứng cột Điểm & Tự chấm.
+		await teacherPage
+			.getByRole("navigation", { name: "Điều hướng chính" })
+			.getByRole("link", { name: "Học viên", exact: true })
+			.click();
+		await expect(teacherPage).toHaveURL(/\/students\/?$/);
+		await teacherPage.getByRole("row", { name: /Học Viên Chấm/ }).click();
+		await expect(teacherPage).toHaveURL(
+			new RegExp(`/students/${fixture.studentId}$`),
+		);
+		const assignTab = teacherPage.getByRole("tab", {
+			name: "Bài tập",
+			exact: true,
+		});
+		if (process.env.CAPTURE_POT_ISSUE === "977") {
+			const profileTab = teacherPage.getByRole("tab", {
+				name: "Hồ sơ",
+				exact: true,
+			});
+			await profileTab.focus();
+			await teacherPage.keyboard.press("Tab");
+			await teacherPage.keyboard.press("Tab");
+			await teacherPage.keyboard.press("Tab");
+			await expect(assignTab).toBeFocused();
+			await teacherPage.keyboard.press("Enter");
+		} else {
+			await assignTab.click();
+		}
+		await expect(assignTab).toHaveAttribute("aria-selected", "true");
+
+		const columnHeaders = teacherPage.getByRole("columnheader");
+		await expect(columnHeaders.nth(3)).toHaveText("Điểm");
+		const quizStudentRow = teacherPage
+			.getByRole("row")
+			.filter({ hasText: quizTitle });
+		await expect(quizStudentRow.locator("td").nth(3)).toHaveText("3/3");
+		await expect(quizStudentRow.locator("td").nth(4)).toHaveText("Tự chấm");
+
+		const writingStudentRow = teacherPage
+			.getByRole("row")
+			.filter({ hasText: "Writing chấm: city life" });
+		await expect(writingStudentRow.locator("td").nth(3)).toHaveText("6.5");
+		await expect(writingStudentRow.locator("td").nth(4)).toHaveText("Đã chấm");
+
+		if (process.env.CAPTURE_POT_ISSUE === "977") {
+			await capturePotSurface(
+				teacherPage,
+				"student-assignments",
+				quizStudentRow,
+			);
+		}
+
+		// 4) Điều hướng SPA sang Dashboard → khối Toàn trung tâm loại trừ bài tự chấm khỏi "Bài tập chưa có điểm".
+		await teacherPage
+			.getByRole("navigation", { name: "Điều hướng chính" })
+			.getByRole("link", { name: "Tổng quan", exact: true })
+			.click();
+		await expect(teacherPage).toHaveURL(/\/dashboard\/?$/);
+		const orgStatsSection = teacherPage.locator("section").filter({
+			has: teacherPage.getByRole("heading", { name: "Toàn trung tâm" }),
+		});
+		await expect(orgStatsSection).toBeVisible();
+		await expect(orgStatsSection).toContainText("Bài tập chưa có điểm");
+		await expect(orgStatsSection).toContainText(
+			"Writing & Speaking giao lớp chờ chấm",
+		);
+		await expect(
+			orgStatsSection.getByTestId("org-stats-ungraded-count"),
+		).toHaveText("0");
+
+		if (process.env.CAPTURE_POT_ISSUE === "977") {
+			await capturePotSurface(
+				teacherPage,
+				"dashboard-org-stats",
+				orgStatsSection,
+			);
+		}
 	});
 });

@@ -1153,4 +1153,226 @@ describe("dashboard", () => {
 		).toBeTruthy();
 		expect(screen.queryByText("IELTS Tạm Dừng Lịch Sử")).toBeNull();
 	});
+
+	it("counts only submitted ungraded gradable class assignments in Toàn trung tâm and excludes auto-graded quizzes & legacy rows (#977)", async () => {
+		startRemindersServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						name: "IELTS Foundation 5.5",
+						status: "active",
+					}),
+				],
+				students: [studentRow({ id: "st-1", name: "Grok Test Student" })],
+				enrollments: [
+					enrollmentRow({ id: "en-1", classId: "cl-1", studentId: "st-1" }),
+				],
+				assignmentPrompts: [
+					{
+						id: "pr-grammar",
+						skill: "grammar",
+						part: "g1",
+						type: "mcq",
+						task: "g1",
+						genre: "",
+						title: "Grammar quick check",
+						band: "5.5",
+						source: "",
+						prompt: "",
+						intro: "",
+						passage: "",
+						transcript: "",
+						cueTopic: "",
+						cuePoints: "",
+						audioName: "",
+						imageUrl: "",
+						questions: [],
+						optionBank: [],
+						note: "",
+						status: "ready",
+						createdAt: "2026-10-01T00:00:00.000Z",
+					},
+					{
+						id: "pr-writing",
+						skill: "writing",
+						part: "task2",
+						type: "opinion",
+						task: "task2",
+						genre: "essay",
+						title: "Writing Essay",
+						band: "6.5",
+						source: "",
+						prompt: "<p>Write essay.</p>",
+						intro: "",
+						passage: "",
+						transcript: "",
+						cueTopic: "",
+						cuePoints: "",
+						audioName: "",
+						imageUrl: "",
+						questions: [],
+						optionBank: [],
+						note: "",
+						status: "ready",
+						createdAt: "2026-10-01T00:00:00.000Z",
+					},
+				],
+				classAssignments: [
+					{
+						id: "ca-mcq",
+						classId: "cl-1",
+						promptId: "pr-grammar",
+						hasGradableTask: false,
+						title: "Grammar quick check",
+						due: "2026-10-10",
+						dueAt: null,
+						note: "",
+						createdAt: "2026-10-01T00:00:00.000Z",
+						targets: [
+							{
+								studentId: "st-1",
+								submittedAt: "2026-10-06T08:00:00.000Z",
+								attemptId: "att-mcq",
+								gradedAt: null,
+								band: null,
+								correctCount: 3,
+								totalQuestions: 3,
+							},
+						],
+					},
+					{
+						id: "ca-writing-pending",
+						classId: "cl-1",
+						promptId: "pr-writing",
+						hasGradableTask: true,
+						title: "Writing Pending",
+						due: "2026-10-10",
+						dueAt: null,
+						note: "",
+						createdAt: "2026-10-01T00:00:00.000Z",
+						targets: [
+							{
+								studentId: "st-1",
+								submittedAt: "2026-10-06T09:00:00.000Z",
+								attemptId: "att-wp",
+								gradedAt: null,
+								band: null,
+							},
+						],
+					},
+					{
+						id: "ca-writing-graded",
+						classId: "cl-1",
+						promptId: "pr-writing",
+						hasGradableTask: true,
+						title: "Writing Graded",
+						due: "2026-10-10",
+						dueAt: null,
+						note: "",
+						createdAt: "2026-10-01T00:00:00.000Z",
+						targets: [
+							{
+								studentId: "st-1",
+								submittedAt: "2026-10-06T09:00:00.000Z",
+								attemptId: "att-wg",
+								gradedAt: "2026-10-06T12:00:00.000Z",
+								band: 6.5,
+							},
+						],
+					},
+					{
+						id: "ca-writing-open",
+						classId: "cl-1",
+						promptId: "pr-writing",
+						hasGradableTask: true,
+						title: "Writing Open",
+						due: "2026-10-15",
+						dueAt: null,
+						note: "",
+						createdAt: "2026-10-01T00:00:00.000Z",
+						targets: [
+							{
+								studentId: "st-1",
+								submittedAt: null,
+								attemptId: null,
+								gradedAt: null,
+								band: null,
+							},
+						],
+					},
+				],
+				assignments: [
+					{
+						id: "leg-unsubmitted",
+						studentId: "st-1",
+						title: "Legacy not submitted",
+						type: "Writing",
+						due: "2026-10-10",
+						status: "not-submitted",
+						scores: null,
+					},
+				],
+			}),
+		);
+		renderWithKernel(<Dashboard />);
+		const orgStats = section(
+			(await screen.findByRole("heading", { name: "Toàn trung tâm" }))
+				.textContent ?? "",
+		);
+		expect(within(orgStats).getByText("Bài tập chưa có điểm")).toBeTruthy();
+		expect(
+			within(orgStats).getByText("Writing & Speaking giao lớp chờ chấm"),
+		).toBeTruthy();
+		expect(
+			within(orgStats).getByTestId("org-stats-ungraded-count").textContent,
+		).toBe("1");
+
+		// When only auto-graded MCQ exists, count is 0.
+		cleanup();
+		startRemindersServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						name: "IELTS Foundation 5.5",
+						status: "active",
+					}),
+				],
+				students: [studentRow({ id: "st-1", name: "Grok Test Student" })],
+				classAssignments: [
+					{
+						id: "ca-mcq",
+						classId: "cl-1",
+						promptId: "pr-grammar",
+						hasGradableTask: false,
+						title: "Grammar quick check",
+						due: "2026-10-10",
+						dueAt: null,
+						note: "",
+						createdAt: "2026-10-01T00:00:00.000Z",
+						targets: [
+							{
+								studentId: "st-1",
+								submittedAt: "2026-10-06T08:00:00.000Z",
+								attemptId: "att-mcq",
+								gradedAt: null,
+								band: null,
+								correctCount: 3,
+								totalQuestions: 3,
+							},
+						],
+					},
+				],
+			}),
+		);
+		renderWithKernel(<Dashboard />);
+		const orgStatsZero = section(
+			(await screen.findByRole("heading", { name: "Toàn trung tâm" }))
+				.textContent ?? "",
+		);
+		expect(
+			within(orgStatsZero).getByTestId("org-stats-ungraded-count").textContent,
+		).toBe("0");
+	});
 });

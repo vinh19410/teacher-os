@@ -2273,12 +2273,15 @@ export interface KernelClassAssignmentRow {
 	dueAt?: string | null;
 	/** Phạm vi giao bài: cả lớp (tự bù học viên mới kích hoạt trước hạn) hay chỉ học viên đã chọn. */
 	targetScope?: ClassAssignmentTargetScope;
+	/** Server-derived: đề có phần Writing/Speaking cần giáo viên chấm (an toàn cả với prompt libraryRef != null). */
+	hasGradableTask?: boolean;
 	note: string;
 	/** Ngày buổi học (yyyy-mm-dd) gắn với lượt giao bài; null nếu giao chung cho lớp. */
 	sessionDate?: string | null;
 	createdAt: string;
 	targets: Array<{
 		studentId: string;
+		/** ISO datetime nộp bài — fallback sang `quizAttempt.submittedAt` trong cửa sổ flip-first; null = chưa nộp. */
 		submittedAt: string | null;
 		/** Attempt đã nộp (status submitted) — null khi chưa nộp/chưa có attempt. */
 		attemptId: string | null;
@@ -2286,6 +2289,10 @@ export interface KernelClassAssignmentRow {
 		gradedAt: string | null;
 		/** Band tổng (ieltsOverallBand) — null khi chưa chấm. */
 		band: number | null;
+		/** Số câu đúng tự chấm — null khi chưa nộp hoặc đề không có câu trắc nghiệm. */
+		correctCount?: number | null;
+		/** Tổng số câu trong questionsSnapshot lúc làm bài — null khi chưa nộp hoặc đề không có câu trắc nghiệm. */
+		totalQuestions?: number | null;
 	}>;
 }
 

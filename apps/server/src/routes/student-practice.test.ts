@@ -793,14 +793,20 @@ describe("student practice (#378 phase 10)", () => {
 						studentId: string;
 						attemptId: string | null;
 						submittedAt: string | null;
+						correctCount?: number | null;
+						totalQuestions?: number | null;
 					}>;
 				}>;
 			};
 			const ca1 = body.classAssignments.find((c) => c.id === "ca-1");
 			expect(ca1?.targets).toHaveLength(1);
-			// Chỉ attempt assignment-mode được tính — practice attempt riêng biệt.
+			// DB cat-1.submittedAt vẫn null (đã kiểm ở test trước); snapshot suy
+			// submittedAt từ attempt-ca (assignment-mode), không nhận timestamp hay
+			// điểm 3/3 của practice attempt riêng biệt.
 			expect(ca1?.targets[0]?.attemptId).toBe("attempt-ca");
-			expect(ca1?.targets[0]?.submittedAt).toBeNull();
+			expect(ca1?.targets[0]?.submittedAt).toBe("2026-10-01T01:00:00.000Z");
+			expect(ca1?.targets[0]?.correctCount).toBe(2);
+			expect(ca1?.targets[0]?.totalQuestions).toBe(2);
 		});
 
 		test("bài tập lớp của học viên không chứa đề practice", async () => {

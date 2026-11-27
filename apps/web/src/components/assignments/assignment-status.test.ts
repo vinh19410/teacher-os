@@ -60,6 +60,17 @@ describe("assignment-status (#208)", () => {
 			expect(res).toEqual({ label: "Đã nộp hết", tone: "ok" });
 		});
 
+		test("flip-first target with submittedAt null and attemptId set counts as submitted", () => {
+			const res = rollupStatus(
+				{
+					due: "2026-09-10",
+					targets: [{ submittedAt: null, attemptId: "att-flip" }],
+				},
+				todayISO,
+			);
+			expect(res).toEqual({ label: "Đã nộp hết", tone: "ok" });
+		});
+
 		test("not all submitted and due in the past returns 'Quá hạn'", () => {
 			const res = rollupStatus(
 				{

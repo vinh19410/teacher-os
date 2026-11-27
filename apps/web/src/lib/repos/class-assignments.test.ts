@@ -41,6 +41,8 @@ describe("mapClassAssignments (#208)", () => {
 						attemptId: null,
 						gradedAt: null,
 						band: null,
+						correctCount: null,
+						totalQuestions: null,
 					},
 					{
 						studentId: "s-2",
@@ -48,6 +50,8 @@ describe("mapClassAssignments (#208)", () => {
 						attemptId: null,
 						gradedAt: null,
 						band: null,
+						correctCount: null,
+						totalQuestions: null,
 					},
 				],
 			},
@@ -85,6 +89,98 @@ describe("mapClassAssignments (#208)", () => {
 				attemptId: "att-1",
 				gradedAt: "2026-09-21T10:00:00.000Z",
 				band: 6.5,
+				correctCount: null,
+				totalQuestions: null,
+			},
+		]);
+	});
+
+	test("maps objective auto-graded score (including 0/N) and optional hasGradableTask (#977)", () => {
+		const snapshot = {
+			classAssignments: [
+				{
+					id: "ca-mcq",
+					classId: "c-1",
+					promptId: "p-grammar",
+					title: "Grammar quick check",
+					due: "2026-11-28",
+					dueAt: null,
+					hasGradableTask: false,
+					note: "",
+					createdAt: "2026-11-26T08:00:00.000Z",
+					targets: [
+						{
+							studentId: "s-1",
+							submittedAt: "2026-11-26T08:29:00.000Z",
+							attemptId: "att-1",
+							gradedAt: null,
+							band: null,
+							correctCount: 3,
+							totalQuestions: 3,
+						},
+						{
+							studentId: "s-2",
+							submittedAt: "2026-11-26T08:30:00.000Z",
+							attemptId: "att-2",
+							gradedAt: null,
+							band: null,
+							correctCount: 0,
+							totalQuestions: 5,
+						},
+						{
+							studentId: "s-3",
+							submittedAt: null,
+							attemptId: null,
+							gradedAt: null,
+							band: null,
+						},
+					],
+				},
+				{
+					id: "ca-gradable",
+					classId: "c-1",
+					promptId: "p-writing",
+					title: "Writing Task 2",
+					due: "2026-11-28",
+					dueAt: null,
+					hasGradableTask: true,
+					note: "",
+					createdAt: "2026-11-26T09:00:00.000Z",
+					targets: [],
+				},
+			],
+		} as unknown as KernelSnapshot;
+
+		const mapped = mapClassAssignments(snapshot);
+		expect(mapped[0]?.hasGradableTask).toBe(false);
+		expect(mapped[1]?.hasGradableTask).toBe(true);
+		expect(mapped[0]?.targets).toEqual([
+			{
+				studentId: "s-1",
+				submittedAt: "2026-11-26T08:29:00.000Z",
+				attemptId: "att-1",
+				gradedAt: null,
+				band: null,
+				correctCount: 3,
+				totalQuestions: 3,
+			},
+			{
+				studentId: "s-2",
+				submittedAt: "2026-11-26T08:30:00.000Z",
+				attemptId: "att-2",
+				gradedAt: null,
+				band: null,
+				correctCount: 0,
+				totalQuestions: 5,
+			},
+			{
+				studentId: "s-3",
+				submittedAt: null,
+				attemptId: null,
+				gradedAt: null,
+				band: null,
+				correctCount: null,
+				totalQuestions: null,
 			},
 		]);
 	});

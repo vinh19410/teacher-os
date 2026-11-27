@@ -464,4 +464,205 @@ describe("studentAssignmentRows (#317)", () => {
 		expect(rows[0]?.band).toBeNull();
 		expect(rows[0]?.gradedAt).toBeNull();
 	});
+
+	test("propagates validated objective scores (incl. 0/N, hybrid, flip-first, libraryRef) and isolates per student (#977)", () => {
+		const data = makeData({
+			assignmentPrompts: [
+				{
+					id: "p-grammar",
+					skill: "grammar",
+					task: "g1",
+					genre: "",
+					title: "Grammar MCQ",
+					band: "",
+					source: "",
+					prompt: "",
+					note: "",
+					status: "ready",
+					createdAt: "2026-11-20T00:00:00.000Z",
+				},
+				{
+					id: "p-hybrid",
+					skill: "grammar",
+					task: "g1",
+					genre: "",
+					title: "Grammar + Writing",
+					band: "",
+					source: "",
+					prompt: "",
+					note: "",
+					status: "ready",
+					writing: {
+						part: "task2",
+						type: "opinion",
+						prompt: "<p>Write essay.</p>",
+					},
+					createdAt: "2026-11-20T00:00:00.000Z",
+				},
+				{
+					id: "p-writing",
+					skill: "writing",
+					task: "task2",
+					genre: "essay",
+					title: "Writing Task 2",
+					band: "",
+					source: "",
+					prompt: "",
+					note: "",
+					status: "ready",
+					createdAt: "2026-11-20T00:00:00.000Z",
+				},
+			],
+			classAssignments: [
+				classAssignment({
+					id: "ca-mcq-3",
+					promptId: "p-grammar",
+					due: "2026-11-20",
+					targets: [
+						{
+							studentId: "s-1",
+							submittedAt: "2026-11-19T10:00:00.000Z",
+							attemptId: "att-1",
+							correctCount: 3,
+							totalQuestions: 3,
+						},
+						{
+							studentId: "s-other",
+							submittedAt: "2026-11-19T09:00:00.000Z",
+							attemptId: "att-other",
+							correctCount: 1,
+							totalQuestions: 3,
+						},
+					],
+				}),
+				classAssignment({
+					id: "ca-mcq-0",
+					promptId: "p-grammar",
+					due: "2026-11-21",
+					targets: [
+						{
+							studentId: "s-1",
+							submittedAt: null,
+							attemptId: "att-flip",
+							correctCount: 0,
+							totalQuestions: 3,
+						},
+					],
+				}),
+				classAssignment({
+					id: "ca-hybrid",
+					promptId: "p-hybrid",
+					due: "2026-11-22",
+					targets: [
+						{
+							studentId: "s-1",
+							submittedAt: "2026-11-21T10:00:00.000Z",
+							attemptId: "att-hyb",
+							gradedAt: "2026-11-22T08:00:00.000Z",
+							band: 6.5,
+							correctCount: 2,
+							totalQuestions: 3,
+						},
+					],
+				}),
+				classAssignment({
+					id: "ca-lib-gradable",
+					promptId: "p-missing-lib",
+					hasGradableTask: true,
+					due: "2026-11-23",
+					targets: [
+						{
+							studentId: "s-1",
+							submittedAt: "2026-11-22T10:00:00.000Z",
+							attemptId: "att-lib",
+						},
+					],
+				}),
+				classAssignment({
+					id: "ca-malformed",
+					promptId: "p-grammar",
+					due: "2026-11-24",
+					targets: [
+						{
+							studentId: "s-1",
+							submittedAt: "2026-11-23T10:00:00.000Z",
+							attemptId: "att-bad",
+							correctCount: 4,
+							totalQuestions: 3,
+						},
+					],
+				}),
+				classAssignment({
+					id: "ca-unsubmitted-garbage",
+					promptId: "p-grammar",
+					due: "2026-11-25",
+					targets: [
+						{
+							studentId: "s-1",
+							submittedAt: null,
+							attemptId: null,
+							correctCount: 2,
+							totalQuestions: 3,
+						},
+					],
+				}),
+			],
+			assignments: [
+				{
+					id: "leg-1",
+					sid: "s-1",
+					title: "Legacy",
+					type: "Task 2",
+					due: "",
+					status: "graded",
+					scores: null,
+				},
+			],
+		});
+
+		const rows = studentAssignmentRows(data, "s-1");
+		const byId = (id: string) => rows.find((r) => r.id === id);
+
+		expect(byId("ca-mcq-3")).toMatchObject({
+			submitted: true,
+			correctCount: 3,
+			totalQuestions: 3,
+			hasGradableTask: false,
+		});
+		expect(byId("ca-mcq-0")).toMatchObject({
+			submitted: true,
+			correctCount: 0,
+			totalQuestions: 3,
+			hasGradableTask: false,
+		});
+		expect(byId("ca-hybrid")).toMatchObject({
+			submitted: true,
+			band: 6.5,
+			correctCount: 2,
+			totalQuestions: 3,
+			hasGradableTask: true,
+		});
+		expect(byId("ca-lib-gradable")).toMatchObject({
+			submitted: true,
+			correctCount: null,
+			totalQuestions: null,
+			hasGradableTask: true,
+		});
+		expect(byId("ca-malformed")).toMatchObject({
+			submitted: true,
+			correctCount: null,
+			totalQuestions: null,
+		});
+		expect(byId("ca-unsubmitted-garbage")).toMatchObject({
+			submitted: false,
+			correctCount: null,
+			totalQuestions: null,
+		});
+		expect(byId("leg-1")).toMatchObject({
+			submitted: false,
+			correctCount: null,
+			totalQuestions: null,
+			hasGradableTask: false,
+		});
+	});
 });

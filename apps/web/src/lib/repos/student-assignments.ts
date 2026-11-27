@@ -1,4 +1,8 @@
-import { isBandStep } from "@teacher-os/api/lib/ielts-band";
+import { hasGradableTask } from "@teacher-os/api/lib/ielts-band";
+import {
+	hasValidGradedBand,
+	normalizeObjectiveScore,
+} from "@teacher-os/api/lib/objective-score";
 import { SKILLS } from "@/components/assignments/assignment-presets";
 import type { KernelHydratedData, Scores } from "@/lib/mock-data";
 
@@ -20,12 +24,24 @@ export interface StudentAssignmentRow {
 	dueAt: string | null;
 	/** class row: từ target.submittedAt; grading row: null. */
 	submittedAt: string | null;
+	/** class row: true khi đã nộp (`submittedAt != null || attemptId != null`,
+	 * gồm cả flip-first); grading row: false. */
+	submitted: boolean;
 	/** class row: Band tổng IELTS hợp lệ (0–9, bước 0.5) đi kèm gradedAt hợp lệ;
 	 * null khi chưa chấm hoặc dữ liệu không hợp lệ; grading row: null. */
 	band: number | null;
 	/** class row: ISO datetime lần chấm gần nhất đi kèm band hợp lệ;
 	 * null khi chưa chấm hoặc dữ liệu không hợp lệ; grading row: null. */
 	gradedAt: string | null;
+	/** class row: số câu đúng tự chấm hợp lệ (`0 <= correctCount <= totalQuestions`);
+	 * null khi chưa nộp hoặc đề không có câu trắc nghiệm; grading row: null. */
+	correctCount: number | null;
+	/** class row: tổng số câu hỏi tự chấm hợp lệ (`> 0`);
+	 * null khi chưa nộp hoặc đề không có câu trắc nghiệm; grading row: null. */
+	totalQuestions: number | null;
+	/** class row: đề có phần tự luận (Writing/Speaking/hybrid) cần giáo viên chấm;
+	 * grading row: false. */
+	hasGradableTask: boolean;
 	/** grading row: "graded" | "late" | "not-submitted"; class row: null. */
 	gradingStatus: string | null;
 	scores: Scores | null;
@@ -63,14 +79,19 @@ export function studentAssignmentRows(
 			? (SKILL_LABELS.get(prompt.skill) ?? null)
 			: null;
 		const className = data.classes.find((c) => c.id === ca.classId)?.name ?? "";
+		const gradable =
+			typeof ca.hasGradableTask === "boolean"
+				? ca.hasGradableTask
+				: prompt
+					? hasGradableTask(prompt)
+					: false;
 		for (const target of ca.targets) {
 			if (target.studentId !== studentId) continue;
-			const hasGrade =
-				typeof target.band === "number" &&
-				isBandStep(target.band) &&
-				typeof target.gradedAt === "string" &&
-				target.gradedAt.trim().length > 0 &&
-				Number.isFinite(Date.parse(target.gradedAt));
+			const submitted = target.submittedAt !== null || target.attemptId != null;
+			const hasGrade = submitted && hasValidGradedBand(target);
+			const objective = submitted
+				? normalizeObjectiveScore(target.correctCount, target.totalQuestions)
+				: null;
 			rows.push({
 				key: `ca:${ca.id}`,
 				kind: "class",
@@ -81,8 +102,12 @@ export function studentAssignmentRows(
 				due: ca.due,
 				dueAt: ca.dueAt ?? null,
 				submittedAt: target.submittedAt,
-				band: hasGrade ? (target.band as number) : null,
-				gradedAt: hasGrade ? (target.gradedAt as string) : null,
+				submitted,
+				band: hasGrade ? target.band : null,
+				gradedAt: hasGrade ? target.gradedAt : null,
+				correctCount: objective?.correctCount ?? null,
+				totalQuestions: objective?.totalQuestions ?? null,
+				hasGradableTask: gradable,
 				gradingStatus: null,
 				scores: null,
 			});
@@ -101,8 +126,12 @@ export function studentAssignmentRows(
 			due: a.due,
 			dueAt: null,
 			submittedAt: null,
+			submitted: false,
 			band: null,
 			gradedAt: null,
+			correctCount: null,
+			totalQuestions: null,
+			hasGradableTask: false,
 			gradingStatus: a.status,
 			scores: a.scores,
 		});
