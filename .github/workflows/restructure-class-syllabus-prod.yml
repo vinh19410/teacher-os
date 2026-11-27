@@ -1,0 +1,152 @@
+# Workflow audit & tái cấu trúc giáo trình bản copy của một lớp học
+# (`syllabus.class_id = <classId>`) về đúng 2 chặng (`syllabus_module`) trên
+# Cloudflare D1 staging hoặc production.
+#
+# Ràng buộc an toàn (test gate: scripts/ci-workflow.test.mjs):
+# - Chỉ chạy bằng manual workflow_dispatch; không trigger tự động.
+# - Mặc định ở chế độ dry-run (read-only).
+# - Chế độ apply yêu cầu truyền spec_json rõ ràng; với stage=prod bắt buộc gõ
+#   xác nhận chính xác "prod" vào confirm_prod và chạy dưới GitHub Environment
+#   "production" (chỉ nhánh main được phép deploy).
+# - Serialize với deploy qua cùng concurrency group deploy-staging / deploy-production.
+# - Quyền contents: read ở cấp top-level; không upload artifact nhạy cảm.
+# - Repo PUBLIC: luôn truyền --public-logs để không in tên lớp, UUID, ID hay email ra log.
+name: Restructure Class Syllabus Prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: "Môi trường đích: prod hoặc staging"
+        type: choice
+        options:
+          - prod
+          - staging
+        default: prod
+        required: true
+      mode:
+        description: "Chế độ: dry-run (chỉ đọc & xem trước kế hoạch) hoặc apply (tái cấu trúc 2 chặng & verify)"
+        type: choice
+        options:
+          - dry-run
+          - apply
+        default: dry-run
+        required: true
+      class_name:
+        description: "Tên lớp cần audit/tái cấu trúc (bỏ trống nếu truyền class_id)"
+        type: string
+        required: false
+        default: ""
+      class_id:
+        description: "ID chính xác của lớp (ưu tiên hơn class_name nếu được truyền)"
+        type: string
+        required: false
+        default: ""
+      spec_json:
+        description: "JSON kế hoạch 2 chặng (tùy chọn khi dry-run để xem trước; bắt buộc khi apply)"
+        type: string
+        required: false
+        default: ""
+      target_org_id:
+        description: "Org đích (để trống sẽ tự phân giải theo TEACHER_EMAILS -> fallback LEAD_ORG_ID)"
+        type: string
+        required: false
+        default: ""
+      confirm_prod:
+        description: "Gõ đúng chữ 'prod' để xác nhận khi chạy stage=prod & mode=apply"
+        type: string
+        required: false
+        default: ""
+
+concurrency:
+  group: deploy-${{ inputs.stage == 'staging' && 'staging' || 'production' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  restructure-syllabus:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ inputs.stage == 'staging' && 'staging' || 'production' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Validate inputs and safety gate
+        env:
+          STAGE: ${{ inputs.stage }}
+          RUN_MODE: ${{ inputs.mode }}
+          CLASS_NAME: ${{ inputs.class_name }}
+          CLASS_ID: ${{ inputs.class_id }}
+          SPEC_JSON: ${{ inputs.spec_json }}
+          CONFIRM_PROD: ${{ inputs.confirm_prod }}
+        run: |
+          if [ -z "$CLASS_NAME" ] && [ -z "$CLASS_ID" ]; then
+            echo "::error::Cần truyền class_name hoặc class_id."
+            exit 1
+          fi
+          if [ "$RUN_MODE" = "apply" ]; then
+            if [ -z "$SPEC_JSON" ]; then
+              echo "::error::Mode 'apply' bắt buộc phải truyền spec_json kế hoạch 2 chặng."
+              exit 1
+            fi
+            if [ "$STAGE" = "prod" ]; then
+              if [ "$CONFIRM_PROD" != "prod" ]; then
+                echo "::error::Mode 'apply' lên prod bắt buộc phải gõ đúng chữ 'prod' trong confirm_prod."
+                exit 1
+              fi
+              echo "Đã xác nhận chính xác 'prod'. Tiếp tục thực thi apply."
+            fi
+          fi
+
+      - name: Run class syllabus restructure
+        working-directory: packages/db
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          LEAD_ORG_ID: ${{ vars.LEAD_ORG_ID }}
+          TEACHER_EMAILS: ${{ vars.TEACHER_EMAILS }}
+          STAGE: ${{ inputs.stage }}
+          RUN_MODE: ${{ inputs.mode }}
+          CLASS_NAME: ${{ inputs.class_name }}
+          CLASS_ID: ${{ inputs.class_id }}
+          SPEC_JSON: ${{ inputs.spec_json }}
+          TARGET_ORG_ID: ${{ inputs.target_org_id }}
+          CONFIRM_PROD: ${{ inputs.confirm_prod }}
+        run: |
+          set -euo pipefail
+          spec_file=""
+          cleanup() {
+            if [ -n "$spec_file" ] && [ -f "$spec_file" ]; then
+              rm -f "$spec_file"
+            fi
+          }
+          trap cleanup EXIT
+
+          args=(
+            --d1
+            --d1-stage "$STAGE"
+            --mode "$RUN_MODE"
+            --public-logs
+          )
+          if [ -n "$CLASS_ID" ]; then
+            args+=(--class-id "$CLASS_ID")
+          elif [ -n "$CLASS_NAME" ]; then
+            args+=(--class "$CLASS_NAME")
+          fi
+          if [ -n "$TARGET_ORG_ID" ]; then
+            args+=(--target-org-id "$TARGET_ORG_ID")
+          fi
+          if [ -n "$SPEC_JSON" ]; then
+            spec_file="$(mktemp /tmp/restructure-syllabus-spec-XXXXXX.json)"
+            printf '%s' "$SPEC_JSON" > "$spec_file"
+            args+=(--spec-file "$spec_file")
+          fi
+          if [ "$STAGE" = "prod" ] && [ "$RUN_MODE" = "apply" ]; then
+            args+=(--allow-prod --confirm-prod "$CONFIRM_PROD" --dump /tmp/restructure-class-syllabus-prod-backup)
+          elif [ "$RUN_MODE" = "apply" ]; then
+            args+=(--dump /tmp/restructure-class-syllabus-staging-backup)
+          fi
+          pnpm exec tsx scripts/restructure-class-syllabus-prod.ts "${args[@]}"
