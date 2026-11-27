@@ -4429,6 +4429,15 @@ export const vocabOverviewDeckSchema = z
 		total: z.number().int().min(0),
 		newCount: z.number().int().min(0),
 		dueCount: z.number().int().min(0),
+		levelDistribution: z
+			.tuple([
+				z.number().int().min(0),
+				z.number().int().min(0),
+				z.number().int().min(0),
+				z.number().int().min(0),
+				z.number().int().min(0),
+			])
+			.catch(() => [0, 0, 0, 0, 0] as [number, number, number, number, number]),
 	})
 	.strict();
 export type VocabOverviewDeck = z.infer<typeof vocabOverviewDeckSchema>;
@@ -4448,6 +4457,28 @@ export const vocabOverviewSchema = z
 			z.number().int().min(0),
 		]),
 		streak: z.number().int().min(0),
+		streakDays: z
+			.tuple([
+				z.boolean(),
+				z.boolean(),
+				z.boolean(),
+				z.boolean(),
+				z.boolean(),
+				z.boolean(),
+				z.boolean(),
+			])
+			.catch(
+				() =>
+					[false, false, false, false, false, false, false] as [
+						boolean,
+						boolean,
+						boolean,
+						boolean,
+						boolean,
+						boolean,
+						boolean,
+					],
+			),
 		retention: z.number().int().min(0).max(100).nullable(),
 		forecast: z.tuple([
 			z.number().int().min(0),
