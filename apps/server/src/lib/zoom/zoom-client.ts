@@ -367,7 +367,7 @@ export function createZoomClient(
 			});
 			throw new ZoomIntegrationError(
 				ZOOM_ERROR_CODES.INVALID_CONFIG,
-				'Tài khoản Zoom host (ZOOM_HOST_USER) không tồn tại trên Zoom. Liên hệ quản trị để kiểm tra email tài khoản Zoom hoặc Zoom User ID (không dùng tên hiển thị hay "me").',
+				'Tài khoản Zoom host (ZOOM_HOST_USER) không tồn tại trên Zoom. Liên hệ quản trị để kiểm tra lại "me", email tài khoản Zoom hoặc Zoom User ID (không dùng tên hiển thị).',
 				502,
 			);
 		}
@@ -401,7 +401,7 @@ export function createZoomClient(
 			if (!isValidRuntimeZoomHostUser(normalizedHostUser)) {
 				throw new ZoomIntegrationError(
 					ZOOM_ERROR_CODES.INVALID_CONFIG,
-					"Cấu hình ZOOM_HOST_USER không hợp lệ. Liên hệ quản trị để đặt email tài khoản Zoom hoặc Zoom User ID (không dùng tên hiển thị).",
+					'Cấu hình ZOOM_HOST_USER không hợp lệ. Liên hệ quản trị để đặt "me", email tài khoản Zoom hoặc Zoom User ID (không dùng tên hiển thị).',
 					503,
 				);
 			}

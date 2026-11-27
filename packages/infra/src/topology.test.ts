@@ -348,62 +348,44 @@ describe("resolveStudentPracticeEnabled", () => {
 });
 
 describe("resolveZoomHostUser", () => {
-	test("accepts and trims valid Zoom account emails and User IDs regardless of zoomConfigured", () => {
-		for (const zoomConfigured of [true, false]) {
-			expect(
-				resolveZoomHostUser("teacher@example.com", { zoomConfigured }),
-			).toBe("teacher@example.com");
-			expect(
-				resolveZoomHostUser("  teacher+zoom@example.com  ", { zoomConfigured }),
-			).toBe("teacher+zoom@example.com");
-			expect(
-				resolveZoomHostUser("KdFLUcR-azSHB8_1234567", { zoomConfigured }),
-			).toBe("KdFLUcR-azSHB8_1234567");
-			expect(
-				resolveZoomHostUser("25f9c0dc-9feb-4766-a7de-70e6bb4f1276", {
-					zoomConfigured,
-				}),
-			).toBe("25f9c0dc-9feb-4766-a7de-70e6bb4f1276");
+	test("accepts and trims valid Zoom account emails and User IDs", () => {
+		expect(resolveZoomHostUser("teacher@example.com")).toBe(
+			"teacher@example.com",
+		);
+		expect(resolveZoomHostUser("  teacher+zoom@example.com  ")).toBe(
+			"teacher+zoom@example.com",
+		);
+		expect(resolveZoomHostUser("KdFLUcR-azSHB8_1234567")).toBe(
+			"KdFLUcR-azSHB8_1234567",
+		);
+		expect(resolveZoomHostUser("25f9c0dc-9feb-4766-a7de-70e6bb4f1276")).toBe(
+			"25f9c0dc-9feb-4766-a7de-70e6bb4f1276",
+		);
+	});
+
+	test("normalizes empty, whitespace, and 'me' variants to 'me'", () => {
+		for (const raw of [undefined, "", "   ", "me", "ME", " me "]) {
+			expect(resolveZoomHostUser(raw)).toBe("me");
 		}
 	});
 
-	test("handles empty and 'me' depending on zoomConfigured", () => {
-		for (const raw of [undefined, "", "   "]) {
-			expect(resolveZoomHostUser(raw, { zoomConfigured: false })).toBe("");
-			expect(() => resolveZoomHostUser(raw, { zoomConfigured: true })).toThrow(
-				/ZOOM_HOST_USER must be set/,
-			);
-		}
-		expect(resolveZoomHostUser("me", { zoomConfigured: false })).toBe("me");
-		expect(resolveZoomHostUser(" ME ", { zoomConfigured: false })).toBe("me");
-		for (const me of ["me", "ME", " me "]) {
-			expect(() => resolveZoomHostUser(me, { zoomConfigured: true })).toThrow(
-				/cannot be 'me'/,
-			);
-		}
-	});
-
-	test("always rejects display names and malformed values even when Zoom is unconfigured", () => {
-		for (const zoomConfigured of [true, false]) {
-			for (const bad of [
-				"Ms My",
-				"MsMy",
-				"Admin",
-				"Ms My <teacher@example.com>",
-				"a@b",
-				"a@.b.com",
-				"a@b..com",
-				"a@-b.com",
-				".a@gmail.com",
-				"a.@gmail.com",
-				"a..b@gmail.com",
-				"foo/bar",
-				"teacher@example.com extra",
-			]) {
-				expect(() => resolveZoomHostUser(bad, { zoomConfigured })).toThrow(
-					/Invalid ZOOM_HOST_USER/,
-				);
-			}
+	test("rejects display names and malformed values fail-loud", () => {
+		for (const bad of [
+			"Ms My",
+			"MsMy",
+			"Admin",
+			"Ms My <teacher@example.com>",
+			"a@b",
+			"a@.b.com",
+			"a@b..com",
+			"a@-b.com",
+			".a@gmail.com",
+			"a.@gmail.com",
+			"a..b@gmail.com",
+			"foo/bar",
+			"teacher@example.com extra",
+		]) {
+			expect(() => resolveZoomHostUser(bad)).toThrow(/Invalid ZOOM_HOST_USER/);
 		}
 	});
 });

@@ -172,17 +172,10 @@ const studentPracticeEnabled = resolveStudentPracticeEnabled(
 	process.env.APP_DOMAIN,
 );
 
-// Zoom Server-to-Server OAuth (#1031): khi đã cấu hình 3 biến Zoom, bắt buộc
-// ZOOM_HOST_USER phải là email tài khoản Zoom hoặc Zoom User ID (không chấp
-// nhận tên hiển thị như "Ms My" hay "me").
-const zoomConfigured = Boolean(
-	(process.env.ZOOM_ACCOUNT_ID ?? "").trim() &&
-		(process.env.ZOOM_CLIENT_ID ?? "").trim() &&
-		(process.env.ZOOM_CLIENT_SECRET ?? "").trim(),
-);
-const zoomHostUser = resolveZoomHostUser(process.env.ZOOM_HOST_USER, {
-	zoomConfigured,
-});
+// Zoom Server-to-Server OAuth (#1031): chuẩn hóa và chặn fail-loud
+// ZOOM_HOST_USER sai định dạng (vd tên hiển thị "Ms My"); chấp nhận "me",
+// email tài khoản Zoom Pro, hoặc Zoom User ID.
+const zoomHostUser = resolveZoomHostUser(process.env.ZOOM_HOST_USER);
 
 // Alchemy's default date moves with each release. Pinning it keeps runtime
 // behavior changes out of Alchemy upgrades, so bumping it stays its own decision.

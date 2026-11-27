@@ -298,34 +298,18 @@ function isValidZoomEmail(value: string): boolean {
 
 /**
  * Chuẩn hoá và kiểm tra `ZOOM_HOST_USER` trước khi deploy (`packages/infra/alchemy.run.ts`).
- * Zoom Server-to-Server OAuth (`/v2/users/{userId}/meetings`) chỉ chấp nhận email
- * tài khoản Zoom hoặc Zoom User ID — tên hiển thị (vd `"Ms My"`) và `"me"` sẽ lỗi 404/1001.
+ * Zoom `/v2/users/{userId}/meetings` chấp nhận `"me"` (chủ tài khoản), email tài khoản Zoom,
+ * hoặc Zoom User ID — tên hiển thị (vd `"Ms My"`) sẽ bị Zoom từ chối với 404/1001.
  */
-export function resolveZoomHostUser(
-	raw: string | undefined,
-	options: { zoomConfigured: boolean },
-): string {
+export function resolveZoomHostUser(raw: string | undefined): string {
 	const value = (raw ?? "").trim();
-	if (value === "") {
-		if (options.zoomConfigured) {
-			throw new Error(
-				"ZOOM_HOST_USER must be set to a Zoom account email or Zoom User ID when Zoom credentials are configured (display names and 'me' are not supported for Server-to-Server OAuth).",
-			);
-		}
-		return "";
-	}
-	if (value.toLowerCase() === "me") {
-		if (options.zoomConfigured) {
-			throw new Error(
-				"ZOOM_HOST_USER cannot be 'me' when Zoom credentials are configured: Server-to-Server OAuth has no user session and requires a Zoom account email or Zoom User ID.",
-			);
-		}
+	if (value === "" || value.toLowerCase() === "me") {
 		return "me";
 	}
 	if (isValidZoomEmail(value) || ZOOM_USER_ID_REGEX.test(value)) {
 		return value;
 	}
 	throw new Error(
-		`Invalid ZOOM_HOST_USER value "${raw}": expected a Zoom account email or Zoom User ID (not a display name).`,
+		`Invalid ZOOM_HOST_USER value "${raw}": expected "me", a Zoom account email, or a Zoom User ID (not a display name).`,
 	);
 }
