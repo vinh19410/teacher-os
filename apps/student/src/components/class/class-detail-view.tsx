@@ -346,8 +346,6 @@ export function ClassDetailView({
 
 			<ClassInfoCard
 				detail={detail}
-				todayISO={todayISO}
-				now={now}
 				held={stats.held}
 				totalSessions={stats.totalSessions}
 			/>

@@ -50,6 +50,9 @@ Quy ước khi cập nhật:
 ### CI/Infra
 - **Chuyển bộ capture và seed của `design:compare` sang route hợp nhất `apps/lms` (`scripts/design-compare`) (#939).**
 
+### Removed
+- **Gỡ thanh footer tổng hợp dư thừa khỏi thẻ thông tin lớp học viên (`ClassInfoCard`) trên `/student/classes/$classId` (`apps/student`, `apps/e2e`, `DESIGN.md`):** loại bỏ cụm `{months} tháng`, khung giờ lặp và dòng `Buổi tới: ...` (trùng với mục **Lịch** trong `<dl>` và khối **Buổi tiếp theo** ở tab **Hành trình học**), dọn sạch mã chết (`computeCourseMonths`, `parseISODateUTC`, `ISO_DATE_RE`) cùng props `todayISO`/`now` không còn dùng trên `ClassInfoCard` và ghi nhận lệch có chủ đích so với `StudentClass.tsx` (design v2) trong `DESIGN.md` (#1013).
+
 ### Changed
 - **Tái thiết kế 3 tab `Hành trình học`, `Bài tập` và `Tài liệu chung` trên trang chi tiết lớp học viên (`/student/classes/$classId`, `apps/student`, `apps/e2e`, `DESIGN.md`):**
   - Đồng bộ trạng thái tab, bộ lọc và từ khóa tìm kiếm lên URL qua `validateSearch` (`parseClassDetailSearch` / `buildClassDetailSearch` với allowlist, chặn prototype key, ép số hữu hạn, lọc ký tự điều khiển/Bidi, dọn param lệch tab và lược bỏ giá trị mặc định, `replace: true, resetScroll: false`, `key={classId}`), kèm tầng pure helpers dùng chung (`class-detail-helpers.ts`) và bảo vệ race giữa debounce với `_auth.beforeLoad` bằng `pendingSearchRef`.

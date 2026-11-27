@@ -100,7 +100,7 @@ describe("ClassDetailView — lớp tạm dừng (#694)", () => {
 	const NOW = new Date("2026-11-20T03:00:00Z");
 	const TODAY = "2026-11-20";
 
-	it("shows neutral pause banner and suppresses Buổi tới in both ClassInfoCard and ClassLessonList", () => {
+	it("shows neutral pause banner and suppresses next-session indicators on paused class", () => {
 		render(
 			<ClassDetailView
 				detail={makeDetail("paused")}
@@ -113,12 +113,13 @@ describe("ClassDetailView — lớp tạm dừng (#694)", () => {
 		const banner = screen.getByTestId("class-paused-banner");
 		expect(banner.textContent).toContain("Lớp đang tạm dừng");
 		expect(banner.className).not.toContain("destructive");
+		expect(screen.queryByTestId("journey-next-hero")).toBeNull();
 		expect(screen.queryByText(/Buổi tới/)).toBeNull();
 		expect(screen.getByText("Tạm hoãn")).toBeTruthy();
 		expect(screen.getByText("Đã học")).toBeTruthy();
 	});
 
-	it("still shows Buổi tới for active class", () => {
+	it("omits footer from ClassInfoCard while keeping next-session indicators in Hành trình học for active class", () => {
 		render(
 			<ClassDetailView
 				detail={makeDetail("active")}
@@ -128,7 +129,13 @@ describe("ClassDetailView — lớp tạm dừng (#694)", () => {
 		);
 
 		expect(screen.queryByTestId("class-paused-banner")).toBeNull();
-		expect(screen.getAllByText(/Buổi tới/).length).toBeGreaterThanOrEqual(1);
+		const infoCard = screen.getByRole("region", { name: "Thông tin lớp học" });
+		expect(within(infoCard).queryByText(/Buổi tới/)).toBeNull();
+		expect(within(infoCard).queryByText(/\d+\s*tháng/)).toBeNull();
+		expect(screen.getByTestId("journey-next-hero").textContent).toContain(
+			"Buổi tiếp theo",
+		);
+		expect(screen.getAllByText("Buổi tới")).toHaveLength(1);
 	});
 });
 
