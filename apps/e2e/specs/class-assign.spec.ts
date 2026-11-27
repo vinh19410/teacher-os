@@ -1,4 +1,6 @@
 import { mkdirSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 import {
 	fillRichEditor,
@@ -10,6 +12,8 @@ import {
 	vnWeekdayMon0,
 } from "./helpers";
 import { API_ORIGIN, LMS_ORIGIN, WEB_ORIGIN } from "./origins";
+
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
 /**
  * Issue #208 / #717 — Giao bài trên lớp:
@@ -731,4 +735,273 @@ test("late activation auto-backfills class assignment (0/1 → 0/2 + Student Por
 	await expect(
 		assignedList.getByRole("button", { name: "Giao bổ sung" }),
 	).toHaveCount(0);
+});
+
+test("#982: checkbox học viên bấm trực tiếp không bị span chặn, hoạt động bàn phím, và Chọn tất cả 3 trạng thái", async ({
+	page,
+}) => {
+	const CLASS_NAME = "E2E 982 Lớp Checkbox";
+	const STUDENT_1 = "An Học viên 1";
+	const STUDENT_2 = "Bình Học viên 2";
+	const PROMPT_TITLE = "QC-982 Prompt Checkbox";
+
+	const teacherEmail = await signUpViaApi(page);
+	await seedStudent({ teacherEmail, name: STUDENT_1 });
+	await seedStudent({ teacherEmail, name: STUDENT_2 });
+
+	// 1. Tạo lớp
+	await page.getByText("Lớp học", { exact: true }).first().click();
+	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
+	const classDialog = page.getByRole("dialog");
+	await classDialog.getByLabel("Tên lớp *").fill(CLASS_NAME);
+	await classDialog
+		.getByRole("button", { name: "Writing", exact: true })
+		.click();
+	await classDialog.getByRole("button", { name: "T2", exact: true }).click();
+	await classDialog
+		.getByRole("button", { name: "Tạo lớp", exact: true })
+		.click();
+	await expect(classDialog).toBeHidden();
+
+	// 2. Enroll & kích hoạt đúng thứ tự An trước -> Bình sau (khớp classGroup.studentIds)
+	await page.getByText(CLASS_NAME).click();
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
+	const confirmModal = page
+		.getByRole("dialog")
+		.filter({ hasText: "Kích hoạt học viên?" });
+
+	for (const studentName of [STUDENT_1, STUDENT_2]) {
+		await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
+		const enrollDialog = page.getByRole("dialog");
+		await enrollDialog.getByRole("option", { name: studentName }).click();
+		await enrollDialog
+			.getByRole("button", { name: "Lưu", exact: true })
+			.click();
+		await expect(enrollDialog).toBeHidden();
+
+		await page.getByRole("button", { name: "Kích hoạt" }).first().click();
+		await expect(confirmModal).toBeVisible();
+		await confirmModal.getByRole("button", { name: "Kích hoạt" }).click();
+		await expect(confirmModal).toBeHidden();
+	}
+
+	// 3. Tạo 1 đề ready
+	await page.goto("/teacher/assignments/new");
+	await selectWritingTask2(page);
+	await page.getByLabel("Tiêu đề").fill(PROMPT_TITLE);
+	await fillRichEditor(
+		page,
+		"Nội dung đề",
+		"Some people believe public libraries are essential.",
+	);
+	await page.getByRole("button", { name: "Lưu vào ngân hàng" }).first().click();
+	await expect(
+		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
+	).toBeVisible();
+
+	// 4. Mở hộp thoại Giao bài tập
+	await page.goto("/teacher/classes");
+	await page.getByText(CLASS_NAME).click();
+	await page
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
+		.click();
+	await page.getByRole("button", { name: "Giao bài tập", exact: true }).click();
+	const assignDialog = page.getByRole("dialog", {
+		name: new RegExp(`Giao bài tập · ${CLASS_NAME}`),
+	});
+	await expect(assignDialog).toBeVisible();
+
+	const selectAll = assignDialog.getByRole("checkbox", {
+		name: "Chọn tất cả",
+		exact: true,
+	});
+	const scopeBadge = assignDialog.getByTestId("assign-students-scope-badge");
+	const submitBtn = assignDialog.getByRole("button", {
+		name: "Giao bài tập",
+		exact: true,
+	});
+	await expect(selectAll).toBeVisible();
+	await expect(selectAll).toBeChecked();
+	await expect(scopeBadge).toHaveText("Cả lớp");
+	await expect(assignDialog.getByText("(2/2)")).toBeVisible();
+
+	// Chọn đề sẵn sàng trước để kiểm chứng disabled tại (0/2) phản ánh đúng studentsOk === false
+	await assignDialog
+		.getByRole("button", { name: new RegExp(PROMPT_TITLE) })
+		.click();
+	await expect(submitBtn).toBeEnabled();
+
+	// 5. Kiểm chứng accessible name sạch (không dính Avatar) và hit-test tâm checkbox trúng INPUT
+	const st1Checkbox = assignDialog.getByRole("checkbox", {
+		name: STUDENT_1,
+		exact: true,
+	});
+	const st2Checkbox = assignDialog.getByRole("checkbox", {
+		name: STUDENT_2,
+		exact: true,
+	});
+	await st2Checkbox.scrollIntoViewIfNeeded();
+	const st2Box = await st2Checkbox.boundingBox();
+	expect(st2Box).not.toBeNull();
+	if (!st2Box) throw new Error("Missing bounding box for st2Checkbox");
+	expect(st2Box.width).toBeGreaterThanOrEqual(16);
+	expect(st2Box.height).toBeGreaterThanOrEqual(16);
+
+	const hitResult = await page.evaluate(
+		({ cx, cy }) => {
+			const el = document.elementFromPoint(cx, cy);
+			return {
+				tagName: el?.tagName ?? null,
+				type: el instanceof HTMLInputElement ? el.type : null,
+			};
+		},
+		{
+			cx: st2Box.x + st2Box.width / 2,
+			cy: st2Box.y + st2Box.height / 2,
+		},
+	);
+	expect(hitResult).toEqual({ tagName: "INPUT", type: "checkbox" });
+
+	// 6. Bỏ tick trực tiếp (KHÔNG force: true) -> indeterminate + Chọn lọc
+	await st2Checkbox.uncheck();
+	await expect(st2Checkbox).not.toBeChecked();
+	await expect(selectAll).not.toBeChecked();
+	await expect(selectAll).toHaveJSProperty("indeterminate", true);
+	await expect(selectAll).toHaveAttribute("aria-checked", "mixed");
+	await expect(scopeBadge).toHaveText("Chọn lọc");
+	await expect(assignDialog.getByText("(1/2)")).toBeVisible();
+
+	// 7. Điều hướng bàn phím (Tab + Space) qua 3 trạng thái
+	await selectAll.focus();
+	await expect(selectAll).toBeFocused();
+	await page.keyboard.press("Space");
+	await expect(selectAll).toBeChecked();
+	await expect(selectAll).toHaveJSProperty("indeterminate", false);
+	await expect(scopeBadge).toHaveText("Cả lớp");
+	await expect(submitBtn).toBeEnabled();
+
+	await page.keyboard.press("Space");
+	await expect(selectAll).not.toBeChecked();
+	await expect(selectAll).toHaveJSProperty("indeterminate", false);
+	await expect(scopeBadge).toHaveText("Chưa chọn");
+	await expect(assignDialog.getByText("(0/2)")).toBeVisible();
+	await expect(assignDialog.getByText("Chưa chọn học viên")).toBeVisible();
+	await expect(submitBtn).toBeDisabled();
+
+	await page.keyboard.press("Tab");
+	await expect(st1Checkbox).toBeFocused();
+	await page.keyboard.press("Space");
+	await expect(st1Checkbox).toBeChecked();
+	await expect(selectAll).toHaveJSProperty("indeterminate", true);
+	await expect(selectAll).toHaveAttribute("aria-checked", "mixed");
+	await expect(scopeBadge).toHaveText("Chọn lọc");
+	await expect(assignDialog.getByText("(1/2)")).toBeVisible();
+	await expect(submitBtn).toBeEnabled();
+
+	// 8. Kiểm tra reflow 4 viewport × 2 theme Light/Dark + chụp 6 ảnh POT opt-in
+	const capturePot = process.env.CAPTURE_POT_982 === "1";
+	const potDir = resolve(REPO_ROOT, "plans/reports");
+	if (capturePot) {
+		mkdirSync(potDir, { recursive: true });
+	}
+	const studentsFieldset = assignDialog.locator(
+		'fieldset[aria-labelledby="assignment-students-heading"]',
+	);
+	const modalBody = assignDialog.locator("> div.overflow-y-auto");
+	const studentScrollList = studentsFieldset.locator(".overflow-y-auto");
+
+	for (const vp of [
+		{ name: "1440x900", width: 1440, height: 900, capture: true },
+		{ name: "768x1024", width: 768, height: 1024, capture: true },
+		{ name: "375x812", width: 375, height: 812, capture: true },
+		{ name: "320x812", width: 320, height: 812, capture: false },
+	] as const) {
+		await page.setViewportSize({ width: vp.width, height: vp.height });
+		for (const theme of ["light", "dark"] as const) {
+			await page.evaluate((t) => {
+				if (t === "dark") {
+					window.localStorage.setItem("theme", "dark");
+					document.documentElement.classList.add("dark");
+				} else {
+					window.localStorage.removeItem("theme");
+					document.documentElement.classList.remove("dark");
+				}
+			}, theme);
+			const hasDark = await page.evaluate(() =>
+				document.documentElement.classList.contains("dark"),
+			);
+			expect(hasDark).toBe(theme === "dark");
+
+			await studentsFieldset.scrollIntoViewIfNeeded();
+			const docOverflow = await page.evaluate(
+				() => document.documentElement.scrollWidth > window.innerWidth,
+			);
+			expect(docOverflow).toBe(false);
+			const dialogOverflow = await assignDialog.evaluate(
+				(el) => el.scrollWidth > el.clientWidth + 1,
+			);
+			expect(dialogOverflow).toBe(false);
+			const bodyOverflow = await modalBody.evaluate(
+				(el) => el.scrollWidth > el.clientWidth + 1,
+			);
+			expect(bodyOverflow).toBe(false);
+			const listOverflow = await studentScrollList.evaluate(
+				(el) => el.scrollWidth > el.clientWidth + 1,
+			);
+			expect(listOverflow).toBe(false);
+
+			if (capturePot && vp.capture) {
+				await page.screenshot({
+					path: resolve(potDir, `982-assign-modal-${vp.name}-${theme}.png`),
+				});
+			}
+		}
+	}
+
+	await page.evaluate(() => {
+		window.localStorage.removeItem("theme");
+		document.documentElement.classList.remove("dark");
+	});
+	await page.setViewportSize({ width: 1280, height: 800 });
+
+	// 9. Giao chọn lọc (1/2 học viên) -> kiểm chứng payload targetScope: "selected" & danh sách đã giao
+	const createResPromise = page.waitForResponse(
+		(r) =>
+			r.url().includes("/api/classes/") &&
+			r.url().endsWith("/assignments") &&
+			r.request().method() === "POST",
+	);
+	await submitBtn.click();
+	const createRes = await createResPromise;
+	expect(createRes.status()).toBe(201);
+	const submittedBody = createRes.request().postDataJSON() as {
+		studentIds?: string[];
+		targetScope?: string;
+	} | null;
+	expect(submittedBody).not.toBeNull();
+	expect(submittedBody?.studentIds).toHaveLength(1);
+	expect(submittedBody?.targetScope).toBe("selected");
+
+	await expect(assignDialog).toBeHidden();
+	await expect(
+		page.getByText(`Đã giao “${PROMPT_TITLE}” cho 1 học viên.`),
+	).toBeVisible();
+	const assignedList = page.locator("#assigned-list");
+	const assignedRows = assignedList.locator(".sub-row");
+	const missingBanner = assignedList.locator(
+		'[data-testid^="assign-missing-students-"]',
+	);
+	await expect(assignedList).toContainText("0/1 đã nộp");
+	await expect(assignedList).toContainText("Giao 1/2 HV");
+	await expect(assignedRows).toHaveCount(1);
+	await expect(
+		assignedRows.getByText(STUDENT_1, { exact: true }),
+	).toBeVisible();
+	await expect(assignedRows.getByText(STUDENT_2)).toHaveCount(0);
+	await expect(missingBanner).toContainText(
+		`Còn 1 học viên chưa được giao: ${STUDENT_2}`,
+	);
+	await expect(
+		missingBanner.getByRole("button", { name: "Giao bổ sung", exact: true }),
+	).toBeVisible();
 });

@@ -852,10 +852,22 @@ describe("AssignClassPromptModal", () => {
 			).disabled,
 		).toBe(true);
 
-		fireEvent.click(screen.getByRole("button", { name: "Bỏ chọn tất cả" }));
+		expect(screen.getByTestId("assign-students-scope-badge").textContent).toBe(
+			"Chọn lọc",
+		);
+		const selectAll = screen.getByRole("checkbox", {
+			name: "Chọn tất cả",
+		}) as HTMLInputElement;
+		fireEvent.click(selectAll);
 		expect(screen.getByText("(0/105)")).toBeTruthy();
-		fireEvent.click(screen.getByRole("button", { name: "Chọn tất cả" }));
+		expect(screen.getByTestId("assign-students-scope-badge").textContent).toBe(
+			"Chưa chọn",
+		);
+		fireEvent.click(selectAll);
 		expect(screen.getByText("(100/105)")).toBeTruthy();
+		expect(screen.getByTestId("assign-students-scope-badge").textContent).toBe(
+			"Chọn lọc",
+		);
 
 		const pausedEmptyClass: ClassGroup = {
 			...testClass,
@@ -1010,5 +1022,135 @@ describe("AssignClassPromptModal", () => {
 				}),
 			);
 		});
+	});
+
+	it("hiển thị checkbox học viên trực tiếp không sr-only/span che, tên truy cập sạch không dính avatar và Chọn tất cả 3 trạng thái (#982)", () => {
+		const { rerender } = render(
+			<AssignClassPromptModal open onClose={vi.fn()} classGroup={testClass} />,
+		);
+
+		const st1 = screen.getByRole("checkbox", {
+			name: "Nguyễn Văn A",
+		}) as HTMLInputElement;
+		const st2 = screen.getByRole("checkbox", {
+			name: "Trần Thị B",
+		}) as HTMLInputElement;
+		const selectAll = screen.getByRole("checkbox", {
+			name: "Chọn tất cả",
+		}) as HTMLInputElement;
+
+		for (const cb of [selectAll, st1, st2]) {
+			expect(cb.className).not.toContain("sr-only");
+			const svgs = cb.parentElement?.querySelectorAll("svg") ?? [];
+			expect(svgs.length).toBeGreaterThan(0);
+			for (const svg of svgs) {
+				expect(svg.getAttribute("aria-hidden")).toBe("true");
+				expect(svg.getAttribute("class") ?? "").toContain(
+					"pointer-events-none",
+				);
+			}
+		}
+
+		// Trạng thái ban đầu (chưa chọn đề): chọn tất cả, badge Cả lớp, footer Chưa chọn đề
+		expect(selectAll.checked).toBe(true);
+		expect(selectAll.indeterminate).toBe(false);
+		expect(selectAll.getAttribute("aria-checked")).toBeNull();
+		expect(screen.getByTestId("assign-students-scope-badge").textContent).toBe(
+			"Cả lớp",
+		);
+		expect(screen.getByText("(2/2)")).toBeTruthy();
+		expect(screen.getByText("Chưa chọn đề")).toBeTruthy();
+
+		// Chọn 1 đề sẵn sàng để kiểm chứng chính xác trạng thái Chưa chọn học viên & nút disabled
+		fireEvent.click(
+			screen.getByRole("button", { name: /Reading — True\/False/ }),
+		);
+		const submitBtn = screen.getByRole("button", {
+			name: "Giao bài tập",
+		}) as HTMLButtonElement;
+		expect(screen.getByText("Giao cho 2 học viên")).toBeTruthy();
+		expect(submitBtn.disabled).toBe(false);
+
+		// Bỏ tick 1 học viên -> indeterminate + aria-checked="mixed" + Chọn lọc
+		fireEvent.click(st2);
+		expect(st2.checked).toBe(false);
+		expect(selectAll.checked).toBe(false);
+		expect(selectAll.indeterminate).toBe(true);
+		expect(selectAll.getAttribute("aria-checked")).toBe("mixed");
+		expect(screen.getByTestId("assign-students-scope-badge").textContent).toBe(
+			"Chọn lọc",
+		);
+		expect(screen.getByText("(1/2)")).toBeTruthy();
+		expect(screen.getByText("Giao cho 1 học viên")).toBeTruthy();
+
+		// Click "Chọn tất cả" từ trạng thái indeterminate -> chọn lại toàn bộ
+		fireEvent.click(selectAll);
+		expect(st2.checked).toBe(true);
+		expect(selectAll.checked).toBe(true);
+		expect(selectAll.indeterminate).toBe(false);
+		expect(selectAll.getAttribute("aria-checked")).toBeNull();
+		expect(screen.getByTestId("assign-students-scope-badge").textContent).toBe(
+			"Cả lớp",
+		);
+		expect(screen.getByText("(2/2)")).toBeTruthy();
+		expect(screen.getByText("Giao cho 2 học viên")).toBeTruthy();
+
+		// Click "Chọn tất cả" khi đang chọn hết -> bỏ chọn tất cả + không còn icon tick/minus
+		fireEvent.click(selectAll);
+		expect(st1.checked).toBe(false);
+		expect(st2.checked).toBe(false);
+		expect(selectAll.checked).toBe(false);
+		expect(selectAll.indeterminate).toBe(false);
+		expect(selectAll.getAttribute("aria-checked")).toBeNull();
+		expect(screen.getByTestId("assign-students-scope-badge").textContent).toBe(
+			"Chưa chọn",
+		);
+		expect(screen.getByText("(0/2)")).toBeTruthy();
+		expect(screen.getByText("Chưa chọn học viên")).toBeTruthy();
+		expect(submitBtn.disabled).toBe(true);
+		for (const cb of [selectAll, st1, st2]) {
+			expect(cb.parentElement?.querySelectorAll("svg").length ?? 0).toBe(0);
+		}
+
+		// Tick từng học viên trở lại -> indeterminate rồi checked toàn bộ
+		fireEvent.click(st1);
+		expect(screen.getByText("(1/2)")).toBeTruthy();
+		expect(selectAll.indeterminate).toBe(true);
+		expect(screen.getByTestId("assign-students-scope-badge").textContent).toBe(
+			"Chọn lọc",
+		);
+		expect(submitBtn.disabled).toBe(false);
+
+		fireEvent.click(st2);
+		expect(screen.getByText("(2/2)")).toBeTruthy();
+		expect(selectAll.checked).toBe(true);
+		expect(selectAll.indeterminate).toBe(false);
+		expect(screen.getByTestId("assign-students-scope-badge").textContent).toBe(
+			"Cả lớp",
+		);
+
+		// Đóng rồi mở lại -> reset về chọn hết (2/2), badge Cả lớp, và Chưa chọn đề
+		rerender(
+			<AssignClassPromptModal
+				open={false}
+				onClose={vi.fn()}
+				classGroup={testClass}
+			/>,
+		);
+		rerender(
+			<AssignClassPromptModal open onClose={vi.fn()} classGroup={testClass} />,
+		);
+		expect(
+			(
+				screen.getByRole("checkbox", {
+					name: "Chọn tất cả",
+				}) as HTMLInputElement
+			).checked,
+		).toBe(true);
+		expect(screen.getByText("(2/2)")).toBeTruthy();
+		expect(screen.getByTestId("assign-students-scope-badge").textContent).toBe(
+			"Cả lớp",
+		);
+		expect(screen.getByText("Chưa chọn đề")).toBeTruthy();
 	});
 });
