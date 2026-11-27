@@ -2669,6 +2669,7 @@ export const RECORDING_ERROR_CODES = {
 	DISABLED: "RECORDINGS_DISABLED",
 	EXPIRED: "RECORDING_EXPIRED",
 	NOT_FOUND: "RECORDING_NOT_FOUND",
+	LOCKED: "RECORDING_LOCKED",
 } as const;
 
 /** Buổi học của chính học viên trong lớp (GET /api/student/classes/:classId). */

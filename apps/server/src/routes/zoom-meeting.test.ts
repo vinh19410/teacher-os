@@ -809,6 +809,50 @@ describe("Recording và cron", () => {
 		});
 	});
 
+	test("buổi ghi nhiều đoạn: lưu đoạn chính lên R2 nhưng không Trash bản gốc, kể cả ở lượt sync và cron sau", async () => {
+		const fake = createFakeZoom();
+		fake.setRecordingReady(true);
+		const getRecording = fake.client.getRecording.bind(fake.client);
+		fake.client.getRecording = async (meetingId) => {
+			const rec = await getRecording(meetingId);
+			return rec.status === "ready"
+				? { ...rec, hasMultipleSegments: true }
+				: rec;
+		};
+		const store = createMemoryRecordingStore();
+		const app = createApp(fake.client, { recordingStore: store });
+		const classId = await createManualOnlineClass(app, "Nhiều đoạn");
+		const date = futureDate(5);
+		await addManualSession(app, classId, date, "");
+
+		const syncPath = `/api/classes/${classId}/sessions/${date}/recording/sync`;
+		for (let attempt = 0; attempt < 2; attempt += 1) {
+			const res = await app.request(syncPath, {
+				method: "POST",
+				headers: TEACHER_HEADERS,
+				body: "{}",
+			});
+			expect(res.status).toBe(200);
+			expect(await res.json()).toMatchObject({
+				hasRecordingVideo: true,
+				recordingZoomTrashStatus: "none",
+			});
+		}
+		const cronRes = await runRecordingSyncCron({
+			db,
+			zoom: undefined,
+			getZoomClient: () => fake.client,
+			recordingStore: store,
+		});
+
+		expect(cronRes.trashed).toBe(0);
+		expect(fake.calls.some((c) => c.method === "trash")).toBe(false);
+		expect((await meetingRow(classId, date))?.recordingZoomTrashStatus).toBe(
+			"none",
+		);
+		expect(store.objects.size).toBe(1);
+	});
+
 	test("thiếu recordingStore hoặc lỗi tải từ Zoom: giữ fallback link Zoom và tuyệt đối không gọi Trash", async () => {
 		const fakeNoStore = createFakeZoom();
 		fakeNoStore.setRecordingReady(true);
@@ -1210,7 +1254,7 @@ describe("Recording và cron", () => {
 		expect(expiredRow?.recordingExpiresAt).toBeInstanceOf(Date);
 	});
 
-	test("gán link tay (PUT /recording) và xoá buổi xoá object R2 cũ", async () => {
+	test("gán link tay (PUT /recording) bị chặn khi video R2 còn hạn; xoá buổi xoá object R2 cũ", async () => {
 		const fake = createFakeZoom();
 		fake.setRecordingReady(true);
 		const store = createMemoryRecordingStore();
@@ -1237,17 +1281,27 @@ describe("Recording và cron", () => {
 		expect(k2).toBeTruthy();
 		expect(store.objects.size).toBe(2);
 
-		// Gán link tay trên d1 → xoá object k1 và chuyển sang external.
-		const override = await app.request(
-			`/api/classes/${classId}/sessions/${d1}/recording`,
-			{
+		// Video R2 còn hạn: cả link mới lẫn ô trống đều bị từ chối, object giữ nguyên.
+		const putManual = (recordingUrl: string) =>
+			app.request(`/api/classes/${classId}/sessions/${d1}/recording`, {
 				method: "PUT",
 				headers: TEACHER_HEADERS,
-				body: JSON.stringify({
-					recordingUrl: "https://drive.google.com/file/d/custom",
-				}),
-			},
-		);
+				body: JSON.stringify({ recordingUrl }),
+			});
+		for (const url of ["", "https://drive.google.com/file/d/custom"]) {
+			const blocked = await putManual(url);
+			expect(blocked.status).toBe(409);
+			expect(await blocked.json()).toMatchObject({ code: "RECORDING_LOCKED" });
+		}
+		expect(store.objects.has(k1 ?? "")).toBe(true);
+		expect((await meetingRow(classId, d1))?.recordingStorageKey).toBe(k1);
+
+		// Video đã quá hạn → gán link tay được, xoá object k1 và chuyển sang external.
+		await db
+			.update(schema.classSessionMeeting)
+			.set({ recordingExpiresAt: new Date(0) })
+			.where(eq(schema.classSessionMeeting.recordingStorageKey, k1 ?? ""));
+		const override = await putManual("https://drive.google.com/file/d/custom");
 		expect(override.status).toBe(200);
 		expect(store.objects.has(k1 ?? "")).toBe(false);
 		const m1After = await meetingRow(classId, d1);

@@ -296,4 +296,41 @@ describe("dispatchScheduledCron", () => {
 
 		expect(runDailyReminder).toHaveBeenCalledTimes(1);
 	});
+
+	test("runs the daily reminder before Zoom sync and still syncs if the reminder fails", async () => {
+		const order: string[] = [];
+		const runZoomSync = vi.fn<typeof runRecordingSyncCron>(async () => {
+			order.push("zoom");
+			return emptySyncResult;
+		});
+		const runDailyReminder = vi.fn<typeof runDailyDeadlineReminderCron>(
+			async () => {
+				order.push("reminder");
+				throw new Error("reminder db error");
+			},
+		);
+		const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+		try {
+			await expect(
+				dispatchScheduledCron(
+					{
+						cron: ZOOM_RECORDING_SYNC_CRON,
+						scheduledTime: Date.parse("2026-05-14T23:00:00.000Z"),
+					},
+					{
+						db: fakeDb,
+						zoom: fakeZoom,
+						getMailer: () => ({ send: vi.fn(async () => {}) }),
+						runZoomSync,
+						runDailyReminder,
+					},
+				),
+			).rejects.toThrow("reminder db error");
+		} finally {
+			errSpy.mockRestore();
+		}
+
+		expect(order).toEqual(["reminder", "zoom"]);
+	});
 });

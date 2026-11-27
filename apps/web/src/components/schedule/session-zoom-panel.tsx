@@ -313,17 +313,23 @@ export function SessionZoomPanel({
 								{syncingRec ? "Đang đồng bộ…" : "Đồng bộ recording"}
 							</Button>
 						)}
-						<Button
-							type="button"
-							variant="ghost"
-							size="sm"
-							onClick={() => {
-								setRecInput(recordingUrl);
-								setEditingRec((prev) => !prev);
-							}}
-						>
-							{editingRec ? "Đóng" : recordingUrl ? "Sửa link" : "Gán link tay"}
-						</Button>
+						{!hasR2Video && (
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								onClick={() => {
+									setRecInput(recordingUrl);
+									setEditingRec((prev) => !prev);
+								}}
+							>
+								{editingRec
+									? "Đóng"
+									: recordingUrl
+										? "Sửa link"
+										: "Gán link tay"}
+							</Button>
+						)}
 					</div>
 
 					{hasR2Video && expiryDateVN && (
@@ -354,7 +360,7 @@ export function SessionZoomPanel({
 						</div>
 					)}
 
-					{editingRec && (
+					{editingRec && !hasR2Video && (
 						<div className="flex flex-wrap items-center gap-2">
 							<Input
 								aria-label="Link recording"

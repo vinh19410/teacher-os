@@ -245,6 +245,8 @@ describe("createZoomClient", () => {
 				recordingType: "shared_screen_with_speaker_view",
 				mimeType: "video/mp4",
 			},
+			// Hai file cùng bố cục = hai đoạn ghi hình.
+			hasMultipleSegments: true,
 		});
 	});
 
@@ -446,6 +448,54 @@ describe("createZoomClient", () => {
 			),
 		);
 		expect(await client.getRecording("seg")).toEqual({ status: "pending" });
+	});
+
+	const mp4 = (id: string, type: string, start: string) => ({
+		id,
+		status: "completed",
+		file_type: "MP4",
+		download_url: `https://us06web.zoom.us/rec/download/${id}`,
+		recording_type: type,
+		recording_start: start,
+	});
+	const FIRST = "2026-11-20T12:00:00Z";
+	const SECOND = "2026-11-20T12:40:00Z";
+
+	it.each([
+		{
+			name: "nhiều bố cục của cùng một đoạn",
+			files: [
+				mp4("a", "shared_screen_with_speaker_view", FIRST),
+				mp4("b", "gallery_view", FIRST),
+			],
+			expected: undefined,
+		},
+		{
+			name: "hai mốc bắt đầu khác nhau",
+			files: [
+				mp4("a", "shared_screen_with_speaker_view", FIRST),
+				mp4("b", "gallery_view", SECOND),
+			],
+			expected: true,
+		},
+		{
+			name: "một bố cục lặp lại",
+			files: [
+				mp4("a", "shared_screen_with_speaker_view", FIRST),
+				mp4("b", "shared_screen_with_speaker_view", FIRST),
+			],
+			expected: true,
+		},
+	])("getRecording nhận biết nhiều đoạn: $name", async (c) => {
+		const client = createZoomClient(
+			cfg(),
+			mockFetch(token(), json({ share_url: "", recording_files: c.files })),
+		);
+		const result = await client.getRecording("seg");
+		expect(result.status).toBe("ready");
+		expect(result.status === "ready" ? result.hasMultipleSegments : null).toBe(
+			c.expected,
+		);
 	});
 
 	it("downloadRecordingFile chặn redirect sang IP private/loopback/credentials, chặn XML/text và bỏ Content-Length khi có Content-Encoding", async () => {

@@ -290,6 +290,16 @@ export function zoomMeetingRoutes(deps: AppDeps) {
 					now: deps.now,
 				},
 			);
+			if (!updated) {
+				return c.json(
+					{
+						error:
+							"Buổi học đang có video lưu trên hệ thống nên không gán link tay được.",
+						code: RECORDING_ERROR_CODES.LOCKED,
+					},
+					409,
+				);
+			}
 			return c.json({
 				status: updated.status,
 				recordingUrl: updated.recordingUrl,

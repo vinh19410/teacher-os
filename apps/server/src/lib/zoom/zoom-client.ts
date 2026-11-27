@@ -51,6 +51,8 @@ export type ZoomRecordingResult =
 			shareUrl: string;
 			password: string | null;
 			primaryFile: ZoomRecordingVideoFile | null;
+			/** Buổi bị ghi thành nhiều đoạn: bản chính không thay được cả buổi. */
+			hasMultipleSegments?: boolean;
 	  }
 	| { status: "pending" }
 	| { status: "missing" };
@@ -101,6 +103,32 @@ interface RawZoomRecordingFile {
 	file_size?: number;
 	download_url?: string;
 	recording_type?: string;
+	recording_start?: string;
+}
+
+function isMp4File(f: RawZoomRecordingFile): boolean {
+	return (
+		(f.file_type ?? "").toUpperCase() === "MP4" ||
+		(f.file_extension ?? "").toUpperCase() === "MP4"
+	);
+}
+
+/**
+ * Các bố cục (`recording_type`) của cùng một đoạn có chung `recording_start`.
+ * Hai mốc bắt đầu khác nhau, hoặc một bố cục lặp lại, nghĩa là có nhiều đoạn.
+ */
+function hasMultipleMp4Segments(files: RawZoomRecordingFile[]): boolean {
+	const starts = new Set<string>();
+	const types = new Set<string>();
+	for (const f of files) {
+		if (!isMp4File(f)) continue;
+		if (f.recording_start) starts.add(f.recording_start);
+		const type = (f.recording_type ?? "").trim().toLowerCase();
+		if (!type) continue;
+		if (types.has(type)) return true;
+		types.add(type);
+	}
+	return starts.size > 1;
 }
 
 function isZoomHostname(hostname: string): boolean {
@@ -139,10 +167,7 @@ function selectPrimaryMp4File(
 
 	for (const f of files) {
 		if ((f.status ?? "").toLowerCase() !== "completed") continue;
-		const isMp4 =
-			(f.file_type ?? "").toUpperCase() === "MP4" ||
-			(f.file_extension ?? "").toUpperCase() === "MP4";
-		if (!isMp4) continue;
+		if (!isMp4File(f)) continue;
 		const downloadUrl =
 			typeof f.download_url === "string" ? f.download_url.trim() : "";
 		if (!downloadUrl) continue;
@@ -369,6 +394,9 @@ export function createZoomClient(
 					shareUrl: body.share_url ?? "",
 					password: body.password || null,
 					primaryFile,
+					...(hasMultipleMp4Segments(files)
+						? { hasMultipleSegments: true }
+						: {}),
 				};
 			}
 			return { status: "pending" };

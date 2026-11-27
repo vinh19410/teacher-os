@@ -213,6 +213,9 @@ describe("SessionZoomPanel", () => {
 		expect(screen.queryByText(/Mật khẩu recording/i)).toBeNull();
 		expect(screen.queryByText("ShouldNotShow")).toBeNull();
 		expect(screen.queryByRole("link", { name: /Xem recording/i })).toBeNull();
+		expect(
+			screen.queryByRole("button", { name: /Gán link tay|Sửa link/i }),
+		).toBeNull();
 
 		const playBtn = screen.getByRole("button", { name: /Xem recording/i });
 		fireEvent.click(playBtn);

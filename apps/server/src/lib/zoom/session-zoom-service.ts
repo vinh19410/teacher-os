@@ -1402,6 +1402,8 @@ export async function syncRecordingForOccurrence(
 	}
 
 	const expiresAt = new Date(now.getTime() + RECORDING_RETENTION_MS);
+	// Chỉ một đoạn được lưu lên R2 → giữ bản gốc trên Zoom ("none" không bị cron Trash lại).
+	const keepZoomOriginal = rec.hasMultipleSegments === true;
 	let claimed: Array<{ id: string }>;
 	try {
 		claimed = await deps.db
@@ -1417,7 +1419,7 @@ export async function syncRecordingForOccurrence(
 				recordingPassword: null,
 				recordingError: null,
 				recordingSyncedAt: now,
-				recordingZoomTrashStatus: "pending",
+				recordingZoomTrashStatus: keepZoomOriginal ? "none" : "pending",
 			})
 			.where(expectedRecordingState)
 			.returning({ id: classSessionMeeting.id });
@@ -1446,14 +1448,16 @@ export async function syncRecordingForOccurrence(
 	}
 
 	// Chỉ đưa bản gốc trên Zoom vào Trash SAU KHI R2 + D1 đã commit thành công.
-	const finalTrashStatus = await tryTrashZoomRecording(
-		deps.db,
-		client,
-		meeting.id,
-		meeting.zoomMeetingId,
-		storageKey,
-		now,
-	);
+	const finalTrashStatus = keepZoomOriginal
+		? "none"
+		: await tryTrashZoomRecording(
+				deps.db,
+				client,
+				meeting.id,
+				meeting.zoomMeetingId,
+				storageKey,
+				now,
+			);
 
 	return {
 		status: "ready",
@@ -1464,7 +1468,9 @@ export async function syncRecordingForOccurrence(
 		recordingExpiresAt: expiresAt.toISOString(),
 		recordingZoomTrashStatus: finalTrashStatus,
 		syncedAt: now.toISOString(),
-		message: null,
+		message: keepZoomOriginal
+			? "Buổi học có nhiều đoạn ghi hình: chỉ lưu đoạn chính, bản gốc vẫn giữ trên Zoom."
+			: null,
 	};
 }
 
@@ -1913,7 +1919,7 @@ export async function updateSessionRecordingManual(
 	status: RecordingStatus;
 	recordingUrl: string;
 	syncedAt: string;
-}> {
+} | null> {
 	const trimmed = input.recordingUrl.trim();
 	const nextStatus: RecordingStatus = trimmed ? "ready" : "none";
 	const now = opts?.now ? opts.now() : new Date();
@@ -1922,6 +1928,7 @@ export async function updateSessionRecordingManual(
 		.select({
 			id: classSessionMeeting.id,
 			recordingStorageKey: classSessionMeeting.recordingStorageKey,
+			recordingExpiresAt: classSessionMeeting.recordingExpiresAt,
 		})
 		.from(classSessionMeeting)
 		.where(
@@ -1934,7 +1941,18 @@ export async function updateSessionRecordingManual(
 		.limit(1);
 
 	if (existing) {
-		await db
+		// Video R2 còn hạn có thể là bản duy nhất → không cho link tay ghi đè (trả null).
+		if (
+			existing.recordingStorageKey &&
+			!isStorageExpired(
+				existing.recordingStorageKey,
+				existing.recordingExpiresAt,
+				now,
+			)
+		) {
+			return null;
+		}
+		const updated = await db
 			.update(classSessionMeeting)
 			.set({
 				recordingUrl: trimmed,
@@ -1949,7 +1967,22 @@ export async function updateSessionRecordingManual(
 				recordingExpiresAt: null,
 				recordingZoomTrashStatus: "none",
 			})
-			.where(eq(classSessionMeeting.id, existing.id));
+			// CAS: lượt sync vừa commit video R2 giữa lúc đọc và ghi thì không đè.
+			.where(
+				and(
+					eq(classSessionMeeting.id, existing.id),
+					existing.recordingStorageKey === null
+						? isNull(classSessionMeeting.recordingStorageKey)
+						: eq(
+								classSessionMeeting.recordingStorageKey,
+								existing.recordingStorageKey,
+							),
+				),
+			)
+			.returning({ id: classSessionMeeting.id });
+		if (updated.length === 0) {
+			return null;
+		}
 
 		if (existing.recordingStorageKey) {
 			await deleteRecordingObjectBestEffort(
