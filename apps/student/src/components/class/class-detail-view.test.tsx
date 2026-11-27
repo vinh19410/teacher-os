@@ -119,7 +119,7 @@ describe("ClassDetailView — lớp tạm dừng (#694)", () => {
 		expect(screen.getByText("Đã học")).toBeTruthy();
 	});
 
-	it("omits footer from ClassInfoCard while keeping next-session indicators in Hành trình học for active class", () => {
+	it("omits footer, Khoá, and Số buổi đã học from ClassInfoCard while keeping RingStat and Hành trình học intact for active class", () => {
 		render(
 			<ClassDetailView
 				detail={makeDetail("active")}
@@ -130,8 +130,32 @@ describe("ClassDetailView — lớp tạm dừng (#694)", () => {
 
 		expect(screen.queryByTestId("class-paused-banner")).toBeNull();
 		const infoCard = screen.getByRole("region", { name: "Thông tin lớp học" });
+		expect(within(infoCard).getByText("Lịch")).toBeTruthy();
+		expect(within(infoCard).getByText("T3 & T6 · 19:00–20:30")).toBeTruthy();
+		expect(within(infoCard).getByText("Hình thức")).toBeTruthy();
+		expect(within(infoCard).getByText("1:1")).toBeTruthy();
+		expect(within(infoCard).getByText("Giáo viên")).toBeTruthy();
+		expect(within(infoCard).getByText("Thầy Minh")).toBeTruthy();
+		expect(within(infoCard).getByText("Khai giảng")).toBeTruthy();
+		expect(within(infoCard).getByText("Chủ Nhật, 01/11/2026")).toBeTruthy();
+		expect(within(infoCard).queryByText("Khoá")).toBeNull();
+		expect(within(infoCard).queryByText("IELTS 6.5")).toBeNull();
+		expect(within(infoCard).queryByText("Số buổi đã học")).toBeNull();
+		expect(within(infoCard).queryByText(/\d+\/\d+\s*buổi/)).toBeNull();
 		expect(within(infoCard).queryByText(/Buổi tới/)).toBeNull();
 		expect(within(infoCard).queryByText(/\d+\s*tháng/)).toBeNull();
+
+		const sessionsRing = screen.getByText("Buổi đã diễn ra")
+			.parentElement as HTMLElement;
+		expect(within(sessionsRing).getByText("1/2")).toBeTruthy();
+		expect(within(sessionsRing).getByText("Buổi học")).toBeTruthy();
+
+		const summitCard = screen
+			.getByText("Đích đến của bạn")
+			.closest("div.rounded-xl") as HTMLElement;
+		expect(within(summitCard).getByText("IELTS 6.5")).toBeTruthy();
+		expect(within(summitCard).getByText("1/2 buổi")).toBeTruthy();
+
 		expect(screen.getByTestId("journey-next-hero").textContent).toContain(
 			"Buổi tiếp theo",
 		);

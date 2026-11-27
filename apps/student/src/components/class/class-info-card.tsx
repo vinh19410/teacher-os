@@ -1,9 +1,7 @@
 import type { StudentClassDetail } from "@teacher-os/api/contracts";
 import { formatSchedule } from "@teacher-os/api/format-schedule";
 import {
-	BookOpen,
 	CalendarDays,
-	ClipboardCheck,
 	GraduationCap,
 	type LucideIcon,
 	MapPin,
@@ -33,19 +31,13 @@ function InfoItem({
 }
 
 /**
- * Thẻ thông tin lớp theo design v2 (`StudentClass.tsx`): lưới `<dl>` 2→4 cột.
+ * Thẻ thông tin lớp theo design v2 (`StudentClass.tsx`): lưới `<dl>` 2→4 cột
+ * gồm tối đa 4 mục (Lịch, Hình thức, Giáo viên, Khai giảng); bỏ `Khoá` và
+ * `Số buổi đã học` vì đã hiển thị tại `JourneySummitCard` và vòng `RingStat`.
  * Chỉ hiển thị các trường có dữ liệu thật từ server; riêng ô Giáo viên luôn
  * hiện để báo trạng thái khi lớp chưa gán giáo viên.
  */
-export function ClassInfoCard({
-	detail,
-	held,
-	totalSessions,
-}: {
-	detail: StudentClassDetail;
-	held: number;
-	totalSessions: number;
-}) {
+export function ClassInfoCard({ detail }: { detail: StudentClassDetail }) {
 	const cls = detail.class;
 	const teacher = cls.teacher;
 	const teacherEmail = teacher?.email.trim() ?? "";
@@ -56,11 +48,6 @@ export function ClassInfoCard({
 			className="mb-6 rounded-xl border bg-card text-card-foreground shadow-sm"
 		>
 			<dl className="grid grid-cols-2 gap-x-6 gap-y-5 p-6 md:grid-cols-4">
-				{cls.level.trim() !== "" && (
-					<InfoItem icon={BookOpen} label="Khoá">
-						{cls.level}
-					</InfoItem>
-				)}
 				{cls.schedule.trim() !== "" && (
 					<InfoItem icon={CalendarDays} label="Lịch">
 						{formatSchedule(cls.schedule)}
@@ -89,9 +76,6 @@ export function ClassInfoCard({
 							Chưa có thông tin giáo viên.
 						</span>
 					)}
-				</InfoItem>
-				<InfoItem icon={ClipboardCheck} label="Số buổi đã học">
-					{held}/{totalSessions} buổi
 				</InfoItem>
 				{cls.startDate.trim() !== "" && (
 					<InfoItem icon={GraduationCap} label="Khai giảng">
