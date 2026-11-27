@@ -1,7 +1,7 @@
 ---
 title: "student-class-study-pack-assignments"
 description: "Tab Bài tập lớp học viên chỉ hiển thị bộ đề tự học, hiển thị toàn bộ kèm ngày dự kiến và cho phép làm trước."
-status: pending
+status: completed
 priority: P1
 effort: "4h"
 tags: [student, study-pack, class-detail]
@@ -27,18 +27,18 @@ Chuyển tab **Bài tập** trên `/student/classes/$classId?tab=assignments` sa
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: Shared API Contracts](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: Server Visibility and Routes](./phase-02-server-visibility-and-routes.md) | Pending |
-| 3 | [Phase 3: Student Class UI](./phase-03-student-class-ui.md) | Pending |
-| 4 | [Phase 4: E2E Docs and POT](./phase-04-e2e-docs-and-pot.md) | Pending |
+| 1 | [Phase 1: Shared API Contracts](./phase-01-start.md) | Done |
+| 2 | [Phase 2: Server Visibility and Routes](./phase-02-server-visibility-and-routes.md) | Done |
+| 3 | [Phase 3: Student Class UI](./phase-03-student-class-ui.md) | Done |
+| 4 | [Phase 4: E2E Docs and POT](./phase-04-e2e-docs-and-pot.md) | Done |
 
 ## Success Criteria
 
-- [ ] `GET /api/student/classes/:classId` trả đủ toàn bộ bài bộ đề tự học (kể cả tương lai) với `classStudyPackId`, `studyPackTitle`, `studyPackStatus`, `availableAt`, `studyPackDayIndex`, `studyPackPosition`.
-- [ ] Học viên mở đề, nghe audio, start, autosave, submit, xem review và lịch sử đối với bài bộ đề tương lai trước `available_at` thành công; bài giao tay hẹn giờ vẫn trả 404.
-- [ ] `/overview` giữ ẩn bài bộ đề tương lai chưa đụng tới nhưng hiển thị ngay bài bộ đề đã bắt đầu/nộp sớm.
-- [ ] Tab `Bài tập` của lớp chỉ hiển thị bài bộ đề tự học theo ngày dự kiến, không gắn `Quá hạn`/`Sắp đến hạn` cho ngày tương lai, và cho làm trước.
-- [ ] `TodoBanner` chỉ đếm bài đến hạn/quá hạn đến hôm nay; `RingStat` đếm trên tổng bài toàn khóa; `ClassLessonList` dùng link quiz trực tiếp thay cho `"Mở trong Bài tập"`.
-- [ ] Toàn bộ gates local (`biome check`, `check-types`, `pnpm test`, 4 E2E specs lẻ) xanh kèm POT 3 viewport Light/Dark.
+- [x] `GET /api/student/classes/:classId` trả đủ toàn bộ bài bộ đề tự học (kể cả tương lai) với `classStudyPackId`, `studyPackTitle`, `studyPackStatus`, `availableAt`, `studyPackDayIndex`, `studyPackPosition`.
+- [x] Học viên mở đề, nghe audio, start, autosave, submit, xem review và lịch sử đối với bài bộ đề tương lai trước `available_at` thành công; bài giao tay hẹn giờ vẫn trả 404.
+- [x] `/overview` giữ ẩn bài bộ đề tương lai chưa đụng tới nhưng hiển thị ngay bài bộ đề đã bắt đầu/nộp sớm.
+- [x] Tab `Bài tập` của lớp chỉ hiển thị bài bộ đề tự học theo ngày dự kiến, không gắn `Quá hạn`/`Sắp đến hạn` cho ngày tương lai, và cho làm trước.
+- [x] `TodoBanner` chỉ đếm bài đến hạn/quá hạn đến hôm nay; `RingStat` đếm trên tổng bài toàn khóa; `ClassLessonList` dùng link quiz trực tiếp thay cho `"Mở trong Bài tập"`.
+- [x] Toàn bộ gates local (`biome check`, `check-types`, `pnpm test`, 4 E2E specs lẻ) xanh kèm POT 3 viewport Light/Dark.
 
 <!-- slug: student-class-study-pack-assignments -->

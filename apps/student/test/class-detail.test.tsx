@@ -245,6 +245,21 @@ const detail: StudentClassDetail = {
 			submittedAt: null,
 			scores: null,
 		},
+		{
+			id: "sp-9",
+			title: "Study Pack Day 1",
+			source: "class_assignment",
+			classId: "class-9",
+			className: "IELTS Detail",
+			due: "2099-03-15",
+			submittedAt: null,
+			scores: null,
+			classStudyPackId: "csp-1",
+			studyPackTitle: "IELTS Daily Pack",
+			studyPackStatus: "active",
+			studyPackDayIndex: 1,
+			studyPackPosition: 0,
+		},
 	],
 };
 
@@ -323,12 +338,13 @@ describe("ClassDetailView", () => {
 		);
 		fireEvent.click(screen.getByRole("tab", { name: "Bài tập" }));
 		expect(screen.getByTestId("assignments-todo-strip")).toBeTruthy();
+		expect(screen.queryByText("Reading Practice 1")).toBeNull();
 		const items = screen.getAllByRole("listitem");
 		expect(items.length).toBeGreaterThanOrEqual(1);
-		expect(items[0]?.textContent).toContain("Reading Practice 1");
-		expect(screen.getByText("Chưa nộp")).toBeTruthy();
+		expect(items[0]?.textContent).toContain("Study Pack Day 1");
+		expect(screen.getByText("Có thể làm trước")).toBeTruthy();
 		expect(
-			screen.getByRole("link", { name: "Làm bài: Reading Practice 1" }),
+			screen.getByRole("link", { name: "Làm bài: Study Pack Day 1" }),
 		).toBeTruthy();
 		utils.unmount();
 	});

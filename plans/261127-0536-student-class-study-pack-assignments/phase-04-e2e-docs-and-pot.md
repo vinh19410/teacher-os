@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Phase 4: E2E Docs and POT"
-status: pending
+status: done
 priority: P1
 effort: "45m"
 dependencies: [2, 3]
@@ -51,8 +51,8 @@ Cập nhật 4 E2E specs bị ảnh hưởng + `helpers-quiz.ts`, cập nhật `
 - Verify: `pnpm exec biome check . && pnpm check-types && pnpm test` exits 0 with 0 failures.
 
 ## Todo
-- [ ] Task 4.1: Update E2E specs & capture POT screenshots
-- [ ] Task 4.2: Update `DESIGN.md` and pass all local gates
+- [x] Task 4.1: Update E2E specs & capture POT screenshots
+- [x] Task 4.2: Update `DESIGN.md` and pass all local gates
 
 ## Verification
 - `pnpm exec biome check . && pnpm check-types && pnpm test`

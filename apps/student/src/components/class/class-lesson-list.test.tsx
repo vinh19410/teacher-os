@@ -1077,8 +1077,7 @@ describe("ClassLessonList — redesign Hành trình học", () => {
 		});
 	});
 
-	test("buổi tới mở sẵn mặc định không lặp count bài giảng/bài tập, ghép bài tập đúng guard (chặn legacy null & holiday), gọi onOpenAssignment và reset expandedIds khi đổi classId", () => {
-		const onOpenAssignment = vi.fn();
+	test("buổi tới mở sẵn mặc định không lặp count bài giảng/bài tập, ghép bài tập đúng guard (chặn legacy null & holiday), link quiz 1-click kèm hạn nộp và reset expandedIds khi đổi classId", () => {
 		const { container, rerender } = render(
 			<ClassLessonList
 				classId="c1"
@@ -1113,6 +1112,14 @@ describe("ClassLessonList — redesign Hành trình học", () => {
 						sessionDate: "2026-11-24",
 					}),
 					assignment({
+						id: "a-graded-nosub",
+						title: "Bài speaking đã chấm",
+						skill: "speaking",
+						sessionDate: "2026-11-24",
+						submittedAt: null,
+						gradedAt: "2026-11-25T10:00:00Z",
+					}),
+					assignment({
 						id: "a-hol",
 						title: "Bài trùng ngày nghỉ lễ",
 						sessionDate: "2026-11-12",
@@ -1125,7 +1132,6 @@ describe("ClassLessonList — redesign Hành trình học", () => {
 				]}
 				todayISO={TODAY}
 				now={NOW}
-				onOpenAssignment={onOpenAssignment}
 			/>,
 		);
 
@@ -1140,8 +1146,21 @@ describe("ClassLessonList — redesign Hành trình học", () => {
 		expect(screen.queryByText("Bài trùng ngày nghỉ lễ")).toBeNull();
 		expect(screen.queryByText("Bài không gắn buổi")).toBeNull();
 
-		fireEvent.click(screen.getByRole("button", { name: "Mở trong Bài tập" }));
-		expect(onOpenAssignment).toHaveBeenCalledWith("a-match");
+		expect(
+			screen.queryByRole("button", { name: "Mở trong Bài tập" }),
+		).toBeNull();
+		const quizLink = screen.getByRole("link", {
+			name: "Làm bài: Bài đọc hiểu buổi 2",
+		});
+		expect(quizLink.getAttribute("href")).toBe("/learn/quizzes/a-match");
+		expect(quizLink.textContent).toBe("Làm bài");
+		const gradedLink = screen.getByRole("link", {
+			name: "Xem lại kết quả: Bài speaking đã chấm",
+		});
+		expect(gradedLink.getAttribute("href")).toBe(
+			"/learn/quizzes/a-graded-nosub",
+		);
+		expect(gradedLink.textContent).toBe("Nhận xét");
 
 		// Mở buổi vắng -> thấy cảnh báo vắng
 		const absentLi = screen

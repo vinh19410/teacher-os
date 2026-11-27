@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: Server Visibility and Routes"
-status: pending
+status: done
 priority: P1
 effort: "1h45m"
 dependencies: [1]
@@ -84,11 +84,11 @@ Mở khóa truy cập/hiển thị toàn bộ bài bộ đề tự học trên c
 - Verify: `pnpm --filter server test && pnpm --filter server check-types` exits 0 with 0 failures.
 
 ## Todo
-- [ ] Task 2.1: TDD Red test updates
-- [ ] Task 2.2: Visibility filters & per-student cancel cleanup
-- [ ] Task 2.3: `loadClassAssignmentItems` in `student-class.ts`
-- [ ] Task 2.4: Routes, history, and reminders updates
-- [ ] Task 2.5: Verify `apps/server` tests & types
+- [x] Task 2.1: TDD Red test updates
+- [x] Task 2.2: Visibility filters & per-student cancel cleanup
+- [x] Task 2.3: `loadClassAssignmentItems` in `student-class.ts`
+- [x] Task 2.4: Routes, history, and reminders updates
+- [x] Task 2.5: Verify `apps/server` tests & types
 
 ## Verification
 - `pnpm --filter server test && pnpm --filter server check-types`

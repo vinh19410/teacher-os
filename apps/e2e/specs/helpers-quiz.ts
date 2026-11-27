@@ -60,7 +60,22 @@ export interface QuizSeedPrompt {
 	optionBank?: string[];
 	/** Nhóm câu hỏi có cấu trúc (hướng dẫn và ngân hàng lựa chọn riêng từng nhóm) — mặc định []. */
 	groups?: QuizSeedGroup[];
+	/** Ngày buổi học gắn bài tập (YYYY-MM-DD) — mặc định null. */
+	sessionDate?: string;
 	questions: QuizSeedQuestion[];
+}
+
+export interface QuizSeedStudyPackItem {
+	dayIndex: number;
+	prompt: QuizSeedPrompt;
+}
+
+export interface QuizSeedStudyPack {
+	title: string;
+	startDate?: string;
+	releaseTime?: string;
+	dueTime?: string;
+	items: QuizSeedStudyPackItem[];
 }
 
 export interface QuizSeedLesson {
@@ -78,6 +93,8 @@ export interface QuizFixture {
 	studentId: string;
 	/** Parallel to `prompts`: class_assignment ids, one per prompt. */
 	assignmentIds: string[];
+	/** Parallel to `studyPack.items`: class_assignment ids when studyPack is seeded. */
+	studyPackAssignmentIds?: string[];
 	/** Set when `invitedClassName` was passed. */
 	invitedClassId: string | null;
 }
@@ -103,6 +120,8 @@ export async function seedQuizFixture(opts: {
 	lessons?: QuizSeedLesson[];
 	/** Second class in the same org with an 'invited' enrollment. */
 	invitedClassName?: string;
+	/** Optional study pack assigned to the seeded class. */
+	studyPack?: QuizSeedStudyPack;
 }): Promise<QuizFixture> {
 	const db = openDb();
 	await db.execute("PRAGMA busy_timeout = 5000;");
@@ -236,9 +255,18 @@ export async function seedQuizFixture(opts: {
 				],
 			});
 			await db.execute({
-				sql: `INSERT INTO class_assignment (id, org_id, class_id, prompt_id, title, due, note, created_at)
-					VALUES (?,?,?,?,?,?, '', ?)`,
-				args: [assignmentId, orgId, classId, promptId, prompt.title, due, now],
+				sql: `INSERT INTO class_assignment (id, org_id, class_id, prompt_id, title, due, note, session_date, created_at)
+					VALUES (?,?,?,?,?,?, '', ?, ?)`,
+				args: [
+					assignmentId,
+					orgId,
+					classId,
+					promptId,
+					prompt.title,
+					due,
+					prompt.sessionDate ?? null,
+					now,
+				],
 			});
 			await db.execute({
 				sql: `INSERT INTO class_assignment_target (id, org_id, assignment_id, student_id, submitted_at)
@@ -248,7 +276,119 @@ export async function seedQuizFixture(opts: {
 			assignmentIds.push(assignmentId);
 		}
 
-		return { orgId, classId, studentId, assignmentIds, invitedClassId };
+		let studyPackAssignmentIds: string[] | undefined;
+		if (opts.studyPack) {
+			const sp = opts.studyPack;
+			const startDate = sp.startDate ?? vietnamTodayISO();
+			const releaseTime = sp.releaseTime ?? "06:00";
+			const dueTime = sp.dueTime ?? "17:00";
+			const packId = crypto.randomUUID();
+			const classPackId = crypto.randomUUID();
+
+			await db.execute({
+				sql: `INSERT INTO study_pack (id, org_id, title, description, level, status, created_at)
+					VALUES (?,?,?, '', '', 'ready', ?)`,
+				args: [packId, orgId, sp.title, now],
+			});
+			await db.execute({
+				sql: `INSERT INTO class_study_pack (id, org_id, class_id, pack_id, title, start_date, release_time, due_time, status, created_at)
+					VALUES (?,?,?,?,?,?,?,?,'active',?)`,
+				args: [
+					classPackId,
+					orgId,
+					classId,
+					packId,
+					sp.title,
+					startDate,
+					releaseTime,
+					dueTime,
+					now,
+				],
+			});
+
+			studyPackAssignmentIds = [];
+			const positionByDay = new Map<number, number>();
+			for (const entry of sp.items) {
+				const itemPos = positionByDay.get(entry.dayIndex) ?? 0;
+				positionByDay.set(entry.dayIndex, itemPos + 1);
+				const itemId = crypto.randomUUID();
+				const promptId = crypto.randomUUID();
+				const assignmentId = `ca_pk_${classPackId}_${itemId}`;
+				const itemDue = addDaysISO(startDate, entry.dayIndex - 1);
+				const availableAtMs = Date.parse(`${itemDue}T${releaseTime}:00+07:00`);
+				const dueAtMs = Date.parse(`${itemDue}T${dueTime}:00+07:00`);
+
+				await db.execute({
+					sql: `INSERT INTO study_pack_item (id, pack_id, day_index, position, source_kind, source_id, note)
+						VALUES (?,?,?,?,'org_prompt',?,'')`,
+					args: [itemId, packId, entry.dayIndex, itemPos, promptId],
+				});
+				await db.execute({
+					sql: `INSERT INTO assignment_prompt (
+							id, org_id, task, genre, skill, part, type, title, band, source,
+							prompt, intro, passage, transcript, cue_topic, cue_points,
+							audio_name, image_url, questions, option_bank, groups, note, status, created_at
+						) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'ready', ?)`,
+					args: [
+						promptId,
+						orgId,
+						"task2",
+						"",
+						entry.prompt.skill,
+						entry.prompt.part,
+						entry.prompt.type,
+						entry.prompt.title,
+						"7.0",
+						"",
+						entry.prompt.prompt ?? "",
+						entry.prompt.intro ?? "",
+						entry.prompt.passage,
+						entry.prompt.transcript ?? "",
+						entry.prompt.cueTopic ?? "",
+						entry.prompt.cuePoints ?? "",
+						"",
+						"",
+						JSON.stringify(entry.prompt.questions),
+						JSON.stringify(entry.prompt.optionBank ?? []),
+						JSON.stringify(entry.prompt.groups ?? []),
+						entry.prompt.note,
+						now,
+					],
+				});
+				await db.execute({
+					sql: `INSERT INTO class_assignment (
+							id, org_id, class_id, prompt_id, title, due, due_at, available_at, class_study_pack_id, note, created_at
+						) VALUES (?,?,?,?,?,?,?,?,?,'',?)`,
+					args: [
+						assignmentId,
+						orgId,
+						classId,
+						promptId,
+						entry.prompt.title,
+						itemDue,
+						Number.isFinite(dueAtMs) ? dueAtMs : null,
+						Number.isFinite(availableAtMs) ? availableAtMs : null,
+						classPackId,
+						now,
+					],
+				});
+				await db.execute({
+					sql: `INSERT INTO class_assignment_target (id, org_id, assignment_id, student_id, submitted_at)
+						VALUES (?,?,?,?, NULL)`,
+					args: [crypto.randomUUID(), orgId, assignmentId, studentId],
+				});
+				studyPackAssignmentIds.push(assignmentId);
+			}
+		}
+
+		return {
+			orgId,
+			classId,
+			studentId,
+			assignmentIds,
+			...(studyPackAssignmentIds ? { studyPackAssignmentIds } : {}),
+			invitedClassId,
+		};
 	} finally {
 		db.close();
 	}

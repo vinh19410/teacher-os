@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: Shared API Contracts"
-status: pending
+status: done
 priority: P1
 effort: "15m"
 dependencies: []
@@ -34,7 +34,7 @@ Bổ sung metadata bộ đề tự học (optional/nullable, tương thích ngư
 - Verify: `pnpm --filter @teacher-os/api check-types && pnpm --filter @teacher-os/api test` exits 0 with all API tests passing.
 
 ## Todo
-- [ ] Task 1.1: Mở rộng `studentAssignmentSchema` trong `packages/api/src/contracts.ts`
+- [x] Task 1.1: Mở rộng `studentAssignmentSchema` trong `packages/api/src/contracts.ts`
 
 ## Verification
 - `pnpm --filter @teacher-os/api check-types && pnpm --filter @teacher-os/api test`

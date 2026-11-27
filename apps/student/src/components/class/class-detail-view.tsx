@@ -21,8 +21,10 @@ import {
 	buildClassDetailSearch,
 	type ClassDetailSearchState,
 	type ClassTabId,
+	isClassAssignmentDueNow,
 	type JourneyFilter,
 	type MaterialKindFilter,
+	resolveAssignmentExpectedDateISO,
 } from "@/components/class/class-detail-helpers";
 import { ClassInfoCard } from "@/components/class/class-info-card";
 import { ClassLessonList } from "@/components/class/class-lesson-list";
@@ -87,7 +89,7 @@ function computeRingStats(detail: StudentClassDetail): ClassRingStats {
 	// không trừ buổi — loại khỏi tổng để không hiện 24/25.
 	const teachingSessions = detail.lessons.filter((l) => l.status !== "holiday");
 	const submitted = detail.assignments.filter(
-		(a) => a.submittedAt != null || a.scores != null,
+		(a) => a.submittedAt != null || a.gradedAt != null || a.scores != null,
 	);
 	const gradedBands = detail.assignments
 		.map((a) => calculateIeltsBand(a.scores))
@@ -107,6 +109,43 @@ function computeRingStats(detail: StudentClassDetail): ClassRingStats {
 	};
 }
 
+function compareNullableNum(
+	a: number | null | undefined,
+	b: number | null | undefined,
+): number {
+	const left = a ?? null;
+	const right = b ?? null;
+	if (left === right) return 0;
+	if (left === null) return 1;
+	if (right === null) return -1;
+	return left - right;
+}
+
+function compareTodoBannerItems(
+	a: StudentAssignment,
+	b: StudentAssignment,
+	todayISO: string,
+	nowMs: number,
+): number {
+	const orderDiff =
+		deriveAssignmentStatus(a, todayISO, nowMs).sortOrder -
+		deriveAssignmentStatus(b, todayISO, nowMs).sortOrder;
+	if (orderDiff !== 0) return orderDiff;
+	const aDate = resolveAssignmentExpectedDateISO(a);
+	const bDate = resolveAssignmentExpectedDateISO(b);
+	if (aDate !== bDate) {
+		if (aDate === null) return 1;
+		if (bDate === null) return -1;
+		const cmp = aDate.localeCompare(bDate);
+		if (cmp !== 0) return cmp;
+	}
+	const byDay = compareNullableNum(a.studyPackDayIndex, b.studyPackDayIndex);
+	if (byDay !== 0) return byDay;
+	const byPos = compareNullableNum(a.studyPackPosition, b.studyPackPosition);
+	if (byPos !== 0) return byPos;
+	return a.id.localeCompare(b.id);
+}
+
 function TodoBanner({
 	className,
 	assignments,
@@ -123,13 +162,11 @@ function TodoBanner({
 			(a) =>
 				a.source === "class_assignment" &&
 				a.submittedAt == null &&
-				a.scores == null,
+				a.gradedAt == null &&
+				a.scores == null &&
+				isClassAssignmentDueNow(a, todayISO),
 		)
-		.sort(
-			(a, b) =>
-				deriveAssignmentStatus(a, todayISO, nowMs).sortOrder -
-				deriveAssignmentStatus(b, todayISO, nowMs).sortOrder,
-		);
+		.sort((a, b) => compareTodoBannerItems(a, b, todayISO, nowMs));
 	const first = todo[0];
 	if (!first) return null;
 
@@ -183,9 +220,6 @@ export function ClassDetailView({
 	const teacher = cls.teacher;
 	const teacherEmail = teacher?.email.trim() ?? "";
 	const [localSearch, setLocalSearch] = useState<ClassDetailSearchState>({});
-	const [focusedAssignmentId, setFocusedAssignmentId] = useState<string | null>(
-		null,
-	);
 	const effectiveSearch = searchState ?? localSearch;
 	const tab: ClassTabId = effectiveSearch.tab ?? "journey";
 	// Giữ trạng thái điều hướng dự kiến đồng bộ để timer debounce Tab 3 không
@@ -201,7 +235,6 @@ export function ClassDetailView({
 		if (prevClassIdRef.current === cls.id) return;
 		prevClassIdRef.current = cls.id;
 		setLocalSearch({});
-		setFocusedAssignmentId(null);
 		pendingSearchRef.current = searchState ?? {};
 	}, [cls.id, searchState]);
 
@@ -222,11 +255,14 @@ export function ClassDetailView({
 	const handleTabChange = useCallback(
 		(nextId: string) => {
 			const nextTab = nextId as ClassTabId;
-			setFocusedAssignmentId(null);
 			updateSearch(() => (nextTab === "journey" ? {} : { tab: nextTab }));
 		},
 		[updateSearch],
 	);
+
+	const handleGoToJourney = useCallback(() => {
+		handleTabChange("journey");
+	}, [handleTabChange]);
 
 	const handleJourneyFilterChange = useCallback(
 		(next: JourneyFilter) => {
@@ -249,18 +285,6 @@ export function ClassDetailView({
 		},
 		[updateSearch],
 	);
-
-	const handleOpenAssignmentFromJourney = useCallback(
-		(assignmentId: string) => {
-			setFocusedAssignmentId(assignmentId);
-			updateSearch(() => ({ tab: "assignments" }));
-		},
-		[updateSearch],
-	);
-
-	const handleAssignmentFocusHandled = useCallback(() => {
-		setFocusedAssignmentId(null);
-	}, []);
 
 	const handleMaterialKindChange = useCallback(
 		(next: MaterialKindFilter) => {
@@ -413,21 +437,18 @@ export function ClassDetailView({
 							now={now}
 							filter={effectiveSearch.jf ?? "all"}
 							onFilterChange={handleJourneyFilterChange}
-							onOpenAssignment={handleOpenAssignmentFromJourney}
 						/>
 					</section>
 				)}
 				{tab === "assignments" && (
 					<ClassAssignmentsTab
-						classId={cls.id}
+						key={cls.id}
 						assignments={detail.assignments}
-						lessons={detail.lessons}
 						todayISO={todayISO}
 						nowMs={now.getTime()}
 						filter={effectiveSearch.af ?? "all"}
 						onFilterChange={handleAssignmentsFilterChange}
-						focusedAssignmentId={focusedAssignmentId}
-						onFocusHandled={handleAssignmentFocusHandled}
+						onGoToJourney={handleGoToJourney}
 					/>
 				)}
 				{tab === "materials" && (

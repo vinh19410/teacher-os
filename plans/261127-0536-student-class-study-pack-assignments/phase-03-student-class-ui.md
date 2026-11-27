@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Phase 3: Student Class UI"
-status: pending
+status: done
 priority: P1
 effort: "1h30m"
 dependencies: [1, 2]
@@ -21,6 +21,7 @@ Cập nhật giao diện chi tiết lớp học viên: Tab `Bài tập` chỉ hi
 - Modify: `apps/student/src/components/class/class-lesson-list.test.tsx`
 - Modify: `apps/student/src/components/class/class-assignments-tab.tsx`
 - Modify: `apps/student/src/components/class/class-assignments-tab.test.tsx`
+- Modify: `apps/student/test/class-detail.test.tsx`
 
 ## Tasks & Steps
 
@@ -92,12 +93,12 @@ Cập nhật giao diện chi tiết lớp học viên: Tab `Bài tập` chỉ hi
 - Verify: `pnpm --filter student test && pnpm --filter student check-types` exits 0 with 0 failures.
 
 ## Todo
-- [ ] Task 3.1: TDD Red unit tests
-- [ ] Task 3.2: Expected-date helpers
-- [ ] Task 3.3: `ClassDetailView` updates
-- [ ] Task 3.4: `ClassLessonList` direct quiz link
-- [ ] Task 3.5: `ClassAssignmentsTab` study-pack view
-- [ ] Task 3.6: Verify `apps/student` tests & types
+- [x] Task 3.1: TDD Red unit tests
+- [x] Task 3.2: Expected-date helpers
+- [x] Task 3.3: `ClassDetailView` updates
+- [x] Task 3.4: `ClassLessonList` direct quiz link
+- [x] Task 3.5: `ClassAssignmentsTab` study-pack view
+- [x] Task 3.6: Verify `apps/student` tests & types
 
 ## Verification
 - `pnpm --filter student test && pnpm --filter student check-types`

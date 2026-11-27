@@ -2636,6 +2636,18 @@ export const studentAssignmentSchema = z.object({
 	hasWriting: z.boolean().optional(),
 	/** Ngày buổi học (yyyy-mm-dd) gắn với bài tập nếu giáo viên chọn buổi; null/vắng = bài tập cấp lớp. */
 	sessionDate: z.string().nullable().optional(),
+	/** ID lượt gán bộ đề tự học (`class_study_pack.id`); null/vắng = bài tập homework giao tay. */
+	classStudyPackId: z.string().nullable().optional(),
+	/** Tiêu đề bộ đề tự học gắn với bài tập này. */
+	studyPackTitle: z.string().nullable().optional(),
+	/** Trạng thái bộ đề tự học (`active` | `cancelled`). */
+	studyPackStatus: z.enum(["active", "cancelled"]).nullable().optional(),
+	/** ISO datetime mở bài dự kiến (`class_assignment.available_at`). */
+	availableAt: z.string().nullable().optional(),
+	/** Thứ tự ngày (1-based) trong bộ đề tự học. */
+	studyPackDayIndex: z.number().int().positive().nullable().optional(),
+	/** Thứ tự bài trong cùng ngày của bộ đề tự học (0-based). */
+	studyPackPosition: z.number().int().min(0).nullable().optional(),
 });
 export type StudentAssignment = z.infer<typeof studentAssignmentSchema>;
 

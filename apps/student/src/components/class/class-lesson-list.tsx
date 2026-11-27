@@ -537,7 +537,6 @@ function LessonDetailPanel({
 	nowMs,
 	zoomNowMs,
 	onOpenRecording,
-	onOpenAssignment,
 }: {
 	classId: string;
 	lesson: StudentClassLesson;
@@ -560,7 +559,6 @@ function LessonDetailPanel({
 	nowMs: number;
 	zoomNowMs?: number;
 	onOpenRecording: (recording: ActiveRecording) => void;
-	onOpenAssignment?: (assignmentId: string) => void;
 }) {
 	const hasRecordingBlock =
 		hasR2Video ||
@@ -735,19 +733,34 @@ function LessonDetailPanel({
 							<div className="space-y-2">
 								{matchedAssignments.map((item) => {
 									const derived = deriveAssignmentStatus(item, todayISO, nowMs);
+									const isSubmitted = Boolean(
+										item.submittedAt || item.gradedAt || item.scores,
+									);
+									const actionLabel = !isSubmitted
+										? "Làm bài"
+										: derived.status === "graded"
+											? "Nhận xét"
+											: "Xem lại";
 									return (
 										<div
 											key={item.id}
 											className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-card px-3 py-2"
 										>
-											<div className="flex min-w-0 flex-1 basis-[160px] items-center gap-2">
+											<div className="flex min-w-0 flex-1 basis-[160px] items-start gap-2">
 												<ClipboardList
 													aria-hidden="true"
-													className="size-4 shrink-0 text-muted-foreground"
+													className="mt-0.5 size-4 shrink-0 text-muted-foreground"
 												/>
-												<span className="min-w-0 break-words font-medium text-foreground text-sm">
-													{item.title}
-												</span>
+												<div className="min-w-0 flex-1">
+													<span className="block break-words font-medium text-foreground text-sm">
+														{item.title}
+													</span>
+													{derived.dueText && (
+														<span className="block text-muted-foreground text-xs tabular-nums">
+															{derived.dueText}
+														</span>
+													)}
+												</div>
 											</div>
 											<div className="flex max-w-full flex-wrap items-center gap-2">
 												<Badge
@@ -759,20 +772,18 @@ function LessonDetailPanel({
 												>
 													{derived.statusLabel}
 												</Badge>
-												{onOpenAssignment && (
-													<button
-														type="button"
-														onClick={() => onOpenAssignment(item.id)}
-														className={cn(
-															buttonVariants({
-																variant: "outline",
-																size: "sm",
-															}),
-															"cursor-pointer",
-														)}
+												{item.source === "class_assignment" && (
+													<Link
+														to="/learn/quizzes/$assignmentId"
+														params={{ assignmentId: item.id }}
+														aria-label={`${isSubmitted ? "Xem lại kết quả" : "Làm bài"}: ${item.title}`}
+														className={buttonVariants({
+															variant: isSubmitted ? "outline" : "default",
+															size: "sm",
+														})}
 													>
-														Mở trong Bài tập
-													</button>
+														{actionLabel}
+													</Link>
 												)}
 											</div>
 										</div>
@@ -808,7 +819,6 @@ function LessonRow({
 	matchedAssignments,
 	onToggle,
 	onOpenRecording,
-	onOpenAssignment,
 	registerButtonRef,
 }: {
 	classId: string;
@@ -825,7 +835,6 @@ function LessonRow({
 	matchedAssignments: StudentAssignment[];
 	onToggle: (lessonId: string) => void;
 	onOpenRecording: (recording: ActiveRecording) => void;
-	onOpenAssignment?: (assignmentId: string) => void;
 	registerButtonRef: (lessonId: string, el: HTMLButtonElement | null) => void;
 }) {
 	const { lesson, teachingIndex, railPosition } = entry;
@@ -1097,7 +1106,6 @@ function LessonRow({
 							nowMs={now.getTime()}
 							zoomNowMs={zoomNowMs}
 							onOpenRecording={onOpenRecording}
-							onOpenAssignment={onOpenAssignment}
 						/>
 					</>
 				)}
@@ -1119,7 +1127,6 @@ export function ClassLessonList({
 	zoomNowMs,
 	filter,
 	onFilterChange,
-	onOpenAssignment,
 }: {
 	classId: string;
 	classLevel?: string;
@@ -1134,7 +1141,6 @@ export function ClassLessonList({
 	zoomNowMs?: number;
 	filter?: JourneyFilter;
 	onFilterChange?: (next: JourneyFilter) => void;
-	onOpenAssignment?: (assignmentId: string) => void;
 }) {
 	useSyncExternalStore(
 		subscribeActiveStudentOrg,
@@ -1365,7 +1371,6 @@ export function ClassLessonList({
 					matchedAssignments={getMatchedAssignments(entry.lesson)}
 					onToggle={handleToggle}
 					onOpenRecording={setActiveRecording}
-					onOpenAssignment={onOpenAssignment}
 					registerButtonRef={registerButtonRef}
 				/>
 			))}
