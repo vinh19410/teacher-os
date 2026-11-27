@@ -696,6 +696,24 @@ export function registerVocabRoutes(
 			}
 		}
 
+		const streakDays: [
+			boolean,
+			boolean,
+			boolean,
+			boolean,
+			boolean,
+			boolean,
+			boolean,
+		] = [
+			logDays.has(addDaysISO(todayISO, -6)),
+			logDays.has(addDaysISO(todayISO, -5)),
+			logDays.has(addDaysISO(todayISO, -4)),
+			logDays.has(addDaysISO(todayISO, -3)),
+			logDays.has(addDaysISO(todayISO, -2)),
+			logDays.has(addDaysISO(todayISO, -1)),
+			logDays.has(todayISO),
+		];
+
 		const retention =
 			logs.length === 0
 				? null
@@ -705,12 +723,21 @@ export function registerVocabRoutes(
 			const wordIds = wordsByDeck.get(d.deckId) ?? [];
 			let deckNewCount = 0;
 			let deckDueCount = 0;
+			const deckLevelDistribution: [number, number, number, number, number] = [
+				0, 0, 0, 0, 0,
+			];
 			for (const wId of wordIds) {
 				const card = cardByWordId.get(wId);
 				if (!card || card.state === "new") {
 					deckNewCount += 1;
-				} else if (card.dueAt <= now) {
-					deckDueCount += 1;
+				} else if (card.state === "review") {
+					if (card.dueAt <= now) {
+						deckDueCount += 1;
+					}
+					if (card.level >= 1 && card.level <= 5) {
+						deckLevelDistribution[card.level - 1] =
+							(deckLevelDistribution[card.level - 1] ?? 0) + 1;
+					}
 				}
 			}
 			return {
@@ -721,6 +748,7 @@ export function registerVocabRoutes(
 				total: wordIds.length,
 				newCount: deckNewCount,
 				dueCount: deckDueCount,
+				levelDistribution: deckLevelDistribution,
 			};
 		});
 
@@ -744,6 +772,7 @@ export function registerVocabRoutes(
 			matureCount,
 			levelDistribution,
 			streak,
+			streakDays,
 			retention,
 			forecast,
 			decks,
