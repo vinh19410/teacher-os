@@ -10,6 +10,14 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-11-27
+
+### Added
+- **Reup cloud recording Zoom lên bucket R2 private, tự xoá sau 90 ngày và phát ngay trong app (`packages/db`, `packages/api`, `packages/infra`, `apps/server`, `apps/web`, `apps/student`):** cron `*/10` và nút `Đồng bộ recording` tải 1 file MP4 chính sang bucket `recordings` (migration `0098`), commit D1 xong mới đưa bản gốc Zoom vào Trash; lỗi tải thì giữ link Zoom dự phòng (#994).
+
+### Fixed
+- **Bảo vệ recording trước khi phát hành (#994):** không cho gán link tay (kể cả để trống) khi video R2 còn hạn (`409 RECORDING_LOCKED`, ẩn nút `Gán link tay`); không Trash bản gốc Zoom khi buổi có nhiều đoạn MP4; email nhắc hạn 06:00 (giờ VN) chạy trước lượt đồng bộ recording. Phần còn lại theo dõi ở #1015 và #1016.
+
 ## 2026-11-26
 
 ### Added
