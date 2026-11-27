@@ -338,6 +338,7 @@ describe("student vocab API (/api/student/vocab/*)", () => {
 				total: 3,
 				newCount: 3,
 				dueCount: 0,
+				levelDistribution: [0, 0, 0, 0, 0],
 			},
 		]);
 	});
@@ -561,7 +562,17 @@ describe("student vocab API (/api/student/vocab/*)", () => {
 		let res = await app.request("/api/student/vocab/overview", {
 			headers: { "x-test-user": "studentA" },
 		});
-		let overview = vocabOverviewSchema.parse(await res.json());
+		let raw = (await res.json()) as Record<string, unknown>;
+		expect(raw.streakDays).toEqual([
+			false,
+			false,
+			false,
+			false,
+			false,
+			true,
+			false,
+		]);
+		let overview = vocabOverviewSchema.parse(raw);
 		expect(overview.streak).toBe(1);
 
 		// 2) Add log today -> streak = 2
@@ -581,7 +592,17 @@ describe("student vocab API (/api/student/vocab/*)", () => {
 		res = await app.request("/api/student/vocab/overview", {
 			headers: { "x-test-user": "studentA" },
 		});
-		overview = vocabOverviewSchema.parse(await res.json());
+		raw = (await res.json()) as Record<string, unknown>;
+		expect(raw.streakDays).toEqual([
+			false,
+			false,
+			false,
+			false,
+			false,
+			true,
+			true,
+		]);
+		overview = vocabOverviewSchema.parse(raw);
 		expect(overview.streak).toBe(2);
 		expect(overview.retention).toBe(50);
 
@@ -616,7 +637,17 @@ describe("student vocab API (/api/student/vocab/*)", () => {
 		res = await app.request("/api/student/vocab/overview", {
 			headers: { "x-test-user": "studentA" },
 		});
-		overview = vocabOverviewSchema.parse(await res.json());
+		raw = (await res.json()) as Record<string, unknown>;
+		expect(raw.streakDays).toEqual([
+			false,
+			false,
+			false,
+			false,
+			true,
+			false,
+			false,
+		]);
+		overview = vocabOverviewSchema.parse(raw);
 		expect(overview.streak).toBe(0);
 		expect(overview.dueCount).toBe(1);
 		// card1 is due in +3 days -> forecast[3] = 1, overdue card2 excluded from forecast
@@ -674,7 +705,21 @@ describe("student vocab API (/api/student/vocab/*)", () => {
 			headers: { "x-test-user": "studentA" },
 		});
 		expect(res.status).toBe(200);
-		const overview = vocabOverviewSchema.parse(await res.json());
+		const raw = (await res.json()) as {
+			levelDistribution?: number[];
+			decks?: Array<{ levelDistribution?: number[] }>;
+		};
+		expect(raw.decks?.[0]?.levelDistribution).toBeDefined();
+		const deckSum = [0, 0, 0, 0, 0];
+		for (const d of raw.decks ?? []) {
+			expect(Array.isArray(d.levelDistribution)).toBe(true);
+			expect(d.levelDistribution).toHaveLength(5);
+			for (let idx = 0; idx < 5; idx++) {
+				deckSum[idx] = (deckSum[idx] ?? 0) + (d.levelDistribution?.[idx] ?? 0);
+			}
+		}
+		expect(deckSum).toEqual(raw.levelDistribution);
+		const overview = vocabOverviewSchema.parse(raw);
 
 		expect(overview.learnedCount).toBe(
 			dbRows.filter((c) => c.level >= 2).length,
@@ -1058,6 +1103,7 @@ describe("student vocab API (/api/student/vocab/*)", () => {
 			total: 2,
 			newCount: 2,
 			dueCount: 0,
+			levelDistribution: [0, 0, 0, 0, 0],
 		});
 		expect(ov2.suggestions.map((s) => s.id)).toEqual(["sug-a-2"]);
 
@@ -1496,6 +1542,7 @@ describe("student vocab API (/api/student/vocab/*)", () => {
 				total: 15,
 				newCount: 14,
 				dueCount: 0,
+				levelDistribution: [0, 1, 0, 0, 0],
 			},
 		]);
 

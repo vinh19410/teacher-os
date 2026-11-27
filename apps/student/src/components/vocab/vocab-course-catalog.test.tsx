@@ -308,6 +308,7 @@ describe("Student Vocab Courses & MochiVocab Lessons UI (#369)", () => {
 			matureCount: 0,
 			levelDistribution: [0, 0, 0, 0, 0],
 			streak: 0,
+			streakDays: [false, false, false, false, false, false, false],
 			retention: null,
 			forecast: [0, 0, 0, 0, 0, 0, 0],
 			decks: [],
@@ -430,6 +431,7 @@ describe("Student Vocab Courses & MochiVocab Lessons UI (#369)", () => {
 			matureCount: 1,
 			levelDistribution: [3, 4, 2, 0, 1],
 			streak: 5,
+			streakDays: [false, false, true, true, true, true, true],
 			retention: 90,
 			forecast: [2, 1, 0, 0, 0, 0, 0],
 			decks: [
@@ -441,6 +443,7 @@ describe("Student Vocab Courses & MochiVocab Lessons UI (#369)", () => {
 					total: 20,
 					newCount: 10,
 					dueCount: 2,
+					levelDistribution: [3, 4, 2, 0, 1],
 				},
 			],
 			suggestions: [],
