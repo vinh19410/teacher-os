@@ -1,6 +1,7 @@
 import {
 	type ClassStatus,
 	type EnrollmentStatus,
+	MAX_PACK_DAYS,
 	RECORDING_STATUSES,
 	type RecordingSource,
 	type RecordingStatus,
@@ -23,16 +24,28 @@ import {
 	classAssignment,
 	classAssignmentTarget,
 	classSessionMeeting,
+	classStudyPack,
 	classTable,
 	enrollment,
 	lesson,
 	membership,
 	quizAttempt,
+	studyPackItem,
 	user,
 } from "@teacher-os/db/schema/index";
-import { and, asc, desc, eq, gte, isNotNull } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNotNull } from "drizzle-orm";
 import type { Db } from "../app";
-import { visibleAssignmentFilter } from "../lib/assignment-visibility";
+import {
+	accessibleAssignmentFilter,
+	overviewAssignmentFilter,
+	visibleAssignmentFilter,
+} from "../lib/assignment-visibility";
+import {
+	computeStudyPackSchedule,
+	extractPackItemIdFromAssignmentId,
+} from "../lib/study-pack-assign";
+import { D1_IN_ARRAY_CHUNK } from "../lib/study-pack-clone";
+import { loadExistingHolidayDates } from "./holidays";
 
 /** Cột lớp + enrollment mà overview và trang chi tiết lớp cùng select. */
 export const studentClassColumns = {
@@ -183,6 +196,11 @@ export function toStudentClass(
 	};
 }
 
+export type ClassAssignmentLoadMode =
+	| "overview"
+	| "class_detail"
+	| "session_detail";
+
 /**
  * Bài tập giáo viên giao cho học viên qua lớp (class_assignment targets),
  * mới nhất trước. `classId` thu hẹp về một lớp cho trang chi tiết lớp.
@@ -193,7 +211,16 @@ export async function loadClassAssignmentItems(
 	studentId: string,
 	classId?: string,
 	now: Date = new Date(),
+	options?: { mode?: ClassAssignmentLoadMode },
 ): Promise<StudentAssignment[]> {
+	const mode: ClassAssignmentLoadMode = options?.mode ?? "overview";
+	const visibilityPredicate =
+		mode === "class_detail"
+			? accessibleAssignmentFilter(now)
+			: mode === "session_detail"
+				? visibleAssignmentFilter(now)
+				: overviewAssignmentFilter(now);
+
 	const targetRows = await db
 		.select({
 			id: classAssignment.id,
@@ -202,6 +229,12 @@ export async function loadClassAssignmentItems(
 			className: classTable.name,
 			due: classAssignment.due,
 			dueAt: classAssignment.dueAt,
+			availableAt: classAssignment.availableAt,
+			classStudyPackId: classAssignment.classStudyPackId,
+			studyPackPackId: classStudyPack.packId,
+			studyPackTitle: classStudyPack.title,
+			studyPackStatus: classStudyPack.status,
+			studyPackStartDate: classStudyPack.startDate,
 			sessionDate: classAssignment.sessionDate,
 			submittedAt: classAssignmentTarget.submittedAt,
 			// TOS-30 #478: skill của đề — cổng học viên phân biệt nhãn chờ
@@ -233,6 +266,13 @@ export async function loadClassAssignmentItems(
 		)
 		.leftJoin(classTable, eq(classAssignment.classId, classTable.id))
 		.leftJoin(
+			classStudyPack,
+			and(
+				eq(classStudyPack.id, classAssignment.classStudyPackId),
+				eq(classStudyPack.orgId, orgId),
+			),
+		)
+		.leftJoin(
 			quizAttempt,
 			and(
 				eq(quizAttempt.orgId, orgId),
@@ -244,13 +284,132 @@ export async function loadClassAssignmentItems(
 			and(
 				eq(classAssignmentTarget.orgId, orgId),
 				eq(classAssignmentTarget.studentId, studentId),
-				visibleAssignmentFilter(now),
+				visibilityPredicate,
 				classId === undefined
 					? undefined
 					: eq(classAssignment.classId, classId),
 			),
 		)
 		.orderBy(desc(classAssignment.createdAt));
+
+	const packItemMetaById = new Map<
+		string,
+		{ dayIndex: number; position: number }
+	>();
+	const fallbackDayIndexByAssignmentId = new Map<string, number>();
+	const fallbackPositionByAssignmentId = new Map<string, number>();
+
+	if (mode === "class_detail") {
+		const uniquePackIds = [
+			...new Set(
+				targetRows
+					.map((r) => r.studyPackPackId)
+					.filter((id): id is string => Boolean(id)),
+			),
+		];
+		for (let i = 0; i < uniquePackIds.length; i += D1_IN_ARRAY_CHUNK) {
+			const slice = uniquePackIds.slice(i, i + D1_IN_ARRAY_CHUNK);
+			const itemRows = await db
+				.select({
+					id: studyPackItem.id,
+					dayIndex: studyPackItem.dayIndex,
+					position: studyPackItem.position,
+				})
+				.from(studyPackItem)
+				.where(inArray(studyPackItem.packId, slice));
+			for (const itemRow of itemRows) {
+				packItemMetaById.set(itemRow.id, {
+					dayIndex: itemRow.dayIndex,
+					position: itemRow.position,
+				});
+			}
+		}
+
+		// Lazy fallback chỉ chạy khi có ít nhất 1 bài bộ đề thiếu item trong studyPackItem
+		// (ví dụ template pack đã bị chỉnh sửa/xoá item sau khi gán vào lớp).
+		const missingMetaRows = targetRows.filter((row) => {
+			if (!row.classStudyPackId) return false;
+			const itemId = extractPackItemIdFromAssignmentId(
+				row.classStudyPackId,
+				row.id,
+			);
+			return !itemId || !packItemMetaById.has(itemId);
+		});
+
+		if (missingMetaRows.length > 0) {
+			const missingMetaIds = new Set(missingMetaRows.map((row) => row.id));
+			const fallbackClassIds = [
+				...new Set(missingMetaRows.map((row) => row.classId)),
+			];
+			const holidaysByClass = await loadExistingHolidayDates(
+				db,
+				orgId,
+				fallbackClassIds,
+			);
+			const dayIndexByPackAndDate = new Map<string, Map<string, number>>();
+			const matchedRowsByPack = new Map<string, typeof targetRows>();
+			const missingRowsByPackAndDue = new Map<string, typeof targetRows>();
+
+			for (const row of targetRows) {
+				if (!row.classStudyPackId) continue;
+				const list = matchedRowsByPack.get(row.classStudyPackId) ?? [];
+				list.push(row);
+				matchedRowsByPack.set(row.classStudyPackId, list);
+
+				if (missingMetaIds.has(row.id)) {
+					const key = `${row.classStudyPackId}|${row.due}`;
+					const dueList = missingRowsByPackAndDue.get(key) ?? [];
+					dueList.push(row);
+					missingRowsByPackAndDue.set(key, dueList);
+				}
+			}
+
+			for (const [classPackId, packRows] of matchedRowsByPack) {
+				const firstRow = packRows[0];
+				if (
+					!firstRow?.studyPackStartDate ||
+					!/^\d{4}-\d{2}-\d{2}$/.test(firstRow.studyPackStartDate)
+				) {
+					continue;
+				}
+				const classHolidays =
+					holidaysByClass.get(firstRow.classId) ?? new Map<string, string>();
+				const schedule = computeStudyPackSchedule(
+					firstRow.studyPackStartDate,
+					MAX_PACK_DAYS,
+					classHolidays,
+				);
+				const dateMap = new Map<string, number>();
+				for (const [dayIdx, dateISO] of schedule.dateByDayIndex) {
+					dateMap.set(dateISO, dayIdx);
+				}
+				// Ưu tiên ánh xạ ngày từ item còn khớp trong studyPackItem (nếu có)
+				for (const row of packRows) {
+					const itemId = extractPackItemIdFromAssignmentId(classPackId, row.id);
+					const meta = itemId ? packItemMetaById.get(itemId) : undefined;
+					if (meta && row.due) {
+						dateMap.set(row.due, meta.dayIndex);
+					}
+				}
+				dayIndexByPackAndDate.set(classPackId, dateMap);
+			}
+
+			for (const [, group] of missingRowsByPackAndDue) {
+				const sortedGroup = [...group].sort((a, b) => a.id.localeCompare(b.id));
+				for (let idx = 0; idx < sortedGroup.length; idx += 1) {
+					const row = sortedGroup[idx];
+					if (!row?.classStudyPackId) continue;
+					const resolvedDay = dayIndexByPackAndDate
+						.get(row.classStudyPackId)
+						?.get(row.due);
+					if (resolvedDay !== undefined) {
+						fallbackDayIndexByAssignmentId.set(row.id, resolvedDay);
+						fallbackPositionByAssignmentId.set(row.id, idx);
+					}
+				}
+			}
+		}
+	}
 
 	return targetRows.map((row) => {
 		// Chỉ lộ `scores` khi ĐÚNG shape IELTS Writing (Speaking lưu key
@@ -259,6 +418,19 @@ export async function loadClassAssignmentItems(
 		const parsedScores = studentAssignmentScoresSchema.safeParse(
 			row.gradeScores,
 		);
+		const itemId = row.classStudyPackId
+			? extractPackItemIdFromAssignmentId(row.classStudyPackId, row.id)
+			: null;
+		const packItemMeta = itemId ? packItemMetaById.get(itemId) : undefined;
+		const resolvedDayIndex =
+			packItemMeta?.dayIndex ?? fallbackDayIndexByAssignmentId.get(row.id);
+		const resolvedPosition =
+			packItemMeta?.position ?? fallbackPositionByAssignmentId.get(row.id);
+		const normalizedPackStatus =
+			row.studyPackStatus === "active" || row.studyPackStatus === "cancelled"
+				? row.studyPackStatus
+				: null;
+
 		return {
 			id: row.id,
 			title: row.title,
@@ -276,6 +448,22 @@ export async function loadClassAssignmentItems(
 			gradedAt: row.gradedAt ? row.gradedAt.toISOString() : null,
 			...(row.writingPart !== null ? { hasWriting: true } : {}),
 			...(row.sessionDate != null ? { sessionDate: row.sessionDate } : {}),
+			...(row.classStudyPackId != null
+				? {
+						classStudyPackId: row.classStudyPackId,
+						studyPackTitle: row.studyPackTitle ?? null,
+						studyPackStatus: normalizedPackStatus,
+					}
+				: {}),
+			...(row.availableAt != null
+				? { availableAt: row.availableAt.toISOString() }
+				: {}),
+			...(mode === "class_detail" && resolvedDayIndex !== undefined
+				? {
+						studyPackDayIndex: resolvedDayIndex,
+						studyPackPosition: resolvedPosition ?? 0,
+					}
+				: {}),
 		};
 	});
 }

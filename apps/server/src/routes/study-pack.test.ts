@@ -516,7 +516,9 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 		});
 		expect(retryRes.status).toBe(200);
 
-		// Student 1 checks overview & class detail: sees ONLY Day 1, NOT Day 2!
+		// Student 1 checks overview & class detail:
+		// - /overview hides unstarted future Day 2 (keeps overview compact)
+		// - /classes/class-1 exposes ALL study pack assignments (Day 1 + Day 2) with pack metadata
 		const overviewRes = await app.request("/api/student/overview", {
 			headers: { "x-test-user": "student-1" },
 		});
@@ -531,72 +533,43 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 			day2Assignment.assignmentId,
 		);
 
-		// Student 1 directly accesses Day 2 quiz / start -> 404!
-		const day2QuizRes = await app.request(
-			`/api/student/assignments/${day2Assignment.assignmentId}/quiz`,
-			{ headers: { "x-test-user": "student-1" } },
-		);
-		expect(day2QuizRes.status).toBe(404);
-
-		const day2StartRes = await app.request(
-			`/api/student/assignments/${day2Assignment.assignmentId}/quiz/start`,
-			{
-				method: "POST",
-				headers: studentHeaders("student-1"),
-				body: "{}",
-			},
-		);
-		expect(day2StartRes.status).toBe(404);
-
-		// Even if an attempt row were pre-seeded for unreleased Day 2, PATCH /answer, POST /submit, GET /attempts/:id all return 404!
-		await db.insert(schema.quizAttempt).values({
-			id: "att-unreleased-day2",
-			orgId: "org-1",
-			assignmentId: day2Assignment.assignmentId,
-			studentId: "stu-1",
-			status: "in_progress",
-			questionsSnapshot: JSON.stringify([
-				{
-					stem: "Renewable ____ is essential for the future.",
-					opts: null,
-					answer: "energy",
-					alts: "",
-				},
-			]),
-			answers: "{}",
-			startedAt: new Date(),
+		const classDetailRes = await app.request("/api/student/classes/class-1", {
+			headers: { "x-test-user": "student-1" },
 		});
-
-		const unreleasedAnswerRes = await app.request(
-			"/api/student/attempts/att-unreleased-day2/answer",
-			{
-				method: "PATCH",
-				headers: studentHeaders("student-1"),
-				body: JSON.stringify({ q: 0, value: "energy" }),
-			},
+		expect(classDetailRes.status).toBe(200);
+		const classDetail = (await classDetailRes.json()) as {
+			assignments: Array<{
+				id: string;
+				classStudyPackId?: string | null;
+				studyPackTitle?: string | null;
+				studyPackStatus?: string | null;
+				availableAt?: string | null;
+				studyPackDayIndex?: number | null;
+				studyPackPosition?: number | null;
+			}>;
+		};
+		const d1Item = classDetail.assignments.find(
+			(a) => a.id === day1Assignment.assignmentId,
 		);
-		expect(unreleasedAnswerRes.status).toBe(404);
-
-		const unreleasedSubmitRes = await app.request(
-			"/api/student/attempts/att-unreleased-day2/submit",
-			{
-				method: "POST",
-				headers: studentHeaders("student-1"),
-				body: "{}",
-			},
+		const d2Item = classDetail.assignments.find(
+			(a) => a.id === day2Assignment.assignmentId,
 		);
-		expect(unreleasedSubmitRes.status).toBe(404);
-
-		const unreleasedReviewRes = await app.request(
-			"/api/student/attempts/att-unreleased-day2",
-			{ headers: { "x-test-user": "student-1" } },
-		);
-		expect(unreleasedReviewRes.status).toBe(404);
-
-		// Clean up the synthetic unreleased attempt row before testing normal flow
-		await db
-			.delete(schema.quizAttempt)
-			.where(eq(schema.quizAttempt.id, "att-unreleased-day2"));
+		expect(d1Item).toMatchObject({
+			classStudyPackId: classPack.id,
+			studyPackTitle: "Bộ đề tự học 2 ngày",
+			studyPackStatus: "active",
+			studyPackDayIndex: 1,
+			studyPackPosition: 0,
+		});
+		expect(d1Item?.availableAt).toBeTruthy();
+		expect(d2Item).toMatchObject({
+			classStudyPackId: classPack.id,
+			studyPackTitle: "Bộ đề tự học 2 ngày",
+			studyPackStatus: "active",
+			studyPackDayIndex: 2,
+			studyPackPosition: 0,
+		});
+		expect(d2Item?.availableAt).toBeTruthy();
 
 		// Student 1 takes & submits Day 1 (Grammar MCQ)
 		const day1QuizRes = await app.request(
@@ -643,6 +616,85 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 		};
 		expect(day1Grade).toMatchObject({ correctCount: 1, totalCount: 1 });
 
+		// Student 1 works ahead on Day 2 BEFORE available_at -> allowed across quiz, start, answer, submit, review, overview & history!
+		const day2QuizRes = await app.request(
+			`/api/student/assignments/${day2Assignment.assignmentId}/quiz`,
+			{ headers: { "x-test-user": "student-1" } },
+		);
+		expect(day2QuizRes.status).toBe(200);
+
+		const day2StartRes = await app.request(
+			`/api/student/assignments/${day2Assignment.assignmentId}/quiz/start`,
+			{
+				method: "POST",
+				headers: studentHeaders("student-1"),
+				body: "{}",
+			},
+		);
+		expect(day2StartRes.status).toBe(201);
+		const { attemptId: day2AttemptId } = (await day2StartRes.json()) as {
+			attemptId: string;
+		};
+
+		const day2AnswerRes = await app.request(
+			`/api/student/attempts/${day2AttemptId}/answer`,
+			{
+				method: "PATCH",
+				headers: studentHeaders("student-1"),
+				body: JSON.stringify({ q: 0, value: "energy" }),
+			},
+		);
+		expect(day2AnswerRes.status).toBe(200);
+
+		const day2SubmitRes = await app.request(
+			`/api/student/attempts/${day2AttemptId}/submit`,
+			{
+				method: "POST",
+				headers: studentHeaders("student-1"),
+				body: "{}",
+			},
+		);
+		expect(day2SubmitRes.status).toBe(200);
+		expect(await day2SubmitRes.json()).toMatchObject({
+			correctCount: 1,
+			totalCount: 1,
+		});
+
+		const day2SummaryRes = await app.request(
+			`/api/student/attempts/${day2AttemptId}`,
+			{ headers: { "x-test-user": "student-1" } },
+		);
+		expect(day2SummaryRes.status).toBe(200);
+
+		const day2ReviewDetailRes = await app.request(
+			`/api/student/attempts/${day2AttemptId}/detail`,
+			{ headers: { "x-test-user": "student-1" } },
+		);
+		expect(day2ReviewDetailRes.status).toBe(200);
+
+		const overviewAfterEarlyRes = await app.request("/api/student/overview", {
+			headers: { "x-test-user": "student-1" },
+		});
+		expect(overviewAfterEarlyRes.status).toBe(200);
+		const overviewAfterEarly = (await overviewAfterEarlyRes.json()) as {
+			assignments: Array<{ id: string; submittedAt: string | null }>;
+		};
+		const earlyDay2Overview = overviewAfterEarly.assignments.find(
+			(a) => a.id === day2Assignment.assignmentId,
+		);
+		expect(earlyDay2Overview?.submittedAt).toBeTruthy();
+
+		const historyAfterEarlyRes = await app.request("/api/student/history", {
+			headers: { "x-test-user": "student-1" },
+		});
+		expect(historyAfterEarlyRes.status).toBe(200);
+		const historyAfterEarly = (await historyAfterEarlyRes.json()) as {
+			entries: Array<{ attemptId: string | null }>;
+		};
+		expect(historyAfterEarly.entries.map((e) => e.attemptId)).toContain(
+			day2AttemptId,
+		);
+
 		// Shift Day 1 dueAt to the past so we can verify late student enrollment backfill:
 		// Day 1 (dueAt <= now) should NOT be backfilled; Day 2 (dueAt > now) SHOULD be backfilled!
 		await db
@@ -676,19 +728,12 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 			day2Assignment.assignmentId,
 		]);
 
-		// Now shift Day 2 availableAt to the past -> Student 1 and Student Late can both see & take Day 2!
-		await db
-			.update(schema.classAssignment)
-			.set({
-				availableAt: new Date(vietnamDateTimeMs("2026-11-01", "00:00")),
-			})
-			.where(eq(schema.classAssignment.id, day2Assignment.assignmentId));
-
-		const day2QuizAfterRelease = await app.request(
+		// Student Late can access Day 2 before availableAt while pack is active
+		const lateDay2QuizBeforeCancel = await app.request(
 			`/api/student/assignments/${day2Assignment.assignmentId}/quiz`,
-			{ headers: { "x-test-user": "student-1" } },
+			{ headers: { "x-test-user": "student-late" } },
 		);
-		expect(day2QuizAfterRelease.status).toBe(200);
+		expect(lateDay2QuizBeforeCancel.status).toBe(200);
 
 		// Snapshot & 200-cap isolation:
 		// loadSnapshot must NOT include study pack assignments or materialized library prompts
@@ -704,7 +749,10 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 			snapshot.assignmentPrompts.some((p) => p.title === "Sys Vocab Exercise"),
 		).toBe(false);
 
-		// Cancel class study pack -> status becomes cancelled, Deleting the underlying study_pack still returns 409!
+		// Cancel class study pack -> status becomes cancelled:
+		// - Student 1 (who worked ahead on Day 2) keeps Day 2 target & quiz access
+		// - Student Late (who never attempted Day 2) loses Day 2 target & gets 404
+		// - Deleting the underlying study_pack still returns 409
 		const cancelRes = await app.request(
 			`/api/classes/class-1/study-packs/${classPack.id}`,
 			{
@@ -715,6 +763,38 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 		expect(cancelRes.status).toBe(200);
 		const afterCancel = (await cancelRes.json()) as ClassStudyPacksResponse;
 		expect(afterCancel.packs[0]?.status).toBe("cancelled");
+
+		const stu1ClassAfterCancel = await app.request(
+			"/api/student/classes/class-1",
+			{ headers: { "x-test-user": "student-1" } },
+		);
+		expect(stu1ClassAfterCancel.status).toBe(200);
+		const stu1ClassBody = (await stu1ClassAfterCancel.json()) as {
+			assignments: Array<{ id: string; studyPackStatus?: string | null }>;
+		};
+		expect(
+			stu1ClassBody.assignments.find(
+				(a) => a.id === day2Assignment.assignmentId,
+			)?.studyPackStatus,
+		).toBe("cancelled");
+
+		const stuLateClassAfterCancel = await app.request(
+			"/api/student/classes/class-1",
+			{ headers: { "x-test-user": "student-late" } },
+		);
+		expect(stuLateClassAfterCancel.status).toBe(200);
+		const stuLateClassBody = (await stuLateClassAfterCancel.json()) as {
+			assignments: Array<{ id: string }>;
+		};
+		expect(stuLateClassBody.assignments.map((a) => a.id)).not.toContain(
+			day2Assignment.assignmentId,
+		);
+
+		const lateDay2QuizAfterCancel = await app.request(
+			`/api/student/assignments/${day2Assignment.assignmentId}/quiz`,
+			{ headers: { "x-test-user": "student-late" } },
+		);
+		expect(lateDay2QuizAfterCancel.status).toBe(404);
 
 		const deleteReferencedPackRes = await app.request(
 			`/api/study-packs/${pack.id}`,
@@ -1191,12 +1271,16 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 		expect(promptRow?.audioName).toBe("accidents.mp3");
 		expect(promptRow?.transcript).toBe("Accidents can happen anywhere.");
 
-		// Day 2 unreleased student audio returns 404
+		// Day 2 study pack student audio unlocks early too (streams 200 audio/mpeg)
 		const day2AudioRes = await app.request(
 			`/api/student/assignments/${day2Assignment?.assignmentId}/audio`,
 			{ headers: studentHeaders("student-1") },
 		);
-		expect(day2AudioRes.status).toBe(404);
+		expect(day2AudioRes.status).toBe(200);
+		expect(day2AudioRes.headers.get("content-type")).toBe("audio/mpeg");
+		expect(day2AudioRes.headers.get("cross-origin-resource-policy")).toBe(
+			"same-site",
+		);
 
 		// Day 1 released student audio streams 200 audio/mpeg
 		const day1AudioRes = await app.request(
@@ -2275,5 +2359,160 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 			},
 		);
 		expect(conflictDelRes.status).toBe(409);
+	});
+
+	test("manual class_assignment (classStudyPackId null) with future availableAt remains gated 404 across student endpoints", async () => {
+		const futureAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+		const futureISO = new Date(futureAt.getTime() + 7 * 60 * 60 * 1000)
+			.toISOString()
+			.slice(0, 10);
+		await db.insert(schema.assignmentPrompt).values({
+			id: "pr-listen-manual-future",
+			orgId: "org-1",
+			task: "",
+			genre: "",
+			skill: "listening",
+			part: "part1",
+			type: "gap",
+			title: "Manual Future Listening Prompt",
+			band: "6.0",
+			prompt: "",
+			audioUrl: "https://listenaminute.com/a/accidents.mp3",
+			audioName: "accidents.mp3",
+			questions: JSON.stringify([
+				{
+					stem: "Accidents happen ____.",
+					opts: null,
+					answer: "anywhere",
+					alts: "",
+				},
+			]),
+			status: "ready",
+		});
+		await db.insert(schema.classAssignment).values([
+			{
+				id: "ca-manual-future-gate",
+				orgId: "org-1",
+				classId: "class-1",
+				promptId: "pr-grammar-1",
+				title: "Manual Scheduled Homework",
+				due: futureISO,
+				availableAt: futureAt,
+				classStudyPackId: null,
+			},
+			{
+				id: "ca-manual-future-audio-gate",
+				orgId: "org-1",
+				classId: "class-1",
+				promptId: "pr-listen-manual-future",
+				title: "Manual Scheduled Audio Homework",
+				due: futureISO,
+				availableAt: futureAt,
+				classStudyPackId: null,
+			},
+		]);
+		await db.insert(schema.classAssignmentTarget).values([
+			{
+				id: "cat-manual-future-gate",
+				orgId: "org-1",
+				assignmentId: "ca-manual-future-gate",
+				studentId: "stu-1",
+				submittedAt: null,
+			},
+			{
+				id: "cat-manual-future-audio-gate",
+				orgId: "org-1",
+				assignmentId: "ca-manual-future-audio-gate",
+				studentId: "stu-1",
+				submittedAt: null,
+			},
+		]);
+		await db.insert(schema.quizAttempt).values({
+			id: "att-manual-future-gate",
+			orgId: "org-1",
+			assignmentId: "ca-manual-future-gate",
+			studentId: "stu-1",
+			status: "in_progress",
+			questionsSnapshot: JSON.stringify([
+				{
+					stem: "If it ____ tomorrow, we will stay home.",
+					opts: ["rains", "rained", "rain", "raining"],
+					answer: "A",
+					alts: "",
+				},
+			]),
+			answers: "{}",
+			startedAt: new Date(),
+		});
+
+		const overviewRes = await app.request("/api/student/overview", {
+			headers: { "x-test-user": "student-1" },
+		});
+		expect(overviewRes.status).toBe(200);
+		const overviewBody = (await overviewRes.json()) as {
+			assignments: Array<{ id: string }>;
+		};
+		expect(overviewBody.assignments.map((a) => a.id)).not.toContain(
+			"ca-manual-future-gate",
+		);
+		expect(overviewBody.assignments.map((a) => a.id)).not.toContain(
+			"ca-manual-future-audio-gate",
+		);
+
+		const classRes = await app.request("/api/student/classes/class-1", {
+			headers: { "x-test-user": "student-1" },
+		});
+		expect(classRes.status).toBe(200);
+		const classBody = (await classRes.json()) as {
+			assignments: Array<{ id: string }>;
+		};
+		expect(classBody.assignments.map((a) => a.id)).not.toContain(
+			"ca-manual-future-gate",
+		);
+		expect(classBody.assignments.map((a) => a.id)).not.toContain(
+			"ca-manual-future-audio-gate",
+		);
+
+		const quizRes = await app.request(
+			"/api/student/assignments/ca-manual-future-gate/quiz",
+			{ headers: { "x-test-user": "student-1" } },
+		);
+		expect(quizRes.status).toBe(404);
+
+		const audioRes = await app.request(
+			"/api/student/assignments/ca-manual-future-audio-gate/audio",
+			{ headers: { "x-test-user": "student-1" } },
+		);
+		expect(audioRes.status).toBe(404);
+
+		const startRes = await app.request(
+			"/api/student/assignments/ca-manual-future-gate/quiz/start",
+			{
+				method: "POST",
+				headers: studentHeaders("student-1"),
+				body: "{}",
+			},
+		);
+		expect(startRes.status).toBe(404);
+
+		const patchRes = await app.request(
+			"/api/student/attempts/att-manual-future-gate/answer",
+			{
+				method: "PATCH",
+				headers: studentHeaders("student-1"),
+				body: JSON.stringify({ q: 0, value: "A" }),
+			},
+		);
+		expect(patchRes.status).toBe(404);
+
+		const submitRes = await app.request(
+			"/api/student/attempts/att-manual-future-gate/submit",
+			{
+				method: "POST",
+				headers: studentHeaders("student-1"),
+				body: "{}",
+			},
+		);
+		expect(submitRes.status).toBe(404);
 	});
 });

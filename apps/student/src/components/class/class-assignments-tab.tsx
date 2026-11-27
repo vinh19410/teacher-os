@@ -1,26 +1,21 @@
 import { Link } from "@tanstack/react-router";
-import type {
-	StudentAssignment,
-	StudentClassLesson,
-} from "@teacher-os/api/contracts";
+import type { StudentAssignment } from "@teacher-os/api/contracts";
 import { hasGradableTask } from "@teacher-os/api/lib/ielts-band";
-import { evaluateAssignmentDeadline } from "@teacher-os/api/vietnam-date";
-import { buttonVariants } from "@teacher-os/ui/components/button";
 import {
-	Calendar,
-	Check,
-	ChevronDown,
-	ChevronRight,
-	ClipboardList,
-} from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+	addDaysISO,
+	evaluateAssignmentDeadline,
+	formatVietnamTimeHHMM,
+	vietnamDateKeyOf,
+} from "@teacher-os/api/vietnam-date";
+import { buttonVariants } from "@teacher-os/ui/components/button";
+import { Calendar, Check, ChevronDown, ClipboardList } from "lucide-react";
+import { useMemo, useState } from "react";
 import {
 	type AssignmentTabFilter,
-	buildSessionNumberByDate,
+	isClassAssignmentDueNow,
+	resolveAssignmentExpectedDateISO,
 	STRICT_ISO_DATE_RE,
-	scrollElementToCenterAndFocus,
 } from "@/components/class/class-detail-helpers";
-import { OverviewEmptyState } from "@/components/overview/empty-state";
 import { Badge } from "@/components/ui/badge";
 import {
 	calculateIeltsBand,
@@ -31,62 +26,81 @@ import { cn } from "@/lib/cn";
 import { formatAssignmentSkillLabel } from "@/lib/student-overview-selectors";
 import { formatVietnamDateFromISO } from "@/lib/vietnam-display-date";
 
-interface EnrichedAssignment {
-	assignment: StudentAssignment;
+interface StudyPackPresentation {
+	badgeLabel: string;
+	badgeClass: string;
+	scheduleLine: string | null;
 	derived: DerivedAssignmentStatus;
-	dueMs: number | null;
+	isSubmitted: boolean;
+	isOverdue: boolean;
+	isUpcoming: boolean;
 }
 
-type AssignmentGroupKey = Exclude<AssignmentTabFilter, "all">;
-
-function getAssignmentGroup(
-	status: DerivedAssignmentStatus["status"],
-): AssignmentGroupKey {
-	if (status === "graded") return "graded";
-	if (status === "submitted") return "submitted";
-	return "todo";
+interface EnrichedStudyPackItem {
+	assignment: StudentAssignment;
+	expectedDateISO: string | null;
+	presentation: StudyPackPresentation;
 }
 
-function getAssignmentActionLabel(
-	isSubmitted: boolean,
-	status: DerivedAssignmentStatus["status"],
-): string {
-	if (!isSubmitted) return "Làm bài";
-	return status === "graded" ? "Nhận xét" : "Xem lại";
-}
-
-function getDueSortMs(
-	assignment: StudentAssignment,
-	todayISO: string,
-	nowMs: number,
-): number | null {
-	const deadline = evaluateAssignmentDeadline({
-		due: assignment.due,
-		dueAt: assignment.dueAt,
-		submittedAt: assignment.submittedAt,
-		todayISO,
-		nowMs,
-		legacyDateLate: false,
-	});
-	if (deadline.hasDueAt && deadline.dueAtMs !== null) {
-		return deadline.dueAtMs;
-	}
-	if (deadline.dueDateISO && STRICT_ISO_DATE_RE.test(deadline.dueDateISO)) {
-		const ms = Date.parse(`${deadline.dueDateISO}T00:00:00Z`);
-		return Number.isFinite(ms) ? ms : null;
-	}
-	return null;
-}
+type AssignmentGroupKey =
+	| "dueNowTodo"
+	| "upcomingTodo"
+	| "submitted"
+	| "graded";
 
 function compareNullable(
-	a: number | null,
-	b: number | null,
-	direction: "asc" | "desc",
+	a: number | null | undefined,
+	b: number | null | undefined,
+	direction: "asc" | "desc" = "asc",
 ): number {
+	const left = a ?? null;
+	const right = b ?? null;
+	if (left === right) return 0;
+	if (left === null) return 1;
+	if (right === null) return -1;
+	return direction === "asc" ? left - right : right - left;
+}
+
+function compareNullableISO(a: string | null, b: string | null): number {
 	if (a === b) return 0;
 	if (a === null) return 1;
 	if (b === null) return -1;
-	return direction === "asc" ? a - b : b - a;
+	return a.localeCompare(b);
+}
+
+function compareStudyPackItems(
+	a: EnrichedStudyPackItem,
+	b: EnrichedStudyPackItem,
+): number {
+	const byDate = compareNullableISO(a.expectedDateISO, b.expectedDateISO);
+	if (byDate !== 0) return byDate;
+	const byDay = compareNullable(
+		a.assignment.studyPackDayIndex,
+		b.assignment.studyPackDayIndex,
+		"asc",
+	);
+	if (byDay !== 0) return byDay;
+	const byPos = compareNullable(
+		a.assignment.studyPackPosition,
+		b.assignment.studyPackPosition,
+		"asc",
+	);
+	if (byPos !== 0) return byPos;
+	return a.assignment.id.localeCompare(b.assignment.id);
+}
+
+function formatShortDayMonth(dateISO: string): string {
+	return `${dateISO.slice(8, 10)}/${dateISO.slice(5, 7)}`;
+}
+
+function formatExpectedDatePhrase(dateISO: string, todayISO: string): string {
+	if (dateISO === todayISO) {
+		return `Hôm nay (${formatShortDayMonth(dateISO)})`;
+	}
+	if (dateISO === addDaysISO(todayISO, 1)) {
+		return `Ngày mai (${formatShortDayMonth(dateISO)})`;
+	}
+	return formatVietnamDateFromISO(dateISO);
 }
 
 function statusChipClass(derived: DerivedAssignmentStatus): string {
@@ -98,531 +112,549 @@ function statusChipClass(derived: DerivedAssignmentStatus): string {
 		case "graded":
 			return "border-success/30 bg-success-soft text-success";
 		case "submitted":
-			return derived.isLate
-				? "border-warn/30 bg-warn-soft text-warn"
-				: "border-border bg-muted text-foreground";
+			return "border-border bg-muted text-muted-foreground";
 		default:
-			return "text-muted-foreground";
+			return "border-border bg-muted/50 text-muted-foreground";
 	}
 }
 
-function dueTextClass(status: DerivedAssignmentStatus["status"]): string {
-	if (status === "overdue") return "text-danger";
-	if (status === "due-soon") return "text-warn";
-	return "text-muted-foreground";
-}
-
-function AssignmentRow({
-	classId,
-	entry,
-	sessionNumber,
-	sessionLesson,
-	open,
-	onToggle,
-	registerButtonRef,
-}: {
-	classId: string;
-	entry: EnrichedAssignment;
-	sessionNumber: number | null;
-	sessionLesson: StudentClassLesson | null;
-	open: boolean;
-	onToggle: (assignmentId: string) => void;
-	registerButtonRef: (
-		assignmentId: string,
-		el: HTMLButtonElement | null,
-	) => void;
-}) {
-	const { assignment, derived } = entry;
-	const detailId = `asg-detail-${assignment.id}`;
-	const skillLabel = formatAssignmentSkillLabel(assignment.skill);
-	const metaParts = [
-		sessionNumber !== null ? `Buổi ${sessionNumber}` : null,
-		skillLabel,
-	].filter((part): part is string => Boolean(part));
-
+function deriveStudyPackPresentation(
+	assignment: StudentAssignment,
+	todayISO: string,
+	nowMs: number,
+): StudyPackPresentation {
+	const expectedDateISO = resolveAssignmentExpectedDateISO(assignment);
+	const derived = deriveAssignmentStatus(assignment, todayISO, nowMs);
 	const isSubmitted = Boolean(
 		assignment.submittedAt || assignment.gradedAt || assignment.scores,
 	);
-	const actionLabel = getAssignmentActionLabel(isSubmitted, derived.status);
-	const canLinkQuiz = assignment.source === "class_assignment";
-	const validSessionDate =
-		assignment.sessionDate &&
-		STRICT_ISO_DATE_RE.test(assignment.sessionDate) &&
-		sessionLesson != null
-			? assignment.sessionDate
-			: null;
-	const bandScore = calculateIeltsBand(assignment.scores);
-	const needsTeacherGrading = hasGradableTask({
-		skill: assignment.skill ?? "",
-		hasWriting: assignment.hasWriting,
+	const deadline = evaluateAssignmentDeadline({
+		due: expectedDateISO ?? assignment.due,
+		dueAt: assignment.dueAt,
+		submittedAt: assignment.submittedAt,
+		todayISO,
+		nowMs,
+		legacyDateLate: false,
 	});
 
-	return (
-		<li id={`asg-${assignment.id}`}>
-			<div
-				className={cn(
-					"flex min-w-0 flex-wrap items-center gap-2 px-3 py-3 transition-colors duration-150 sm:px-4",
-					open ? "bg-muted/40" : "hover:bg-muted/30",
-				)}
-			>
-				<button
-					type="button"
-					ref={(el) => registerButtonRef(assignment.id, el)}
-					aria-expanded={open}
-					aria-controls={detailId}
-					onClick={() => onToggle(assignment.id)}
-					className="flex min-h-11 min-w-0 flex-1 basis-[200px] cursor-pointer flex-wrap items-center justify-between gap-2 rounded-md text-left outline-none focus-visible:shadow-[var(--focus-ring)]"
-				>
-					<span className="min-w-0 flex-1 basis-[140px]">
-						{metaParts.length > 0 && (
-							<span className="block text-muted-foreground text-xs tabular-nums">
-								{metaParts.join(" · ")}
-							</span>
-						)}
-						<span className="mt-0.5 block break-words font-medium text-foreground text-sm sm:text-base">
-							{assignment.title}
-						</span>
-						{derived.dueText && (
-							<span
-								className={cn(
-									"mt-0.5 block text-xs tabular-nums sm:text-sm",
-									dueTextClass(derived.status),
-								)}
-							>
-								{derived.dueText}
-							</span>
-						)}
-					</span>
+	let dueTimeSuffix = "";
+	if (deadline.hasDueAt && deadline.dueAtMs !== null) {
+		const hhmm = formatVietnamTimeHHMM(new Date(deadline.dueAtMs));
+		if (hhmm) {
+			dueTimeSuffix = ` · hạn ${hhmm}`;
+		}
+	}
 
-					<span className="flex max-w-full shrink-0 items-center gap-2">
+	// 1. Đã nộp / đã chấm
+	if (isSubmitted) {
+		let earlySuffix = "";
+		if (assignment.submittedAt != null && expectedDateISO != null) {
+			const submittedMs = Date.parse(assignment.submittedAt);
+			if (Number.isFinite(submittedMs)) {
+				const submittedDateISO = vietnamDateKeyOf(new Date(submittedMs));
+				if (submittedDateISO < expectedDateISO) {
+					earlySuffix = " · Làm sớm";
+				}
+			}
+		}
+		const scheduleLine = expectedDateISO
+			? `Dự kiến: ${formatExpectedDatePhrase(expectedDateISO, todayISO)}${earlySuffix}`
+			: earlySuffix
+				? earlySuffix.slice(3)
+				: null;
+
+		return {
+			badgeLabel: derived.statusLabel,
+			badgeClass: statusChipClass(derived),
+			scheduleLine,
+			derived,
+			isSubmitted: true,
+			isOverdue: false,
+			isUpcoming: false,
+		};
+	}
+
+	// 2. Quá hạn (kiểm tra trước Hôm nay để bài hôm nay qua dueAt 17:00 hiện Quá hạn)
+	if (deadline.isOverdue) {
+		const scheduleLine = expectedDateISO
+			? `Dự kiến: ${formatExpectedDatePhrase(expectedDateISO, todayISO)} · quá hạn`
+			: "Quá hạn hoàn thành";
+		return {
+			badgeLabel: "Quá hạn",
+			badgeClass: "border-danger/30 bg-danger-soft text-danger",
+			scheduleLine,
+			derived,
+			isSubmitted: false,
+			isOverdue: true,
+			isUpcoming: false,
+		};
+	}
+
+	// 3. Đến hạn hôm nay
+	if (expectedDateISO === todayISO) {
+		return {
+			badgeLabel: "Hôm nay",
+			badgeClass: "border-warn/30 bg-warn-soft text-warn",
+			scheduleLine: `Dự kiến: ${formatExpectedDatePhrase(expectedDateISO, todayISO)}${dueTimeSuffix}`,
+			derived,
+			isSubmitted: false,
+			isOverdue: false,
+			isUpcoming: false,
+		};
+	}
+
+	// 4. Lịch sắp tới / có thể làm trước (không dùng "Sắp đến hạn" hay "Quá hạn")
+	const isFuture =
+		expectedDateISO !== null &&
+		STRICT_ISO_DATE_RE.test(expectedDateISO) &&
+		expectedDateISO > todayISO;
+	return {
+		badgeLabel: "Có thể làm trước",
+		badgeClass: "border-border bg-muted/50 text-muted-foreground",
+		scheduleLine: expectedDateISO
+			? `Dự kiến: ${formatExpectedDatePhrase(expectedDateISO, todayISO)}${dueTimeSuffix}`
+			: dueTimeSuffix
+				? `Làm tự do${dueTimeSuffix}`
+				: null,
+		derived,
+		isSubmitted: false,
+		isOverdue: false,
+		isUpcoming: isFuture,
+	};
+}
+
+function getActionLabel(
+	isSubmitted: boolean,
+	status: DerivedAssignmentStatus["status"],
+): string {
+	if (!isSubmitted) return "Làm bài";
+	return status === "graded" ? "Nhận xét" : "Xem lại";
+}
+
+const GROUP_META: Record<
+	AssignmentGroupKey,
+	{ title: string; collapsible?: boolean }
+> = {
+	dueNowTodo: { title: "Cần làm hôm nay & quá hạn" },
+	upcomingTodo: { title: "Lịch sắp tới · Có thể làm trước" },
+	submitted: { title: "Đã nộp" },
+	graded: { title: "Đã chấm", collapsible: true },
+};
+
+function StudyPackAssignmentRow({
+	item,
+	expanded,
+	onToggleExpand,
+}: {
+	item: EnrichedStudyPackItem;
+	expanded: boolean;
+	onToggleExpand: () => void;
+}) {
+	const { assignment, presentation } = item;
+	const { badgeLabel, badgeClass, scheduleLine, derived, isSubmitted } =
+		presentation;
+	const band = calculateIeltsBand(assignment.scores);
+	const canExpand =
+		assignment.scores != null ||
+		assignment.gradedAt != null ||
+		assignment.submittedAt != null;
+	const detailId = `assignment-detail-${assignment.id}`;
+	const actionLabel = getActionLabel(isSubmitted, derived.status);
+
+	const metaParts = [
+		assignment.studyPackTitle?.trim() || null,
+		assignment.studyPackDayIndex != null
+			? `Ngày ${assignment.studyPackDayIndex}`
+			: null,
+		formatAssignmentSkillLabel(assignment.skill),
+	].filter((part): part is string => Boolean(part));
+
+	const rowSummaryContent = (
+		<>
+			<span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-md border border-border bg-muted/50 text-muted-foreground">
+				<ClipboardList aria-hidden="true" className="size-4" />
+			</span>
+			<span className="min-w-0 flex-1">
+				<span className="flex flex-wrap items-center gap-2">
+					<span className="break-words font-medium text-foreground text-sm">
+						{assignment.title}
+					</span>
+					{assignment.studyPackStatus === "cancelled" && (
 						<Badge
 							variant="outline"
+							className="border-border bg-muted/40 text-[11px] text-muted-foreground"
+						>
+							Bộ đề đã huỷ
+						</Badge>
+					)}
+				</span>
+				{metaParts.length > 0 && (
+					<span className="mt-0.5 block text-muted-foreground text-xs">
+						{metaParts.join(" · ")}
+					</span>
+				)}
+				{scheduleLine && (
+					<span className="mt-0.5 flex items-center gap-1 text-muted-foreground text-xs tabular-nums">
+						<Calendar aria-hidden="true" className="size-3 shrink-0" />
+						{scheduleLine}
+					</span>
+				)}
+			</span>
+		</>
+	);
+
+	return (
+		<li className="rounded-lg border border-border bg-card transition-colors">
+			<div className="flex flex-wrap items-center gap-3 px-4 py-3">
+				{canExpand ? (
+					<button
+						type="button"
+						onClick={onToggleExpand}
+						aria-expanded={expanded}
+						aria-controls={detailId}
+						className="flex min-w-0 flex-1 basis-[200px] cursor-pointer items-start gap-3 rounded-md text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+					>
+						{rowSummaryContent}
+					</button>
+				) : (
+					<div className="flex min-w-0 flex-1 basis-[200px] items-start gap-3">
+						{rowSummaryContent}
+					</div>
+				)}
+
+				<div className="flex shrink-0 flex-wrap items-center gap-2">
+					{band != null && (
+						<span className="rounded-md bg-success-soft px-2 py-0.5 font-semibold text-success text-xs tabular-nums">
+							Band {band.toFixed(1)}
+						</span>
+					)}
+					<Badge
+						variant="outline"
+						data-testid="study-pack-status-badge"
+						className={badgeClass}
+					>
+						{badgeLabel}
+					</Badge>
+					{assignment.source === "class_assignment" && (
+						<Link
+							to="/learn/quizzes/$assignmentId"
+							params={{ assignmentId: assignment.id }}
+							aria-label={`${isSubmitted ? "Xem lại kết quả" : "Làm bài"}: ${assignment.title}`}
 							className={cn(
-								"whitespace-normal text-left tabular-nums",
-								statusChipClass(derived),
+								buttonVariants({
+									variant: isSubmitted ? "outline" : "default",
+									size: "sm",
+								}),
 							)}
 						>
-							{derived.status === "graded" && (
-								<Check aria-hidden="true" className="size-3 shrink-0" />
-							)}
-							{derived.statusLabel}
-						</Badge>
-						<ChevronDown
-							aria-hidden="true"
-							className={cn(
-								"size-4 shrink-0 text-muted-foreground transition-transform duration-150 motion-reduce:transition-none",
-								open && "rotate-180",
-							)}
-						/>
-					</span>
-				</button>
-
-				{canLinkQuiz && (
-					<Link
-						to="/learn/quizzes/$assignmentId"
-						params={{ assignmentId: assignment.id }}
-						aria-label={
-							isSubmitted
-								? `Xem lại kết quả: ${assignment.title}`
-								: `Làm bài: ${assignment.title}`
-						}
-						className={cn(
-							buttonVariants({
-								variant: isSubmitted ? "outline" : "default",
-								size: "sm",
-							}),
-							"shrink-0",
-						)}
-					>
-						{actionLabel}
-					</Link>
-				)}
+							{actionLabel}
+						</Link>
+					)}
+					{canExpand && (
+						<button
+							type="button"
+							onClick={onToggleExpand}
+							aria-label={expanded ? "Thu gọn chi tiết" : "Xem chi tiết bài"}
+							className="grid size-8 cursor-pointer place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50"
+						>
+							<ChevronDown
+								aria-hidden="true"
+								className={cn(
+									"size-4 transition-transform duration-150",
+									expanded && "rotate-180",
+								)}
+							/>
+						</button>
+					)}
+				</div>
 			</div>
 
-			<div
-				id={detailId}
-				hidden={!open}
-				className="border-border/70 border-t bg-muted/40 px-4 py-4 text-sm"
-			>
-				{open ? (
-					<div className="space-y-4">
-						{validSessionDate && (
-							<div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card px-3.5 py-2.5">
-								<div className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs sm:text-sm">
-									<Calendar
-										aria-hidden="true"
-										className="size-4 shrink-0 text-muted-foreground"
-									/>
-									<span className="min-w-0 break-words">
-										Gắn với{" "}
-										{sessionNumber !== null ? `Buổi ${sessionNumber} · ` : ""}
-										{formatVietnamDateFromISO(validSessionDate)}
-										{sessionLesson?.topic?.trim()
-											? ` — ${sessionLesson.topic.trim()}`
-											: ""}
+			{canExpand && expanded && (
+				<div
+					id={detailId}
+					className="space-y-3 border-border/70 border-t bg-muted/20 px-4 py-3 text-sm"
+				>
+					{assignment.scores != null ? (
+						<div className="space-y-2">
+							<div className="flex items-center justify-between text-xs">
+								<span className="font-medium text-muted-foreground">
+									Điểm từng tiêu chí IELTS
+								</span>
+								{band != null && (
+									<span className="font-semibold text-foreground tabular-nums">
+										Overall Band {band.toFixed(1)}
 									</span>
-								</div>
-								<Link
-									to="/classes/$classId/sessions/$date"
-									params={{ classId, date: validSessionDate }}
-									className={cn(
-										buttonVariants({ variant: "outline", size: "sm" }),
-										"shrink-0",
-									)}
-								>
-									Xem buổi học
-									<ChevronRight aria-hidden="true" className="size-3.5" />
-								</Link>
-							</div>
-						)}
-
-						{derived.status === "graded" && assignment.scores != null && (
-							<div className="space-y-3 rounded-lg border bg-card p-4">
-								<p className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-									Kết quả chấm điểm
-								</p>
-								{bandScore !== null && (
-									<p className="font-bold text-foreground text-xl tabular-nums tracking-tight">
-										Band {bandScore.toFixed(1)}
-									</p>
 								)}
-								<div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-									{[
-										{ label: "Task", value: assignment.scores.task },
-										{ label: "Coherence", value: assignment.scores.coherence },
-										{ label: "Lexical", value: assignment.scores.lexical },
-										{ label: "Grammar", value: assignment.scores.grammar },
-									].map((criterion) => (
+							</div>
+							<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+								{(
+									[
+										["Task", assignment.scores.task],
+										["Coherence", assignment.scores.coherence],
+										["Lexical", assignment.scores.lexical],
+										["Grammar", assignment.scores.grammar],
+									] as const
+								)
+									.filter(([, score]) => typeof score === "number")
+									.map(([label, score]) => (
 										<div
-											key={criterion.label}
-											className="min-w-0 rounded-md border bg-muted/40 px-3 py-2"
+											key={label}
+											className="rounded-md border border-border bg-card px-2.5 py-1.5"
 										>
-											<p className="truncate text-muted-foreground text-xs">
-												{criterion.label}
-											</p>
-											<p className="mt-0.5 font-semibold text-foreground text-sm tabular-nums">
-												{criterion.value}
-											</p>
+											<span className="block text-[11px] text-muted-foreground">
+												{label}
+											</span>
+											<span className="font-semibold text-foreground text-sm tabular-nums">
+												{(score as number).toFixed(1)}
+											</span>
 										</div>
 									))}
-								</div>
 							</div>
-						)}
-
-						{derived.status === "graded" &&
-							assignment.scores == null &&
-							assignment.gradedAt != null && (
-								<div className="rounded-lg border bg-card p-4">
-									<p className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-										Kết quả chấm điểm
-									</p>
-									<p className="mt-1.5 text-foreground text-sm">
-										Giáo viên đã chốt trả bài. Mở bài nộp để xem chi tiết nhận
-										xét.
-									</p>
-								</div>
-							)}
-
-						{derived.status === "submitted" && (
-							<p className="text-muted-foreground text-sm">
-								{needsTeacherGrading
-									? "Bạn đã nộp bài. Giáo viên sẽ chấm và gửi nhận xét trong thời gian sớm nhất."
-									: "Bạn đã hoàn thành và nộp bài tập này. Bạn có thể mở lại để xem chi tiết bài làm."}
-							</p>
-						)}
-
-						{derived.status !== "graded" && derived.status !== "submitted" && (
-							<p className="text-muted-foreground text-sm">
-								{canLinkQuiz
-									? "Mở bài tập để làm bài trực tiếp và nộp cho giáo viên."
-									: "Bài tập này do giáo viên chấm điểm và cập nhật kết quả trực tiếp trên hệ thống."}
-							</p>
-						)}
-					</div>
-				) : null}
-			</div>
+						</div>
+					) : assignment.gradedAt != null ? (
+						<p className="text-muted-foreground text-xs">
+							Giáo viên đã chốt trả bài. Mở “Nhận xét” để xem điểm và ghi chú
+							chi tiết.
+						</p>
+					) : (
+						<p className="text-muted-foreground text-xs">
+							{hasGradableTask({
+								skill: assignment.skill ?? "",
+								hasWriting: assignment.hasWriting,
+							})
+								? "Bạn đã nộp bài. Giáo viên sẽ chấm và gửi nhận xét trong thời gian sớm nhất."
+								: "Bạn đã hoàn thành và nộp bài tập này. Bạn có thể mở lại để xem chi tiết bài làm."}
+						</p>
+					)}
+				</div>
+			)}
 		</li>
 	);
 }
 
 export interface ClassAssignmentsTabProps {
-	classId: string;
 	assignments: StudentAssignment[];
-	lessons: StudentClassLesson[];
 	todayISO: string;
 	nowMs: number;
 	filter?: AssignmentTabFilter;
 	onFilterChange?: (next: AssignmentTabFilter) => void;
-	focusedAssignmentId?: string | null;
-	onFocusHandled?: () => void;
+	onGoToJourney?: () => void;
 }
 
 export function ClassAssignmentsTab({
-	classId,
 	assignments,
-	lessons,
 	todayISO,
 	nowMs,
 	filter,
 	onFilterChange,
-	focusedAssignmentId,
-	onFocusHandled,
+	onGoToJourney,
 }: ClassAssignmentsTabProps) {
 	const [localFilter, setLocalFilter] = useState<AssignmentTabFilter>("all");
-	const activeFilter = filter ?? localFilter;
-	const setFilter = useCallback(
-		(next: AssignmentTabFilter) => {
-			if (onFilterChange) {
-				onFilterChange(next);
-			} else {
-				setLocalFilter(next);
-			}
-		},
-		[onFilterChange],
-	);
-
 	const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
 	const [gradedOpen, setGradedOpen] = useState(false);
-	const rowBtnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
-	const prevClassIdRef = useRef(classId);
 
-	useEffect(() => {
-		if (prevClassIdRef.current === classId) return;
-		prevClassIdRef.current = classId;
-		setLocalFilter("all");
-		setExpandedIds(new Set());
-		setGradedOpen(false);
-	}, [classId]);
-
-	const sessionNumberByDate = useMemo(
-		() => buildSessionNumberByDate(lessons),
-		[lessons],
-	);
-	const clickableLessonByDate = useMemo(() => {
-		const map = new Map<string, StudentClassLesson>();
-		for (const item of lessons) {
-			if (item.date && item.status !== "holiday" && !map.has(item.date)) {
-				map.set(item.date, item);
-			}
+	const activeFilter = filter ?? localFilter;
+	const handleFilterSelect = (next: AssignmentTabFilter) => {
+		if (onFilterChange) {
+			onFilterChange(next);
+		} else {
+			setLocalFilter(next);
 		}
-		return map;
-	}, [lessons]);
+	};
 
-	const enriched = useMemo<EnrichedAssignment[]>(
+	const studyPackAssignments = useMemo(
+		() => assignments.filter((a) => Boolean(a.classStudyPackId)),
+		[assignments],
+	);
+
+	const hasSessionHomework = useMemo(
 		() =>
-			assignments.map((assignment) => ({
-				assignment,
-				derived: deriveAssignmentStatus(assignment, todayISO, nowMs),
-				dueMs: getDueSortMs(assignment, todayISO, nowMs),
-			})),
-		[assignments, todayISO, nowMs],
+			assignments.some((a) => !a.classStudyPackId && Boolean(a.sessionDate)),
+		[assignments],
+	);
+	const hasUnlinkedHomework = useMemo(
+		() => assignments.some((a) => !a.classStudyPackId && !a.sessionDate),
+		[assignments],
 	);
 
-	const { todo, submitted, graded, overdueCount } = useMemo(() => {
-		const buckets: Record<AssignmentGroupKey, EnrichedAssignment[]> = {
-			todo: [],
-			submitted: [],
-			graded: [],
-		};
+	const enriched = useMemo<EnrichedStudyPackItem[]>(() => {
+		return studyPackAssignments.map((assignment) => ({
+			assignment,
+			expectedDateISO: resolveAssignmentExpectedDateISO(assignment),
+			presentation: deriveStudyPackPresentation(assignment, todayISO, nowMs),
+		}));
+	}, [studyPackAssignments, todayISO, nowMs]);
+
+	const grouped = useMemo(() => {
+		const dueNowTodo: EnrichedStudyPackItem[] = [];
+		const upcomingTodo: EnrichedStudyPackItem[] = [];
+		const submitted: EnrichedStudyPackItem[] = [];
+		const graded: EnrichedStudyPackItem[] = [];
+
 		for (const item of enriched) {
-			buckets[getAssignmentGroup(item.derived.status)].push(item);
-		}
-		buckets.todo.sort(
-			(a, b) =>
-				a.derived.sortOrder - b.derived.sortOrder ||
-				compareNullable(a.dueMs, b.dueMs, "asc") ||
-				a.assignment.id.localeCompare(b.assignment.id),
-		);
-		buckets.submitted.sort(
-			(a, b) =>
-				compareNullable(a.dueMs, b.dueMs, "asc") ||
-				a.assignment.id.localeCompare(b.assignment.id),
-		);
-		buckets.graded.sort(
-			(a, b) =>
-				compareNullable(a.dueMs, b.dueMs, "desc") ||
-				a.assignment.id.localeCompare(b.assignment.id),
-		);
-		return {
-			todo: buckets.todo,
-			submitted: buckets.submitted,
-			graded: buckets.graded,
-			overdueCount: buckets.todo.filter((i) => i.derived.status === "overdue")
-				.length,
-		};
-	}, [enriched]);
-
-	const registerButtonRef = useCallback(
-		(assignmentId: string, el: HTMLButtonElement | null) => {
-			if (el) {
-				rowBtnRefs.current.set(assignmentId, el);
+			if (item.presentation.isSubmitted) {
+				if (item.presentation.derived.status === "graded") {
+					graded.push(item);
+				} else {
+					submitted.push(item);
+				}
+			} else if (isClassAssignmentDueNow(item.assignment, todayISO)) {
+				dueNowTodo.push(item);
 			} else {
-				rowBtnRefs.current.delete(assignmentId);
+				upcomingTodo.push(item);
 			}
-		},
-		[],
-	);
+		}
 
-	const handleToggle = useCallback((assignmentId: string) => {
+		dueNowTodo.sort(compareStudyPackItems);
+		upcomingTodo.sort(compareStudyPackItems);
+		submitted.sort(compareStudyPackItems);
+		graded.sort(compareStudyPackItems);
+
+		return { dueNowTodo, upcomingTodo, submitted, graded };
+	}, [enriched, todayISO]);
+
+	const toggleExpand = (id: string) => {
 		setExpandedIds((prev) => {
 			const next = new Set(prev);
-			if (next.has(assignmentId)) {
-				next.delete(assignmentId);
-			} else {
-				next.add(assignmentId);
-			}
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
 			return next;
 		});
-	}, []);
+	};
 
-	// Pha 1 → Pha 2 focus khi nhảy từ Tab Hành trình học sang bài cụ thể
-	useEffect(() => {
-		if (!focusedAssignmentId) return;
-		const target = enriched.find(
-			(item) => item.assignment.id === focusedAssignmentId,
-		);
-		if (!target) {
-			onFocusHandled?.();
-			return;
-		}
-		if (
-			activeFilter !== "all" &&
-			activeFilter !== getAssignmentGroup(target.derived.status)
-		) {
-			setFilter("all");
-			return;
-		}
-		if (
-			target.derived.status === "graded" &&
-			activeFilter !== "graded" &&
-			!gradedOpen
-		) {
-			setGradedOpen(true);
-			return;
-		}
-		const btn = rowBtnRefs.current.get(focusedAssignmentId);
-		if (!btn) return;
-		setExpandedIds((prev) => {
-			if (prev.has(focusedAssignmentId)) return prev;
-			const next = new Set(prev);
-			next.add(focusedAssignmentId);
-			return next;
-		});
-		scrollElementToCenterAndFocus(btn);
-		onFocusHandled?.();
-	}, [
-		focusedAssignmentId,
-		enriched,
-		activeFilter,
-		gradedOpen,
-		setFilter,
-		onFocusHandled,
-	]);
-
-	if (assignments.length === 0) {
+	if (studyPackAssignments.length === 0) {
 		return (
-			<OverviewEmptyState
-				icon="book"
-				title="Chưa có bài tập nào"
-				description="Giáo viên chưa giao bài tập nào cho bạn."
-			/>
+			<div className="flex flex-col items-center justify-center rounded-xl border bg-card px-4 py-10 text-center shadow-sm">
+				<div className="mb-3 flex size-10 items-center justify-center rounded-md bg-muted text-muted-foreground">
+					<ClipboardList aria-hidden="true" className="size-5" />
+				</div>
+				<p className="font-medium text-[15px] text-foreground">
+					Chưa có bộ đề tự học
+				</p>
+				<p className="mt-1 max-w-[44ch] text-[13px] text-muted-foreground">
+					{hasSessionHomework
+						? "Bài tập về nhà theo buổi đã được hiển thị trực tiếp bên trong từng buổi ở Tab Hành trình học."
+						: hasUnlinkedHomework
+							? "Lớp chưa được gán bộ đề tự học. Các bài tập khác của bạn nằm ở trang Bài tập chung."
+							: "Khi giáo viên gán bộ đề tự học theo ngày cho lớp, toàn bộ bài sẽ hiện ở đây kèm ngày dự kiến."}
+				</p>
+				{hasSessionHomework ? (
+					<div className="mt-4">
+						<button
+							type="button"
+							onClick={() => onGoToJourney?.()}
+							className={cn(
+								buttonVariants({ variant: "outline", size: "sm" }),
+								"cursor-pointer",
+							)}
+						>
+							Xem Hành trình học
+						</button>
+					</div>
+				) : hasUnlinkedHomework ? (
+					<div className="mt-4">
+						<Link
+							to="/assignments"
+							className={buttonVariants({ variant: "outline", size: "sm" })}
+						>
+							Xem tất cả bài tập
+						</Link>
+					</div>
+				) : null}
+			</div>
 		);
 	}
 
-	const priorityItem = todo[0] ?? null;
-	const nextActionable =
-		todo.find((item) => item.assignment.source === "class_assignment") ?? null;
-	const featuredItem = nextActionable ?? priorityItem;
+	const { dueNowTodo, upcomingTodo, submitted, graded } = grouped;
+	const overdueCount = dueNowTodo.filter(
+		(i) => i.presentation.isOverdue,
+	).length;
+	const primaryDueNow =
+		dueNowTodo.find((i) => i.assignment.source === "class_assignment") ?? null;
+	const primaryUpcoming =
+		upcomingTodo.find((i) => i.assignment.source === "class_assignment") ??
+		null;
+	const todoTotalCount = dueNowTodo.length + upcomingTodo.length;
 
-	const filterOptions: readonly {
+	const filterOptions: Array<{
 		id: AssignmentTabFilter;
 		label: string;
 		count?: number;
-	}[] = [
+	}> = [
 		{ id: "all", label: "Tất cả" },
-		{ id: "todo", label: "Cần làm", count: todo.length },
+		{ id: "todo", label: "Chưa làm", count: todoTotalCount },
 		{ id: "submitted", label: "Đã nộp", count: submitted.length },
 		{ id: "graded", label: "Đã chấm", count: graded.length },
 	];
 
-	const renderList = (items: EnrichedAssignment[], emptyMessage: string) => {
-		if (items.length === 0) {
-			return (
-				<p className="rounded-xl border border-border border-dashed px-4 py-4 text-muted-foreground text-sm">
-					{emptyMessage}
-				</p>
-			);
-		}
-		return (
-			<ul className="divide-y overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
-				{items.map((entry) => {
-					const sessionDate = entry.assignment.sessionDate;
-					const sessionNumber = sessionDate
-						? (sessionNumberByDate.get(sessionDate) ?? null)
-						: null;
-					const sessionLesson = sessionDate
-						? (clickableLessonByDate.get(sessionDate) ?? null)
-						: null;
-					return (
-						<AssignmentRow
-							key={entry.assignment.id}
-							classId={classId}
-							entry={entry}
-							sessionNumber={sessionNumber}
-							sessionLesson={sessionLesson}
-							open={expandedIds.has(entry.assignment.id)}
-							onToggle={handleToggle}
-							registerButtonRef={registerButtonRef}
-						/>
-					);
-				})}
-			</ul>
-		);
-	};
+	const visibleGroups: AssignmentGroupKey[] =
+		activeFilter === "all"
+			? ["dueNowTodo", "upcomingTodo", "submitted", "graded"]
+			: activeFilter === "todo"
+				? ["dueNowTodo", "upcomingTodo"]
+				: activeFilter === "submitted"
+					? ["submitted"]
+					: ["graded"];
 
-	const forceGradedOpen = activeFilter === "graded";
-	const isGradedExpanded = forceGradedOpen || gradedOpen;
+	const hasAnyInFilter = visibleGroups.some((k) => grouped[k].length > 0);
 
 	return (
-		<div className="space-y-6">
-			{featuredItem ? (
+		<div className="space-y-5">
+			{dueNowTodo.length > 0 ? (
 				<div
 					data-testid="assignments-todo-strip"
-					className="flex flex-wrap items-center justify-between gap-4 rounded-xl border-[1.5px] border-primary bg-card p-4 text-card-foreground shadow-sm sm:p-6"
+					className={cn(
+						"flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3",
+						overdueCount > 0
+							? "border-danger/30 bg-danger-soft/40"
+							: "border-warn/30 bg-warn-soft/50",
+					)}
 				>
-					<div className="min-w-0 flex-1 basis-[240px]">
-						<p className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-							Việc cần làm
-						</p>
-						<p className="mt-1 font-bold text-foreground text-xl tabular-nums tracking-tight sm:text-2xl">
-							{todo.length} bài cần làm
+					<div className="min-w-0 space-y-0.5">
+						<div className="flex flex-wrap items-center gap-2 font-semibold text-foreground text-sm">
+							<span>{dueNowTodo.length} bài cần làm</span>
 							{overdueCount > 0 && (
-								<>
-									{" · "}
-									<span className="text-danger">{overdueCount} quá hạn</span>
-								</>
+								<span className="rounded-md bg-danger-soft px-2 py-0.5 font-medium text-danger text-xs">
+									{overdueCount} quá hạn
+								</span>
 							)}
-						</p>
-						<p className="mt-1 break-words text-muted-foreground text-sm">
-							Ưu tiên:{" "}
-							<strong className="font-semibold text-foreground">
-								{featuredItem.assignment.title}
-							</strong>
-							{featuredItem.derived.dueText
-								? ` · ${featuredItem.derived.dueText}`
-								: ""}
-						</p>
+						</div>
+						{primaryDueNow && (
+							<p className="truncate text-muted-foreground text-xs">
+								Ưu tiên: {primaryDueNow.assignment.title}
+							</p>
+						)}
 					</div>
-					{nextActionable && (
+					{primaryDueNow && (
 						<Link
 							to="/learn/quizzes/$assignmentId"
-							params={{ assignmentId: nextActionable.assignment.id }}
-							className={cn(
-								buttonVariants({ variant: "default", size: "default" }),
-								"shrink-0",
-							)}
+							params={{ assignmentId: primaryDueNow.assignment.id }}
+							className={buttonVariants({ variant: "default", size: "sm" })}
 						>
-							<ClipboardList aria-hidden="true" className="size-4" />
+							Làm bài này
+						</Link>
+					)}
+				</div>
+			) : upcomingTodo.length > 0 ? (
+				<div
+					data-testid="assignments-todo-strip"
+					className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3"
+				>
+					<div className="min-w-0 space-y-0.5">
+						<p className="font-semibold text-foreground text-sm">
+							Bạn đã xong bài hôm nay
+						</p>
+						<p className="text-muted-foreground text-xs">
+							Còn {upcomingTodo.length} bài sắp tới — có thể mở làm trước bất cứ
+							lúc nào.
+						</p>
+					</div>
+					{primaryUpcoming && (
+						<Link
+							to="/learn/quizzes/$assignmentId"
+							params={{ assignmentId: primaryUpcoming.assignment.id }}
+							className={buttonVariants({ variant: "outline", size: "sm" })}
+						>
 							Làm bài này
 						</Link>
 					)}
@@ -630,135 +662,120 @@ export function ClassAssignmentsTab({
 			) : (
 				<div
 					data-testid="assignments-todo-strip"
-					className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm sm:p-6"
+					className="flex items-center gap-2 rounded-xl border border-success/30 bg-success-soft/50 px-4 py-2.5 text-sm text-success"
 				>
-					<p className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-						Việc cần làm
-					</p>
-					<p className="mt-1 font-bold text-foreground text-xl tracking-tight sm:text-2xl">
-						Bạn đã hoàn thành hết bài tập
-					</p>
-					<p className="mt-1 text-muted-foreground text-sm">
-						Bài mới sẽ xuất hiện ở đây sau mỗi buổi học.
-					</p>
+					<Check aria-hidden="true" className="size-4 shrink-0" />
+					<span className="font-medium">Bạn đã hoàn thành hết bài tập</span>
 				</div>
 			)}
 
-			<div className="flex flex-wrap items-center justify-between gap-3">
-				<h2 className="font-semibold text-foreground text-lg tracking-tight">
-					Bài tập của bạn
-				</h2>
-				{/* biome-ignore lint/a11y/useSemanticElements: nhóm nút lọc dùng role="group" + aria-label theo pattern ChipFilter cho SR/e2e */}
-				<div
-					role="group"
-					aria-label="Lọc bài tập"
-					className="inline-flex max-w-full flex-wrap gap-1 rounded-lg bg-muted p-1"
-				>
-					{filterOptions.map((opt) => {
-						const active = activeFilter === opt.id;
-						return (
-							<button
-								key={opt.id}
-								type="button"
-								aria-pressed={active}
-								onClick={() => setFilter(opt.id)}
-								className={cn(
-									"inline-flex min-h-8 cursor-pointer items-center gap-1 rounded-md px-3 font-medium text-xs transition-colors duration-150 sm:text-sm",
-									active
-										? "bg-background font-semibold text-foreground shadow-xs"
-										: "text-muted-foreground hover:text-foreground",
-								)}
-							>
-								<span>{opt.label}</span>
-								{opt.count !== undefined && (
-									<span
-										aria-hidden="true"
-										className="text-muted-foreground tabular-nums"
-									>
-										({opt.count})
-									</span>
-								)}
-							</button>
-						);
-					})}
+			<fieldset
+				aria-label="Lọc bài tập"
+				className="m-0 flex flex-wrap items-center gap-2 border-0 p-0"
+			>
+				{filterOptions.map((opt) => {
+					const active = activeFilter === opt.id;
+					return (
+						<button
+							key={opt.id}
+							type="button"
+							aria-pressed={active}
+							onClick={() => handleFilterSelect(opt.id)}
+							className={cn(
+								"inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 font-medium text-xs outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50",
+								active
+									? "border-primary bg-primary text-primary-foreground"
+									: "border-border bg-card text-foreground hover:bg-muted",
+							)}
+						>
+							<span>{opt.label}</span>
+							{typeof opt.count === "number" && (
+								<span
+									aria-hidden="true"
+									className={cn(
+										"rounded-full px-1.5 py-0.5 text-[11px] tabular-nums",
+										active
+											? "bg-primary-foreground/20 text-primary-foreground"
+											: "bg-muted text-muted-foreground",
+									)}
+								>
+									{opt.count}
+								</span>
+							)}
+						</button>
+					);
+				})}
+			</fieldset>
+
+			{!hasAnyInFilter ? (
+				<div className="rounded-lg border border-border border-dashed px-4 py-6 text-center text-muted-foreground text-sm">
+					Không có bài tập nào trong mục này.
 				</div>
-			</div>
+			) : (
+				<div className="space-y-6">
+					{visibleGroups.map((groupKey) => {
+						const groupItems = grouped[groupKey];
+						if (groupItems.length === 0) return null;
+						const meta = GROUP_META[groupKey];
+						const isGradedCollapsible =
+							Boolean(meta.collapsible) && activeFilter === "all";
+						const isGroupExpanded = isGradedCollapsible ? gradedOpen : true;
 
-			<div className="space-y-6">
-				{(activeFilter === "all" || activeFilter === "todo") && (
-					<section aria-labelledby="asg-group-todo" className="space-y-3">
-						<div className="flex items-baseline justify-between gap-3">
-							<h3
-								id="asg-group-todo"
-								className="font-semibold text-base text-foreground tracking-tight sm:text-lg"
+						return (
+							<section
+								key={groupKey}
+								aria-label={meta.title}
+								className="space-y-2.5"
 							>
-								Cần làm
-							</h3>
-							<span className="text-muted-foreground text-sm tabular-nums">
-								{todo.length} bài
-							</span>
-						</div>
-						{renderList(todo, "Không còn bài nào cần làm. Tuyệt vời!")}
-					</section>
-				)}
-
-				{(activeFilter === "all" || activeFilter === "submitted") && (
-					<section aria-labelledby="asg-group-submitted" className="space-y-3">
-						<div className="flex items-baseline justify-between gap-3">
-							<h3
-								id="asg-group-submitted"
-								className="font-semibold text-base text-foreground tracking-tight sm:text-lg"
-							>
-								Đã nộp
-							</h3>
-							<span className="text-muted-foreground text-sm tabular-nums">
-								{submitted.length} bài
-							</span>
-						</div>
-						{renderList(submitted, "Chưa có bài nào đã nộp đang chờ chấm.")}
-					</section>
-				)}
-
-				{(activeFilter === "all" || activeFilter === "graded") && (
-					<section aria-labelledby="asg-group-graded" className="space-y-3">
-						<div className="flex items-baseline justify-between gap-3">
-							<h3
-								id="asg-group-graded"
-								className="font-semibold text-base text-foreground tracking-tight sm:text-lg"
-							>
-								{forceGradedOpen ? (
-									"Đã chấm"
-								) : (
+								{isGradedCollapsible ? (
 									<button
 										type="button"
-										aria-expanded={isGradedExpanded}
-										aria-controls="asg-graded-list"
-										onClick={() => setGradedOpen((v) => !v)}
-										className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-md text-left outline-none focus-visible:shadow-[var(--focus-ring)]"
+										aria-expanded={gradedOpen}
+										aria-controls="assignments-graded-list"
+										onClick={() => setGradedOpen((prev) => !prev)}
+										className="flex w-full cursor-pointer items-center justify-between rounded-md py-1 text-left font-semibold text-muted-foreground text-xs uppercase tracking-wider outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
 									>
-										<span>Đã chấm</span>
+										<span>
+											{meta.title} ({groupItems.length})
+										</span>
 										<ChevronDown
 											aria-hidden="true"
 											className={cn(
-												"size-4 text-muted-foreground transition-transform duration-150 motion-reduce:transition-none",
-												isGradedExpanded && "rotate-180",
+												"size-4 transition-transform duration-150",
+												gradedOpen && "rotate-180",
 											)}
 										/>
 									</button>
+								) : (
+									<h3 className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+										{meta.title} ({groupItems.length})
+									</h3>
 								)}
-							</h3>
-							<span className="text-muted-foreground text-sm tabular-nums">
-								{graded.length} bài
-							</span>
-						</div>
-						<div id="asg-graded-list" hidden={!isGradedExpanded}>
-							{isGradedExpanded
-								? renderList(graded, "Chưa có bài nào được chấm.")
-								: null}
-						</div>
-					</section>
-				)}
-			</div>
+
+								{isGroupExpanded && (
+									<ul
+										id={
+											isGradedCollapsible
+												? "assignments-graded-list"
+												: undefined
+										}
+										className="space-y-2"
+									>
+										{groupItems.map((item) => (
+											<StudyPackAssignmentRow
+												key={item.assignment.id}
+												item={item}
+												expanded={expandedIds.has(item.assignment.id)}
+												onToggleExpand={() => toggleExpand(item.assignment.id)}
+											/>
+										))}
+									</ul>
+								)}
+							</section>
+						);
+					})}
+				</div>
+			)}
 		</div>
 	);
 }

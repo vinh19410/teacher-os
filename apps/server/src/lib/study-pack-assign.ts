@@ -152,7 +152,8 @@ function buildCleanupCancelledPackStatements(
 				.where(
 					and(
 						eq(classAssignmentTarget.orgId, orgId),
-						sql`${classAssignmentTarget.assignmentId} IN (SELECT ca.id FROM ${classAssignment} ca WHERE ca.org_id = ${orgId} AND ca.class_id = ${classId} AND ca.class_study_pack_id = ${classPackId} AND ca.available_at > ${cutoffMs} AND NOT EXISTS (SELECT 1 FROM ${quizAttempt} qa WHERE qa.org_id = ${orgId} AND qa.assignment_id = ca.id))`,
+						sql`${classAssignmentTarget.assignmentId} IN (SELECT ca.id FROM ${classAssignment} ca WHERE ca.org_id = ${orgId} AND ca.class_id = ${classId} AND ca.class_study_pack_id = ${classPackId} AND ca.available_at > ${cutoffMs})`,
+						sql`NOT EXISTS (SELECT 1 FROM ${quizAttempt} qa WHERE qa.org_id = ${orgId} AND qa.assignment_id = ${classAssignmentTarget.assignmentId} AND qa.student_id = ${classAssignmentTarget.studentId})`,
 					),
 				),
 			db
@@ -175,7 +176,8 @@ function buildCleanupCancelledPackStatements(
 			.where(
 				and(
 					eq(classAssignmentTarget.orgId, orgId),
-					sql`${classAssignmentTarget.assignmentId} IN (SELECT ca.id FROM ${classAssignment} ca WHERE ca.org_id = ${orgId} AND ca.class_id = ${classId} AND ca.class_study_pack_id = ${classPackId} AND NOT EXISTS (SELECT 1 FROM ${quizAttempt} qa WHERE qa.org_id = ${orgId} AND qa.assignment_id = ca.id))`,
+					sql`${classAssignmentTarget.assignmentId} IN (SELECT ca.id FROM ${classAssignment} ca WHERE ca.org_id = ${orgId} AND ca.class_id = ${classId} AND ca.class_study_pack_id = ${classPackId})`,
+					sql`NOT EXISTS (SELECT 1 FROM ${quizAttempt} qa WHERE qa.org_id = ${orgId} AND qa.assignment_id = ${classAssignmentTarget.assignmentId} AND qa.student_id = ${classAssignmentTarget.studentId})`,
 				),
 			),
 		db

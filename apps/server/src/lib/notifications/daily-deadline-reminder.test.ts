@@ -325,8 +325,7 @@ describe("runDailyDeadlineReminderCron", () => {
 		expect(mail.html).toContain("Writing Task 2 — Education");
 		expect(mail.html).toContain("Reading Day 1");
 		expect(mail.html).toContain("Listening Day 1");
-		expect(mail.html).toContain("(mở lúc 08:30)");
-		expect(mail.html).not.toContain("(mở lúc 06:00)");
+		expect(mail.html).not.toContain("mở lúc");
 		expect(mail.html).toContain(
 			'href="https://lms.msmy.io.vn/student/learn/quizzes/hw-1"',
 		);

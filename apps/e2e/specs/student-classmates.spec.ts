@@ -149,7 +149,7 @@ test.describe("Student classmates tab", () => {
 		const assignmentsTab = page.getByRole("tab", { name: "Bài tập" });
 		await assignmentsTab.click();
 		await expect(assignmentsTab).toHaveAttribute("aria-selected", "true");
-		await expect(page.getByText("Chưa có bài tập nào")).toBeVisible();
+		await expect(page.getByText("Chưa có bộ đề tự học")).toBeVisible();
 
 		const materialsTab = page.getByRole("tab", { name: "Tài liệu chung" });
 		await page.keyboard.press("Tab");

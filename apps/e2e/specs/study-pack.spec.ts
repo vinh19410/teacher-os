@@ -261,7 +261,8 @@ test("study pack end-to-end: create grammar & reading prompts -> build 2-day pac
 	expect(day1AssignmentId.length).toBeGreaterThan(0);
 	expect(day2AssignmentId.length).toBeGreaterThan(0);
 
-	// 7. Student 1 opens portal: sees Day 1 Grammar, does NOT see Day 2 Reading
+	// 7. Student 1 opens portal: overview shows Day 1 Grammar & hides unstarted Day 2 Reading,
+	//    while class tab ?tab=assignments shows both + direct /quiz unlocks early (200)
 	const studentContext = await browser.newContext();
 	const studentPage = await studentContext.newPage();
 	await signUpAndVerifyStudent(studentPage, STUDENT_1_NAME, STUDENT_1_EMAIL);
@@ -271,15 +272,30 @@ test("study pack end-to-end: create grammar & reading prompts -> build 2-day pac
 	).toBeVisible();
 	await expect(studentPage.getByText(READING_TITLE)).toHaveCount(0);
 
-	// Direct GET /api/student/assignments/<day2Id>/quiz returns 404 before available_at
+	// Direct GET /api/student/assignments/<day2Id>/quiz is unlocked (200) before available_at
 	const day2DirectRes = await studentPage.request.get(
 		`${API_ORIGIN}/api/student/assignments/${day2AssignmentId}/quiz`,
 		{ headers: { Origin: STUDENT_ORIGIN } },
 	);
-	expect(day2DirectRes.status()).toBe(404);
+	expect(day2DirectRes.status()).toBe(200);
 
-	// 8. Student 1 completes and submits Day 1 Grammar quiz -> auto-graded immediately
 	await dismissPlacementPromptIfPresent(studentPage);
+
+	// Class tab ?tab=assignments displays both Day 1 & upcoming Day 2 with expected date & allows starting early
+	await studentPage.goto(
+		`${STUDENT_BASE_URL}/classes/${classId}?tab=assignments`,
+	);
+	await expect(
+		studentPage.getByRole("link", { name: `Làm bài: ${GRAMMAR_TITLE}` }),
+	).toBeVisible();
+	const day2ClassRow = studentPage
+		.getByRole("listitem")
+		.filter({ hasText: READING_TITLE });
+	await expect(day2ClassRow).toBeVisible();
+	await expect(day2ClassRow).toContainText("Có thể làm trước");
+	await expect(day2ClassRow).toContainText("Dự kiến:");
+
+	// 8. Student 1 completes and submits Day 1 Grammar quiz, then submits Day 2 early BEFORE available_at
 	await studentPage
 		.getByRole("link", { name: `Làm bài: ${GRAMMAR_TITLE}` })
 		.click();
@@ -309,7 +325,39 @@ test("study pack end-to-end: create grammar & reading prompts -> build 2-day pac
 	await expect(studentPage.getByTestId("attempt-correct")).toHaveText("1");
 	await expect(studentPage.getByTestId("attempt-wrong")).toHaveText("0");
 
-	// 9. Shift Day 2 available_at to the past via POST /__e2e/study-pack-shift
+	// Làm trước & nộp Day 2 ngay từ tab Bài tập khi chưa đến available_at
+	await studentPage.goto(
+		`${STUDENT_BASE_URL}/classes/${classId}?tab=assignments`,
+	);
+	await studentPage
+		.getByRole("link", { name: `Làm bài: ${READING_TITLE}` })
+		.click();
+	await expect(paper.or(startDialog)).toBeVisible();
+	if (await startDialog.isVisible()) {
+		await startDialog.getByRole("button", { name: "Bắt đầu" }).click();
+	}
+	await expect(paper).toBeVisible();
+	await studentPage
+		.locator('[data-question="0"] label', { hasText: "TRUE" })
+		.click();
+	await expect(studentPage.getByTestId("save-state")).toHaveAttribute(
+		"data-state",
+		"saved",
+	);
+	await studentPage.getByRole("button", { name: "Nộp bài" }).click();
+	await expect(studentPage).toHaveURL(/\/learn\/quizzes\/attempt\//);
+	await expect(studentPage.getByTestId("attempt-correct-count")).toHaveText(
+		"1",
+	);
+
+	// 9. After early submission (even before available_at shift), Day 2 appears on `/` overview
+	await studentPage.goto(`${STUDENT_BASE_URL}/`);
+	await expect(
+		studentPage.getByRole("link", {
+			name: `Xem lại kết quả: ${READING_TITLE}`,
+		}),
+	).toBeVisible();
+
 	const shiftRes = await page.request.post(
 		`${API_ORIGIN}/__e2e/study-pack-shift`,
 		{
@@ -321,11 +369,11 @@ test("study pack end-to-end: create grammar & reading prompts -> build 2-day pac
 		},
 	);
 	expect(shiftRes.status()).toBe(200);
-
-	// Student 1 reloads overview and immediately sees Day 2 without any cron tick
 	await studentPage.goto(`${STUDENT_BASE_URL}/`);
 	await expect(
-		studentPage.getByRole("link", { name: `Làm bài: ${READING_TITLE}` }),
+		studentPage.getByRole("link", {
+			name: `Xem lại kết quả: ${READING_TITLE}`,
+		}),
 	).toBeVisible();
 	await studentContext.close();
 
@@ -340,13 +388,12 @@ test("study pack end-to-end: create grammar & reading prompts -> build 2-day pac
 
 	await acceptAllClassEnrollments(page, classId);
 
-	// Verify in class study pack section that targetsTotal is now 2
+	// Verify in class study pack section that both Day 1 & Day 2 show 1/2 submitted (strict-mode safe)
 	await page
 		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	await page.getByRole("button", { name: "Bộ đề tự học", exact: true }).click();
-	await expect(page.getByText("1/2 đã nộp")).toBeVisible();
-	await expect(page.getByText("0/2 đã nộp")).toBeVisible();
+	await expect(page.getByText("1/2 đã nộp")).toHaveCount(2);
 });
 
 test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page preview & simulation, assign, class pack link, student listening blob audio & post-submit transcript (#702, #720)", async ({
@@ -578,7 +625,7 @@ test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page 
 		"/teacher/assignments/packs/syspack-foun-gt1-discipline",
 	);
 
-	// Fetch Day 1 & Day 2 assignmentIds from API
+	// Fetch Day 1, Day 2 (Reading) & Day 3 (Listening) assignmentIds from API
 	const packsRes = await page.request.get(
 		`${API_ORIGIN}/api/classes/${classId}/study-packs`,
 		{ headers: { Origin: WEB_ORIGIN } },
@@ -594,26 +641,105 @@ test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page 
 		assignments.find((a) => a.dayIndex === 1)?.assignmentId ?? "";
 	const day2AssignmentId =
 		assignments.find((a) => a.dayIndex === 2)?.assignmentId ?? "";
+	const day3AssignmentId =
+		assignments.find((a) => a.dayIndex === 3)?.assignmentId ?? "";
 	expect(day1AssignmentId.length).toBeGreaterThan(0);
 	expect(day2AssignmentId.length).toBeGreaterThan(0);
+	expect(day3AssignmentId.length).toBeGreaterThan(0);
 
-	// 4. Student opens portal, verifies Day 2 audio is gated (404), opens Day 1 Listening
+	// 4. Student opens portal, verifies Day 2 quiz (200) and Day 3 audio (200) unlock early, inspects ?tab=assignments, opens Day 1 Listening
 	const studentContext = await browser.newContext({
 		viewport: { width: 1440, height: 900 },
 	});
 	const studentPage = await studentContext.newPage();
 	await signUpAndVerifyStudent(studentPage, STUDENT_NAME, STUDENT_EMAIL);
 
-	const day2AudioRes = await studentPage.request.get(
-		`${API_ORIGIN}/api/student/assignments/${day2AssignmentId}/audio`,
+	const day2QuizRes = await studentPage.request.get(
+		`${API_ORIGIN}/api/student/assignments/${day2AssignmentId}/quiz`,
 		{ headers: { Origin: STUDENT_ORIGIN } },
 	);
-	expect(day2AudioRes.status()).toBe(404);
+	expect(day2QuizRes.status()).toBe(200);
 
+	const day3AudioRes = await studentPage.request.get(
+		`${API_ORIGIN}/api/student/assignments/${day3AssignmentId}/audio`,
+		{ headers: { Origin: STUDENT_ORIGIN } },
+	);
+	expect(day3AudioRes.status()).toBe(200);
+	expect(day3AudioRes.headers()["content-type"]).toContain("audio/mpeg");
+
+	await dismissPlacementPromptIfPresent(studentPage);
+
+	// Check class Tab Bài tập renders full 69-day pack schedule + expected dates + early access
+	await studentPage.goto(
+		`${STUDENT_BASE_URL}/classes/${classId}?tab=assignments`,
+	);
 	await expect(
 		studentPage.getByRole("link", { name: `Làm bài: ${DAY_1_TITLE}` }),
 	).toBeVisible();
-	await dismissPlacementPromptIfPresent(studentPage);
+	const upcomingGroup = studentPage.getByRole("region", {
+		name: "Lịch sắp tới · Có thể làm trước",
+	});
+	await expect(upcomingGroup).toBeVisible();
+	await expect(upcomingGroup).toContainText("Ngày 2");
+	await expect(upcomingGroup).toContainText("Có thể làm trước");
+	await expect(upcomingGroup).toContainText("Dự kiến:");
+
+	const potIssue = process.env.CAPTURE_POT_ISSUE?.trim();
+	const potViewports = [
+		{ key: "desktop-1440x900", width: 1440, height: 900 },
+		{ key: "tablet-768x1024", width: 768, height: 1024 },
+		{ key: "mobile-375x812", width: 375, height: 812 },
+	] as const;
+
+	if (potIssue === "1026") {
+		try {
+			for (const vp of potViewports) {
+				await studentPage.setViewportSize({
+					width: vp.width,
+					height: vp.height,
+				});
+				await expect(upcomingGroup).toBeVisible();
+				for (const theme of ["light", "dark"] as const) {
+					await studentPage.evaluate((t) => {
+						document.documentElement.classList.toggle("dark", t === "dark");
+						window.localStorage.setItem("theme", t);
+					}, theme);
+					expect(
+						await studentPage.evaluate(
+							() => document.documentElement.scrollWidth > window.innerWidth,
+						),
+						`student study-pack tab overflow (${theme}) at ${vp.width}x${vp.height}`,
+					).toBe(false);
+					await studentPage.screenshot({
+						path: `../../plans/reports/${potIssue}-student-study-pack-tab-${vp.key}-${theme}.png`,
+						fullPage: true,
+					});
+				}
+			}
+			await studentPage.evaluate(() => {
+				document.documentElement.classList.remove("dark");
+				window.localStorage.setItem("theme", "light");
+			});
+			await studentPage.setViewportSize({ width: 320, height: 568 });
+			expect(
+				await studentPage.evaluate(
+					() => document.documentElement.scrollWidth > window.innerWidth,
+				),
+				"student study-pack tab horizontal overflow at 320x568",
+			).toBe(false);
+		} finally {
+			await studentPage.evaluate(() => {
+				document.documentElement.classList.remove("dark");
+				window.localStorage.setItem("theme", "light");
+			});
+			await studentPage.setViewportSize({ width: 1440, height: 900 });
+		}
+	}
+
+	await studentPage.goto(`${STUDENT_BASE_URL}/`);
+	await expect(
+		studentPage.getByRole("link", { name: `Làm bài: ${DAY_1_TITLE}` }),
+	).toBeVisible();
 	await studentPage
 		.getByRole("link", { name: `Làm bài: ${DAY_1_TITLE}` })
 		.click();
@@ -662,12 +788,7 @@ test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page 
 	await expect(studentPage.getByText("education.mp3")).toHaveCount(0);
 	await expect(studentPage.getByText(/🔊/)).toHaveCount(0);
 
-	const potIssue = process.env.CAPTURE_POT_ISSUE?.trim();
-	const potViewports = [
-		{ key: "desktop-1440x900", width: 1440, height: 900 },
-		{ key: "tablet-768x1024", width: 768, height: 1024 },
-		{ key: "mobile-375x812", width: 375, height: 812 },
-	] as const;
+	const captureAudioPot = potIssue && potIssue !== "1026";
 	try {
 		for (const vp of potViewports) {
 			await studentPage.setViewportSize({
@@ -685,7 +806,7 @@ test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page 
 					),
 					`student listening take overflow (${theme}) at ${vp.width}x${vp.height}`,
 				).toBe(false);
-				if (potIssue) {
+				if (captureAudioPot) {
 					await studentPage.screenshot({
 						path: `../../plans/reports/${potIssue}-quiz-audio-take-${vp.key}-${theme}.png`,
 						fullPage: true,
@@ -760,7 +881,7 @@ test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page 
 		path: "../../plans/reports/702-student-listening-review-1440x900.png",
 		fullPage: true,
 	});
-	if (potIssue) {
+	if (captureAudioPot) {
 		await studentPage.screenshot({
 			path: `../../plans/reports/${potIssue}-quiz-audio-review-desktop-1440x900-light.png`,
 			fullPage: true,
