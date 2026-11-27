@@ -1,0 +1,104 @@
+# Workflow audit & promote bộ đề tự học (study_pack, study_pack_exercise,
+# study_pack_item + R2 audio library-audio) trực tiếp từ Cloudflare D1/R2
+# staging lên production.
+#
+# Ràng buộc an toàn (test gate: scripts/ci-workflow.test.mjs):
+# - Chỉ chạy bằng manual workflow_dispatch; không trigger tự động.
+# - Mặc định ở chế độ audit-staging (read-only trên staging D1 & R2).
+# - Chế độ dry-run chỉ đọc cả staging & production để đối chiếu diff & R2 audio.
+# - Chế độ apply yêu cầu gõ xác nhận chính xác "prod" vào confirm_prod và chạy
+#   dưới GitHub Environment "production" (chỉ nhánh main được phép deploy).
+# - Serialize với deploy qua cùng concurrency group deploy-staging / deploy-production.
+# - Quyền contents: read ở cấp top-level; không upload artifact nhạy cảm.
+# - Repo PUBLIC: luôn truyền --public-logs để không in UUID/org ID nội bộ ra log.
+name: Promote Study Packs Staging to Prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Chế độ: audit-staging (liệt kê staging D1/R2), dry-run (xem trước diff prod), apply (ghi lên prod)"
+        type: choice
+        options:
+          - audit-staging
+          - dry-run
+          - apply
+        default: audit-staging
+        required: true
+      pack_titles:
+        description: "Tiêu đề các study_pack cần promote, phân tách bằng dấu ';' (VD: First Step/GT2 — Mô hình Kỷ luật (15 phút/ngày))"
+        type: string
+        required: false
+        default: "First Step/GT2 — Mô hình Kỷ luật (15 phút/ngày)"
+      pack_ids:
+        description: "ID chính xác các study_pack cần promote nếu cần chọn theo ID, phân tách bằng dấu ';'"
+        type: string
+        required: false
+        default: ""
+      confirm_prod:
+        description: "Gõ đúng chữ 'prod' để xác nhận khi chạy mode=apply"
+        type: string
+        required: false
+        default: ""
+
+concurrency:
+  group: deploy-${{ inputs.mode == 'audit-staging' && 'staging' || 'production' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ inputs.mode == 'audit-staging' && 'staging' || 'production' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Validate inputs and safety gate
+        env:
+          PROMOTE_MODE: ${{ inputs.mode }}
+          PACK_TITLES: ${{ inputs.pack_titles }}
+          PACK_IDS: ${{ inputs.pack_ids }}
+          CONFIRM_PROD: ${{ inputs.confirm_prod }}
+        run: |
+          if [ "$PROMOTE_MODE" != "audit-staging" ]; then
+            if [ -z "$PACK_TITLES" ] && [ -z "$PACK_IDS" ]; then
+              echo "::error::Mode '$PROMOTE_MODE' bắt buộc phải truyền pack_titles hoặc pack_ids."
+              exit 1
+            fi
+          fi
+          if [ "$PROMOTE_MODE" = "apply" ]; then
+            if [ "$CONFIRM_PROD" != "prod" ]; then
+              echo "::error::Mode 'apply' bắt buộc phải gõ đúng chữ 'prod' trong confirm_prod."
+              exit 1
+            fi
+            echo "Đã xác nhận chính xác 'prod'. Tiếp tục thực thi apply."
+          fi
+
+      - name: Run study-packs staging-to-prod migration
+        working-directory: packages/db
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          PROMOTE_MODE: ${{ inputs.mode }}
+          PACK_TITLES: ${{ inputs.pack_titles }}
+          PACK_IDS: ${{ inputs.pack_ids }}
+          CONFIRM_PROD: ${{ inputs.confirm_prod }}
+        run: |
+          set -euo pipefail
+          args=(--d1 --mode "$PROMOTE_MODE" --public-logs)
+          if [ "$PROMOTE_MODE" != "audit-staging" ]; then
+            if [ -n "$PACK_TITLES" ]; then
+              args+=(--pack-titles "$PACK_TITLES")
+            fi
+            if [ -n "$PACK_IDS" ]; then
+              args+=(--pack-ids "$PACK_IDS")
+            fi
+          fi
+          if [ "$PROMOTE_MODE" = "apply" ]; then
+            args+=(--allow-prod --confirm-prod "$CONFIRM_PROD" --dump /tmp/promote-study-packs-prod-backup)
+          fi
+          pnpm exec tsx scripts/promote-study-packs-prod.ts "${args[@]}"
