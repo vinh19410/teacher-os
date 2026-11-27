@@ -160,7 +160,17 @@ function createMemoryRecordingStore(): MemoryRecordingStore {
 
 function createApp(
 	zoomClient?: ZoomClient,
-	opts?: { recordingStore?: RecordingStore; now?: () => Date },
+	opts?: {
+		recordingStore?: RecordingStore;
+		now?: () => Date;
+		zoom?: {
+			accountId?: string;
+			clientId?: string;
+			clientSecret?: string;
+			hostUser?: string;
+		};
+		zoomFetch?: typeof fetch;
+	},
 ) {
 	return buildApp({
 		getDb: () => db,
@@ -207,6 +217,8 @@ function createApp(
 		},
 		authHandler: async () => new Response(null, { status: 404 }),
 		...(zoomClient ? { getZoomClient: () => zoomClient } : {}),
+		...(opts?.zoom ? { zoom: opts.zoom } : {}),
+		...(opts?.zoomFetch ? { zoomFetch: opts.zoomFetch } : {}),
 		...(opts?.recordingStore
 			? { getRecordingStore: () => opts.recordingStore }
 			: {}),
@@ -455,6 +467,89 @@ describe("Tạo Zoom meeting", () => {
 			skipped: 19,
 			failed: 1,
 		});
+		expect(attempts).toBe(2);
+	});
+
+	test("lỗi cấu hình ZOOM_HOST_USER trả 503 ZOOM_INVALID_CONFIG với 0 request mạng và auto-provision/bulk dừng ngay sau 1 lần lỗi", async () => {
+		let fetchCalls = 0;
+		const appInvalidHost = createApp(undefined, {
+			zoom: {
+				accountId: "acc",
+				clientId: "cid",
+				clientSecret: "sec",
+				hostUser: "Ms My",
+			},
+			zoomFetch: async () => {
+				fetchCalls += 1;
+				return new Response(null, { status: 500 });
+			},
+		});
+		const manualClassId = await createManualOnlineClass(
+			appInvalidHost,
+			"Invalid Host Manual",
+		);
+		const date = futureDate(5);
+		await addManualSession(appInvalidHost, manualClassId, date, "");
+		const createRes = await appInvalidHost.request(
+			`/api/classes/${manualClassId}/sessions/${date}/zoom`,
+			{ method: "POST", headers: TEACHER_HEADERS, body: "{}" },
+		);
+		expect(createRes.status).toBe(503);
+		expect(await createRes.json()).toMatchObject({
+			code: "ZOOM_INVALID_CONFIG",
+			error: expect.stringContaining("ZOOM_HOST_USER"),
+		});
+		expect(fetchCalls).toBe(0);
+
+		const fake = createFakeZoom();
+		let attempts = 0;
+		const invalidConfigClient: ZoomClient = {
+			...fake.client,
+			async createMeeting() {
+				attempts += 1;
+				throw new ZoomIntegrationError(
+					ZOOM_ERROR_CODES.INVALID_CONFIG,
+					"Cấu hình ZOOM_HOST_USER không hợp lệ.",
+					503,
+				);
+			},
+		};
+		const app = createApp(invalidConfigClient);
+		const res = await app.request("/api/classes", {
+			method: "POST",
+			headers: TEACHER_HEADERS,
+			body: JSON.stringify({
+				name: "Invalid Host Auto",
+				skills: ["Speaking"],
+				mode: "Online",
+				schedulingMode: "auto",
+				schedule: { days: [0, 2], start: "10:00", end: "11:30" },
+				startDate: futureDate(1),
+				sessionsTotal: 20,
+			}),
+		});
+		expect(res.status).toBe(201);
+		const { id: classId } = (await res.json()) as { id: string };
+		// autoProvisionMeetingsForNewClass dừng ngay sau 1 lần gặp ZOOM_INVALID_CONFIG.
+		expect(attempts).toBe(1);
+
+		const bulk = await app.request(`/api/classes/${classId}/zoom/bulk`, {
+			method: "POST",
+			headers: TEACHER_HEADERS,
+			body: "{}",
+		});
+		expect(bulk.status).toBe(200);
+		expect(await bulk.json()).toMatchObject({
+			created: 0,
+			skipped: 19,
+			failed: 1,
+			errors: [
+				{
+					message: "Cấu hình ZOOM_HOST_USER không hợp lệ.",
+				},
+			],
+		});
+		// bulkCreateMeetingsForClass cũng dừng ngay sau 1 lần gặp ZOOM_INVALID_CONFIG.
 		expect(attempts).toBe(2);
 	});
 
