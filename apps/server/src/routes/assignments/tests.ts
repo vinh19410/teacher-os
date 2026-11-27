@@ -1,23 +1,22 @@
 import type { CreatedResponse } from "@teacher-os/api/contracts";
 import {
-	ASSIGNMENT_TEST_ERROR_CODES,
-	ASSIGNMENT_TEST_PRESETS,
-	type AssignmentSkill,
 	assignmentTestCreateSchema,
 	assignmentTestPartsSetSchema,
 	assignmentTestUpdateSchema,
 } from "@teacher-os/api/contracts";
-import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
 import {
 	assignmentTest,
 	assignmentTestPart,
 } from "@teacher-os/db/schema/assignment-test";
-import { quizAttempt } from "@teacher-os/db/schema/quiz-attempt";
-import { and, eq, inArray } from "drizzle-orm";
-import type { BatchItem } from "drizzle-orm/batch";
+import { and, eq } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../../app";
+import {
+	createAssignmentTest,
+	setAssignmentTestParts,
+	updateAssignmentTest,
+} from "../../lib/assignments/assignment-service";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type AssignmentTestContext = Context<Env>;
@@ -65,24 +64,15 @@ export function testsRoutes(deps: { getDb(): Db }) {
 		if (!ctx) return unauthorized(c);
 		const body = await readBody(c, assignmentTestCreateSchema);
 		if (!body.ok) return body.response;
-		const [created] = await deps
-			.getDb()
-			.insert(assignmentTest)
-			.values({
-				id: crypto.randomUUID(),
-				orgId: ctx.orgId,
-				// Explicit map — a missing entry here silently drops the field.
-				title: body.data.title,
-				description: body.data.description ?? null,
-				skill: body.data.skill,
-				timeLimitSeconds: body.data.timeLimitSeconds,
-				collection: body.data.collection ?? null,
-				testGroup: body.data.testGroup ?? null,
-				status: "draft",
-			})
-			.returning({ id: assignmentTest.id });
-		if (!created) return c.json({ error: "test write conflict" }, 500);
-		return c.json<CreatedResponse>(created, 201);
+		const result = await createAssignmentTest(
+			deps.getDb(),
+			ctx.orgId,
+			body.data,
+		);
+		if (!result.ok) {
+			return c.json({ error: result.error }, result.status);
+		}
+		return c.json<CreatedResponse>(result.data, 201);
 	});
 
 	// Meta/status update. `skill` không đổi được: parts đang gắn theo preset
@@ -93,41 +83,16 @@ export function testsRoutes(deps: { getDb(): Db }) {
 		const body = await readBody(c, assignmentTestUpdateSchema);
 		if (!body.ok) return body.response;
 		const testId = c.req.param("id");
-		const db = deps.getDb();
-		const [row] = await db
-			.select({ skill: assignmentTest.skill })
-			.from(assignmentTest)
-			.where(
-				and(eq(assignmentTest.id, testId), eq(assignmentTest.orgId, ctx.orgId)),
-			);
-		if (!row) return c.json({ error: "test not found" }, 404);
-		if (body.data.skill !== undefined && body.data.skill !== row.skill)
-			return c.json({ error: "skill is immutable" }, 400);
-
-		// Explicit map — a missing entry here silently drops the field.
-		const updates: Partial<typeof assignmentTest.$inferInsert> = {};
-		if (body.data.title !== undefined) updates.title = body.data.title;
-		if (body.data.description !== undefined)
-			updates.description = body.data.description;
-		if (body.data.timeLimitSeconds !== undefined)
-			updates.timeLimitSeconds = body.data.timeLimitSeconds;
-		if (body.data.collection !== undefined)
-			updates.collection = body.data.collection;
-		if (body.data.testGroup !== undefined)
-			updates.testGroup = body.data.testGroup;
-		if (body.data.status !== undefined) updates.status = body.data.status;
-
-		if (Object.keys(updates).length === 0)
-			return c.json({ id: testId } satisfies CreatedResponse);
-		const updated = await db
-			.update(assignmentTest)
-			.set(updates)
-			.where(
-				and(eq(assignmentTest.id, testId), eq(assignmentTest.orgId, ctx.orgId)),
-			)
-			.returning({ id: assignmentTest.id });
-		if (!updated[0]) return c.json({ error: "test not found" }, 404);
-		return c.json({ id: testId } satisfies CreatedResponse);
+		const result = await updateAssignmentTest(
+			deps.getDb(),
+			ctx.orgId,
+			testId,
+			body.data,
+		);
+		if (!result.ok) {
+			return c.json({ error: result.error }, result.status);
+		}
+		return c.json(result.data satisfies CreatedResponse);
 	});
 
 	// Parts + test ra trong MỘT batch — không dựa vào FK cascade (PRAGMA
@@ -169,136 +134,22 @@ export function testsRoutes(deps: { getDb(): Db }) {
 		const body = await readBody(c, assignmentTestPartsSetSchema);
 		if (!body.ok) return body.response;
 		const testId = c.req.param("id");
-		const db = deps.getDb();
-		const [test] = await db
-			.select({ skill: assignmentTest.skill })
-			.from(assignmentTest)
-			.where(
-				and(eq(assignmentTest.id, testId), eq(assignmentTest.orgId, ctx.orgId)),
-			);
-		if (!test) return c.json({ error: "test not found" }, 404);
-		const preset = ASSIGNMENT_TEST_PRESETS[test.skill as AssignmentSkill];
-		if (!preset) return c.json({ error: "invalid test skill" }, 400);
-		for (const item of body.data) {
-			if (!preset.slots.some((slot) => slot.part === item.part))
-				return c.json({ error: "invalid part slot for skill" }, 400);
-		}
-
-		// IDOR chặn ở đây: promptId phải thuộc org (và đúng skill/part của
-		// slot) trước khi vào assignment_test_part.
-		const promptIds = [...new Set(body.data.map((item) => item.promptId))];
-		const promptRows = promptIds.length
-			? await db
-					.select({
-						id: assignmentPrompt.id,
-						skill: assignmentPrompt.skill,
-						part: assignmentPrompt.part,
-						writingPart: assignmentPrompt.writingPart,
-					})
-					.from(assignmentPrompt)
-					.where(
-						and(
-							eq(assignmentPrompt.orgId, ctx.orgId),
-							inArray(assignmentPrompt.id, promptIds),
-						),
-					)
-			: [];
-		const promptsById = new Map(promptRows.map((row) => [row.id, row]));
-		for (const item of body.data) {
-			const prompt = promptsById.get(item.promptId);
-			if (!prompt) return c.json({ error: "prompt not found" }, 400);
-			if (prompt.skill !== test.skill)
-				return c.json({ error: "prompt skill mismatch" }, 400);
-			if (prompt.part !== item.part)
-				return c.json({ error: "prompt part mismatch" }, 400);
-			if (prompt.writingPart !== null)
-				return c.json(
-					{ error: "hybrid prompt cannot be attached to test" },
-					400,
-				);
-		}
-
-		// So khớp part hiện tại với payload mới: map part -> { promptId, qStartOverride }
-		const existingParts = await db
-			.select({
-				part: assignmentTestPart.part,
-				promptId: assignmentTestPart.promptId,
-				qStartOverride: assignmentTestPart.qStartOverride,
-			})
-			.from(assignmentTestPart)
-			.where(eq(assignmentTestPart.testId, testId));
-
-		const existingMap = new Map(
-			existingParts.map((p) => [
-				p.part,
-				{ promptId: p.promptId, qStartOverride: p.qStartOverride ?? null },
-			]),
+		const result = await setAssignmentTestParts(
+			deps.getDb(),
+			ctx.orgId,
+			testId,
+			body.data,
 		);
-		const incomingMap = new Map(
-			body.data.map((p) => [
-				p.part,
-				{ promptId: p.promptId, qStartOverride: p.qStartOverride ?? null },
-			]),
-		);
-
-		let partsChanged = existingMap.size !== incomingMap.size;
-		if (!partsChanged) {
-			for (const [part, incoming] of incomingMap) {
-				const existing = existingMap.get(part);
-				if (
-					!existing ||
-					existing.promptId !== incoming.promptId ||
-					existing.qStartOverride !== incoming.qStartOverride
-				) {
-					partsChanged = true;
-					break;
-				}
-			}
-		}
-
-		if (!partsChanged) {
-			// Idempotent: gửi lại danh sách part giống hệt thì giữ nguyên các row hiện có
-			return c.json({ id: testId } satisfies CreatedResponse);
-		}
-
-		// Nếu có thay đổi part (thêm/gỡ/đổi prompt/đổi override), kiểm tra attempt
-		const [attempt] = await db
-			.select({ id: quizAttempt.id })
-			.from(quizAttempt)
-			.where(
-				and(eq(quizAttempt.orgId, ctx.orgId), eq(quizAttempt.testId, testId)),
-			)
-			.limit(1);
-
-		if (attempt) {
+		if (!result.ok) {
 			return c.json(
 				{
-					error: "test parts locked",
-					code: ASSIGNMENT_TEST_ERROR_CODES.PARTS_LOCKED,
+					error: result.error,
+					...(result.code ? { code: result.code } : {}),
 				},
-				409,
+				result.status,
 			);
 		}
-
-		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
-			db
-				.delete(assignmentTestPart)
-				.where(eq(assignmentTestPart.testId, testId)),
-			...body.data.map((item) =>
-				db.insert(assignmentTestPart).values({
-					id: crypto.randomUUID(),
-					testId,
-					promptId: item.promptId,
-					part: item.part,
-					// Slot index trong preset — thứ tự hiển thị ổn định với mọi
-					// thứ tự gửi lên của client.
-					position: preset.slots.findIndex((slot) => slot.part === item.part),
-					qStartOverride: item.qStartOverride ?? null,
-				}),
-			),
-		];
-		await db.batch(statements);
-		return c.json({ id: testId } satisfies CreatedResponse);
+		return c.json(result.data satisfies CreatedResponse);
 	});
 
 	return routes;
