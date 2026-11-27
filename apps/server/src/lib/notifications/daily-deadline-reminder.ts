@@ -186,7 +186,6 @@ export async function runDailyDeadlineReminderCron(
 			),
 		);
 
-	const nowMs = now.getTime();
 	const bucketsByOrg = new Map<string, Map<string, StudentReminderBucket>>();
 
 	for (const row of rows) {
@@ -234,12 +233,7 @@ export async function runDailyDeadlineReminderCron(
 		const dueTimeLabel = row.dueAt
 			? formatVietnamTimeHHMM(row.dueAt)
 			: "Trong ngày";
-		const opensAtLabel =
-			row.classStudyPackId !== null &&
-			row.availableAt !== null &&
-			row.availableAt.getTime() > nowMs
-				? formatVietnamTimeHHMM(row.availableAt)
-				: null;
+		const opensAtLabel: string | null = null;
 
 		const entry: InternalReminderEntry = {
 			item: {

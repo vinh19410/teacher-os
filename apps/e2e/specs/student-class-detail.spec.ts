@@ -92,6 +92,7 @@ test.beforeAll(async ({ browser }) => {
 				part: "p1",
 				type: "mcq",
 				note: "",
+				sessionDate: addDaysISO(today, 1),
 				passage: "<p>An là học sinh chăm chỉ.</p>",
 				questions: [
 					{
@@ -103,6 +104,52 @@ test.beforeAll(async ({ browser }) => {
 				],
 			},
 		],
+		studyPack: {
+			title: "Bộ đề tự học E2E",
+			startDate: today,
+			releaseTime: "00:00",
+			dueTime: "23:59",
+			items: [
+				{
+					dayIndex: 1,
+					prompt: {
+						title: "Study Pack Ngày 1",
+						skill: "reading",
+						part: "p1",
+						type: "mcq",
+						note: "",
+						passage: "<p>Day 1 study pack passage.</p>",
+						questions: [
+							{
+								stem: "Day 1 Q1?",
+								opts: ["Yes", "No"],
+								answer: "A",
+								alts: "",
+							},
+						],
+					},
+				},
+				{
+					dayIndex: 3,
+					prompt: {
+						title: "Study Pack Ngày 3",
+						skill: "reading",
+						part: "p1",
+						type: "mcq",
+						note: "",
+						passage: "<p>Day 3 study pack passage.</p>",
+						questions: [
+							{
+								stem: "Day 3 Q1?",
+								opts: ["Yes", "No"],
+								answer: "A",
+								alts: "",
+							},
+						],
+					},
+				},
+			],
+		},
 	});
 
 	const context = await browser.newContext();
@@ -288,13 +335,34 @@ test.describe("Student class card & class detail page", () => {
 		await expect(lessons.nth(2)).toHaveAttribute("aria-current", "true");
 		await expect(lessons.nth(3)).not.toContainText("Buổi tới");
 
-		// Bài tập đã chuyển vào tab riêng ("Bài tập") theo design-v2 #378.
-		await page.getByRole("tab", { name: "Bài tập" }).click();
+		// Bài tập gắn buổi mở trực tiếp 1-click trong Tab Hành trình học (#1026).
 		await page
 			.getByRole("link", { name: `Làm bài: ${assignmentTitle}` })
 			.click();
 		await expect(page).toHaveURL(
 			`${STUDENT_BASE_URL}/learn/quizzes/${fixture.assignmentIds[0]}`,
+		);
+		await page.goBack();
+		await expect(
+			page.getByRole("heading", { level: 1, name: className }),
+		).toBeVisible();
+
+		// Tab Bài tập chỉ hiển thị bộ đề tự học (ẩn homework gắn buổi) và mở làm trước được.
+		await page.getByRole("tab", { name: "Bài tập" }).click();
+		await expect(page.getByText(assignmentTitle)).toHaveCount(0);
+		await expect(
+			page.getByRole("listitem").filter({ hasText: "Study Pack Ngày 1" }),
+		).toBeVisible();
+		const day3Row = page
+			.getByRole("listitem")
+			.filter({ hasText: "Study Pack Ngày 3" });
+		await expect(day3Row).toBeVisible();
+		await expect(day3Row).toContainText("Có thể làm trước");
+		await day3Row
+			.getByRole("link", { name: "Làm bài: Study Pack Ngày 3" })
+			.click();
+		await expect(page).toHaveURL(
+			`${STUDENT_BASE_URL}/learn/quizzes/${fixture.studyPackAssignmentIds?.[1]}`,
 		);
 		await page.goBack();
 		await expect(

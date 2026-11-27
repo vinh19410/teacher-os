@@ -1,4 +1,7 @@
-import type { StudentClassLesson } from "@teacher-os/api/contracts";
+import type {
+	StudentAssignment,
+	StudentClassLesson,
+} from "@teacher-os/api/contracts";
 import {
 	isSafeMaterialUrl,
 	MATERIAL_MIME,
@@ -296,4 +299,58 @@ export function scrollElementToCenterAndFocus(
 		block: "center",
 	});
 	el.focus({ preventScroll: true });
+}
+
+/**
+ * Xác định ngày dự kiến (YYYY-MM-DD, giờ VN UTC+7) cho bài tập lớp.
+ * Ưu tiên `due`, fallback sang `availableAt` rồi `dueAt`; trả `null` nếu thiếu
+ * hoặc không parse được để tránh `RangeError` ở `vietnamDateKeyOf`.
+ */
+export function resolveAssignmentExpectedDateISO(
+	assignment: Pick<StudentAssignment, "due" | "availableAt" | "dueAt">,
+): string | null {
+	const trimmedDue = assignment.due.trim();
+	if (STRICT_ISO_DATE_RE.test(trimmedDue)) {
+		return trimmedDue;
+	}
+	for (const raw of [assignment.availableAt, assignment.dueAt]) {
+		if (typeof raw !== "string") continue;
+		const trimmed = raw.trim();
+		if (!trimmed) continue;
+		const ms = Date.parse(trimmed);
+		if (Number.isFinite(ms)) {
+			return vietnamDateKeyOf(new Date(ms));
+		}
+	}
+	return null;
+}
+
+/**
+ * Chỉ trả `true` cho bài thuộc bộ đề tự học có ngày dự kiến sau `todayISO`.
+ * Bài giao tay (`classStudyPackId == null`) luôn trả `false`.
+ */
+export function isStudyPackUpcoming(
+	assignment: Pick<
+		StudentAssignment,
+		"classStudyPackId" | "due" | "availableAt" | "dueAt"
+	>,
+	todayISO: string,
+): boolean {
+	if (!assignment.classStudyPackId) return false;
+	const expected = resolveAssignmentExpectedDateISO(assignment);
+	return expected !== null && expected > todayISO;
+}
+
+/**
+ * Bài giao tay hoặc bài bộ đề tự học đến hạn hôm nay / quá hạn / không rõ ngày.
+ * Dùng cho `TodoBanner` và phân nhóm `Cần làm hôm nay & quá hạn`.
+ */
+export function isClassAssignmentDueNow(
+	assignment: Pick<
+		StudentAssignment,
+		"classStudyPackId" | "due" | "availableAt" | "dueAt"
+	>,
+	todayISO: string,
+): boolean {
+	return !isStudyPackUpcoming(assignment, todayISO);
 }
