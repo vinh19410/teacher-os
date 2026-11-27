@@ -29,21 +29,34 @@ CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... \
 
 ---
 
-## 2. Promote từ Staging lên Production (Thủ công sau khi Staging OK)
+## 2. Promote có chọn lọc từ Staging lên Production (Thủ công sau khi Staging OK)
 
-`.github/workflows/deploy.yml` **KHÔNG** tự động seed study packs lên production. Khi staging đã kiểm thử ổn định, chạy 2 bước sau:
+`.github/workflows/deploy.yml` **KHÔNG** tự động seed study packs lên production. Khi staging đã kiểm thử ổn định, promote đúng bộ đề cần chuyển (đọc trực tiếp dữ liệu live từ D1 staging và copy MP3 từ R2 staging sang R2 production):
 
+### 2.1 Qua GitHub Actions (`.github/workflows/promote-study-packs-prod.yml`)
+1. `mode=audit-staging` (trên nhánh `develop`, môi trường `staging`): liệt kê toàn bộ `study_pack` trên D1 staging và kiểm tra số MP3 hiện có trên R2 staging.
+2. `mode=dry-run` (trên nhánh `main`, môi trường `production`): chỉ đọc, đối chiếu diff D1 (insert/update/unchanged), xung đột và trạng thái MP3 giữa R2 staging và R2 production cho `pack_titles` đã chọn.
+3. `mode=apply` với `confirm_prod=prod` (trên nhánh `main`, môi trường `production`): chụp preimage JSON + rollback SQL trước khi ghi, copy MP3 còn thiếu từ R2 staging sang R2 production (fail-closed nếu R2 staging thiếu file), upsert D1 production và đối chiếu SHA-256 content parity.
+
+### 2.2 Chạy CLI trực tiếp ở local (khi có Cloudflare credentials)
 ```bash
-# Bước 1: Dry-run kiểm tra số file R2 còn thiếu & trạng thái D1 production (chỉ đọc, không ghi)
+# Bước 1: Audit read-only trên staging (D1 + R2)
 CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... \
-  pnpm --filter @teacher-os/db exec tsx scripts/promote-study-packs-prod.ts --dry-run
+  pnpm --filter @teacher-os/db exec tsx scripts/promote-study-packs-prod.ts --d1 --mode audit-staging
 
-# Bước 2: Copy các MP3 còn thiếu từ R2 staging -> R2 production, rồi upsert + verify D1 production
+# Bước 2: Dry-run đối chiếu staging -> production cho 1 bộ đề cụ thể (chỉ đọc)
 CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... \
-  pnpm --filter @teacher-os/db exec tsx scripts/promote-study-packs-prod.ts --allow-prod --verify
+  pnpm --filter @teacher-os/db exec tsx scripts/promote-study-packs-prod.ts --d1 --mode dry-run \
+    --pack "First Step/GT2 — Mô hình Kỷ luật (15 phút/ngày)"
+
+# Bước 3: Apply lên production (kèm preimage backup, rollback SQL, copy R2 audio & verify SHA-256)
+CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... \
+  pnpm --filter @teacher-os/db exec tsx scripts/promote-study-packs-prod.ts --d1 --mode apply \
+    --allow-prod --confirm-prod prod \
+    --pack "First Step/GT2 — Mô hình Kỷ luật (15 phút/ngày)"
 ```
 
 **Lưu ý:**
-- Có thể truyền `--audio-dir <dir>` nếu muốn upload MP3 từ máy local thay vì copy qua R2 staging.
-- Nếu cần đặt tên bucket hoặc D1 UUID tường minh, dùng `STAGING_R2_LIBRARY_AUDIO_BUCKET`, `PROD_R2_LIBRARY_AUDIO_BUCKET`, `D1_DATABASE_ID`.
-- Có thể chạy lại nguyên lệnh Bước 2 nhiều lần an toàn (idempotent).
+- Bộ đề hệ thống (`org_id IS NULL`) giữ nguyên `org_id = NULL` trên production để dùng chung trên `/assignments/packs` (#829).
+- Nếu cần chỉ định tường minh bucket hoặc D1 UUID, dùng `STAGING_R2_LIBRARY_AUDIO_BUCKET`, `PROD_R2_LIBRARY_AUDIO_BUCKET`, `STAGING_D1_DATABASE_ID`, `PROD_D1_DATABASE_ID`.
+- Có thể chạy lại lệnh Bước 3 nhiều lần an toàn (idempotent).

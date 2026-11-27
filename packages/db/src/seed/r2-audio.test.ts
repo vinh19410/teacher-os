@@ -291,12 +291,28 @@ describe("study-pack R2 audio sync & prod promote CLI (#814)", () => {
 		).toEqual(new Uint8Array([0xff, 0xfb, 0x10, 0xc4]));
 	});
 
-	it("uploads from local --audio-dir and refuses prod sync/promote without --allow-prod", async () => {
+	it("uploads from local --audio-dir and refuses prod sync/promote without required safety flags", async () => {
 		expect(() => parseSyncAudioArgs(["--stage", "prod"])).toThrow(
 			"requires --allow-prod",
 		);
-		expect(() => parsePromoteArgs([])).toThrow("requires --allow-prod");
-		expect(parsePromoteArgs(["--dry-run"]).dryRun).toBe(true);
+		expect(() =>
+			parsePromoteArgs([
+				"--d1",
+				"--mode",
+				"apply",
+				"--pack",
+				"First Step/GT2 — Mô hình Kỷ luật (15 phút/ngày)",
+			]),
+		).toThrow("requires --allow-prod");
+		expect(
+			parsePromoteArgs([
+				"--d1",
+				"--mode",
+				"dry-run",
+				"--pack",
+				"First Step/GT2 — Mô hình Kỷ luật (15 phút/ngày)",
+			]).mode,
+		).toBe("dry-run");
 
 		const dir = mkdtempSync(join(tmpdir(), "r2-local-audio-"));
 		tmpDirs.push(dir);
@@ -365,8 +381,10 @@ describe("study-pack R2 audio sync & prod promote CLI (#814)", () => {
 		expect(res.verified).toBe(1);
 	});
 
-	it("promote-study-packs-prod --dry-run inspects prod R2 & D1 without writing and redacts tokens", async () => {
+	it("promote-study-packs-prod --d1 --mode dry-run inspects staging & prod R2/D1 without writing and redacts tokens", async () => {
 		const writes: string[] = [];
+		const stagingDbId = "11111111-1111-4111-8111-111111111111";
+		const prodDbId = "22222222-2222-4222-8222-222222222222";
 		const mockFetch: typeof fetch = async (input, init) => {
 			const url = String(input);
 			const method = init?.method ?? "GET";
@@ -379,6 +397,7 @@ describe("study-pack R2 audio sync & prod promote CLI (#814)", () => {
 						success: true,
 						result: {
 							buckets: [
+								{ name: "teacher-os-library-audio-staging-abcd2345efgh6723" },
 								{ name: "teacher-os-library-audio-prod-zyxw7654utsr3223" },
 							],
 						},
@@ -392,7 +411,11 @@ describe("study-pack R2 audio sync & prod promote CLI (#814)", () => {
 						success: true,
 						result: [
 							{
-								uuid: "11111111-1111-4111-8111-111111111111",
+								uuid: stagingDbId,
+								name: "teacher-os-database-staging-abcd2345efgh6723",
+							},
+							{
+								uuid: prodDbId,
 								name: "teacher-os-database-prod-zyxw7654utsr3223",
 							},
 						],
@@ -401,17 +424,147 @@ describe("study-pack R2 audio sync & prod promote CLI (#814)", () => {
 				);
 			}
 			if (url.includes("/objects?")) {
-				return new Response(JSON.stringify({ success: true, result: [] }), {
-					status: 200,
-				});
-			}
-			if (url.includes("/objects/")) {
-				return new Response(null, { status: 404 });
+				const isStagingBucket = url.includes("staging-abcd2345efgh6723");
+				const parsed = new URL(url);
+				const prefix = parsed.searchParams.get("prefix") ?? "";
+				return new Response(
+					JSON.stringify({
+						success: true,
+						result: isStagingBucket ? [{ key: prefix, size: 1024 }] : [],
+					}),
+					{ status: 200 },
+				);
 			}
 			if (url.endsWith("/query")) {
 				const body = JSON.parse(String(init?.body ?? "{}")) as { sql?: string };
-				if (/INSERT|UPDATE|DELETE/i.test(body.sql ?? "")) {
-					writes.push(body.sql ?? "");
+				const sql = body.sql ?? "";
+				if (/^\s*(INSERT|UPDATE|DELETE)\b/i.test(sql)) {
+					writes.push(sql);
+				}
+				if (sql.includes("sqlite_master")) {
+					return new Response(
+						JSON.stringify({
+							success: true,
+							result: [
+								{
+									success: true,
+									results: [
+										{ name: "study_pack" },
+										{ name: "study_pack_exercise" },
+										{ name: "study_pack_item" },
+									],
+								},
+							],
+						}),
+						{ status: 200 },
+					);
+				}
+				if (sql.includes("PRAGMA table_info('study_pack')")) {
+					return new Response(
+						JSON.stringify({
+							success: true,
+							result: [{ success: true, results: [{ name: "level" }] }],
+						}),
+						{ status: 200 },
+					);
+				}
+				if (sql.includes("PRAGMA table_info('study_pack_exercise')")) {
+					return new Response(
+						JSON.stringify({
+							success: true,
+							result: [{ success: true, results: [{ name: "audio_key" }] }],
+						}),
+						{ status: 200 },
+					);
+				}
+				const isStagingDb = url.includes(stagingDbId);
+				if (isStagingDb && sql.includes("FROM study_pack WHERE")) {
+					return new Response(
+						JSON.stringify({
+							success: true,
+							result: [
+								{
+									success: true,
+									results: [
+										{
+											id: "syspack-first-step-gt2",
+											org_id: null,
+											title: "First Step/GT2 — Mô hình Kỷ luật (15 phút/ngày)",
+											description: "Desc",
+											level: "IELTS First Step",
+											status: "ready",
+											source_pack_id: null,
+											created_by: null,
+											created_at: 1000,
+											updated_at: 1000,
+										},
+									],
+								},
+							],
+						}),
+						{ status: 200 },
+					);
+				}
+				if (isStagingDb && sql.includes("FROM study_pack_item")) {
+					return new Response(
+						JSON.stringify({
+							success: true,
+							result: [
+								{
+									success: true,
+									results: [
+										{
+											id: "syspackitem-first-step-gt2-d02",
+											pack_id: "syspack-first-step-gt2",
+											day_index: 2,
+											position: 0,
+											source_kind: "library_exercise",
+											source_id: "sysex-first-step-gt2-b02",
+											note: "",
+										},
+									],
+								},
+							],
+						}),
+						{ status: 200 },
+					);
+				}
+				if (isStagingDb && sql.includes("FROM study_pack_exercise")) {
+					return new Response(
+						JSON.stringify({
+							success: true,
+							result: [
+								{
+									success: true,
+									results: [
+										{
+											id: "sysex-first-step-gt2-b02",
+											skill: "listening",
+											part: "s1",
+											type: "notes",
+											title: "Listening B02",
+											band: "5.5",
+											level: "IELTS First Step",
+											intro: "Listen",
+											passage: "",
+											audio_url: "",
+											audio_key:
+												"study-packs/first-step-gt2/sysex-first-step-gt2-b02.mp3",
+											transcript: "Sample",
+											questions: "[]",
+											option_bank: "[]",
+											note: "",
+											status: "ready",
+											created_by: null,
+											created_at: 1000,
+											updated_at: 1000,
+										},
+									],
+								},
+							],
+						}),
+						{ status: 200 },
+					);
 				}
 				return new Response(
 					JSON.stringify({
@@ -425,22 +578,34 @@ describe("study-pack R2 audio sync & prod promote CLI (#814)", () => {
 		};
 
 		let stdout = "";
-		await runPromoteStudyPacksProdCli(["--dry-run"], {
-			env: {
-				CLOUDFLARE_ACCOUNT_ID: "acc-1",
-				CLOUDFLARE_API_TOKEN: "super-secret-token-value",
+		await runPromoteStudyPacksProdCli(
+			[
+				"--d1",
+				"--mode",
+				"dry-run",
+				"--pack",
+				"First Step/GT2 — Mô hình Kỷ luật (15 phút/ngày)",
+				"--public-logs",
+			],
+			{
+				env: {
+					CLOUDFLARE_ACCOUNT_ID: "acc-1",
+					CLOUDFLARE_API_TOKEN: "super-secret-token-value",
+				},
+				fetchImpl: mockFetch,
+				writeStdout: (s) => {
+					stdout += s;
+				},
 			},
-			fetchImpl: mockFetch,
-			writeStdout: (s) => {
-				stdout += s;
-			},
-		});
+		);
 
 		expect(writes).toHaveLength(0);
-		expect(stdout).toContain("DRY-RUN D1 status: countsOk=false");
+		expect(stdout).toContain("DRY-RUN complete (read-only");
 		expect(stdout).toContain(
-			"R2 summary: total=32, existing=0, uploaded=0, missing=32",
+			"DRY-RUN R2 audio: total=1, existingOnProd=0, toCopyFromStaging=1, missingOnStaging=0",
 		);
 		expect(stdout).not.toContain("super-secret-token-value");
+		expect(stdout).not.toContain(stagingDbId);
+		expect(stdout).not.toContain(prodDbId);
 	});
 });
