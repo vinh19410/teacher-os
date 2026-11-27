@@ -1060,6 +1060,6 @@ gọi cùng endpoint phải 403 `ACCOUNT_NOT_ADMIN`.
 
 - **Hình dạng migration:** `0099` chỉ tạo bảng `mcp_token` và hai index `mcp_token_hash_uq`, `mcp_token_user_org_idx` (additive, không sửa dữ liệu cũ). Nguồn sự thật là `packages/db/src/migrations/0099_daffy_gressill.sql`.
 - **Trước khi merge vào `main`:** export D1 (`wrangler d1 export … --remote`) hoặc ghi bookmark Time Travel.
-- **Vận hành token:** đăng xuất hoặc đặt lại mật khẩu không thu hồi token MCP, và giáo viên được chọn token không hết hạn. Khi nghi lộ token, thu hồi tại `/teacher/profile`; gỡ email khỏi `TEACHER_EMAILS` cũng chặn token ở request kế tiếp. Hướng dẫn kết nối: `docs/claude-desktop-mcp.md`.
+- **Vận hành token:** đăng xuất hoặc đặt lại mật khẩu không thu hồi token MCP, và giáo viên được chọn token không hết hạn. Khi nghi lộ token, thu hồi tại `/teacher/profile`; gỡ email khỏi `TEACHER_EMAILS` rồi deploy lại (biến này là Worker binding) cũng chặn token của email đó. Hướng dẫn kết nối: `docs/claude-desktop-mcp.md`.
 - **Sau deploy:** kiểm `/readyz` trả `200`, tạo thử một lịch Zoom và xem log có `ZOOM_INVALID_CONFIG` hay không (`ZOOM_HOST_USER`).
 - **Rollback:** chỉ thêm bảng mới; ưu tiên forward-fix, không `DROP` tay bảng đã ghi trong `d1_migrations`.
