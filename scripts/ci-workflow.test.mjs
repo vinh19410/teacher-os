@@ -1382,3 +1382,64 @@ test("dedup-vocab-group-prod.yml triggers only on manual workflow_dispatch, enfo
 		"dedup-vocab-group-prod.yml may only reference the two Cloudflare environment secrets",
 	);
 });
+
+test("promote-study-packs-prod.yml triggers only on manual workflow_dispatch, enforces prod confirmation gate, and shares deploy concurrency", () => {
+	const raw = readFileSync(
+		join(repoRoot, ".github/workflows/promote-study-packs-prod.yml"),
+		"utf8",
+	);
+	const code = stripComments(raw);
+
+	assert.doesNotMatch(
+		code,
+		/\bpush:/,
+		"promote-study-packs-prod.yml must never trigger automatically on push",
+	);
+	assert.doesNotMatch(
+		code,
+		/\bpull_request:/,
+		"promote-study-packs-prod.yml must never trigger on pull_request",
+	);
+	assert.match(
+		code,
+		/\bworkflow_dispatch:/,
+		"promote-study-packs-prod.yml must trigger only on workflow_dispatch",
+	);
+	assertReadOnlyWorkflowPermissions(code, "promote-study-packs-prod.yml");
+	assert.match(
+		code,
+		/group:\s*deploy-\$\{\{\s*inputs\.mode\s*==\s*'audit-staging'\s*&&\s*'staging'\s*\|\|\s*'production'\s*\}\}/,
+		"promote-study-packs-prod.yml must share deploy-staging/deploy-production concurrency group",
+	);
+	assert.match(
+		code,
+		/cancel-in-progress:\s*false/,
+		"promote-study-packs-prod.yml must never cancel in-progress runs",
+	);
+	assert.match(
+		code,
+		/environment:\s*\$\{\{\s*inputs\.mode\s*==\s*'audit-staging'\s*&&\s*'staging'\s*\|\|\s*'production'\s*\}\}/,
+		"promote-study-packs-prod.yml must route audit-staging to staging env and dry-run/apply to production env",
+	);
+	assert.match(
+		code,
+		/--public-logs/,
+		"promote-study-packs-prod.yml must always pass --public-logs on this public repo",
+	);
+	assert.match(
+		code,
+		/--allow-prod\s+--confirm-prod\s+"\$CONFIRM_PROD"/,
+		"promote-study-packs-prod.yml must require explicit --allow-prod and --confirm-prod for apply mode",
+	);
+	assert.doesNotMatch(
+		code,
+		/actions\/upload-artifact/,
+		"promote-study-packs-prod.yml must never upload artifacts containing backup data",
+	);
+	const secretRefs = [...new Set(code.match(/secrets\.[A-Z_]+/g) ?? [])];
+	assert.deepEqual(
+		secretRefs.sort(),
+		["secrets.CLOUDFLARE_ACCOUNT_ID", "secrets.CLOUDFLARE_API_TOKEN"],
+		"promote-study-packs-prod.yml may only reference the two Cloudflare environment secrets",
+	);
+});
