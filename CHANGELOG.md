@@ -18,6 +18,9 @@ Quy ước khi cập nhật:
 ### Fixed
 - **Bảo vệ recording trước khi phát hành (#994):** không cho gán link tay (kể cả để trống) khi video R2 còn hạn (`409 RECORDING_LOCKED`, ẩn nút `Gán link tay`); không Trash bản gốc Zoom khi buổi có nhiều đoạn MP4; email nhắc hạn 06:00 (giờ VN) chạy trước lượt đồng bộ recording. Phần còn lại theo dõi ở #1015 và #1016.
 
+### Removed
+- **Gỡ 2 mục dư thừa `Khoá` và `Số buổi đã học` khỏi thẻ thông tin chung của lớp (`ClassInfoCard`) trên `/student/classes/$classId` (`apps/student`, `apps/e2e`, `DESIGN.md`):** thu gọn lưới `<dl>` còn tối đa 4 mục (`Lịch`, `Hình thức`, `Giáo viên` + `mailto:`, `Khai giảng`), dọn props thừa (`held`, `totalSessions`) và icon imports (`BookOpen`, `ClipboardCheck`), giữ nguyên vòng `RingStat` và `JourneySummitCard`, đồng thời sửa `fileURLToPath` cho đường dẫn worktree UTF-8 + bổ sung `classMeta?` allowlist trong `helpers-quiz.ts` và cập nhật `DESIGN.md` (#1023).
+
 ## 2026-11-26
 
 ### Added
