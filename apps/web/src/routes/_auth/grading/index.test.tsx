@@ -2,7 +2,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type {
 	AiGradingDraftView,
-	GradingQueueItem,
+	GradingQueueItemV2,
+	TeacherAutoSubmission,
 	TeacherSubmission,
 } from "@teacher-os/api/contracts";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
@@ -17,8 +18,15 @@ const mockSearch = vi.hoisted(() => ({
 	current: {} as {
 		q?: string;
 		mode?: "assignment" | "practice";
-		skill?: "writing" | "speaking";
-		status?: "awaiting" | "graded";
+		skill?:
+			| "writing"
+			| "speaking"
+			| "reading"
+			| "listening"
+			| "grammar"
+			| "vocabulary";
+		status?: "awaiting" | "graded" | "auto";
+		from?: "grading" | "class" | "student";
 	},
 }));
 const mockParams = vi.hoisted(() => ({
@@ -67,7 +75,7 @@ vi.mock("@tanstack/react-router", () => ({
 import { GradingRoute } from "./$attemptId";
 import { GradingQueueRoute, validateGradingSearch } from "./index";
 
-const QUEUE_ITEMS: GradingQueueItem[] = [
+const QUEUE_ITEMS: GradingQueueItemV2[] = [
 	{
 		attemptId: "att-prac-w",
 		mode: "practice",
@@ -114,7 +122,7 @@ const QUEUE_ITEMS: GradingQueueItem[] = [
 	},
 ];
 
-function renderQueue(items: GradingQueueItem[] = QUEUE_ITEMS) {
+function renderQueue(items: GradingQueueItemV2[] = QUEUE_ITEMS) {
 	const client = new QueryClient({
 		defaultOptions: { queries: { retry: false } },
 	});
@@ -156,7 +164,7 @@ describe("GradingQueueRoute (/grading #383)", () => {
 			validateGradingSearch({
 				q: "",
 				mode: "xyz",
-				skill: "reading",
+				skill: "unknown",
 				status: "invalid",
 			}),
 		).toEqual({
@@ -164,6 +172,17 @@ describe("GradingQueueRoute (/grading #383)", () => {
 			mode: undefined,
 			skill: undefined,
 			status: undefined,
+		});
+		expect(
+			validateGradingSearch({
+				skill: "grammar",
+				status: "auto",
+			}),
+		).toEqual({
+			q: undefined,
+			mode: undefined,
+			skill: "grammar",
+			status: "auto",
 		});
 	});
 
@@ -178,16 +197,58 @@ describe("GradingQueueRoute (/grading #383)", () => {
 		const gradeNgoc = screen.getByRole("link", {
 			name: "Chấm bài của Bảo Ngọc",
 		});
-		expect(gradeNgoc.getAttribute("href")).toBe("/grading/att-prac-w");
+		expect(gradeNgoc.getAttribute("href")).toBe(
+			"/grading/att-prac-w?from=grading",
+		);
 		const gradeHuy = screen.getByRole("link", {
 			name: "Chấm bài của Lê Quang Huy",
 		});
-		expect(gradeHuy.getAttribute("href")).toBe("/grading/att-assign-s");
+		expect(gradeHuy.getAttribute("href")).toBe(
+			"/grading/att-assign-s?from=grading",
+		);
 		const editNgoc = screen.getByRole("link", {
 			name: "Xem / sửa điểm của Bảo Ngọc",
 		});
-		expect(editNgoc.getAttribute("href")).toBe("/grading/att-assign-w-graded");
+		expect(editNgoc.getAttribute("href")).toBe(
+			"/grading/att-assign-w-graded?from=grading",
+		);
 		expect(screen.getByText("Đã chấm · Band 6.5")).toBeTruthy();
+	});
+
+	it("hiển thị bài tự chấm với trạng thái Tự chấm · X/Y, link Xem bài làm, không tính vào bài chờ chấm (#978)", () => {
+		renderQueue([
+			...QUEUE_ITEMS,
+			{
+				attemptId: "att-grammar-1",
+				mode: "assignment",
+				classId: "class-1",
+				className: "IELTS Foundation 5.5 (Test)",
+				title: "[Integration test] Grammar quick check 26/11",
+				due: "2026-11-30",
+				student: { id: "s-3", name: "Grok Test Student" },
+				skill: "grammar",
+				part: "grammar",
+				submittedAt: "2026-11-26T08:29:00.000Z",
+				grade: null,
+				aiStatus: null,
+				aiGradingMode: null,
+				autoScore: { correctCount: 3, totalCount: 3 },
+			},
+		]);
+
+		// Chỉ 2 bài Writing/Speaking chưa chấm (att-prac-w, att-assign-s), KHÔNG tính att-grammar-1
+		expect(document.body.textContent).toContain(
+			"2 bài chờ chấm · 4 bài đã nộp",
+		);
+		expect(document.body.textContent).not.toContain("Grammar · Grammar");
+		expect(screen.getByText("Tự chấm · 3/3")).toBeTruthy();
+		const reviewLink = screen.getByRole("link", {
+			name: "Xem bài làm của Grok Test Student",
+		});
+		expect(reviewLink.getAttribute("href")).toBe(
+			"/grading/att-grammar-1?from=grading",
+		);
+		expect(reviewLink.textContent).toBe("Xem bài làm");
 	});
 
 	it("lọc theo nguồn bài (Luyện tập), kỹ năng, trạng thái và tính counts chéo nhóm chính xác", () => {
@@ -578,5 +639,121 @@ describe("GradingQueueRoute — demo grading sample (#508)", () => {
 		await vi.waitFor(() => {
 			expect(deleteSpy).toHaveBeenCalledTimes(1);
 		});
+	});
+});
+
+describe("GradingRoute (/grading/$attemptId) — auto-graded review & back links (#978)", () => {
+	const AUTO_SUBMISSION: TeacherAutoSubmission = {
+		kind: "auto",
+		attemptId: "att-mc-1",
+		classAssignmentId: "ca-1",
+		classId: "class-1",
+		className: "IELTS Foundation 5.5 (Test)",
+		title: "[Integration test] Grammar quick check 26/11",
+		due: "2026-11-30",
+		student: { id: "st-9", name: "Grok Test Student" },
+		skill: "grammar",
+		part: "",
+		startedAt: "2026-11-26T08:25:00.000Z",
+		submittedAt: "2026-11-26T08:29:00.000Z",
+		correctCount: 3,
+		wrongCount: 0,
+		skippedCount: 0,
+		totalCount: 3,
+		items: [
+			{ verdict: "correct", key: "A", answer: "A" },
+			{ verdict: "correct", key: "B", answer: "B" },
+			{ verdict: "correct", key: "C", answer: "C" },
+		],
+		detail: {
+			skill: "grammar",
+			type: "mcq",
+			band: "5.5",
+			intro: "",
+			prompt: "<p>Choose the right option.</p>",
+			passage: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			optionBank: [],
+			note: "",
+		},
+		questions: [
+			{
+				stem: "Q1",
+				opts: ["A", "B", "C", "D"],
+				type: "mcq",
+				pin: null,
+				key: "A",
+				alts: "",
+				verdict: "correct",
+				answer: "A",
+			},
+			{
+				stem: "Q2",
+				opts: ["A", "B", "C", "D"],
+				type: "mcq",
+				pin: null,
+				key: "B",
+				alts: "",
+				verdict: "correct",
+				answer: "B",
+			},
+			{
+				stem: "Q3",
+				opts: ["A", "B", "C", "D"],
+				type: "mcq",
+				pin: null,
+				key: "C",
+				alts: "",
+				verdict: "correct",
+				answer: "C",
+			},
+		],
+	};
+
+	it("renders read-only AutoSubmissionView without GradeForm and adapts back link by ?from=", () => {
+		mockParams.attemptId = "att-mc-1";
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		client.setQueryData(gradingQueryKey("att-mc-1"), AUTO_SUBMISSION);
+
+		mockSearch.current = { from: "student" };
+		const { rerender } = render(
+			<QueryClientProvider client={client}>
+				<GradingRoute />
+			</QueryClientProvider>,
+		);
+
+		expect(screen.getByTestId("auto-submission-view")).toBeTruthy();
+		expect(screen.getByTestId("auto-submission-score").textContent).toBe("3/3");
+		expect(screen.queryByTestId("grade-form")).toBeNull();
+		expect(
+			screen.getByRole("link", { name: "← Về học viên" }).getAttribute("href"),
+		).toBe("/students/st-9?tab=assign");
+
+		mockSearch.current = { from: "grading" };
+		rerender(
+			<QueryClientProvider client={client}>
+				<GradingRoute />
+			</QueryClientProvider>,
+		);
+		expect(
+			screen
+				.getByRole("link", { name: "← Về hàng chờ chấm" })
+				.getAttribute("href"),
+		).toBe("/grading");
+
+		mockSearch.current = { from: "class" };
+		rerender(
+			<QueryClientProvider client={client}>
+				<GradingRoute />
+			</QueryClientProvider>,
+		);
+		expect(
+			screen.getByRole("link", { name: "← Về lớp" }).getAttribute("href"),
+		).toBe("/classes/class-1?tab=assignments");
 	});
 });

@@ -1,4 +1,4 @@
-import { isBandStep } from "@teacher-os/api/lib/ielts-band";
+import { hasGradableTask, isBandStep } from "@teacher-os/api/lib/ielts-band";
 import { SKILLS } from "@/components/assignments/assignment-presets";
 import type { KernelHydratedData, Scores } from "@/lib/mock-data";
 
@@ -20,6 +20,10 @@ export interface StudentAssignmentRow {
 	dueAt: string | null;
 	/** class row: từ target.submittedAt; grading row: null. */
 	submittedAt: string | null;
+	/** class row: attemptId để mở /grading/$attemptId (null khi chưa nộp); grading row: null. */
+	attemptId: string | null;
+	/** class row: true nếu bài cần chấm tay (Writing/Speaking/Hybrid); grading row: false. */
+	gradable: boolean;
 	/** class row: Band tổng IELTS hợp lệ (0–9, bước 0.5) đi kèm gradedAt hợp lệ;
 	 * null khi chưa chấm hoặc dữ liệu không hợp lệ; grading row: null. */
 	band: number | null;
@@ -71,6 +75,12 @@ export function studentAssignmentRows(
 				typeof target.gradedAt === "string" &&
 				target.gradedAt.trim().length > 0 &&
 				Number.isFinite(Date.parse(target.gradedAt));
+			const attemptId =
+				typeof target.attemptId === "string" &&
+				target.attemptId.trim().length > 0
+					? target.attemptId
+					: null;
+			const gradable = prompt ? hasGradableTask(prompt) : hasGrade;
 			rows.push({
 				key: `ca:${ca.id}`,
 				kind: "class",
@@ -81,6 +91,8 @@ export function studentAssignmentRows(
 				due: ca.due,
 				dueAt: ca.dueAt ?? null,
 				submittedAt: target.submittedAt,
+				attemptId,
+				gradable,
 				band: hasGrade ? (target.band as number) : null,
 				gradedAt: hasGrade ? (target.gradedAt as string) : null,
 				gradingStatus: null,
@@ -101,6 +113,8 @@ export function studentAssignmentRows(
 			due: a.due,
 			dueAt: null,
 			submittedAt: null,
+			attemptId: null,
+			gradable: false,
 			band: null,
 			gradedAt: null,
 			gradingStatus: a.status,

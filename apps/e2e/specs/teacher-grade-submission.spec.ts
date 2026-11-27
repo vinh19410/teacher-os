@@ -216,7 +216,7 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 		});
 		await row.getByRole("link", { name: "Chấm bài" }).click();
 		await expect(teacherPage).toHaveURL(
-			new RegExp(`/grading/${writingAttemptId}$`),
+			new RegExp(`/grading/${writingAttemptId}(\\?from=class)?$`),
 		);
 
 		await expect(
@@ -412,7 +412,7 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 		});
 		await row.getByRole("link", { name: "Chấm bài" }).click();
 		await expect(teacherPage).toHaveURL(
-			new RegExp(`/grading/${speakingAttemptId}$`),
+			new RegExp(`/grading/${speakingAttemptId}(\\?from=class)?$`),
 		);
 
 		await expect(
@@ -510,7 +510,7 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 			.getByRole("link", { name: "Chấm bài của Học Viên Chấm" })
 			.click();
 		await expect(teacherPage).toHaveURL(
-			new RegExp(`/grading/${practiceAttemptId}$`),
+			new RegExp(`/grading/${practiceAttemptId}(\\?from=grading)?$`),
 		);
 
 		// 4) Giáo viên chấm 4 tiêu chí + nhận xét rồi quay lại hàng chờ chấm.

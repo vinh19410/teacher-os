@@ -5,11 +5,11 @@ import {
 	useNavigate,
 	useSearch,
 } from "@tanstack/react-router";
-import type { GradingQueueItem } from "@teacher-os/api/contracts";
-import { formatBand } from "@teacher-os/api/lib/ielts-band";
+import type { GradingQueueItemV2 } from "@teacher-os/api/contracts";
+import { formatBand, isGradableSkill } from "@teacher-os/api/lib/ielts-band";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { partOf, skillOf } from "@/components/assignments/assignment-presets";
+import { skillOf } from "@/components/assignments/assignment-presets";
 import { fmtDue, fmtWhen } from "@/components/assignments/assignment-status";
 import { StatusTag } from "@/components/assignments/status-tag";
 import { normalizeVi } from "@/components/command-search/search-index";
@@ -39,18 +39,31 @@ import {
 } from "@/lib/repos/grading";
 
 export type GradingModeFilter = "all" | "assignment" | "practice";
-export type GradingSkillFilter = "all" | "writing" | "speaking";
-export type GradingStatusFilter = "all" | "awaiting" | "graded";
+export type GradingSkillFilter =
+	| "all"
+	| "writing"
+	| "speaking"
+	| "reading"
+	| "listening"
+	| "grammar"
+	| "vocabulary";
+export type GradingStatusFilter = "all" | "awaiting" | "graded" | "auto";
 
 export interface GradingSearch {
 	q?: string;
 	mode?: "assignment" | "practice";
-	skill?: "writing" | "speaking";
-	status?: "awaiting" | "graded";
+	skill?:
+		| "writing"
+		| "speaking"
+		| "reading"
+		| "listening"
+		| "grammar"
+		| "vocabulary";
+	status?: "awaiting" | "graded" | "auto";
 }
 
 /**
- * Chuẩn hóa search params (?q=&mode=&skill=&status=) cho /grading (#383).
+ * Chuẩn hóa search params (?q=&mode=&skill=&status=) cho /grading (#383, #978).
  * Giá trị lạ hoặc mặc định rơi về `undefined` để URL chia sẻ luôn sạch.
  */
 export function validateGradingSearch(input: {
@@ -71,11 +84,18 @@ export function validateGradingSearch(input: {
 			? input.mode
 			: undefined;
 	const skill =
-		input.skill === "writing" || input.skill === "speaking"
+		input.skill === "writing" ||
+		input.skill === "speaking" ||
+		input.skill === "reading" ||
+		input.skill === "listening" ||
+		input.skill === "grammar" ||
+		input.skill === "vocabulary"
 			? input.skill
 			: undefined;
 	const status =
-		input.status === "awaiting" || input.status === "graded"
+		input.status === "awaiting" ||
+		input.status === "graded" ||
+		input.status === "auto"
 			? input.status
 			: undefined;
 	return { q, mode, skill, status };
@@ -103,6 +123,10 @@ const SKILL_FILTERS: ReadonlyArray<{
 	{ label: "Tất cả", id: "all" },
 	{ label: "Writing", id: "writing" },
 	{ label: "Speaking", id: "speaking" },
+	{ label: "Reading", id: "reading" },
+	{ label: "Listening", id: "listening" },
+	{ label: "Grammar", id: "grammar" },
+	{ label: "Vocabulary", id: "vocabulary" },
 ];
 const SKILL_OPTIONS = SKILL_FILTERS.map((f) => f.label);
 
@@ -113,8 +137,13 @@ const STATUS_FILTERS: ReadonlyArray<{
 	{ label: "Tất cả", id: "all" },
 	{ label: "Chờ chấm", id: "awaiting" },
 	{ label: "Đã chấm", id: "graded" },
+	{ label: "Tự chấm", id: "auto" },
 ];
 const STATUS_OPTIONS = STATUS_FILTERS.map((f) => f.label);
+
+function isAutoGradedItem(item: GradingQueueItemV2): boolean {
+	return !isGradableSkill(item.skill);
+}
 
 const GRADE_LINK_BUTTON_CLASS =
 	"inline-flex items-center whitespace-nowrap rounded-full bg-primary px-[14px] py-[6px] font-medium text-primary-foreground text-xs hover:bg-accent focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none";
@@ -250,12 +279,17 @@ export function GradingQueueRoute() {
 			const skillCounts: Record<string, number> = {
 				Writing: 0,
 				Speaking: 0,
+				Reading: 0,
+				Listening: 0,
+				Grammar: 0,
+				Vocabulary: 0,
 			};
 			const statusCounts: Record<string, number> = {
 				"Chờ chấm": 0,
 				"Đã chấm": 0,
+				"Tự chấm": 0,
 			};
-			const filtered: GradingQueueItem[] = [];
+			const filtered: GradingQueueItemV2[] = [];
 
 			for (const item of items) {
 				if (
@@ -266,13 +300,16 @@ export function GradingQueueRoute() {
 				) {
 					continue;
 				}
+				const auto = isAutoGradedItem(item);
 				const matchMode = modeFilter === "all" || item.mode === modeFilter;
 				const matchSkill = skillFilter === "all" || item.skill === skillFilter;
 				const matchStatus =
 					statusFilter === "all" ||
-					(statusFilter === "graded"
-						? item.grade !== null
-						: item.grade === null);
+					(statusFilter === "auto"
+						? auto
+						: statusFilter === "graded"
+							? !auto && item.grade !== null
+							: !auto && item.grade === null);
 
 				if (matchSkill && matchStatus) {
 					const modeLabel =
@@ -280,11 +317,15 @@ export function GradingQueueRoute() {
 					modeCounts[modeLabel] = (modeCounts[modeLabel] ?? 0) + 1;
 				}
 				if (matchMode && matchStatus) {
-					const skillLabel = item.skill === "writing" ? "Writing" : "Speaking";
+					const skillLabel = skillOf(item.skill).name;
 					skillCounts[skillLabel] = (skillCounts[skillLabel] ?? 0) + 1;
 				}
 				if (matchMode && matchSkill) {
-					const statusLabel = item.grade !== null ? "Đã chấm" : "Chờ chấm";
+					const statusLabel = auto
+						? "Tự chấm"
+						: item.grade !== null
+							? "Đã chấm"
+							: "Chờ chấm";
 					statusCounts[statusLabel] = (statusCounts[statusLabel] ?? 0) + 1;
 				}
 				if (matchMode && matchSkill && matchStatus) {
@@ -301,7 +342,9 @@ export function GradingQueueRoute() {
 		}, [items, qNorm, modeFilter, skillFilter, statusFilter]);
 
 	const awaitingCount = useMemo(
-		() => items.filter((item) => item.grade === null).length,
+		() =>
+			items.filter((item) => !isAutoGradedItem(item) && item.grade === null)
+				.length,
 		[items],
 	);
 
@@ -335,7 +378,7 @@ export function GradingQueueRoute() {
 			<PageHead
 				kicker={`${awaitingCount} bài chờ chấm · ${items.length} bài đã nộp`}
 				title="Chấm bài"
-				lead="Danh sách bài Writing và Speaking học viên đã nộp từ lớp học và tự luyện."
+				lead="Danh sách bài học viên đã nộp từ lớp học và tự luyện (chấm tay Writing/Speaking và xem lại bài tự chấm)."
 				action={
 					hasDemoSample ? (
 						<Button
@@ -361,9 +404,8 @@ export function GradingQueueRoute() {
 						Chưa có bài nộp cần chấm
 					</h2>
 					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
-						Khi học viên nộp bài Writing hoặc Speaking từ lớp học hay mục Luyện
-						tập, bài nộp sẽ xuất hiện tại đây để giáo viên chấm điểm và nhận
-						xét.
+						Khi học viên nộp bài tập từ lớp học hay mục Luyện tập, bài nộp sẽ
+						xuất hiện tại đây để giáo viên chấm điểm hoặc xem lại chi tiết.
 					</p>
 					<div className="mt-4 flex justify-center">
 						<Button
@@ -545,8 +587,13 @@ export function GradingQueueRoute() {
 								rows={filteredItems.map((item) => {
 									const skillMeta = skillOf(item.skill);
 									const partMeta = item.part
-										? partOf(item.skill, item.part)
+										? (skillMeta.parts.find((p) => p.id === item.part) ?? null)
 										: null;
+									const partSuffix =
+										partMeta && partMeta.label !== skillMeta.name
+											? ` · ${partMeta.label}`
+											: "";
+									const auto = isAutoGradedItem(item);
 									return {
 										cells: [
 											<div
@@ -565,7 +612,7 @@ export function GradingQueueRoute() {
 												<div className="font-medium text-sm">{item.title}</div>
 												<div className="text-muted-foreground text-xs">
 													{skillMeta.name}
-													{partMeta ? ` · ${partMeta.label}` : ""}
+													{partSuffix}
 												</div>
 											</div>,
 											<div key="source" className="whitespace-nowrap">
@@ -594,32 +641,52 @@ export function GradingQueueRoute() {
 												key="status"
 												className="flex items-center gap-1.5 whitespace-nowrap"
 											>
-												{item.grade ? (
+												{auto ? (
+													<StatusTag tone="ok">
+														{item.autoScore
+															? `Tự chấm · ${item.autoScore.correctCount}/${item.autoScore.totalCount}`
+															: "Tự chấm"}
+													</StatusTag>
+												) : item.grade ? (
 													<StatusTag tone="ok">
 														{`Đã chấm · Band ${formatBand(item.grade.band)}`}
 													</StatusTag>
 												) : (
 													<StatusTag tone="warn">Chờ chấm</StatusTag>
 												)}
-												{AI_ENABLED &&
+												{!auto &&
+													AI_ENABLED &&
 													item.aiStatus !== null &&
 													item.aiStatus !== undefined && (
 														<AiDraftStatusBadge status={item.aiStatus} />
 													)}
-												{AI_ENABLED && item.aiGradingMode === "quick" && (
-													<AiQuickGradeBadge />
-												)}
+												{!auto &&
+													AI_ENABLED &&
+													item.aiGradingMode === "quick" && (
+														<AiQuickGradeBadge />
+													)}
 											</div>,
 											<div
 												key="action"
 												className="whitespace-nowrap text-right"
 											>
-												{item.grade ? (
+												{auto ? (
 													<Link
 														to="/grading/$attemptId"
 														params={{ attemptId: item.attemptId }}
+														search={{ from: "grading" }}
+														aria-label={`Xem bài làm của ${item.student.name}`}
+														className="rounded-xs font-medium text-primary text-xs outline-none hover:text-primary focus-visible:shadow-[var(--focus-ring)]"
+													>
+														Xem bài làm
+													</Link>
+												) : item.grade ? (
+													<Link
+														to="/grading/$attemptId"
+														params={{ attemptId: item.attemptId }}
+														search={{ from: "grading" }}
 														aria-label={`Xem / sửa điểm của ${item.student.name}`}
-														className="font-medium text-primary text-xs hover:text-primary"
+														className="rounded-xs font-medium text-primary text-xs outline-none hover:text-primary focus-visible:shadow-[var(--focus-ring)]"
 													>
 														Xem / sửa điểm
 													</Link>
@@ -627,6 +694,7 @@ export function GradingQueueRoute() {
 													<Link
 														to="/grading/$attemptId"
 														params={{ attemptId: item.attemptId }}
+														search={{ from: "grading" }}
 														aria-label={`Chấm bài của ${item.student.name}`}
 														className={GRADE_LINK_BUTTON_CLASS}
 													>

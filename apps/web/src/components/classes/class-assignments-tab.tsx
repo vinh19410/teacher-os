@@ -91,6 +91,7 @@ function TargetGradeActions({
 				<Link
 					to="/grading/$attemptId"
 					params={{ attemptId: target.attemptId }}
+					search={{ from: "class" }}
 					className="rounded-xs font-medium text-primary text-xs outline-none hover:text-primary focus-visible:shadow-[var(--focus-ring)]"
 				>
 					Xem / sửa điểm
@@ -102,6 +103,7 @@ function TargetGradeActions({
 		<Link
 			to="/grading/$attemptId"
 			params={{ attemptId: target.attemptId }}
+			search={{ from: "class" }}
 			aria-label={`Chấm bài của ${studentName}`}
 			className={GRADE_LINK_BUTTON_CLASS}
 		>
@@ -369,6 +371,9 @@ export function ClassAssignmentsTab({
 												todayVN,
 												{ dueAt: ca.dueAt, nowMs: effectiveNowMs },
 											);
+											const showManualGrade =
+												gradable ||
+												(target.band != null && Boolean(target.gradedAt));
 											return (
 												<div
 													key={target.studentId}
@@ -387,12 +392,22 @@ export function ClassAssignmentsTab({
 																: "Chưa có bài nộp"}
 														</span>
 														<StatusTag tone={sub.tone}>{sub.label}</StatusTag>
-														{gradable && (
+														{showManualGrade ? (
 															<TargetGradeActions
 																target={target}
 																studentName={s?.name ?? target.studentId}
 															/>
-														)}
+														) : target.attemptId ? (
+															<Link
+																to="/grading/$attemptId"
+																params={{ attemptId: target.attemptId }}
+																search={{ from: "class" }}
+																aria-label={`Xem bài làm của ${s?.name ?? target.studentId}`}
+																className={GRADE_LINK_BUTTON_CLASS}
+															>
+																Xem bài làm
+															</Link>
+														) : null}
 													</div>
 												</div>
 											);

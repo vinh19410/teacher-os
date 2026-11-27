@@ -3,6 +3,9 @@ import { createClient } from "@libsql/client";
 import type {
 	AiGradingDraftView,
 	GradingQueueResponse,
+	GradingQueueV2Response,
+	TeacherAttemptReview,
+	TeacherAutoSubmission,
 	TeacherSubmission,
 } from "@teacher-os/api/contracts";
 import {
@@ -2684,5 +2687,676 @@ describe("TOS-33 (#481) — vai TA, publish version, ai-retry", () => {
 		expect(queueAfterRes.status).toBe(200);
 		const queueAfter = (await queueAfterRes.json()) as GradingQueueResponse;
 		expect(queueAfter.items.some((i) => i.attemptId === attemptId)).toBe(false);
+	});
+});
+
+describe("teacher auto-graded submission review & v2 queue (/api/grading #978)", () => {
+	let app: ReturnType<typeof buildApp>;
+	let libsql: Db;
+	const audioStore = createMemoryMediaStore();
+
+	beforeAll(async () => {
+		const client = createClient({ url: "file::memory:" });
+		const db = drizzle(client, { schema });
+		await migrate(db, { migrationsFolder: MIGRATIONS_DIR });
+		libsql = db as unknown as Db;
+
+		await libsql.insert(schema.organization).values([
+			{ id: "org-1", name: "Academy 1" },
+			{ id: "org-2", name: "Academy 2" },
+		]);
+		await libsql.insert(schema.user).values([
+			{
+				id: "t-1",
+				name: "Cô Lan",
+				email: "lan@test.local",
+				role: "teacher",
+			},
+			{
+				id: "t-2",
+				name: "Thầy Nam",
+				email: "nam@test.local",
+				role: "teacher",
+			},
+		]);
+		await libsql.insert(schema.membership).values([
+			{ id: "mem-1", orgId: "org-1", userId: "t-1", role: "teacher" },
+			{ id: "mem-2", orgId: "org-2", userId: "t-2", role: "teacher" },
+		]);
+		await libsql.insert(schema.student).values([
+			{
+				id: "student-1",
+				orgId: "org-1",
+				name: "Grok Test Student",
+				email: "grok@test.local",
+				phone: "0901234567",
+			},
+			{
+				id: "student-2",
+				orgId: "org-2",
+				name: "Other Student",
+				email: "other@test.local",
+				phone: "0909999999",
+			},
+		]);
+		await libsql.insert(schema.classTable).values([
+			{
+				id: "class-1",
+				orgId: "org-1",
+				name: "IELTS Foundation 5.5 (Test)",
+				level: "IELTS 5.5",
+				mode: "Online",
+				schedule: "T2 & T5 18:30–20:00",
+				sessionsDone: 0,
+				sessionsTotal: 20,
+				status: "active",
+			},
+			{
+				id: "class-2",
+				orgId: "org-2",
+				name: "Org 2 Class",
+				level: "IELTS 6.0",
+				mode: "Online",
+				schedule: "T3 19:00",
+				sessionsDone: 0,
+				sessionsTotal: 10,
+				status: "active",
+			},
+		]);
+
+		const grammarQuestions = [
+			{
+				stem: "She ___ coffee every morning.",
+				opts: ["drink", "drinks", "drinking", "drank"],
+				answer: "B",
+				alts: "",
+				type: "mcq",
+				pin: null,
+			},
+			{
+				stem: "They ___ the project yesterday.",
+				opts: ["finish", "finishes", "finished", "finishing"],
+				answer: "C",
+				alts: "",
+				type: "mcq",
+				pin: null,
+			},
+			{
+				stem: "We ___ here since 2020.",
+				opts: ["live", "lived", "have lived", "living"],
+				answer: "C",
+				alts: "",
+				type: "mcq",
+				pin: null,
+				explanation: "Present perfect with since.",
+			},
+		];
+
+		const readingGroups = [
+			{
+				id: "grp-1",
+				type: "tfng",
+				instruction: "Do the following statements agree?",
+				startIndex: 0,
+				count: 1,
+				optionBank: [],
+			},
+		];
+
+		await libsql.insert(schema.assignmentPrompt).values([
+			{
+				id: "p-grammar",
+				orgId: "org-1",
+				task: "task1",
+				genre: "",
+				skill: "grammar",
+				part: "tenses",
+				type: "mcq",
+				title: "[Integration test] Grammar quick check 26/11",
+				band: "5.5",
+				prompt: "<p>Choose the best option.</p>",
+				questions: JSON.stringify(grammarQuestions),
+				optionBank: "[]",
+				note: "<p>Xem lại thì hiện tại hoàn thành.</p>",
+				status: "ready",
+			},
+			{
+				id: "p-reading",
+				orgId: "org-1",
+				task: "task1",
+				genre: "",
+				skill: "reading",
+				part: "p1",
+				type: "tfng",
+				title: "Reading Passage 1",
+				band: "6.0",
+				prompt: "",
+				passage: "<p>Solar power is growing rapidly.</p>",
+				questions: JSON.stringify([
+					{
+						stem: "Solar power is declining.",
+						opts: null,
+						answer: "FALSE",
+						alts: "",
+						type: "tfng",
+						pin: null,
+						explanation: "The passage states solar power is growing rapidly.",
+					},
+				]),
+				groups: JSON.stringify(readingGroups),
+				optionBank: "[]",
+				note: "",
+				status: "ready",
+			},
+			{
+				id: "p-listening",
+				orgId: "org-1",
+				task: "task1",
+				genre: "",
+				skill: "listening",
+				part: "s1",
+				type: "cloze",
+				title: "Listening Section 1",
+				band: "6.0",
+				prompt: "Complete the form.",
+				transcript: "Speaker: My name is Anna.",
+				audioName: "section1.mp3",
+				audioKey: "library-audio/org-1/s1.mp3",
+				questions: JSON.stringify([
+					{
+						stem: "Name: [___]",
+						opts: null,
+						answer: "Anna",
+						alts: "",
+						type: "cloze",
+						pin: null,
+					},
+				]),
+				optionBank: "[]",
+				note: "",
+				status: "ready",
+			},
+			{
+				id: "p-writing-await",
+				orgId: "org-1",
+				task: "task2",
+				genre: "opinion",
+				skill: "writing",
+				part: "task2",
+				type: "opinion",
+				title: "Writing Task 2 Pending",
+				prompt: "<p>Discuss both views.</p>",
+				questions: "[]",
+				optionBank: "[]",
+				note: "",
+				status: "ready",
+			},
+			{
+				id: "p-hybrid",
+				orgId: "org-1",
+				task: "task1",
+				genre: "",
+				skill: "grammar",
+				part: "tenses",
+				type: "mcq",
+				title: "Hybrid Grammar + Writing",
+				prompt: "Choose A",
+				questions: JSON.stringify([
+					{
+						stem: "Q1",
+						opts: ["A", "B", "C", "D"],
+						answer: "A",
+						alts: "",
+						pin: null,
+					},
+				]),
+				optionBank: "[]",
+				note: "",
+				writingPart: "task2",
+				writingType: "opinion",
+				writingPrompt: "<p>Write a paragraph.</p>",
+				status: "ready",
+			},
+			{
+				id: "p-org2-grammar",
+				orgId: "org-2",
+				task: "task1",
+				genre: "",
+				skill: "grammar",
+				part: "tenses",
+				type: "mcq",
+				title: "Org 2 Grammar",
+				prompt: "Choose",
+				questions: JSON.stringify([
+					{
+						stem: "Q1",
+						opts: ["A", "B"],
+						answer: "A",
+						alts: "",
+						pin: null,
+					},
+				]),
+				optionBank: "[]",
+				note: "",
+				status: "ready",
+			},
+		]);
+
+		// Seed 1 active study pack so we can verify classStudyPackId IS NOT NULL is excluded from /api/grading
+		await libsql.insert(schema.studyPack).values({
+			id: "sp-1",
+			orgId: "org-1",
+			title: "Pack 1",
+			status: "ready",
+		});
+		await libsql.insert(schema.classStudyPack).values({
+			id: "csp-1",
+			orgId: "org-1",
+			classId: "class-1",
+			packId: "sp-1",
+			title: "Pack 1",
+			startDate: "2026-11-20",
+			releaseTime: "06:00",
+			dueTime: "17:00",
+			status: "active",
+		});
+
+		await libsql.insert(schema.classAssignment).values([
+			{
+				id: "ca-grammar",
+				orgId: "org-1",
+				classId: "class-1",
+				promptId: "p-grammar",
+				title: "[Integration test] Grammar quick check 26/11",
+				due: "2026-11-30",
+			},
+			{
+				id: "ca-reading",
+				orgId: "org-1",
+				classId: "class-1",
+				promptId: "p-reading",
+				title: "Reading Passage 1",
+				due: "2026-11-30",
+			},
+			{
+				id: "ca-listening",
+				orgId: "org-1",
+				classId: "class-1",
+				promptId: "p-listening",
+				title: "Listening Section 1",
+				due: "2026-11-30",
+			},
+			{
+				id: "ca-writing-await",
+				orgId: "org-1",
+				classId: "class-1",
+				promptId: "p-writing-await",
+				title: "Writing Task 2 Pending",
+				due: "2026-11-30",
+			},
+			{
+				id: "ca-hybrid",
+				orgId: "org-1",
+				classId: "class-1",
+				promptId: "p-hybrid",
+				title: "Hybrid Grammar + Writing",
+				due: "2026-11-30",
+			},
+			{
+				id: "ca-study-pack",
+				orgId: "org-1",
+				classId: "class-1",
+				promptId: "p-grammar",
+				title: "Study Pack Grammar",
+				due: "2026-11-30",
+				classStudyPackId: "csp-1",
+			},
+			{
+				id: "ca-org2",
+				orgId: "org-2",
+				classId: "class-2",
+				promptId: "p-org2-grammar",
+				title: "Org 2 Grammar",
+				due: "2026-11-30",
+			},
+		]);
+
+		await libsql.insert(schema.assignmentTest).values([
+			{
+				id: "test-listen-prac",
+				orgId: "org-1",
+				title: "Listening Practice 1",
+				skill: "listening",
+				status: "ready",
+			},
+		]);
+		await libsql.insert(schema.assignmentTestPart).values([
+			{
+				id: "atp-listen-1",
+				testId: "test-listen-prac",
+				promptId: "p-listening",
+				part: "s1",
+				position: 0,
+			},
+		]);
+
+		await libsql.insert(schema.quizAttempt).values([
+			{
+				id: "att-grammar",
+				orgId: "org-1",
+				assignmentId: "ca-grammar",
+				studentId: "student-1",
+				mode: "assignment",
+				status: "submitted",
+				questionsSnapshot: JSON.stringify(
+					grammarQuestions.map(({ explanation: _e, ...q }) => q),
+				),
+				answers: JSON.stringify({ 0: "B", 1: "A" }), // Q1 correct (B), Q2 wrong (A vs C), Q3 skipped
+				correctCount: 1,
+				startedAt: new Date("2026-11-26T08:20:00.000Z"),
+				submittedAt: new Date("2026-11-26T08:29:00.000Z"),
+			},
+			{
+				id: "att-reading",
+				orgId: "org-1",
+				assignmentId: "ca-reading",
+				studentId: "student-1",
+				mode: "assignment",
+				status: "submitted",
+				questionsSnapshot: JSON.stringify([
+					{
+						stem: "Solar power is declining.",
+						opts: null,
+						answer: "FALSE",
+						alts: "",
+						type: "tfng",
+						pin: null,
+					},
+				]),
+				answers: JSON.stringify({ 0: "FALSE" }),
+				correctCount: 1,
+				startedAt: new Date("2026-11-26T08:10:00.000Z"),
+				submittedAt: new Date("2026-11-26T08:25:00.000Z"),
+			},
+			{
+				id: "att-listening",
+				orgId: "org-1",
+				assignmentId: "ca-listening",
+				studentId: "student-1",
+				mode: "assignment",
+				status: "submitted",
+				questionsSnapshot: JSON.stringify([
+					{
+						stem: "Name: [___]",
+						opts: null,
+						answer: "Anna",
+						alts: "",
+						type: "cloze",
+						pin: null,
+					},
+				]),
+				answers: JSON.stringify({ 0: "Anna" }),
+				correctCount: 1,
+				startedAt: new Date("2026-11-26T08:05:00.000Z"),
+				submittedAt: new Date("2026-11-26T08:20:00.000Z"),
+			},
+			{
+				id: "att-writing-await",
+				orgId: "org-1",
+				assignmentId: "ca-writing-await",
+				studentId: "student-1",
+				mode: "assignment",
+				status: "submitted",
+				questionsSnapshot: "[]",
+				essay: "An older awaiting writing essay.",
+				startedAt: new Date("2026-11-26T07:00:00.000Z"),
+				submittedAt: new Date("2026-11-26T07:10:00.000Z"),
+			},
+			{
+				id: "att-hybrid",
+				orgId: "org-1",
+				assignmentId: "ca-hybrid",
+				studentId: "student-1",
+				mode: "assignment",
+				status: "submitted",
+				questionsSnapshot: JSON.stringify([
+					{
+						stem: "Q1",
+						opts: ["A", "B", "C", "D"],
+						answer: "A",
+						alts: "",
+						pin: null,
+					},
+				]),
+				answers: JSON.stringify({ 0: "A" }),
+				correctCount: 1,
+				essay: "Hybrid essay.",
+				startedAt: new Date("2026-11-26T06:00:00.000Z"),
+				submittedAt: new Date("2026-11-26T06:10:00.000Z"),
+			},
+			{
+				id: "att-study-pack",
+				orgId: "org-1",
+				assignmentId: "ca-study-pack",
+				studentId: "student-1",
+				mode: "assignment",
+				status: "submitted",
+				questionsSnapshot: JSON.stringify(grammarQuestions),
+				answers: JSON.stringify({ 0: "B" }),
+				correctCount: 1,
+				startedAt: new Date("2026-11-26T08:30:00.000Z"),
+				submittedAt: new Date("2026-11-26T08:40:00.000Z"),
+			},
+			{
+				id: "att-listen-prac",
+				orgId: "org-1",
+				assignmentId: null,
+				testId: "test-listen-prac",
+				studentId: "student-1",
+				mode: "practice",
+				status: "submitted",
+				questionsSnapshot: JSON.stringify([
+					{
+						stem: "Name: [___]",
+						opts: null,
+						answer: "Anna",
+						alts: "",
+						type: "cloze",
+						pin: null,
+					},
+				]),
+				answers: JSON.stringify({ 0: "Anna" }),
+				correctCount: 1,
+				startedAt: new Date("2026-11-26T08:15:00.000Z"),
+				submittedAt: new Date("2026-11-26T08:28:00.000Z"),
+			},
+			{
+				id: "att-org2",
+				orgId: "org-2",
+				assignmentId: "ca-org2",
+				studentId: "student-2",
+				mode: "assignment",
+				status: "submitted",
+				questionsSnapshot: JSON.stringify([
+					{
+						stem: "Q1",
+						opts: ["A", "B"],
+						answer: "A",
+						alts: "",
+						pin: null,
+					},
+				]),
+				answers: JSON.stringify({ 0: "A" }),
+				correctCount: 1,
+				startedAt: new Date("2026-11-26T08:00:00.000Z"),
+				submittedAt: new Date("2026-11-26T08:10:00.000Z"),
+			},
+		]);
+
+		audioStore.objects.set("library-audio/org-1/s1.mp3", {
+			bytes: new Uint8Array([0x49, 0x44, 0x33, 0x03]),
+			contentType: "audio/mpeg",
+		});
+
+		app = buildApp({
+			getDb: () => libsql as unknown as Db,
+			corsOrigin: CORS_ORIGINS,
+			getSessionUser: sessionFor,
+			authHandler: () => new Response("auth OK"),
+			getLibraryAudioStore: () => audioStore.store,
+		});
+	});
+
+	test("v1 GET /api/grading remains writing/speaking only while ?includeAuto=1 includes auto-graded items, excludes study packs, and keeps awaiting manual items first", async () => {
+		const v1Res = await app.request("/api/grading", { headers: TEACHER });
+		expect(v1Res.status).toBe(200);
+		const v1Body = (await v1Res.json()) as GradingQueueResponse;
+		expect(v1Body.items.map((i) => i.attemptId)).toEqual([
+			"att-writing-await",
+			"att-hybrid",
+		]);
+
+		const v2Res = await app.request("/api/grading?includeAuto=1", {
+			headers: TEACHER,
+		});
+		expect(v2Res.status).toBe(200);
+		const v2Body = (await v2Res.json()) as GradingQueueV2Response;
+		const ids = v2Body.items.map((i) => i.attemptId);
+
+		// Awaiting manual items (att-writing-await, att-hybrid) MUST sort before newer auto-graded items
+		expect(ids.slice(0, 2)).toEqual(["att-writing-await", "att-hybrid"]);
+		expect(ids).toContain("att-grammar");
+		expect(ids).toContain("att-reading");
+		expect(ids).toContain("att-listening");
+		expect(ids).toContain("att-listen-prac");
+		expect(ids).not.toContain("att-study-pack");
+		expect(ids).not.toContain("att-org2");
+
+		const grammarItem = v2Body.items.find((i) => i.attemptId === "att-grammar");
+		expect(grammarItem?.skill).toBe("grammar");
+		expect(grammarItem?.autoScore).toEqual({ correctCount: 1, totalCount: 3 });
+
+		// branchLimit = 2 on loadGradingQueue(..., { includeAuto: true }) must still retain both older awaiting manual items
+		const limited = await loadGradingQueue(libsql, "org-1", 2, {
+			includeAuto: true,
+		});
+		const limitedAssignmentIds = limited
+			.filter((i) => i.mode === "assignment")
+			.map((i) => i.attemptId);
+		expect(limitedAssignmentIds).toEqual(["att-writing-await", "att-hybrid"]);
+	});
+
+	test("GET /api/grading/:attemptId?v=2 returns TeacherAutoSubmission with full review details and fallback explanations while preserving v1 400 and write-route guards", async () => {
+		const v1Grammar = await app.request("/api/grading/att-grammar", {
+			headers: TEACHER,
+		});
+		expect(v1Grammar.status).toBe(400);
+
+		const v2Grammar = await app.request("/api/grading/att-grammar?v=2", {
+			headers: TEACHER,
+		});
+		expect(v2Grammar.status).toBe(200);
+		const grammarData = (await v2Grammar.json()) as TeacherAutoSubmission;
+		expect(grammarData.kind).toBe("auto");
+		expect(grammarData.skill).toBe("grammar");
+		expect(grammarData.correctCount).toBe(1);
+		expect(grammarData.wrongCount).toBe(1);
+		expect(grammarData.skippedCount).toBe(1);
+		expect(grammarData.totalCount).toBe(3);
+		expect(grammarData.detail.note).toContain("hiện tại hoàn thành");
+		expect(grammarData.questions[0]?.verdict).toBe("correct");
+		expect(grammarData.questions[1]?.verdict).toBe("wrong");
+		expect(grammarData.questions[1]?.answer).toBe("A");
+		expect(grammarData.questions[1]?.key).toBe("C");
+		expect(grammarData.questions[2]?.verdict).toBe("skipped");
+		expect(grammarData.questions[2]?.answer).toBeNull();
+		// Fallback explanation from current assignment_prompt when snapshot omitted explanation
+		expect(grammarData.questions[2]?.explanation).toBe(
+			"Present perfect with since.",
+		);
+
+		const v2Reading = await app.request("/api/grading/att-reading?v=2", {
+			headers: TEACHER,
+		});
+		expect(v2Reading.status).toBe(200);
+		const readingData = (await v2Reading.json()) as TeacherAutoSubmission;
+		expect(readingData.detail.passage).toContain("Solar power");
+		expect(readingData.groups).toHaveLength(1);
+
+		const v2PracticeListen = await app.request(
+			"/api/grading/att-listen-prac?v=2",
+			{ headers: TEACHER },
+		);
+		expect(v2PracticeListen.status).toBe(200);
+		const practiceListenData =
+			(await v2PracticeListen.json()) as TeacherAutoSubmission;
+		expect(practiceListenData.practice).toBe(true);
+		expect(practiceListenData.detail.hasAudio).toBe(true);
+		expect(practiceListenData.transcript).toBe("Speaker: My name is Anna.");
+
+		// Hybrid still returns TeacherSubmission
+		const v2Hybrid = await app.request("/api/grading/att-hybrid?v=2", {
+			headers: TEACHER,
+		});
+		expect(v2Hybrid.status).toBe(200);
+		const hybridData = (await v2Hybrid.json()) as TeacherAttemptReview;
+		expect("kind" in hybridData).toBe(false);
+		expect((hybridData as TeacherSubmission).objective).toEqual({
+			correctCount: 1,
+			totalCount: 1,
+		});
+
+		// Cross-org IDOR -> 404
+		const crossOrg = await app.request("/api/grading/att-grammar?v=2", {
+			headers: { "x-test-user": "teacher-2" },
+		});
+		expect(crossOrg.status).toBe(404);
+
+		// Write route on pure auto-graded attempt stays blocked with 400 SKILL_NOT_GRADABLE
+		const writeRes = await app.request("/api/grading/att-grammar/grade", {
+			method: "POST",
+			headers: {
+				...TEACHER,
+				Origin: TEACHER_ORIGIN,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				scores: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+				feedback: "No",
+			}),
+		});
+		expect(writeRes.status).toBe(400);
+	});
+
+	test("GET /api/grading/:attemptId/audio streams assignment and practice listening audio with security headers and IDOR guard", async () => {
+		const res = await app.request("/api/grading/att-listening/audio", {
+			headers: TEACHER,
+		});
+		expect(res.status).toBe(200);
+		expect(res.headers.get("cross-origin-resource-policy")).toBe("same-site");
+		expect(res.headers.get("referrer-policy")).toBe("no-referrer");
+		const bytes = new Uint8Array(await res.arrayBuffer());
+		expect([...bytes]).toEqual([0x49, 0x44, 0x33, 0x03]);
+
+		const pracRes = await app.request("/api/grading/att-listen-prac/audio", {
+			headers: TEACHER,
+		});
+		expect(pracRes.status).toBe(200);
+
+		const noAudio = await app.request("/api/grading/att-grammar/audio", {
+			headers: TEACHER,
+		});
+		expect(noAudio.status).toBe(404);
+
+		const crossOrgAudio = await app.request(
+			"/api/grading/att-listening/audio",
+			{ headers: { "x-test-user": "teacher-2" } },
+		);
+		expect(crossOrgAudio.status).toBe(404);
+
+		const studentAudio = await app.request("/api/grading/att-listening/audio", {
+			headers: { "x-test-user": "student-u" },
+		});
+		expect(studentAudio.status).toBe(403);
 	});
 });

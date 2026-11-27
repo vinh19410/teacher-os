@@ -6,13 +6,16 @@ import {
 	type AiGradingDraftView,
 	type EssayAnnotation,
 	type QuizGradeInput,
-	type TeacherSubmission,
+	type TeacherAttemptReview,
+	type TeacherAutoSubmission,
 } from "@teacher-os/api/contracts";
 import { criterionLabel } from "@teacher-os/api/lib/ielts-band";
 import { canPublishGrade } from "@teacher-os/auth/role";
 import { useState } from "react";
 import { fmtDue, fmtWhen } from "@/components/assignments/assignment-status";
+import { StatusTag } from "@/components/assignments/status-tag";
 import { AiDraftPanel } from "@/components/grading/ai-draft-panel";
+import { AutoSubmissionView } from "@/components/grading/auto-submission-view";
 import { GradeForm } from "@/components/grading/grade-form";
 import { SubmissionView } from "@/components/grading/submission-view";
 import { Button } from "@/components/ui/button";
@@ -36,9 +39,93 @@ import {
 } from "@/lib/repos/grading";
 import { kernelQueryKey } from "@/lib/repos/kernel";
 
+export type GradingReturnSource = "grading" | "class" | "student";
+
+function isAutoSubmission(
+	submission: TeacherAttemptReview,
+): submission is TeacherAutoSubmission {
+	return "kind" in submission && submission.kind === "auto";
+}
+
+export function validateGradingAttemptSearch(input: { from?: string }): {
+	from?: GradingReturnSource;
+} {
+	return {
+		from:
+			input.from === "grading" ||
+			input.from === "class" ||
+			input.from === "student"
+				? input.from
+				: undefined,
+	};
+}
+
 export const Route = createFileRoute("/_auth/grading/$attemptId")({
+	validateSearch: validateGradingAttemptSearch,
 	component: GradingRoute,
 });
+
+function renderBackLink(
+	submission: TeacherAttemptReview,
+	from?: GradingReturnSource,
+) {
+	if (from === "student") {
+		return (
+			<Link
+				to="/students/$studentId"
+				params={{ studentId: submission.student.id }}
+				search={{ tab: "assign" }}
+				className="self-start text-muted-foreground text-sm transition-colors hover:text-foreground"
+			>
+				← Về học viên
+			</Link>
+		);
+	}
+	if (from === "grading") {
+		return (
+			<Link
+				to="/grading"
+				search={submission.practice ? { mode: "practice" } : undefined}
+				className="self-start text-muted-foreground text-sm transition-colors hover:text-foreground"
+			>
+				← Về hàng chờ chấm
+			</Link>
+		);
+	}
+	if (from === "class" && submission.classId) {
+		return (
+			<Link
+				to="/classes/$classId"
+				params={{ classId: submission.classId }}
+				search={{ tab: "assignments" }}
+				className="self-start text-muted-foreground text-sm transition-colors hover:text-foreground"
+			>
+				← Về lớp
+			</Link>
+		);
+	}
+	if (submission.practice || !submission.classId) {
+		return (
+			<Link
+				to="/grading"
+				search={submission.practice ? { mode: "practice" } : undefined}
+				className="self-start text-muted-foreground text-sm transition-colors hover:text-foreground"
+			>
+				← Về hàng chờ chấm
+			</Link>
+		);
+	}
+	return (
+		<Link
+			to="/classes/$classId"
+			params={{ classId: submission.classId }}
+			search={{ tab: "assignments" }}
+			className="self-start text-muted-foreground text-sm transition-colors hover:text-foreground"
+		>
+			← Về lớp
+		</Link>
+	);
+}
 
 /** 409 ở route annotation chỉ có thể là OVERLAP (NOT_SUBMITTED không xảy ra
  * vì trang chỉ mở bài đã nộp) — đọc trạng thái từ `status`, không cần body.
@@ -68,12 +155,19 @@ function isVersionConflict(error: unknown): boolean {
 
 export function GradingRoute() {
 	const { attemptId } = Route.useParams();
+	const { from } = Route.useSearch();
 	const { data, error, isPending, refetch } = useQuery({
 		...submissionQueryOptions(attemptId),
 		// TOS-33 D3/D5: khi draft đang `ai_processing` (sau khi bấm "Thử chấm
 		// lại AI" hoặc vừa nộp), tự poll 1s/lần tới khi rời `ai_processing`.
-		refetchInterval: (query) =>
-			query.state.data?.aiDraft?.status === "ai_processing" ? 1_000 : false,
+		refetchInterval: (query) => {
+			const current = query.state.data;
+			return current &&
+				!isAutoSubmission(current) &&
+				current.aiDraft?.status === "ai_processing"
+				? 1_000
+				: false;
+		},
 	});
 	const queryClient = useQueryClient();
 	const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -99,8 +193,10 @@ export function GradingRoute() {
 	) => {
 		queryClient.setQueryData(
 			gradingQueryKey(attemptId),
-			(old: TeacherSubmission | undefined) =>
-				old ? { ...old, annotations: update(old.annotations ?? []) } : old,
+			(old: TeacherAttemptReview | undefined) =>
+				!old || isAutoSubmission(old)
+					? old
+					: { ...old, annotations: update(old.annotations ?? []) },
 		);
 	};
 
@@ -110,9 +206,10 @@ export function GradingRoute() {
 		onSuccess(grade) {
 			queryClient.setQueryData(
 				gradingQueryKey(attemptId),
-				(old: TeacherSubmission | undefined) =>
-					old
-						? {
+				(old: TeacherAttemptReview | undefined) =>
+					!old || isAutoSubmission(old)
+						? old
+						: {
 								...old,
 								grade,
 								// Chốt trả bài → draft sang published ngay trong cache
@@ -124,8 +221,7 @@ export function GradingRoute() {
 											publishedAt: new Date().toISOString(),
 										}
 									: null,
-							}
-						: old,
+							},
 			);
 			// Tab Bài tập (kernel snapshot) phải thấy tag "Đã chấm · Band X" mới.
 			void queryClient.invalidateQueries({
@@ -158,8 +254,10 @@ export function GradingRoute() {
 			version: number;
 		}) => saveDraft(attemptId, { ...input.patch, version: input.version }),
 		onSuccess(view: AiGradingDraftView) {
-			queryClient.setQueryData(gradingQueryKey(attemptId), (old) =>
-				old ? { ...old, aiDraft: view } : old,
+			queryClient.setQueryData(
+				gradingQueryKey(attemptId),
+				(old: TeacherAttemptReview | undefined) =>
+					!old || isAutoSubmission(old) ? old : { ...old, aiDraft: view },
 			);
 			void queryClient.invalidateQueries({
 				queryKey: gradingQueueQueryKey,
@@ -183,8 +281,10 @@ export function GradingRoute() {
 	const retryMutation = useMutation({
 		mutationFn: () => retryAiGrading(attemptId),
 		onSuccess(view: AiGradingDraftView) {
-			queryClient.setQueryData(gradingQueryKey(attemptId), (old) =>
-				old ? { ...old, aiDraft: view } : old,
+			queryClient.setQueryData(
+				gradingQueryKey(attemptId),
+				(old: TeacherAttemptReview | undefined) =>
+					!old || isAutoSubmission(old) ? old : { ...old, aiDraft: view },
 			);
 			void queryClient.invalidateQueries({
 				queryKey: gradingQueueQueryKey,
@@ -258,6 +358,37 @@ export function GradingRoute() {
 		);
 	}
 
+	if (isAutoSubmission(data)) {
+		return (
+			<div className="flex min-w-0 flex-col">
+				{renderBackLink(data, from)}
+				<PageHead
+					kicker={
+						<>
+							{data.student.name} · {data.className} · Nộp{" "}
+							{fmtWhen(data.submittedAt)}
+							{data.due ? <> · Hạn {fmtDue(data.due)}</> : null}
+						</>
+					}
+					title={data.title}
+					action={
+						<div className="flex flex-col items-end gap-1.5 text-right">
+							<div className="text-muted-foreground text-sm">Điểm tự chấm</div>
+							<div
+								data-testid="auto-submission-score"
+								className="font-semibold text-4xl tabular-nums leading-none tracking-tight md:text-5xl"
+							>
+								{data.correctCount}/{data.totalCount}
+							</div>
+							<StatusTag tone="ok">Tự chấm</StatusTag>
+						</div>
+					}
+				/>
+				<AutoSubmissionView submission={data} />
+			</div>
+		);
+	}
+
 	const saveError =
 		mutation.error instanceof Error ? mutation.error.message : null;
 	const friendlySaveError =
@@ -313,24 +444,7 @@ export function GradingRoute() {
 
 	return (
 		<div className="flex flex-col">
-			{data.practice || !data.classId ? (
-				<Link
-					to="/grading"
-					search={data.practice ? { mode: "practice" } : undefined}
-					className="self-start text-muted-foreground text-sm transition-colors hover:text-foreground"
-				>
-					← Về hàng chờ chấm
-				</Link>
-			) : (
-				<Link
-					to="/classes/$classId"
-					params={{ classId: data.classId }}
-					search={{ tab: "assignments" }}
-					className="self-start text-muted-foreground text-sm transition-colors hover:text-foreground"
-				>
-					← Về lớp
-				</Link>
-			)}
+			{renderBackLink(data, from)}
 			<PageHead
 				kicker={
 					<>
