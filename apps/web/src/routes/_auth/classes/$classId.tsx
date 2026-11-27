@@ -1,7 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { evaluateClassStartDateEditability } from "@teacher-os/api/class-start-date";
-import { CLASS_ERROR_CODES } from "@teacher-os/api/contracts";
+import {
+	CLASS_ERROR_CODES,
+	RECORDING_ERROR_CODES,
+} from "@teacher-os/api/contracts";
 import { canManageClassStatus } from "@teacher-os/auth/role";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -141,7 +144,8 @@ function ClassDetailRoute() {
 		if (
 			result.kind === "committed" ||
 			result.kind === "outcome-unknown" ||
-			failureCode === CLASS_ERROR_CODES.CLASS_PAUSED
+			failureCode === CLASS_ERROR_CODES.CLASS_PAUSED ||
+			failureCode === RECORDING_ERROR_CODES.LOCKED
 		) {
 			await refresh();
 		}

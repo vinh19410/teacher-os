@@ -89,19 +89,20 @@ export async function deleteHoliday(
 	);
 	const raw: unknown = await res.json().catch(() => null);
 	if (!res.ok) {
+		const record =
+			raw != null && typeof raw === "object"
+				? (raw as Record<string, unknown>)
+				: null;
+		const code =
+			record && typeof record.code === "string" ? record.code : undefined;
 		const error =
-			raw != null &&
-			typeof raw === "object" &&
-			"error" in raw &&
-			typeof raw.error === "string"
-				? raw.error
+			record && typeof record.error === "string"
+				? record.error
 				: "request-failed";
+		const errorCode = code ?? error;
 		const touched =
-			raw != null &&
-			typeof raw === "object" &&
-			"touched" in raw &&
-			Array.isArray(raw.touched)
-				? raw.touched.filter(
+			record && Array.isArray(record.touched)
+				? record.touched.filter(
 						(
 							item,
 						): item is {
@@ -117,7 +118,7 @@ export async function deleteHoliday(
 					)
 				: [];
 		throw Object.assign(new Error(error), {
-			holidayErrorCode: error,
+			holidayErrorCode: errorCode,
 			status: res.status,
 			touched,
 		});

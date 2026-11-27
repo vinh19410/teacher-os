@@ -3,6 +3,7 @@ import {
 	type ClassConfirmOpeningInput,
 	type ClassConfirmOpeningResponse,
 	classConfirmOpeningResponseSchema,
+	RECORDING_ERROR_CODES,
 } from "@teacher-os/api/contracts";
 import { reauth } from "@/lib/reauth";
 import { getApiBaseUrl } from "./api-base-url";
@@ -34,6 +35,9 @@ function defaultErrorMessage(status: number, code?: string): string {
 	}
 	if (code === CLASS_ERROR_CODES.START_DATE_LOCKED) {
 		return "Lớp đã bắt đầu học nên không thể đổi ngày khai giảng.";
+	}
+	if (code === RECORDING_ERROR_CODES.LOCKED) {
+		return "Buổi học đang có video recording còn hạn lưu trữ nên chưa thể đổi ngày khai giảng.";
 	}
 	return "Không thể chốt khai giảng. Vui lòng thử lại.";
 }

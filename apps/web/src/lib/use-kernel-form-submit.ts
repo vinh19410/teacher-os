@@ -2,6 +2,7 @@ import {
 	ASSIGNMENT_PROMPT_ERROR_CODES,
 	ASSIGNMENT_TEST_ERROR_CODES,
 	CLASS_ERROR_CODES,
+	RECORDING_ERROR_CODES,
 } from "@teacher-os/api/contracts";
 import { useCallback, useState } from "react";
 import { useData } from "@/lib/data-store";
@@ -31,6 +32,8 @@ function lockFailureMessage(error: unknown): string {
 			return "Lớp đã bắt đầu học hoặc lịch không hỗ trợ dời tự động nên không sửa được ngày khai giảng. Dữ liệu lớp đã được tải lại.";
 		case CLASS_ERROR_CODES.CLASS_PAUSED:
 			return "Lớp đang tạm dừng — mở lại lớp để tiếp tục thao tác này.";
+		case RECORDING_ERROR_CODES.LOCKED:
+			return "Buổi học đang có video recording còn hạn lưu trữ nên chưa thể đổi ngày khai giảng. Dữ liệu lớp đã được tải lại.";
 		default:
 			return GENERIC_FAILURE_MESSAGE;
 	}
@@ -87,7 +90,8 @@ export function useKernelFormSubmit(): KernelFormSubmitState {
 					setError(lockFailureMessage(result.error));
 					if (
 						httpErr?.code === CLASS_ERROR_CODES.CLASS_PAUSED ||
-						httpErr?.code === CLASS_ERROR_CODES.START_DATE_LOCKED
+						httpErr?.code === CLASS_ERROR_CODES.START_DATE_LOCKED ||
+						httpErr?.code === RECORDING_ERROR_CODES.LOCKED
 					) {
 						void refresh();
 					}

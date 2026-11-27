@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { RECORDING_ERROR_CODES } from "@teacher-os/api/contracts";
 import {
 	cleanup,
 	fireEvent,
@@ -923,6 +924,75 @@ describe("paused class sessions & read-only attendance (#694)", () => {
 		await waitFor(() =>
 			expect(screen.getByTestId("class-status-badge").textContent).toBe(
 				"Tạm dừng",
+			),
+		);
+	});
+
+	it("handles 409 RECORDING_LOCKED on delete and moveDate with Vietnamese guidance, formError, and snapshot refresh", async () => {
+		const base = mondayClass(["st-1", "st-2"]);
+		server = startKernelServer(base, (req) => {
+			if (
+				req.method === "DELETE" &&
+				req.path === `/api/classes/cl-1/sessions/${NEXT_WEEK}`
+			) {
+				return {
+					status: 409,
+					body: {
+						error: "Buổi học đang có video ghi hình",
+						code: RECORDING_ERROR_CODES.LOCKED,
+						reason: "recording-locked",
+					},
+				};
+			}
+			if (
+				req.method === "POST" &&
+				req.path === `/api/classes/cl-1/sessions/${NEXT_WEEK}/edit`
+			) {
+				return {
+					status: 409,
+					body: {
+						error: "Ngày đích đang có video ghi hình",
+						code: RECORDING_ERROR_CODES.LOCKED,
+						reason: "recording-locked",
+					},
+				};
+			}
+			return undefined;
+		});
+		await openSessionsTab();
+		const initialLoads = server.snapshotLoads;
+
+		fireEvent.click(
+			within(sessionRow("19/10")).getByRole("button", { name: "Điều chỉnh" }),
+		);
+		const dialog = screen.getByRole("dialog");
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Xóa buổi học" }),
+		);
+		const confirm = within(dialog).getByRole("alertdialog");
+		fireEvent.click(within(confirm).getByRole("button", { name: "Xác nhận" }));
+
+		await waitFor(() =>
+			expect(toast.error).toHaveBeenCalledWith(
+				expect.stringContaining("video recording"),
+			),
+		);
+		await waitFor(() =>
+			expect(dialog.textContent).toContain("video recording"),
+		);
+		await waitFor(() =>
+			expect(server.snapshotLoads).toBeGreaterThan(initialLoads),
+		);
+
+		const moveInput = within(dialog).getByLabelText("Dời sang ngày");
+		fireEvent.change(moveInput, { target: { value: "26/10/2026" } });
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Lưu thay đổi" }),
+		);
+
+		await waitFor(() =>
+			expect(dialog.textContent).toContain(
+				"Ngày đích đang có video recording lưu trên hệ thống — chọn ngày khác.",
 			),
 		);
 	});

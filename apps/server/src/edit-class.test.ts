@@ -3,6 +3,7 @@ import { createClient, type InArgs, type InStatement } from "@libsql/client";
 import {
 	CLASS_ERROR_CODES,
 	type KernelSnapshot,
+	RECORDING_ERROR_CODES,
 } from "@teacher-os/api/contracts";
 import { parseStoredSchedule, skeletonOf } from "@teacher-os/api/skeleton";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
@@ -15,7 +16,7 @@ import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { describe, expect, test } from "vitest";
-import { buildApp, type Db } from "./app";
+import { type AppDeps, buildApp, type Db, type RecordingStore } from "./app";
 import type { ZoomClient, ZoomMeetingInput } from "./lib/zoom/zoom-client";
 
 const CORS_ORIGIN = "http://localhost:8001";
@@ -61,7 +62,49 @@ function countBindParams(
 	return countArgs(stmt.args);
 }
 
-async function setupTestApp(options?: { getZoomClient?: () => ZoomClient }) {
+function createMemoryRecordingStore(): RecordingStore & {
+	objects: Map<string, Uint8Array>;
+} {
+	const objects = new Map<string, Uint8Array>();
+	return {
+		objects,
+		async putStream(key, body) {
+			const buf = new Uint8Array(await new Response(body).arrayBuffer());
+			objects.set(key, buf);
+			return { sizeBytes: buf.byteLength };
+		},
+		async head(key) {
+			const item = objects.get(key);
+			return item
+				? { contentType: "video/mp4", size: item.byteLength, etag: '"1"' }
+				: null;
+		},
+		async get(key) {
+			const item = objects.get(key);
+			if (!item) return null;
+			return {
+				body: new ReadableStream({
+					start(c) {
+						c.enqueue(item);
+						c.close();
+					},
+				}),
+				contentType: "video/mp4",
+				size: item.byteLength,
+				etag: '"1"',
+			};
+		},
+		async delete(key) {
+			objects.delete(key);
+		},
+	};
+}
+
+async function setupTestApp(options?: {
+	getZoomClient?: () => ZoomClient;
+	getRecordingStore?: AppDeps["getRecordingStore"];
+	now?: AppDeps["now"];
+}) {
 	const client = createClient({ url: "file::memory:" });
 	let maxBoundParams = 0;
 	const origExecute = client.execute.bind(client);
@@ -114,6 +157,8 @@ async function setupTestApp(options?: { getZoomClient?: () => ZoomClient }) {
 		getSessionUser,
 		authHandler: () => new Response("auth stub", { status: 404 }),
 		getZoomClient: options?.getZoomClient,
+		getRecordingStore: options?.getRecordingStore,
+		now: options?.now,
 	});
 
 	async function insertUser(
@@ -2350,5 +2395,380 @@ describe("PATCH /api/classes/:id (Issue #693)", () => {
 		const expectedFinal = [mon5, addDaysISO(mon5, 7)];
 		expect(enr1Dates).toEqual(expectedFinal);
 		expect(enr2Dates).toEqual(expectedFinal);
+	});
+
+	test("16. protects live R2 recordings across surplusOldDates, Pass 1.5, buildMeetingMovePair, and confirm-opening while cleaning expired objects and preserving safe shifts/cancels", async () => {
+		const store = createMemoryRecordingStore();
+		const fixedNow = new Date("2026-12-01T10:00:00Z");
+		const t = await setupTestApp({
+			getRecordingStore: () => store,
+			now: () => fixedNow,
+		});
+		const teacher = await t.insertUser("Teacher R2 Reschedule");
+		const startMonday = futureMondayISO(10);
+		const schedule = { days: [0, 2], start: "19:00", end: "20:30" };
+		const dates4 = expectedSkeletonDates(
+			JSON.stringify(schedule),
+			startMonday,
+			4,
+		);
+		const [d1, , d3, d4] = dates4 as [string, string, string, string];
+
+		// (a) Projected 0-lesson class: surplusOldDates (shrink 4 -> 2, and clear startDate: "")
+		const projId = await t.createAutoClass(teacher.token, {
+			name: "Proj R2 Class",
+			mode: "Online",
+			schedule,
+			sessionsTotal: 4,
+			startDate: startMonday,
+		});
+		const orgId = await t.getOrgIdForUser(teacher.id);
+		const surplusKey = `org/${projId}/${d4}/surplus.mp4`;
+		store.objects.set(surplusKey, new Uint8Array([1, 2, 3]));
+		await t.libsql.insert(schema.classSessionMeeting).values({
+			id: "m-proj-surplus",
+			orgId,
+			classId: projId,
+			date: d4,
+			joinUrl: "",
+			recordingStatus: "ready",
+			recordingStorageKey: surplusKey,
+			recordingExpiresAt: new Date(fixedNow.getTime() + 60_000),
+		});
+
+		const shrinkBlocked = await t.call(
+			teacher.token,
+			`/api/classes/${projId}`,
+			{
+				method: "PATCH",
+				body: {
+					name: "Proj R2 Class",
+					type: "ielts",
+					level: "Band 6.0",
+					skills: ["Writing", "Speaking"],
+					mode: "Online",
+					sessionsTotal: 2,
+					startDate: addDaysISO(startMonday, 7),
+				},
+			},
+		);
+		expect(shrinkBlocked.status).toBe(409);
+		expect(await shrinkBlocked.json()).toMatchObject({
+			code: RECORDING_ERROR_CODES.LOCKED,
+		});
+		expect(store.objects.has(surplusKey)).toBe(true);
+
+		const clearBlocked = await t.call(teacher.token, `/api/classes/${projId}`, {
+			method: "PATCH",
+			body: {
+				name: "Proj R2 Class",
+				type: "ielts",
+				level: "Band 6.0",
+				skills: ["Writing", "Speaking"],
+				mode: "Online",
+				startDate: "",
+			},
+		});
+		expect(clearBlocked.status).toBe(409);
+		expect(await clearBlocked.json()).toMatchObject({
+			code: RECORDING_ERROR_CODES.LOCKED,
+		});
+		expect(store.objects.has(surplusKey)).toBe(true);
+
+		// Expire surplus -> shrink succeeds 200 and cleans expired R2 even without Zoom configured
+		await t.libsql
+			.update(schema.classSessionMeeting)
+			.set({ recordingExpiresAt: new Date(fixedNow.getTime() - 1000) })
+			.where(eq(schema.classSessionMeeting.id, "m-proj-surplus"));
+		const shrinkOk = await t.call(teacher.token, `/api/classes/${projId}`, {
+			method: "PATCH",
+			body: {
+				name: "Proj R2 Class",
+				type: "ielts",
+				level: "Band 6.0",
+				skills: ["Writing", "Speaking"],
+				mode: "Online",
+				sessionsTotal: 2,
+				startDate: addDaysISO(startMonday, 7),
+			},
+		});
+		expect(shrinkOk.status).toBe(200);
+		expect(store.objects.has(surplusKey)).toBe(false);
+
+		// (b) Materialized class: Pass 1.5 collision (unmapped leftover live R2 on newDate) + confirm-opening
+		const matId = await t.createAutoClass(teacher.token, {
+			name: "Mat R2 Class",
+			mode: "Online",
+			schedule,
+			sessionsTotal: 2,
+			startDate: startMonday,
+		});
+		const enrollMat = await t.call(teacher.token, "/api/students", {
+			body: {
+				name: "HV Mat R2",
+				email: "hv-mat-r2@test.local",
+				classId: matId,
+				activateNow: true,
+			},
+		});
+		expect(enrollMat.status).toBe(201);
+
+		// Safe live R2 on d1, plus leftover live R2 on d3 (target of moving d1 -> d3)
+		const safeKey = `org/${matId}/${d1}/safe.mp4`;
+		const pass15Key = `org/${matId}/${d3}/pass15.mp4`;
+		store.objects.set(safeKey, new Uint8Array([4, 5]));
+		store.objects.set(pass15Key, new Uint8Array([6, 7]));
+		await t.libsql.insert(schema.classSessionMeeting).values([
+			{
+				id: "m-mat-safe",
+				orgId,
+				classId: matId,
+				date: d1,
+				joinUrl: "",
+				recordingStatus: "ready",
+				recordingStorageKey: safeKey,
+				recordingExpiresAt: new Date(fixedNow.getTime() + 60_000),
+			},
+			{
+				id: "m-mat-pass15",
+				orgId,
+				classId: matId,
+				date: d3,
+				joinUrl: "",
+				recordingStatus: "ready",
+				recordingStorageKey: pass15Key,
+				recordingExpiresAt: new Date(fixedNow.getTime() + 60_000),
+			},
+		]);
+
+		const pass15Blocked = await t.call(teacher.token, `/api/classes/${matId}`, {
+			method: "PATCH",
+			body: {
+				name: "Mat R2 Class",
+				type: "ielts",
+				level: "Band 6.0",
+				skills: ["Writing", "Speaking"],
+				mode: "Online",
+				startDate: d3,
+			},
+		});
+		expect(pass15Blocked.status).toBe(409);
+		expect(await pass15Blocked.json()).toMatchObject({
+			code: RECORDING_ERROR_CODES.LOCKED,
+		});
+		expect(store.objects.has(pass15Key)).toBe(true);
+
+		// POST /confirm-opening hitting same live R2 -> 409 RECORDING_LOCKED
+		const confirmBlocked = await t.call(
+			teacher.token,
+			`/api/classes/${matId}/confirm-opening`,
+			{
+				body: {
+					mode: "initial",
+					startDate: d3,
+					note: "",
+					expectedVersion: 0,
+				},
+			},
+		);
+		expect(confirmBlocked.status).toBe(409);
+		expect(await confirmBlocked.json()).toMatchObject({
+			code: RECORDING_ERROR_CODES.LOCKED,
+		});
+
+		// Expire Pass 1.5 blocker -> shift d1 -> d3 succeeds, cleans pass15Key, moves safeKey cleanly to d3
+		await t.libsql
+			.update(schema.classSessionMeeting)
+			.set({ recordingExpiresAt: new Date(fixedNow.getTime() - 1000) })
+			.where(eq(schema.classSessionMeeting.id, "m-mat-pass15"));
+		const matShiftOk = await t.call(teacher.token, `/api/classes/${matId}`, {
+			method: "PATCH",
+			body: {
+				name: "Mat R2 Class",
+				type: "ielts",
+				level: "Band 6.0",
+				skills: ["Writing", "Speaking"],
+				mode: "Online",
+				startDate: d3,
+			},
+		});
+		expect(matShiftOk.status).toBe(200);
+		expect(store.objects.has(pass15Key)).toBe(false);
+		expect(store.objects.has(safeKey)).toBe(true);
+		const movedSafe = await t.libsql
+			.select()
+			.from(schema.classSessionMeeting)
+			.where(
+				and(
+					eq(schema.classSessionMeeting.classId, matId),
+					eq(schema.classSessionMeeting.date, d3),
+				),
+			);
+		expect(movedSafe.map((r) => r.recordingStorageKey)).toEqual([safeKey]);
+
+		// (c) Holiday shift Step A unwind collision via buildMeetingMovePair & Step C newCancels preserve
+		const holClassId = await t.createAutoClass(teacher.token, {
+			name: "Hol R2 Class",
+			mode: "Online",
+			schedule,
+			sessionsTotal: 2,
+			startDate: startMonday,
+		});
+		const enrollHol = await t.call(teacher.token, "/api/students", {
+			body: {
+				name: "HV Hol R2",
+				email: "hv-hol-r2@test.local",
+				classId: holClassId,
+				activateNow: true,
+			},
+		});
+		expect(enrollHol.status).toBe(201);
+		// Shift d1 -> d3; place live meeting at d3 AND leftover live R2 at d1 so unwind (d3 -> d1) collides!
+		const hShiftId = crypto.randomUUID();
+		await t.libsql.insert(schema.organizationHoliday).values({
+			id: hShiftId,
+			orgId,
+			name: "Lễ shift R2",
+			fromDate: d1,
+			toDate: d1,
+			scope: "classes",
+			mode: "shift",
+			createdByUserId: teacher.id,
+		});
+		await t.libsql.insert(schema.organizationHolidayClass).values({
+			id: crypto.randomUUID(),
+			holidayId: hShiftId,
+			classId: holClassId,
+		});
+		await t.libsql
+			.update(schema.lesson)
+			.set({ status: "holiday" })
+			.where(
+				and(eq(schema.lesson.classId, holClassId), eq(schema.lesson.date, d1)),
+			);
+		const [holEnr] = await t.libsql
+			.select({ id: schema.enrollment.id })
+			.from(schema.enrollment)
+			.where(eq(schema.enrollment.classId, holClassId));
+		await t.libsql.insert(schema.lesson).values({
+			id: crypto.randomUUID(),
+			orgId,
+			classId: holClassId,
+			enrollmentId: holEnr?.id ?? "",
+			day: 1,
+			time: "19:00",
+			dur: 90,
+			date: d3,
+			status: "upcoming",
+			topic: "",
+			zoom: "",
+		});
+		await t.libsql.insert(schema.holidaySessionShift).values({
+			id: crypto.randomUUID(),
+			orgId,
+			holidayId: hShiftId,
+			classId: holClassId,
+			originalDate: d1,
+			makeupDate: d3,
+		});
+		const unwindTargetKey = `org/${holClassId}/${d1}/unwind-target.mp4`;
+		const makeupSrcKey = `org/${holClassId}/${d3}/makeup-src.mp4`;
+		store.objects.set(unwindTargetKey, new Uint8Array([8, 9]));
+		store.objects.set(makeupSrcKey, new Uint8Array([10, 11]));
+		await t.libsql.insert(schema.classSessionMeeting).values([
+			{
+				id: "m-hol-unwind-target",
+				orgId,
+				classId: holClassId,
+				date: d1,
+				joinUrl: "",
+				recordingStatus: "ready",
+				recordingStorageKey: unwindTargetKey,
+				recordingExpiresAt: new Date(fixedNow.getTime() + 60_000),
+			},
+			{
+				id: "m-hol-makeup-src",
+				orgId,
+				classId: holClassId,
+				date: d3,
+				joinUrl: "",
+				recordingStatus: "ready",
+				recordingStorageKey: makeupSrcKey,
+				recordingExpiresAt: new Date(fixedNow.getTime() + 60_000),
+			},
+		]);
+
+		const unwindBlocked = await t.call(
+			teacher.token,
+			`/api/classes/${holClassId}`,
+			{
+				method: "PATCH",
+				body: {
+					name: "Hol R2 Class",
+					type: "ielts",
+					level: "Band 6.0",
+					skills: ["Writing", "Speaking"],
+					mode: "Online",
+					startDate: addDaysISO(startMonday, 14),
+				},
+			},
+		);
+		expect(unwindBlocked.status).toBe(409);
+		expect(await unwindBlocked.json()).toMatchObject({
+			code: RECORDING_ERROR_CODES.LOCKED,
+		});
+		expect(store.objects.has(unwindTargetKey)).toBe(true);
+
+		// Remove unwind collision, add a cancel holiday hitting the moved date -> Step C newCancels preserves R2!
+		await t.libsql
+			.delete(schema.classSessionMeeting)
+			.where(eq(schema.classSessionMeeting.id, "m-hol-unwind-target"));
+		store.objects.delete(unwindTargetKey);
+		const cancelTargetDate = addDaysISO(startMonday, 14);
+		const hCancelId = crypto.randomUUID();
+		await t.libsql.insert(schema.organizationHoliday).values({
+			id: hCancelId,
+			orgId,
+			name: "Lễ cancel R2",
+			fromDate: cancelTargetDate,
+			toDate: cancelTargetDate,
+			scope: "classes",
+			mode: "cancel",
+			createdByUserId: teacher.id,
+		});
+		await t.libsql.insert(schema.organizationHolidayClass).values({
+			id: crypto.randomUUID(),
+			holidayId: hCancelId,
+			classId: holClassId,
+		});
+		const cancelRescheduleOk = await t.call(
+			teacher.token,
+			`/api/classes/${holClassId}`,
+			{
+				method: "PATCH",
+				body: {
+					name: "Hol R2 Class",
+					type: "ielts",
+					level: "Band 6.0",
+					skills: ["Writing", "Speaking"],
+					mode: "Online",
+					startDate: cancelTargetDate,
+				},
+			},
+		);
+		expect(cancelRescheduleOk.status).toBe(200);
+		expect(store.objects.has(makeupSrcKey)).toBe(true);
+		const [cancelledRow] = await t.libsql
+			.select()
+			.from(schema.classSessionMeeting)
+			.where(
+				and(
+					eq(schema.classSessionMeeting.classId, holClassId),
+					eq(schema.classSessionMeeting.date, cancelTargetDate),
+				),
+			);
+		expect(cancelledRow?.recordingStorageKey).toBe(makeupSrcKey);
+		expect(cancelledRow?.recordingStatus).toBe("ready");
+		expect(cancelledRow?.zoomMeetingId).toBeNull();
 	});
 });
