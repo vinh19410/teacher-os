@@ -1515,6 +1515,10 @@ export const ASSIGNMENT_PROMPT_ERROR_CODES = {
 	CONTENT_LOCKED: "PROMPT_CONTENT_LOCKED",
 	/** Phần Writing bị khóa vì đề đã giao / nằm trong bộ đề, study pack. */
 	WRITING_SECTION_LOCKED: "WRITING_SECTION_LOCKED",
+	/** Chỉ cho phép xóa bản nháp; đề ready không được xóa. */
+	DELETE_NOT_DRAFT: "PROMPT_DELETE_NOT_DRAFT",
+	/** Đề đang được tham chiếu ở lớp học, bộ đề thi hoặc bộ đề tự học. */
+	DELETE_REFERENCED: "PROMPT_DELETE_REFERENCED",
 } as const;
 export type AssignmentPromptErrorCode =
 	(typeof ASSIGNMENT_PROMPT_ERROR_CODES)[keyof typeof ASSIGNMENT_PROMPT_ERROR_CODES];

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
 	fmtDate,
+	fmtDayMonth,
 	fmtDue,
 	fmtDueDisplay,
 	fmtWhen,
@@ -22,6 +23,12 @@ describe("assignment-status (#208)", () => {
 			expect(fmtDate("2026-09-18T10:00:00.000Z")).toBe("18/09/2026");
 			expect(fmtDate("2026-09-18")).toBe("18/09/2026");
 			expect(fmtDate("")).toBe("");
+		});
+
+		test("fmtDayMonth formats dd/mm in Vietnam timezone", () => {
+			expect(fmtDayMonth("2026-09-18T10:00:00.000Z")).toBe("18/09");
+			expect(fmtDayMonth("2026-11-05")).toBe("05/11");
+			expect(fmtDayMonth("")).toBe("");
 		});
 
 		test("fmtWhen formats datetime to dd/mm/yyyy · HH:mm", () => {
@@ -226,13 +233,13 @@ describe("assignment-status (#208)", () => {
 			});
 		});
 
-		test("used > 0 returns 'Đã dùng N lớp'", () => {
+		test("used > 0 returns 'Đã giao N lớp'", () => {
 			expect(promptStatus("ready", 1)).toEqual({
-				label: "Đã dùng 1 lớp",
+				label: "Đã giao 1 lớp",
 				tone: "used",
 			});
 			expect(promptStatus("ready", 3)).toEqual({
-				label: "Đã dùng 3 lớp",
+				label: "Đã giao 3 lớp",
 				tone: "used",
 			});
 		});

@@ -187,3 +187,14 @@ có chủ đích theo token hệ có sẵn, không phải sót quét:
 - **Chip trạng thái câu thu gọn dùng `--success`/`--warn`** ("Có đáp án" / "Thiếu đáp án",
   chấm màu `bg-success`/`bg-warn`) — tái dùng cặp trạng thái thường có sẵn, đỏ vẫn chỉ dành cho
   hành động phá hủy.
+
+## Lệch có chủ đích so với design mẫu — trang ngân hàng bài tập (/teacher/assignments) (#1043)
+
+Nguồn đối chiếu: [open-design/assignments.html](open-design/assignments.html). Các điểm dưới đây là quyết định có chủ đích theo dữ liệu thật và hợp đồng giao diện của hệ thống:
+
+- **Khung ứng dụng & token ngữ nghĩa Light/Dark:** Giữ nguyên `AppShell` (`sidebar-07`, `max-w-7xl`), topbar, ⌘K và bảng màu neutral trong `packages/ui/src/styles/globals.css` (không chỉnh sidebar/topbar, không hard-code hex; quick-action trên hàng dùng `hover:bg-foreground/10` để nổi trên nền hàng đang chọn `bg-muted`).
+- **Tỷ lệ cột & ngưỡng tách panel (`1360px`):** Inner container `1440px` của `AppShell` rộng `1110px`, nên panel xem trước giữ `w-[360px] 2xl:w-[392px]` và bảng `@container` dùng `minmax(0,1fr) 128px 48px 136px 80px` để tiêu đề không bị ép vỡ chữ. Ở `< 1360px`, panel mở thành slide-over drawer (`role="dialog"`, `aria-modal="true"`) có focus trap `Tab` và trả focus về hàng kích hoạt khi đóng hoặc xóa nháp.
+- **Tách `Band` khỏi tờ đề học viên (`#847`):** `Band` hiển thị ở bảng ngân hàng, metadata mobile, bộ sắp xếp và `.preview-head` (chrome giáo viên), nhưng bị loại khỏi `PromptStudentPaper` (tab `Đề phía học viên`) cùng toàn bộ đáp án bí mật/transcript.
+- **Bộ lọc & nhãn trạng thái theo dữ liệu thật (`#979`):** Đổi nhãn `"Đã dùng N lớp"` sang `"Đã giao N lớp"` đếm theo `classId` duy nhất (`status = 'draft'` luôn ưu tiên hiển thị `Bản nháp`); tab `Lịch sử giao` đọc từ `data.classAssignments` (tổng hợp `Đã nộp x/y`, trạng thái hạn theo giờ VN), không dựng dữ liệu chi tiết từng học viên hay thời lượng audio giả; dải kỹ năng dùng `<fieldset aria-label="Kỹ năng">` và badge đếm `aria-hidden="true"`.
+- **Modal `<Modal>` thay `<dialog>` & xóa nháp nguyên tử (`#983`):** Modal `Giao đề cho lớp` dùng `@/components/ui/modal` (`z-100`) thay `<dialog>.showModal()` để calendar popover của `DatePickerInput` (`z-[110]`) không bị Top Layer che; `Xóa nháp` dùng hộp thoại xác nhận gọi `DELETE /api/assignments/prompts/:id` (chỉ xóa nháp chưa tham chiếu, không làm nút Hoàn tác giả phía client) và nút `Xem trước` giữ cho cả `ready` lẫn `draft`.
+- **Phạm vi ngân hàng đề:** Mục `"Đề thi nhiều phần"` trong menu tạo dẫn sang `/assignments/tests/new`, không trộn danh sách `assignmentTests` vào bảng `/assignments`.

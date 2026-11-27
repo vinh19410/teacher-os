@@ -331,6 +331,7 @@ export type KernelAction =
 			promptId: string;
 			payload: AssignmentPromptUpdate;
 	  }
+	| { type: "delete-assignment-prompt"; promptId: string }
 	| {
 			/** Tạo nhóm bộ từ vựng ở cấp org. */
 			type: "create-vocab-group";

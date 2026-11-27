@@ -2,6 +2,7 @@ import type { KernelSnapshot } from "@teacher-os/api/contracts";
 import { describe, expect, test } from "vitest";
 
 import { mapAssignmentPrompts } from "./assignment-prompts";
+import { kernelCommand } from "./kernel";
 
 describe("mapAssignmentPrompts (#202)", () => {
 	test("projects snapshot rows field-for-field", () => {
@@ -168,5 +169,15 @@ describe("mapAssignmentPrompts (#202)", () => {
 			prompt: "<p>Write 250 words.</p>",
 		});
 		expect(pure?.writing).toBeNull();
+	});
+
+	test("delete-assignment-prompt maps to DELETE /api/assignments/prompts/:id with no body", () => {
+		expect(
+			kernelCommand({ type: "delete-assignment-prompt", promptId: "ap-1" }),
+		).toEqual({
+			path: "/api/assignments/prompts/ap-1",
+			method: "DELETE",
+			body: undefined,
+		});
 	});
 });

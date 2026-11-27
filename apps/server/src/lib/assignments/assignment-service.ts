@@ -30,7 +30,17 @@ import {
 import { classAssignment } from "@teacher-os/db/schema/class-assignment";
 import { quizAttempt } from "@teacher-os/db/schema/quiz-attempt";
 import { studyPack, studyPackItem } from "@teacher-os/db/schema/study-pack";
-import { and, asc, desc, eq, inArray, isNull, notLike, or } from "drizzle-orm";
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	inArray,
+	isNull,
+	notLike,
+	or,
+	sql,
+} from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { z } from "zod";
 import type { Db } from "../../app";
@@ -566,6 +576,70 @@ export async function updateAssignmentPrompt(
 		return { ok: false, status: 404, error: "prompt not found" };
 	}
 	return { ok: true, data: { id: promptId } };
+}
+
+/**
+ * Atomic draft-only deletion for assignment prompts: guards org scope,
+ * non-library/non-demo rows, `status === "draft"`, and zero references in
+ * `class_assignment`, `assignment_test_part`, and `study_pack_item` inside the
+ * single `DELETE ... WHERE` so `class_assignment`'s `ON DELETE CASCADE` can
+ * never wipe student submissions even if a prompt was flipped `ready -> draft`.
+ */
+export async function deleteAssignmentPrompt(
+	db: Db,
+	orgId: string,
+	promptId: string,
+): Promise<AssignmentServiceResult<{ id: string }>> {
+	const deleted = await db
+		.delete(assignmentPrompt)
+		.where(
+			and(
+				eq(assignmentPrompt.id, promptId),
+				eq(assignmentPrompt.orgId, orgId),
+				isNull(assignmentPrompt.libraryRef),
+				notLike(assignmentPrompt.id, "demo-prompt:%"),
+				eq(assignmentPrompt.status, "draft"),
+				sql`NOT EXISTS (SELECT 1 FROM ${classAssignment} WHERE ${classAssignment.promptId} = ${assignmentPrompt.id})`,
+				sql`NOT EXISTS (SELECT 1 FROM ${assignmentTestPart} WHERE ${assignmentTestPart.promptId} = ${assignmentPrompt.id})`,
+				sql`NOT EXISTS (SELECT 1 FROM ${studyPackItem} WHERE ${studyPackItem.sourceKind} = 'org_prompt' AND ${studyPackItem.sourceId} = ${assignmentPrompt.id})`,
+			),
+		)
+		.returning({ id: assignmentPrompt.id });
+
+	if (deleted[0]) {
+		return { ok: true, data: { id: deleted[0].id } };
+	}
+
+	const [existing] = await db
+		.select({ status: assignmentPrompt.status })
+		.from(assignmentPrompt)
+		.where(
+			and(
+				eq(assignmentPrompt.id, promptId),
+				eq(assignmentPrompt.orgId, orgId),
+				isNull(assignmentPrompt.libraryRef),
+				notLike(assignmentPrompt.id, "demo-prompt:%"),
+			),
+		)
+		.limit(1);
+
+	if (!existing) {
+		return { ok: false, status: 404, error: "prompt not found" };
+	}
+	if (existing.status !== "draft") {
+		return {
+			ok: false,
+			status: 409,
+			error: "only draft prompts can be deleted",
+			code: ASSIGNMENT_PROMPT_ERROR_CODES.DELETE_NOT_DRAFT,
+		};
+	}
+	return {
+		ok: false,
+		status: 409,
+		error: "prompt is referenced and cannot be deleted",
+		code: ASSIGNMENT_PROMPT_ERROR_CODES.DELETE_REFERENCED,
+	};
 }
 
 export async function listAssignmentPrompts(

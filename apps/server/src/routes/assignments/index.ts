@@ -4,6 +4,7 @@ import {
 	assignmentPromptCreateSchema,
 	assignmentPromptUpdateSchema,
 } from "@teacher-os/api/contracts";
+import { canPublishGrade } from "@teacher-os/auth/role";
 import { assignment } from "@teacher-os/db/schema/assignment";
 import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
 import { and, eq } from "drizzle-orm";
@@ -13,6 +14,7 @@ import type { z } from "zod";
 import type { Db, KernelCtx } from "../../app";
 import {
 	createAssignmentPrompt,
+	deleteAssignmentPrompt,
 	updateAssignmentPrompt,
 } from "../../lib/assignments/assignment-service";
 import type { MediaStore } from "../../lib/media-store";
@@ -180,6 +182,30 @@ export function assignmentRoutes(deps: {
 					...(result.question !== undefined
 						? { question: result.question }
 						: {}),
+				},
+				result.status,
+			);
+		}
+		return c.json(result.data satisfies CreatedResponse);
+	});
+
+	routes.delete("/prompts/:id", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		if (ctx.role !== undefined && !canPublishGrade(ctx.role)) {
+			return c.json({ error: "forbidden", code: "FORBIDDEN" }, 403);
+		}
+		const promptId = c.req.param("id");
+		const result = await deleteAssignmentPrompt(
+			deps.getDb(),
+			ctx.orgId,
+			promptId,
+		);
+		if (!result.ok) {
+			return c.json(
+				{
+					error: result.error,
+					...(result.code ? { code: result.code } : {}),
 				},
 				result.status,
 			);

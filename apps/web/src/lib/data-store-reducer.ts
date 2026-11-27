@@ -97,6 +97,7 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 		case "add-comment-bank":
 		case "create-report":
 		case "create-assignment-prompt":
+		case "delete-assignment-prompt":
 		case "assign-class-prompt":
 		case "add-class-assignment-targets":
 		case "record-invoice-payment":
