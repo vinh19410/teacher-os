@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
 
-import type { HolidayPreview } from "@teacher-os/api/contracts";
+import {
+	type HolidayPreview,
+	RECORDING_ERROR_CODES,
+} from "@teacher-os/api/contracts";
 import {
 	cleanup,
 	fireEvent,
@@ -633,5 +636,38 @@ describe("HolidayModal CLASS_PAUSED (#694)", () => {
 		).toBe(true);
 		await settle();
 		expect(repos.previewHoliday).not.toHaveBeenCalled();
+	});
+
+	it("shows dedicated toast error when applyHoliday rejects with RECORDING_LOCKED", async () => {
+		repos.previewHoliday.mockResolvedValueOnce(PREVIEW);
+		repos.applyHoliday.mockRejectedValueOnce(
+			Object.assign(new Error(RECORDING_ERROR_CODES.LOCKED), {
+				holidayErrorCode: RECORDING_ERROR_CODES.LOCKED,
+			}),
+		);
+
+		render(
+			<HolidayModal
+				open
+				classes={CLASSES}
+				onClose={vi.fn()}
+				onApplied={vi.fn()}
+				onRefreshClasses={vi.fn()}
+			/>,
+		);
+
+		fillValidForm();
+		await waitFor(() =>
+			expect(screen.getByTestId("holiday-preview")).toBeTruthy(),
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Xác nhận áp dụng & Dời buổi" }),
+		);
+
+		await waitFor(() =>
+			expect(toast.error).toHaveBeenCalledWith(
+				expect.stringContaining("video recording"),
+			),
+		);
 	});
 });

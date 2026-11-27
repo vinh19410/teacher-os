@@ -3,6 +3,7 @@ import {
 	ASSIGNMENT_PROMPT_ERROR_CODES,
 	ASSIGNMENT_TEST_ERROR_CODES,
 	CLASS_ERROR_CODES,
+	RECORDING_ERROR_CODES,
 } from "@teacher-os/api/contracts";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -184,6 +185,26 @@ describe("useKernelFormSubmit — 409 lock messages (#630)", () => {
 			CLASS_ERROR_CODES.CLASS_PAUSED,
 		);
 		expect(latest.current?.error).toContain("tạm dừng");
+		expect(dataFixture.refresh).toHaveBeenCalledTimes(1);
+	});
+
+	it("maps RECORDING_LOCKED (409) to Vietnamese copy and refreshes kernel snapshot", async () => {
+		dataFixture.refresh.mockResolvedValue(true);
+		dataFixture.dispatch.mockResolvedValue({
+			kind: "definite-failure",
+			status: 409,
+			error: new HttpError(409, "recording locked", {
+				code: RECORDING_ERROR_CODES.LOCKED,
+			}),
+		});
+		const { run } = renderHarness();
+
+		await run();
+
+		expect(latest.current?.failureError?.code).toBe(
+			RECORDING_ERROR_CODES.LOCKED,
+		);
+		expect(latest.current?.error).toContain("video recording");
 		expect(dataFixture.refresh).toHaveBeenCalledTimes(1);
 	});
 });

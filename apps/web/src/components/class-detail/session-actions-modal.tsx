@@ -1,6 +1,7 @@
 import {
 	CLASS_ERROR_CODES,
 	type KernelSessionMeetingRow,
+	RECORDING_ERROR_CODES,
 } from "@teacher-os/api/contracts";
 import { useState } from "react";
 import { SessionZoomPanel } from "@/components/schedule/session-zoom-panel";
@@ -143,6 +144,9 @@ export function SessionActionsModal({
 		if (!result.ok) {
 			if (result.code === CLASS_ERROR_CODES.CLASS_PAUSED) {
 				return "Lớp đang tạm dừng — không thể thực hiện thao tác giảng dạy này.";
+			}
+			if (result.code === RECORDING_ERROR_CODES.LOCKED) {
+				return "Buổi học hoặc ngày đích đang có video recording còn hạn lưu trữ nên không thể thao tác.";
 			}
 			switch (result.reason) {
 				case "use-occurrence-endpoint":
@@ -422,6 +426,12 @@ export function SessionActionsModal({
 									}
 									if (result.ok) {
 										return; // route toast already summarized the counts
+									}
+									if (result.code === RECORDING_ERROR_CODES.LOCKED) {
+										setFormError(
+											"Ngày đích đang có video recording lưu trên hệ thống — chọn ngày khác.",
+										);
+										return;
 									}
 									if (result.reason === "date-occupied") {
 										setFormError("Ngày đích đã có buổi — chọn ngày khác.");

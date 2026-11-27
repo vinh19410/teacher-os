@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
+import { RECORDING_ERROR_CODES } from "@teacher-os/api/contracts";
 import { isoToLessonWeekday } from "@teacher-os/api/skeleton";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
@@ -8,7 +9,7 @@ import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeEach, describe, expect, test } from "vitest";
-import { buildApp, type Db, type ServerApp } from "../app";
+import { buildApp, type Db, type RecordingStore, type ServerApp } from "../app";
 import {
 	activateEnrollment,
 	generateScheduleLessons,
@@ -187,6 +188,8 @@ function createApp(
 	opts?: {
 		mailer?: Mailer;
 		studentOrigin?: string;
+		getRecordingStore?: () => RecordingStore | undefined;
+		now?: () => Date;
 	},
 ) {
 	return buildApp({
@@ -197,6 +200,44 @@ function createApp(
 		// #454 D9: đường ống thông báo holiday_created cần mailer + origin.
 		...opts,
 	});
+}
+
+function createMemoryRecordingStore(): RecordingStore & {
+	objects: Map<string, Uint8Array>;
+} {
+	const objects = new Map<string, Uint8Array>();
+	return {
+		objects,
+		async putStream(key, body) {
+			const buf = new Uint8Array(await new Response(body).arrayBuffer());
+			objects.set(key, buf);
+			return { sizeBytes: buf.byteLength };
+		},
+		async head(key) {
+			const item = objects.get(key);
+			return item
+				? { contentType: "video/mp4", size: item.byteLength, etag: '"1"' }
+				: null;
+		},
+		async get(key) {
+			const item = objects.get(key);
+			if (!item) return null;
+			return {
+				body: new ReadableStream({
+					start(c) {
+						c.enqueue(item);
+						c.close();
+					},
+				}),
+				contentType: "video/mp4",
+				size: item.byteLength,
+				etag: '"1"',
+			};
+		},
+		async delete(key) {
+			objects.delete(key);
+		},
+	};
 }
 
 const draft = () => ({
@@ -2023,6 +2064,138 @@ describe("TOS-13 Phase 2: apply mode cancel + DELETE hoàn tác + activation D7 
 		]);
 		expect(snap.holidayCancels).toEqual([
 			{ holidayId, classId: "cls-a", date: F3 },
+		]);
+	});
+
+	test("bảo vệ R2 recording khi áp và hoàn tác kỳ nghỉ dời buổi (409 RECORDING_LOCKED, dời đồng bộ tránh tự khoá undo, dọn R2 hết hạn)", async () => {
+		const store = createMemoryRecordingStore();
+		const fixedNow = new Date("2026-12-01T10:00:00Z");
+		const app = createApp(db, {
+			getRecordingStore: () => store,
+			now: () => fixedNow,
+		});
+
+		// 1. Ngày bù F9 của cls-a có sẵn meeting mồ côi chứa R2 live → chặn 409 RECORDING_LOCKED
+		const orphanKey = `org-1/cls-a/${F9}/orphan.mp4`;
+		store.objects.set(orphanKey, new Uint8Array([1, 2, 3]));
+		await db.insert(schema.classSessionMeeting).values({
+			id: "m-hol-orphan",
+			orgId: "org-1",
+			classId: "cls-a",
+			date: F9,
+			joinUrl: "",
+			recordingStatus: "ready",
+			recordingStorageKey: orphanKey,
+			recordingExpiresAt: new Date(fixedNow.getTime() + 60_000),
+		});
+
+		const shiftDraft = {
+			...draft(),
+			scope: "classes" as const,
+			classIds: ["cls-a"],
+		};
+		const planHash = await previewHash(app, shiftDraft);
+		const blockedApply = await apply(app, { ...shiftDraft, planHash });
+		expect(blockedApply.status).toBe(409);
+		expect(await blockedApply.json()).toMatchObject({
+			code: RECORDING_ERROR_CODES.LOCKED,
+		});
+		expect(store.objects.has(orphanKey)).toBe(true);
+		expect(await db.select().from(schema.organizationHoliday)).toHaveLength(0);
+
+		// 2. Hết hạn R2 ở F9 → áp dụng thành công, dọn object hết hạn, đồng thời dời live R2 của F3 sang F9
+		const liveSrcKey = `org-1/cls-a/${F3}/src-live.mp4`;
+		store.objects.set(liveSrcKey, new Uint8Array([4, 5, 6]));
+		await db.insert(schema.classSessionMeeting).values({
+			id: "m-hol-src-live",
+			orgId: "org-1",
+			classId: "cls-a",
+			date: F3,
+			joinUrl: "",
+			recordingStatus: "ready",
+			recordingStorageKey: liveSrcKey,
+			recordingExpiresAt: new Date(fixedNow.getTime() + 60_000),
+		});
+		await db
+			.update(schema.classSessionMeeting)
+			.set({ recordingExpiresAt: new Date(fixedNow.getTime() - 1000) })
+			.where(eq(schema.classSessionMeeting.id, "m-hol-orphan"));
+
+		const okApply = await apply(app, { ...shiftDraft, planHash });
+		expect(okApply.status).toBe(200);
+		const { holidayId } = (await okApply.json()) as { holidayId: string };
+		expect(store.objects.has(orphanKey)).toBe(false);
+		expect(store.objects.has(liveSrcKey)).toBe(true);
+		const movedRows = await db
+			.select()
+			.from(schema.classSessionMeeting)
+			.where(eq(schema.classSessionMeeting.classId, "cls-a"));
+		expect(movedRows.map((r) => r.date)).toEqual([F9]);
+
+		// 3. Hoàn tác ngay lập tức: không bị tự khoá, F9 quay về F3 sạch sẽ
+		const immediateUndo = await deleteHolidayReq(app, holidayId);
+		expect(immediateUndo.status).toBe(200);
+		const restoredRows = await db
+			.select()
+			.from(schema.classSessionMeeting)
+			.where(eq(schema.classSessionMeeting.classId, "cls-a"));
+		expect(restoredRows.map((r) => r.date)).toEqual([F3]);
+		expect(store.objects.has(liveSrcKey)).toBe(true);
+
+		// 4. Áp lại (không còn R2 ở F3) → chèn live R2 vào F3 (ngày gốc) → undo bị chặn 409 RECORDING_LOCKED
+		await db
+			.delete(schema.classSessionMeeting)
+			.where(eq(schema.classSessionMeeting.id, "m-hol-src-live"));
+		const planHash2 = await previewHash(app, shiftDraft);
+		const apply2 = await apply(app, { ...shiftDraft, planHash: planHash2 });
+		expect(apply2.status).toBe(200);
+		const { holidayId: hol2 } = (await apply2.json()) as { holidayId: string };
+
+		const blockerKey = `org-1/cls-a/${F3}/orig-live.mp4`;
+		store.objects.set(blockerKey, new Uint8Array([7, 8, 9]));
+		await db.insert(schema.classSessionMeeting).values([
+			{
+				id: "m-hol-makeup-zoom",
+				orgId: "org-1",
+				classId: "cls-a",
+				date: F9,
+				joinUrl: "https://zoom.us/j/makeup-99",
+				zoomMeetingId: "makeup-99",
+				recordingStatus: "none",
+			},
+			{
+				id: "m-hol-orig-live",
+				orgId: "org-1",
+				classId: "cls-a",
+				date: F3,
+				joinUrl: "",
+				recordingStatus: "ready",
+				recordingStorageKey: blockerKey,
+				recordingExpiresAt: new Date(fixedNow.getTime() + 60_000),
+			},
+		]);
+		const blockedUndo = await deleteHolidayReq(app, hol2);
+		expect(blockedUndo.status).toBe(409);
+		expect(await blockedUndo.json()).toMatchObject({
+			code: RECORDING_ERROR_CODES.LOCKED,
+		});
+		expect(store.objects.has(blockerKey)).toBe(true);
+		expect(await db.select().from(schema.organizationHoliday)).toHaveLength(1);
+
+		// Hết hạn ở ngày gốc → undo thành công, dời meeting từ F9 về F3 và xoá object hết hạn
+		await db
+			.update(schema.classSessionMeeting)
+			.set({ recordingExpiresAt: new Date(fixedNow.getTime() - 1000) })
+			.where(eq(schema.classSessionMeeting.id, "m-hol-orig-live"));
+		const okUndo = await deleteHolidayReq(app, hol2);
+		expect(okUndo.status).toBe(200);
+		expect(store.objects.has(blockerKey)).toBe(false);
+		const afterUndoRows = await db
+			.select()
+			.from(schema.classSessionMeeting)
+			.where(eq(schema.classSessionMeeting.classId, "cls-a"));
+		expect(afterUndoRows.map((r) => ({ id: r.id, date: r.date }))).toEqual([
+			{ id: "m-hol-makeup-zoom", date: F3 },
 		]);
 	});
 });
