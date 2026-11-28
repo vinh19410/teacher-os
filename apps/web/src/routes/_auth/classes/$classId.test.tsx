@@ -2815,4 +2815,61 @@ describe("class detail → edit startDate before class starts", () => {
 			),
 		).toBeTruthy();
 	});
+
+	it("passes materialized holiday-shifted end date into ConfirmOpeningModal email preview", async () => {
+		startKernelServer(
+			unstartedAutoSnapshot({
+				lessons: [
+					lessonRow({
+						id: "les-1",
+						classId: "cl-1",
+						enrollmentId: "en-1",
+						day: 1,
+						date: "2099-05-04",
+						status: "upcoming",
+					}),
+					lessonRow({
+						id: "les-2",
+						classId: "cl-1",
+						enrollmentId: "en-1",
+						day: 1,
+						date: "2099-05-11",
+						status: "holiday",
+					}),
+					lessonRow({
+						id: "les-3",
+						classId: "cl-1",
+						enrollmentId: "en-1",
+						day: 1,
+						date: "2099-05-18",
+						status: "upcoming",
+					}),
+				],
+				holidayShifts: [
+					{
+						holidayId: "hol-1",
+						classId: "cl-1",
+						originalDate: "2099-05-11",
+						makeupDate: "2099-05-18",
+					},
+				],
+			}),
+		);
+		renderWithKernel(<ClassDetail />);
+
+		fireEvent.click(
+			await screen.findByRole("button", { name: "Chốt khai giảng" }),
+		);
+		const dialog = await screen.findByRole("dialog", {
+			name: "Chốt khai giảng — IELTS Writing Unstarted",
+		});
+		const iframe = within(dialog).getByTitle(
+			"Xem trước email thông báo khai giảng",
+		) as HTMLIFrameElement;
+		const srcDoc = iframe.getAttribute("srcdoc") ?? "";
+		expect(srcDoc).toContain("Ngày kết thúc khóa học dự kiến");
+		expect(srcDoc).toContain("18/05/2099");
+		expect(srcDoc).not.toContain("Trình độ");
+		expect(srcDoc).not.toContain("Thời lượng");
+	});
 });

@@ -158,7 +158,6 @@ describe("notification template builders (phase 3 #454)", () => {
 			}),
 			mode: "Online",
 			sessionsTotal: 24,
-			level: "Band 6.5",
 			version: 1,
 			isUpdate: false,
 			teacherNote: "Mang theo <b>vở ghi</b>\nVào phòng sớm 10 phút",
@@ -197,8 +196,12 @@ describe("notification template builders (phase 3 #454)", () => {
 		expect(first.htmlBody).toContain("Chào Nguyễn Văn An,");
 		expect(first.htmlBody).toContain("IELTS 6.5 Intensive");
 		expect(first.htmlBody).toContain("19:00 – 20:30");
-		expect(first.htmlBody).toContain("24 buổi");
-		expect(first.htmlBody).toContain("Band 6.5");
+		expect(first.htmlBody).toContain("Ngày kết thúc khóa học dự kiến");
+		expect(first.htmlBody).toContain("Thứ Sáu, 07/08/2026");
+		expect(first.htmlBody).not.toContain("Trình độ");
+		expect(first.htmlBody).not.toContain("Thời lượng");
+		expect(first.htmlBody).not.toContain("24 buổi");
+		expect(first.htmlBody).not.toContain("Band 6.5");
 		expect(first.htmlBody).toContain("Trung tâm Anh ngữ Minh Anh");
 		expect(first.htmlBody).toContain(
 			"Mang theo &lt;b&gt;vở ghi&lt;/b&gt;<br>Vào phòng sớm 10 phút",
@@ -210,7 +213,12 @@ describe("notification template builders (phase 3 #454)", () => {
 		expect(first.textBody).toBeTruthy();
 		expect(first.textBody).toContain("Chào Nguyễn Văn An,");
 		expect(first.textBody).toContain("19:00 – 20:30");
-		expect(first.textBody).toContain("24 buổi");
+		expect(first.textBody).toContain(
+			"- Ngày kết thúc khóa học dự kiến: Thứ Sáu, 07/08/2026",
+		);
+		expect(first.textBody).not.toContain("Trình độ");
+		expect(first.textBody).not.toContain("Thời lượng");
+		expect(first.textBody).not.toContain("24 buổi");
 		expect(first.textBody).toContain(
 			"Mang theo <b>vở ghi</b>\nVào phòng sớm 10 phút",
 		);
@@ -219,6 +227,56 @@ describe("notification template builders (phase 3 #454)", () => {
 		);
 		expect(second.htmlBody).toContain("Chào Trần Thu Hà,");
 		expect(second.textBody).toContain("Chào Trần Thu Hà,");
+	});
+
+	test("classOpeningConfirmedEvents — truyền explicit expectedEndDate và null để ẩn dòng", () => {
+		const overridden = classOpeningConfirmedEvents({
+			classId: "cls-override",
+			className: "IELTS 7.0",
+			startDate: "2026-06-15",
+			scheduleRaw: JSON.stringify({
+				days: [0, 2, 4],
+				start: "19:00",
+				end: "20:30",
+			}),
+			mode: "Online",
+			sessionsTotal: 24,
+			expectedEndDate: "2026-08-14",
+			version: 1,
+			isUpdate: false,
+			teacherNote: "",
+			orgName: "Trung tâm Anh ngữ",
+			students: [{ id: "s-1", name: "An", hasEmail: true }],
+		});
+		expect(overridden[0]?.htmlBody).toContain("Thứ Sáu, 14/08/2026");
+		expect(overridden[0]?.textBody).toContain(
+			"- Ngày kết thúc khóa học dự kiến: Thứ Sáu, 14/08/2026",
+		);
+
+		const suppressed = classOpeningConfirmedEvents({
+			classId: "cls-null",
+			className: "IELTS 7.0",
+			startDate: "2026-06-15",
+			scheduleRaw: JSON.stringify({
+				days: [0, 2, 4],
+				start: "19:00",
+				end: "20:30",
+			}),
+			mode: "Online",
+			sessionsTotal: 24,
+			expectedEndDate: null,
+			version: 1,
+			isUpdate: false,
+			teacherNote: "",
+			orgName: "Trung tâm Anh ngữ",
+			students: [{ id: "s-1", name: "An", hasEmail: true }],
+		});
+		expect(suppressed[0]?.htmlBody).not.toContain(
+			"Ngày kết thúc khóa học dự kiến",
+		);
+		expect(suppressed[0]?.textBody).not.toContain(
+			"Ngày kết thúc khóa học dự kiến",
+		);
 	});
 
 	test("classOpeningConfirmedEvents — chế độ cập nhật bỏ CTA khi thiếu studentOrigin và chặn scheme lạ", () => {

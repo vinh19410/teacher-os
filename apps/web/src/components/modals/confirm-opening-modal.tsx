@@ -1,4 +1,7 @@
-import { renderClassOpeningEmail } from "@teacher-os/api/class-opening-email";
+import {
+	computeExpectedEndDateFromSchedule,
+	renderClassOpeningEmail,
+} from "@teacher-os/api/class-opening-email";
 import type { StartDateLockReason } from "@teacher-os/api/class-start-date";
 import {
 	CLASS_ERROR_CODES,
@@ -55,6 +58,8 @@ export interface ConfirmOpeningModalProps {
 	isManual?: boolean;
 	startDateLocked?: boolean;
 	startDateLockReason?: StartDateLockReason | null;
+	expectedEndDate?: string | null;
+	effectiveSessionsTotal?: number;
 	roster: OpeningRosterEntry[];
 	orgName?: string;
 	onConfirmed: () => Promise<void>;
@@ -157,6 +162,8 @@ export function ConfirmOpeningModal({
 	isManual,
 	startDateLocked,
 	startDateLockReason = null,
+	expectedEndDate,
+	effectiveSessionsTotal,
 	roster,
 	orgName,
 	onConfirmed,
@@ -293,6 +300,38 @@ export function ConfirmOpeningModal({
 		targetRoster[0]?.student.name ||
 		"Nguyễn Minh";
 
+	const resolvedSessionsTotal = effectiveSessionsTotal ?? cls.sessionsTotal;
+	const isLiveStartDateEdited =
+		!startDateReadOnly && effectiveStartDate !== cls.startDate.trim();
+
+	const previewExpectedEndDate = useMemo(() => {
+		if (isManualMode) {
+			return expectedEndDate ?? null;
+		}
+		if (isLiveStartDateEdited) {
+			return computeExpectedEndDateFromSchedule({
+				startDate: effectiveStartDate,
+				scheduleRaw: cls.schedule,
+				sessionsTotal: resolvedSessionsTotal,
+			});
+		}
+		if (expectedEndDate !== undefined) {
+			return expectedEndDate;
+		}
+		return computeExpectedEndDateFromSchedule({
+			startDate: effectiveStartDate,
+			scheduleRaw: cls.schedule,
+			sessionsTotal: resolvedSessionsTotal,
+		});
+	}, [
+		isManualMode,
+		isLiveStartDateEdited,
+		expectedEndDate,
+		effectiveStartDate,
+		cls.schedule,
+		resolvedSessionsTotal,
+	]);
+
 	const preview = useMemo(
 		() =>
 			renderClassOpeningEmail({
@@ -300,8 +339,9 @@ export function ConfirmOpeningModal({
 				startDate: effectiveStartDate,
 				scheduleRaw: cls.schedule,
 				mode: cls.mode,
-				sessionsTotal: cls.sessionsTotal > 0 ? cls.sessionsTotal : undefined,
-				level: cls.level || undefined,
+				sessionsTotal:
+					resolvedSessionsTotal > 0 ? resolvedSessionsTotal : undefined,
+				expectedEndDate: previewExpectedEndDate,
 				studentName: previewStudentName,
 				orgName,
 				teacherNote: note,
@@ -313,8 +353,8 @@ export function ConfirmOpeningModal({
 			effectiveStartDate,
 			cls.schedule,
 			cls.mode,
-			cls.sessionsTotal,
-			cls.level,
+			resolvedSessionsTotal,
+			previewExpectedEndDate,
 			previewStudentName,
 			orgName,
 			note,

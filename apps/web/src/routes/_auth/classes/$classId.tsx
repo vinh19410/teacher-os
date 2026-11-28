@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { resolveClassExpectedEndDate } from "@teacher-os/api/class-opening-email";
 import { evaluateClassStartDateEditability } from "@teacher-os/api/class-start-date";
 import {
 	CLASS_ERROR_CODES,
@@ -244,26 +245,36 @@ function ClassDetailRoute() {
 	const cls = classById(classId);
 	const isPaused = cls?.status === "paused";
 	const canToggleStatus = canManageClassStatus(data.viewer?.role ?? "teacher");
-	const classLessonsForClass = data.lessons.filter(
-		(l) => l.classId === classId,
+	const classLessonsForClass = useMemo(
+		() => data.lessons.filter((l) => l.classId === classId),
+		[data.lessons, classId],
 	);
-	const classSessionsForClass = (data.classSessions ?? []).filter(
-		(cs) => cs.classId === classId,
+	const classSessionsForClass = useMemo(
+		() => (data.classSessions ?? []).filter((cs) => cs.classId === classId),
+		[data.classSessions, classId],
 	);
 	const hasRealSessions =
 		classLessonsForClass.length > 0 || classSessionsForClass.length > 0;
 	const isManual =
 		!sy &&
 		(cls?.schedulingMode === "manual" || classSessionsForClass.length > 0);
-	const holidayCancelDatesForClass = (data.holidayCancels ?? [])
-		.filter((hc) => hc.classId === classId)
-		.map((hc) => hc.date);
-	const holidayShiftsForClass = (data.holidayShifts ?? [])
-		.filter((hs) => hs.classId === classId)
-		.map((hs) => ({
-			originalDate: hs.originalDate,
-			makeupDate: hs.makeupDate,
-		}));
+	const holidayCancelDatesForClass = useMemo(
+		() =>
+			(data.holidayCancels ?? [])
+				.filter((hc) => hc.classId === classId)
+				.map((hc) => hc.date),
+		[data.holidayCancels, classId],
+	);
+	const holidayShiftsForClass = useMemo(
+		() =>
+			(data.holidayShifts ?? [])
+				.filter((hs) => hs.classId === classId)
+				.map((hs) => ({
+					originalDate: hs.originalDate,
+					makeupDate: hs.makeupDate,
+				})),
+		[data.holidayShifts, classId],
+	);
 	const startDateEditability = cls
 		? evaluateClassStartDateEditability({
 				schedule: cls.schedule,
@@ -414,6 +425,43 @@ function ClassDetailRoute() {
 		}
 		return entries;
 	}, [cls.studentIds, cls.invitedStudentIds, studentById]);
+
+	const effectiveOpeningSessionsTotal = useMemo(() => {
+		if (!isManual && cls.sessionsTotal === 0 && sy) {
+			const lessonCount = sy.modules.reduce(
+				(sum, mod) => sum + mod.lessons.length,
+				0,
+			);
+			if (lessonCount > 0) return lessonCount;
+		}
+		return cls.sessionsTotal;
+	}, [isManual, cls.sessionsTotal, sy]);
+
+	const openingSessionEndDate = useMemo(
+		() =>
+			resolveClassExpectedEndDate({
+				startDate: cls.startDate,
+				scheduleRaw: cls.schedule,
+				sessionsTotal: effectiveOpeningSessionsTotal,
+				isManual,
+				lessons: classLessonsForClass,
+				classSessions: classSessionsForClass,
+				holidayShiftOriginalDates: holidayShiftsForClass.map(
+					(s) => s.originalDate,
+				),
+				holidayCancelDates: holidayCancelDatesForClass,
+			}),
+		[
+			cls.startDate,
+			cls.schedule,
+			effectiveOpeningSessionsTotal,
+			isManual,
+			classLessonsForClass,
+			classSessionsForClass,
+			holidayShiftsForClass,
+			holidayCancelDatesForClass,
+		],
+	);
 
 	return (
 		<div>
@@ -790,6 +838,8 @@ function ClassDetailRoute() {
 				isManual={isManual}
 				startDateLocked={!startDateEditability.editable}
 				startDateLockReason={startDateEditability.reason}
+				expectedEndDate={openingSessionEndDate}
+				effectiveSessionsTotal={effectiveOpeningSessionsTotal}
 				roster={openingRoster}
 				onConfirmed={async () => {
 					await refresh();
