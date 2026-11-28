@@ -1,14 +1,13 @@
+import { createHmac } from "node:crypto";
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
+import { E2E_SEPAY_WEBHOOK_SECRET } from "../src/fake-sepay";
 import { seedStudent, signUpViaApi } from "./helpers";
 import { API_ORIGIN, LMS_ORIGIN, TEACHER_BASE_URL } from "./origins";
 
 /**
  * Invoice detail page E2E (#345). Click/Enter trên dòng hóa đơn mở
  * /tuition/$invoiceId hiển thị đủ thông tin + QR + lịch sử giao dịch đã khớp.
- * Seed direct-SQL (unit test kernel phủ POST /invoices); IPN mô phỏng bằng
- * POST webhook với Apikey của fake bank hub — cùng pattern
- * tuition-bank-transfer.spec.ts.
  */
 
 const PASSWORD = "password-8chars";
@@ -18,7 +17,7 @@ const LIVE_CODE = "TOSJKMN2345";
 const SHOT_CODE = "TOSTUV2345";
 
 let teacherEmail = "";
-let myAccountXid = "";
+const myAccountNumber = `22${String(Date.now()).slice(-4)}${String(Math.floor(Math.random() * 100)).padStart(2, "0")}6789`;
 let studentId = "";
 let classId = "";
 let enrollmentId = "";
@@ -87,25 +86,33 @@ async function simulateIpn(
 	request: import("@playwright/test").APIRequestContext,
 	input: { transactionId: string; amount: number; content: string },
 ): Promise<number> {
-	const res = await request.post(`${API_ORIGIN}/webhooks/sepay/bankhub/ipn`, {
+	const rawBody = JSON.stringify({
+		id: input.transactionId,
+		gateway: "MBBank",
+		transactionDate: "2026-10-05 10:00:00",
+		accountNumber: myAccountNumber,
+		subAccount: "",
+		code: null,
+		content: input.content,
+		transferType: "in",
+		description: input.content,
+		transferAmount: input.amount,
+		accumulated: input.amount,
+		referenceCode: "FT-E2E",
+	});
+	const timestamp = Math.floor(Date.now() / 1000);
+	const signature =
+		"sha256=" +
+		createHmac("sha256", E2E_SEPAY_WEBHOOK_SECRET)
+			.update(`${timestamp}.${rawBody}`)
+			.digest("hex");
+	const res = await request.post(`${API_ORIGIN}/webhooks/sepay`, {
 		headers: {
-			Authorization: "Apikey e2e-ipn-key",
 			"Content-Type": "application/json",
+			"X-SePay-Signature": signature,
+			"X-SePay-Timestamp": String(timestamp),
 		},
-		data: {
-			gateway: "MBBank",
-			transaction_date: "2026-10-05 10:00:00",
-			account_number: "0123456789",
-			// Fake hub cấp xid tuần tự dùng chung cho mọi spec chạy song song —
-			// đọc xid THẬT của org này từ DB, không hardcode ba-e2e-1.
-			bank_account_xid: myAccountXid,
-			content: input.content,
-			transfer_type: "credit",
-			amount: input.amount,
-			reference_code: "FT-E2E",
-			payment_code: null,
-			transaction_id: input.transactionId,
-		},
+		data: rawBody,
 	});
 	return res.status();
 }
@@ -141,29 +148,15 @@ test.describe("Invoice detail page (#345)", () => {
 		await signUpViaApi(page, { email: teacherEmail, password: PASSWORD });
 
 		await page.goto(`${TEACHER_BASE_URL}/profile`);
-		await page
-			.getByRole("button", { name: "Liên kết tài khoản ngân hàng" })
-			.click();
-		const frame = page.frameLocator("iframe[title*='SePay']");
-		await frame.getByRole("button", { name: "Hoàn tất" }).click();
+		await page.getByTestId("bank-bin-select").selectOption("970422");
+		await page.getByTestId("bank-account-number").fill(myAccountNumber);
+		await page.getByTestId("bank-holder-name").fill("NGUYEN VAN E2E");
+		await page.getByTestId("bank-link-submit").click();
 		await expect(page.getByText("Đã liên kết")).toBeVisible({
 			timeout: 20_000,
 		});
 
 		const orgId = await orgIdOfTeacher();
-		{
-			const client = openDb();
-			try {
-				const res = await client.execute({
-					sql: "SELECT bank_account_xid AS xid FROM org_bank_link WHERE org_id = ? LIMIT 1",
-					args: [orgId],
-				});
-				myAccountXid = String(res.rows[0]?.xid ?? "");
-			} finally {
-				client.close();
-			}
-		}
-		expect(myAccountXid).not.toBe("");
 		const student = await seedStudent({
 			teacherEmail,
 			name: "Học Viên Detail",

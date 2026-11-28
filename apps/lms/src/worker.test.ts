@@ -1,4 +1,3 @@
-import { BANK_HUB_LINK_ORIGINS } from "@teacher-os/api/lib/bank-hub-origins";
 import { describe, expect, it, vi } from "vitest";
 import worker, { handleLmsRequest, type WorkerEnv } from "./worker.ts";
 
@@ -282,7 +281,7 @@ describe("apps/lms worker fetch handler", () => {
 		expect(await missingAsset.text()).toBe("Not Found");
 	});
 
-	it("serves valid /teacher routes with teacher shell, bank-hub frame-src, and microphone=()", async () => {
+	it("serves valid /teacher routes with teacher shell, no frame-src, and microphone=()", async () => {
 		const env = createMockEnv();
 		for (const path of [
 			"/teacher",
@@ -305,9 +304,8 @@ describe("apps/lms worker fetch handler", () => {
 				"camera=(), microphone=(), geolocation=(), browsing-topics=()",
 			);
 			const csp = res.headers.get("content-security-policy") ?? "";
-			for (const origin of BANK_HUB_LINK_ORIGINS) {
-				expect(csp).toContain(origin);
-			}
+			expect(csp).not.toContain("frame-src");
+			expect(csp).not.toContain("bankhub.sepay.vn");
 			expect(csp).toContain("frame-ancestors 'none'");
 		}
 	});

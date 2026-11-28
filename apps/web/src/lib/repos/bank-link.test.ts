@@ -2,9 +2,9 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import {
 	BANK_LINK_DISABLED,
 	BankLinkRequestError,
-	createBankLinkToken,
 	fetchBankLink,
-	syncBankLink,
+	removeBankLink,
+	saveBankLink,
 } from "./bank-link";
 
 function jsonRes(body: unknown, status = 200): Response {
@@ -16,9 +16,14 @@ function jsonRes(body: unknown, status = 200): Response {
 
 const LINKED = {
 	enabled: true,
+	reconcileEnabled: true,
 	status: "linked",
 	brandName: "MBBank",
+	bankBin: "970422",
+	bankCode: "MB",
+	accountNumber: "0123456789",
 	accountNumberMasked: "•••6789",
+	vaCode: "",
 	holderName: "NGUYEN VAN A",
 	linkedAt: "2026-10-05T00:00:00.000Z",
 };
@@ -38,10 +43,10 @@ describe("fetchBankLink", () => {
 		expect(status).toEqual(LINKED);
 	});
 
-	test("maps 503 BANKHUB_DISABLED to the disabled status, not a throw", async () => {
+	test("maps 503 SEPAY_DISABLED to the disabled status, not a throw", async () => {
 		vi.stubGlobal(
 			"fetch",
-			vi.fn(async () => jsonRes({ code: "BANKHUB_DISABLED" }, 503)),
+			vi.fn(async () => jsonRes({ code: "SEPAY_DISABLED" }, 503)),
 		);
 		const status = await fetchBankLink("http://api.test");
 		expect(status).toEqual(BANK_LINK_DISABLED);
@@ -56,45 +61,72 @@ describe("fetchBankLink", () => {
 	});
 });
 
-describe("createBankLinkToken", () => {
-	test("posts the purpose and returns the hosted link", async () => {
-		const fetchMock = vi.fn(async () =>
-			jsonRes({
-				hostedLinkUrl: "https://bankhub.sepay.vn/link/abc",
-				expiresAt: "2026-01-01T00:00:00Z",
-			}),
-		);
+describe("saveBankLink", () => {
+	test("PUTs normalized bank account and returns updated status", async () => {
+		const fetchMock = vi.fn(async () => jsonRes(LINKED));
 		vi.stubGlobal("fetch", fetchMock);
-		const token = await createBankLinkToken("link", "http://api.test");
-		expect(token.hostedLinkUrl).toContain("bankhub.sepay.vn");
+		const status = await saveBankLink(
+			{
+				bankBin: "970422",
+				accountNumber: "0123456789",
+				holderName: "NGUYEN VAN A",
+			},
+			"http://api.test",
+		);
+		expect(status).toEqual(LINKED);
 		const [url, init] = fetchMock.mock.calls[0] as unknown as [
 			string,
 			RequestInit,
 		];
-		expect(url).toBe("http://api.test/api/bank-link/link-token");
-		expect(JSON.parse(init.body as string)).toEqual({ purpose: "link" });
+		expect(url).toBe("http://api.test/api/bank-link");
+		expect(init.method).toBe("PUT");
 	});
 
-	test("surfaces the server error code (409 already linked)", async () => {
+	test("surfaces the server error code (409 account in use)", async () => {
 		vi.stubGlobal(
 			"fetch",
-			vi.fn(async () => jsonRes({ code: "BANK_LINK_ALREADY_LINKED" }, 409)),
+			vi.fn(async () =>
+				jsonRes({ code: "BANK_LINK_ACCOUNT_ALREADY_IN_USE" }, 409),
+			),
 		);
-		const err = await createBankLinkToken("link", "http://api.test").catch(
-			(e) => e,
-		);
+		const err = await saveBankLink(
+			{
+				bankBin: "970422",
+				accountNumber: "0123456789",
+				holderName: "NGUYEN VAN A",
+			},
+			"http://api.test",
+		).catch((e) => e);
 		expect(err).toBeInstanceOf(BankLinkRequestError);
-		expect((err as BankLinkRequestError).code).toBe("BANK_LINK_ALREADY_LINKED");
+		expect((err as BankLinkRequestError).code).toBe(
+			"BANK_LINK_ACCOUNT_ALREADY_IN_USE",
+		);
 	});
 });
 
-describe("syncBankLink", () => {
-	test("POSTs and parses the refreshed status", async () => {
-		const fetchMock = vi.fn(async () => jsonRes({ ...LINKED, status: "none" }));
+describe("removeBankLink", () => {
+	test("DELETEs and parses the reset status", async () => {
+		const fetchMock = vi.fn(async () =>
+			jsonRes({
+				...LINKED,
+				status: "none",
+				brandName: "",
+				bankBin: "",
+				bankCode: "",
+				accountNumber: "",
+				accountNumberMasked: "",
+				holderName: "",
+				linkedAt: null,
+			}),
+		);
 		vi.stubGlobal("fetch", fetchMock);
-		const status = await syncBankLink("http://api.test");
+		const status = await removeBankLink("http://api.test");
 		expect(status.status).toBe("none");
-		const [url] = fetchMock.mock.calls[0] as unknown as [string];
-		expect(url).toBe("http://api.test/api/bank-link/sync");
+		const [url, init] = fetchMock.mock.calls[0] as unknown as [
+			string,
+			RequestInit,
+		];
+		expect(url).toBe("http://api.test/api/bank-link");
+		expect(init.method).toBe("DELETE");
 	});
 });

@@ -1,7 +1,3 @@
-import { BANK_HUB_LINK_ORIGINS } from "@teacher-os/api/lib/bank-hub-origins";
-
-const FRAME_SRC = BANK_HUB_LINK_ORIGINS.join(" ");
-
 export const HSTS_HEADER_VALUE = "max-age=31536000; includeSubDomains";
 
 export function isLocalHost(hostname: string): boolean {
@@ -59,7 +55,6 @@ export function buildContentSecurityPolicy(
 ): string {
 	const apiOrigin = resolveApiOrigin(rawApiUrl);
 	const isStudent = isPrefixPath(pathname, "/student");
-	const isTeacher = isPrefixPath(pathname, "/teacher");
 
 	const directives = [
 		"default-src 'self'",
@@ -70,7 +65,6 @@ export function buildContentSecurityPolicy(
 		`media-src 'self' blob:${apiOrigin ? ` ${apiOrigin}` : ""}`,
 		"font-src 'self' data:",
 		`connect-src 'self' blob:${apiOrigin ? ` ${apiOrigin}` : ""} https:`,
-		...(isTeacher ? [`frame-src ${FRAME_SRC}`] : []),
 		"frame-ancestors 'none'",
 		"object-src 'none'",
 		"base-uri 'self'",

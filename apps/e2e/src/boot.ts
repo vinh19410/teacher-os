@@ -27,7 +27,7 @@ import { isAllowedStudyPackAudioUrl } from "server/lib/study-pack-audio";
 import { createFakeZoom } from "server/lib/zoom/fake-zoom-client";
 import { runRecordingSyncCron } from "server/lib/zoom/session-zoom-service";
 import { getSessionUser } from "server/session";
-import { createFakeBankHub } from "./fake-bank-hub";
+import { createFakeSepay } from "./fake-sepay";
 import { createFsMediaStore } from "./fs-media-store";
 import { createFsRecordingStore } from "./fs-recording-store";
 
@@ -188,10 +188,8 @@ const EXAM_IMPORT_DIR = mkdtempSync(
 );
 const examImportStore = createFsMediaStore(EXAM_IMPORT_DIR);
 
-// Fake Bank Hub (#320): hosted-link pages + client stub cho E2E.
-const fakeBankHub = createFakeBankHub({
-	origin: `http://localhost:${PORT}`,
-});
+// Fake SePay (#320): webhook secret + client stub cho E2E.
+const fakeSepay = createFakeSepay();
 
 const placementAiGrader = createFakePlacementAiGrader();
 const fakeZoom = createFakeZoom();
@@ -223,7 +221,7 @@ const app = buildApp({
 	adminEmails: ADMIN_EMAILS,
 	teacherEmails: runtimeTeacherEmails,
 	adminOrigins: [LMS_ORIGIN],
-	getBankHub: () => fakeBankHub.hub,
+	getSepay: () => fakeSepay.sepay,
 	// Plan TOS-21 (#454): hàng đợi thông báo dùng recordingMailer để E2E đọc được thư đã gửi.
 	mailer: recordingMailer,
 	// Link tuyệt đối trong email thông báo trỏ cổng học viên e2e.
@@ -631,13 +629,9 @@ app.post("/__e2e/clock", async (c) => {
 	return c.json({ error: "invalid-now-iso" }, 400);
 });
 
-// Fake SePay hosted-link pages (#320) ride the same API server — the iframe
-// src is relative (/__fake-bankhub/...) so the postMessage origin check in
-// the web app sees the API origin, exactly like the real hosted link.
 const server = serve(
 	{
-		fetch: (request, env) =>
-			fakeBankHub.handleFakePage(request) ?? app.fetch(request, env),
+		fetch: app.fetch,
 		port: PORT,
 		hostname: HOSTNAME,
 	},

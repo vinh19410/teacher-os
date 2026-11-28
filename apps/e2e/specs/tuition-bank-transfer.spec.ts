@@ -1,5 +1,7 @@
+import { createHmac } from "node:crypto";
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
+import { E2E_SEPAY_WEBHOOK_SECRET } from "../src/fake-sepay";
 import {
 	seedStudent,
 	signUpViaApi,
@@ -13,24 +15,20 @@ import {
 } from "./origins";
 
 /**
- * Tuition bank-transfer flow E2E (#320, plan phase 6). Fake Bank Hub injects
- * qua AppDeps.getBankHub (apps/e2e/src/fake-bank-hub.ts) — hosted link là
- * trang /__fake-bankhub do chính API server phục vụ, postMessage đúng contract
- * của SePay. IPN mô phỏng bằng POST thẳng webhook với Apikey của fake.
- *
- * Ghi chú: invoice được seed trực tiếp bằng SQL (POST /invoices đã được phủ
- * bởi unit test kernel) để spec tập trung vào luồng QR → IPN → đối soát.
+ * Tuition bank-transfer flow E2E (#320). Teacher configures bank account via
+ * form on /profile; SePay webhooks are simulated by POST /webhooks/sepay signed
+ * with HMAC-SHA256 using E2E_SEPAY_WEBHOOK_SECRET.
  */
 
 const PASSWORD = "password-8chars";
-const MAIN_CODE = "TOS7K2M9QXA";
-const SECOND_CODE = "TOS7K2M9QXB";
+const MAIN_CODE = "MSMY7K2M9QXA";
+const SECOND_CODE = "MSMY7K2M9QXB";
 const MAIN_TOKEN = "e2epaytoken-main-0000000000a";
 const SECOND_TOKEN = "e2epaytoken-second-000000000b";
 
 let teacherEmail: string;
 let studentEmail: string;
-let myAccountXid = "";
+const myAccountNumber = `11${String(Date.now()).slice(-4)}${String(Math.floor(Math.random() * 100)).padStart(2, "0")}6789`;
 function openDb() {
 	const client = createClient({
 		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
@@ -82,44 +80,37 @@ async function orgIdOfTeacher(): Promise<string> {
 	}
 }
 
-/** Fake hub cấp xid tuần tự dùng chung cho mọi spec chạy song song — đọc
- * xid THẬT của org này sau khi link, tránh IPN resolve nhầm org khác. */
-async function accountXidOfTeacher(): Promise<string> {
-	const client = openDb();
-	try {
-		const res = await client.execute({
-			sql: `SELECT l.bank_account_xid AS xid FROM org_bank_link l
-				JOIN membership m ON m.org_id = l.org_id JOIN user u ON u.id = m.user_id
-				WHERE lower(u.email) = lower(?) ORDER BY l.last_event_at DESC LIMIT 1`,
-			args: [teacherEmail],
-		});
-		return String(res.rows[0]?.xid ?? "");
-	} finally {
-		client.close();
-	}
-}
-
 async function simulateIpn(
 	request: import("@playwright/test").APIRequestContext,
 	input: { transactionId: string; amount: number; content: string },
 ): Promise<number> {
-	const res = await request.post(`${API_ORIGIN}/webhooks/sepay/bankhub/ipn`, {
+	const rawBody = JSON.stringify({
+		id: input.transactionId,
+		gateway: "MBBank",
+		transactionDate: "2026-10-05 10:00:00",
+		accountNumber: myAccountNumber,
+		subAccount: "MMY",
+		code: null,
+		content: input.content,
+		transferType: "in",
+		description: input.content,
+		transferAmount: input.amount,
+		accumulated: input.amount,
+		referenceCode: "FT-E2E",
+	});
+	const timestamp = Math.floor(Date.now() / 1000);
+	const signature =
+		"sha256=" +
+		createHmac("sha256", E2E_SEPAY_WEBHOOK_SECRET)
+			.update(`${timestamp}.${rawBody}`)
+			.digest("hex");
+	const res = await request.post(`${API_ORIGIN}/webhooks/sepay`, {
 		headers: {
-			Authorization: "Apikey e2e-ipn-key",
 			"Content-Type": "application/json",
+			"X-SePay-Signature": signature,
+			"X-SePay-Timestamp": String(timestamp),
 		},
-		data: {
-			gateway: "MBBank",
-			transaction_date: "2026-10-05 10:00:00",
-			account_number: "0123456789",
-			bank_account_xid: myAccountXid,
-			content: input.content,
-			transfer_type: "credit",
-			amount: input.amount,
-			reference_code: "FT-E2E",
-			payment_code: null,
-			transaction_id: input.transactionId,
-		},
+		data: rawBody,
 	});
 	return res.status();
 }
@@ -146,17 +137,13 @@ async function openPayModalForAmount(
 	await page.goto(`${TEACHER_BASE_URL}/tuition`);
 	const row = page.locator("tr", { hasText: amount });
 	await row.locator("button", { hasText: "Thu học phí" }).click();
-	await expect(
-		page.locator("iframe[title*='liên kết'], img[src*='vietqr.app']").first(),
-	).toBeVisible();
+	await expect(page.locator("img[src*='vietqr.app']").first()).toBeVisible();
 }
 
 test.describe.configure({ mode: "serial" });
 
 test.describe("Tuition bank transfer (#320)", () => {
-	test("teacher links a bank account through the fake hosted link", async ({
-		page,
-	}) => {
+	test("teacher configures a bank account on /profile", async ({ page }) => {
 		teacherEmail = `lan.teacher.${Date.now()}@e2e.local`;
 		await signUpViaApi(page, { email: teacherEmail, password: PASSWORD });
 		await teacherSignIn(page);
@@ -164,19 +151,16 @@ test.describe("Tuition bank transfer (#320)", () => {
 		// #338: panel bank link dời từ trang riêng /payments vào trang Hồ sơ.
 		await page.goto(`${TEACHER_BASE_URL}/profile`);
 		await expect(page.getByText("Nhận học phí qua chuyển khoản")).toBeVisible();
-		await page
-			.getByRole("button", { name: "Liên kết tài khoản ngân hàng" })
-			.click();
-		const frame = page.frameLocator("iframe[title*='SePay']");
-		await frame.getByRole("button", { name: "Hoàn tất" }).click();
-		// The modal closes itself once the server reports "linked" (postMessage
-		// or the 5s poll — both paths converge here).
+		await page.getByTestId("bank-bin-select").selectOption("970422");
+		await page.getByTestId("bank-account-number").fill(myAccountNumber);
+		await page.getByTestId("bank-va-code").fill("MMY");
+		await page.getByTestId("bank-holder-name").fill("NGUYEN VAN E2E");
+		await page.getByTestId("bank-link-submit").click();
 		await expect(page.getByText("Đã liên kết")).toBeVisible({
 			timeout: 20_000,
 		});
+		await expect(page.getByText("VA: TKPMMY")).toBeVisible();
 		await expect(page.getByText("•••6789")).toBeVisible();
-		myAccountXid = await accountXidOfTeacher();
-		expect(myAccountXid).not.toBe("");
 	});
 
 	test("invoice shows QR with the right amount and memo; public link works", async ({
@@ -209,9 +193,12 @@ test.describe("Tuition bank transfer (#320)", () => {
 		const qr = page.locator("img[src*='vietqr.app']");
 		await expect(qr).toBeVisible();
 		const src = await qr.getAttribute("src");
-		expect(src).toContain("amount=500000");
-		expect(src).toContain(`des=${MAIN_CODE}`);
-		await expect(page.getByText(MAIN_CODE)).toBeVisible();
+		expect(src).toBeTruthy();
+		const qrUrl = new URL(src ?? "");
+		expect(qrUrl.searchParams.get("acc")).toBe(myAccountNumber);
+		expect(qrUrl.searchParams.get("amount")).toBe("500000");
+		expect(qrUrl.searchParams.get("des")).toBe(`TKPMMY ${MAIN_CODE}`);
+		await expect(page.getByText(`TKPMMY ${MAIN_CODE}`)).toBeVisible();
 		await page.keyboard.press("Escape");
 
 		// Public /pay/<token> in a signed-out context.
@@ -221,7 +208,7 @@ test.describe("Tuition bank transfer (#320)", () => {
 		await expect(anonPage.locator("img[src*='vietqr.app']")).toBeVisible({
 			timeout: 15_000,
 		});
-		await expect(anonPage.getByText(MAIN_CODE)).toBeVisible();
+		await expect(anonPage.getByText(`TKPMMY ${MAIN_CODE}`)).toBeVisible();
 		await anon.close();
 	});
 
@@ -285,7 +272,7 @@ test.describe("Tuition bank transfer (#320)", () => {
 			await simulateIpn(request, {
 				transactionId: "e2e-t1",
 				amount: 200000,
-				content: `Hoc phi ${MAIN_CODE}`,
+				content: `TKPMMY ${MAIN_CODE}`,
 			}),
 		).toBe(200);
 
@@ -309,7 +296,7 @@ test.describe("Tuition bank transfer (#320)", () => {
 			await simulateIpn(request, {
 				transactionId: "e2e-t2",
 				amount: 300000,
-				content: `sevqr ${MAIN_CODE.toLowerCase()} hoc phi`,
+				content: `tkpmmy ${MAIN_CODE.toLowerCase()} hoc phi`,
 			}),
 		).toBe(200);
 
@@ -326,7 +313,7 @@ test.describe("Tuition bank transfer (#320)", () => {
 			await simulateIpn(request, {
 				transactionId: "e2e-t1",
 				amount: 200000,
-				content: `Hoc phi ${MAIN_CODE}`,
+				content: `TKPMMY ${MAIN_CODE}`,
 			}),
 		).toBe(200);
 		const client = openDb();
@@ -353,14 +340,14 @@ test.describe("Tuition bank transfer (#320)", () => {
 			await simulateIpn(request, {
 				transactionId: "e2e-t3",
 				amount: 150000,
-				content: "TOSZZZZ9999 chuyen khoan lac",
+				content: "TKPMMY MSMYZZZZ9999 chuyen khoan lac",
 			}),
 		).toBe(200);
 
 		await teacherSignIn(page);
 		await page.goto(`${TEACHER_BASE_URL}/tuition`);
 		await expect(page.getByText("Giao dịch chưa khớp (1)")).toBeVisible();
-		const row = page.locator("tr", { hasText: "TOSZZZZ9999" });
+		const row = page.locator("tr", { hasText: "MSMYZZZZ9999" });
 		// Picker labels carry the INV- display code + remaining amount — the
 		// second invoice (400k, unsettled) is the only option.
 		const secondId = await row

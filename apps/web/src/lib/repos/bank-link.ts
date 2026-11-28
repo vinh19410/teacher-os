@@ -1,20 +1,24 @@
 import { queryOptions } from "@tanstack/react-query";
 import type {
 	BankLinkStatus,
-	BankLinkTokenRequest,
-	BankLinkTokenResponse,
+	BankLinkUpsertInput,
 } from "@teacher-os/api/contracts";
 import { bankLinkStatusSchema } from "@teacher-os/api/contracts";
 import { getApiBaseUrl } from "@/lib/repos/api-base-url";
 
 export const bankLinkQueryKey = ["bank-link"] as const;
 
-/** Server answer for 503 BANKHUB_DISABLED: feature exists but unconfigured. */
+/** Server answer for 503 SEPAY_DISABLED: feature exists but unconfigured. */
 export const BANK_LINK_DISABLED: BankLinkStatus = {
 	enabled: false,
+	reconcileEnabled: false,
 	status: "none",
 	brandName: "",
+	bankBin: "",
+	bankCode: "",
+	accountNumber: "",
 	accountNumberMasked: "",
+	vaCode: "",
 	holderName: "",
 	linkedAt: null,
 };
@@ -27,7 +31,7 @@ export async function fetchBankLink(
 		credentials: "include",
 		signal,
 	});
-	// Unconfigured Bank Hub is a normal state ("Chưa bật"), not an error.
+	// Unconfigured SePay is a normal state ("Chưa bật"), not an error.
 	if (res.status === 503) return BANK_LINK_DISABLED;
 	if (!res.ok) {
 		throw new Error(`Failed to fetch bank link: ${res.status}`);
@@ -62,26 +66,25 @@ async function parseError(res: Response): Promise<never> {
 	throw new BankLinkRequestError(code);
 }
 
-export async function createBankLinkToken(
-	purpose: BankLinkTokenRequest["purpose"],
-	baseUrl: string = getApiBaseUrl(),
-): Promise<BankLinkTokenResponse> {
-	const res = await fetch(`${baseUrl}/api/bank-link/link-token`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		credentials: "include",
-		body: JSON.stringify({ purpose }),
-	});
-	if (!res.ok) await parseError(res);
-	return (await res.json()) as BankLinkTokenResponse;
-}
-
-export async function syncBankLink(
+export async function saveBankLink(
+	input: BankLinkUpsertInput,
 	baseUrl: string = getApiBaseUrl(),
 ): Promise<BankLinkStatus> {
-	const res = await fetch(`${baseUrl}/api/bank-link/sync`, {
-		method: "POST",
+	const res = await fetch(`${baseUrl}/api/bank-link`, {
+		method: "PUT",
 		headers: { "Content-Type": "application/json" },
+		credentials: "include",
+		body: JSON.stringify(input),
+	});
+	if (!res.ok) await parseError(res);
+	return bankLinkStatusSchema.parse(await res.json());
+}
+
+export async function removeBankLink(
+	baseUrl: string = getApiBaseUrl(),
+): Promise<BankLinkStatus> {
+	const res = await fetch(`${baseUrl}/api/bank-link`, {
+		method: "DELETE",
 		credentials: "include",
 	});
 	if (!res.ok) await parseError(res);

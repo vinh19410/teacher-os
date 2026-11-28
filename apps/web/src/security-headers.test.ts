@@ -1,4 +1,3 @@
-import { BANK_HUB_LINK_ORIGINS } from "@teacher-os/api/lib/bank-hub-origins";
 import { describe, expect, it } from "vitest";
 import { applySecurityHeaders, shouldRedirectHost } from "./security-headers";
 
@@ -111,18 +110,15 @@ describe("applySecurityHeaders (issue #203)", () => {
 	});
 });
 
-describe("CSP frame-src for the Bank Hub hosted link (#320)", () => {
-	it("allows exactly the shared BANK_HUB_LINK_ORIGINS", () => {
+describe("CSP frame-src removal (#320)", () => {
+	it("omits Bank Hub frame-src origins", () => {
 		const headers = applySecurityHeaders(
-			// CSP là global (không route-scoped) — URL mẫu là /profile sau khi
-			// route /payments gỡ (#338).
 			new Request("https://app.teacheros.io.vn/profile"),
 			new Headers({ "Content-Type": "text/html" }),
 		);
 		const csp = headers.get("content-security-policy") ?? "";
-		expect(csp).toContain("frame-src https://bankhub.sepay.vn");
-		expect(csp).toContain("https://bankhub-sandbox.sepay.vn;");
-		// Sourced from the same const the server validates against.
-		expect(csp).toContain(BANK_HUB_LINK_ORIGINS.join(" "));
+		expect(csp).not.toContain("frame-src");
+		expect(csp).not.toContain("bankhub.sepay.vn");
+		expect(csp).not.toContain("bankhub-sandbox.sepay.vn");
 	});
 });
