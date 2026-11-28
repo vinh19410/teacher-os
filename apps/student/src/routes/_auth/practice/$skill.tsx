@@ -1,5 +1,11 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	notFound,
+	redirect,
+	useNavigate,
+} from "@tanstack/react-router";
 import type { PracticeCatalogItem } from "@teacher-os/api/contracts";
+import { PRACTICE_ROUTES_LIVE } from "@/components/layout/student-nav";
 import { StudentPageGate } from "@/components/layout/student-page-gate";
 import { HistoryButton } from "@/components/practice/history-button";
 import {
@@ -28,6 +34,9 @@ export const Route = createFileRoute("/_auth/practice/$skill")({
 	validateSearch: (search: Record<string, unknown>): PracticeSearchParams =>
 		parsePracticeSearch(search),
 	beforeLoad: ({ params }) => {
+		if (!PRACTICE_ROUTES_LIVE) {
+			throw notFound();
+		}
 		if (parseSkill(params.skill) === null) {
 			throw redirect({
 				to: "/practice/$skill",

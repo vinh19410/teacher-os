@@ -3,6 +3,7 @@ import {
 	computeExpectedEndDateFromSchedule,
 	escapeEmailHtml,
 	isSafeEmailUrl,
+	ONLINE_SESSION_LINK_NOTICE,
 	renderClassOpeningEmail,
 	resolveClassExpectedEndDate,
 } from "./class-opening-email";
@@ -114,6 +115,9 @@ describe("renderClassOpeningEmail", () => {
 		expect(rendered.html).not.toContain("24 buổi");
 		expect(rendered.html).toContain("Ngày kết thúc khóa học dự kiến");
 		expect(rendered.html).toContain("Thứ Năm, 03/12/2026");
+		expect(rendered.html).toContain('class="bg-session-notice"');
+		expect(rendered.html).toContain("Link buổi học");
+		expect(rendered.html).toContain(ONLINE_SESSION_LINK_NOTICE);
 		expect(rendered.html).toContain("Mở cổng học viên");
 		expect(rendered.html).toContain(
 			'href="https://student.comy.edu.vn/classes/cls-1"',
@@ -132,6 +136,9 @@ describe("renderClassOpeningEmail", () => {
 		expect(rendered.text).not.toContain("24 buổi");
 		expect(rendered.text).toContain(
 			"- Ngày kết thúc khóa học dự kiến: Thứ Năm, 03/12/2026",
+		);
+		expect(rendered.text).toContain(
+			`Lưu ý về link buổi học: ${ONLINE_SESSION_LINK_NOTICE}`,
 		);
 		expect(rendered.text).toContain(
 			"https://student.comy.edu.vn/classes/cls-1",
@@ -160,6 +167,44 @@ describe("renderClassOpeningEmail", () => {
 		expect(rendered.html).toContain("Cập nhật lịch khai giảng lớp IELTS 7.0");
 		expect(rendered.html).toContain("Chào bạn,");
 		expect(rendered.html).toContain("Chủ Nhật, 08/11/2026");
+		expect(rendered.html).not.toContain('class="bg-session-notice"');
+		expect(rendered.html).not.toContain(ONLINE_SESSION_LINK_NOTICE);
+		expect(rendered.text).not.toContain(ONLINE_SESSION_LINK_NOTICE);
+	});
+
+	test("places Online session link notice after detail table and before teacher note & CTA, and hides for Offline or empty mode", () => {
+		const online = renderClassOpeningEmail({
+			className: "IELTS Speaking 7.0",
+			startDate: "2026-09-15",
+			scheduleRaw: STRUCTURED_SCHEDULE,
+			mode: "  online ",
+			teacherNote: "Chuẩn bị micro trước giờ học",
+			portalUrl: "https://student.comy.edu.vn/classes/cls-1",
+		});
+		const detailTableStartIdx = online.html.indexOf('class="bg-surface"');
+		const detailTableEndIdx = online.html.indexOf(
+			"</table>",
+			detailTableStartIdx,
+		);
+		const noticeIdx = online.html.indexOf('class="bg-session-notice"');
+		const teacherNoteIdx = online.html.indexOf("Lời nhắn từ giáo viên");
+		const ctaIdx = online.html.indexOf("Mở cổng học viên");
+		expect(detailTableStartIdx).toBeGreaterThan(-1);
+		expect(detailTableEndIdx).toBeGreaterThan(detailTableStartIdx);
+		expect(noticeIdx).toBeGreaterThan(detailTableEndIdx);
+		expect(teacherNoteIdx).toBeGreaterThan(noticeIdx);
+		expect(ctaIdx).toBeGreaterThan(teacherNoteIdx);
+		expect(online.html).toContain(".bg-session-notice");
+		expect(online.html).toContain("[data-ogsc] .bg-session-notice");
+
+		const emptyMode = renderClassOpeningEmail({
+			className: "Lớp thử nghiệm",
+			startDate: "2026-09-15",
+			scheduleRaw: STRUCTURED_SCHEDULE,
+			mode: "",
+		});
+		expect(emptyMode.html).not.toContain(ONLINE_SESSION_LINK_NOTICE);
+		expect(emptyMode.text).not.toContain(ONLINE_SESSION_LINK_NOTICE);
 	});
 
 	test("supports legacy free-text schedule and empty schedule", () => {
@@ -626,6 +671,10 @@ describe("class opening confirmation contracts", () => {
 	test("registers notification event type, group mapping, and error code", () => {
 		expect(NOTIFICATION_EVENT_TYPES).toContain("class_opening_confirmed");
 		expect(NOTIFICATION_EVENT_GROUP_BY_TYPE.class_opening_confirmed).toBe(
+			"schedule",
+		);
+		expect(NOTIFICATION_EVENT_TYPES).toContain("session_link_reminder");
+		expect(NOTIFICATION_EVENT_GROUP_BY_TYPE.session_link_reminder).toBe(
 			"schedule",
 		);
 		expect(CLASS_ERROR_CODES.OPENING_VERSION_CONFLICT).toBe(

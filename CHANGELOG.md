@@ -10,6 +10,11 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-11-28
+
+### Changed
+- **Mở mục Từ vựng (`/student/practice/vocabulary`) trên PROD và giữ ẩn các đường dẫn tự luyện còn lại (`apps/student`, `AGENTS.md`, `docs/production-release-runbook.md`):** khi `VITE_STUDENT_PRACTICE_ENABLED !== "true"` (mặc định trên PROD), sidebar học viên hiển thị mục cấp 1 **Từ vựng** (`/practice/vocabulary`), `/practice` chuyển hướng về `/practice/vocabulary`, còn `/practice/$skill` (reading/listening/writing/speaking), `/history` và `/learn/quizzes/practice/$testId` trả về trang 404 (`NotFoundPage`) ngay tại `beforeLoad`; staging và E2E (`VITE_STUDENT_PRACTICE_ENABLED="true"`) giữ nguyên đầy đủ 5 kỹ năng + Lịch sử (#1054).
+
 ## 2026-11-27
 
 ### Added

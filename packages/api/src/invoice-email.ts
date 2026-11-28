@@ -1,9 +1,9 @@
+import { normalizeMultilineText } from "./class-opening-email";
 import {
 	escapeEmailHtml,
 	hasControlChars,
-	normalizeMultilineText,
 	sanitizeSingleLine,
-} from "./class-opening-email";
+} from "./email-html";
 import { formatViDateDisplay, formatViWeekdayDate } from "./vietnam-date";
 
 const DEFAULT_BRAND_NAME = "Cô Mỹ Dạy Tiếng Anh";
