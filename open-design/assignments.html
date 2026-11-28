@@ -1,0 +1,1262 @@
+<!doctype html>
+<html lang="vi">
+<head><script type="application/json" data-od-external-dependencies>["https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"]</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bài tập · Teacher OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* OD-LAYOUT-PRIMITIVES v1 — structure only */
+@layer od-layout {
+  [hidden]:not([hidden="until-found" i]) { display: none !important; }
+  dialog:not([open]) { display: none !important; }
+  :where(.od-stack,.od-row,.od-row-top,.od-cluster,.od-grid,.od-field,.od-stat,.od-cell,.od-tile) > :where(*) { min-width: 0; }
+  .od-stack   { display: flex; flex-direction: column; gap: var(--od-gap, 8px); }
+  .od-row     { display: flex; align-items: center; gap: var(--od-gap, 8px); }
+  .od-row-top { display: flex; align-items: flex-start; gap: var(--od-gap, 8px); }
+  .od-cluster { display: flex; flex-wrap: wrap; align-items: center; gap: var(--od-gap, 8px); }
+  .od-fill    { flex: 1 1 0; min-width: 0; }
+  .od-fixed   { flex: none; }
+  .od-grid    { display: grid; gap: var(--od-gap, 12px); grid-template-columns: repeat(var(--od-cols, 3), minmax(0, 1fr)); }
+  .od-stat, .od-field, .od-cell { display: grid; gap: var(--od-gap, 2px); }
+  :where(.od-stat,.od-field,.od-cell) > :where(*) { display: block; }
+  .od-tile { display: grid; grid-template-rows: auto 1fr; }
+  :where(.od-tile) > :where(*) { display: block; }
+  .od-media { display: block; width: 100%; height: auto; aspect-ratio: var(--od-ratio, auto); }
+  .od-media-cover { object-fit: cover; }
+  .od-icon { display: inline-block; inline-size: var(--od-icon-size, 1em); block-size: var(--od-icon-size, 1em); flex: none; }
+  .od-truncate { display: block; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .od-clamp-2, .od-clamp-3 { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+  .od-clamp-2 { -webkit-line-clamp: 2; }
+  .od-clamp-3 { -webkit-line-clamp: 3; }
+  .od-lines-2 { min-height: calc(2 * 1.4em); }
+  .od-nowrap  { white-space: nowrap; }
+  .od-keep    { word-break: keep-all; overflow-wrap: anywhere; }
+  .od-screen { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: 100%; }
+  .od-scroll { overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
+  .od-rail { display: flex; gap: var(--od-gap, 8px); overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none;
+             padding-inline: var(--od-rail-pad, 16px); scroll-padding-inline: var(--od-rail-pad, 16px); }
+  .od-rail::-webkit-scrollbar { display: none; }
+  :where(.od-rail) > :where(*) { flex: none; scroll-snap-align: start; }
+  :where(.od-rail) > :where(:last-child) { margin-inline-end: var(--od-rail-pad, 16px); }
+  .od-spacer { flex: none; visibility: hidden; pointer-events: none; }
+  .od-touch  { min-width: 44px; min-height: 44px; }
+}
+:root [hidden]:where(:not([hidden="until-found" i])) { display: none; }
+/* /OD-LAYOUT-PRIMITIVES v1 */
+
+/* ========== Tokens (Teacher OS design v2 — light) ========== */
+:root {
+  --bg: #ffffff;
+  --fg: #0a0a0a;
+  --fg-hover: #2b2b2b;
+  --muted: #f5f5f5;
+  --muted-strong: #ebebeb;
+  --muted-fg: #6b6b6b;
+  --border: #e5e5e5;
+  --border-strong: #8a8a8a;
+  --sidebar: #141414;
+  --sidebar-fg: #e8e8e8;
+  --sidebar-muted: #a3a3a3;
+  --sidebar-active: #2a2a2a;
+  --success: #047857;
+  --success-soft: #ecf8f3;
+  --warn: #a35a00;
+  --warn-soft: #fdf6ea;
+  --danger: #b42318;
+  --danger-soft: #fdf0ef;
+  --ring: #0a0a0a;
+  --scrim: rgba(10,10,10,0.5);
+
+  --font-sans: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --fs-xs: 0.75rem; --fs-sm: 0.875rem; --fs-base: 1rem; --fs-lg: 1.125rem; --fs-xl: 1.25rem; --fs-2xl: 1.5rem; --fs-3xl: 1.875rem;
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px;
+  --radius: 10px; --radius-sm: 6px; --radius-lg: 14px;
+  --shadow-sm: 0 1px 2px rgba(10,10,10,0.05);
+  --shadow-lg: 0 16px 48px rgba(10,10,10,0.16);
+  --dur: 150ms; --dur-in: 220ms; --dur-out: 150ms; --ease: cubic-bezier(0.28, 0, 0.22, 1);
+  --sidebar-w: 248px;
+  --preview-w: 392px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: var(--font-sans); font-size: var(--fs-base); line-height: 1.5;
+  color: var(--fg); background: var(--bg); -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, p { margin: 0; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: inherit; }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+::selection { background: var(--fg); color: var(--bg); }
+
+/* ========== Shell ========== */
+.shell { display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr); min-height: 100vh; }
+.sidebar {
+  position: sticky; top: 0; height: 100vh; background: var(--sidebar); color: var(--sidebar-fg);
+  display: flex; flex-direction: column; padding: var(--s-4) var(--s-3);
+}
+.brand { display: flex; align-items: center; gap: var(--s-2); padding: var(--s-2) var(--s-3) var(--s-5); font-weight: 700; font-size: var(--fs-base); letter-spacing: -0.01em; }
+.brand-mark { width: 28px; height: 28px; border-radius: var(--radius-sm); background: var(--sidebar-fg); color: var(--sidebar); display: grid; place-items: center; font-size: var(--fs-sm); font-weight: 700; flex: none; }
+.nav-label { padding: var(--s-3) var(--s-3) var(--s-2); font-size: var(--fs-xs); color: var(--sidebar-muted); }
+.nav a {
+  display: flex; align-items: center; gap: var(--s-3); padding: var(--s-2) var(--s-3); min-height: 40px;
+  border-radius: var(--radius-sm); text-decoration: none; color: var(--sidebar-fg); font-size: var(--fs-sm);
+  transition: background-color var(--dur) var(--ease);
+}
+.nav a .od-icon { --od-icon-size: 18px; color: var(--sidebar-muted); }
+.nav a[aria-current="page"] { background: var(--sidebar-active); font-weight: 600; }
+.nav a[aria-current="page"] .od-icon { color: var(--sidebar-fg); }
+@media (hover: hover) { .nav a:hover { background: var(--sidebar-active); } }
+.nav .count { margin-left: auto; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--sidebar-fg); background: #333; border-radius: 999px; padding: 0 var(--s-2); }
+.nav a:focus-visible { outline-color: var(--sidebar-fg); }
+.sidebar-foot { margin-top: auto; display: flex; align-items: center; gap: var(--s-3); padding: var(--s-3); border-top: 1px solid #2a2a2a; }
+.avatar { width: 32px; height: 32px; border-radius: 999px; background: #3a3a3a; color: var(--sidebar-fg); display: grid; place-items: center; font-size: var(--fs-xs); font-weight: 600; flex: none; }
+.sidebar-foot .od-field { font-size: var(--fs-sm); }
+.sidebar-foot .od-field span:last-child { color: var(--sidebar-muted); font-size: var(--fs-xs); }
+
+.topbar { display: none; }
+.main { min-width: 0; padding: var(--s-8) var(--s-8) var(--s-12); }
+.main-inner { max-width: 1440px; margin: 0 auto; }
+
+/* ========== Page head ========== */
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s-4); flex-wrap: wrap; margin-bottom: var(--s-6); }
+.page-head h1 { font-size: var(--fs-3xl); font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+.page-head .lead { margin-top: var(--s-1); color: var(--muted-fg); font-size: var(--fs-sm); max-width: 60ch; }
+.head-actions { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+
+/* ========== Buttons ========== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+  min-height: 40px; padding: 0 var(--s-4); border-radius: var(--radius-sm); border: 1px solid transparent;
+  font-size: var(--fs-sm); font-weight: 500; white-space: nowrap; text-decoration: none;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.btn .od-icon { --od-icon-size: 16px; }
+.btn-primary { background: var(--fg); color: var(--bg); }
+.btn-outline { background: var(--bg); color: var(--fg); border-color: var(--border); }
+.btn-ghost { background: transparent; color: var(--fg); }
+.btn-danger-text { background: transparent; color: var(--danger); }
+.btn-danger { background: var(--danger); color: #ffffff; }
+@media (hover: hover) {
+  .btn-primary:hover:not(:disabled) { background: var(--fg-hover); }
+  .btn-outline:hover:not(:disabled), .btn-ghost:hover:not(:disabled) { background: var(--muted); }
+  .btn-danger-text:hover:not(:disabled) { background: var(--danger-soft); }
+  .btn-danger:hover:not(:disabled) { background: #951d14; }
+}
+.btn:disabled { cursor: not-allowed; background: var(--muted); color: var(--muted-fg); border-color: var(--border); }
+.btn-sm { min-height: 32px; padding: 0 var(--s-3); font-size: var(--fs-xs); }
+.icon-btn {
+  display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: var(--radius-sm);
+  border: 1px solid transparent; background: transparent; color: var(--muted-fg);
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.icon-btn .od-icon { --od-icon-size: 18px; }
+@media (hover: hover) { .icon-btn:hover { background: var(--muted-strong); color: var(--fg); } }
+.split { position: relative; display: inline-flex; }
+.menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; min-width: 260px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); padding: var(--s-1);
+}
+.menu button {
+  display: grid; gap: 2px; width: 100%; text-align: left; padding: var(--s-2) var(--s-3); border: 0; background: transparent; border-radius: var(--radius-sm);
+}
+.menu button span:first-child { font-size: var(--fs-sm); font-weight: 500; }
+.menu button span:last-child { font-size: var(--fs-xs); color: var(--muted-fg); }
+.menu button:focus-visible { outline-offset: -2px; }
+@media (hover: hover) { .menu button:hover { background: var(--muted); } }
+
+/* ========== Stats ========== */
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-3); margin-bottom: var(--s-6); }
+.stat {
+  text-align: left; padding: var(--s-4); border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg);
+  transition: border-color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+.stat .value { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: var(--fs-2xl); font-weight: 500; line-height: 1.2; }
+.stat .label { font-size: var(--fs-sm); color: var(--muted-fg); }
+.stat .hint { font-size: var(--fs-xs); color: var(--muted-fg); }
+.stat[aria-pressed="true"] { border-color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); }
+@media (hover: hover) { .stat:hover { background: var(--muted); } }
+
+/* ========== Toolbar ========== */
+.toolbar { display: grid; gap: var(--s-3); margin-bottom: var(--s-4); }
+.tool-row { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
+.search {
+  position: relative; flex: 1 1 280px; max-width: 420px; display: flex; align-items: center;
+}
+.search .od-icon { position: absolute; left: 12px; --od-icon-size: 16px; color: var(--muted-fg); pointer-events: none; }
+.search input {
+  width: 100%; min-height: 40px; padding: 0 44px 0 36px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--bg); font-size: var(--fs-sm);
+}
+.search input:focus-visible { outline: none; border-color: var(--fg); box-shadow: 0 0 0 3px rgba(10,10,10,0.12); }
+.kbd { position: absolute; right: 10px; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--muted-fg); border: 1px solid var(--border); border-radius: 4px; padding: 0 6px; line-height: 18px; pointer-events: none; }
+.search-clear { position: absolute; right: 4px; }
+.filters-extra { display: flex; gap: var(--s-2); flex-wrap: wrap; align-items: center; }
+.sel {
+  display: inline-flex; align-items: center; gap: var(--s-2); min-height: 40px; padding: 0 var(--s-2) 0 var(--s-3);
+  border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); font-size: var(--fs-sm);
+}
+.sel-label { color: var(--muted-fg); white-space: nowrap; }
+.sel select { border: 0; background: transparent; font-weight: 500; padding: var(--s-2) var(--s-1); max-width: 220px; cursor: pointer; }
+.sel select:focus-visible { outline: none; }
+.sel:focus-within { border-color: var(--fg); box-shadow: 0 0 0 3px rgba(10,10,10,0.12); }
+.filters-toggle { display: none; }
+.filters-toggle .badge-count { font-family: var(--font-mono); font-size: var(--fs-xs); background: var(--fg); color: var(--bg); border-radius: 999px; padding: 0 6px; line-height: 18px; }
+
+.segmented { display: flex; gap: var(--s-1); padding: var(--s-1); background: var(--muted); border-radius: var(--radius-sm); width: fit-content; max-width: 100%; --od-rail-pad: 4px; }
+.seg {
+  display: inline-flex; align-items: center; gap: var(--s-2); min-height: 32px; padding: 0 var(--s-3); border: 0; border-radius: 4px; background: transparent;
+  font-size: var(--fs-sm); color: var(--muted-fg); font-weight: 500; white-space: nowrap;
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.seg .c { font-family: var(--font-mono); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
+.seg[aria-pressed="true"] { background: var(--bg); color: var(--fg); box-shadow: var(--shadow-sm), 0 0 0 1px var(--border); }
+@media (hover: hover) { .seg:hover { color: var(--fg); } }
+.seg:focus-visible { outline-offset: -2px; }
+
+.active-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; min-height: 32px; }
+.chips { display: flex; gap: var(--s-2); flex-wrap: wrap; align-items: center; }
+.chip {
+  display: inline-flex; align-items: center; gap: var(--s-1); min-height: 28px; padding: 0 var(--s-1) 0 var(--s-3); border-radius: 999px;
+  background: var(--muted); border: 1px solid var(--border); font-size: var(--fs-xs); font-weight: 500;
+}
+.chip button { display: grid; place-items: center; width: 22px; height: 22px; border: 0; border-radius: 999px; background: transparent; color: var(--muted-fg); }
+.chip button .od-icon { --od-icon-size: 12px; }
+@media (hover: hover) { .chip button:hover { background: var(--muted-strong); color: var(--fg); } }
+.link-btn { border: 0; background: transparent; padding: var(--s-1) var(--s-2); font-size: var(--fs-xs); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; color: var(--fg); border-radius: 4px; }
+.result-count { font-size: var(--fs-sm); color: var(--muted-fg); }
+.result-count strong { color: var(--fg); font-weight: 600; }
+
+/* ========== Workspace (list + preview) ========== */
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-6); align-items: start; }
+@media (min-width: 1360px) { .workspace.has-preview { grid-template-columns: minmax(0, 1fr) var(--preview-w); } }
+
+.list-wrap { container-type: inline-size; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); overflow: hidden; }
+.list-head, .row {
+  display: grid; align-items: center; gap: var(--s-4);
+  grid-template-columns: minmax(0, 1fr) 140px 56px 148px 116px;
+  padding: 0 var(--s-4);
+}
+.list-head { min-height: 40px; background: var(--muted); font-size: var(--fs-xs); color: var(--muted-fg); font-weight: 500; border-bottom: 1px solid var(--border); }
+.list-head .sort-btn { border: 0; background: transparent; padding: 0; font: inherit; color: inherit; display: inline-flex; align-items: center; gap: 4px; }
+.list-head .r { text-align: right; }
+.row { min-height: 68px; padding-block: var(--s-3); border-top: 1px solid var(--border); cursor: pointer; position: relative; transition: background-color var(--dur) var(--ease); }
+.row:first-child { border-top: 0; }
+@media (hover: hover) { .row:hover { background: var(--muted); } }
+.row.is-selected { background: var(--muted); box-shadow: inset 3px 0 0 var(--fg); }
+.c-title { display: grid; gap: 2px; min-width: 0; }
+.row-title { border: 0; background: transparent; padding: 0; text-align: left; font-size: var(--fs-sm); font-weight: 600; color: var(--fg); min-width: 0; border-radius: 4px; }
+.row-title:focus-visible { outline-offset: 3px; }
+.row-sub { font-size: var(--fs-xs); color: var(--muted-fg); }
+.c-skill { display: grid; gap: 0; font-size: var(--fs-sm); }
+.c-skill span:last-child { font-size: var(--fs-xs); color: var(--muted-fg); }
+.c-band { font-size: var(--fs-sm); }
+.c-actions { display: flex; justify-content: flex-end; gap: 2px; }
+@media (hover: hover) and (min-width: 768px) {
+  .row .c-actions .icon-btn { opacity: 0; transition: opacity var(--dur) var(--ease), background-color var(--dur) var(--ease); }
+  .row:hover .c-actions .icon-btn, .row:focus-within .c-actions .icon-btn, .row.is-selected .c-actions .icon-btn { opacity: 1; }
+}
+.m-meta { display: none; }
+
+@container (max-width: 640px) {
+  .list-head { display: none; }
+  .row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "title actions" "meta actions"; row-gap: var(--s-2); }
+  .c-title { grid-area: title; }
+  .c-actions { grid-area: actions; align-self: start; }
+  .c-skill, .c-band, .c-status { display: none; }
+  .m-meta { display: flex; grid-area: meta; flex-wrap: wrap; align-items: center; gap: var(--s-2); font-size: var(--fs-xs); color: var(--muted-fg); }
+}
+
+/* Badges */
+.badge { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); font-weight: 500; color: var(--fg); white-space: nowrap; }
+.badge .dot { width: 8px; height: 8px; border-radius: 999px; flex: none; }
+.badge--draft .dot { background: transparent; border: 1.5px dashed var(--border-strong); }
+.badge--draft { color: var(--muted-fg); }
+.badge--ready .dot { background: var(--success); }
+.badge--used .dot { background: var(--fg); }
+.badge--open .dot { background: var(--success); }
+.badge--late .dot { background: var(--danger); }
+.badge--late { color: var(--danger); }
+.badge--closed .dot { background: var(--border-strong); }
+.tag { display: inline-flex; align-items: center; min-height: 22px; padding: 0 var(--s-2); border-radius: 4px; border: 1px solid var(--border); font-size: var(--fs-xs); color: var(--fg); background: var(--bg); white-space: nowrap; }
+
+/* Empty + skeleton */
+.empty { padding: var(--s-12) var(--s-6); text-align: center; display: grid; justify-items: center; gap: var(--s-2); }
+.empty .od-icon { --od-icon-size: 32px; color: var(--muted-fg); margin-bottom: var(--s-2); }
+.empty h2 { font-size: var(--fs-lg); font-weight: 600; }
+.empty p { color: var(--muted-fg); font-size: var(--fs-sm); max-width: 44ch; }
+.empty .od-cluster { justify-content: center; margin-top: var(--s-3); }
+.skel-row { display: grid; grid-template-columns: minmax(0,1fr) 140px 56px 148px; gap: var(--s-4); padding: var(--s-4); border-top: 1px solid var(--border); }
+.skel-row:first-child { border-top: 0; }
+.skel { height: 12px; border-radius: 4px; background: var(--muted-strong); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.5; } }
+
+/* ========== Preview ========== */
+.preview {
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg);
+  display: flex; flex-direction: column; min-height: 0;
+}
+@media (min-width: 1360px) {
+  .preview { position: sticky; top: var(--s-6); max-height: calc(100vh - 48px); }
+  .preview .close-preview { display: none; }
+}
+.preview-head { padding: var(--s-5) var(--s-5) var(--s-4); border-bottom: 1px solid var(--border); display: grid; gap: var(--s-2); }
+.preview-head .top { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); }
+.kicker { font-size: var(--fs-xs); color: var(--muted-fg); }
+.preview-head h2 { font-size: var(--fs-lg); font-weight: 600; line-height: 1.35; letter-spacing: -0.01em; }
+.preview-head .od-cluster { --od-gap: 6px; }
+.tabs { display: flex; gap: var(--s-1); padding: var(--s-1); margin: var(--s-4) var(--s-5) 0; background: var(--muted); border-radius: var(--radius-sm); }
+.tabs [role="tab"] { flex: 1; min-height: 32px; border: 0; border-radius: 4px; background: transparent; font-size: var(--fs-sm); font-weight: 500; color: var(--muted-fg); }
+.tabs [role="tab"][aria-selected="true"] { background: var(--bg); color: var(--fg); box-shadow: var(--shadow-sm), 0 0 0 1px var(--border); }
+.tabs [role="tab"]:focus-visible { outline-offset: -2px; }
+.preview-body { padding: var(--s-4) var(--s-5) var(--s-5); overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+.paper { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: var(--s-4); display: grid; gap: var(--s-3); font-size: var(--fs-sm); line-height: 1.65; }
+.paper-label { font-size: var(--fs-xs); color: var(--muted-fg); font-weight: 500; }
+.paper .spec { font-size: var(--fs-xs); color: var(--muted-fg); border-top: 1px solid var(--border); padding-top: var(--s-3); }
+.paper ul { display: grid; gap: var(--s-1); padding-left: var(--s-5); list-style: disc; }
+.audio-row { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-3); background: var(--muted); border-radius: var(--radius-sm); }
+.audio-row .od-icon { --od-icon-size: 20px; }
+.audio-row .od-field span:last-child { font-size: var(--fs-xs); color: var(--muted-fg); }
+.note { margin-top: var(--s-3); font-size: var(--fs-xs); color: var(--muted-fg); }
+
+.history { display: grid; gap: var(--s-3); }
+.h-item { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: var(--s-3) var(--s-4); display: grid; gap: var(--s-2); }
+.h-item .od-row { justify-content: space-between; }
+.h-item .name { font-size: var(--fs-sm); font-weight: 600; }
+.h-item .meta { font-size: var(--fs-xs); color: var(--muted-fg); }
+.bar { height: 6px; border-radius: 999px; background: var(--muted-strong); overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--fg); border-radius: 999px; }
+.preview-foot { border-top: 1px solid var(--border); padding: var(--s-4) var(--s-5); display: grid; gap: var(--s-2); }
+.preview-foot .od-row { --od-gap: 8px; }
+.preview-foot .btn-primary { width: 100%; }
+.preview-foot .od-row .btn { flex: 1; }
+.foot-hint { font-size: var(--fs-xs); color: var(--muted-fg); }
+
+.scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 40; opacity: 0; transition: opacity var(--dur-out) ease-in; }
+.scrim.is-open { opacity: 1; transition: opacity var(--dur-in) ease-out; }
+@media (max-width: 1359px) {
+  .preview.as-drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 100vw); z-index: 50; border-radius: 0; border-width: 0 0 0 1px;
+    box-shadow: var(--shadow-lg); transform: translateX(100%); transition: transform var(--dur-out) ease-in;
+  }
+  .preview.as-drawer.is-open { transform: none; transition: transform var(--dur-in) ease-out; }
+}
+
+/* ========== Dialogs ========== */
+dialog.modal {
+  width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 48px); padding: 0; border: 1px solid var(--border); border-radius: var(--radius-lg);
+  background: var(--bg); color: var(--fg); box-shadow: var(--shadow-lg);
+}
+dialog.modal::backdrop { background: var(--scrim); }
+dialog.modal[open] { display: flex; flex-direction: column; }
+.modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s-3); padding: var(--s-5) var(--s-5) var(--s-3); }
+.modal-head h2 { font-size: var(--fs-lg); font-weight: 600; }
+.modal-head p { font-size: var(--fs-sm); color: var(--muted-fg); margin-top: 2px; }
+.modal-body { padding: 0 var(--s-5) var(--s-4); overflow-y: auto; display: grid; gap: var(--s-5); }
+.modal-foot { display: flex; justify-content: flex-end; gap: var(--s-2); padding: var(--s-4) var(--s-5); border-top: 1px solid var(--border); }
+fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+legend, .f-label { font-size: var(--fs-sm); font-weight: 600; padding: 0; margin-bottom: var(--s-2); display: block; }
+.req { color: var(--danger); }
+.class-list { display: grid; gap: var(--s-2); }
+.class-opt { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-3); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; min-height: 56px; }
+.class-opt input { width: 18px; height: 18px; accent-color: var(--fg); flex: none; margin: 0; }
+.class-opt .od-field span:first-child { font-size: var(--fs-sm); font-weight: 500; }
+.class-opt .od-field span:last-child { font-size: var(--fs-xs); color: var(--muted-fg); }
+.class-opt:has(input:checked) { border-color: var(--fg); background: var(--muted); }
+.class-opt.is-disabled { cursor: not-allowed; background: var(--muted); }
+.class-opt.is-disabled .od-field span:first-child { color: var(--muted-fg); }
+@media (hover: hover) { .class-opt:not(.is-disabled):hover { border-color: var(--border-strong); } }
+.due-grid { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: var(--s-3); }
+.input { width: 100%; min-height: 40px; padding: 0 var(--s-3); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--bg); font-size: var(--fs-base); }
+.input:focus-visible { outline: none; border-color: var(--fg); box-shadow: 0 0 0 3px rgba(10,10,10,0.12); }
+.input[aria-invalid="true"] { border-color: var(--danger); }
+.help { font-size: var(--fs-xs); color: var(--muted-fg); margin-top: var(--s-1); }
+.err { font-size: var(--fs-xs); color: var(--danger); margin-top: var(--s-1); }
+.quick { display: flex; gap: var(--s-2); flex-wrap: wrap; margin-top: var(--s-2); }
+.err-summary { border: 1px solid var(--danger); background: var(--danger-soft); border-radius: var(--radius-sm); padding: var(--s-3); font-size: var(--fs-sm); color: var(--danger); }
+.err-summary ul { list-style: disc; padding-left: var(--s-5); margin-top: var(--s-1); }
+.err-summary a { color: var(--danger); }
+
+/* Toast */
+.toast-region { position: fixed; left: 50%; bottom: var(--s-6); transform: translateX(-50%); z-index: 80; display: grid; gap: var(--s-2); width: min(440px, calc(100vw - 32px)); }
+.toast { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-3) var(--s-4); background: var(--fg); color: var(--bg); border-radius: var(--radius); box-shadow: var(--shadow-lg); font-size: var(--fs-sm); animation: toast-in var(--dur-in) ease-out; }
+.toast .od-icon { --od-icon-size: 18px; }
+.toast p { flex: 1; }
+.toast button { border: 0; background: transparent; color: var(--bg); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; padding: var(--s-1) var(--s-2); border-radius: 4px; }
+.toast button:focus-visible { outline-color: var(--bg); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* ========== Responsive ========== */
+@media (max-width: 1023px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: var(--sidebar-w); z-index: 60; transform: translateX(-100%); transition: transform var(--dur-out) ease-in; }
+  .sidebar.is-open { transform: none; transition: transform var(--dur-in) ease-out; }
+  .topbar { display: flex; align-items: center; gap: var(--s-2); position: sticky; top: 0; z-index: 20; min-height: 56px; padding: 0 var(--s-3); background: var(--bg); border-bottom: 1px solid var(--border); }
+  .topbar .brand { padding: 0; }
+  .topbar .brand-mark { background: var(--fg); color: var(--bg); }
+  .main { padding: var(--s-6) var(--s-5) var(--s-12); }
+}
+@media (max-width: 767px) {
+  .main { padding: var(--s-5) var(--s-4) var(--s-12); }
+  .page-head h1 { font-size: var(--fs-2xl); }
+  .head-actions { width: 100%; }
+  .head-actions > * { flex: 1; }
+  .head-actions .split .btn { width: 100%; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-2); }
+  .stat { padding: var(--s-3); }
+  .stat .hint { display: none; }
+  .search { max-width: none; flex-basis: 100%; order: -1; }
+  .filters-toggle { display: inline-flex; }
+  .filters-extra { display: none; width: 100%; }
+  .filters-extra.is-open { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .filters-extra .sel select { flex: 1; max-width: none; }
+  .segmented { width: auto; margin-inline: calc(var(--s-4) * -1); border-radius: 0; --od-rail-pad: 16px; }
+  .due-grid { grid-template-columns: minmax(0, 1fr); }
+  .menu { left: 0; right: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.4 3.2-5.5 6.5-5.5s5.9 2.1 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18 14.8c2 .6 3.2 2.4 3.5 5.2"/></symbol>
+  <symbol id="i-class" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></symbol>
+  <symbol id="i-check-sq" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h14v15H6a2 2 0 0 0-2 2z"/><path d="M4 20a2 2 0 0 0 2 2h14v-4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3 10 14"/><path d="m21 3-7 18-4-7-7-4z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6 7.5V19l-4 2v-8.5z"/></symbol>
+  <symbol id="i-headphones" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/></symbol>
+  <symbol id="i-sort" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"/></symbol>
+</svg>
+
+<div class="shell">
+  <nav class="sidebar" id="sidebar" aria-label="Điều hướng chính">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">T</span><span>Teacher OS</span></div>
+    <p class="nav-label">Giảng dạy</p>
+    <ul class="nav">
+      <li><a href="#" data-nav><svg class="od-icon" aria-hidden="true"><use href="#i-home"/></svg>Tổng quan</a></li>
+      <li><a href="#" data-nav><svg class="od-icon" aria-hidden="true"><use href="#i-class"/></svg>Lớp học</a></li>
+      <li><a href="#" data-nav><svg class="od-icon" aria-hidden="true"><use href="#i-users"/></svg>Học viên</a></li>
+      <li><a href="#" aria-current="page"><svg class="od-icon" aria-hidden="true"><use href="#i-file"/></svg>Bài tập</a></li>
+      <li><a href="#" data-nav><svg class="od-icon" aria-hidden="true"><use href="#i-check-sq"/></svg>Chấm bài<span class="count" aria-label="7 bài chờ chấm">7</span></a></li>
+      <li><a href="#" data-nav><svg class="od-icon" aria-hidden="true"><use href="#i-book"/></svg>Từ vựng</a></li>
+    </ul>
+    <p class="nav-label">Kinh doanh</p>
+    <ul class="nav">
+      <li><a href="#" data-nav><svg class="od-icon" aria-hidden="true"><use href="#i-wallet"/></svg>Học phí</a></li>
+    </ul>
+    <div class="sidebar-foot">
+      <span class="avatar" aria-hidden="true">ML</span>
+      <div class="od-field"><span>Mai Linh</span><span>Giáo viên</span></div>
+    </div>
+  </nav>
+  <div class="scrim" id="navScrim" hidden></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button type="button" class="icon-btn" id="navOpen" aria-label="Mở menu" aria-controls="sidebar" aria-expanded="false"><svg class="od-icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+      <div class="brand"><span class="brand-mark" aria-hidden="true">T</span><span>Teacher OS</span></div>
+    </header>
+
+    <main class="main" id="main">
+      <div class="main-inner">
+        <div class="page-head">
+          <div>
+            <h1>Bài tập</h1>
+            <p class="lead">Ngân hàng đề của bạn. Lọc, xem trước như học viên thấy, rồi giao thẳng cho lớp.</p>
+          </div>
+          <div class="head-actions">
+            <button type="button" class="btn btn-outline" id="packsBtn">Bộ đề tự học</button>
+            <div class="split">
+              <button type="button" class="btn btn-primary" id="createBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="createMenu">
+                <svg class="od-icon" aria-hidden="true"><use href="#i-plus"/></svg>Tạo bài tập<svg class="od-icon" aria-hidden="true"><use href="#i-chev"/></svg>
+              </button>
+              <div class="menu" id="createMenu" role="menu" hidden>
+                <button type="button" role="menuitem" data-create="single"><span>Bài lẻ</span><span>Một phần thi, một kỹ năng</span></button>
+                <button type="button" role="menuitem" data-create="test"><span>Đề thi nhiều phần</span><span>Ghép nhiều phần thành bài kiểm tra</span></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <section class="stats" aria-label="Tổng quan ngân hàng đề" id="stats"></section>
+
+        <section class="toolbar" aria-label="Bộ lọc">
+          <div class="tool-row">
+            <div class="search">
+              <svg class="od-icon" aria-hidden="true"><use href="#i-search"/></svg>
+              <input type="search" id="q" placeholder="Tìm theo tên đề, dạng đề hoặc nguồn" aria-label="Tìm đề" autocomplete="off">
+              <span class="kbd" id="kbd" aria-hidden="true">/</span>
+              <button type="button" class="icon-btn search-clear" id="qClear" aria-label="Xóa từ khóa" hidden><svg class="od-icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+            </div>
+            <button type="button" class="btn btn-outline filters-toggle" id="filtersToggle" aria-expanded="false" aria-controls="filtersExtra">
+              <svg class="od-icon" aria-hidden="true"><use href="#i-filter"/></svg>Bộ lọc<span class="badge-count" id="filtersCount" hidden></span>
+            </button>
+            <div class="filters-extra" id="filtersExtra">
+              <label class="sel"><span class="sel-label">Phần thi</span><select id="partSel"></select></label>
+              <label class="sel"><span class="sel-label">Trạng thái</span>
+                <select id="statusSel">
+                  <option value="all">Tất cả</option>
+                  <option value="ready">Sẵn sàng, chưa giao</option>
+                  <option value="used">Đang giao cho lớp</option>
+                  <option value="draft">Bản nháp</option>
+                </select></label>
+              <label class="sel"><span class="sel-label">Sắp xếp</span>
+                <select id="sortSel">
+                  <option value="new">Mới thêm</option>
+                  <option value="used">Giao nhiều nhất</option>
+                  <option value="bandDesc">Band cao → thấp</option>
+                  <option value="bandAsc">Band thấp → cao</option>
+                  <option value="az">Tên A → Z</option>
+                </select></label>
+            </div>
+          </div>
+          <div class="segmented od-rail" role="group" aria-label="Kỹ năng" id="skillSeg"></div>
+          <div class="active-row">
+            <div class="chips" id="chips"></div>
+            <p class="result-count" id="resultCount" aria-live="polite"></p>
+          </div>
+        </section>
+
+        <div class="workspace" id="workspace">
+          <section aria-label="Danh sách đề">
+            <div class="list-wrap" id="listWrap">
+              <div class="list-head" id="listHead" aria-hidden="true">
+                <span>Đề</span><span>Kỹ năng · Phần</span><span>Band</span><span>Trạng thái</span><span class="r">Thao tác</span>
+              </div>
+              <ul id="list" aria-label="Đề trong ngân hàng"></ul>
+              <div id="emptyFilter" class="empty" hidden>
+                <svg class="od-icon" aria-hidden="true"><use href="#i-search"/></svg>
+                <h2>Không có đề khớp bộ lọc</h2>
+                <p>Thử từ khóa ngắn hơn, chọn kỹ năng khác, hoặc xóa bộ lọc để xem lại toàn bộ ngân hàng.</p>
+                <div class="od-cluster"><button type="button" class="btn btn-outline" id="emptyClear">Xóa bộ lọc</button></div>
+              </div>
+              <div id="emptyBank" class="empty" hidden>
+                <svg class="od-icon" aria-hidden="true"><use href="#i-inbox"/></svg>
+                <h2>Ngân hàng đề đang trống</h2>
+                <p>Tạo bài lẻ cho từng phần thi, hoặc ghép thành đề thi nhiều phần, rồi giao cho lớp ngay tại đây.</p>
+                <div class="od-cluster"><button type="button" class="btn btn-primary" data-create="single">Tạo bài tập đầu tiên</button></div>
+              </div>
+            </div>
+          </section>
+
+          <aside class="preview" id="preview" aria-label="Xem trước đề" hidden></aside>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<div class="scrim" id="previewScrim" hidden></div>
+
+<!-- Giao cho lớp -->
+<dialog class="modal" id="assignDlg" aria-labelledby="assignTitle">
+  <div class="modal-head">
+    <div>
+      <h2 id="assignTitle">Giao đề cho lớp</h2>
+      <p id="assignSub"></p>
+    </div>
+    <button type="button" class="icon-btn" data-close aria-label="Đóng"><svg class="od-icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="modal-body">
+    <div class="err-summary" id="errSummary" role="alert" tabindex="-1" hidden></div>
+    <fieldset id="classField">
+      <legend>Lớp nhận đề <span class="req" aria-hidden="true">*</span></legend>
+      <div class="class-list" id="classList"></div>
+      <p class="err" id="classErr" hidden></p>
+    </fieldset>
+    <div>
+      <span class="f-label">Hạn nộp <span class="req" aria-hidden="true">*</span></span>
+      <div class="due-grid">
+        <div>
+          <label class="sr-only" for="dueDate">Ngày hạn nộp</label>
+          <input class="input num" id="dueDate" inputmode="numeric" placeholder="dd/mm/yyyy" autocomplete="off" aria-describedby="dueHelp dueErr">
+        </div>
+        <div>
+          <label class="sr-only" for="dueTime">Giờ hạn nộp</label>
+          <input class="input num" id="dueTime" inputmode="numeric" placeholder="HH:mm" value="21:00" autocomplete="off" aria-describedby="dueHelp timeErr">
+        </div>
+      </div>
+      <p class="help" id="dueHelp">Ngày theo dd/mm/yyyy, giờ 24h.</p>
+      <p class="err" id="dueErr" hidden></p>
+      <p class="err" id="timeErr" hidden></p>
+      <div class="quick" role="group" aria-label="Chọn nhanh hạn nộp">
+        <button type="button" class="btn btn-outline btn-sm" data-quick="2">2 ngày nữa</button>
+        <button type="button" class="btn btn-outline btn-sm" data-quick="7">1 tuần</button>
+        <button type="button" class="btn btn-outline btn-sm" data-quick="14">2 tuần</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button type="button" class="btn btn-ghost" data-close>Hủy</button>
+    <button type="button" class="btn btn-primary" id="assignSubmit">Giao đề</button>
+  </div>
+</dialog>
+
+<!-- Xóa bản nháp -->
+<dialog class="modal" id="deleteDlg" aria-labelledby="deleteTitle">
+  <div class="modal-head">
+    <div>
+      <h2 id="deleteTitle">Xóa bản nháp?</h2>
+      <p id="deleteSub"></p>
+    </div>
+  </div>
+  <div class="modal-foot">
+    <button type="button" class="btn btn-ghost" data-close>Giữ lại</button>
+    <button type="button" class="btn btn-danger" id="deleteConfirm">Xóa bản nháp</button>
+  </div>
+</dialog>
+
+<div class="toast-region" id="toasts" aria-live="polite"></div>
+<script>
+(() => {
+'use strict';
+/* ================= Dữ liệu mẫu ================= */
+const TODAY = new Date(2026, 10, 28, 10, 0);
+const SKILLS = [
+  { id: 'writing', name: 'Writing', parts: [{ id: 'task1', label: 'Task 1' }, { id: 'task2', label: 'Task 2' }] },
+  { id: 'reading', name: 'Reading', parts: [{ id: 'passage1', label: 'Passage 1' }, { id: 'passage2', label: 'Passage 2' }, { id: 'passage3', label: 'Passage 3' }] },
+  { id: 'listening', name: 'Listening', parts: [{ id: 'part1', label: 'Part 1' }, { id: 'part2', label: 'Part 2' }, { id: 'part3', label: 'Part 3' }, { id: 'part4', label: 'Part 4' }] },
+  { id: 'speaking', name: 'Speaking', parts: [{ id: 'part1', label: 'Part 1' }, { id: 'part2', label: 'Part 2' }, { id: 'part3', label: 'Part 3' }] },
+  { id: 'grammar', name: 'Grammar', parts: [{ id: 'practice', label: 'Luyện tập' }] },
+  { id: 'vocabulary', name: 'Vocabulary', parts: [{ id: 'collocation', label: 'Collocation' }, { id: 'topic', label: 'Theo chủ đề' }] },
+];
+const CLASSES = [
+  { id: 'c1', name: 'IELTS Intensive 6.5 · K12', students: 18 },
+  { id: 'c2', name: 'IELTS Foundation 5.5 · K08', students: 14 },
+  { id: 'c3', name: 'Writing Clinic · tối T3–T5', students: 9 },
+  { id: 'c4', name: 'Kèm 1–1 · Minh Anh', students: 1 },
+];
+let prompts = [
+  { id: 'p1', skill: 'writing', part: 'task2', type: 'Opinion essay', title: 'Làm việc từ xa giúp thành phố bớt đông đúc?', band: 6.5, level: 'Intermediate', source: 'Đề thi thật 10/2026 (tổng hợp)', status: 'ready', createdAt: '2026-11-26',
+    body: 'Some people believe that the rise of remote working will make large cities less crowded and more pleasant to live in. To what extent do you agree or disagree?', spec: 'Viết ít nhất 250 từ · 40 phút' },
+  { id: 'p2', skill: 'writing', part: 'task1', type: 'Line graph', title: 'Lượng tiêu thụ điện của ba quốc gia, 2000–2020', band: 6.0, level: 'Intermediate', source: 'Tự soạn', status: 'ready', createdAt: '2026-11-20',
+    body: 'The graph below shows electricity consumption per person in three countries between 2000 and 2020. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.', spec: 'Viết ít nhất 150 từ · 20 phút' },
+  { id: 'p3', skill: 'reading', part: 'passage2', type: 'Matching headings', title: 'The history of the bicycle', band: 6.5, level: 'Upper-Int', source: 'Tự soạn', status: 'ready', createdAt: '2026-11-18',
+    body: 'A. In 1817, the German inventor Karl Drais rode a two-wheeled "running machine" through the streets of Mannheim. It had no pedals; riders pushed along the ground with their feet…', spec: '13 câu · Matching headings · 20 phút' },
+  { id: 'p4', skill: 'listening', part: 'part3', type: 'Multiple choice', title: 'Nhóm sinh viên thảo luận dự án môi trường', band: 6.0, level: 'Intermediate', source: 'Tự soạn', status: 'draft', createdAt: '2026-11-27',
+    audio: 'p3_environment_project.mp3', duration: '5:48', body: '21. What is the main aim of the students’ project?\nA. to reduce plastic waste on campus\nB. to measure air quality near the library\nC. to promote cycling among staff', spec: '10 câu · Multiple choice' },
+  { id: 'p5', skill: 'speaking', part: 'part2', type: 'Cue card', title: 'Describe a skill you learned as a child', band: 6.0, level: 'Intermediate', source: 'Bộ đề quý IV/2026', status: 'ready', createdAt: '2026-11-10',
+    body: 'Describe a skill you learned as a child.', points: ['What the skill was', 'Who taught you', 'How you learned it', 'And explain how it helps you today'], spec: '1 phút chuẩn bị · nói 1–2 phút' },
+  { id: 'p6', skill: 'vocabulary', part: 'collocation', type: 'Gap fill', title: 'Collocation: Environment', band: 6.5, level: 'Upper-Int', source: 'Tự soạn', status: 'ready', createdAt: '2026-11-24', writing: true,
+    body: 'Governments should ______ strict measures to cut carbon emissions.\n(take / make / do)', spec: '20 câu · tự chấm · kèm 1 câu Writing' },
+  { id: 'p7', skill: 'grammar', part: 'practice', type: 'Multiple choice', title: 'Hiện tại hoàn thành và quá khứ đơn', band: 5.5, level: 'Pre-Int', source: 'Tự soạn', status: 'ready', createdAt: '2026-11-05',
+    body: 'I ______ in Hanoi since 2019.\nA. live   B. lived   C. have lived', spec: '15 câu · tự chấm' },
+  { id: 'p8', skill: 'writing', part: 'task2', type: 'Discussion essay', title: 'Học online hay học tại trường?', band: 6.0, level: 'Intermediate', source: 'Tự soạn', status: 'draft', createdAt: '2026-11-25',
+    body: 'Some people think online learning is more effective than learning in a classroom, while others disagree. Discuss both views and give your own opinion.', spec: 'Viết ít nhất 250 từ · 40 phút' },
+  { id: 'p9', skill: 'reading', part: 'passage3', type: 'True / False / Not given', title: 'Sleep and memory consolidation', band: 7.0, level: 'Advanced', source: 'Tự soạn', status: 'ready', createdAt: '2026-11-15',
+    body: 'For decades, researchers assumed that sleep was simply a period of rest for the brain. More recent studies suggest that during deep sleep, the brain replays the day’s experiences…', spec: '14 câu · T/F/NG · 20 phút' },
+  { id: 'p10', skill: 'listening', part: 'part1', type: 'Form completion', title: 'Đăng ký thẻ thư viện', band: 5.5, level: 'Pre-Int', source: 'Tự soạn', status: 'ready', createdAt: '2026-11-02',
+    audio: 'p1_library_card.mp3', duration: '4:12', body: 'Name: Sarah ______\nPostcode: ______\nPreferred contact: email / phone', spec: '10 câu · Form completion' },
+  { id: 'p11', skill: 'speaking', part: 'part3', type: 'Discussion', title: 'Technology and family life', band: 6.5, level: 'Upper-Int', source: 'Bộ đề quý IV/2026', status: 'ready', createdAt: '2026-11-12',
+    body: 'Do you think technology brings family members closer together or pushes them apart?', points: ['How has technology changed family meals?', 'Should parents limit children’s screen time?'], spec: '4–5 câu hỏi · 4–5 phút' },
+  { id: 'p12', skill: 'listening', part: 'part4', type: 'Note completion', title: 'Lecture: nuôi ong trong đô thị', band: 7.0, level: 'Advanced', source: 'Tự soạn', status: 'ready', createdAt: '2026-10-30',
+    audio: 'p4_urban_beekeeping.mp3', duration: '6:42', body: 'Urban hives produce honey with a wider ______ of flavours.\nRooftop hives need protection from strong ______.', spec: '10 câu · Note completion' },
+  { id: 'p13', skill: 'writing', part: 'task1', type: 'Map', title: 'Thay đổi khu cảng Riverside', band: 6.5, level: 'Upper-Int', source: 'Tự soạn', status: 'draft', createdAt: '2026-11-21',
+    body: 'The maps below show the Riverside harbour area in 1995 and today. Summarise the information by selecting and reporting the main features.', spec: 'Viết ít nhất 150 từ · 20 phút' },
+  { id: 'p14', skill: 'vocabulary', part: 'topic', type: 'Matching', title: 'Từ vựng chủ đề: Work & Careers', band: 6.0, level: 'Intermediate', source: 'Tự soạn', status: 'ready', createdAt: '2026-10-28',
+    body: 'Match each word with its meaning: promotion · redundancy · freelance · workload', spec: '24 câu · tự chấm' },
+];
+let assignments = [
+  { id: 'a1', promptId: 'p2', classId: 'c1', due: '2026-11-22T21:00', submitted: 18 },
+  { id: 'a2', promptId: 'p2', classId: 'c3', due: '2026-12-01T21:00', submitted: 4 },
+  { id: 'a3', promptId: 'p3', classId: 'c1', due: '2026-12-03T21:00', submitted: 7 },
+  { id: 'a4', promptId: 'p5', classId: 'c1', due: '2026-11-25T21:00', submitted: 15 },
+  { id: 'a5', promptId: 'p5', classId: 'c2', due: '2026-11-30T21:00', submitted: 9 },
+  { id: 'a6', promptId: 'p5', classId: 'c4', due: '2026-11-29T20:00', submitted: 1 },
+  { id: 'a7', promptId: 'p7', classId: 'c2', due: '2026-11-20T21:00', submitted: 14 },
+  { id: 'a8', promptId: 'p10', classId: 'c2', due: '2026-11-27T21:00', submitted: 11 },
+  { id: 'a9', promptId: 'p10', classId: 'c4', due: '2026-11-18T20:00', submitted: 1 },
+  { id: 'a10', promptId: 'p12', classId: 'c1', due: '2026-12-05T21:00', submitted: 2 },
+  { id: 'a11', promptId: 'p14', classId: 'c3', due: '2026-12-02T21:00', submitted: 3 },
+];
+
+/* ================= Tiện ích ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ico = (id) => `<svg class="od-icon" aria-hidden="true"><use href="#i-${id}"/></svg>`;
+const pad = (n) => String(n).padStart(2, '0');
+const skillOf = (id) => SKILLS.find((s) => s.id === id);
+const partLabel = (skill, part) => skillOf(skill)?.parts.find((p) => p.id === part)?.label ?? part;
+const classOf = (id) => CLASSES.find((c) => c.id === id);
+const parseISO = (s) => { const [d, t = '00:00'] = s.split('T'); const [y, m, dd] = d.split('-').map(Number); const [h, mi] = t.split(':').map(Number); return new Date(y, m - 1, dd, h, mi); };
+const fmtDM = (s) => { const d = parseISO(s); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`; };
+const fmtDue = (s) => { const d = parseISO(s); return `${pad(d.getHours())}:${pad(d.getMinutes())} · ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`; };
+const fmtBand = (b) => Number(b).toFixed(1);
+const norm = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
+
+const usedClasses = (pid) => new Set(assignments.filter((a) => a.promptId === pid).map((a) => a.classId));
+function statusOf(p) {
+  if (p.status === 'draft') return { key: 'draft', label: 'Bản nháp' };
+  const n = usedClasses(p.id).size;
+  return n > 0 ? { key: 'used', label: `Đã giao ${n} lớp` } : { key: 'ready', label: 'Sẵn sàng' };
+}
+const badge = (st) => `<span class="badge badge--${st.key}"><span class="dot" aria-hidden="true"></span>${esc(st.label)}</span>`;
+function assignmentState(a) {
+  const total = classOf(a.classId)?.students ?? 0;
+  if (parseISO(a.due) >= TODAY) return { key: 'open', label: 'Đang mở' };
+  return a.submitted >= total ? { key: 'closed', label: 'Đã đóng' } : { key: 'late', label: `Quá hạn · thiếu ${total - a.submitted}` };
+}
+
+/* ================= Trạng thái ================= */
+const state = { q: '', skill: 'all', part: 'all', status: 'all', sort: 'new', selectedId: null, tab: 'prompt', filtersOpen: false, drawerOpen: false, loading: true };
+const wideMQ = window.matchMedia('(min-width: 1360px)');
+const isWide = () => wideMQ.matches;
+
+(function readURL() {
+  try {
+    const sp = new URLSearchParams(location.search);
+    if (sp.get('q')) state.q = sp.get('q');
+    if (SKILLS.some((s) => s.id === sp.get('skill'))) state.skill = sp.get('skill');
+    if (state.skill !== 'all' && skillOf(state.skill).parts.some((p) => p.id === sp.get('part'))) state.part = sp.get('part');
+    if (['ready', 'used', 'draft'].includes(sp.get('status'))) state.status = sp.get('status');
+  } catch (e) { /* URL không đọc được — giữ mặc định */ }
+})();
+function writeURL() {
+  try {
+    const sp = new URLSearchParams();
+    if (state.q) sp.set('q', state.q);
+    if (state.skill !== 'all') sp.set('skill', state.skill);
+    if (state.part !== 'all') sp.set('part', state.part);
+    if (state.status !== 'all') sp.set('status', state.status);
+    const qs = sp.toString();
+    history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
+  } catch (e) { /* sandbox chặn history — bộ lọc vẫn chạy trong bộ nhớ */ }
+}
+
+function matchesQuery(p, q) {
+  if (!q) return true;
+  const n = norm(q.trim());
+  return [p.title, p.type, p.source, skillOf(p.skill).name].some((f) => norm(f).includes(n));
+}
+const matchesStatus = (p, st) => st === 'all' || statusOf(p).key === st;
+function filtered() {
+  const list = prompts.filter((p) => matchesQuery(p, state.q) && matchesStatus(p, state.status)
+    && (state.skill === 'all' || p.skill === state.skill) && (state.part === 'all' || p.part === state.part));
+  const by = {
+    new: (a, b) => b.createdAt.localeCompare(a.createdAt),
+    used: (a, b) => usedClasses(b.id).size - usedClasses(a.id).size || b.createdAt.localeCompare(a.createdAt),
+    bandDesc: (a, b) => b.band - a.band || a.title.localeCompare(b.title, 'vi'),
+    bandAsc: (a, b) => a.band - b.band || a.title.localeCompare(b.title, 'vi'),
+    az: (a, b) => a.title.localeCompare(b.title, 'vi'),
+  };
+  return list.sort(by[state.sort]);
+}
+
+/* ================= Render: số liệu ================= */
+function renderStats() {
+  const c = { all: prompts.length, used: 0, ready: 0, draft: 0 };
+  prompts.forEach((p) => { c[statusOf(p).key] += 1; });
+  const tiles = [
+    { key: 'all', value: c.all, label: 'Đề trong ngân hàng', hint: 'Xem tất cả' },
+    { key: 'used', value: c.used, label: 'Đang giao cho lớp', hint: 'Đề đã có lớp nhận' },
+    { key: 'ready', value: c.ready, label: 'Sẵn sàng, chưa giao', hint: 'Có thể giao ngay' },
+    { key: 'draft', value: c.draft, label: 'Bản nháp', hint: 'Cần hoàn thiện trước khi giao' },
+  ];
+  $('#stats').innerHTML = tiles.map((t) => `
+    <button type="button" class="stat od-stat" data-status="${t.key}" aria-pressed="${state.status === t.key}">
+      <span class="value">${t.value}</span><span class="label">${t.label}</span><span class="hint">${t.hint}</span>
+    </button>`).join('');
+}
+
+/* ================= Render: thanh lọc ================= */
+function renderToolbar() {
+  const base = prompts.filter((p) => matchesQuery(p, state.q) && matchesStatus(p, state.status));
+  const seg = [{ id: 'all', name: 'Tất cả', n: base.length }, ...SKILLS.map((s) => ({ id: s.id, name: s.name, n: base.filter((p) => p.skill === s.id).length }))];
+  $('#skillSeg').innerHTML = seg.map((s) => `
+    <button type="button" class="seg" data-skill="${s.id}" aria-pressed="${state.skill === s.id}">${s.name}<span class="c" aria-label="${s.n} đề">${s.n}</span></button>`).join('');
+
+  const sel = $('#partSel');
+  const opt = (skill, p) => {
+    const n = base.filter((x) => x.skill === skill && x.part === p.id).length;
+    const v = `${skill}:${p.id}`;
+    return `<option value="${v}" ${state.skill === skill && state.part === p.id ? 'selected' : ''}>${p.label} (${n})</option>`;
+  };
+  sel.innerHTML = `<option value="all">Tất cả phần</option>` + (state.skill === 'all'
+    ? SKILLS.map((s) => `<optgroup label="${s.name}">${s.parts.map((p) => opt(s.id, p)).join('')}</optgroup>`).join('')
+    : skillOf(state.skill).parts.map((p) => opt(state.skill, p)).join(''));
+  if (state.part === 'all') sel.value = 'all';
+  $('#statusSel').value = state.status;
+  $('#sortSel').value = state.sort;
+
+  const chips = [];
+  if (state.q.trim()) chips.push({ k: 'q', label: `“${state.q.trim()}”` });
+  if (state.skill !== 'all') chips.push({ k: 'skill', label: skillOf(state.skill).name });
+  if (state.part !== 'all') chips.push({ k: 'part', label: partLabel(state.skill, state.part) });
+  if (state.status !== 'all') chips.push({ k: 'status', label: $('#statusSel').selectedOptions[0].textContent });
+  $('#chips').innerHTML = chips.map((c) => `<span class="chip">${esc(c.label)}<button type="button" data-unchip="${c.k}" aria-label="Bỏ lọc ${esc(c.label)}">${ico('x')}</button></span>`).join('')
+    + (chips.length ? `<button type="button" class="link-btn" data-clear>Xóa bộ lọc</button>` : '');
+  const fc = $('#filtersCount');
+  const extra = (state.part !== 'all') + (state.status !== 'all') + (state.sort !== 'new');
+  fc.hidden = extra === 0; fc.textContent = extra;
+  $('#qClear').hidden = !state.q; $('#kbd').hidden = !!state.q;
+  $('#filtersExtra').classList.toggle('is-open', state.filtersOpen);
+  $('#filtersToggle').setAttribute('aria-expanded', String(state.filtersOpen));
+}
+
+/* ================= Render: danh sách ================= */
+let currentList = [];
+function renderList() {
+  const listEl = $('#list');
+  const bankEmpty = prompts.length === 0;
+  currentList = filtered();
+  $('#emptyBank').hidden = !bankEmpty;
+  $('#emptyFilter').hidden = bankEmpty || currentList.length > 0;
+  $('#listHead').hidden = bankEmpty || currentList.length === 0;
+  $('#resultCount').innerHTML = bankEmpty ? '' : `Hiện <strong>${currentList.length}</strong> / ${prompts.length} đề`;
+
+  if (state.loading) {
+    listEl.innerHTML = Array.from({ length: 6 }, () => `<li class="skel-row" aria-hidden="true"><span class="skel" style="width:70%"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span></li>`).join('');
+    return;
+  }
+  if (isWide() && !currentList.some((p) => p.id === state.selectedId)) state.selectedId = currentList[0]?.id ?? null;
+
+  listEl.innerHTML = currentList.map((p) => {
+    const st = statusOf(p);
+    const sel = p.id === state.selectedId;
+    const canAssign = p.status !== 'draft';
+    return `
+    <li class="row${sel ? ' is-selected' : ''}" data-id="${p.id}">
+      <div class="c-title">
+        <button type="button" class="row-title od-truncate" data-open="${p.id}" ${sel ? 'aria-current="true"' : ''}>${esc(p.title)}</button>
+        <p class="row-sub od-truncate">${esc(p.type)} · ${esc(p.source)} · thêm ${fmtDM(p.createdAt)}${p.writing ? ' · kèm Writing' : ''}</p>
+      </div>
+      <div class="c-skill"><span>${skillOf(p.skill).name}</span><span>${esc(partLabel(p.skill, p.part))}</span></div>
+      <div class="c-band num">${fmtBand(p.band)}</div>
+      <div class="c-status">${badge(st)}</div>
+      <div class="m-meta"><span>${skillOf(p.skill).name} · ${esc(partLabel(p.skill, p.part))}</span><span class="num od-nowrap">Band ${fmtBand(p.band)}</span>${badge(st)}</div>
+      <div class="c-actions">
+        ${canAssign
+          ? `<button type="button" class="icon-btn" data-act="assign" data-id="${p.id}" aria-label="Giao “${esc(p.title)}” cho lớp" title="Giao cho lớp">${ico('send')}</button>`
+          : `<button type="button" class="icon-btn" data-act="edit" data-id="${p.id}" aria-label="Hoàn thiện bản nháp “${esc(p.title)}”" title="Hoàn thiện bản nháp">${ico('edit')}</button>`}
+        <button type="button" class="icon-btn" data-act="dup" data-id="${p.id}" aria-label="Nhân bản “${esc(p.title)}”" title="Nhân bản">${ico('copy')}</button>
+      </div>
+    </li>`;
+  }).join('');
+}
+
+/* ================= Render: xem trước ================= */
+function paperHTML(p) {
+  const lines = (t) => esc(t).replace(/\n/g, '<br>');
+  if (p.skill === 'listening') {
+    return `<div class="paper">
+      <div class="audio-row">${ico('headphones')}<div class="od-field"><span class="od-truncate">${esc(p.audio)}</span><span class="num">${esc(p.duration)}</span></div></div>
+      <p class="paper-label">Câu hỏi mẫu</p><p>${lines(p.body)}</p><p class="spec">${esc(p.spec)}</p></div>`;
+  }
+  if (p.skill === 'speaking') {
+    return `<div class="paper"><p class="paper-label">${p.part === 'part2' ? 'Cue card' : 'Câu hỏi'}</p><p><strong>${esc(p.body)}</strong></p>
+      ${p.points ? `<p>${p.part === 'part2' ? 'You should say:' : 'Câu hỏi tiếp theo:'}</p><ul>${p.points.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+      <p class="spec">${esc(p.spec)}</p></div>`;
+  }
+  if (p.skill === 'reading') {
+    return `<div class="paper"><p class="paper-label">Đoạn đọc</p><p class="od-clamp-3">${lines(p.body)}</p><p class="spec">${esc(p.spec)}</p></div>`;
+  }
+  return `<div class="paper"><p class="paper-label">${p.skill === 'writing' ? 'Đề bài' : 'Câu mẫu'}</p><p>${lines(p.body)}</p><p class="spec">${esc(p.spec)}</p></div>`;
+}
+function historyHTML(p) {
+  const rows = assignments.filter((a) => a.promptId === p.id).sort((a, b) => b.due.localeCompare(a.due));
+  if (!rows.length) {
+    return `<div class="empty" style="padding:32px 8px">${ico('send')}<h2>Chưa giao cho lớp nào</h2><p>${p.status === 'draft' ? 'Hoàn thiện bản nháp rồi giao cho lớp từ đây.' : 'Bấm “Giao cho lớp” bên dưới để chọn lớp và hạn nộp.'}</p></div>`;
+  }
+  return `<ul class="history">${rows.map((a) => {
+    const c = classOf(a.classId); const st = assignmentState(a);
+    const pct = c.students ? Math.round((a.submitted / c.students) * 100) : 0;
+    return `<li class="h-item">
+      <div class="od-row"><span class="name od-truncate">${esc(c.name)}</span>${badge(st)}</div>
+      <div class="bar" role="img" aria-label="Đã nộp ${a.submitted} trên ${c.students}"><span style="width:${pct}%"></span></div>
+      <div class="od-row meta"><span class="num">Đã nộp ${a.submitted}/${c.students}</span><span class="num od-nowrap">Hạn ${fmtDue(a.due)}</span></div>
+    </li>`;
+  }).join('')}</ul>`;
+}
+function renderPreview() {
+  const aside = $('#preview');
+  const p = prompts.find((x) => x.id === state.selectedId);
+  $('#workspace').classList.toggle('has-preview', !!p && isWide() && !state.loading);
+  aside.classList.toggle('as-drawer', !isWide());
+  if (!p || state.loading) { aside.hidden = true; aside.innerHTML = ''; return; }
+  if (!isWide() && !state.drawerOpen) { aside.hidden = true; return; }
+  aside.hidden = false;
+  const st = statusOf(p);
+  const nHist = assignments.filter((a) => a.promptId === p.id).length;
+  const draft = p.status === 'draft';
+  aside.innerHTML = `
+    <div class="preview-head">
+      <div class="top"><span class="kicker">${skillOf(p.skill).name} · ${esc(partLabel(p.skill, p.part))} · ${esc(p.type)}</span>
+        <button type="button" class="icon-btn close-preview" data-close-preview aria-label="Đóng xem trước">${ico('x')}</button></div>
+      <h2 id="pvTitle">${esc(p.title)}</h2>
+      <div class="od-cluster">${badge(st)}<span class="tag num">Band ${fmtBand(p.band)}</span><span class="tag">${esc(p.level)}</span>${p.writing ? '<span class="tag">Kèm Writing</span>' : ''}</div>
+      <p class="kicker">${esc(p.source)} · thêm ${fmtDM(p.createdAt)}</p>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Nội dung xem trước">
+      <button type="button" role="tab" id="tab-prompt" aria-controls="pv-panel" aria-selected="${state.tab === 'prompt'}" tabindex="${state.tab === 'prompt' ? 0 : -1}" data-tab="prompt">Đề phía học viên</button>
+      <button type="button" role="tab" id="tab-history" aria-controls="pv-panel" aria-selected="${state.tab === 'history'}" tabindex="${state.tab === 'history' ? 0 : -1}" data-tab="history">Lịch sử giao (${nHist})</button>
+    </div>
+    <div class="preview-body" id="pv-panel" role="tabpanel" aria-labelledby="tab-${state.tab}">
+      ${state.tab === 'prompt' ? paperHTML(p) + (draft ? '<p class="note">Bản nháp chỉ bạn nhìn thấy. Học viên chưa nhận được đề này.</p>' : '') : historyHTML(p)}
+    </div>
+    <div class="preview-foot">
+      ${draft
+        ? `<button type="button" class="btn btn-primary" data-act="edit" data-id="${p.id}">${ico('edit')}Hoàn thiện bản nháp</button>
+           <p class="foot-hint">Đề cần ở trạng thái “Sẵn sàng” mới giao được cho lớp.</p>
+           <div class="od-row"><button type="button" class="btn btn-outline" data-act="dup" data-id="${p.id}">${ico('copy')}Nhân bản</button><button type="button" class="btn btn-danger-text" data-act="delete" data-id="${p.id}">${ico('trash')}Xóa nháp</button></div>`
+        : `<button type="button" class="btn btn-primary" data-act="assign" data-id="${p.id}" id="pvAssign">${ico('send')}Giao cho lớp</button>
+           <div class="od-row"><button type="button" class="btn btn-outline" data-act="edit" data-id="${p.id}">${ico('edit')}Sửa</button><button type="button" class="btn btn-outline" data-act="dup" data-id="${p.id}">${ico('copy')}Nhân bản</button></div>`}
+    </div>`;
+}
+
+/* ================= Điều phối ================= */
+function render() { renderStats(); renderToolbar(); renderList(); renderPreview(); }
+function focusRow(id, fallback = '#createBtn') {
+  const el = id && document.querySelector(`.row-title[data-open="${CSS.escape(id)}"]`);
+  (el || $(fallback))?.focus();
+}
+function setFilter(patch) {
+  Object.assign(state, patch);
+  writeURL();
+  render();
+}
+function clearFilters() { $('#q').value = ''; setFilter({ q: '', skill: 'all', part: 'all', status: 'all' }); }
+
+/* Toast */
+function toast(msg, action) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `${ico('check')}<p>${esc(msg)}</p>${action ? `<button type="button">${esc(action.label)}</button>` : ''}`;
+  if (action) el.querySelector('button').addEventListener('click', () => { action.run(); el.remove(); });
+  $('#toasts').appendChild(el);
+  setTimeout(() => el.remove(), action ? 6000 : 3500);
+}
+
+/* Drawer xem trước (màn hình < 1360px) */
+let drawerReturnId = null;
+function openDrawer(id) {
+  drawerReturnId = id;
+  state.drawerOpen = true;
+  renderPreview();
+  const aside = $('#preview'), scrim = $('#previewScrim');
+  scrim.hidden = false;
+  requestAnimationFrame(() => { aside.classList.add('is-open'); scrim.classList.add('is-open'); });
+  setTimeout(() => aside.querySelector('[data-close-preview]')?.focus(), 230);
+}
+function closeDrawer() {
+  if (!state.drawerOpen) return;
+  const aside = $('#preview'), scrim = $('#previewScrim');
+  aside.classList.remove('is-open'); scrim.classList.remove('is-open');
+  state.drawerOpen = false;
+  setTimeout(() => { if (!state.drawerOpen) { aside.hidden = true; scrim.hidden = true; } }, 160);
+  focusRow(drawerReturnId);
+}
+function select(id, { open = false } = {}) {
+  state.selectedId = id; state.tab = 'prompt';
+  renderList(); 
+  if (isWide()) renderPreview();
+  else if (open) openDrawer(id);
+}
+
+/* ================= Hành động ================= */
+let dlgReturn = null;
+function runAction(act, id) {
+  const p = prompts.find((x) => x.id === id);
+  if (!p) return;
+  if (act === 'assign') openAssign(p);
+  else if (act === 'edit') toast(`Trình soạn đề chưa có trong bản mẫu này — “${p.title}”`);
+  else if (act === 'delete') openDelete(p);
+  else if (act === 'dup') {
+    const copy = { ...p, id: `p${Date.now()}`, title: `${p.title} (bản sao)`, status: 'draft', createdAt: '2026-11-28' };
+    prompts.unshift(copy);
+    if (!filtered().some((x) => x.id === copy.id)) { state.q = ''; $('#q').value = ''; state.status = 'all'; state.skill = 'all'; state.part = 'all'; writeURL(); }
+    state.selectedId = copy.id; state.sort = 'new';
+    render();
+    focusRow(copy.id);
+    toast('Đã tạo bản sao ở dạng bản nháp');
+  }
+}
+
+/* Giao cho lớp */
+let assigning = null;
+const touched = { class: false, date: false, time: false };
+function dateISO(d) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+function openAssign(p) {
+  assigning = p;
+  dlgReturn = document.activeElement;
+  const used = new Map(assignments.filter((a) => a.promptId === p.id).map((a) => [a.classId, a]));
+  $('#assignSub').textContent = p.title;
+  $('#classList').innerHTML = CLASSES.map((c) => {
+    const a = used.get(c.id);
+    return `<label class="class-opt${a ? ' is-disabled' : ''}">
+      <input type="checkbox" name="cls" value="${c.id}" ${a ? 'disabled' : ''}>
+      <span class="od-field od-fill"><span class="od-truncate">${esc(c.name)}</span><span>${a ? `Đã giao · hạn ${fmtDM(a.due)}` : `${c.students} học viên`}</span></span>
+    </label>`;
+  }).join('');
+  const d = new Date(TODAY); d.setDate(d.getDate() + 7);
+  $('#dueDate').value = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+  $('#dueTime').value = '21:00';
+  Object.keys(touched).forEach((k) => { touched[k] = false; });
+  showErrors({});
+  $('#errSummary').hidden = true;
+  const btn = $('#assignSubmit'); btn.disabled = false; btn.textContent = 'Giao đề';
+  $('#assignDlg').showModal();
+  ($('#classList input:not(:disabled)') || $('#dueDate')).focus();
+}
+function validate() {
+  const e = {};
+  if (!$('#classList input:checked')) e.class = 'Chọn ít nhất một lớp để giao đề.';
+  const m = $('#dueDate').value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  let date = null;
+  if (!m) e.date = 'Nhập ngày theo dạng dd/mm/yyyy, ví dụ 05/12/2026.';
+  else {
+    date = new Date(+m[3], +m[2] - 1, +m[1]);
+    if (date.getDate() !== +m[1] || date.getMonth() !== +m[2] - 1) { e.date = 'Ngày này không tồn tại. Kiểm tra lại ngày và tháng.'; date = null; }
+  }
+  const t = $('#dueTime').value.trim().match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
+  if (!t) e.time = 'Nhập giờ dạng 24h HH:mm, ví dụ 21:00.';
+  if (date && t) {
+    date.setHours(+t[1], +t[2]);
+    if (date <= TODAY) e.date = 'Hạn nộp phải sau thời điểm hiện tại.';
+  }
+  return { e, date };
+}
+function showErrors(e, all = false) {
+  const set = (key, inputSel, errSel) => {
+    const show = e[key] && (all || touched[key]);
+    const err = $(errSel);
+    if (err) { err.hidden = !show; err.textContent = show ? e[key] : ''; }
+    const input = inputSel && $(inputSel);
+    if (input) input.setAttribute('aria-invalid', show ? 'true' : 'false');
+  };
+  set('class', null, '#classErr'); set('date', '#dueDate', '#dueErr'); set('time', '#dueTime', '#timeErr');
+}
+function submitAssign() {
+  const { e, date } = validate();
+  Object.keys(touched).forEach((k) => { touched[k] = true; });
+  showErrors(e, true);
+  const keys = Object.keys(e);
+  const sum = $('#errSummary');
+  if (keys.length) {
+    if (keys.length > 1) {
+      const target = { class: '#classList input:not(:disabled)', date: '#dueDate', time: '#dueTime' };
+      sum.innerHTML = `Cần sửa ${keys.length} mục trước khi giao:<ul>${keys.map((k) => `<li><a href="#" data-goto="${target[k]}">${esc(e[k])}</a></li>`).join('')}</ul>`;
+      sum.hidden = false; sum.focus();
+    } else {
+      sum.hidden = true;
+      ({ class: () => $('#classList input:not(:disabled)')?.focus(), date: () => $('#dueDate').focus(), time: () => $('#dueTime').focus() })[keys[0]]();
+    }
+    return;
+  }
+  sum.hidden = true;
+  const ids = [...document.querySelectorAll('#classList input:checked')].map((i) => i.value);
+  const btn = $('#assignSubmit'); btn.disabled = true; btn.textContent = 'Đang giao…';
+  setTimeout(() => {
+    const due = `${dateISO(date)}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    ids.forEach((cid, i) => assignments.push({ id: `a${Date.now()}${i}`, promptId: assigning.id, classId: cid, due, submitted: 0 }));
+    const p = assigning;
+    $('#assignDlg').close();
+    state.tab = 'history';
+    render();
+    if (state.drawerOpen) renderPreview();
+    toast(`Đã giao “${p.title}” cho ${ids.length} lớp · hạn ${fmtDue(due)}`);
+  }, 600);
+}
+$('#assignSubmit').addEventListener('click', submitAssign);
+$('#assignDlg').addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.matches('input.input')) { ev.preventDefault(); submitAssign(); } });
+$('#classList').addEventListener('change', () => { touched.class = true; showErrors(validate().e); });
+['dueDate', 'dueTime'].forEach((id) => $(`#${id}`).addEventListener('blur', () => { touched[id === 'dueDate' ? 'date' : 'time'] = true; showErrors(validate().e); }));
+document.querySelectorAll('[data-quick]').forEach((b) => b.addEventListener('click', () => {
+  const d = new Date(TODAY); d.setDate(d.getDate() + Number(b.dataset.quick));
+  $('#dueDate').value = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+  touched.date = true; showErrors(validate().e);
+}));
+$('#errSummary').addEventListener('click', (ev) => { const a = ev.target.closest('[data-goto]'); if (a) { ev.preventDefault(); $(a.dataset.goto)?.focus(); } });
+
+/* Xóa bản nháp */
+let deleting = null;
+function openDelete(p) {
+  deleting = p; dlgReturn = document.activeElement;
+  $('#deleteSub').textContent = `“${p.title}” sẽ bị xóa khỏi ngân hàng đề. Bản nháp chưa giao cho lớp nào nên không ảnh hưởng học viên.`;
+  $('#deleteDlg').showModal();
+  $('#deleteDlg [data-close]').focus();
+}
+$('#deleteConfirm').addEventListener('click', () => {
+  const idx = prompts.findIndex((x) => x.id === deleting.id);
+  if (idx < 0) return;
+  const [removed] = prompts.splice(idx, 1);
+  dlgReturn = null;
+  $('#deleteDlg').close();
+  if (state.drawerOpen) closeDrawer();
+  state.selectedId = null;
+  render();
+  focusRow(currentList[Math.min(idx, currentList.length - 1)]?.id);
+  toast('Đã xóa bản nháp', { label: 'Hoàn tác', run: () => { prompts.splice(idx, 0, removed); state.selectedId = removed.id; render(); focusRow(removed.id); } });
+});
+
+/* Đóng dialog: trả focus về control còn sống */
+document.querySelectorAll('dialog.modal').forEach((d) => {
+  d.addEventListener('click', (ev) => { if (ev.target.closest('[data-close]') || ev.target === d) d.close(); });
+  d.addEventListener('close', () => {
+    if (dlgReturn && document.body.contains(dlgReturn)) dlgReturn.focus();
+    else if (d.id === 'assignDlg' && assigning) {
+      const pv = (state.drawerOpen || isWide()) ? $('#pvAssign') : null;
+      if (pv) pv.focus(); else focusRow(assigning.id);
+    }
+    dlgReturn = null;
+  });
+});
+
+/* ================= Sự kiện ================= */
+let qTimer = null;
+$('#q').addEventListener('input', (ev) => {
+  const v = ev.target.value;
+  $('#qClear').hidden = !v; $('#kbd').hidden = !!v;
+  clearTimeout(qTimer);
+  qTimer = setTimeout(() => setFilter({ q: v }), 300);
+});
+$('#q').addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && ev.target.value) { ev.stopPropagation(); ev.target.value = ''; setFilter({ q: '' }); } });
+$('#qClear').addEventListener('click', () => { $('#q').value = ''; setFilter({ q: '' }); $('#q').focus(); });
+$('#partSel').addEventListener('change', (ev) => {
+  const v = ev.target.value;
+  if (v === 'all') return setFilter({ part: 'all' });
+  const [skill, part] = v.split(':');
+  setFilter({ skill, part });
+  $('#partSel').focus();
+});
+$('#statusSel').addEventListener('change', (ev) => setFilter({ status: ev.target.value }));
+$('#sortSel').addEventListener('change', (ev) => setFilter({ sort: ev.target.value }));
+$('#filtersToggle').addEventListener('click', () => { state.filtersOpen = !state.filtersOpen; renderToolbar(); });
+$('#emptyClear').addEventListener('click', () => { clearFilters(); $('#q').focus(); });
+
+$('#stats').addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-status]'); if (!b) return;
+  setFilter({ status: b.dataset.status });
+  $(`#stats [data-status="${b.dataset.status}"]`)?.focus();
+});
+$('#skillSeg').addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-skill]'); if (!b) return;
+  setFilter({ skill: b.dataset.skill, part: 'all' });
+  $(`#skillSeg [data-skill="${b.dataset.skill}"]`)?.focus();
+});
+$('#chips').addEventListener('click', (ev) => {
+  if (ev.target.closest('[data-clear]')) { clearFilters(); $('#q').focus(); return; }
+  const b = ev.target.closest('[data-unchip]'); if (!b) return;
+  const k = b.dataset.unchip;
+  if (k === 'q') $('#q').value = '';
+  setFilter(k === 'q' ? { q: '' } : k === 'skill' ? { skill: 'all', part: 'all' } : k === 'part' ? { part: 'all' } : { status: 'all' });
+  ($('#chips [data-unchip]') || $('#q')).focus();
+});
+
+/* Danh sách: bấm hàng, thao tác nhanh, phím mũi tên */
+$('#list').addEventListener('click', (ev) => {
+  const act = ev.target.closest('[data-act]');
+  if (act) { runAction(act.dataset.act, act.dataset.id); return; }
+  const row = ev.target.closest('.row'); if (!row) return;
+  select(row.dataset.id, { open: true });
+  if (isWide()) focusRow(row.dataset.id);
+});
+$('#list').addEventListener('keydown', (ev) => {
+  if (!ev.target.matches('.row-title')) return;
+  if (ev.key !== 'ArrowDown' && ev.key !== 'ArrowUp') return;
+  ev.preventDefault();
+  const ids = currentList.map((p) => p.id);
+  const i = ids.indexOf(ev.target.dataset.open);
+  const next = ids[Math.max(0, Math.min(ids.length - 1, i + (ev.key === 'ArrowDown' ? 1 : -1)))];
+  if (isWide()) select(next);
+  focusRow(next);
+});
+
+/* Panel xem trước */
+$('#preview').addEventListener('click', (ev) => {
+  if (ev.target.closest('[data-close-preview]')) { closeDrawer(); return; }
+  const tab = ev.target.closest('[data-tab]');
+  if (tab) { state.tab = tab.dataset.tab; renderPreview(); $(`#tab-${state.tab}`).focus(); return; }
+  const act = ev.target.closest('[data-act]');
+  if (act) runAction(act.dataset.act, act.dataset.id);
+});
+$('#preview').addEventListener('keydown', (ev) => {
+  if (!ev.target.matches('[role="tab"]') || !['ArrowLeft', 'ArrowRight'].includes(ev.key)) return;
+  state.tab = state.tab === 'prompt' ? 'history' : 'prompt';
+  renderPreview(); $(`#tab-${state.tab}`).focus();
+});
+$('#previewScrim').addEventListener('click', closeDrawer);
+
+/* Menu tạo bài tập */
+const createBtn = $('#createBtn'), createMenu = $('#createMenu');
+function toggleCreate(open) {
+  createMenu.hidden = !open; createBtn.setAttribute('aria-expanded', String(open));
+  if (open) createMenu.querySelector('button').focus();
+}
+createBtn.addEventListener('click', () => toggleCreate(createMenu.hidden));
+createMenu.addEventListener('keydown', (ev) => {
+  const items = [...createMenu.querySelectorAll('button')];
+  const i = items.indexOf(document.activeElement);
+  if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') { ev.preventDefault(); items[(i + (ev.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus(); }
+  if (ev.key === 'Escape') { ev.stopPropagation(); toggleCreate(false); createBtn.focus(); }
+});
+document.addEventListener('click', (ev) => {
+  const c = ev.target.closest('[data-create]');
+  if (c) {
+    toggleCreate(false);
+    toast(c.dataset.create === 'test' ? 'Trình ghép đề thi nhiều phần chưa có trong bản mẫu này' : 'Trình soạn bài lẻ chưa có trong bản mẫu này');
+    return;
+  }
+  if (!createMenu.hidden && !ev.target.closest('.split')) toggleCreate(false);
+});
+$('#packsBtn').addEventListener('click', () => toast('Trang Bộ đề tự học chưa có trong bản mẫu này'));
+
+/* Sidebar (màn hình < 1024px) */
+const sidebar = $('#sidebar'), navScrim = $('#navScrim'), navOpen = $('#navOpen');
+function setNav(open) {
+  sidebar.classList.toggle('is-open', open); navOpen.setAttribute('aria-expanded', String(open));
+  if (open) { navScrim.hidden = false; requestAnimationFrame(() => navScrim.classList.add('is-open')); sidebar.querySelector('a').focus(); }
+  else { navScrim.classList.remove('is-open'); setTimeout(() => { if (!sidebar.classList.contains('is-open')) navScrim.hidden = true; }, 160); }
+}
+navOpen.addEventListener('click', () => setNav(true));
+navScrim.addEventListener('click', () => { setNav(false); navOpen.focus(); });
+document.querySelectorAll('[data-nav]').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); toast(`Trang “${a.textContent.trim().replace(/\d+$/, '')}” chưa có trong bản mẫu này`); }));
+document.querySelector('.nav a[aria-current="page"]').addEventListener('click', (ev) => ev.preventDefault());
+
+/* Phím tắt toàn trang */
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === '/' && !ev.target.closest('input, select, textarea, dialog')) { ev.preventDefault(); $('#q').focus(); return; }
+  if (ev.key === 'Escape') {
+    if (!createMenu.hidden) { toggleCreate(false); createBtn.focus(); return; }
+    if (sidebar.classList.contains('is-open')) { setNav(false); navOpen.focus(); return; }
+    if (state.drawerOpen && !document.querySelector('dialog[open]')) closeDrawer();
+  }
+});
+
+/* Đổi bố cục khi kéo cửa sổ */
+wideMQ.addEventListener('change', () => {
+  if (isWide() && state.drawerOpen) { state.drawerOpen = false; $('#previewScrim').hidden = true; $('#previewScrim').classList.remove('is-open'); }
+  $('#preview').classList.remove('is-open');
+  render();
+});
+
+/* ================= Khởi động ================= */
+$('#q').value = state.q;
+render();
+setTimeout(() => { state.loading = false; render(); }, 350);
+})();
+</script>
+</body>
+</html>

@@ -20,7 +20,8 @@ test("create a ready prompt, list it, and survive reload", async ({ page }) => {
 
 	await signUpViaApi(page);
 	await page.goto("/teacher/assignments");
-	await page.getByRole("button", { name: "+ Tạo bài tập" }).click();
+	await page.getByRole("button", { name: "Tạo bài tập", exact: true }).click();
+	await page.getByRole("menuitem", { name: /Bài lẻ/ }).click();
 	await expect(page).toHaveURL(/\/assignments\/new$/);
 
 	// Blank form: the save button stays enabled, but clicking it only surfaces

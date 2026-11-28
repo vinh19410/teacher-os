@@ -343,6 +343,12 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				method: "PATCH",
 				body: { ...action.payload },
 			};
+		case "delete-assignment-prompt":
+			return {
+				path: `/api/assignments/prompts/${encodeURIComponent(action.promptId)}`,
+				method: "DELETE",
+				body: undefined,
+			};
 		case "create-vocab-group":
 			return {
 				path: "/api/kernel/vocab/groups",

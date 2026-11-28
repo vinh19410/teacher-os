@@ -51,9 +51,9 @@ test("bold formatting persists through save and renders in the preview", async (
 	// Bank row → aside preview renders real bold markup for students.
 	await page.goto("/teacher/assignments");
 	await page.getByRole("button", { name: new RegExp(TITLE) }).click();
-	await expect(page.getByText("Xem trước phía học viên")).toBeVisible();
+	const paper = page.getByRole("tabpanel", { name: "Đề phía học viên" });
 	await expect(
-		page.locator("strong", { hasText: "boldme" }).first(),
+		paper.locator("strong", { hasText: "boldme" }).first(),
 	).toBeVisible();
 });
 
@@ -97,8 +97,8 @@ test("XSS payload in rich text is stored but never executes at render", async ({
 	// Render the stored payload through the preview surface.
 	await page.goto("/teacher/assignments");
 	await page.getByRole("button", { name: new RegExp(TITLE) }).click();
-	await expect(page.getByText("Xem trước phía học viên")).toBeVisible();
-	await expect(page.getByText("safe text").first()).toBeVisible();
+	const paper = page.getByRole("tabpanel", { name: "Đề phía học viên" });
+	await expect(paper.getByText("safe text").first()).toBeVisible();
 	// The handler never ran and no <img> element exists in the rendered paper.
 	expect(
 		await page.evaluate(() => (window as { __pwned?: string }).__pwned),
@@ -179,8 +179,7 @@ test("full-option toolbar structures persist and render for students", async ({
 	// Student-facing preview keeps the structure (h2 + blockquote + hr).
 	await page.goto("/teacher/assignments");
 	await page.getByRole("button", { name: new RegExp(TITLE) }).click();
-	await expect(page.getByText("Xem trước phía học viên")).toBeVisible();
-	const paper = page.getByText("Xem trước phía học viên").locator("..");
+	const paper = page.getByRole("tabpanel", { name: "Đề phía học viên" });
 	await expect(paper.locator("h2")).toContainText("Phần giảng dạy chính");
 	await expect(paper.locator("blockquote")).toContainText(
 		"Trích dẫn từ tài liệu",
@@ -227,8 +226,7 @@ test("link popover persists an allowlisted href and renders for students", async
 
 	await page.goto("/teacher/assignments");
 	await page.getByRole("button", { name: new RegExp(TITLE) }).click();
-	await expect(page.getByText("Xem trước phía học viên")).toBeVisible();
-	const paper = page.getByText("Xem trước phía học viên").locator("..");
+	const paper = page.getByRole("tabpanel", { name: "Đề phía học viên" });
 	await expect(
 		paper.locator("a[href='https://example.com/de-tai']"),
 	).toContainText("Tài liệu đọc thêm");

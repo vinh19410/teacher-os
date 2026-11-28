@@ -24,6 +24,10 @@ function lockFailureMessage(error: unknown): string {
 			return "Đề đã có học viên làm bài nên không sửa được nội dung. Bạn vẫn có thể đổi tiêu đề, band, nguồn và trạng thái. Muốn đổi nội dung, hãy tạo đề mới.";
 		case ASSIGNMENT_PROMPT_ERROR_CODES.WRITING_SECTION_LOCKED:
 			return "Đề đã được giao hoặc đang dùng trong bộ đề nên không sửa được phần Writing. Hãy trả phần này về như cũ để lưu các thay đổi khác.";
+		case ASSIGNMENT_PROMPT_ERROR_CODES.DELETE_NOT_DRAFT:
+			return "Chỉ có thể xóa bản nháp. Đề đã sẵn sàng không xóa được — dữ liệu đã được tải lại.";
+		case ASSIGNMENT_PROMPT_ERROR_CODES.DELETE_REFERENCED:
+			return "Bản nháp đang được dùng trong lớp học, bộ đề thi hoặc bộ đề tự học nên không thể xóa. Dữ liệu đã được tải lại.";
 		case ASSIGNMENT_TEST_ERROR_CODES.PARTS_LOCKED:
 			return "Bộ đề đã có học viên làm bài nên không thể thay đổi hoặc gỡ part. Bạn vẫn có thể đổi tên, thời gian và trạng thái bộ đề. Muốn thay đổi đề, hãy tạo bộ đề mới.";
 		case CLASS_ERROR_CODES.SCHEDULE_LOCKED:
@@ -91,7 +95,9 @@ export function useKernelFormSubmit(): KernelFormSubmitState {
 					if (
 						httpErr?.code === CLASS_ERROR_CODES.CLASS_PAUSED ||
 						httpErr?.code === CLASS_ERROR_CODES.START_DATE_LOCKED ||
-						httpErr?.code === RECORDING_ERROR_CODES.LOCKED
+						httpErr?.code === RECORDING_ERROR_CODES.LOCKED ||
+						httpErr?.code === ASSIGNMENT_PROMPT_ERROR_CODES.DELETE_NOT_DRAFT ||
+						httpErr?.code === ASSIGNMENT_PROMPT_ERROR_CODES.DELETE_REFERENCED
 					) {
 						void refresh();
 					}

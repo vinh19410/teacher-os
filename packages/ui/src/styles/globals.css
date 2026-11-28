@@ -79,6 +79,12 @@
 	--verdict-correct: #166534;
 	--verdict-wrong: #b91c1c;
 	--verdict-on: #ffffff;
+	/* Sắc độ 5 cấp trí nhớ từ vựng (Mới gặp -> Thành thạo, luôn kèm nhãn chữ). */
+	--vocab-lv-1: oklch(0.76 0 0);
+	--vocab-lv-2: oklch(0.62 0 0);
+	--vocab-lv-3: oklch(0.48 0 0);
+	--vocab-lv-4: oklch(0.32 0 0);
+	--vocab-lv-5: oklch(0.145 0 0);
 	/* Reading passage highlight & note underline: fg/bg >= 4.5:1 (AA), border >= 3.0:1 (1.4.11). */
 	--reading-highlight: oklch(0.93 0.11 95);
 	--reading-highlight-border: oklch(0.56 0.15 78);
@@ -169,6 +175,11 @@
 	--verdict-correct: #4ade80;
 	--verdict-wrong: #f87171;
 	--verdict-on: oklch(0.145 0 0);
+	--vocab-lv-1: oklch(0.42 0 0);
+	--vocab-lv-2: oklch(0.56 0 0);
+	--vocab-lv-3: oklch(0.7 0 0);
+	--vocab-lv-4: oklch(0.84 0 0);
+	--vocab-lv-5: oklch(0.985 0 0);
 	--reading-highlight: oklch(0.37 0.08 86);
 	--reading-highlight-border: oklch(0.78 0.14 86);
 
@@ -259,6 +270,11 @@
 	--color-verdict-wrong-soft: var(--verdict-wrong-soft);
 	--color-reading-highlight: var(--reading-highlight);
 	--color-reading-highlight-border: var(--reading-highlight-border);
+	--color-vocab-lv-1: var(--vocab-lv-1);
+	--color-vocab-lv-2: var(--vocab-lv-2);
+	--color-vocab-lv-3: var(--vocab-lv-3);
+	--color-vocab-lv-4: var(--vocab-lv-4);
+	--color-vocab-lv-5: var(--vocab-lv-5);
 
 	/* radius v2 — derive từ --radius; 2xl+ giữ pill cho chip/tag legacy
 	   (markup mới dùng rounded-full; dọn ở phase 12). */

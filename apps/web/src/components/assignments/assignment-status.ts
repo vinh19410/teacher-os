@@ -80,6 +80,14 @@ export function fmtDate(iso: string): string {
 	}
 }
 
+/** Format ISO datetime string or yyyy-mm-dd → dd/mm in Vietnam timezone. */
+export function fmtDayMonth(iso: string): string {
+	const full = fmtDate(iso);
+	if (!full) return "";
+	const match = full.match(/^(\d{2}\/\d{2})(?:\/\d{4})?$/);
+	return match?.[1] ?? full;
+}
+
 /** Format ISO datetime (e.g. 2026-09-11T21:14:00) → dd/mm/yyyy · HH:mm. */
 export function fmtWhen(iso: string): string {
 	if (!iso) return "";
@@ -192,7 +200,7 @@ export function studentSubmissionStatus(
 /**
  * Tag trạng thái cho hàng đề trong ngân hàng:
  * - draft → Bản nháp (draft tone)
- * - used > 0 → Đã dùng {N} lớp (used tone)
+ * - used > 0 → Đã giao {N} lớp (used tone)
  * - ready, chưa dùng → Sẵn sàng (ok tone)
  */
 export function promptStatus(status: string, used: number): PromptStatusResult {
@@ -200,7 +208,7 @@ export function promptStatus(status: string, used: number): PromptStatusResult {
 		return { label: "Bản nháp", tone: "draft" };
 	}
 	if (used > 0) {
-		return { label: `Đã dùng ${used} lớp`, tone: "used" };
+		return { label: `Đã giao ${used} lớp`, tone: "used" };
 	}
 	return { label: "Sẵn sàng", tone: "ok" };
 }

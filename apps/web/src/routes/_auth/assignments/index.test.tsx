@@ -1,10 +1,15 @@
+import type { KernelViewer } from "@teacher-os/api/contracts";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-
-import type { AssignmentPrompt, ClassAssignment } from "@/lib/mock-data";
+import type {
+	AssignmentPrompt,
+	ClassAssignment,
+	ClassGroup,
+} from "@/lib/mock-data";
 
 const mockNavigate = vi.fn();
-/** URL search params (?skill=&part=&q=) the route reads its filters from. */
+const mockDispatch = vi.fn();
+const mockRefresh = vi.fn();
 const mockSearch = vi.hoisted(() => ({
 	current: {} as Record<string, string>,
 }));
@@ -28,6 +33,7 @@ const bankFixture: AssignmentPrompt[] = [
 		genre: "chart",
 		title: "Writing Task 1 — Chart Draft",
 		band: "6.5",
+		level: "Intermediate",
 		source: "Cambridge 10",
 		prompt: "The chart below shows...",
 		questions: [],
@@ -44,6 +50,7 @@ const bankFixture: AssignmentPrompt[] = [
 		genre: "discuss",
 		title: "Writing Task 2 — Discuss Both Views",
 		band: "7.0",
+		level: "Upper-Int",
 		source: "Cambridge 12",
 		prompt: "Some people think that...",
 		questions: [],
@@ -94,6 +101,27 @@ const bankFixture: AssignmentPrompt[] = [
 	},
 ];
 
+const classesFixture: ClassGroup[] = [
+	{
+		id: "cl-1",
+		name: "IELTS Foundation 5.5",
+		level: "5.5",
+		type: "ielts",
+		skills: ["Writing", "Reading"],
+		mode: "Online",
+		syllabusId: "",
+		studentIds: ["st-1", "st-2"],
+		invitedStudentIds: [],
+		schedule: "T3 & T5",
+		sessionsDone: 0,
+		sessionsTotal: 12,
+		status: "active",
+		startDate: "2026-09-01",
+		tuitionFee: null,
+		notes: "",
+	},
+];
+
 const classAssignmentsFixture: ClassAssignment[] = [
 	{
 		id: "ca-1",
@@ -103,74 +131,97 @@ const classAssignmentsFixture: ClassAssignment[] = [
 		due: "2026-09-25",
 		note: "",
 		createdAt: "2026-09-17T11:00:00.000Z",
-		targets: [{ studentId: "st-1", submittedAt: null }],
+		targets: [
+			{ studentId: "st-1", submittedAt: "2026-09-20T10:00:00.000Z" },
+			{ studentId: "st-2", submittedAt: null },
+		],
 	},
 ];
 
 let mockStoreData: {
 	assignmentPrompts: AssignmentPrompt[];
 	classAssignments: ClassAssignment[];
+	classes: ClassGroup[];
+	viewer: KernelViewer;
 } = {
 	assignmentPrompts: bankFixture,
 	classAssignments: classAssignmentsFixture,
+	classes: classesFixture,
+	viewer: { role: "teacher", canAccessFinance: true },
 };
 
 vi.mock("@/lib/data-store", () => ({
-	useData: () => ({ data: mockStoreData }),
+	useData: () => ({
+		data: mockStoreData,
+		dispatch: mockDispatch,
+		refresh: mockRefresh,
+	}),
 }));
 
 import { AssignmentsRoute } from "./index";
 
-describe("AssignmentsRoute — merged created-assignments page (#267)", () => {
-	it("renders page structure and copy per design", () => {
+describe("AssignmentsRoute — redesign theo open-design/assignments.html", () => {
+	it("renders page head, 4 KPI tiles, toolbar, and split list", () => {
 		mockStoreData = {
 			assignmentPrompts: bankFixture,
 			classAssignments: classAssignmentsFixture,
+			classes: classesFixture,
+			viewer: { role: "teacher", canAccessFinance: true },
 		};
 		const html = renderToStaticMarkup(<AssignmentsRoute />);
 
 		expect(html).toContain("Bài tập");
 		expect(html).toContain(
-			"Danh sách bài tập đã tạo. Lọc theo kỹ năng rồi giao cho lớp ở trang Lớp học.",
+			"Ngân hàng đề của bạn. Lọc, xem trước như học viên thấy, rồi giao thẳng cho lớp.",
 		);
-		expect(html).toContain("+ Tạo bài tập");
-		expect(html).toContain("Kỹ năng");
+		expect(html).toContain("Bộ đề tự học");
+		expect(html).toContain("Tạo bài tập");
+		expect(html).toContain("Đề trong ngân hàng");
+		expect(html).toContain("Đang giao cho lớp");
+		expect(html).toContain("Sẵn sàng, chưa giao");
+		expect(html).toContain("Tìm theo tên đề, dạng đề hoặc nguồn");
 		expect(html).toContain("Phần thi");
-		expect(html).toContain("Tìm đề theo tiêu đề hoặc nguồn");
-		expect(html).toContain("Đang hiện");
+		expect(html).toContain("Trạng thái");
+		expect(html).toContain("Sắp xếp");
+		expect(html).toContain("Hiện");
 		expect(html).toContain("/ 4 đề");
 	});
 
-	it("renders rows with usage-status tags: used class wins over ready, draft shows draft", () => {
+	it("renders rows with status badges: 'Đã giao N lớp', 'Sẵn sàng', and 'Bản nháp'", () => {
 		mockStoreData = {
 			assignmentPrompts: bankFixture,
 			classAssignments: classAssignmentsFixture,
+			classes: classesFixture,
+			viewer: { role: "teacher", canAccessFinance: true },
 		};
 		const html = renderToStaticMarkup(<AssignmentsRoute />);
 
 		expect(html).toContain("Bản nháp");
-		expect(html).toContain("Đã dùng 1 lớp");
+		expect(html).toContain("Đã giao 1 lớp");
 		expect(html).toContain("Sẵn sàng");
 	});
 
-	it("renders preview aside with student view kicker without exposing answer key", () => {
+	it("renders preview panel tabs without exposing secret answer key", () => {
 		mockStoreData = {
-			assignmentPrompts: [bankFixture[3]], // reading with secret answer
+			assignmentPrompts: [bankFixture[3]],
 			classAssignments: [],
+			classes: classesFixture,
+			viewer: { role: "teacher", canAccessFinance: true },
 		};
 		const html = renderToStaticMarkup(<AssignmentsRoute />);
 
-		expect(html).toContain("Xem trước phía học viên");
-		expect(html).toContain("Đề này chưa giao lớp. Giao cho học viên ở trang");
-		expect(html).toContain("Lớp học");
+		expect(html).toContain("Đề phía học viên");
+		expect(html).toContain("Lịch sử giao");
 		expect(html).toContain("Question stem one");
 		expect(html).not.toContain("SECRET_ANSWER_FALSE");
 		expect(html).toContain("Chấm tự động");
+		expect(html).toContain("Giao cho lớp");
 		expect(html).toContain("Xem trước");
-		expect(html).toContain("Chỉnh sửa");
+		expect(html).toContain("Sửa");
+		expect(html).toContain("Nhân bản");
 	});
 
-	it("renders the diagram thumbnail in the bank preview aside (#269)", () => {
+	it("renders diagram thumbnail in preview panel without answer key (#269)", () => {
 		mockStoreData = {
 			assignmentPrompts: [
 				{
@@ -191,6 +242,8 @@ describe("AssignmentsRoute — merged created-assignments page (#267)", () => {
 				},
 			],
 			classAssignments: [],
+			classes: classesFixture,
+			viewer: { role: "teacher", canAccessFinance: true },
 		};
 		const html = renderToStaticMarkup(<AssignmentsRoute />);
 
@@ -199,98 +252,77 @@ describe("AssignmentsRoute — merged created-assignments page (#267)", () => {
 		expect(html).not.toContain("SECRET_ANSWER_THUMB");
 	});
 
-	it("does not render the aside thumbnail for non-diagram prompts (#269)", () => {
+	it("does not render thumbnail for non-diagram prompts (#269)", () => {
 		mockStoreData = {
-			assignmentPrompts: [bankFixture[3]], // tfng, no image
+			assignmentPrompts: [bankFixture[3]],
 			classAssignments: [],
+			classes: classesFixture,
+			viewer: { role: "teacher", canAccessFinance: true },
 		};
 		const html = renderToStaticMarkup(<AssignmentsRoute />);
 		expect(html).not.toContain("<img");
 	});
 
-	it("renders empty state when there are zero prompts", () => {
+	it("renders empty bank state when there are zero prompts", () => {
 		mockStoreData = {
 			assignmentPrompts: [],
 			classAssignments: [],
+			classes: classesFixture,
+			viewer: { role: "teacher", canAccessFinance: true },
 		};
 		const html = renderToStaticMarkup(<AssignmentsRoute />);
 
-		expect(html).toContain("Chưa có bài tập nào");
-		expect(html).toContain(
-			"Tạo bài tập đầu tiên để lưu vào danh sách và giao cho các lớp học.",
-		);
+		expect(html).toContain("Ngân hàng đề đang trống");
 		expect(html).toContain("Tạo bài tập đầu tiên");
 	});
 
-	it("renders filter UI: search, skill chips, part chips grouped by skill with counts", () => {
+	it("renders skill tabs with aria-hidden counts and optgroups in part select", () => {
 		mockStoreData = {
 			assignmentPrompts: bankFixture,
 			classAssignments: classAssignmentsFixture,
+			classes: classesFixture,
+			viewer: { role: "teacher", canAccessFinance: true },
 		};
 		const html = renderToStaticMarkup(<AssignmentsRoute />);
 
-		expect(html).toContain("Tìm đề theo tiêu đề hoặc nguồn");
-		expect(html).toContain("Kỹ năng");
+		expect(html).toContain('aria-label="Kỹ năng"');
+		expect(html).toContain("Writing");
+		expect(html).toContain("Reading");
 		expect(html).toContain("Listening");
 		expect(html).toContain("Speaking");
-		expect(html).toContain("Tất cả phần");
-		// Skill="Tất cả" → 4 nhóm part dán nhãn kỹ năng thay vì tường 12 chip trộn.
-		expect(html).toContain('aria-label="Phần thi Writing"');
-		expect(html).toContain('aria-label="Phần thi Reading"');
-		expect(html).toContain('aria-label="Phần thi Listening"');
-		expect(html).toContain('aria-label="Phần thi Speaking"');
-		expect(html).toContain('aria-label="Kỹ năng"');
-		// Fixture: 3 Writing + 1 Reading → badge đếm trên chip, 0 cho skill rỗng.
-		expect(html).toContain(">3</span>");
-		expect(html).toContain(">1</span>");
-		expect(html).toContain(">0</span>");
-		// Badge đếm ẩn với AT để accessible name chip giữ nguyên cho e2e.
+		expect(html).toContain("<optgroup");
 		expect(html).toContain('aria-hidden="true"');
 	});
 
-	it("counts prompts from the live bank, not a fixed number", () => {
+	it("filters by URL search param (?skill=reading)", () => {
 		mockStoreData = {
 			assignmentPrompts: bankFixture,
 			classAssignments: classAssignmentsFixture,
+			classes: classesFixture,
+			viewer: { role: "teacher", canAccessFinance: true },
 		};
-		const total = bankFixture.length;
-		expect(renderToStaticMarkup(<AssignmentsRoute />)).toContain(
-			`${total}/${total} đề`,
-		);
-		// Fixture: 3 Writing + 1 Reading — a skill filter in the URL narrows it.
 		mockSearch.current = { skill: "reading" };
 		try {
-			expect(renderToStaticMarkup(<AssignmentsRoute />)).toContain(
-				`1/${total} đề`,
-			);
+			const html = renderToStaticMarkup(<AssignmentsRoute />);
+			expect(html).toContain(">1</strong> / 4 đề");
 		} finally {
 			mockSearch.current = {};
 		}
 	});
 
-	it("renders the mobile filter toggle with aria wiring", () => {
+	it("hides assign and delete draft actions when viewer role is ta", () => {
 		mockStoreData = {
 			assignmentPrompts: bankFixture,
 			classAssignments: classAssignmentsFixture,
+			classes: classesFixture,
+			viewer: { role: "ta", canAccessFinance: false },
 		};
 		const html = renderToStaticMarkup(<AssignmentsRoute />);
-
-		expect(html).toContain("Bộ lọc");
-		expect(html).toContain('aria-controls="assignment-filters-body"');
-		expect(html).toContain('aria-expanded="true"');
-		expect(html).toContain('id="assignment-filters-body"');
+		expect(html).not.toContain("Xóa nháp");
+		expect(html).not.toContain(">Giao cho lớp<");
 	});
 
-	it("pins the create CTA to the dedicated prompt page (#202)", () => {
-		mockStoreData = {
-			assignmentPrompts: bankFixture,
-			classAssignments: classAssignmentsFixture,
-		};
-		const html = renderToStaticMarkup(<AssignmentsRoute />);
-		expect(html).toContain("+ Tạo bài tập");
-	});
-
-	it("renders 'Chưa chọn dạng' tag for draft prompts without a type (#577)", () => {
+	it("renders 'Chưa chọn dạng' for draft prompts without a type (#577)", () => {
 		mockStoreData = {
 			assignmentPrompts: [
 				{
@@ -311,9 +343,12 @@ describe("AssignmentsRoute — merged created-assignments page (#267)", () => {
 				},
 			],
 			classAssignments: [],
+			classes: classesFixture,
+			viewer: { role: "teacher", canAccessFinance: true },
 		};
 		const html = renderToStaticMarkup(<AssignmentsRoute />);
 		expect(html).toContain("Chưa chọn dạng");
-		expect(html).not.toContain("Discuss both views");
+		expect(html).toContain("Xóa nháp");
+		expect(html).toContain("Xem trước");
 	});
 });
