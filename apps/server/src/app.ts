@@ -9,17 +9,15 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import type { AiGrader } from "./lib/ai-grading/grader";
-import type { BankHubContext } from "./lib/bank-hub/bank-hub-client";
 import type { ExamExtractor } from "./lib/exam-import/extractor";
 import type { MediaStore } from "./lib/media-store";
 import type { PlacementAiGrader } from "./lib/placement-ai/grader";
 import type { RecordingStore } from "./lib/recording-store";
 import { createAdminMeRoutes } from "./lib/require-admin";
+import type { SepayContext } from "./lib/sepay/sepay-client";
 import type { ZoomClient, ZoomConfig } from "./lib/zoom/zoom-client";
 import { redactResetToken } from "./log-redaction";
 import { adminLibraryRoutes } from "./routes/admin-library";
-import { bankHubMockRoutes } from "./routes/bank-hub-mock";
-import { bankHubWebhookRoutes } from "./routes/bank-hub-webhooks";
 import { creditRoutes } from "./routes/credits";
 import { examImportRoutes } from "./routes/exam-imports";
 import { githubWebhookRoutes } from "./routes/github-webhooks";
@@ -30,6 +28,7 @@ import { publicLibraryImagesRoutes } from "./routes/public-library-images";
 import { publicPayRoutes } from "./routes/public-pay";
 import { publicPlacementTestRoutes } from "./routes/public-placement-test";
 import { readinessRoute } from "./routes/readiness";
+import { sepayWebhookRoutes } from "./routes/sepay-webhooks";
 import { studentRoutes } from "./routes/student";
 import { studentClassmatesRoutes } from "./routes/student-classmates";
 import { studentHistoryRoutes } from "./routes/student-history";
@@ -40,14 +39,6 @@ import { zoomMeetingRoutes } from "./routes/zoom-meeting";
 import type { SessionUser } from "./session";
 
 export type Db = DrizzleD1Database<Record<string, never>>;
-// Re-export cho e2e fake (pattern tương tự MediaStore ở dưới).
-export type {
-	BankHubAccount,
-	BankHubClient,
-	BankHubContext,
-	BankHubLinkPurpose,
-	BankHubTransaction,
-} from "./lib/bank-hub/bank-hub-client";
 // Re-export cho adapter lưu trữ của e2e (package `server` chỉ export
 // `.`, `./app`, `./session`).
 export {
@@ -65,6 +56,13 @@ export type {
 	StoredRecording,
 	StoredRecordingMeta,
 } from "./lib/recording-store";
+// Re-export cho e2e fake (pattern tương tự MediaStore ở dưới).
+export type {
+	SepayClient,
+	SepayContext,
+	SepayTransaction,
+	SepayTransactionPage,
+} from "./lib/sepay/sepay-client";
 
 export interface KernelCtx {
 	orgId: string;
@@ -125,14 +123,14 @@ export interface AppDeps {
 	 */
 	adminOrigins?: string | string[];
 	/**
-	 * SePay Bank Hub (#320) — vắng mặt (thiếu secret) thì các route ngân hàng
-	 * trả 503 BANKHUB_DISABLED, y hệt hợp đồng của `getMediaStore`.
+	 * SePay cá nhân thường (#320) — vắng mặt (thiếu SEPAY_WEBHOOK_SECRET) thì
+	 * các route ngân hàng trả 503 SEPAY_DISABLED, y hệt hợp đồng của `getMediaStore`.
 	 */
-	getBankHub?(): BankHubContext | undefined;
+	getSepay?(): SepayContext | undefined;
 	/**
 	 * Webhook GitHub (#421) — secret HMAC dùng chung. Rỗng/vắng (chưa cấu
 	 * hình binding) thì `/webhooks/github` trả 503 GITHUB_WEBHOOK_DISABLED,
-	 * cùng hợp đồng fail-closed với `getBankHub`.
+	 * cùng hợp đồng fail-closed với `getSepay`.
 	 */
 	githubWebhookSecret?: string;
 	/**
@@ -461,18 +459,15 @@ export function buildApp(deps: AppDeps) {
 	app.use("/api/*", bootstrapMiddleware(deps));
 	app.on(["POST", "GET"], "/api/auth/*", (c) => deps.authHandler(c.req.raw));
 	app.get("/", (c) => c.text("OK"));
-	// Bank Hub webhooks (#320): mounted outside /api/* so the bootstrap
-	// middleware and Better Auth never run — auth is the X-Secret-Key header.
-	app.route("/webhooks/sepay/bankhub", bankHubWebhookRoutes(deps));
+	// SePay webhooks (#320): mounted outside /api/* so the bootstrap
+	// middleware and Better Auth never run — auth is X-SePay-Signature HMAC-SHA256.
+	app.route("/webhooks/sepay", sepayWebhookRoutes(deps));
 	// GitHub webhooks (#421): cùng ngoài-/api treatment — auth là HMAC
 	// X-Hub-Signature-256 trên raw body, không session.
 	app.route(
 		"/webhooks/github",
 		githubWebhookRoutes({ secret: deps.githubWebhookSecret }),
 	);
-	// Postman-facing sandbox mock-transaction wrapper: same outside-/api
-	// treatment, auth is the IPN Apikey header (see routes/bank-hub-mock.ts).
-	app.route("/dev/bank-hub", bankHubMockRoutes(deps));
 	// Public pay page data (#320): outside /api/* (bootstrap 403s student
 	// roles there) and readable signed-out — the token is the capability.
 	app.route("/public/pay", publicPayRoutes(deps));

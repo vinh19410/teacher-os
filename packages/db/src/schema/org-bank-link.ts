@@ -8,12 +8,13 @@ import {
 import { organization } from "./organization";
 
 /**
- * One bank-account link per org (issue #320). `company_xid`/`bank_account_xid`
- * are SePay Bank Hub external ids (unique per merchant). Status lifecycle:
- * none → linked → inactive (bank-side deactivation, OCB/MSB/KienLong/TPB) or
- * unlinked (teacher-initiated). Re-linking overwrites the single row and
- * records the previous `bank_account_xid` in `past_bank_account_xids` so the
- * reconciliation sweep (phase 4) still covers the old account.
+ * One bank-account link per org (issue #320), configured for standard SePay
+ * (`my.sepay.vn` webhooks + API v2 reconciliation). `company_xid`/`bank_account_xid`
+ * are legacy Bank Hub external ids kept nullable/unused on SQLite. `va_code`
+ * holds an optional memo-based Virtual Account identifier (`TKP`, e.g. `MMY`
+ * -> `TKPMMY`) without a unique index so multiple test/org links can share VA codes.
+ * Re-linking overwrites the single row and archives the previous `account_number`
+ * in `past_bank_account_xids` so manual reconciliation covers the old account.
  */
 export const orgBankLink = sqliteTable(
 	"org_bank_link",
@@ -32,6 +33,7 @@ export const orgBankLink = sqliteTable(
 		bankBin: text("bank_bin").notNull().default(""),
 		bankCode: text("bank_code").notNull().default(""),
 		accountNumber: text("account_number").notNull().default(""),
+		vaCode: text("va_code").notNull().default(""),
 		accountHolderName: text("account_holder_name").notNull().default(""),
 		lastEventAt: integer("last_event_at").notNull().default(0),
 		lastReconciledAt: integer("last_reconciled_at").notNull().default(0),

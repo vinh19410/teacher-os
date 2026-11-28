@@ -282,6 +282,7 @@ export function UnmatchedTransactions({
 		| { kind: "running" }
 		| { kind: "done"; matched: number; unmatched: number }
 		| { kind: "cooldown" }
+		| { kind: "error"; message: string }
 	>({ kind: "idle" });
 
 	const invalidate = () => {
@@ -301,11 +302,28 @@ export function UnmatchedTransactions({
 				unmatched: result.unmatched,
 			});
 		} catch (err) {
-			setReconcile(
-				err instanceof Error && err.message === "RECONCILE_COOLDOWN"
-					? { kind: "cooldown" }
-					: { kind: "done", matched: 0, unmatched: 0 },
-			);
+			const code = err instanceof Error ? err.message : "";
+			if (code === "RECONCILE_COOLDOWN") {
+				setReconcile({ kind: "cooldown" });
+			} else if (
+				code === "SEPAY_RECONCILE_DISABLED" ||
+				code === "SEPAY_DISABLED"
+			) {
+				setReconcile({
+					kind: "error",
+					message: "Chưa cấu hình SePay API Token để đối soát tự động.",
+				});
+			} else if (code === "SEPAY_RATE_LIMITED") {
+				setReconcile({
+					kind: "error",
+					message: "SePay đang giới hạn tốc độ, thử lại sau ít phút.",
+				});
+			} else {
+				setReconcile({
+					kind: "error",
+					message: "Không đối soát được với SePay, vui lòng thử lại.",
+				});
+			}
 		}
 		invalidate();
 	};
@@ -335,6 +353,11 @@ export function UnmatchedTransactions({
 			{reconcile.kind === "cooldown" && (
 				<p className="mb-3 text-warn text-xs" aria-live="polite">
 					Vừa đối soát, thử lại sau 1 phút.
+				</p>
+			)}
+			{reconcile.kind === "error" && (
+				<p className="mb-3 text-destructive text-xs" aria-live="polite">
+					{reconcile.message}
 				</p>
 			)}
 			{rows.length === 0 ? (

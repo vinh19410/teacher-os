@@ -101,6 +101,10 @@ jobs:
           # Lead intake & placement test (#506, #515, #524): truyền từ GitHub Environment production.
           LEAD_ORG_ID: ${{ vars.LEAD_ORG_ID }}
           LEAD_ORIGINS: ${{ vars.LEAD_ORIGINS }}
+          # SePay (my.sepay.vn): SEPAY_WEBHOOK_SECRET rỗng = tắt (503 SEPAY_DISABLED); SEPAY_API_TOKEN tùy chọn cho nút Đối soát.
+          SEPAY_WEBHOOK_SECRET: ${{ secrets.SEPAY_WEBHOOK_SECRET }}
+          SEPAY_API_TOKEN: ${{ secrets.SEPAY_API_TOKEN }}
+          SEPAY_API_BASE_URL: ${{ vars.SEPAY_API_BASE_URL }}
         run: pnpm alchemy deploy --stage prod ${{ inputs.dry_run && '--dry-run' || '--yes' }}
         # --yes auto-approves the plan: without it Alchemy exits code 0 in a
         # non-interactive terminal WITHOUT applying anything ("Non-interactive

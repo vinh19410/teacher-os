@@ -1,34 +1,49 @@
 import {
 	BANK_LINK_ERROR_CODES,
 	type BankLinkStatus,
-	bankLinkTokenRequestSchema,
-	bankLinkTokenResponseSchema,
+	bankLinkUpsertSchema,
 } from "@teacher-os/api/contracts";
-import { isAllowedBankHubLinkOrigin } from "@teacher-os/api/lib/bank-hub-origins";
+import {
+	findVietnamBankByBin,
+	normalizeBankAccountNumber,
+} from "@teacher-os/api/lib/vietnam-banks";
+import {
+	formatTkpVaPrefix,
+	matchesTkpVa,
+	normalizeVaCode,
+} from "@teacher-os/api/lib/vietqr";
 import { orgBankLink } from "@teacher-os/db/schema/org-bank-link";
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
-import {
-	type BankHubContext,
-	BankHubError,
-	type BankHubLinkToken,
-} from "../lib/bank-hub/bank-hub-client";
-import {
-	ensureCompany,
-	maskAccount,
-	type OrgBankLinkRow,
-	syncFromBankHub,
-} from "../lib/bank-hub/bank-link-service";
 import {
 	clientTransactionToIngest,
 	ingestTransaction,
 } from "../lib/payments/ingest-transaction";
 import { requireFinanceRole } from "../lib/require-finance-role";
+import { type SepayContext, SepayError } from "../lib/sepay/sepay-client";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type BankLinkContext = Context<Env>;
+type OrgBankLinkRow = typeof orgBankLink.$inferSelect;
+
+/** Account display: keep only the last 4 digits visible in UI/DTOs. */
+export function maskAccount(accountNumber: string): string {
+	const tail = accountNumber.slice(-4);
+	return tail ? `•••${tail}` : "•••";
+}
+
+function parsePastAccounts(raw: string | null | undefined): string[] {
+	try {
+		const parsed: unknown = JSON.parse(raw || "[]");
+		return Array.isArray(parsed)
+			? parsed.filter((x): x is string => typeof x === "string" && x.length > 0)
+			: [];
+	} catch {
+		return [];
+	}
+}
 
 function statusOf(row: OrgBankLinkRow | undefined): BankLinkStatus["status"] {
 	const status = row?.status;
@@ -37,36 +52,49 @@ function statusOf(row: OrgBankLinkRow | undefined): BankLinkStatus["status"] {
 		: "none";
 }
 
-function toStatus(row: OrgBankLinkRow | undefined): BankLinkStatus {
+function toStatus(
+	row: OrgBankLinkRow | undefined,
+	reconcileEnabled: boolean,
+): BankLinkStatus {
+	const accountNumber = row?.accountNumber ?? "";
 	return {
 		enabled: true,
+		reconcileEnabled,
 		status: statusOf(row),
 		brandName: row?.brandName ?? "",
-		accountNumberMasked: maskAccount(row?.accountNumber ?? ""),
+		bankBin: row?.bankBin ?? "",
+		bankCode: row?.bankCode ?? "",
+		accountNumber,
+		accountNumberMasked: accountNumber ? maskAccount(accountNumber) : "",
+		vaCode: row?.vaCode ?? "",
 		holderName: row?.accountHolderName ?? "",
 		linkedAt: row?.linkedAt ? row.linkedAt.toISOString() : null,
 	};
 }
 
-const PURPOSE_BY_REQUEST = {
-	link: "LINK_BANK_ACCOUNT",
-	unlink: "UNLINK_BANK_ACCOUNT",
-	reactivate: "REACTIVATE_BANK_ACCOUNT",
-} as const;
-
 /**
- * Teacher-side bank-account linking, mounted under the kernel tree so every
- * write passes the kernel Origin/JSON CSRF guard and kernelCtx org scoping.
+ * Cấu hình tài khoản ngân hàng nhận học phí qua SePay cá nhân thường (#320),
+ * mounted trong kernel tree (CSRF guard + org scoping + requireFinanceRole).
  */
 export function bankLinkRoutes(deps: {
 	getDb(): Db;
-	getBankHub?(): BankHubContext | undefined;
+	getSepay?(): SepayContext | undefined;
 }) {
 	const router = new Hono<Env>();
 	router.use("*", requireFinanceRole);
 
 	function unauthorized(c: BankLinkContext) {
 		return c.json({ error: "unauthorized" }, 401);
+	}
+
+	function sepayDisabled(c: BankLinkContext) {
+		return c.json(
+			{
+				error: BANK_LINK_ERROR_CODES.SEPAY_DISABLED,
+				code: BANK_LINK_ERROR_CODES.SEPAY_DISABLED,
+			},
+			503,
+		);
 	}
 
 	async function readBody<S extends z.ZodType>(
@@ -88,29 +116,24 @@ export function bankLinkRoutes(deps: {
 		return { ok: true, data: parsed.data };
 	}
 
-	/**
-	 * Client-safe mapping for a failed Bank Hub call: 429 keeps SePay's
-	 * Retry-After, everything else is a 502. The upstream message stays in the
-	 * server log — the response body only carries our stable error code.
-	 */
-	function bankHubFailure(c: BankLinkContext, err: BankHubError): Response {
+	function sepayFailure(c: BankLinkContext, err: SepayError): Response {
 		console.error(
-			`[bank-hub] ${err.status}${err.code ? ` ${err.code}` : ""}: ${err.message}`,
+			`[sepay] ${err.status}${err.code ? ` ${err.code}` : ""}: ${err.message}`,
 		);
 		if (err.status === 429) {
 			c.header("Retry-After", String(err.retryAfter ?? 60));
 			return c.json(
 				{
-					error: BANK_LINK_ERROR_CODES.BANKHUB_RATE_LIMITED,
-					code: BANK_LINK_ERROR_CODES.BANKHUB_RATE_LIMITED,
+					error: BANK_LINK_ERROR_CODES.SEPAY_RATE_LIMITED,
+					code: BANK_LINK_ERROR_CODES.SEPAY_RATE_LIMITED,
 				},
 				429,
 			);
 		}
 		return c.json(
 			{
-				error: BANK_LINK_ERROR_CODES.BANKHUB_UPSTREAM,
-				code: BANK_LINK_ERROR_CODES.BANKHUB_UPSTREAM,
+				error: BANK_LINK_ERROR_CODES.SEPAY_UPSTREAM,
+				code: BANK_LINK_ERROR_CODES.SEPAY_UPSTREAM,
 			},
 			502,
 		);
@@ -119,73 +142,158 @@ export function bankLinkRoutes(deps: {
 	router.get("/", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
-		const hub = deps.getBankHub?.();
-		if (!hub) {
-			return c.json(
-				{
-					error: BANK_LINK_ERROR_CODES.BANKHUB_DISABLED,
-					code: BANK_LINK_ERROR_CODES.BANKHUB_DISABLED,
-				},
-				503,
-			);
-		}
-		const db = deps.getDb();
-		let [row] = await db
-			.select()
-			.from(orgBankLink)
-			.where(eq(orgBankLink.orgId, ctx.orgId))
-			.limit(1);
-		// ?refresh=1 re-checks account state against Bank Hub — the fallback
-		// when the bank-side INACTIVED webhook was lost (SePay never retries
-		// 5xx).
-		if (c.req.query("refresh") === "1" && row?.companyXid) {
-			try {
-				row = (await syncFromBankHub(db, hub, ctx.orgId)) ?? row;
-			} catch (err) {
-				if (err instanceof BankHubError) return bankHubFailure(c, err);
-				throw err;
-			}
-		}
-		return c.json(toStatus(row));
-	});
+		const sepay = deps.getSepay?.();
+		if (!sepay) return sepayDisabled(c);
 
-	router.post("/link-token", async (c) => {
-		const ctx = c.get("kernelCtx");
-		if (!ctx) return unauthorized(c);
-		const hub = deps.getBankHub?.();
-		if (!hub) {
-			return c.json(
-				{
-					error: BANK_LINK_ERROR_CODES.BANKHUB_DISABLED,
-					code: BANK_LINK_ERROR_CODES.BANKHUB_DISABLED,
-				},
-				503,
-			);
-		}
-		const body = await readBody(c, bankLinkTokenRequestSchema);
-		if (!body.ok) return body.response;
 		const db = deps.getDb();
 		const [row] = await db
 			.select()
 			.from(orgBankLink)
 			.where(eq(orgBankLink.orgId, ctx.orgId))
 			.limit(1);
-		// Server-side enforcement of "one active account per org" — the UI
-		// hides the button, but this is the actual gate.
-		if (
-			body.data.purpose === "link" &&
-			row?.status === "linked" &&
-			row.bankAccountXid
-		) {
+		return c.json(toStatus(row, Boolean(sepay.client)));
+	});
+
+	router.put("/", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const sepay = deps.getSepay?.();
+		if (!sepay) return sepayDisabled(c);
+
+		const body = await readBody(c, bankLinkUpsertSchema);
+		if (!body.ok) return body.response;
+
+		const bank = findVietnamBankByBin(body.data.bankBin);
+		if (!bank) {
 			return c.json(
 				{
-					error: BANK_LINK_ERROR_CODES.ALREADY_LINKED,
-					code: BANK_LINK_ERROR_CODES.ALREADY_LINKED,
+					error: BANK_LINK_ERROR_CODES.INVALID_BANK,
+					code: BANK_LINK_ERROR_CODES.INVALID_BANK,
+				},
+				400,
+			);
+		}
+
+		const normalizedAccount = normalizeBankAccountNumber(
+			body.data.accountNumber,
+		);
+		const normalizedVaCode = normalizeVaCode(body.data.vaCode);
+		const holderName = body.data.holderName.trim();
+		const db = deps.getDb();
+
+		// Mỗi cặp (STK, mã VA) đang active chỉ thuộc 1 org để webhook không bao giờ resolve nhầm org.
+		// Nếu 1 org không đặt mã VA (nhận trực tiếp vào STK), không cho org khác dùng chung STK đó.
+		const otherLinked = await db
+			.select({
+				orgId: orgBankLink.orgId,
+				accountNumber: orgBankLink.accountNumber,
+				vaCode: orgBankLink.vaCode,
+			})
+			.from(orgBankLink)
+			.where(
+				and(eq(orgBankLink.status, "linked"), ne(orgBankLink.orgId, ctx.orgId)),
+			);
+		const incomingVaPrefix = formatTkpVaPrefix(normalizedVaCode);
+		const conflict = otherLinked.some((row) => {
+			if (
+				normalizeBankAccountNumber(row.accountNumber).toLowerCase() !==
+				normalizedAccount.toLowerCase()
+			) {
+				return false;
+			}
+			const existingVaPrefix = formatTkpVaPrefix(row.vaCode);
+			if (!existingVaPrefix || !incomingVaPrefix) return true;
+			return existingVaPrefix === incomingVaPrefix;
+		});
+		if (conflict) {
+			return c.json(
+				{
+					error: BANK_LINK_ERROR_CODES.ACCOUNT_ALREADY_IN_USE,
+					code: BANK_LINK_ERROR_CODES.ACCOUNT_ALREADY_IN_USE,
 				},
 				409,
 			);
 		}
-		if (body.data.purpose !== "link" && !row?.bankAccountXid) {
+
+		const [existing] = await db
+			.select()
+			.from(orgBankLink)
+			.where(eq(orgBankLink.orgId, ctx.orgId))
+			.limit(1);
+
+		const past = parsePastAccounts(existing?.pastBankAccountXids);
+		const nextPast =
+			existing?.accountNumber &&
+			normalizeBankAccountNumber(existing.accountNumber).toLowerCase() !==
+				normalizedAccount.toLowerCase()
+				? Array.from(
+						new Set([
+							...past,
+							normalizeBankAccountNumber(existing.accountNumber),
+						]),
+					)
+				: past;
+
+		const now = new Date();
+		let saved: OrgBankLinkRow | undefined;
+		if (existing) {
+			const [updated] = await db
+				.update(orgBankLink)
+				.set({
+					companyXid: null,
+					bankAccountXid: null,
+					pastBankAccountXids: JSON.stringify(nextPast),
+					status: "linked",
+					brandName: bank.shortName,
+					bankBin: bank.bin,
+					bankCode: bank.code,
+					accountNumber: normalizedAccount,
+					vaCode: normalizedVaCode,
+					accountHolderName: holderName,
+					linkedAt: existing.linkedAt ?? now,
+					updatedAt: now,
+				})
+				.where(eq(orgBankLink.orgId, ctx.orgId))
+				.returning();
+			saved = updated;
+		} else {
+			const [inserted] = await db
+				.insert(orgBankLink)
+				.values({
+					orgId: ctx.orgId,
+					companyXid: null,
+					bankAccountXid: null,
+					pastBankAccountXids: "[]",
+					status: "linked",
+					brandName: bank.shortName,
+					bankBin: bank.bin,
+					bankCode: bank.code,
+					accountNumber: normalizedAccount,
+					vaCode: normalizedVaCode,
+					accountHolderName: holderName,
+					linkedAt: now,
+					updatedAt: now,
+				})
+				.returning();
+			saved = inserted;
+		}
+
+		return c.json(toStatus(saved, Boolean(sepay.client)));
+	});
+
+	router.delete("/", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const sepay = deps.getSepay?.();
+		if (!sepay) return sepayDisabled(c);
+
+		const db = deps.getDb();
+		const [existing] = await db
+			.select()
+			.from(orgBankLink)
+			.where(eq(orgBankLink.orgId, ctx.orgId))
+			.limit(1);
+		if (existing?.status !== "linked" || !existing.accountNumber) {
 			return c.json(
 				{
 					error: BANK_LINK_ERROR_CODES.NO_LINKED_ACCOUNT,
@@ -194,86 +302,73 @@ export function bankLinkRoutes(deps: {
 				409,
 			);
 		}
-		let token: BankHubLinkToken;
-		try {
-			const company = await ensureCompany(db, hub, ctx.orgId);
-			if (!company.companyXid) {
-				return c.json(
-					{
-						error: BANK_LINK_ERROR_CODES.COMPANY_SETTLING,
-						code: BANK_LINK_ERROR_CODES.COMPANY_SETTLING,
-					},
-					409,
-				);
-			}
-			token = await hub.client.createLinkToken({
-				companyXid: company.companyXid,
-				purpose: PURPOSE_BY_REQUEST[body.data.purpose],
-				...(body.data.purpose !== "link" && row?.bankAccountXid
-					? { bankAccountXid: row.bankAccountXid }
-					: {}),
-			});
-		} catch (err) {
-			if (err instanceof BankHubError) return bankHubFailure(c, err);
-			throw err;
-		}
-		let origin: string;
-		try {
-			origin = new URL(token.hostedLinkUrl).origin;
-		} catch {
-			console.error("[bank-hub] hosted_link_url is not a valid URL");
-			return c.json(
-				{
-					error: BANK_LINK_ERROR_CODES.BAD_HOSTED_LINK_ORIGIN,
-					code: BANK_LINK_ERROR_CODES.BAD_HOSTED_LINK_ORIGIN,
-				},
-				502,
-			);
-		}
-		if (!isAllowedBankHubLinkOrigin(origin, hub.env)) {
-			console.error(`[bank-hub] hosted_link_url origin not allowed: ${origin}`);
-			return c.json(
-				{
-					error: BANK_LINK_ERROR_CODES.BAD_HOSTED_LINK_ORIGIN,
-					code: BANK_LINK_ERROR_CODES.BAD_HOSTED_LINK_ORIGIN,
-				},
-				502,
-			);
-		}
-		return c.json(
-			bankLinkTokenResponseSchema.parse({
-				hostedLinkUrl: token.hostedLinkUrl,
-				expiresAt: token.expiresAt,
-			}),
+
+		const past = parsePastAccounts(existing.pastBankAccountXids);
+		const nextPast = Array.from(
+			new Set([...past, normalizeBankAccountNumber(existing.accountNumber)]),
 		);
+		const now = new Date();
+		const [updated] = await db
+			.update(orgBankLink)
+			.set({
+				companyXid: null,
+				bankAccountXid: null,
+				pastBankAccountXids: JSON.stringify(nextPast),
+				status: "none",
+				brandName: "",
+				bankBin: "",
+				bankCode: "",
+				accountNumber: "",
+				vaCode: "",
+				accountHolderName: "",
+				linkedAt: null,
+				updatedAt: now,
+			})
+			.where(eq(orgBankLink.orgId, ctx.orgId))
+			.returning();
+
+		return c.json(toStatus(updated, Boolean(sepay.client)));
 	});
 
-	// Manual reconciliation sweep (#320): pulls recent credits for EVERY
-	// account xid the org has ever linked (current + past_bank_account_xids)
-	// and ingests them through the same path as the IPN — the safety net for
-	// deliveries lost to 4xx/5xx (SePay never retries those).
+	// Đối soát thủ công (#320): kéo giao dịch tiền vào 7 ngày gần nhất từ SePay API v2,
+	// lọc theo STK/VA của org rồi đưa qua ingestTransaction (chống trùng 2 tầng).
 	router.post("/reconcile", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
-		const hub = deps.getBankHub?.();
-		if (!hub) {
+		const sepay = deps.getSepay?.();
+		if (!sepay) return sepayDisabled(c);
+		if (!sepay.client) {
 			return c.json(
 				{
-					error: BANK_LINK_ERROR_CODES.BANKHUB_DISABLED,
-					code: BANK_LINK_ERROR_CODES.BANKHUB_DISABLED,
+					error: BANK_LINK_ERROR_CODES.SEPAY_RECONCILE_DISABLED,
+					code: BANK_LINK_ERROR_CODES.SEPAY_RECONCILE_DISABLED,
 				},
 				503,
 			);
 		}
+
 		const db = deps.getDb();
 		const [row] = await db
 			.select()
 			.from(orgBankLink)
 			.where(eq(orgBankLink.orgId, ctx.orgId))
 			.limit(1);
-		if (!row?.companyXid) {
+
+		const currentAcc = normalizeBankAccountNumber(
+			row?.accountNumber ?? "",
+		).toLowerCase();
+		const currentVaCode = normalizeVaCode(row?.vaCode ?? "");
+		const pastAccounts = Array.from(
+			new Set(
+				parsePastAccounts(row?.pastBankAccountXids)
+					.map((acc) => normalizeBankAccountNumber(acc).toLowerCase())
+					.filter((acc) => Boolean(acc) && acc !== currentAcc),
+			),
+		);
+		if (!row || (!currentAcc && pastAccounts.length === 0)) {
 			return c.json({ scanned: 0, matched: 0, unmatched: 0 });
 		}
+
 		const nowSec = Math.floor(Date.now() / 1000);
 		if (nowSec - row.lastReconciledAt < 60) {
 			return c.json(
@@ -282,57 +377,59 @@ export function bankLinkRoutes(deps: {
 			);
 		}
 
-		let pastXids: string[] = [];
-		try {
-			const parsed: unknown = JSON.parse(row.pastBankAccountXids || "[]");
-			if (Array.isArray(parsed)) {
-				pastXids = parsed.filter((x): x is string => typeof x === "string");
-			}
-		} catch {
-			pastXids = [];
-		}
-		const xids = Array.from(
-			new Set(
-				[row.bankAccountXid, ...pastXids].filter((x): x is string =>
-					Boolean(x),
-				),
-			),
-		);
-
 		const startDate = new Date(Date.now() - 7 * 24 * 3600 * 1000)
 			.toISOString()
 			.slice(0, 10);
+		const transactionDateFrom = `${startDate} 00:00:00`;
+
 		let scanned = 0;
 		let matched = 0;
 		let unmatched = 0;
+
 		try {
-			for (const xid of xids) {
-				// per_page=100, max 5 pages per account (500 tx / 7 days ceiling).
-				for (let page = 1; page <= 5; page += 1) {
-					const result = await hub.client.listTransactions({
-						bankAccountXid: xid,
-						transferType: "credit",
-						startDate,
-						page,
-						perPage: 100,
-					});
-					for (const transaction of result.data) {
-						scanned += 1;
-						const outcome = await ingestTransaction(
-							db,
-							hub,
-							clientTransactionToIngest(transaction),
-							{ saveNoCode: true },
-						);
-						if (outcome === "matched") matched += 1;
-						else if (outcome === "unmatched") unmatched += 1;
-					}
-					const totalPages = result.meta?.totalPages ?? page;
-					if (page >= totalPages) break;
+			for (let page = 1; page <= 5; page += 1) {
+				const result = await sepay.client.listTransactions({
+					transferType: "in",
+					transactionDateFrom,
+					page,
+					perPage: 100,
+				});
+				for (const tx of result.data) {
+					const acc = normalizeBankAccountNumber(
+						tx.accountNumber,
+					).toLowerCase();
+					const va = normalizeBankAccountNumber(tx.va).toLowerCase();
+					const matchesCurrent =
+						currentAcc !== "" &&
+						(currentVaCode !== ""
+							? acc === currentAcc &&
+								matchesTkpVa({
+									vaCode: currentVaCode,
+									subAccount: tx.va,
+									content: tx.transactionContent,
+								})
+							: acc === currentAcc || (va !== "" && va === currentAcc));
+					const matchesPast =
+						(acc !== "" && pastAccounts.includes(acc)) ||
+						(va !== "" && pastAccounts.includes(va));
+					if (!matchesCurrent && !matchesPast) continue;
+
+					scanned += 1;
+					const outcome = await ingestTransaction(
+						db,
+						{
+							...clientTransactionToIngest(tx),
+							orgId: ctx.orgId,
+						},
+						{ saveNoCode: true },
+					);
+					if (outcome === "matched") matched += 1;
+					else if (outcome === "unmatched") unmatched += 1;
 				}
+				if (!result.hasMore) break;
 			}
 		} catch (err) {
-			if (err instanceof BankHubError) return bankHubFailure(c, err);
+			if (err instanceof SepayError) return sepayFailure(c, err);
 			throw err;
 		}
 
@@ -341,30 +438,6 @@ export function bankLinkRoutes(deps: {
 			.set({ lastReconciledAt: nowSec, updatedAt: new Date() })
 			.where(eq(orgBankLink.orgId, ctx.orgId));
 		return c.json({ scanned, matched, unmatched });
-	});
-
-	router.post("/sync", async (c) => {
-		const ctx = c.get("kernelCtx");
-		if (!ctx) return unauthorized(c);
-		const hub = deps.getBankHub?.();
-		if (!hub) {
-			return c.json(
-				{
-					error: BANK_LINK_ERROR_CODES.BANKHUB_DISABLED,
-					code: BANK_LINK_ERROR_CODES.BANKHUB_DISABLED,
-				},
-				503,
-			);
-		}
-		const db = deps.getDb();
-		let row: OrgBankLinkRow | undefined;
-		try {
-			row = await syncFromBankHub(db, hub, ctx.orgId);
-		} catch (err) {
-			if (err instanceof BankHubError) return bankHubFailure(c, err);
-			throw err;
-		}
-		return c.json(toStatus(row));
 	});
 
 	return router;

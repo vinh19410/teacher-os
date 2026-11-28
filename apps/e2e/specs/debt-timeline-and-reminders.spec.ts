@@ -1,6 +1,8 @@
+import { createHmac } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
+import { E2E_SEPAY_WEBHOOK_SECRET } from "../src/fake-sepay";
 import {
 	isoInDaysFromTodayVN,
 	orgIdForTeacherEmail,
@@ -102,7 +104,10 @@ test("AC-004: dòng thời gian hóa đơn & giao dịch (QR Bank-Hub + thu th�
 }) => {
 	const teacherEmail = await signUpViaApi(page);
 	const orgId = await orgIdForTeacherEmail(teacherEmail);
-	const bankAccountXid = `xid-${orgId.slice(0, 12)}`;
+	const bankAccountNumber = `33${orgId
+		.replace(/[^0-9]/g, "")
+		.slice(0, 6)
+		.padEnd(6, "0")}6789`;
 
 	const stuA = await seedStudent({
 		teacherEmail,
@@ -164,11 +169,11 @@ test("AC-004: dòng thời gian hóa đơn & giao dịch (QR Bank-Hub + thu th�
 				now,
 			],
 		});
-		// Liên kết ngân hàng để nhận webhook IPN của SePay Bank-Hub
+		// Liên kết ngân hàng để nhận webhook của SePay
 		await client.execute({
-			sql: `INSERT INTO org_bank_link (org_id, company_xid, bank_account_xid, status, brand_name, bank_bin, bank_code, account_number, account_holder_name, updated_at)
-				VALUES (?, ?, ?, 'linked', 'MBBank', '970422', 'MB', '0123456789', 'TEACHER OS', ?)`,
-			args: [orgId, `comp-${orgId.slice(0, 12)}`, bankAccountXid, now],
+			sql: `INSERT INTO org_bank_link (org_id, status, brand_name, bank_bin, bank_code, account_number, account_holder_name, updated_at)
+				VALUES (?, 'linked', 'MBBank', '970422', 'MB', ?, 'TEACHER OS', ?)`,
+			args: [orgId, bankAccountNumber, now],
 		});
 	} finally {
 		client.close();
@@ -191,29 +196,36 @@ test("AC-004: dòng thời gian hóa đơn & giao dịch (QR Bank-Hub + thu th�
 		due: isoInDaysFromTodayVN(5),
 	});
 
-	// Bắn webhook IPN QR Bank-Hub 1.000.000đ cho hóa đơn của Nguyễn Minh Anh
+	// Bắn webhook SePay 1.000.000đ cho hóa đơn của Nguyễn Minh Anh
 	const paymentCodeA = await paymentCodeForStudent(stuA.id);
-	const ipnRes = await request.post(
-		`${API_ORIGIN}/webhooks/sepay/bankhub/ipn`,
-		{
-			headers: {
-				Authorization: "Apikey e2e-ipn-key",
-				"Content-Type": "application/json",
-			},
-			data: {
-				gateway: "MBBank",
-				transaction_date: "2026-10-27 10:00:00",
-				account_number: "0123456789",
-				bank_account_xid: bankAccountXid,
-				content: `PHU HUYNH CHUYEN KHOAN ${paymentCodeA}`,
-				transfer_type: "credit",
-				amount: 1_000_000,
-				reference_code: "FT-TOS18",
-				payment_code: null,
-				transaction_id: `tx-tos18-${crypto.randomUUID()}`,
-			},
+	const rawWebhookBody = JSON.stringify({
+		id: `tx-tos18-${crypto.randomUUID()}`,
+		gateway: "MBBank",
+		transactionDate: "2026-10-27 10:00:00",
+		accountNumber: bankAccountNumber,
+		subAccount: "",
+		code: null,
+		content: `PHU HUYNH CHUYEN KHOAN ${paymentCodeA}`,
+		transferType: "in",
+		description: `PHU HUYNH CHUYEN KHOAN ${paymentCodeA}`,
+		transferAmount: 1_000_000,
+		accumulated: 1_000_000,
+		referenceCode: "FT-TOS18",
+	});
+	const webhookTs = Math.floor(Date.now() / 1000);
+	const webhookSig =
+		"sha256=" +
+		createHmac("sha256", E2E_SEPAY_WEBHOOK_SECRET)
+			.update(`${webhookTs}.${rawWebhookBody}`)
+			.digest("hex");
+	const ipnRes = await request.post(`${API_ORIGIN}/webhooks/sepay`, {
+		headers: {
+			"Content-Type": "application/json",
+			"X-SePay-Signature": webhookSig,
+			"X-SePay-Timestamp": String(webhookTs),
 		},
-	);
+		data: rawWebhookBody,
+	});
 	expect(ipnRes.status()).toBe(200);
 
 	await page.reload();

@@ -305,26 +305,20 @@ export const server = Cloudflare.Worker("server", {
 		OPENAI_TRANSCRIBE_MODEL: Config.String("OPENAI_TRANSCRIBE_MODEL").pipe(
 			Config.withDefault("gpt-4o-transcribe"),
 		),
-		// SePay Bank Hub (#320): blank secret ⇒ getBankHub() trả undefined ⇒
-		// các route ngân hàng trả 503 BANKHUB_DISABLED (dev không cần cấu hình).
+		// SePay cá nhân thường (my.sepay.vn, #320): blank SEPAY_WEBHOOK_SECRET ⇒
+		// getSepay() trả undefined ⇒ webhook và bank-link trả 503 SEPAY_DISABLED.
 		// Same pattern as RESEND_API_KEY — redacted conflicts with withDefault.
-		SEPAY_BANKHUB_CLIENT_ID: Config.String("SEPAY_BANKHUB_CLIENT_ID").pipe(
+		SEPAY_WEBHOOK_SECRET: Config.String("SEPAY_WEBHOOK_SECRET").pipe(
 			Config.withDefault(""),
 		),
-		SEPAY_BANKHUB_CLIENT_SECRET: Config.String(
-			"SEPAY_BANKHUB_CLIENT_SECRET",
-		).pipe(Config.withDefault("")),
-		SEPAY_BANKHUB_IPN_API_KEY: Config.String("SEPAY_BANKHUB_IPN_API_KEY").pipe(
+		// Optional: API Token 64 ký tự từ my.sepay.vn để bật nút Đối soát qua SePay API v2.
+		SEPAY_API_TOKEN: Config.String("SEPAY_API_TOKEN").pipe(
 			Config.withDefault(""),
 		),
-		SEPAY_BANKHUB_WEBHOOK_SECRET: Config.String(
-			"SEPAY_BANKHUB_WEBHOOK_SECRET",
-		).pipe(Config.withDefault("")),
-		// Production deploys MUST set the production host; sandbox is the
-		// documented default so a forgotten value fails safe (sandbox keys are
-		// useless against it and no real money moves).
-		SEPAY_BANKHUB_BASE_URL: Config.String("SEPAY_BANKHUB_BASE_URL").pipe(
-			Config.withDefault("https://bankhub-api-sandbox.sepay.vn"),
+		// Mặc định production host (chỉ đọc giao dịch); staging dùng Test mode có thể đặt
+		// https://userapi-sandbox.sepay.vn/v2.
+		SEPAY_API_BASE_URL: Config.String("SEPAY_API_BASE_URL").pipe(
+			Config.withDefault("https://userapi.sepay.vn/v2"),
 		),
 		// Webhook GitHub (#421): blank secret ⇒ /webhooks/github trả 503
 		// GITHUB_WEBHOOK_DISABLED (dev không cần cấu hình). Same pattern as

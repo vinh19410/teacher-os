@@ -118,6 +118,10 @@ jobs:
           # Lead intake & placement test (#506, #515, #524): truyền từ GitHub Environment staging.
           LEAD_ORG_ID: ${{ vars.LEAD_ORG_ID }}
           LEAD_ORIGINS: ${{ vars.LEAD_ORIGINS }}
+          # SePay (my.sepay.vn): SEPAY_WEBHOOK_SECRET rỗng = tắt (503 SEPAY_DISABLED); SEPAY_API_TOKEN tùy chọn cho nút Đối soát.
+          SEPAY_WEBHOOK_SECRET: ${{ secrets.SEPAY_WEBHOOK_SECRET }}
+          SEPAY_API_TOKEN: ${{ secrets.SEPAY_API_TOKEN }}
+          SEPAY_API_BASE_URL: ${{ vars.SEPAY_API_BASE_URL }}
           AI_ENABLED: ${{ vars.AI_ENABLED }}
           # Staging không gửi mail: mọi tài khoản coi như đã xác minh email.
           AUTH_ASSUME_EMAIL_VERIFIED: "true"
