@@ -302,9 +302,15 @@ test("AC-001 thông báo email + in-app: hóa đơn, giao bài, đã xem, filter
 		.filter({ hasText: "Hóa đơn học phí" });
 	await expect(invoiceItem).toHaveCount(1);
 	await invoiceItem.click();
-	// linkPath hóa đơn → trang học phí của cổng.
-	await expect(student).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/tuition$`));
+	// linkPath hóa đơn → trang chi tiết hóa đơn của cổng.
+	await expect(student).toHaveURL(
+		new RegExp(`^${STUDENT_BASE_URL}/tuition/[^/]+$`),
+	);
 	await expect(student.getByText("500.000đ").first()).toBeVisible();
+	await expect(
+		student.getByText("Giáo viên chưa thiết lập nhận chuyển khoản"),
+	).toBeVisible();
+	await expect(student.getByText("Chuyển khoản theo QR dưới đây")).toBeHidden();
 
 	// Quay lại /notifications phía GV → dòng hóa đơn "Đã xem".
 	await openNotifications(teacher);

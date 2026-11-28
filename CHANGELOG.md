@@ -15,6 +15,13 @@ Quy ước khi cập nhật:
 ### Changed
 - **Mở mục Từ vựng (`/student/practice/vocabulary`) trên PROD và giữ ẩn các đường dẫn tự luyện còn lại (`apps/student`, `AGENTS.md`, `docs/production-release-runbook.md`):** khi `VITE_STUDENT_PRACTICE_ENABLED !== "true"` (mặc định trên PROD), sidebar học viên hiển thị mục cấp 1 **Từ vựng** (`/practice/vocabulary`), `/practice` chuyển hướng về `/practice/vocabulary`, còn `/practice/$skill` (reading/listening/writing/speaking), `/history` và `/learn/quizzes/practice/$testId` trả về trang 404 (`NotFoundPage`) ngay tại `beforeLoad`; staging và E2E (`VITE_STUDENT_PRACTICE_ENABLED="true"`) giữ nguyên đầy đủ 5 kỹ năng + Lịch sử (#1054).
 
+### Fixed
+- **Sửa lỗi hiển thị hóa đơn học phí học viên, ẩn tiêu đề QR khi chưa liên kết ngân hàng, bỏ nháy polling 5 giây và điều hướng thẳng thông báo hóa đơn (`packages/ui`, `apps/student`, `apps/server`, `apps/web`, `apps/e2e`):**
+  - Chuẩn hóa các ô stat `"Còn lại"` / `hot` trong `apps/student` (`$invoiceId.tsx`, `tuition-list.tsx`, `stat-card.tsx`) về thẻ sáng chuẩn design v2 (`bg-card border shadow-sm`, giá trị `text-destructive` khi còn nợ > 0 và `text-foreground` khi `0đ`, hỗ trợ hóa đơn thu tay `status === "paid"` / `reason === "PAID"` / `amountDue <= 0`) để không còn tàng hình trên cả Light & Dark.
+  - Cập nhật `PaymentQrPanel` (`packages/ui`) để ẩn heading `"Chuyển khoản theo QR dưới đây"` khi không có QR (`paid`, `nolink`, hoặc `payable: true` nhưng thiếu `bank` → fallback về `nolink`).
+  - Loại bỏ nháy `"Đang tải…"` mỗi 5 giây trên `/student/tuition/$invoiceId` bằng `refetchInterval` của TanStack Query sau `StudentPageGate` (`queryKey: ["student", "invoice-payment", orgId, invoiceId]`, dừng khi `hidden` / `error` / quá 15 phút, tự phục hồi khi tab quay lại, giữ QR khi poll nền lỗi thoáng qua, heal/invalidate cache `["student", "invoices"]` và bổ sung nút `← Học phí` khi lỗi).
+  - Trỏ thẳng `linkPath` của `invoiceIssuedEvent` và `tuitionReminderEvent` sang `/tuition/<invoiceId>` (fallback `/tuition` nếu ID rỗng hoặc `.`/`..`) (#1059).
+
 ## 2026-11-27
 
 ### Added

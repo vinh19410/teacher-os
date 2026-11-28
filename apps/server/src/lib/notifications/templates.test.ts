@@ -88,7 +88,7 @@ describe("notification template builders (phase 3 #454)", () => {
 		expect(eventGroupOf(e.eventType)).toBe("assignment");
 	});
 
-	test("invoiceIssuedEvent — khóa theo hóa đơn, định dạng VND và ngày VN", () => {
+	test("invoiceIssuedEvent — khóa theo hóa đơn, định dạng VND, ngày VN và trỏ thẳng chi tiết hóa đơn", () => {
 		const e = invoiceIssuedEvent({
 			id: "inv-1",
 			studentId: "s-1",
@@ -97,7 +97,7 @@ describe("notification template builders (phase 3 #454)", () => {
 		});
 		expect(e.eventType).toBe("invoice_issued");
 		expect(e.idempotencyKey).toBe("invoice_issued:inv-1");
-		expect(e.linkPath).toBe("/tuition");
+		expect(e.linkPath).toBe("/tuition/inv-1");
 		expect(e.title.startsWith("Hóa đơn học phí")).toBe(true);
 		expect(e.body).toContain("2.500.000đ");
 		expect(e.body).toContain("15/11/2026");
@@ -148,7 +148,9 @@ describe("notification template builders (phase 3 #454)", () => {
 			},
 		});
 		expect(issued.title).toBe("Hóa đơn học phí INV-EF123456 — 2.500.000đ");
-		expect(issued.linkPath).toBe("/tuition");
+		expect(issued.linkPath).toBe(
+			"/tuition/11111111-2222-3333-4444-abcdef123456",
+		);
 		expect(issued.htmlBody).toContain(
 			'href="https://lms.msmy.io.vn/pay/tok_secret_1234567890ab"',
 		);
@@ -260,6 +262,44 @@ describe("notification template builders (phase 3 #454)", () => {
 				{ ...linked, status: "none" },
 			),
 		).toBeNull();
+	});
+
+	test("tuitionReminderEvent — trỏ thẳng /tuition/<id>, encode ký tự đặc biệt và fallback /tuition khi ID không hợp lệ", () => {
+		const normal = tuitionReminderEvent(
+			{
+				id: "inv-2",
+				studentId: "s-1",
+				amount: 1500000,
+				due: "2026-11-20",
+			},
+			"2026-11-20",
+		);
+		expect(normal.eventType).toBe("tuition_reminder");
+		expect(normal.linkPath).toBe("/tuition/inv-2");
+
+		const encoded = tuitionReminderEvent(
+			{
+				id: " inv/a?b=1 ",
+				studentId: "s-1",
+				amount: 1500000,
+				due: "2026-11-20",
+			},
+			"2026-11-20",
+		);
+		expect(encoded.linkPath).toBe("/tuition/inv%2Fa%3Fb%3D1");
+
+		for (const badId of ["", "   ", ".", ".."]) {
+			const fallback = tuitionReminderEvent(
+				{
+					id: badId,
+					studentId: "s-1",
+					amount: 1500000,
+					due: "2026-11-20",
+				},
+				"2026-11-20",
+			);
+			expect(fallback.linkPath).toBe("/tuition");
+		}
 	});
 
 	test("scheduleChangedEvents — khóa gồm classId:date:editedAtMs:studentId", () => {

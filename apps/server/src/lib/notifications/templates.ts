@@ -137,6 +137,14 @@ export function buildInvoiceEmailUrls(input: {
 	return { payUrl, portalUrl };
 }
 
+function invoiceTuitionLinkPath(invoiceId: string): string {
+	const trimmed = invoiceId.trim();
+	if (!trimmed || trimmed === "." || trimmed === "..") {
+		return "/tuition";
+	}
+	return `/tuition/${encodeURIComponent(trimmed)}`;
+}
+
 /**
  * Sự kiện "nhắc hạn hóa đơn học phí" cho TOS-18 (#452) — builder thuần,
  * khóa chống trùng gồm ngày VN nên mỗi ngày nhắc 1 lần (D3).
@@ -176,7 +184,7 @@ export function tuitionReminderEvent(
 		body: rendered.inboxBody,
 		htmlBody: rendered.html,
 		textBody: rendered.text,
-		linkPath: "/tuition",
+		linkPath: invoiceTuitionLinkPath(invoice.id),
 		refType: "invoice",
 		refId: invoice.id,
 	};
@@ -289,7 +297,7 @@ export function invoiceIssuedEvent(
 		body: rendered.inboxBody,
 		htmlBody: rendered.html,
 		textBody: rendered.text,
-		linkPath: "/tuition",
+		linkPath: invoiceTuitionLinkPath(invoice.id),
 		refType: "invoice",
 		refId: invoice.id,
 	};

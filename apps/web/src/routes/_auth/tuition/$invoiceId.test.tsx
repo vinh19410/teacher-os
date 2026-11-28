@@ -115,6 +115,7 @@ type PaymentFixture = {
 	amountDue: number;
 	paidAmount: number;
 	status: string;
+	bank?: { brandName: string; accountNumber: string; holderName: string };
 	memo?: string;
 };
 
@@ -125,6 +126,11 @@ const PAYABLE_PAYMENT: PaymentFixture = {
 	amountDue: 300000,
 	paidAmount: 200000,
 	status: "unpaid",
+	bank: {
+		brandName: "MBBank",
+		accountNumber: "0123456789",
+		holderName: "NGUYEN VAN A",
+	},
 	memo: "TOSDETAIL1",
 };
 

@@ -41,21 +41,31 @@ describe("PaymentQrPanel", () => {
 		expect(html).toContain("Giữ nguyên nội dung chuyển khoản");
 	});
 
-	it("renders the PAID state without any bank fields", () => {
+	it("renders the PAID state without any bank fields or QR title", () => {
 		const html = renderToStaticMarkup(
 			<PaymentQrPanel data={{ ...payable, payable: false, reason: "PAID" }} />,
 		);
 		expect(html).toContain("Đã thanh toán đủ");
+		expect(html).not.toContain("Chuyển khoản theo QR dưới đây");
 		expect(html).not.toContain("vietqr.app");
 	});
 
-	it("renders NO_BANK_LINK guidance", () => {
+	it("renders NO_BANK_LINK guidance without the QR title", () => {
 		const html = renderToStaticMarkup(
 			<PaymentQrPanel
 				data={{ ...payable, payable: false, reason: "NO_BANK_LINK" }}
 			/>,
 		);
 		expect(html).toContain("Giáo viên chưa thiết lập nhận chuyển khoản");
+		expect(html).not.toContain("Chuyển khoản theo QR dưới đây");
+	});
+
+	it("falls back to NO_BANK_LINK and hides QR title when bank is missing", () => {
+		const html = renderToStaticMarkup(
+			<PaymentQrPanel data={{ ...payable, payable: true, bank: undefined }} />,
+		);
+		expect(html).toContain("Giáo viên chưa thiết lập nhận chuyển khoản");
+		expect(html).not.toContain("Chuyển khoản theo QR dưới đây");
 	});
 
 	it("renders the partial-payment progress line", () => {
