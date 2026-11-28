@@ -88,10 +88,9 @@ loads `packages/infra/.env` first — a value there wins over the same name in
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google Cloud project owner | Google Cloud console → Credentials | console → rotate secret → update `.env` → redeploy. One OAuth client may serve both stages by registering each stage's callback URI (preflight 4) |
 | `ZOOM_ACCOUNT_ID` / `ZOOM_CLIENT_ID` / `ZOOM_CLIENT_SECRET` | Zoom account owner (Pro) | GitHub **per-environment** secret (`production`; để trống ở `staging` trừ khi có app Zoom riêng — không đặt mức Repository vì staging sẽ dùng chung quota/license với prod) → Worker binding; optional variable `ZOOM_HOST_USER` (default `"me"`, or Zoom Pro account email / Zoom User ID — never a display name; fail-loud at deploy via `resolveZoomHostUser`) | Zoom Marketplace → Server-to-Server OAuth app → regenerate secret → `gh secret set` + `gh variable set ZOOM_HOST_USER` → redeploy; blank secrets = Zoom feature off (graceful). Setup, scopes and limits: README "Zoom (Server-to-Server OAuth)" |
 | D1 database IDs | Deploy operator | Cloudflare dashboard / alchemy state | n/a (identifiers); never paste into issues |
-| `SEPAY_BANKHUB_CLIENT_ID` / `SEPAY_BANKHUB_CLIENT_SECRET` | SePay Bank Hub merchant owner (operator requests from SePay) | operator env → Worker binding (#320) | request new pair from SePay, update `.env`, redeploy; feature degrades to 503 BANKHUB_DISABLED while blank |
-| `SEPAY_BANKHUB_IPN_API_KEY` | SePay (issued per merchant) | operator env → Worker binding | request reissue from SePay; IPN rejects with 401 while mismatched — reconcile button covers the gap |
-| `SEPAY_BANKHUB_WEBHOOK_SECRET` | Operator-generated, registered via `apps/server/scripts/bankhub-setup.ts` | operator env → Worker binding | generate new, re-run bankhub-setup, update `.env`, redeploy |
-| `SEPAY_BANKHUB_BASE_URL` | Deploy operator | operator env → Worker binding | n/a (endpoint); production MUST set `https://bankhub-api.sepay.vn` — blank falls back to the sandbox host and the feature silently no-ops |
+| `SEPAY_WEBHOOK_SECRET` | Operator / SePay Webhook HMAC-SHA256 Secret Key (`my.sepay.vn`) | GitHub per-environment secret (`production` / `staging`) → Worker binding (#320) | Rotate secret in `my.sepay.vn` → Integrations → Webhooks (`HMAC_SHA256`), update GitHub Environment secret, redeploy; blank disables SePay (`503 SEPAY_DISABLED`) |
+| `SEPAY_API_TOKEN` | Optional — SePay API v2 Bearer Token (`my.sepay.vn` → Company settings → API Access) | GitHub per-environment secret (`production` / `staging`) → Worker binding | Reissue token in `my.sepay.vn`, update GitHub Environment secret, redeploy; blank disables manual `/reconcile` (`503 SEPAY_RECONCILE_DISABLED`) while webhook keeps working |
+| `SEPAY_API_BASE_URL` | Deploy operator | GitHub per-environment variable → Worker binding | Defaults to `https://userapi.sepay.vn/v2` (production); set `https://userapi-sandbox.sepay.vn/v2` when staging uses SePay Test mode |
 | `GITHUB_WEBHOOK_SECRET` | Operator-generated (`openssl rand -hex 32`) | GitHub environment secret `GH_WEBHOOK_SECRET` → bước deploy CI → Worker binding `GITHUB_WEBHOOK_SECRET` (#421) | sinh mới → cập nhật secret trên trang webhook GitHub và GitHub environment → redeploy; trong lúc lệch, delivery trả 401 và có thể "Redeliver" từ UI. **Cảnh báo:** `withDefault("")` nghĩa là deploy prod/staging NGOÀI CI mà không export `GITHUB_WEBHOOK_SECRET` sẽ ghi đè secret đang chạy về rỗng ⇒ endpoint 503 — deploy tay phải export biến từ `.env` (hoặc chờ CI) |
 | `DISCORD_WEBHOOK_URL` | Release operator (Discord Server channel webhook) | Optional GitHub repository secret or per-environment secret (`staging` / `production`) used ONLY by the post-smoke `Notify Discord release changelog` CI step (#686) | Discord Channel Settings → Integrations → Webhooks → Copy/Reset Webhook URL, then update via `gh secret set DISCORD_WEBHOOK_URL` (per env or repo). Never committed or logged; if unset or Discord is unreachable, deploy stays green with `::notice::` / `::warning::` |
 
@@ -847,59 +846,38 @@ là đường duy nhất đọc/ghi bucket, qua `/api/student/attempts/:id/media
   lifecycle rule theo prefix `quiz-media/` — nó xoá cả bài đã nộp; dọn bằng
   job đối chiếu với `quiz_attempt.media_key` (follow-up).
 
-## SePay Bank Hub go-live (migration 0034) — issue #320
+## SePay go-live (`my.sepay.vn` Webhooks + API v2) — issue #320
 
-Tuition transfer matching (#320) ships disabled by default: with the four
-`SEPAY_BANKHUB_*` secrets blank, `getBankHub()` returns `undefined` and every
-bank route answers `503 BANKHUB_DISABLED` (UI shows "Chưa bật"). Enabling is
-a per-stage operation.
+Tuition transfer matching (#320) uses standard SePay (`my.sepay.vn`) instead of Bank Hub, and ships disabled by default: with `SEPAY_WEBHOOK_SECRET` blank, `getSepay()` returns `undefined` and bank-link / webhook routes answer `503 SEPAY_DISABLED` (UI shows "Chưa bật"). Enabling is a per-stage operation.
 
-### Checklist trước khi bật production
+### Checklist cấu hình production / staging
 
-1. Xin credential đối tác từ SePay: `client_id`/`client_secret` (merchant
-   Cô Mỹ Dạy Tiếng Anh, trước đây đăng ký là TeacherOS) và API key cho IPN. SePay cấu hình URL IPN phía họ:
-   `https://api.<domain>/webhooks/sepay/bankhub/ipn`.
-2. Set 5 binding env cho stage đó (tên biến trong Secret inventory ở trên,
-   KHÔNG bao giờ giá trị): 4 secret + `SEPAY_BANKHUB_BASE_URL=https://bankhub-api.sepay.vn`
-   (bắt buộc set tường minh ở production — default rơi về sandbox host).
-   Deploy qua CI hiện CHƯA truyền các biến này: bước `pnpm alchemy deploy`
-   trong `.github/workflows/deploy.yml` (prod) và `deploy-staging.yml`
-   (staging) không có `SEPAY_BANKHUB_*` trong khối `env:`, nên
-   `packages/infra/alchemy.run.ts` rơi về default (secret rỗng, base URL
-   sandbox) và Worker deploy từ CI luôn ở trạng thái tắt; đặt tay trên
-   Cloudflare dashboard cũng bị ghi đè ở lần deploy kế tiếp. Trước khi bật,
-   phải mở rộng khối `env:` của bước deploy ở cả hai workflow để đọc 4 secret
-   (`secrets.*`) và `SEPAY_BANKHUB_BASE_URL` (`vars.*`) từ GitHub environment
-   của stage — cùng pattern với `RESEND_API_KEY`/`MAILER_IMPL` — rồi đặt giá
-   trị bằng `gh secret set … --env <stage>` / `gh variable set … --env <stage>`.
-3. Chạy `apps/server/scripts/bankhub-setup.ts` (đọc env, không in secret):
-   đăng ký webhook lifecycle
-   `https://api.<domain>/webhooks/sepay/bankhub/events` (auth `SECRET_KEY`,
-   `allow_events: ["*"]`) và merchant-config whitelist
-   `transaction_whitelist_remark_keywords: ["TOS"]`.
-4. Sandbox gate (trước go-live production, ghi kết quả vào
-   `plans/261005-0754-sepay-bank-hub-tuition-qr/reports/sandbox-verification.md`):
-   host thật của `hosted_link_url` (cập nhật const `BANK_HUB_LINK_ORIGINS` nếu
-   khác); `transaction_amount` mặc định của company mới (nếu 0 → xác nhận
-   `company/edit` → `Unlimited`); tên event khôi phục (`REACTIVATE`);
-   `payment_code` trong IPN thật + định dạng `transaction_date`; whitelist
-   keyword với nội dung chữ thường; `FINISHED_*` postMessage có phát khi
-   không có `completion_redirect_uri`.
-5. Smoke sau bật: liên kết 1 tài khoản sandbox/production từ trang Hồ sơ
-   (`/profile`, card "Nhận học phí qua chuyển khoản" — #338) → tạo
-   phiếu → chuyển khoản thử (sandbox `POST /v1/transaction/create`) → phiếu
-   "Thu một phần"/"Đã thu" trong ≤ 1 phút; nút "Đối soát" trả `{scanned…}`.
-6. Rollback tính năng: blank lại 4 secret → redeploy. Feature flag bằng
-   secret-blank, không cần migration revert (migration 0034 additive-only).
+1. Trên `my.sepay.vn` (đã liên kết sẵn tài khoản ngân hàng nhận học phí):
+   - Vào **Tích hợp / Integrations → Webhooks → Thêm Webhook**:
+     - **URL nhận Webhook:**
+       - Production: `https://api.msmy.io.vn/webhooks/sepay`
+       - Staging: `https://api.staging.teacheros.io.vn/webhooks/sepay`
+     - **Sự kiện:** `Tiền vào` (`Money in` / `In_only`).
+     - **Content-Type:** `application/json`, bật **Tự động thử lại (Auto retry)**.
+     - **Điều kiện lọc:** chọn tài khoản ngân hàng nhận học phí (nếu dùng VA theo nội dung `TKP` như `MMY`, gắn VA tương ứng trên `my.sepay.vn`); khuyến nghị bật **Nhận diện mã thanh toán** tiền tố `MSMY` dài **8 ký tự sau tiền tố** (tổng 12 ký tự `MSMYxxxxxxxx`, gồm chữ + số, hoặc để trống để server tự trích `MSMY...` / legacy `TOS...` không phân biệt hoa thường, kể cả khi dính liền `TKPMMYMSMY...`).
+     - **Xác thực:** chọn **`HMAC-SHA256`** (`X-SePay-Signature` + `X-SePay-Timestamp`) và copy **Secret Key** ngay lúc tạo (chỉ hiện đầy đủ 1 lần).
+   - *(Tùy chọn cho nút Đối soát)* Vào **Cấu hình công ty → API Access → + Thêm API** tạo **API Token** (64 ký tự).
+2. Đặt secret/var trên **GitHub Environment** của từng stage (`production` hoặc `staging`, tách riêng — không đặt ở mức Repository):
+   - `gh secret set SEPAY_WEBHOOK_SECRET --env <stage>`
+   - `gh secret set SEPAY_API_TOKEN --env <stage>` *(tùy chọn; thiếu thì nút Đối soát báo `503 SEPAY_RECONCILE_DISABLED`)*
+   - `gh variable set SEPAY_API_BASE_URL --env staging --body "https://userapi-sandbox.sepay.vn/v2"` *(chỉ cần nếu staging dùng SePay Test mode; production mặc định `https://userapi.sepay.vn/v2`)*
+   - `deploy.yml` và `deploy-staging.yml` tự truyền 3 biến này sang `alchemy deploy`; không đặt tay trên Cloudflare Dashboard vì lần deploy CI kế tiếp sẽ ghi đè.
+3. **Migration `0100` (`org_bank_link.va_code` — additive):** `0100_smooth_metal_master.sql` chỉ chạy `ALTER TABLE org_bank_link ADD va_code text DEFAULT '' NOT NULL;`. Trước khi deploy production, ghi lại bookmark **D1 Time Travel** (hoặc `wrangler d1 export … --remote`). Vì probe `/readyz` (`apps/server/src/routes/readiness.ts`) kiểm khớp chính xác tổng số cột schema, không lùi riêng Worker về bản trước `0100` trên D1 đã migrate và tuyệt đối không `DROP COLUMN` thủ công (`d1_migrations` đã ghi nhận `0100`).
+4. Bấm **Test send** trên `my.sepay.vn` (gửi `id: 0`) để xác nhận server trả `200 {"success": true}`.
+5. Mở trang Hồ sơ (`https://lms.<domain>/teacher/profile`, card **SePay — Nhận học phí qua chuyển khoản**), chọn ngân hàng, nhập **Số tài khoản gốc** (hoặc số VA độc lập nếu dùng BIDV/OCB/MSB/KienLongBank), nhập **Mã VA theo nội dung (TKP, tùy chọn)** (VD: `MMY` → QR/hướng dẫn tự thêm tiền tố `TKPMMY` trước mã `MSMYxxxxxxxx`), nhập **Chủ tài khoản**, bấm **Lưu tài khoản**.
+6. Smoke sau bật: tạo 1 phiếu học phí thử → mở QR (kiểm tra `acc` là STK gốc, nội dung `TKPMMY MSMYxxxxxxxx`, riêng VietinBank có thêm `SEVQR `) → chuyển khoản thật một số tiền nhỏ → phiếu cập nhật `Thu một phần` / `Đã thu` trong ≤ 1 phút; bấm nút **Đối soát** xác nhận trả `{scanned, matched, unmatched}`.
+7. Rollback tính năng: xóa/để rỗng `SEPAY_WEBHOOK_SECRET` trên GitHub Environment rồi redeploy → route ngân hàng trở về `503 SEPAY_DISABLED`, không cần revert migration `0100`.
 
-### Hạn chế đã biết (chấp nhận cho beta)
+### Lưu ý vận hành
 
-- Đối soát quét 7 ngày gần nhất của mọi `bank_account_xid` đã từng liên kết;
-  giao dịch trong thời gian TK bị ngân hàng vô hiệu hoá (OCB/MSB/KLB/TPB)
-  không được Bank Hub đồng bộ bù — giáo viên đối chiếu sao kê tay nếu có tiền
-  trong cửa sổ đó.
-- SePay không retry IPN khi nhận 4xx/5xx: parse-lỏng chặn schema-drift, nhưng
-  lỗi DB thật vẫn làm mất delivery — nút "Đối soát" là đường bù.
+- SePay tự retry webhook tối đa 7 lần theo Fibonacci (~33 phút) khi gặp lỗi mạng, timeout hoặc HTTP khác 200/201; nếu quá 33 phút vẫn thất bại, có thể bấm **Replay** trên `my.sepay.vn` hoặc bấm nút **Đối soát** trên app (quét 7 ngày gần nhất qua `GET /v2/transactions`, chống trùng 2 tầng theo `provider_txn_id` và fingerprint `reference_code + amount + transaction_date`).
+- Khi giáo viên cấu hình **Mã VA theo nội dung** (`vaCode`, VD: `MMY`), cả webhook lẫn nút **Đối soát** đều lọc đúng các giao dịch có `subAccount`/`va` khớp `MMY` hoặc `TKPMMY` (fallback tìm `TKPMMY` trong nội dung nếu `subAccount` rỗng), giúp tiền chuyển cá nhân không qua VA vào cùng STK gốc không bị đẩy vào hàng đợi `unmatched`.
+- Nếu giáo viên dùng ngân hàng BIDV cá nhân/hộ KD, OCB, MSB hoặc KienLongBank mà không dùng VA TKP, nhập **số tài khoản ảo (VA)** vào ô **Số tài khoản** trên `/teacher/profile` và để trống **Mã VA theo nội dung**.
 
 ## Built-in vocabulary library (migration 0037) — issue #361
 
