@@ -4,11 +4,11 @@ import {
 	type NotificationEventGroup,
 	type NotificationEventType,
 } from "@teacher-os/api/contracts";
-import { renderSessionLinkEmail } from "@teacher-os/api/session-link-email";
 import {
 	type InvoiceEmailPaymentInfo,
 	renderInvoiceEmail,
 } from "@teacher-os/api/invoice-email";
+import { renderSessionLinkEmail } from "@teacher-os/api/session-link-email";
 import {
 	formatViDateDisplay,
 	formatVietnamTimeHHMM,
