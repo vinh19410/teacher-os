@@ -9,15 +9,15 @@ import { createDb } from "@teacher-os/db";
 import { env } from "@teacher-os/env/server";
 import { buildApp, type Db, type MediaStore, type RecordingStore } from "./app";
 import { createAiProviders } from "./lib/ai-gate";
-import {
-	type BankHubContext,
-	createBankHubContext,
-} from "./lib/bank-hub/bank-hub-client";
 import type { PlacementAiGrader } from "./lib/placement-ai/grader";
 import { createPlacementAiGrader } from "./lib/placement-ai/openai-grader";
 import { createR2MediaStore } from "./lib/r2-media-store";
 import { createR2RecordingStore } from "./lib/r2-recording-store";
 import { dispatchScheduledCron } from "./lib/scheduled";
+import {
+	createSepayContext,
+	type SepayContext,
+} from "./lib/sepay/sepay-client";
 import { getSessionUser } from "./session";
 
 export function parseCORSOrigins(raw: string): string[] {
@@ -45,7 +45,7 @@ let mediaStore: MediaStore | undefined;
 let libraryAudioStore: MediaStore | undefined;
 let materialsStore: MediaStore | undefined;
 let recordingStore: RecordingStore | undefined;
-let bankHub: BankHubContext | undefined;
+let sepay: SepayContext | undefined;
 
 const getRecordingStore = (): RecordingStore | undefined => {
 	if (!env.RECORDINGS) return undefined;
@@ -190,17 +190,15 @@ const app = buildApp({
 	adminEmails: parseCORSOrigins(env.ADMIN_EMAILS),
 	teacherEmails: parseCORSOrigins(env.TEACHER_EMAILS ?? ""),
 	adminOrigins: parseCORSOrigins(env.ADMIN_ORIGINS || env.CORS_ORIGIN),
-	// Thiếu bất kỳ secret Bank Hub nào (#320) → undefined → route ngân hàng
-	// trả 503 BANKHUB_DISABLED; local/dev không cần cấu hình gì.
-	getBankHub: () => {
-		bankHub ??= createBankHubContext({
-			clientId: env.SEPAY_BANKHUB_CLIENT_ID,
-			clientSecret: env.SEPAY_BANKHUB_CLIENT_SECRET,
-			ipnApiKey: env.SEPAY_BANKHUB_IPN_API_KEY,
-			webhookSecret: env.SEPAY_BANKHUB_WEBHOOK_SECRET,
-			baseUrl: env.SEPAY_BANKHUB_BASE_URL,
+	// Thiếu SEPAY_WEBHOOK_SECRET (#320) → undefined → route ngân hàng
+	// trả 503 SEPAY_DISABLED; local/dev không cần cấu hình gì.
+	getSepay: () => {
+		sepay ??= createSepayContext({
+			webhookSecret: env.SEPAY_WEBHOOK_SECRET,
+			apiToken: env.SEPAY_API_TOKEN,
+			apiBaseUrl: env.SEPAY_API_BASE_URL,
 		});
-		return bankHub;
+		return sepay;
 	},
 	// Webhook GitHub (#421): secret rỗng (chưa cấu hình binding) →
 	// /webhooks/github trả 503 GITHUB_WEBHOOK_DISABLED.

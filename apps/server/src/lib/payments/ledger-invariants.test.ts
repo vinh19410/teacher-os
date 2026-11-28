@@ -144,16 +144,16 @@ describe("tuition ledger invariants (bounded-exhaustive)", () => {
 		if (bank) {
 			const input: IngestInput = {
 				transactionId: bank.id,
-				transferType: "credit",
+				transferType: "in",
 				amount: bank.amount,
-				bankAccountXid: ACCOUNT,
+				accountNumber: ACCOUNT,
 				content: bank.content,
 				paymentCode: null,
 				referenceCode: "",
 				transactionDate: "2026-01-01 00:00:00",
 				rawJson: "{}",
 			};
-			await ingestTransaction(db, undefined, input, { saveNoCode: true });
+			await ingestTransaction(db, input, { saveNoCode: true });
 			return undefined;
 		}
 		if (op === "manualK1_400" || op === "manualK2_700") {
@@ -231,7 +231,7 @@ describe("tuition ledger invariants (bounded-exhaustive)", () => {
 			"INSERT INTO student (id, org_id, name, phone, email, zalo, created_at) VALUES ('stu-other', 'org-other', 'HV khác', '', '', '', 1)",
 		);
 		await client.execute({
-			sql: "INSERT INTO org_bank_link (org_id, bank_account_xid) VALUES (?, ?)",
+			sql: "INSERT INTO org_bank_link (org_id, status, account_number) VALUES (?, 'linked', ?)",
 			args: [orgId, ACCOUNT],
 		});
 	});

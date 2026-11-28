@@ -96,6 +96,7 @@ export async function loadPaymentInstructions(input: {
 	const memo = buildTransferMemo({
 		code: inv.paymentCode ?? "",
 		bankBin: link.bankBin,
+		vaCode: link.vaCode,
 	});
 	return {
 		...base,

@@ -33,7 +33,7 @@ describe("public pay route (#320)", () => {
 			authHandler: () => new Response("auth stub", { status: 404 }),
 		});
 
-		paymentCode = "TOS7K2M9QXA";
+		paymentCode = "MSMY7K2M9QXA";
 		payToken = "abc123def456ghi789jkl";
 		const orgIdValue = crypto.randomUUID();
 		const studentId = crypto.randomUUID();
@@ -78,6 +78,25 @@ describe("public pay route (#320)", () => {
 		expect(bank.brandName).toBe("MBBank");
 		expect(String(body.memo)).toBe(paymentCode);
 		expect(String(body.qrUrl)).toContain("vietqr.app/img");
+	});
+
+	test("prepends TKPMMY when orgBankLink has vaCode=MMY while keeping acc as source account", async () => {
+		const [link] = await libsql.select().from(orgBankLink).limit(1);
+		await libsql
+			.update(orgBankLink)
+			.set({ vaCode: "MMY" })
+			.where(eq(orgBankLink.orgId, link?.orgId ?? ""));
+		const res = await app.request(`/public/pay/${payToken}`);
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { memo: string; qrUrl: string };
+		expect(body.memo).toBe(`TKPMMY ${paymentCode}`);
+		const qr = new URL(body.qrUrl);
+		expect(qr.searchParams.get("acc")).toBe("0123456789");
+		expect(qr.searchParams.get("des")).toBe(`TKPMMY ${paymentCode}`);
+		await libsql
+			.update(orgBankLink)
+			.set({ vaCode: "" })
+			.where(eq(orgBankLink.orgId, link?.orgId ?? ""));
 	});
 
 	test("unknown token is a generic 404", async () => {

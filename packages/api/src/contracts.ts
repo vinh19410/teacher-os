@@ -3739,40 +3739,72 @@ export interface StudentOrgItem {
 	isCurrent: boolean;
 }
 
-// --- Bank Hub account linking (issue #320) ---
+// --- SePay bank account configuration (#320) ---
 
 export const BANK_LINK_ERROR_CODES = {
-	BANKHUB_DISABLED: "BANKHUB_DISABLED",
-	ALREADY_LINKED: "BANK_LINK_ALREADY_LINKED",
+	SEPAY_DISABLED: "SEPAY_DISABLED",
+	SEPAY_RECONCILE_DISABLED: "SEPAY_RECONCILE_DISABLED",
+	SEPAY_UPSTREAM: "SEPAY_UPSTREAM",
+	SEPAY_RATE_LIMITED: "SEPAY_RATE_LIMITED",
+	ACCOUNT_ALREADY_IN_USE: "BANK_LINK_ACCOUNT_ALREADY_IN_USE",
 	NO_LINKED_ACCOUNT: "BANK_LINK_NO_LINKED_ACCOUNT",
-	BAD_HOSTED_LINK_ORIGIN: "BANK_LINK_BAD_HOSTED_LINK_ORIGIN",
-	COMPANY_SETTLING: "BANK_LINK_COMPANY_SETTLING",
-	BANKHUB_UPSTREAM: "BANKHUB_UPSTREAM",
-	BANKHUB_RATE_LIMITED: "BANKHUB_RATE_LIMITED",
+	INVALID_BANK: "BANK_LINK_INVALID_BANK",
 } as const;
 export type BankLinkErrorCode =
 	(typeof BANK_LINK_ERROR_CODES)[keyof typeof BANK_LINK_ERROR_CODES];
 
 export const bankLinkStatusSchema = z.object({
 	enabled: z.boolean(),
+	reconcileEnabled: z.boolean().default(false),
 	status: z.enum(["none", "linked", "inactive", "unlinked"]),
 	brandName: z.string(),
+	bankBin: z.string().default(""),
+	bankCode: z.string().default(""),
+	accountNumber: z.string().default(""),
 	accountNumberMasked: z.string(),
+	vaCode: z.string().default(""),
 	holderName: z.string(),
 	linkedAt: z.string().nullable(),
 });
 export type BankLinkStatus = z.infer<typeof bankLinkStatusSchema>;
 
-export const bankLinkTokenRequestSchema = z
-	.object({ purpose: z.enum(["link", "unlink", "reactivate"]) })
+export const bankLinkUpsertSchema = z
+	.object({
+		bankBin: z
+			.string()
+			.trim()
+			.regex(/^\d{6}$/),
+		accountNumber: z
+			.string()
+			.trim()
+			.transform((v) => v.replace(/[\s-]+/g, ""))
+			.pipe(
+				z
+					.string()
+					.min(4)
+					.max(30)
+					.regex(/^[A-Za-z0-9]+$/),
+			),
+		vaCode: z
+			.string()
+			.trim()
+			.transform((v) => v.replace(/[\s-]+/g, "").toUpperCase())
+			.pipe(
+				z.union([
+					z.literal(""),
+					z
+						.string()
+						.min(2)
+						.max(20)
+						.regex(/^[A-Z0-9]+$/),
+				]),
+			)
+			.optional()
+			.default(""),
+		holderName: z.string().trim().min(2).max(100),
+	})
 	.strict();
-export type BankLinkTokenRequest = z.infer<typeof bankLinkTokenRequestSchema>;
-
-export const bankLinkTokenResponseSchema = z.object({
-	hostedLinkUrl: z.string().min(1),
-	expiresAt: z.string(),
-});
-export type BankLinkTokenResponse = z.infer<typeof bankLinkTokenResponseSchema>;
+export type BankLinkUpsertInput = z.input<typeof bankLinkUpsertSchema>;
 
 // --- Invoice payment instructions (#320) ---
 

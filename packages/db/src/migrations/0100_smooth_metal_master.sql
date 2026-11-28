@@ -1,0 +1,1 @@
+ALTER TABLE `org_bank_link` ADD `va_code` text DEFAULT '' NOT NULL;

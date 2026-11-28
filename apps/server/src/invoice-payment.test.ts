@@ -153,7 +153,7 @@ describe("invoice payment instructions (#320)", () => {
 			amountDue: number;
 		};
 		expect(first.payToken).toMatch(/^[A-Za-z0-9_-]{22}$/);
-		expect(first.memo).toMatch(/^TOS[0-9A-HJKMNP-TV-Z]{8}$/);
+		expect(first.memo).toMatch(/^MSMY[0-9A-HJKMNP-TV-Z]{8}$/);
 		expect(first.qrUrl).toContain("amount=500000");
 		expect(first.paidAmount).toBe(0);
 		expect(first.amountDue).toBe(500000);
@@ -214,6 +214,23 @@ describe("invoice payment instructions (#320)", () => {
 			otherToken,
 		);
 		expect(foreign.status).toBe(404);
+	});
+
+	test("prepends TKPMMY prefix to memo and QR des when vaCode=MMY is linked", async () => {
+		await libsql
+			.update(orgBankLink)
+			.set({ vaCode: "MMY" })
+			.where(eq(orgBankLink.orgId, orgIdValue));
+		const res = await get(
+			`/api/invoices/${legacyInvoiceId}/payment`,
+			teacherToken,
+		);
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { memo: string; qrUrl: string };
+		expect(body.memo).toMatch(/^TKPMMY MSMY[0-9A-HJKMNP-TV-Z]{8}$/);
+		const qr = new URL(body.qrUrl);
+		expect(qr.searchParams.get("acc")).toBe("0987654321");
+		expect(qr.searchParams.get("des")).toBe(body.memo);
 	});
 
 	test("org id stays scoped when the linked row is missing", async () => {

@@ -12,142 +12,25 @@ import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test } from "vitest";
 import { buildApp, type Db, type ServerApp } from "./app";
-import {
-	type BankHubAccount,
-	type BankHubClient,
-	type BankHubContext,
-	BankHubError,
-} from "./lib/bank-hub/bank-hub-client";
 
 const CORS_ORIGIN = "http://localhost:8001";
 const MIGRATIONS_DIR = fileURLToPath(
 	new URL("../../../packages/db/src/migrations", import.meta.url).href,
 );
 
-function account(overrides: Partial<BankHubAccount> = {}): BankHubAccount {
-	return {
-		xid: "ba-1",
-		companyXid: "company-1",
-		brandName: "MBBank",
-		bankBin: "970422",
-		bankCode: "MB",
-		accountHolderName: "NGUYEN VAN A",
-		accountNumber: "0123456789",
-		active: true,
-		...overrides,
-	};
-}
-
-interface FakeHub {
-	hub: BankHubContext;
-	linkCalls: string[];
-	companyCreations(): number;
-	companyEdits(): { xid: string; transactionAmount: number | "Unlimited" }[];
-	setAccounts(accounts: BankHubAccount[]): void;
-	setHostedUrl(url: string): void;
-	setLinkTokenError(err: unknown): void;
-	setListAccountsError(err: unknown): void;
-	setCompanyAmount(amount: number | "Unlimited"): void;
-}
-
-function createFakeHub(): FakeHub {
-	let accounts: BankHubAccount[] = [account()];
-	let hostedUrl = "https://bankhub.sepay.vn/link/abc";
-	let creations = 0;
-	let companyAmount: number | "Unlimited" = 0;
-	const linkCalls: string[] = [];
-	const edits: { xid: string; transactionAmount: number | "Unlimited" }[] = [];
-	let linkTokenError: unknown;
-	let listAccountsError: unknown;
-	const client: BankHubClient = {
-		createCompany: async (input) => {
-			creations += 1;
-			return {
-				xid: `company-${creations}`,
-				fullName: input.fullName,
-				status: "Active",
-				transactionAmount: companyAmount,
-			};
-		},
-		getCompany: async (xid) => ({
-			xid,
-			fullName: "",
-			status: "Active",
-			transactionAmount: companyAmount,
-		}),
-		editCompany: async (xid, patch) => {
-			edits.push({
-				xid,
-				transactionAmount: patch.transactionAmount ?? "Unlimited",
-			});
-			return {
-				xid,
-				fullName: "",
-				status: "Active",
-				transactionAmount: "Unlimited",
-			};
-		},
-		createLinkToken: async (input) => {
-			if (linkTokenError) throw linkTokenError;
-			linkCalls.push(input.purpose);
-			return {
-				xid: "lt-1",
-				hostedLinkUrl: hostedUrl,
-				linkToken: "ltok-1",
-				expiresAt: "2026-01-01T00:00:00Z",
-			};
-		},
-		getBankAccount: async (xid) => account({ xid }),
-		listBankAccounts: async () => {
-			if (listAccountsError) throw listAccountsError;
-			return accounts;
-		},
-		listTransactions: async () => ({ data: [] }),
-		createMockTransaction: async () => {
-			throw new Error("not used");
-		},
-	};
-	return {
-		hub: {
-			client,
-			ipnApiKey: "ipn-key",
-			webhookSecret: "whsec",
-			env: "sandbox",
-		},
-		linkCalls,
-		companyCreations: () => creations,
-		companyEdits: () => edits,
-		setAccounts: (next) => {
-			accounts = next;
-		},
-		setHostedUrl: (next) => {
-			hostedUrl = next;
-		},
-		setLinkTokenError: (err) => {
-			linkTokenError = err;
-		},
-		setListAccountsError: (err) => {
-			listAccountsError = err;
-		},
-		setCompanyAmount: (amount) => {
-			companyAmount = amount;
-		},
-	};
-}
-
 async function api(
 	app: ServerApp,
-	method: "GET" | "POST",
+	method: "GET" | "PUT" | "POST" | "DELETE",
 	path: string,
 	opts: { token?: string; body?: unknown } = {},
 ): Promise<Response> {
 	const headers: Record<string, string> = {};
 	if (opts.token) headers.cookie = `better-auth.session_token=${opts.token}`;
-	if (method === "POST") {
-		// The kernel CSRF guard requires Origin + JSON content-type on writes,
-		// even for body-less POSTs like /sync.
+	if (method !== "GET") {
 		headers.origin = CORS_ORIGIN;
-		headers["content-type"] = "application/json";
+		if (opts.body !== undefined) {
+			headers["content-type"] = "application/json";
+		}
 	}
 	return app.request(path, {
 		method,
@@ -156,12 +39,11 @@ async function api(
 	});
 }
 
-describe("bank-link routes", () => {
+describe("bank-link routes (SePay standard)", () => {
 	const client = createClient({ url: "file::memory:" });
 	const libsql = drizzle(client, { schema });
 	let db: Db;
 	let app: ServerApp;
-	let fake: FakeHub;
 	let userA: { userId: string; token: string };
 	let userB: { userId: string; token: string };
 
@@ -192,7 +74,6 @@ describe("bank-link routes", () => {
 	beforeAll(async () => {
 		await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
 		db = libsql as unknown as Db;
-		fake = createFakeHub();
 		app = buildApp({
 			getDb: () => db,
 			corsOrigin: CORS_ORIGIN,
@@ -217,184 +98,191 @@ describe("bank-link routes", () => {
 				};
 			},
 			authHandler: () => new Response("auth stub", { status: 404 }),
-			getBankHub: () => fake.hub,
+			getSepay: () => ({
+				webhookSecret: "whsec",
+				client: {
+					listTransactions: async () => ({
+						data: [],
+						hasMore: false,
+						currentPage: 1,
+						lastPage: 1,
+					}),
+				},
+			}),
 		});
 		userA = await insertUser("Teacher A");
 		userB = await insertUser("Teacher B");
 	});
 
-	test("link-token creates the Bank Hub company exactly once", async () => {
-		const first = await api(app, "POST", "/api/bank-link/link-token", {
+	test("GET returns status=none initially and isolates orgs", async () => {
+		const resA = await api(app, "GET", "/api/bank-link", {
 			token: userA.token,
-			body: { purpose: "link" },
 		});
-		expect(first.status).toBe(200);
-		const body = (await first.json()) as { hostedLinkUrl: string };
-		expect(body.hostedLinkUrl).toBe("https://bankhub.sepay.vn/link/abc");
-		expect(fake.companyCreations()).toBe(1);
-
-		const second = await api(app, "POST", "/api/bank-link/link-token", {
-			token: userA.token,
-			body: { purpose: "link" },
+		expect(resA.status).toBe(200);
+		expect(await resA.json()).toEqual({
+			enabled: true,
+			reconcileEnabled: true,
+			status: "none",
+			brandName: "",
+			bankBin: "",
+			bankCode: "",
+			accountNumber: "",
+			accountNumberMasked: "",
+			vaCode: "",
+			holderName: "",
+			linkedAt: null,
 		});
-		expect(second.status).toBe(200);
-		expect(fake.companyCreations()).toBe(1);
 	});
 
-	test("forces transaction_amount Unlimited right after company creation", async () => {
-		// Bank Hub only delivers IPNs for companies with transaction_amount > 0
-		// or "Unlimited"; new companies default to 0, so the edit is mandatory.
-		const userC = await insertUser("Teacher C");
-		const res = await api(app, "POST", "/api/bank-link/link-token", {
-			token: userC.token,
-			body: { purpose: "link" },
+	test("PUT saves bank account, normalizes number, and populates bank metadata", async () => {
+		const res = await api(app, "PUT", "/api/bank-link", {
+			token: userA.token,
+			body: {
+				bankBin: "970422",
+				accountNumber: "0123-456 789",
+				vaCode: " mmy ",
+				holderName: "  NGUYEN THI MY  ",
+			},
 		});
 		expect(res.status).toBe(200);
-		const lastEdit = fake.companyEdits().at(-1);
-		expect(lastEdit).toMatchObject({
-			xid: expect.stringMatching(/^company-\d+$/),
-			transactionAmount: "Unlimited",
+		const body = (await res.json()) as Record<string, unknown>;
+		expect(body).toMatchObject({
+			enabled: true,
+			reconcileEnabled: true,
+			status: "linked",
+			brandName: "MBBank",
+			bankBin: "970422",
+			bankCode: "MB",
+			accountNumber: "0123456789",
+			accountNumberMasked: "•••6789",
+			vaCode: "MMY",
+			holderName: "NGUYEN THI MY",
 		});
-	});
+		expect(typeof body.linkedAt).toBe("string");
 
-	test("repairs a cached company still on the zero limit", async () => {
-		// The fresh-create edit may have been lost (crash/network) — the cached
-		// company path must re-check and self-heal on the next link attempt.
-		fake.setCompanyAmount(0);
-		const res = await api(app, "POST", "/api/bank-link/link-token", {
-			token: userA.token,
-			body: { purpose: "link" },
-		});
-		expect(res.status).toBe(200);
-		const lastEdit = fake.companyEdits().at(-1);
-		expect(lastEdit).toMatchObject({ transactionAmount: "Unlimited" });
-		fake.setCompanyAmount("Unlimited");
-	});
-
-	test("rejects a hosted link outside the allowlist with 502", async () => {
-		fake.setHostedUrl("https://evil.example/link/x");
-		const res = await api(app, "POST", "/api/bank-link/link-token", {
-			token: userB.token,
-			body: { purpose: "link" },
-		});
-		expect(res.status).toBe(502);
-		fake.setHostedUrl("https://bankhub.sepay.vn/link/abc");
-	});
-
-	test("accepts the sandbox hosted-link origin", async () => {
-		fake.setHostedUrl("https://bankhub-sandbox.sepay.vn/link/x");
-		const res = await api(app, "POST", "/api/bank-link/link-token", {
-			token: userB.token,
-			body: { purpose: "link" },
-		});
-		expect(res.status).toBe(200);
-		fake.setHostedUrl("https://bankhub.sepay.vn/link/abc");
-	});
-
-	test("maps a Bank Hub failure on link-token to 502 without leaking the message", async () => {
-		fake.setLinkTokenError(new BankHubError(500, "sandbox exploded"));
-		const res = await api(app, "POST", "/api/bank-link/link-token", {
-			token: userB.token,
-			body: { purpose: "link" },
-		});
-		expect(res.status).toBe(502);
-		const text = await res.text();
-		expect(text).toContain("BANKHUB_UPSTREAM");
-		expect(text).not.toContain("sandbox exploded");
-		fake.setLinkTokenError(undefined);
-	});
-
-	test("maps Bank Hub rate limiting on link-token to 429 with Retry-After", async () => {
-		fake.setLinkTokenError(
-			new BankHubError(429, "slow down", { retryAfter: 30 }),
-		);
-		const res = await api(app, "POST", "/api/bank-link/link-token", {
-			token: userB.token,
-			body: { purpose: "link" },
-		});
-		expect(res.status).toBe(429);
-		expect(res.headers.get("retry-after")).toBe("30");
-		const err = (await res.json()) as { code: string };
-		expect(err.code).toBe("BANKHUB_RATE_LIMITED");
-		fake.setLinkTokenError(undefined);
-	});
-
-	test("sync maps a Bank Hub failure to 502 instead of a bare 500", async () => {
-		fake.setListAccountsError(new BankHubError(500, "accounts unavailable"));
-		const res = await api(app, "POST", "/api/bank-link/sync", {
-			token: userA.token,
-		});
-		expect(res.status).toBe(502);
-		const err = (await res.json()) as { code: string };
-		expect(err.code).toBe("BANKHUB_UPSTREAM");
-		fake.setListAccountsError(undefined);
-	});
-
-	test("server blocks link when the org is already linked (409)", async () => {
-		const orgId = await orgIdOf(userA.userId);
-		await api(app, "POST", "/api/bank-link/sync", { token: userA.token });
-		const [row] = await libsql
-			.select()
-			.from(orgBankLink)
-			.where(eq(orgBankLink.orgId, orgId));
-		expect(row?.status).toBe("linked");
-
-		const res = await api(app, "POST", "/api/bank-link/link-token", {
-			token: userA.token,
-			body: { purpose: "link" },
-		});
-		expect(res.status).toBe(409);
-		const err = (await res.json()) as { code: string };
-		expect(err.code).toBe("BANK_LINK_ALREADY_LINKED");
-	});
-
-	test("sync reports masked account data and keeps orgs isolated", async () => {
-		const res = await api(app, "POST", "/api/bank-link/sync", {
-			token: userA.token,
-		});
-		expect(res.status).toBe(200);
-		const status = (await res.json()) as {
-			status: string;
-			accountNumberMasked: string;
-			holderName: string;
-		};
-		expect(status.status).toBe("linked");
-		expect(status.accountNumberMasked).toBe("•••6789");
-		expect(status.holderName).toBe("NGUYEN VAN A");
-
-		// Teacher B's org has no link and must never see A's data.
+		// Org B still sees none
 		const resB = await api(app, "GET", "/api/bank-link", {
 			token: userB.token,
 		});
-		const statusB = (await resB.json()) as {
-			status: string;
-			brandName: string;
-		};
-		expect(statusB.status).toBe("none");
-		expect(statusB.brandName).toBe("");
+		expect((await resB.json()) as { status: string }).toMatchObject({
+			status: "none",
+		});
 	});
 
-	test("?refresh=1 picks up bank-side deactivation", async () => {
-		fake.setAccounts([account({ active: false })]);
-		const res = await api(app, "GET", "/api/bank-link?refresh=1", {
+	test("PUT rejects invalid bank BIN with 400", async () => {
+		const res = await api(app, "PUT", "/api/bank-link", {
+			token: userB.token,
+			body: {
+				bankBin: "999999",
+				accountNumber: "1122334455",
+				holderName: "Teacher B",
+			},
+		});
+		expect(res.status).toBe(400);
+		expect((await res.json()) as { code: string }).toMatchObject({
+			code: "BANK_LINK_INVALID_BANK",
+		});
+	});
+
+	test("PUT rejects account number + same VA already linked by another org with 409, allows distinct VA", async () => {
+		const sameVaRes = await api(app, "PUT", "/api/bank-link", {
+			token: userB.token,
+			body: {
+				bankBin: "970422",
+				accountNumber: "0123456789",
+				vaCode: "TKPMMY",
+				holderName: "Teacher B",
+			},
+		});
+		expect(sameVaRes.status).toBe(409);
+		expect((await sameVaRes.json()) as { code: string }).toMatchObject({
+			code: "BANK_LINK_ACCOUNT_ALREADY_IN_USE",
+		});
+
+		const emptyVaRes = await api(app, "PUT", "/api/bank-link", {
+			token: userB.token,
+			body: {
+				bankBin: "970422",
+				accountNumber: "0123456789",
+				holderName: "Teacher B",
+			},
+		});
+		expect(emptyVaRes.status).toBe(409);
+
+		const distinctVaRes = await api(app, "PUT", "/api/bank-link", {
+			token: userB.token,
+			body: {
+				bankBin: "970422",
+				accountNumber: "0123456789",
+				vaCode: "OTHER",
+				holderName: "Teacher B",
+			},
+		});
+		expect(distinctVaRes.status).toBe(200);
+		expect((await distinctVaRes.json()) as { vaCode: string }).toMatchObject({
+			vaCode: "OTHER",
+		});
+		await api(app, "DELETE", "/api/bank-link", { token: userB.token });
+	});
+
+	test("PUT updates account number and archives previous account in pastBankAccountXids", async () => {
+		const orgIdA = await orgIdOf(userA.userId);
+		const res = await api(app, "PUT", "/api/bank-link", {
+			token: userA.token,
+			body: {
+				bankBin: "970415",
+				accountNumber: "1098765432",
+				holderName: "NGUYEN THI MY",
+			},
+		});
+		expect(res.status).toBe(200);
+		expect((await res.json()) as { brandName: string }).toMatchObject({
+			brandName: "VietinBank",
+			bankBin: "970415",
+			accountNumber: "1098765432",
+			accountNumberMasked: "•••5432",
+		});
+
+		const [row] = await libsql
+			.select()
+			.from(orgBankLink)
+			.where(eq(orgBankLink.orgId, orgIdA));
+		expect(JSON.parse(row?.pastBankAccountXids ?? "[]")).toContain(
+			"0123456789",
+		);
+	});
+
+	test("DELETE unlinks current account and archives it; second DELETE returns 409", async () => {
+		const orgIdA = await orgIdOf(userA.userId);
+		const del = await api(app, "DELETE", "/api/bank-link", {
 			token: userA.token,
 		});
-		const status = (await res.json()) as { status: string };
-		expect(status.status).toBe("inactive");
-		fake.setAccounts([account()]);
-	});
-
-	test("unlink without a linked account is a 409", async () => {
-		const res = await api(app, "POST", "/api/bank-link/link-token", {
-			token: userB.token,
-			body: { purpose: "unlink" },
+		expect(del.status).toBe(200);
+		expect((await del.json()) as { status: string }).toMatchObject({
+			status: "none",
+			accountNumber: "",
+			accountNumberMasked: "",
+			vaCode: "",
 		});
-		expect(res.status).toBe(409);
-		const err = (await res.json()) as { code: string };
-		expect(err.code).toBe("BANK_LINK_NO_LINKED_ACCOUNT");
+
+		const [row] = await libsql
+			.select()
+			.from(orgBankLink)
+			.where(eq(orgBankLink.orgId, orgIdA));
+		expect(JSON.parse(row?.pastBankAccountXids ?? "[]")).toEqual(
+			expect.arrayContaining(["0123456789", "1098765432"]),
+		);
+
+		const secondDel = await api(app, "DELETE", "/api/bank-link", {
+			token: userA.token,
+		});
+		expect(secondDel.status).toBe(409);
+		expect((await secondDel.json()) as { code: string }).toMatchObject({
+			code: "BANK_LINK_NO_LINKED_ACCOUNT",
+		});
 	});
 
-	test("returns 503 BANKHUB_DISABLED when Bank Hub is not configured", async () => {
+	test("returns 503 SEPAY_DISABLED when SePay is not configured", async () => {
 		const bare = buildApp({
 			getDb: () => db,
 			corsOrigin: CORS_ORIGIN,
@@ -424,20 +312,8 @@ describe("bank-link routes", () => {
 			token: userA.token,
 		});
 		expect(res.status).toBe(503);
-		const err = (await res.json()) as { code: string };
-		expect(err.code).toBe("BANKHUB_DISABLED");
-	});
-
-	test("sync records a replaced account into past_bank_account_xids", async () => {
-		const orgId = await orgIdOf(userA.userId);
-		fake.setAccounts([account({ xid: "ba-2" })]);
-		await api(app, "POST", "/api/bank-link/sync", { token: userA.token });
-		const [row] = await libsql
-			.select()
-			.from(orgBankLink)
-			.where(eq(orgBankLink.orgId, orgId));
-		expect(row?.bankAccountXid).toBe("ba-2");
-		expect(JSON.parse(row?.pastBankAccountXids ?? "[]")).toContain("ba-1");
-		fake.setAccounts([account()]);
+		expect((await res.json()) as { code: string }).toMatchObject({
+			code: "SEPAY_DISABLED",
+		});
 	});
 });

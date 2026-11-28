@@ -186,7 +186,7 @@ async function createFinanceTestHarness() {
 }
 
 const FINANCE_ENDPOINTS: ReadonlyArray<{
-	method: "GET" | "POST";
+	method: "GET" | "POST" | "PUT" | "DELETE";
 	path: (invoiceId: string) => string;
 	body?: (enrollmentId: string, invoiceId: string) => unknown;
 }> = [
@@ -236,9 +236,13 @@ const FINANCE_ENDPOINTS: ReadonlyArray<{
 	},
 	{ method: "GET", path: () => "/api/bank-link" },
 	{
-		method: "POST",
-		path: () => "/api/bank-link/link-token",
-		body: () => ({ purpose: "link" }),
+		method: "PUT",
+		path: () => "/api/bank-link",
+		body: () => ({
+			bankBin: "970422",
+			accountNumber: "0123456789",
+			holderName: "NGUYEN VAN A",
+		}),
 	},
 	{
 		method: "POST",
@@ -246,9 +250,8 @@ const FINANCE_ENDPOINTS: ReadonlyArray<{
 		body: () => ({}),
 	},
 	{
-		method: "POST",
-		path: () => "/api/bank-link/sync",
-		body: () => ({}),
+		method: "DELETE",
+		path: () => "/api/bank-link",
 	},
 	{
 		method: "GET",
