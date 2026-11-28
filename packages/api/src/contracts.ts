@@ -1515,6 +1515,10 @@ export const ASSIGNMENT_PROMPT_ERROR_CODES = {
 	CONTENT_LOCKED: "PROMPT_CONTENT_LOCKED",
 	/** Phần Writing bị khóa vì đề đã giao / nằm trong bộ đề, study pack. */
 	WRITING_SECTION_LOCKED: "WRITING_SECTION_LOCKED",
+	/** Chỉ cho phép xóa bản nháp; đề ready không được xóa. */
+	DELETE_NOT_DRAFT: "PROMPT_DELETE_NOT_DRAFT",
+	/** Đề đang được tham chiếu ở lớp học, bộ đề thi hoặc bộ đề tự học. */
+	DELETE_REFERENCED: "PROMPT_DELETE_REFERENCED",
 } as const;
 export type AssignmentPromptErrorCode =
 	(typeof ASSIGNMENT_PROMPT_ERROR_CODES)[keyof typeof ASSIGNMENT_PROMPT_ERROR_CODES];
@@ -4461,6 +4465,15 @@ export const vocabOverviewDeckSchema = z
 		total: z.number().int().min(0),
 		newCount: z.number().int().min(0),
 		dueCount: z.number().int().min(0),
+		levelDistribution: z
+			.tuple([
+				z.number().int().min(0),
+				z.number().int().min(0),
+				z.number().int().min(0),
+				z.number().int().min(0),
+				z.number().int().min(0),
+			])
+			.catch(() => [0, 0, 0, 0, 0] as [number, number, number, number, number]),
 	})
 	.strict();
 export type VocabOverviewDeck = z.infer<typeof vocabOverviewDeckSchema>;
@@ -4480,6 +4493,28 @@ export const vocabOverviewSchema = z
 			z.number().int().min(0),
 		]),
 		streak: z.number().int().min(0),
+		streakDays: z
+			.tuple([
+				z.boolean(),
+				z.boolean(),
+				z.boolean(),
+				z.boolean(),
+				z.boolean(),
+				z.boolean(),
+				z.boolean(),
+			])
+			.catch(
+				() =>
+					[false, false, false, false, false, false, false] as [
+						boolean,
+						boolean,
+						boolean,
+						boolean,
+						boolean,
+						boolean,
+						boolean,
+					],
+			),
 		retention: z.number().int().min(0).max(100).nullable(),
 		forecast: z.tuple([
 			z.number().int().min(0),

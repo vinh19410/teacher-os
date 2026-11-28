@@ -422,12 +422,35 @@ describe("vocab contracts (.strict() and boundary validation)", () => {
 		// New client schema parses old server payload using .catch() defaults
 		const parsedFromLegacy = vocabOverviewSchema.parse(legacyOverviewPayload);
 		expect(parsedFromLegacy.suggestions).toEqual([]);
+		expect(parsedFromLegacy.streakDays).toEqual([
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+		]);
 		expect(parsedFromLegacy.decks[0]?.source).toBe("class");
 		expect(parsedFromLegacy.decks[0]?.className).toBe("IELTS A1");
+		expect(parsedFromLegacy.decks[0]?.levelDistribution).toEqual([
+			0, 0, 0, 0, 0,
+		]);
+
+		// Factory .catch(() => [...]) must return fresh tuple instances per parse
+		const parsedFromLegacy2 = vocabOverviewSchema.parse(legacyOverviewPayload);
+		expect(parsedFromLegacy2.streakDays).not.toBe(parsedFromLegacy.streakDays);
+		expect(parsedFromLegacy2.decks[0]?.levelDistribution).not.toBe(
+			parsedFromLegacy.decks[0]?.levelDistribution,
+		);
 
 		// New server payload with suggested deck (className: "") and suggestions[]
+		// Note on single-PR release train: serverWorker deploys before lmsWorker in
+		// packages/infra/alchemy.run.ts, so open legacy client bundles with .strict()
+		// reject streakDays / decks[].levelDistribution until reload (accepted for --ship --beta).
 		const newOverviewPayload = {
 			...legacyOverviewPayload,
+			streakDays: [false, true, false, true, true, false, true],
 			decks: [
 				{
 					deckId: "d-indep",
@@ -437,6 +460,7 @@ describe("vocab contracts (.strict() and boundary validation)", () => {
 					total: 15,
 					newCount: 15,
 					dueCount: 0,
+					levelDistribution: [1, 2, 0, 0, 0],
 				},
 			],
 			suggestions: [
@@ -451,8 +475,18 @@ describe("vocab contracts (.strict() and boundary validation)", () => {
 			],
 		};
 		const parsedNew = vocabOverviewSchema.parse(newOverviewPayload);
+		expect(parsedNew.streakDays).toEqual([
+			false,
+			true,
+			false,
+			true,
+			true,
+			false,
+			true,
+		]);
 		expect(parsedNew.decks[0]?.source).toBe("suggested");
 		expect(parsedNew.decks[0]?.className).toBe("");
+		expect(parsedNew.decks[0]?.levelDistribution).toEqual([1, 2, 0, 0, 0]);
 		expect(parsedNew.suggestions).toHaveLength(1);
 		expect(
 			vocabSuggestionItemSchema.parse(newOverviewPayload.suggestions[0])

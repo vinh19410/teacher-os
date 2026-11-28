@@ -10,6 +10,7 @@ vi.mock("@tanstack/react-router", () => ({
 
 import type { AssignmentPrompt } from "@/lib/mock-data";
 import { PromptPreviewAside } from "./prompt-preview-aside";
+import { PromptStudentPaper } from "./prompt-student-paper";
 
 function prompt(overrides: Partial<AssignmentPrompt> = {}): AssignmentPrompt {
 	return {
@@ -204,5 +205,84 @@ describe("PromptPreviewAside — Xem trước CTA (#282)", () => {
 		);
 		expect(html).not.toContain("Band 7.0");
 		expect(html).not.toContain("· Band");
+	});
+
+	it("PromptStudentPaper omits difficulty band and secret answers (#847)", () => {
+		const html = renderToStaticMarkup(
+			<PromptStudentPaper
+				prompt={prompt({
+					band: "7.0",
+					level: "IELTS Academic",
+					questions: [
+						{ stem: "Q1", opts: null, answer: "SECRET_TRUE", alts: "" },
+					],
+				})}
+			/>,
+		);
+		expect(html).toContain("Academic · Passage 3 · 20 phút · IELTS Academic");
+		expect(html).not.toContain("Band 7.0");
+		expect(html).not.toContain("SECRET_TRUE");
+	});
+
+	it("PromptStudentPaper avoids duplicate <img> when PinOverlay renders for pinned diagram", () => {
+		const html = renderToStaticMarkup(
+			<PromptStudentPaper
+				prompt={prompt({
+					skill: "reading",
+					part: "p1",
+					type: "diagram",
+					imageUrl: "https://example.com/diagram.png",
+					questions: [
+						{
+							stem: "Label 1",
+							opts: null,
+							answer: "turbine",
+							alts: "",
+							pin: { x: 40, y: 55 },
+						},
+					],
+				})}
+			/>,
+		);
+		const imgMatches = html.match(/<img\b/g) ?? [];
+		expect(imgMatches).toHaveLength(1);
+		expect(html).not.toContain("turbine");
+	});
+
+	it("PromptStudentPaper renders grammar/vocabulary passage and empty writing draft placeholder", () => {
+		const grammarHtml = renderToStaticMarkup(
+			<PromptStudentPaper
+				prompt={prompt({
+					skill: "grammar",
+					part: "g1",
+					type: "mcq",
+					passage: "<p>Grammar context passage</p>",
+					questions: [
+						{
+							stem: "Q1 stem",
+							opts: ["A", "B"],
+							answer: "A",
+							alts: "",
+						},
+					],
+				})}
+			/>,
+		);
+		expect(grammarHtml).toContain("Grammar context passage");
+
+		const draftHtml = renderToStaticMarkup(
+			<PromptStudentPaper
+				prompt={prompt({
+					skill: "writing",
+					part: "task2",
+					type: "discuss",
+					prompt: "",
+					status: "draft",
+				})}
+				showDraftNote
+			/>,
+		);
+		expect(draftHtml).toContain("Nội dung đề bài sẽ hiện ở đây.");
+		expect(draftHtml).toContain("Bản nháp chỉ bạn nhìn thấy");
 	});
 });

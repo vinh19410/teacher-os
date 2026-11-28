@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="vi">
+<head><script type="application/json" data-od-external-dependencies>["https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"]</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Từ vựng · Luyện tập</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* OD-LAYOUT-PRIMITIVES v1 — structure only: display, flex/grid, overflow, wrapping, ratio, geometry.
+   Put this @layer first; product CSS outside the layer wins ordinary layout rules.
+   Native hidden and closed-dialog states take precedence over component display rules. */
+@layer od-layout {
+  [hidden]:not([hidden="until-found" i]) { display: none !important; }
+  dialog:not([open]) { display: none !important; }
+
+  :where(.od-stack,.od-row,.od-row-top,.od-cluster,.od-grid,.od-field,.od-stat,.od-cell,.od-tile) > :where(*) { min-width: 0; }
+
+  .od-stack   { display: flex; flex-direction: column; gap: var(--od-gap, 8px); }
+  .od-row     { display: flex; align-items: center; gap: var(--od-gap, 8px); }
+  .od-row-top { display: flex; align-items: flex-start; gap: var(--od-gap, 8px); }
+  .od-cluster { display: flex; flex-wrap: wrap; align-items: center; gap: var(--od-gap, 8px); }
+  .od-fill    { flex: 1 1 0; min-width: 0; }
+  .od-fixed   { flex: none; }
+  .od-grid    { display: grid; gap: var(--od-gap, 12px); grid-template-columns: repeat(var(--od-cols, 3), minmax(0, 1fr)); }
+
+  .od-stat, .od-field, .od-cell { display: grid; gap: var(--od-gap, 2px); }
+  :where(.od-stat,.od-field,.od-cell) > :where(*) { display: block; }
+  .od-tile { display: grid; grid-template-rows: auto 1fr; }
+  :where(.od-tile) > :where(*) { display: block; }
+
+  .od-media { display: block; width: 100%; height: auto; aspect-ratio: var(--od-ratio, auto); }
+  .od-media-cover { object-fit: cover; }
+
+  .od-icon { display: inline-block; inline-size: var(--od-icon-size, 1em); block-size: var(--od-icon-size, 1em); flex: none; }
+
+  .od-truncate { display: block; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .od-clamp-2, .od-clamp-3 { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+  .od-clamp-2 { -webkit-line-clamp: 2; }
+  .od-clamp-3 { -webkit-line-clamp: 3; }
+  .od-lines-2 { min-height: calc(2 * 1.4em); }
+  .od-nowrap  { white-space: nowrap; }
+  .od-keep    { word-break: keep-all; overflow-wrap: anywhere; }
+
+  .od-screen { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: 100%; }
+  .od-scroll { overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
+
+  .od-rail { display: flex; gap: var(--od-gap, 8px); overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none;
+             padding-inline: var(--od-rail-pad, 16px); scroll-padding-inline: var(--od-rail-pad, 16px); }
+  .od-rail::-webkit-scrollbar { display: none; }
+  :where(.od-rail) > :where(*) { flex: none; scroll-snap-align: start; }
+  :where(.od-rail) > :where(:last-child) { margin-inline-end: var(--od-rail-pad, 16px); }
+
+  .od-spacer { flex: none; visibility: hidden; pointer-events: none; }
+  .od-touch  { min-width: 44px; min-height: 44px; }
+}
+:root [hidden]:where(:not([hidden="until-found" i])) { display: none; }
+/* /OD-LAYOUT-PRIMITIVES v1 */
+
+/* ========== Tokens (Teacher OS design v2 — light) ========== */
+:root {
+  --bg: #ffffff;
+  --fg: #0a0a0a;
+  --muted: #f5f5f5;
+  --muted-fg: #6b6b6b;
+  --border: #e5e5e5;
+  --border-strong: #8a8a8a;
+  --success: #047857;
+  --success-soft: #ecf8f3;
+  --warn: #a35a00;
+  --warn-soft: #fdf6ea;
+  --danger: #b42318;
+  --ring: #0a0a0a;
+  /* Sắc độ cấp trí nhớ: xám → mực (luôn kèm tên cấp, không dựa vào màu) */
+  --lv1: #e5e5e5;
+  --lv2: #bdbdbd;
+  --lv3: #8a8a8a;
+  --lv4: #4a4a4a;
+  --lv5: #0a0a0a;
+
+  --font-sans: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --fs-xs: 0.75rem; --fs-sm: 0.875rem; --fs-base: 1rem; --fs-lg: 1.125rem; --fs-xl: 1.25rem; --fs-2xl: 1.5rem; --fs-3xl: 1.875rem;
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px;
+  --radius: 10px; --radius-sm: 6px; --radius-lg: 14px;
+  --shadow-sm: 0 1px 2px rgba(10,10,10,0.05);
+  --dur: 150ms; --dur-in: 220ms; --ease: cubic-bezier(0.28, 0, 0.22, 1);
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-sans); font-size: var(--fs-base); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+h1, h2, h3, p { margin: 0; }
+button { font: inherit; color: inherit; }
+ul { margin: 0; padding: 0; list-style: none; }
+:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: var(--radius-sm); }
+.tnum { font-variant-numeric: tabular-nums; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+.page { max-width: 1040px; margin: 0 auto; padding: var(--s-8) var(--s-6) var(--s-12); }
+.crumb { display: flex; align-items: center; gap: var(--s-2); font-size: var(--fs-sm); color: var(--muted-fg); min-height: 32px; }
+.page-head { margin: var(--s-2) 0 var(--s-6); }
+.page-head h1 { font-size: var(--fs-3xl); font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; }
+.page-head p { color: var(--muted-fg); margin-top: var(--s-1); }
+.section + .section { margin-top: var(--s-10); }
+.section-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--s-3); margin-bottom: var(--s-4); }
+.section-title { font-size: var(--fs-xl); font-weight: 600; letter-spacing: -0.01em; }
+.section-sub { font-size: var(--fs-sm); color: var(--muted-fg); }
+.eyebrow { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted-fg); }
+.card { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg); box-shadow: var(--shadow-sm); }
+
+/* Buttons & chips */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2); min-height: 40px; padding: 0 var(--s-4); border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--fg); font-size: var(--fs-sm); font-weight: 500; cursor: pointer; white-space: nowrap; transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+.btn-lg { min-height: 48px; padding: 0 var(--s-6); font-size: var(--fs-base); font-weight: 600; }
+.btn-primary { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+.btn-ghost { border-color: transparent; background: transparent; }
+.btn:disabled { cursor: not-allowed; background: var(--muted); border-color: var(--border); color: var(--muted-fg); }
+.btn-icon { min-width: 36px; min-height: 36px; padding: 0; border-color: transparent; }
+@media (hover: hover) {
+  .btn:not(:disabled):hover { background: var(--muted); }
+  .btn-primary:not(:disabled):hover { background: #2a2a2a; border-color: #2a2a2a; color: var(--bg); }
+}
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--border); font-size: var(--fs-xs); font-weight: 500; line-height: 1.6; white-space: nowrap; color: var(--muted-fg); background: var(--bg); }
+.chip .od-icon { --od-icon-size: 12px; }
+.chip-warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 30%, transparent); background: var(--warn-soft); }
+.chip-done { color: var(--success); border-color: color-mix(in srgb, var(--success) 30%, transparent); background: var(--success-soft); }
+.chip-ink { color: var(--bg); background: var(--fg); border-color: var(--fg); }
+.seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: var(--radius); background: var(--muted); max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.seg::-webkit-scrollbar { display: none; }
+.seg button { flex: none; border: 0; background: transparent; padding: 0 var(--s-3); min-height: 34px; border-radius: 7px; font-size: var(--fs-sm); color: var(--muted-fg); cursor: pointer; white-space: nowrap; transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease); }
+.seg button[aria-pressed="true"] { background: var(--bg); color: var(--fg); font-weight: 600; box-shadow: var(--shadow-sm); }
+.empty { font-size: var(--fs-sm); color: var(--muted-fg); padding: var(--s-6); border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); text-align: center; }
+
+/* ===== Hôm nay ===== */
+.today { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s-6); padding: var(--s-6) var(--s-8); border: 1.5px solid var(--fg); border-radius: var(--radius-lg); }
+.today.is-calm { border: 1px solid var(--border); }
+.today-title { font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.25rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; margin-top: var(--s-1); }
+.today-sub { color: var(--muted-fg); margin-top: var(--s-2); }
+.today-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-5); }
+.streak { display: grid; align-content: start; gap: var(--s-3); padding-left: var(--s-6); border-left: 1px solid var(--border); min-width: 240px; }
+.streak-num { font-size: var(--fs-2xl); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+.streak-num small { font-size: var(--fs-sm); font-weight: 500; color: var(--muted-fg); letter-spacing: 0; }
+.week { display: grid; grid-template-columns: repeat(7, 28px); gap: var(--s-2); }
+.day { display: grid; justify-items: center; gap: var(--s-1); }
+.day-dot { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 999px; border: 1.5px solid var(--border-strong); color: var(--bg); }
+.day-dot .od-icon { --od-icon-size: 14px; }
+.day.is-done .day-dot { background: var(--fg); border-color: var(--fg); }
+.day.is-today .day-dot { border-style: dashed; border-color: var(--fg); }
+.day.is-today.is-done .day-dot { border-style: solid; }
+.day-label { font-size: var(--fs-xs); color: var(--muted-fg); }
+.day.is-today .day-label { color: var(--fg); font-weight: 600; }
+
+/* ===== Trí nhớ ===== */
+.memory { padding: var(--s-6); }
+.memory-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-4); margin-bottom: var(--s-6); }
+.memory-stats .od-stat > :first-child { font-size: var(--fs-2xl); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+.memory-stats .od-stat > :last-child { font-size: var(--fs-sm); color: var(--muted-fg); }
+.mbar { display: flex; height: 14px; border-radius: 999px; overflow: hidden; gap: 2px; background: var(--bg); }
+.mbar span { display: block; min-width: 4px; transition: flex-grow 400ms var(--ease); }
+.legend { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--s-2); margin-top: var(--s-4); }
+.legend button { display: grid; gap: 2px; justify-items: start; text-align: left; padding: var(--s-2) var(--s-3); min-height: 56px; border: 1px solid transparent; border-radius: var(--radius); background: transparent; cursor: pointer; transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+@media (hover: hover) { .legend button:hover { background: var(--muted); } }
+.legend button[aria-pressed="true"] { border-color: var(--fg); background: var(--muted); }
+.legend-name { display: flex; align-items: center; gap: var(--s-2); font-size: var(--fs-sm); font-weight: 500; }
+.swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; box-shadow: inset 0 0 0 1px rgba(10,10,10,0.12); }
+.legend-count { display: block; font-size: var(--fs-xs); color: var(--muted-fg); }
+
+/* ===== Gợi ý ===== */
+.sugs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4); }
+.sug { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-5); }
+.sug-reason { display: flex; gap: var(--s-2); font-size: var(--fs-sm); color: var(--muted-fg); }
+.sug-reason .od-icon { margin-top: 3px; }
+.sug-title { font-size: var(--fs-lg); font-weight: 600; letter-spacing: -0.01em; }
+.sug-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2); margin-top: auto; }
+.inline-error { font-size: var(--fs-sm); color: var(--danger); margin-top: var(--s-3); }
+
+/* ===== Bộ từ ===== */
+.deck-tools { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--s-3); margin-bottom: var(--s-4); }
+.search { display: grid; gap: var(--s-1); flex: 1 1 240px; max-width: 360px; }
+.search label { font-size: var(--fs-sm); font-weight: 500; }
+.search-box { display: flex; align-items: center; gap: var(--s-2); min-height: 44px; padding: 0 var(--s-3); border: 1px solid var(--border-strong); border-radius: var(--radius); }
+.search-box:focus-within { outline: 2px solid var(--ring); outline-offset: 2px; }
+.search-box .od-icon { color: var(--muted-fg); }
+.search-box input { flex: 1 1 0; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; color: var(--fg); }
+.active-filter { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); margin-bottom: var(--s-4); font-size: var(--fs-sm); }
+.decks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4); }
+.deck { display: flex; flex-direction: column; gap: var(--s-4); padding: var(--s-5); }
+.deck.has-due { border-color: var(--fg); }
+.deck-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s-3); }
+.deck-title { font-size: var(--fs-lg); font-weight: 600; letter-spacing: -0.01em; line-height: 1.35; margin-top: var(--s-1); }
+.progress { display: grid; gap: var(--s-2); }
+.progress-text { display: flex; justify-content: space-between; gap: var(--s-2); font-size: var(--fs-sm); }
+.progress-text span:last-child { color: var(--muted-fg); }
+.deck .mbar { height: 8px; }
+.deck-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2); margin-top: auto; }
+.deck-chips { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+
+/* ===== Thư viện ===== */
+.library { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-4); padding: var(--s-6); background: var(--muted); border: 0; box-shadow: none; }
+.library-mark { display: grid; place-items: center; width: 48px; height: 48px; border-radius: var(--radius); background: var(--bg); flex: none; }
+.library-mark .od-icon { --od-icon-size: 24px; }
+
+/* ===== Phiên ôn ===== */
+.dlg { border: 0; padding: 0; border-radius: var(--radius-lg); width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 32px); color: var(--fg); background: var(--bg); box-shadow: 0 24px 64px rgba(10,10,10,0.24); }
+.dlg::backdrop { background: rgba(10,10,10,0.5); }
+.dlg[open] { animation: rise var(--dur-in) var(--ease); }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.dlg-inner { display: flex; flex-direction: column; gap: var(--s-5); padding: var(--s-6); }
+.dlg-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.dlg-title { font-size: var(--fs-base); font-weight: 600; }
+.sess-progress { display: block; height: 6px; border-radius: 999px; background: var(--muted); overflow: hidden; }
+.sess-fill { display: block; height: 100%; width: 100%; background: var(--fg); transform-origin: left; transform: scaleX(var(--p, 0)); transition: transform 300ms var(--ease); }
+.flash { display: grid; gap: var(--s-3); min-height: 260px; align-content: center; justify-items: center; text-align: center; padding: var(--s-8) var(--s-6); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.flash-word { font-size: clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+.flash-ipa { font-family: var(--font-mono); color: var(--muted-fg); font-size: var(--fs-sm); }
+.flash-meaning { font-size: var(--fs-xl); font-weight: 600; }
+.flash-ex { font-size: var(--fs-sm); color: var(--muted-fg); max-width: 44ch; font-style: italic; }
+.flash-back { display: grid; gap: var(--s-2); justify-items: center; padding-top: var(--s-4); border-top: 1px solid var(--border); width: 100%; animation: rise var(--dur-in) var(--ease); }
+.rate { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-2); }
+.rate button { display: grid; gap: 2px; justify-items: center; min-height: 64px; padding: var(--s-2); border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); cursor: pointer; transition: background-color var(--dur) var(--ease); }
+@media (hover: hover) { .rate button:hover { background: var(--muted); } }
+.rate-name { display: block; font-weight: 600; }
+.rate-hint { display: block; font-size: var(--fs-xs); color: var(--muted-fg); }
+.kbd { font-family: var(--font-mono); font-size: var(--fs-xs); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; color: var(--muted-fg); }
+.summary { display: grid; gap: var(--s-3); text-align: center; justify-items: center; padding: var(--s-4) 0; }
+.summary-num { font-size: var(--fs-3xl); font-weight: 700; letter-spacing: -0.03em; }
+
+.toast { position: fixed; left: 50%; bottom: 24px; z-index: 10; transform: translateX(-50%); display: flex; align-items: center; gap: var(--s-3); max-width: calc(100% - 32px); background: var(--fg); color: var(--bg); padding: var(--s-2) var(--s-2) var(--s-2) var(--s-4); min-height: 48px; border-radius: var(--radius); font-size: var(--fs-sm); box-shadow: 0 8px 24px rgba(10,10,10,0.18); animation: rise 200ms var(--ease); }
+.toast-action { border: 0; background: transparent; color: var(--bg); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; min-height: 36px; padding: 0 var(--s-3); cursor: pointer; border-radius: var(--radius-sm); }
+.toast-action:focus-visible { outline-color: var(--bg); }
+
+@media (max-width: 1023px) {
+  .today { grid-template-columns: minmax(0, 1fr); }
+  .streak { padding-left: 0; border-left: 0; padding-top: var(--s-5); border-top: 1px solid var(--border); }
+}
+@media (max-width: 767px) {
+  .page { padding: var(--s-4) var(--s-4) var(--s-12); }
+  .today { padding: var(--s-5); }
+  .today-actions .btn { flex: 1 1 auto; }
+  .memory { padding: var(--s-4); }
+  .memory-stats .od-stat > :first-child { font-size: var(--fs-xl); }
+  .legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sugs, .decks { grid-template-columns: minmax(0, 1fr); }
+  .deck-tools .seg { width: 100%; }
+  .search { max-width: none; }
+  .dlg-inner { padding: var(--s-4); }
+  .flash { padding: var(--s-6) var(--s-4); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+  <nav class="crumb" aria-label="Đường dẫn">
+    <span>Luyện tập</span>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page" style="color:var(--fg)">Từ vựng</span>
+  </nav>
+  <header class="page-head">
+    <h1>Từ vựng</h1>
+    <p>Ôn đúng lúc bạn sắp quên — mỗi ngày vài phút là đủ.</p>
+  </header>
+
+  <section class="section" aria-label="Việc hôm nay"><div id="today"></div></section>
+
+  <section class="section" aria-labelledby="memTitle">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title" id="memTitle">Trí nhớ của bạn</h2>
+        <p class="section-sub">Mỗi lần ôn đúng, từ lên một cấp. Bấm vào một cấp để xem bộ từ có từ ở cấp đó.</p>
+      </div>
+    </div>
+    <div class="card memory" id="memory"></div>
+  </section>
+
+  <section class="section" aria-labelledby="sugTitle" id="sugSection">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title" id="sugTitle">Gợi ý cho bạn</h2>
+        <p class="section-sub">Chọn dựa trên bài làm và lớp học của bạn.</p>
+      </div>
+    </div>
+    <div id="sugs"></div>
+  </section>
+
+  <section class="section" aria-labelledby="deckTitle">
+    <div class="section-head">
+      <h2 class="section-title" id="deckTitle">Bộ từ đang học</h2>
+    </div>
+    <div class="deck-tools">
+      <div class="search">
+        <label for="deckSearch">Tìm bộ từ</label>
+        <div class="search-box">
+          <svg class="od-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="deckSearch" type="search" autocomplete="off" placeholder="Ví dụ: environment">
+        </div>
+      </div>
+      <div class="seg" role="group" aria-label="Lọc bộ từ">
+        <button type="button" data-deck-filter="all" aria-pressed="true">Tất cả</button>
+        <button type="button" data-deck-filter="due" aria-pressed="false">Đến hạn</button>
+        <button type="button" data-deck-filter="learning" aria-pressed="false">Đang học</button>
+        <button type="button" data-deck-filter="done" aria-pressed="false">Đã thuộc hết</button>
+      </div>
+    </div>
+    <div id="activeFilter"></div>
+    <div id="decks"></div>
+  </section>
+
+  <section class="section" aria-label="Thư viện từ vựng">
+    <div class="card library">
+      <div class="od-row" style="--od-gap:16px">
+        <span class="library-mark" aria-hidden="true"><svg class="od-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a1 1 0 0 1 1-1h3v16H5a1 1 0 0 1-1-1zM8 4h4v16H8zM13.5 5.2l3.4-.9 3.6 13.5-3.4.9z"/></svg></span>
+        <div>
+          <p style="font-weight:600">Thư viện từ vựng</p>
+          <p class="section-sub tnum">6 khóa · 48 bài · tự học theo chủ đề IELTS</p>
+        </div>
+      </div>
+      <button type="button" class="btn" data-toast="Mở Thư viện từ vựng (ngoài phạm vi prototype)">Khám phá thư viện</button>
+    </div>
+  </section>
+</main>
+
+<dialog class="dlg" id="session" aria-labelledby="sessTitle">
+  <div class="dlg-inner" id="sessInner"></div>
+</dialog>
+
+<div id="toastRegion" aria-live="polite"></div>
+
+<script>
+(() => {
+  const P = {
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
+    x: '<path d="M18 6 6 18M6 6l12 12"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    flame: '<path d="M12 21a6 6 0 0 0 6-6c0-4-3-6-4-10-2 2-3 4-3 6-1-1-2-2-2-4-2 2-3 5-3 8a6 6 0 0 0 6 6z"/>',
+    rotate: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>'
+  };
+  const icon = (n, cls = '') => `<svg class="od-icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const norm = (x) => x.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
+
+  /* ---------- Dữ liệu mẫu ---------- */
+  const NOW = new Date(2026, 10, 27, 14, 0); // Thứ Sáu 27/11/2026, 14:00 — cố định để demo nhất quán
+  const SEC_PER_WORD = 15;
+  const LEVELS = [
+    { name: 'Mới gặp', hint: 'vừa học, dễ quên' },
+    { name: 'Đang nhớ', hint: 'nhớ được vài ngày' },
+    { name: 'Nhớ khá', hint: 'nhớ được 1–2 tuần' },
+    { name: 'Vững', hint: 'nhớ được cả tháng' },
+    { name: 'Thành thạo', hint: 'gần như không quên' }
+  ];
+  const INTERVAL = ['dưới 1 phút', '1 ngày', '3 ngày', '7 ngày', '16 ngày', '35 ngày'];
+
+  const W = (w, ipa, pos, vi, ex, level) => ({ w, ipa, pos, vi, ex, level });
+  const decks = [
+    { id: 'd1', source: 'class', origin: 'Lớp IELTS Intensive 6.5 · K24', title: 'Education & Learning', newCount: 5, due: 12, dist: [8, 10, 14, 15, 8],
+      pool: [
+        W('curriculum', '/kəˈrɪkjələm/', 'n.', 'chương trình học', 'The school revised its curriculum to include coding.', 1),
+        W('compulsory', '/kəmˈpʌlsəri/', 'adj.', 'bắt buộc', 'Education is compulsory until the age of sixteen.', 0),
+        W('vocational', '/vəʊˈkeɪʃənl/', 'adj.', 'thuộc về nghề nghiệp', 'Vocational courses prepare students for specific jobs.', 2),
+        W('literacy', '/ˈlɪtərəsi/', 'n.', 'khả năng đọc viết', 'Adult literacy rates have risen sharply.', 1),
+        W('tuition fee', '/tjuˈɪʃn fiː/', 'n.', 'học phí', 'Many students take loans to pay tuition fees.', 2)
+      ],
+      fresh: [
+        W('scholarship', '/ˈskɒləʃɪp/', 'n.', 'học bổng', 'She won a full scholarship to study abroad.', -1),
+        W('extracurricular', '/ˌekstrəkəˈrɪkjələ/', 'adj.', 'ngoại khóa', 'Extracurricular activities build teamwork skills.', -1)
+      ] },
+    { id: 'd2', source: 'class', origin: 'Lớp IELTS Intensive 6.5 · K24', title: 'Environment', newCount: 0, due: 7, dist: [4, 6, 10, 16, 12],
+      pool: [
+        W('deforestation', '/diːˌfɒrɪˈsteɪʃn/', 'n.', 'nạn phá rừng', 'Deforestation destroys the habitats of many species.', 1),
+        W('carbon footprint', '/ˈkɑːbən ˈfʊtprɪnt/', 'n.', 'lượng khí thải carbon', 'Cycling to work reduces your carbon footprint.', 2),
+        W('renewable energy', '/rɪˈnjuːəbl ˈenədʒi/', 'n.', 'năng lượng tái tạo', 'The government invests heavily in renewable energy.', 3),
+        W('biodiversity', '/ˌbaɪəʊdaɪˈvɜːsəti/', 'n.', 'đa dạng sinh học', 'Coral reefs are rich in biodiversity.', 0)
+      ], fresh: [] },
+    { id: 'd3', source: 'library', origin: 'Khóa học Writing Band 7', title: 'Collocations cho Writing Task 2', newCount: 10, due: 5, dist: [12, 14, 18, 16, 10],
+      pool: [
+        W('play a pivotal role in', '/pleɪ ə ˈpɪvətl rəʊl/', 'phr.', 'đóng vai trò then chốt trong', 'Technology plays a pivotal role in modern education.', 2),
+        W('pose a threat to', '/pəʊz ə θret tuː/', 'phr.', 'gây ra mối đe dọa cho', 'Plastic waste poses a threat to marine life.', 1),
+        W('raise awareness of', '/reɪz əˈweənəs/', 'phr.', 'nâng cao nhận thức về', 'Campaigns can raise awareness of mental health.', 3),
+        W('strike a balance between', '/straɪk ə ˈbæləns/', 'phr.', 'cân bằng giữa', 'It is hard to strike a balance between work and study.', 0)
+      ],
+      fresh: [
+        W('draw a conclusion', '/drɔː ə kənˈkluːʒn/', 'phr.', 'rút ra kết luận', 'It is too early to draw a conclusion from the data.', -1),
+        W('bridge the gap', '/brɪdʒ ðə ɡæp/', 'phr.', 'thu hẹp khoảng cách', 'Online courses help bridge the gap between rich and poor.', -1)
+      ] },
+    { id: 'd4', source: 'suggested', origin: 'Gợi ý', title: 'Phrasal verbs cho Speaking', newCount: 0, due: 0, dist: [0, 0, 4, 12, 24], pool: [], fresh: [] }
+  ];
+  let suggestions = [
+    { id: 's1', title: 'Từ vựng chủ đề Health', words: 30, reason: 'Bài Writing gần đây của bạn dùng lặp “healthy” và “sick” — bộ này có các cách diễn đạt thay thế.' },
+    { id: 's2', title: 'Linking words cho Task 1', words: 24, reason: 'Giáo viên lớp K24 đề xuất trước buổi Writing Task 1: Process & Map.' }
+  ];
+  const streak = { count: 12, week: [true, true, true, true, true, true, false] }; // 7 ngày gần nhất, ô cuối là hôm nay
+  const WEEK_LABELS = ['T7', 'CN', 'T2', 'T3', 'T4', 'T5', 'T6'];
+  const NEXT_DUE = { at: new Date(2026, 10, 27, 17, 20), count: 8 };
+
+  const learnedOf = (d) => d.dist[1] + d.dist[2] + d.dist[3] + d.dist[4];
+  const totalOf = (d) => d.newCount + d.dist.reduce((a, b) => a + b, 0);
+  const sum = (f) => decks.reduce((a, d) => a + f(d), 0);
+
+  /* ---------- Hôm nay ---------- */
+  function renderToday() {
+    const due = sum((d) => d.due);
+    const fresh = sum((d) => d.newCount);
+    const dueDecks = decks.filter((d) => d.due > 0).length;
+    const mins = Math.max(1, Math.round((due * SEC_PER_WORD) / 60));
+    let main;
+    if (!decks.length) {
+      main = `<p class="eyebrow">Hôm nay</p>
+        <p class="today-title">Bắt đầu bộ từ đầu tiên</p>
+        <p class="today-sub">Chọn một gợi ý bên dưới hoặc mở Thư viện từ vựng.</p>`;
+    } else if (due > 0) {
+      main = `<p class="eyebrow">Hôm nay</p>
+        <p class="today-title tnum">${due} từ đến hạn ôn</p>
+        <p class="today-sub">Khoảng <span class="tnum">${mins}</span> phút · từ <span class="tnum">${dueDecks}</span> bộ từ${fresh ? ` · thêm <span class="tnum">${fresh}</span> từ mới nếu bạn muốn học tiếp` : ''}</p>
+        <div class="today-actions">
+          <button type="button" class="btn btn-primary btn-lg" data-start="review" id="startReview">Bắt đầu ôn</button>
+          ${fresh ? `<button type="button" class="btn btn-lg" data-start="new" id="startNew">${icon('plus')}Học từ mới</button>` : ''}
+        </div>`;
+    } else {
+      const diff = NEXT_DUE.at - NOW;
+      const h = Math.floor(diff / 3600000), m = Math.round((diff % 3600000) / 60000);
+      main = `<p class="eyebrow">Hôm nay</p>
+        <p class="today-title">Bạn đã ôn xong hôm nay</p>
+        <p class="today-sub">Lượt ôn tiếp theo sau <span class="tnum od-nowrap">${h} giờ ${m} phút</span> · <span class="tnum">${NEXT_DUE.count}</span> từ</p>
+        ${fresh ? `<div class="today-actions"><button type="button" class="btn btn-primary btn-lg" data-start="new" id="startNew">${icon('plus')}Học <span class="tnum">${fresh}</span> từ mới</button></div>` : ''}`;
+    }
+    const doneToday = streak.week[6];
+    const el = document.getElementById('today');
+    el.className = `today ${due > 0 ? '' : 'is-calm'}`;
+    el.innerHTML = `
+      <div>${main}</div>
+      <div class="streak">
+        <div>
+          <p class="eyebrow">Chuỗi ngày học</p>
+          <p class="streak-num tnum">${streak.count} <small>ngày liên tiếp</small></p>
+        </div>
+        <ul class="week" aria-label="7 ngày gần nhất">
+          ${streak.week.map((on, i) => `
+            <li class="day ${on ? 'is-done' : ''} ${i === 6 ? 'is-today' : ''}">
+              <span class="day-dot" aria-hidden="true">${on ? icon('check') : ''}</span>
+              <span class="day-label">${i === 6 ? 'Nay' : WEEK_LABELS[i]}</span>
+              <span class="sr-only">${on ? 'đã học' : 'chưa học'}</span>
+            </li>`).join('')}
+        </ul>
+        <p class="section-sub">${doneToday ? 'Hôm nay đã tính vào chuỗi.' : 'Ôn ít nhất 1 từ hôm nay để giữ chuỗi.'}</p>
+      </div>`;
+  }
+
+  /* ---------- Trí nhớ ---------- */
+  let levelFilter = null;
+  function renderMemory() {
+    const dist = [0, 1, 2, 3, 4].map((i) => sum((d) => d.dist[i]));
+    const learned = dist[1] + dist[2] + dist[3] + dist[4];
+    const tracked = dist.reduce((a, b) => a + b, 0);
+    document.getElementById('memory').innerHTML = `
+      <div class="memory-stats">
+        <div class="od-stat"><span class="tnum">${learned}</span><span>từ đã thuộc</span></div>
+        <div class="od-stat"><span class="tnum">${dist[4]}</span><span>từ thành thạo</span></div>
+        <div class="od-stat"><span class="tnum">87%</span><span>tỉ lệ nhớ 30 ngày</span></div>
+      </div>
+      <div class="mbar" role="img" aria-label="Phân bổ ${tracked} từ theo 5 cấp trí nhớ">
+        ${dist.map((c, i) => c ? `<span style="flex-grow:${c};background:var(--lv${i + 1})"></span>` : '').join('')}
+      </div>
+      <div class="legend" role="group" aria-label="Lọc bộ từ theo cấp trí nhớ">
+        ${LEVELS.map((lv, i) => `
+          <button type="button" data-level="${i}" aria-pressed="${levelFilter === i}">
+            <span class="legend-name"><span class="swatch" style="background:var(--lv${i + 1})"></span>${lv.name}</span>
+            <span class="legend-count tnum">${dist[i]} từ · ${lv.hint}</span>
+          </button>`).join('')}
+      </div>`;
+  }
+
+  /* ---------- Gợi ý ---------- */
+  let busySug = null;
+  let sugError = null;
+  function renderSugs() {
+    const sec = document.getElementById('sugSection');
+    sec.hidden = suggestions.length === 0;
+    document.getElementById('sugs').innerHTML = `
+      <div class="sugs">
+        ${suggestions.map((s) => `
+          <article class="card sug" id="sug-${s.id}" aria-labelledby="sugt-${s.id}">
+            <p class="sug-reason">${icon('spark')}<span>${esc(s.reason)}</span></p>
+            <h3 class="sug-title" id="sugt-${s.id}">${esc(s.title)}</h3>
+            <div class="sug-foot">
+              <span class="chip tnum">${s.words} từ</span>
+              <span class="od-row">
+                <button type="button" class="btn btn-ghost" data-sug-hide="${s.id}" ${busySug ? 'disabled' : ''} aria-label="Ẩn gợi ý ${esc(s.title)}">Ẩn</button>
+                <button type="button" class="btn btn-primary" data-sug-add="${s.id}" id="sugadd-${s.id}" ${busySug ? 'disabled' : ''}>${busySug === s.id ? 'Đang thêm…' : 'Bắt đầu học'}</button>
+              </span>
+            </div>
+          </article>`).join('')}
+      </div>
+      ${sugError ? `<p class="inline-error" role="alert">${esc(sugError)}</p>` : ''}`;
+  }
+
+  /* ---------- Bộ từ ---------- */
+  let deckFilter = 'all';
+  let deckQuery = '';
+  function deckState(d) {
+    if (d.due > 0) return 'due';
+    if (learnedOf(d) === totalOf(d)) return 'done';
+    return 'learning';
+  }
+  function deckCard(d) {
+    const total = totalOf(d), learned = learnedOf(d);
+    const srcLabel = { class: 'Lớp học', library: 'Khóa học', suggested: 'Gợi ý' }[d.source];
+    let action;
+    if (d.due > 0) action = `<button type="button" class="btn btn-primary" data-start="review" data-deck="${d.id}" id="deckbtn-${d.id}">Ôn <span class="tnum">${d.due}</span> từ</button>`;
+    else if (d.newCount > 0) action = `<button type="button" class="btn" data-start="new" data-deck="${d.id}" id="deckbtn-${d.id}">${icon('plus')}Học <span class="tnum">${d.newCount}</span> từ mới</button>`;
+    else action = `<button type="button" class="btn btn-ghost" data-toast="Mở bộ từ “${esc(d.title)}” (ngoài phạm vi prototype)" id="deckbtn-${d.id}">Xem bộ từ</button>`;
+    const chips = [
+      d.due > 0 ? `<span class="chip chip-warn">${icon('clock')}<span class="tnum">${d.due}</span> đến hạn</span>` : '',
+      d.newCount > 0 ? `<span class="chip"><span class="tnum">${d.newCount}</span> từ mới</span>` : '',
+      learned === total ? `<span class="chip chip-done">${icon('check')}Đã thuộc hết</span>` : '',
+      levelFilter !== null && d.dist[levelFilter] ? `<span class="chip"><span class="tnum">${d.dist[levelFilter]}</span> từ ${LEVELS[levelFilter].name.toLowerCase()}</span>` : ''
+    ].join('');
+    return `
+      <article class="card deck ${d.due > 0 ? 'has-due' : ''}" aria-labelledby="dt-${d.id}">
+        <div class="deck-top">
+          <div style="min-width:0">
+            <p class="eyebrow">${srcLabel} · ${esc(d.origin)}</p>
+            <h3 class="deck-title" id="dt-${d.id}">${esc(d.title)}</h3>
+          </div>
+        </div>
+        <div class="progress">
+          <div class="progress-text"><span>Đã thuộc <strong class="tnum">${learned}</strong>/<span class="tnum">${total}</span></span><span class="tnum">${Math.round((learned / total) * 100)}%</span></div>
+          <div class="mbar" aria-hidden="true">
+            ${d.dist.map((c, i) => c ? `<span style="flex-grow:${c};background:var(--lv${i + 1})"></span>` : '').join('')}
+            ${d.newCount ? `<span style="flex-grow:${d.newCount};background:var(--muted);box-shadow:inset 0 0 0 1px var(--border)"></span>` : ''}
+          </div>
+        </div>
+        <div class="deck-foot">
+          <div class="deck-chips">${chips}</div>
+          ${action}
+        </div>
+      </article>`;
+  }
+  function renderDecks() {
+    const q = norm(deckQuery.trim());
+    const list = decks
+      .filter((d) => deckFilter === 'all' || deckState(d) === deckFilter)
+      .filter((d) => levelFilter === null || d.dist[levelFilter] > 0)
+      .filter((d) => !q || norm(d.title).includes(q) || norm(d.origin).includes(q))
+      .sort((a, b) => b.due - a.due || b.newCount - a.newCount);
+    document.getElementById('activeFilter').innerHTML = levelFilter === null ? '' : `
+      <div class="active-filter">
+        <span>Đang xem bộ từ có từ ở cấp <strong>${LEVELS[levelFilter].name}</strong></span>
+        <button type="button" class="btn btn-ghost" data-clear-level>${icon('x')}Bỏ lọc</button>
+      </div>`;
+    const box = document.getElementById('decks');
+    if (!decks.length) {
+      box.innerHTML = `<p class="empty">Bạn chưa có bộ từ nào. Bắt đầu từ một gợi ý ở trên, mở Thư viện từ vựng, hoặc đợi giáo viên giao bộ từ cho lớp.</p>`;
+      return;
+    }
+    if (!list.length) {
+      const msg = q ? `Không có bộ từ nào khớp “${esc(deckQuery.trim())}”.`
+        : deckFilter === 'due' ? 'Không có bộ từ nào đến hạn ôn. Bạn đang theo kịp lịch ôn!'
+        : deckFilter === 'done' ? 'Chưa có bộ từ nào thuộc hết. Cứ ôn đều, bộ đầu tiên sẽ sớm về đích.'
+        : 'Không có bộ từ nào khớp bộ lọc.';
+      box.innerHTML = `<div class="empty od-stack" style="justify-items:center"><span>${msg}</span><span><button type="button" class="btn" data-reset-filters>Xem tất cả bộ từ</button></span></div>`;
+      return;
+    }
+    box.innerHTML = `<div class="decks">${list.map(deckCard).join('')}</div>`;
+  }
+  function setDeckFilter(f) {
+    deckFilter = f;
+    document.querySelectorAll('[data-deck-filter]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.deckFilter === f)));
+    renderDecks();
+  }
+  document.getElementById('deckSearch').addEventListener('input', (e) => { deckQuery = e.target.value; renderDecks(); });
+
+  function renderAll() { renderToday(); renderMemory(); renderSugs(); renderDecks(); }
+
+  /* ---------- Phiên ôn / học từ mới ---------- */
+  const dlg = document.getElementById('session');
+  const inner = document.getElementById('sessInner');
+  let sess = null;
+  let returnFocusId = null;
+
+  function buildQueue(mode, deckId) {
+    const src = deckId ? decks.filter((d) => d.id === deckId) : decks;
+    const q = [];
+    src.forEach((d) => {
+      if (mode === 'review') {
+        const n = Math.min(d.due, d.pool.length ? 5 : 0);
+        for (let i = 0; i < n; i++) q.push({ deck: d, word: d.pool[i % d.pool.length] });
+      } else {
+        const n = Math.min(d.newCount, d.fresh.length ? 5 : 0);
+        for (let i = 0; i < n; i++) q.push({ deck: d, word: d.fresh[i % d.fresh.length] });
+      }
+    });
+    return q.slice(0, 5);
+  }
+
+  function openSession(mode, deckId, triggerId) {
+    const queue = buildQueue(mode, deckId);
+    if (!queue.length) { toast('Không có từ nào để ' + (mode === 'review' ? 'ôn' : 'học') + ' lúc này.'); return; }
+    sess = { mode, queue, i: 0, flipped: false, result: { again: 0, good: 0, easy: 0 } };
+    returnFocusId = triggerId;
+    renderCard();
+    dlg.showModal();
+    const f = document.getElementById('flipBtn');
+    if (f) f.focus();
+  }
+
+  function renderCard() {
+    const { queue, i, flipped, mode } = sess;
+    const item = queue[i];
+    const w = item.word;
+    const lv = mode === 'review' ? Math.max(0, w.level) : -1;
+    const hint = (k) => {
+      if (k === 'again') return INTERVAL[0];
+      if (k === 'good') return INTERVAL[Math.min(lv + 2, 5)];
+      return INTERVAL[Math.min(lv + 3, 5)];
+    };
+    inner.innerHTML = `
+      <div class="dlg-head">
+        <div>
+          <h2 class="dlg-title" id="sessTitle">${mode === 'review' ? 'Ôn từ đến hạn' : 'Học từ mới'}</h2>
+          <p class="section-sub">${esc(item.deck.title)} · thẻ <span class="tnum">${i + 1}/${queue.length}</span></p>
+        </div>
+        <button type="button" class="btn btn-icon btn-ghost" data-close aria-label="Dừng phiên và lưu tiến độ">${icon('x')}</button>
+      </div>
+      <span class="sess-progress" role="progressbar" aria-label="Tiến độ phiên" aria-valuemin="0" aria-valuemax="${queue.length}" aria-valuenow="${i}"><span class="sess-fill" style="--p:${i / queue.length}"></span></span>
+      <div class="flash" aria-live="polite">
+        ${mode === 'review' ? `<span class="chip"><span class="swatch" style="background:var(--lv${lv + 1})"></span>${LEVELS[lv].name}</span>` : '<span class="chip chip-ink">Từ mới</span>'}
+        <p class="flash-word" lang="en">${esc(w.w)}</p>
+        <p class="flash-ipa">${esc(w.ipa)} · ${esc(w.pos)}</p>
+        ${flipped ? `
+          <div class="flash-back">
+            <p class="flash-meaning">${esc(w.vi)}</p>
+            <p class="flash-ex" lang="en">“${esc(w.ex)}”</p>
+          </div>` : ''}
+      </div>
+      ${flipped ? `
+        <div class="rate" role="group" aria-label="Bạn nhớ từ này thế nào?">
+          <button type="button" data-rate="again"><span class="rate-name">Quên</span><span class="rate-hint">ôn lại ${hint('again')} · <span class="kbd">1</span></span></button>
+          <button type="button" data-rate="good"><span class="rate-name">Nhớ</span><span class="rate-hint">ôn lại sau ${hint('good')} · <span class="kbd">2</span></span></button>
+          <button type="button" data-rate="easy"><span class="rate-name">Dễ</span><span class="rate-hint">ôn lại sau ${hint('easy')} · <span class="kbd">3</span></span></button>
+        </div>` : `
+        <button type="button" class="btn btn-primary btn-lg" id="flipBtn" data-flip>Xem nghĩa <span class="kbd" style="color:inherit;border-color:currentColor">Space</span></button>`}`;
+  }
+
+  function rate(kind) {
+    const { deck, word } = sess.queue[sess.i];
+    sess.result[kind]++;
+    if (sess.mode === 'review') {
+      const from = Math.max(0, word.level);
+      const to = kind === 'again' ? 0 : Math.min(4, from + (kind === 'easy' ? 2 : 1));
+      if (deck.dist[from] > 0) { deck.dist[from]--; deck.dist[to]++; }
+      deck.due = Math.max(0, deck.due - 1);
+    } else {
+      const to = kind === 'again' ? 0 : 1;
+      deck.newCount = Math.max(0, deck.newCount - 1);
+      deck.dist[to]++;
+    }
+    if (!streak.week[6]) { streak.week[6] = true; streak.count++; }
+    sess.i++;
+    sess.flipped = false;
+    if (sess.i >= sess.queue.length) return showSummary();
+    renderCard();
+    const f = document.getElementById('flipBtn');
+    if (f) f.focus();
+  }
+
+  function showSummary() {
+    const r = sess.result, n = sess.queue.length;
+    const dueLeft = sum((d) => d.due);
+    inner.innerHTML = `
+      <div class="dlg-head">
+        <h2 class="dlg-title" id="sessTitle">Xong phiên ${sess.mode === 'review' ? 'ôn' : 'học'}</h2>
+        <button type="button" class="btn btn-icon btn-ghost" data-close aria-label="Đóng">${icon('x')}</button>
+      </div>
+      <span class="sess-progress" aria-hidden="true"><span class="sess-fill" style="--p:1"></span></span>
+      <div class="summary">
+        <p class="summary-num tnum">${n} từ</p>
+        <p class="section-sub tnum">${r.good + r.easy} nhớ · ${r.again} quên${r.again ? ' — các từ quên sẽ quay lại ngay trong lượt ôn tới' : ''}</p>
+        <p class="section-sub">Chuỗi ngày học: <strong class="tnum" style="color:var(--fg)">${streak.count} ngày</strong></p>
+      </div>
+      <div class="od-cluster" style="justify-content:flex-end">
+        ${dueLeft > 0 ? `<button type="button" class="btn" data-continue>Ôn tiếp <span class="tnum">${dueLeft}</span> từ</button>` : ''}
+        <button type="button" class="btn btn-primary" data-close id="doneBtn">Xong</button>
+      </div>`;
+    sess.done = true;
+    const b = document.getElementById('doneBtn');
+    if (b) b.focus();
+  }
+
+  dlg.addEventListener('close', () => {
+    const partial = sess && !sess.done && sess.i > 0;
+    sess = null;
+    renderAll();
+    if (partial) toast('Đã lưu tiến độ các thẻ bạn vừa ôn.');
+    const t = returnFocusId && document.getElementById(returnFocusId);
+    (t || document.getElementById('startReview') || document.getElementById('startNew') || document.querySelector('h1')).focus?.();
+  });
+
+  dlg.addEventListener('keydown', (e) => {
+    if (!sess || sess.done) return;
+    if (!sess.flipped && (e.key === ' ' || e.key === 'Enter') && e.target.id !== 'flipBtn' && !e.target.closest('[data-close]')) {
+      e.preventDefault(); flip();
+    } else if (sess.flipped && ['1', '2', '3'].includes(e.key)) {
+      e.preventDefault(); rate({ 1: 'again', 2: 'good', 3: 'easy' }[e.key]);
+    }
+  });
+  function flip() {
+    sess.flipped = true;
+    renderCard();
+    const b = inner.querySelector('[data-rate="good"]');
+    if (b) b.focus();
+  }
+
+  /* ---------- Toast ---------- */
+  let toastTimer;
+  function toast(msg, action) {
+    document.querySelectorAll('.toast').forEach((x) => x.remove());
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.setAttribute('role', 'status');
+    const span = document.createElement('span');
+    span.textContent = msg;
+    el.appendChild(span);
+    if (action) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'toast-action';
+      b.textContent = action.label;
+      b.addEventListener('click', () => { el.remove(); action.run(); });
+      el.appendChild(b);
+    }
+    (document.querySelector('dialog[open]') || document.getElementById('toastRegion')).appendChild(el);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.remove(), action ? 6000 : 2800);
+  }
+
+  /* ---------- Events ---------- */
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('button');
+    if (!t) return;
+    if (t.dataset.start) {
+      if (!t.id) t.id = `start-${Math.random().toString(36).slice(2, 7)}`;
+      openSession(t.dataset.start, t.dataset.deck || null, t.id);
+      return;
+    }
+    if (t.hasAttribute('data-flip')) { flip(); return; }
+    if (t.dataset.rate) { rate(t.dataset.rate); return; }
+    if (t.hasAttribute('data-continue')) {
+      const q = buildQueue('review', null);
+      sess = { mode: 'review', queue: q, i: 0, flipped: false, result: { again: 0, good: 0, easy: 0 } };
+      renderCard();
+      const f = document.getElementById('flipBtn'); if (f) f.focus();
+      return;
+    }
+    if (t.hasAttribute('data-close')) { dlg.close(); return; }
+    if (t.dataset.level !== undefined) {
+      const lv = Number(t.dataset.level);
+      levelFilter = levelFilter === lv ? null : lv;
+      renderMemory(); renderDecks();
+      const again = document.querySelector(`[data-level="${lv}"]`); if (again) again.focus();
+      return;
+    }
+    if (t.hasAttribute('data-clear-level')) {
+      const lv = levelFilter; levelFilter = null; renderMemory(); renderDecks();
+      const b = document.querySelector(`[data-level="${lv}"]`); if (b) b.focus();
+      return;
+    }
+    if (t.hasAttribute('data-reset-filters')) {
+      levelFilter = null; deckQuery = ''; document.getElementById('deckSearch').value = '';
+      renderMemory(); setDeckFilter('all');
+      document.getElementById('deckSearch').focus();
+      return;
+    }
+    if (t.dataset.deckFilter) { setDeckFilter(t.dataset.deckFilter); return; }
+    if (t.dataset.sugAdd) {
+      const s = suggestions.find((x) => x.id === t.dataset.sugAdd);
+      if (!s || busySug) return;
+      busySug = s.id; sugError = null; renderSugs();
+      setTimeout(() => {
+        busySug = null;
+        if (navigator.onLine === false) { sugError = 'Không thể thêm bộ từ gợi ý. Kiểm tra kết nối rồi thử lại.'; renderSugs(); return; }
+        suggestions = suggestions.filter((x) => x.id !== s.id);
+        decks.push({ id: `d-${s.id}`, source: 'suggested', origin: 'Gợi ý', title: s.title, newCount: s.words, due: 0, dist: [0, 0, 0, 0, 0], pool: [],
+          fresh: [W('well-being', '/ˌwel ˈbiːɪŋ/', 'n.', 'sức khỏe, hạnh phúc', 'Exercise improves both physical and mental well-being.', -1),
+                  W('sedentary', '/ˈsedntri/', 'adj.', 'ít vận động', 'A sedentary lifestyle increases health risks.', -1)] });
+        renderAll();
+        toast(`Đã thêm “${s.title}” vào Bộ từ đang học.`);
+        const b = document.getElementById(`deckbtn-d-${s.id}`); if (b) b.focus();
+      }, 700);
+      return;
+    }
+    if (t.dataset.sugHide) {
+      const idx = suggestions.findIndex((x) => x.id === t.dataset.sugHide);
+      if (idx < 0) return;
+      const [removed] = suggestions.splice(idx, 1);
+      renderSugs();
+      const next = document.querySelector('[data-sug-add]') || document.getElementById('deckSearch');
+      if (next) next.focus();
+      toast(`Đã ẩn gợi ý “${removed.title}”.`, { label: 'Hoàn tác', run: () => { suggestions.splice(idx, 0, removed); renderSugs(); const b = document.getElementById(`sugadd-${removed.id}`); if (b) b.focus(); } });
+      return;
+    }
+    if (t.dataset.toast) toast(t.dataset.toast);
+  });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>

@@ -1,4 +1,7 @@
 import { Link } from "@tanstack/react-router";
+import { buttonVariants } from "@teacher-os/ui/components/button";
+import { Library } from "lucide-react";
+import { cn } from "@/lib/cn";
 
 export interface VocabLibrarySummary {
 	courseCount: number;
@@ -35,26 +38,36 @@ export function VocabCoursesCta({
 	}
 
 	return (
-		<section className="space-y-3">
+		<section aria-label="Thư viện từ vựng">
 			<Link
 				to="/practice/vocabulary/courses"
 				data-testid="vocab-courses-cta"
-				className="group flex flex-wrap items-center justify-between gap-4 rounded-md rounded-xl border bg-card p-5 shadow-sm transition-colors duration-150 hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+				className="group flex flex-wrap items-center justify-between gap-4 rounded-xl bg-muted p-6 transition-colors duration-150 hover:bg-muted/80 focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 			>
-				<div className="space-y-1.5">
-					<p className="font-mono text-[11px] text-primary uppercase tracking-[0.2em]">
-						{`Thư viện từ vựng · ${summary.courseCount} khóa · ${summary.lessonCount} bài`}
-					</p>
-					<h2 className="font-extrabold text-foreground text-xl tracking-[-0.02em] group-hover:text-primary">
-						Khóa học từ vựng
-					</h2>
-					<p className="text-muted-foreground text-sm">
-						Tự chọn lộ trình từ vựng IELTS, TOEIC và giao tiếp theo chủ đề với
-						hình ảnh minh họa và phát âm chuẩn.
-					</p>
+				<div className="flex min-w-0 items-center gap-4">
+					<span
+						aria-hidden="true"
+						className="grid size-12 shrink-0 place-items-center rounded-lg bg-background text-foreground shadow-xs"
+					>
+						<Library className="size-6" />
+					</span>
+					<div className="min-w-0">
+						<p className="font-semibold text-foreground group-hover:text-primary">
+							Thư viện từ vựng
+						</p>
+						<p className="text-muted-foreground text-sm tabular-nums">
+							{`Thư viện từ vựng · ${summary.courseCount} khóa · ${summary.lessonCount} bài · tự học theo chủ đề`}
+						</p>
+					</div>
 				</div>
-				<span className="shrink-0 rounded-md rounded-md border border-input bg-transparent px-3.5 py-2 font-mono text-foreground text-xs transition-colors group-hover:border-primary group-hover:text-primary">
-					Khám phá khóa học →
+				<span
+					aria-hidden="true"
+					className={cn(
+						buttonVariants({ variant: "outline" }),
+						"shrink-0 border-input",
+					)}
+				>
+					Khám phá thư viện
 				</span>
 			</Link>
 		</section>

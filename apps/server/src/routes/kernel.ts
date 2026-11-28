@@ -1,3 +1,4 @@
+import { resolveClassExpectedEndDate } from "@teacher-os/api/class-opening-email";
 import type {
 	BillingTimelineEvent,
 	BillingTimelineResponse,
@@ -174,7 +175,11 @@ import {
 	dashboardReminderRoutes,
 	resolveReminderScope,
 } from "./dashboard-reminders";
-import { activateEnrollment } from "./enrollment-activation";
+import {
+	activateEnrollment,
+	loadClassCancels,
+	loadClassShifts,
+} from "./enrollment-activation";
 import { eventRoutes } from "./events";
 import { gradingRoutes } from "./grading";
 import { holidayRoutes, isRollbackableConstraintError } from "./holidays";
@@ -3106,7 +3111,6 @@ export function kernelRoutes(deps: {
 		let emailScheduleRaw = cls.schedule;
 		let emailMode = cls.mode;
 		let emailSessionsTotal = cls.sessionsTotal;
-		let emailLevel = cls.level;
 
 		if (input.mode === "new_only") {
 			confirmedAt = cls.openingConfirmedAt ?? now;
@@ -3222,7 +3226,6 @@ export function kernelRoutes(deps: {
 			emailScheduleRaw = rescheduled.updatedRow.schedule;
 			emailMode = rescheduled.updatedRow.mode;
 			emailSessionsTotal = rescheduled.updatedRow.sessionsTotal;
-			emailLevel = rescheduled.updatedRow.level;
 		} else {
 			const nextVersion = currentVersion + 1;
 			const updated = await db
@@ -3243,7 +3246,6 @@ export function kernelRoutes(deps: {
 				.returning({
 					id: classTable.id,
 					name: classTable.name,
-					level: classTable.level,
 					schedule: classTable.schedule,
 					sessionsTotal: classTable.sessionsTotal,
 					mode: classTable.mode,
@@ -3280,7 +3282,6 @@ export function kernelRoutes(deps: {
 			emailScheduleRaw = updatedRow.schedule;
 			emailMode = updatedRow.mode;
 			emailSessionsTotal = updatedRow.sessionsTotal;
-			emailLevel = updatedRow.level;
 		}
 
 		const [rosterRows, priorNotifState, { senderName }] = await Promise.all([
@@ -3396,36 +3397,102 @@ export function kernelRoutes(deps: {
 				studentName: r.studentName,
 			}));
 
-		const events = classOpeningConfirmedEvents({
-			classId,
-			className: emailClassName,
-			startDate: persistedStartDate,
-			scheduleRaw: emailScheduleRaw,
-			mode: emailMode,
-			sessionsTotal: emailSessionsTotal,
-			level: emailLevel,
-			version: announcementVersion,
-			isUpdate: input.mode === "all",
-			teacherNote: persistedNote,
-			orgName: senderName,
-			studentOrigin: deps.studentOrigin,
-			students: targets.map((t) => ({
-				id: t.studentId,
-				name: t.studentName,
-				hasEmail: t.email.trim().length > 0,
-			})),
-		});
+		let queuedEmailCount = 0;
+		let inAppOnlyCount = 0;
+		if (targets.length > 0) {
+			const [
+				classLessonRows,
+				classSessionRows,
+				curriculumCopy,
+				classHolidayShifts,
+				classHolidayCancels,
+			] = await Promise.all([
+				db
+					.select({ date: lesson.date, status: lesson.status })
+					.from(lesson)
+					.where(and(eq(lesson.orgId, ctx.orgId), eq(lesson.classId, classId))),
+				db
+					.select({ date: classSession.date })
+					.from(classSession)
+					.where(
+						and(
+							eq(classSession.orgId, ctx.orgId),
+							eq(classSession.classId, classId),
+						),
+					),
+				findClassCurriculum(db, classId, ctx.orgId),
+				loadClassShifts(db, ctx.orgId, classId),
+				loadClassCancels(db, ctx.orgId, classId),
+			]);
+			const isManualForEmail =
+				!curriculumCopy &&
+				(cls.schedulingMode === "manual" || classSessionRows.length > 0);
+			let effectiveSessionsTotal = emailSessionsTotal;
+			if (
+				!isManualForEmail &&
+				effectiveSessionsTotal === 0 &&
+				curriculumCopy &&
+				classLessonRows.length === 0
+			) {
+				const [countRow] = await db
+					.select({ count: sql<number>`count(*)` })
+					.from(syllabusLesson)
+					.innerJoin(
+						syllabusModule,
+						and(
+							eq(syllabusLesson.moduleId, syllabusModule.id),
+							eq(syllabusModule.orgId, ctx.orgId),
+						),
+					)
+					.where(
+						and(
+							eq(syllabusLesson.orgId, ctx.orgId),
+							eq(syllabusModule.syllabusId, curriculumCopy.id),
+						),
+					);
+				effectiveSessionsTotal = Number(countRow?.count ?? 0);
+			}
+			const expectedEndDate = resolveClassExpectedEndDate({
+				startDate: persistedStartDate,
+				scheduleRaw: emailScheduleRaw,
+				sessionsTotal: effectiveSessionsTotal,
+				isManual: isManualForEmail,
+				lessons: classLessonRows,
+				classSessions: classSessionRows,
+				holidayShiftOriginalDates: classHolidayShifts.map(
+					(s) => s.originalDate,
+				),
+				holidayCancelDates: classHolidayCancels.map((hc) => hc.date),
+			});
 
-		const { createdIds, queuedEmailIds } = await emitNotifications(
-			notificationDepsFrom(deps),
-			ctx.orgId,
-			events,
-		);
-		const queuedEmailCount = queuedEmailIds.length;
-		const inAppOnlyCount = Math.max(
-			0,
-			createdIds.length - queuedEmailIds.length,
-		);
+			const events = classOpeningConfirmedEvents({
+				classId,
+				className: emailClassName,
+				startDate: persistedStartDate,
+				scheduleRaw: emailScheduleRaw,
+				mode: emailMode,
+				sessionsTotal: effectiveSessionsTotal,
+				expectedEndDate,
+				version: announcementVersion,
+				isUpdate: input.mode === "all",
+				teacherNote: persistedNote,
+				orgName: senderName,
+				studentOrigin: deps.studentOrigin,
+				students: targets.map((t) => ({
+					id: t.studentId,
+					name: t.studentName,
+					hasEmail: t.email.trim().length > 0,
+				})),
+			});
+
+			const { createdIds, queuedEmailIds } = await emitNotifications(
+				notificationDepsFrom(deps),
+				ctx.orgId,
+				events,
+			);
+			queuedEmailCount = queuedEmailIds.length;
+			inAppOnlyCount = Math.max(0, createdIds.length - queuedEmailIds.length);
+		}
 
 		const afterNotifState = await loadOpeningNotifState(db, ctx.orgId, classId);
 		const notifiedStudentIds = computeOpeningNotifiedStudentIds(

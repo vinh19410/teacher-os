@@ -1,8 +1,14 @@
 import { formatSchedule, parseSchedule } from "./format-schedule";
+import {
+	parseStartDateStrict,
+	parseStoredSchedule,
+	skeletonOf,
+} from "./skeleton";
 import { formatViDateDisplay, formatViWeekdayDate } from "./vietnam-date";
 
 const DEFAULT_BRAND_NAME = "Cô Mỹ Dạy Tiếng Anh";
 const INBOX_NOTE_MAX_LENGTH = 140;
+const MAX_EXPECTED_END_DATE_SESSIONS = 52;
 const EMAIL_FONT_STACK =
 	"-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif";
 
@@ -12,13 +18,145 @@ export interface ClassOpeningEmailInput {
 	scheduleRaw: string;
 	mode: string;
 	sessionsTotal?: number;
-	level?: string;
+	/**
+	 * Ngày kết thúc khóa học dự kiến (ISO `yyyy-mm-dd`).
+	 * - `undefined`: tự suy từ `startDate + scheduleRaw + sessionsTotal` qua `computeExpectedEndDateFromSchedule`.
+	 * - `null` hoặc chuỗi rỗng: ẩn dòng này khỏi email.
+	 */
+	expectedEndDate?: string | null;
 	studentName?: string;
 	orgName?: string;
 	brandName?: string;
 	teacherNote?: string;
 	isUpdate?: boolean;
 	portalUrl?: string;
+}
+
+export interface ClassSessionDateInput {
+	date: string | null | undefined;
+	status?: string;
+}
+
+/**
+ * Tính ngày kết thúc khóa học dự kiến (ISO `yyyy-mm-dd`) từ ngày khai giảng,
+ * lịch học định kỳ dạng JSON và tổng số buổi (`1..52` nguyên). Trả `null` khi
+ * lịch không có cấu trúc hoặc thiếu thông tin hợp lệ.
+ */
+export function computeExpectedEndDateFromSchedule(input: {
+	startDate: string;
+	scheduleRaw: string;
+	sessionsTotal?: number;
+}): string | null {
+	if (
+		typeof input.sessionsTotal !== "number" ||
+		!Number.isInteger(input.sessionsTotal) ||
+		input.sessionsTotal <= 0 ||
+		input.sessionsTotal > MAX_EXPECTED_END_DATE_SESSIONS
+	) {
+		return null;
+	}
+	const parsed = parseStoredSchedule(input.scheduleRaw.trim());
+	const startISO = parseStartDateStrict(input.startDate.trim());
+	if (!parsed || !startISO) return null;
+	const skeleton = skeletonOf(parsed, startISO, input.sessionsTotal);
+	if (!skeleton) return null;
+	let max: string | null = null;
+	for (const dates of skeleton.values()) {
+		for (const dateISO of dates) {
+			if (max === null || dateISO > max) max = dateISO;
+		}
+	}
+	return max;
+}
+
+function toReadonlyStringSet(
+	input?: ReadonlySet<string> | ReadonlyArray<string>,
+): ReadonlySet<string> {
+	if (!input) return new Set();
+	return input instanceof Set ? input : new Set(input);
+}
+
+/**
+ * Xác định ngày kết thúc khóa học dự kiến theo trạng thái lớp thật:
+ * - Lớp `manual`: hợp nhất ngày hợp lệ từ `classSessions` và `lessons` (bao gồm
+ *   buổi bù nghỉ lễ), loại các ngày đã hủy (`cancelled`/`holiday` hoặc trong
+ *   `holidayShiftOriginalDates`/`holidayCancelDates`).
+ * - Lớp `auto` đã có ít nhất 1 `lesson` mang ngày hợp lệ: lấy ngày lớn nhất
+ *   trong các buổi chưa bị `holiday`/`cancelled` (trả `null` nếu tất cả đều hủy/nghỉ).
+ * - Lớp `auto` chưa có `lesson` mang ngày (0 buổi hoặc legacy `date: null`): ước tính
+ *   qua `computeExpectedEndDateFromSchedule`.
+ */
+export function resolveClassExpectedEndDate(input: {
+	startDate: string;
+	scheduleRaw: string;
+	sessionsTotal?: number;
+	isManual?: boolean;
+	lessons?: ReadonlyArray<ClassSessionDateInput>;
+	classSessions?: ReadonlyArray<{ date: string | null | undefined }>;
+	holidayShiftOriginalDates?: ReadonlySet<string> | ReadonlyArray<string>;
+	holidayCancelDates?: ReadonlySet<string> | ReadonlyArray<string>;
+}): string | null {
+	const shiftedOrigSet = toReadonlyStringSet(input.holidayShiftOriginalDates);
+	const cancelDateSet = toReadonlyStringSet(input.holidayCancelDates);
+	const isManual = input.isManual ?? (input.classSessions?.length ?? 0) > 0;
+	const lessons = input.lessons ?? [];
+
+	if (isManual) {
+		const lessonsByDate = new Map<string, string[]>();
+		const candidateDates = new Set<string>();
+		for (const cs of input.classSessions ?? []) {
+			const dateISO = parseStartDateStrict((cs.date ?? "").trim());
+			if (dateISO) candidateDates.add(dateISO);
+		}
+		for (const row of lessons) {
+			const dateISO = parseStartDateStrict((row.date ?? "").trim());
+			if (!dateISO) continue;
+			candidateDates.add(dateISO);
+			const list = lessonsByDate.get(dateISO) ?? [];
+			list.push(row.status ?? "upcoming");
+			lessonsByDate.set(dateISO, list);
+		}
+		let maxDate: string | null = null;
+		for (const dateISO of candidateDates) {
+			const statuses = lessonsByDate.get(dateISO);
+			if (statuses && statuses.length > 0) {
+				if (
+					statuses.every(
+						(status) => status === "holiday" || status === "cancelled",
+					)
+				) {
+					continue;
+				}
+			} else if (shiftedOrigSet.has(dateISO) || cancelDateSet.has(dateISO)) {
+				continue;
+			}
+			if (maxDate === null || dateISO > maxDate) {
+				maxDate = dateISO;
+			}
+		}
+		return maxDate;
+	}
+
+	let hasAnyDatedLesson = false;
+	let maxAutoDate: string | null = null;
+	for (const row of lessons) {
+		const dateISO = parseStartDateStrict((row.date ?? "").trim());
+		if (!dateISO) continue;
+		hasAnyDatedLesson = true;
+		if (row.status === "holiday" || row.status === "cancelled") continue;
+		if (maxAutoDate === null || dateISO > maxAutoDate) {
+			maxAutoDate = dateISO;
+		}
+	}
+	if (hasAnyDatedLesson) {
+		return maxAutoDate;
+	}
+
+	return computeExpectedEndDateFromSchedule({
+		startDate: input.startDate,
+		scheduleRaw: input.scheduleRaw,
+		sessionsTotal: input.sessionsTotal,
+	});
 }
 
 export interface RenderedClassOpeningEmail {
@@ -183,17 +321,23 @@ export function renderClassOpeningEmail(
 		detailRows.push(["Hình thức", trimmedMode]);
 	}
 
-	const trimmedLevel = sanitizeSingleLine(input.level ?? "");
-	if (trimmedLevel) {
-		detailRows.push(["Trình độ", trimmedLevel]);
-	}
-
-	if (
-		typeof input.sessionsTotal === "number" &&
-		Number.isFinite(input.sessionsTotal) &&
-		input.sessionsTotal > 0
-	) {
-		detailRows.push(["Thời lượng", `${input.sessionsTotal} buổi`]);
+	const resolvedEndDateRaw =
+		input.expectedEndDate === undefined
+			? (computeExpectedEndDateFromSchedule({
+					startDate: trimmedStartDate,
+					scheduleRaw: trimmedSchedule,
+					sessionsTotal: input.sessionsTotal,
+				}) ?? "")
+			: (input.expectedEndDate ?? "").trim();
+	const strictEndDateISO = parseStartDateStrict(resolvedEndDateRaw);
+	const expectedEndDateDisplay = sanitizeSingleLine(
+		strictEndDateISO
+			? formatViWeekdayDate(strictEndDateISO) ||
+					formatViDateDisplay(strictEndDateISO)
+			: formatViDateDisplay(resolvedEndDateRaw) || resolvedEndDateRaw,
+	);
+	if (expectedEndDateDisplay) {
+		detailRows.push(["Ngày kết thúc khóa học dự kiến", expectedEndDateDisplay]);
 	}
 
 	const brandName =
@@ -256,7 +400,7 @@ export function renderClassOpeningEmail(
 			const borderClass = isLast ? "" : " border-row";
 			return (
 				"<tr>" +
-				`<td class="text-muted${borderClass}" style="padding:11px 16px;${borderCss}font-size:13px;line-height:20px;color:#525252;vertical-align:top;width:38%;">${escapeEmailHtml(label)}</td>` +
+				`<td class="text-muted${borderClass}" style="padding:11px 16px;${borderCss}font-size:13px;line-height:20px;color:#525252;vertical-align:top;width:44%;">${escapeEmailHtml(label)}</td>` +
 				`<td class="text-main${borderClass}" style="padding:11px 16px;${borderCss}font-size:14px;line-height:20px;font-weight:600;color:#171717;text-align:right;vertical-align:top;">${escapeEmailHtml(value)}</td>` +
 				"</tr>"
 			);

@@ -187,3 +187,28 @@ có chủ đích theo token hệ có sẵn, không phải sót quét:
 - **Chip trạng thái câu thu gọn dùng `--success`/`--warn`** ("Có đáp án" / "Thiếu đáp án",
   chấm màu `bg-success`/`bg-warn`) — tái dùng cặp trạng thái thường có sẵn, đỏ vẫn chỉ dành cho
   hành động phá hủy.
+
+## Lệch có chủ đích so với design mẫu — trang ngân hàng bài tập (/teacher/assignments) (#1043)
+
+Nguồn đối chiếu: [open-design/assignments.html](open-design/assignments.html). Các điểm dưới đây là quyết định có chủ đích theo dữ liệu thật và hợp đồng giao diện của hệ thống:
+
+- **Khung ứng dụng & token ngữ nghĩa Light/Dark:** Giữ nguyên `AppShell` (`sidebar-07`, `max-w-7xl`), topbar, ⌘K và bảng màu neutral trong `packages/ui/src/styles/globals.css` (không chỉnh sidebar/topbar, không hard-code hex; quick-action trên hàng dùng `hover:bg-foreground/10` để nổi trên nền hàng đang chọn `bg-muted`).
+- **Tỷ lệ cột & ngưỡng tách panel (`1360px`):** Inner container `1440px` của `AppShell` rộng `1110px`, nên panel xem trước giữ `w-[360px] 2xl:w-[392px]` và bảng `@container` dùng `minmax(0,1fr) 128px 48px 136px 80px` để tiêu đề không bị ép vỡ chữ. Ở `< 1360px`, panel mở thành slide-over drawer (`role="dialog"`, `aria-modal="true"`) có focus trap `Tab` và trả focus về hàng kích hoạt khi đóng hoặc xóa nháp.
+- **Tách `Band` khỏi tờ đề học viên (`#847`):** `Band` hiển thị ở bảng ngân hàng, metadata mobile, bộ sắp xếp và `.preview-head` (chrome giáo viên), nhưng bị loại khỏi `PromptStudentPaper` (tab `Đề phía học viên`) cùng toàn bộ đáp án bí mật/transcript.
+- **Bộ lọc & nhãn trạng thái theo dữ liệu thật (`#979`):** Đổi nhãn `"Đã dùng N lớp"` sang `"Đã giao N lớp"` đếm theo `classId` duy nhất (`status = 'draft'` luôn ưu tiên hiển thị `Bản nháp`); tab `Lịch sử giao` đọc từ `data.classAssignments` (tổng hợp `Đã nộp x/y`, trạng thái hạn theo giờ VN), không dựng dữ liệu chi tiết từng học viên hay thời lượng audio giả; dải kỹ năng dùng `<fieldset aria-label="Kỹ năng">` và badge đếm `aria-hidden="true"`.
+- **Modal `<Modal>` thay `<dialog>` & xóa nháp nguyên tử (`#983`):** Modal `Giao đề cho lớp` dùng `@/components/ui/modal` (`z-100`) thay `<dialog>.showModal()` để calendar popover của `DatePickerInput` (`z-[110]`) không bị Top Layer che; `Xóa nháp` dùng hộp thoại xác nhận gọi `DELETE /api/assignments/prompts/:id` (chỉ xóa nháp chưa tham chiếu, không làm nút Hoàn tác giả phía client) và nút `Xem trước` giữ cho cả `ready` lẫn `draft`.
+- **Phạm vi ngân hàng đề:** Mục `"Đề thi nhiều phần"` trong menu tạo dẫn sang `/assignments/tests/new`, không trộn danh sách `assignmentTests` vào bảng `/assignments`.
+
+## Trang Từ vựng học viên (`/practice/vocabulary`) (#1042)
+
+Nguồn đối chiếu: `open-design/vocabulary.html`. Các quy ước triển khai thật và lệch có chủ đích:
+
+- **Bố cục 5 khối theo dòng ưu tiên học SRS**: (1) Khối **Hôm nay** kèm chuỗi ngày học 7 ngày theo giờ Việt Nam, (2) Khối **Trí nhớ của bạn** gồm 3 chỉ số + thanh stacked 5 cấp + 5 nút lọc `<fieldset>` tương tác, (3) Khối **Gợi ý cho bạn** (ẩn khi rỗng), (4) **Bộ từ đang học** với tìm kiếm URL `?q=` (debounce 300ms, `maxLength={200}`), bộ lọc segmented `?f=due|learning|done` (mặc định `all` bỏ khỏi URL) và lọc cấp trí nhớ `?lv=1..5` (`replace: true, resetScroll: false`), và (5) Banner **Thư viện từ vựng** (ẩn khi `librarySummary === null`).
+- **Token cấp trí nhớ `--vocab-lv-1..5`** trong `packages/ui/src/styles/globals.css`: thang xám đơn điệu Light (`oklch(0.76 -> 0.145 0 0)`) và đảo chiều trên `.dark` (`oklch(0.42 -> 0.985 0 0)`) với `@theme inline` `--color-vocab-lv-1..5`; ô màu legend kèm `ring-1 ring-input ring-inset`.
+- **5 trạng thái Hero trong `VocabTodayHero`**: `no-decks`, `due` (`border-[1.5px] border-foreground`), `new-only`, `caught-up` (nhúng `VocabCountdown` `variant="inline"` với `onExpired` bắn 1 lần mỗi `nextDueAt`), và `empty-decks`. `vocab-overview-new-count` chỉ render tối đa 1 lần trong DOM; `vocab-overview-streak` tách riêng chuỗi `"{streak} ngày"` khỏi `"liên tiếp"`.
+- **Card bộ từ (`VocabDeckCard`)**: dùng stretched-link `<Link>` ở tiêu đề để click cả card mở chi tiết deck mà vẫn giữ CTA phụ `relative z-10` điều hướng trực tiếp sang SRS session; focus ring đặt qua `focus-visible:after:shadow-[var(--focus-ring)]` tránh double ring. Chip cảnh báo/hoàn tất dùng `bg-warn-soft`/`bg-success-soft` với `text-foreground` (chỉ icon dùng `text-warn`/`text-success`) bảo đảm contrast AA.
+- **Lệch có chủ đích so với `open-design/vocabulary.html`**:
+  - **Không làm modal flashcard giả lập 5 thẻ hay nút Undo giả sau Ẩn gợi ý**: mọi CTA "Bắt đầu ôn" / "Học từ mới" dẫn thẳng vào route SRS thật (`/practice/vocabulary/$deckId/session?mode=review|learn`); Dismiss gọi API thật kèm `toast.success`.
+  - **Nhãn `"tỉ lệ nhớ"` là all-time**: giữ nguyên công thức tổng ôn trong server (`retention` toàn thời gian), không gán nhãn "30 ngày" gây hiểu nhầm.
+  - **Giữ nguyên chuỗi khóa bởi E2E/unit test cũ**: mô tả ở `VocabCoursesCta` (`"Thư viện từ vựng · X khóa · Y bài"`) và nhánh `vocab-decks-empty` (`"Mở mục Khóa học từ vựng bên dưới"`).
+  - **Đơn PR cho `.strict()` API contract**: `GET /api/student/vocab/overview` thêm `streakDays` và `levelDistribution` cùng factory `.catch(() => [...])`; `deploy.yml` deploy `server` trước `lms`, chấp nhận cửa sổ ~2 phút lúc chuyển bản trên staging/prod nếu client bundle mới chạy trước server mới (hoàn toàn không làm trắng trang nhờ `.catch` mặc định).
