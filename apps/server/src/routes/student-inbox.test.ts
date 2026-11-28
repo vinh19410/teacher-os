@@ -377,6 +377,47 @@ describe("student inbox (/api/student/inbox)", () => {
 		expect(row?.status).toBe("sent");
 	});
 
+	test("excludes email-only session_link_reminder from GET /inbox and unread count, and rejects POST read with 404", async () => {
+		const beforeRes = await get("/api/student/inbox", "hoa");
+		expect(beforeRes.status).toBe(200);
+		const beforeBody = (await beforeRes.json()) as {
+			items: Array<{ id: string }>;
+			unread: number;
+		};
+
+		await libsql.insert(schema.notificationRecord).values({
+			id: "n-hoa-session-link-email-only",
+			orgId: "org-1",
+			studentId: "student-hoa",
+			eventType: "session_link_reminder",
+			eventGroup: "schedule",
+			idempotencyKey:
+				"session_link_reminder:cls-1:2026-11-28:19:00:student-hoa",
+			title: "Link buổi học lớp IELTS — 19:00, 28/11/2026",
+			body: "Link tham gia buổi học đã được gửi qua email.",
+			linkPath: "/classes/cls-1/sessions/2026-11-28",
+			channels: "email",
+			recipientEmail: "hoa@test.local",
+			status: "sent",
+			sentAt: new Date(),
+			createdAt: new Date(),
+		});
+
+		const afterRes = await get("/api/student/inbox", "hoa");
+		expect(afterRes.status).toBe(200);
+		const afterBody = (await afterRes.json()) as {
+			items: Array<{ id: string }>;
+			unread: number;
+		};
+		expect(
+			afterBody.items.some((i) => i.id === "n-hoa-session-link-email-only"),
+		).toBe(false);
+		expect(afterBody.unread).toBe(beforeBody.unread);
+
+		const readRes = await postRead("n-hoa-session-link-email-only", "hoa");
+		expect(readRes.status).toBe(404);
+	});
+
 	test("matches exact in_app channel token: allows in_app,email and excludes empty or non-matching channels", async () => {
 		const beforeRes = await get("/api/student/inbox", "hoa");
 		expect(beforeRes.status).toBe(200);

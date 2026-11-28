@@ -177,6 +177,25 @@ describe("NotificationsRoute (#454 phase 5)", () => {
 		expect(within(table).getByText("Email")).toBeTruthy();
 	});
 
+	it("renders session_link_reminder row with event label Nhắc link buổi học and channel Email", async () => {
+		renderRoute(
+			seedResponse({
+				rows: [
+					row({
+						id: "nt-session-link-reminder",
+						eventType: "session_link_reminder",
+						eventGroup: "schedule",
+						channels: "email",
+						status: "sent",
+					}),
+				],
+			}),
+		);
+		const table = await screen.findByTestId("notifications-table");
+		expect(within(table).getByText("Nhắc link buổi học")).toBeTruthy();
+		expect(within(table).getByText("Email")).toBeTruthy();
+	});
+
 	it("badge đếm chip trạng thái lấy từ counts server, aria-hidden", async () => {
 		renderRoute();
 		await screen.findByText("Minh Tran");

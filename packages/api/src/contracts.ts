@@ -4872,6 +4872,7 @@ export const NOTIFICATION_EVENT_TYPES = [
 	"schedule_changed",
 	"holiday_created",
 	"class_opening_confirmed",
+	"session_link_reminder",
 ] as const;
 
 /** #454 — 4 nhóm chip lọc màn notification log (plan TOS-21 D2). */
@@ -4900,6 +4901,7 @@ export const NOTIFICATION_EVENT_GROUP_BY_TYPE: Record<
 	schedule_changed: "schedule",
 	holiday_created: "schedule",
 	class_opening_confirmed: "schedule",
+	session_link_reminder: "schedule",
 };
 
 export const NOTIFICATION_STATUSES = [

@@ -6,6 +6,7 @@ import {
 	ZOOM_RECORDING_SYNC_CRON,
 } from "./notifications/daily-deadline-reminder";
 import { resolveMailer } from "./notifications/emit";
+import { runSessionLinkReminderCron } from "./notifications/session-link-reminder";
 import type { RecordingStore } from "./recording-store";
 import { runRecordingSyncCron } from "./zoom/session-zoom-service";
 import type { ZoomConfig } from "./zoom/zoom-client";
@@ -26,6 +27,7 @@ export interface ScheduledDispatchDeps {
 	sendIntervalMs?: number;
 	runZoomSync?: typeof runRecordingSyncCron;
 	runDailyReminder?: typeof runDailyDeadlineReminderCron;
+	runSessionLinkReminder?: typeof runSessionLinkReminderCron;
 }
 
 /**
@@ -60,12 +62,37 @@ async function executeDailyReminder(
 	});
 }
 
+async function executeSessionLinkReminder(
+	controller: ScheduledControllerLike,
+	deps: ScheduledDispatchDeps,
+): Promise<void> {
+	const runSessionLinkReminder =
+		deps.runSessionLinkReminder ?? runSessionLinkReminderCron;
+	const now =
+		deps.now ?? (() => new Date(controller.scheduledTime ?? Date.now()));
+	await runSessionLinkReminder({
+		db: deps.db,
+		getMailer: () =>
+			resolveMailer({
+				get mailer() {
+					return deps.getMailer();
+				},
+			}),
+		studentOrigin: deps.studentOrigin,
+		now,
+		retryDelaysMs: deps.retryDelaysMs,
+		sendIntervalMs: deps.sendIntervalMs,
+	});
+}
+
 /**
  * Điều phối Cloudflare Cron Triggers theo `controller.cron`:
  * - `"*\/10 * * * *"` (trigger duy nhất trên Worker để giữ dưới giới hạn 5 cron của
- *   Cloudflare Workers Free): khi thời điểm thuộc cửa sổ 23:00–23:09 UTC
- *   (06:00 VN) thì chạy nhắc hạn bài tập hằng ngày trước, rồi luôn chạy đồng bộ
- *   cloud recording Zoom (cô lập lỗi giữa hai tác vụ).
+ *   Cloudflare Workers Free):
+ *   1. Khi thời điểm thuộc cửa sổ 23:00–23:09 UTC (06:00 VN), chạy nhắc hạn bài tập hằng ngày.
+ *   2. Luôn chạy nhắc link buổi học Online trước 2 tiếng (`runSessionLinkReminderCron`).
+ *   3. Luôn chạy đồng bộ cloud recording Zoom (`runRecordingSyncCron`) sau cùng để
+ *      việc tải video nặng không làm gián đoạn các email đúng giờ (cô lập lỗi giữa 3 tác vụ).
  * - `"0 23 * * *"` → giữ nhánh tương thích cho gọi thủ công/test.
  * - Biểu thức lạ → ghi cảnh báo, không ném lỗi và không chạy nhầm job nào.
  */
@@ -83,16 +110,23 @@ export async function dispatchScheduledCron(
 			deps.now ?? (() => new Date(controller.scheduledTime ?? Date.now()));
 		const runZoomSync = deps.runZoomSync ?? runRecordingSyncCron;
 		const recordingStore = deps.getRecordingStore?.();
-		// Nhắc hạn chạy TRƯỚC: mỗi ngày chỉ có một tick, còn việc tải video có thể
-		// làm runtime huỷ cả lượt chạy (không bắt được bằng try/catch).
-		let reminderError: unknown;
+		// Các tác vụ email chạy TRƯỚC: việc tải video recording có thể khiến
+		// runtime huỷ cả lượt chạy (không bắt được bằng try/catch).
+		let firstError: unknown;
 		if (isDailyDeadlineReminderWindow(now())) {
 			try {
 				await executeDailyReminder(controller, deps);
 			} catch (error) {
-				reminderError = error;
+				firstError ??= error;
 				console.error("[cron] daily deadline reminder failed:", error);
 			}
+		}
+
+		try {
+			await executeSessionLinkReminder(controller, deps);
+		} catch (error) {
+			firstError ??= error;
+			console.error("[cron] session link reminder failed:", error);
 		}
 
 		try {
@@ -103,14 +137,12 @@ export async function dispatchScheduledCron(
 				...(deps.now ? { now: deps.now } : {}),
 			});
 		} catch (error) {
+			firstError ??= error;
 			console.error("[cron] Zoom recording sync failed:", error);
-			if (reminderError === undefined) {
-				throw error;
-			}
 		}
 
-		if (reminderError !== undefined) {
-			throw reminderError;
+		if (firstError !== undefined) {
+			throw firstError;
 		}
 		return;
 	}

@@ -4,6 +4,7 @@ import {
 	type NotificationEventGroup,
 	type NotificationEventType,
 } from "@teacher-os/api/contracts";
+import { renderSessionLinkEmail } from "@teacher-os/api/session-link-email";
 import {
 	formatViDateDisplay,
 	formatVietnamTimeHHMM,
@@ -518,6 +519,62 @@ export function dailyDeadlineReminderEvent(input: {
 		linkPath: "/assignments",
 		refType: "daily_deadline_reminder",
 		refId: input.dateISO,
+		channels: "email",
+	};
+}
+
+/**
+ * Sự kiện email nhắc link buổi học Online trước giờ học 2 tiếng (chỉ gửi email,
+ * khóa chống trùng theo `(classId, dateISO, time, studentId)` để đổi giờ học vẫn
+ * nhận được link cập nhật mà cùng một buổi không gửi lặp lại).
+ */
+export function sessionLinkReminderEvent(input: {
+	classId: string;
+	className: string;
+	dateISO: string;
+	time: string;
+	dur: number;
+	topic?: string;
+	joinUrl: string;
+	orgName?: string;
+	studentId: string;
+	studentName: string;
+	studentOrigin?: string;
+}): NotificationEvent {
+	const linkPath = `/classes/${encodeURIComponent(input.classId)}/sessions/${encodeURIComponent(input.dateISO)}`;
+	const normalizedOrigin = (input.studentOrigin?.trim() ?? "").replace(
+		/\/+$/,
+		"",
+	);
+	const sessionPortalUrl =
+		normalizedOrigin && /^https?:\/\//i.test(normalizedOrigin)
+			? `${normalizedOrigin}${linkPath}`
+			: undefined;
+
+	const rendered = renderSessionLinkEmail({
+		className: input.className,
+		dateISO: input.dateISO,
+		time: input.time,
+		dur: input.dur,
+		topic: input.topic,
+		joinUrl: input.joinUrl,
+		sessionPortalUrl,
+		studentName: input.studentName,
+		orgName: input.orgName,
+		brandName: BRAND_NAME,
+	});
+
+	return {
+		studentId: input.studentId,
+		eventType: "session_link_reminder",
+		idempotencyKey: `session_link_reminder:${input.classId}:${input.dateISO}:${input.time}:${input.studentId}`,
+		title: rendered.subject,
+		body: rendered.summaryBody,
+		htmlBody: rendered.html,
+		textBody: rendered.text,
+		linkPath,
+		refType: "lesson",
+		refId: `${input.classId}:${input.dateISO}`,
 		channels: "email",
 	};
 }
