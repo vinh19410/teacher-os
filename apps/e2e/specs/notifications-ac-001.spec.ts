@@ -244,12 +244,12 @@ test("AC-001 thông báo email + in-app: hóa đơn, giao bài, đã xem, filter
 	await expect(invoiceRow.getByText("Đã gửi")).toBeVisible();
 
 	const invoiceMails = await pollMail((entries) =>
-		mailsTo(entries, student1Email).some(
-			(e) => e.subject === "Hóa đơn học phí",
+		mailsTo(entries, student1Email).some((e) =>
+			e.subject?.startsWith("Hóa đơn học phí"),
 		),
 	);
-	const invoiceMail = mailsTo(invoiceMails, student1Email).find(
-		(e) => e.subject === "Hóa đơn học phí",
+	const invoiceMail = mailsTo(invoiceMails, student1Email).find((e) =>
+		e.subject?.startsWith("Hóa đơn học phí"),
 	);
 	expect(invoiceMail?.fromName).toBe(`${orgName} qua Cô Mỹ Dạy Tiếng Anh`);
 	expect(invoiceMail?.replyTo).toBe(teacherEmail);

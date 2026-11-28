@@ -1,5 +1,9 @@
 import type { PaymentInstructions } from "@teacher-os/api/contracts";
 import {
+	formatInvoiceCode,
+	type InvoiceEmailPaymentInfo,
+} from "@teacher-os/api/invoice-email";
+import {
 	generatePaymentCode,
 	generatePayToken,
 } from "@teacher-os/api/lib/payment-code";
@@ -54,6 +58,68 @@ export async function ensurePaymentRefs(
 	return row;
 }
 
+export interface EmailBankLinkInput {
+	status: string;
+	brandName: string;
+	bankBin: string;
+	bankCode: string;
+	accountNumber: string;
+	vaCode: string;
+	accountHolderName: string;
+}
+
+/**
+ * Dựng thông tin chuyển khoản và QR dùng cho email thông báo hóa đơn từ bản ghi
+ * `org_bank_link` hiện tại. Trả `null` khi hóa đơn đã thu đủ, org chưa liên kết
+ * ngân hàng, hoặc hóa đơn legacy chưa có `paymentCode` (tránh tạo memo rỗng).
+ */
+export function buildEmailPaymentInfo(
+	inv: {
+		amount: number;
+		paidAmount: number;
+		status: string;
+		paymentCode: string | null;
+	},
+	link: EmailBankLinkInput | undefined,
+): InvoiceEmailPaymentInfo | null {
+	const amountDue = Math.max(
+		inv.amount - Math.min(inv.paidAmount, inv.amount),
+		0,
+	);
+	if (amountDue <= 0 || inv.status === "paid") {
+		return null;
+	}
+	if (link?.status !== "linked" || !link.accountNumber.trim()) {
+		return null;
+	}
+	const bin = link.bankBin.trim() || link.bankCode.trim();
+	if (!bin) {
+		return null;
+	}
+	const code = inv.paymentCode?.trim() ?? "";
+	if (!code) {
+		return null;
+	}
+	const accountNumber = link.accountNumber.trim();
+	const memo = buildTransferMemo({
+		code,
+		bankBin: link.bankBin,
+		vaCode: link.vaCode,
+	});
+	return {
+		bankBrandName: link.brandName || link.bankCode || bin,
+		accountNumber,
+		holderName: link.accountHolderName,
+		memo,
+		qrUrl: buildVietQrUrl({
+			bin,
+			accountNumber,
+			amount: amountDue,
+			memo,
+		}),
+	};
+}
+
 /**
  * Everything the QR panel needs. QR is always built from the org's CURRENT
  * linked account and the CURRENT remaining debt — nothing about it is
@@ -66,7 +132,7 @@ export async function loadPaymentInstructions(input: {
 	const { db, invoice: inv } = input;
 	const amountDue = Math.max(inv.amount - inv.paidAmount, 0);
 	const base: PaymentInstructions = {
-		invoiceCode: `INV-${inv.id.slice(-8).toUpperCase()}`,
+		invoiceCode: formatInvoiceCode(inv.id),
 		amount: inv.amount,
 		paidAmount: inv.paidAmount,
 		amountDue,

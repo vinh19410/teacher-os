@@ -178,7 +178,7 @@ export interface RenderedClassOpeningEmail {
 	inboxBody: string;
 }
 
-function normalizeMultilineText(value: string): string {
+export function normalizeMultilineText(value: string): string {
 	const normalized = value.replace(/\r\n?/g, "\n");
 	let out = "";
 	for (let i = 0; i < normalized.length; i += 1) {

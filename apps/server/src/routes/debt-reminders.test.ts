@@ -68,6 +68,7 @@ describe("POST /api/debt-reminders (TOS-18 #452)", () => {
 			corsOrigin: CORS_ORIGIN,
 			mailer: fakeMailer,
 			studentOrigin: "http://localhost:8003",
+			appOrigin: "http://localhost:8001/teacher",
 			getSessionUser: async (headers) => {
 				const cookie = headers.get("cookie") ?? "";
 				const t = /better-auth\.session_token=([^;]+)/.exec(cookie)?.[1];
@@ -331,6 +332,14 @@ describe("POST /api/debt-reminders (TOS-18 #452)", () => {
 		expect(rows[0]?.body).toContain("2.500.000đ");
 		expect(rows[0]?.body).not.toContain("4.500.000đ");
 		expect(sentMails).toHaveLength(1);
+		expect(sentMails[0]?.subject).toBe("Nhắc học phí INV-INV-1A — 2.500.000đ");
+		expect(sentMails[0]?.html).toContain("Nguyễn Minh Anh");
+		expect(sentMails[0]?.html).toContain("IELTS 6.5A");
+		expect(sentMails[0]?.html).toContain("4.500.000đ");
+		expect(sentMails[0]?.html).toContain("2.000.000đ");
+		expect(sentMails[0]?.html).toContain("2.500.000đ");
+		expect(sentMails[0]?.html).toContain("20/10/2026");
+		expect(sentMails[0]?.text).toContain("Tổng hóa đơn: 4.500.000đ");
 	});
 
 	test("2 học viên đang nợ (tổng 3 hóa đơn còn nợ): inv-1a đã nhắc -> tạo mới 2 hóa đơn còn lại (queued=2, skipped=1); gọi lại lần 2 cùng ngày -> queued=0, skipped=3", async () => {
@@ -391,5 +400,76 @@ describe("POST /api/debt-reminders (TOS-18 #452)", () => {
 		const forbidden = await postReminders({ studentIds: ["stu-1"] }, taToken);
 		expect(forbidden.status).toBe(403);
 		expect(await forbidden.json()).toEqual({ error: "finance-forbidden" });
+	});
+
+	test("nhắc nợ khi đã liên kết ngân hàng vẫn giữ hóa đơn legacy (trống enrollmentId/paymentCode/payToken) và gửi VietQR cho hóa đơn mới", async () => {
+		sentMails.length = 0;
+		await libsql.insert(schema.orgBankLink).values({
+			orgId,
+			status: "linked",
+			brandName: "Vietcombank",
+			bankBin: "970436",
+			bankCode: "VCB",
+			accountNumber: "9988776655",
+			vaCode: "",
+			accountHolderName: "CO MINH",
+		});
+		await client.execute({
+			sql: "INSERT INTO student (id, org_id, name, phone, email, zalo, created_at) VALUES ('stu-legacy', ?, 'Phạm Gia Bảo', '0904445555', 'legacy@test.local', '', 1000), ('stu-modern', ?, 'Đỗ Lan Anh', '0905556666', 'modern@test.local', '', 1000)",
+			args: [orgId, orgId],
+		});
+		await libsql.insert(invoice).values([
+			{
+				id: "inv-legacy-no-enr",
+				orgId,
+				studentId: "stu-legacy",
+				enrollmentId: "",
+				amount: 900_000,
+				paidAmount: 0,
+				status: "unpaid",
+				due: "2026-10-15",
+				paymentCode: null,
+				payToken: null,
+			},
+			{
+				id: "inv-modern-with-code",
+				orgId,
+				studentId: "stu-modern",
+				enrollmentId: "",
+				amount: 1_200_000,
+				paidAmount: 0,
+				status: "unpaid",
+				due: "2026-12-20",
+				paymentCode: "MSMYDEBT0001",
+				payToken: "tok_debt_1234567890abc",
+			},
+		]);
+
+		const res = await postReminders(
+			{ studentIds: ["stu-legacy", "stu-modern"] },
+			teacherToken,
+		);
+		expect(res.status).toBe(200);
+		expect(await res.json()).toEqual({ queued: 2, skipped: 0 });
+		expect(sentMails).toHaveLength(2);
+
+		const legacyMail = sentMails.find((m) => m.to === "legacy@test.local");
+		expect(legacyMail?.html).toContain("Phạm Gia Bảo");
+		expect(legacyMail?.html).toContain("900.000đ");
+		expect(legacyMail?.html).not.toContain("Thông tin chuyển khoản");
+		expect(legacyMail?.html).not.toContain("https://vietqr.app/img");
+		expect(legacyMail?.html).not.toContain("/pay/");
+
+		const modernMail = sentMails.find((m) => m.to === "modern@test.local");
+		expect(modernMail?.html).toContain("Đỗ Lan Anh");
+		expect(modernMail?.html).toContain("Thông tin chuyển khoản");
+		expect(modernMail?.html).toContain("MSMYDEBT0001");
+		expect(modernMail?.html).toContain("https://vietqr.app/img?");
+		expect(modernMail?.html).toContain(
+			"http://localhost:8001/pay/tok_debt_1234567890abc",
+		);
+		expect(modernMail?.html).toContain(
+			"http://localhost:8003/tuition/inv-modern-with-code",
+		);
 	});
 });

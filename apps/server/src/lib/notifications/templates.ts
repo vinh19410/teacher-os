@@ -4,6 +4,10 @@ import {
 	type NotificationEventGroup,
 	type NotificationEventType,
 } from "@teacher-os/api/contracts";
+import {
+	type InvoiceEmailPaymentInfo,
+	renderInvoiceEmail,
+} from "@teacher-os/api/invoice-email";
 import { renderSessionLinkEmail } from "@teacher-os/api/session-link-email";
 import {
 	formatViDateDisplay,
@@ -43,20 +47,135 @@ export function formatVnd(amount: number): string {
 	return `${amount.toLocaleString("vi-VN")}đ`;
 }
 
+export interface InvoiceNotificationInput {
+	id: string;
+	studentId: string;
+	/** Số tiền còn phải thanh toán (VND). */
+	amount: number;
+	due: string;
+	totalAmount?: number;
+	paidAmount?: number;
+	studentName?: string;
+	className?: string;
+	note?: string;
+	orgName?: string;
+	payToken?: string | null;
+	payment?: InvoiceEmailPaymentInfo | null;
+	studentOrigin?: string;
+	appOrigin?: string;
+}
+
+/**
+ * Xác định origin phục vụ `/pay/$token`:
+ * - Unified LMS (`studentOrigin` có hậu tố `/student`) → `parsed.origin` (gốc phục vụ `/pay/$token`).
+ * - Hoặc fallback `appOrigin` (`apps/web` có route `/pay/$token`).
+ * - Standalone `apps/student` (không có `/student`, không có `/pay/$token`) → `undefined`.
+ */
+export function resolvePublicPayOrigin(input: {
+	studentOrigin?: string;
+	appOrigin?: string;
+}): string | undefined {
+	const rawStudent = (input.studentOrigin ?? "").trim().replace(/\/+$/, "");
+	if (rawStudent) {
+		try {
+			const parsed = new URL(rawStudent);
+			if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+				const normalizedPath = parsed.pathname.replace(/\/+$/, "");
+				if (normalizedPath.endsWith("/student")) {
+					return parsed.origin;
+				}
+			}
+		} catch {
+			// Bỏ qua studentOrigin không hợp lệ.
+		}
+	}
+	const rawApp = (input.appOrigin ?? "").trim().replace(/\/+$/, "");
+	if (rawApp) {
+		try {
+			const parsed = new URL(rawApp);
+			if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+				return parsed.origin;
+			}
+		} catch {
+			// Bỏ qua appOrigin không hợp lệ.
+		}
+	}
+	return undefined;
+}
+
+export function buildInvoiceEmailUrls(input: {
+	invoiceId: string;
+	payToken?: string | null;
+	studentOrigin?: string;
+	appOrigin?: string;
+}): { payUrl?: string; portalUrl?: string } {
+	const payOrigin = resolvePublicPayOrigin({
+		studentOrigin: input.studentOrigin,
+		appOrigin: input.appOrigin,
+	});
+	const cleanToken = input.payToken?.trim() ?? "";
+	const payUrl =
+		payOrigin && cleanToken
+			? `${payOrigin}/pay/${encodeURIComponent(cleanToken)}`
+			: undefined;
+
+	const cleanStudentOrigin = (input.studentOrigin ?? "")
+		.trim()
+		.replace(/\/+$/, "");
+	let portalUrl: string | undefined;
+	if (cleanStudentOrigin) {
+		try {
+			const parsed = new URL(cleanStudentOrigin);
+			if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+				portalUrl = `${cleanStudentOrigin}/tuition/${encodeURIComponent(input.invoiceId)}`;
+			}
+		} catch {
+			// Bỏ qua studentOrigin không hợp lệ.
+		}
+	}
+
+	return { payUrl, portalUrl };
+}
+
 /**
  * Sự kiện "nhắc hạn hóa đơn học phí" cho TOS-18 (#452) — builder thuần,
  * khóa chống trùng gồm ngày VN nên mỗi ngày nhắc 1 lần (D3).
  */
 export function tuitionReminderEvent(
-	invoice: { id: string; studentId: string; amount: number; due: string },
+	invoice: InvoiceNotificationInput,
 	vnDate: string,
 ): NotificationEvent {
+	const urls = buildInvoiceEmailUrls({
+		invoiceId: invoice.id,
+		payToken: invoice.payToken,
+		studentOrigin: invoice.studentOrigin,
+		appOrigin: invoice.appOrigin,
+	});
+	const rendered = renderInvoiceEmail({
+		variant: "reminder",
+		invoiceId: invoice.id,
+		amountDue: invoice.amount,
+		totalAmount: invoice.totalAmount,
+		paidAmount: invoice.paidAmount,
+		due: invoice.due,
+		vnToday: vnDate,
+		studentName: invoice.studentName,
+		className: invoice.className,
+		note: invoice.note,
+		orgName: invoice.orgName,
+		brandName: BRAND_NAME,
+		payUrl: urls.payUrl,
+		portalUrl: urls.portalUrl,
+		payment: invoice.payment,
+	});
 	return {
 		studentId: invoice.studentId,
 		eventType: "tuition_reminder",
 		idempotencyKey: `tuition_reminder:${invoice.id}:${vnDate}`,
-		title: "Nhắc học phí",
-		body: `Hóa đơn học phí ${formatVnd(invoice.amount)} đến hạn ngày ${invoice.due || vnDate}. Vui lòng thanh toán đúng hạn.`,
+		title: rendered.subject,
+		body: rendered.inboxBody,
+		htmlBody: rendered.html,
+		textBody: rendered.text,
 		linkPath: "/tuition",
 		refType: "invoice",
 		refId: invoice.id,
@@ -137,18 +256,39 @@ export function gradeReturnedEvent(input: {
 }
 
 /** Sự kiện "hóa đơn học phí được tạo" (#454 phase 3). */
-export function invoiceIssuedEvent(invoice: {
-	id: string;
-	studentId: string;
-	amount: number;
-	due: string;
-}): NotificationEvent {
+export function invoiceIssuedEvent(
+	invoice: InvoiceNotificationInput,
+): NotificationEvent {
+	const urls = buildInvoiceEmailUrls({
+		invoiceId: invoice.id,
+		payToken: invoice.payToken,
+		studentOrigin: invoice.studentOrigin,
+		appOrigin: invoice.appOrigin,
+	});
+	const rendered = renderInvoiceEmail({
+		variant: "issued",
+		invoiceId: invoice.id,
+		amountDue: invoice.amount,
+		totalAmount: invoice.totalAmount,
+		paidAmount: invoice.paidAmount,
+		due: invoice.due,
+		studentName: invoice.studentName,
+		className: invoice.className,
+		note: invoice.note,
+		orgName: invoice.orgName,
+		brandName: BRAND_NAME,
+		payUrl: urls.payUrl,
+		portalUrl: urls.portalUrl,
+		payment: invoice.payment,
+	});
 	return {
 		studentId: invoice.studentId,
 		eventType: "invoice_issued",
 		idempotencyKey: `invoice_issued:${invoice.id}`,
-		title: "Hóa đơn học phí",
-		body: `Hóa đơn học phí ${formatVnd(invoice.amount)} đã được tạo, hạn thanh toán ${invoice.due}.`,
+		title: rendered.subject,
+		body: rendered.inboxBody,
+		htmlBody: rendered.html,
+		textBody: rendered.text,
 		linkPath: "/tuition",
 		refType: "invoice",
 		refId: invoice.id,
