@@ -9,6 +9,7 @@ import {
 import {
 	addDaysISO,
 	formatViDateDisplay,
+	formatViWeekdayDate,
 	vietnamTodayISO,
 } from "@teacher-os/api/vietnam-date";
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
@@ -540,6 +541,9 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 		expect(initialBody.startDate).toBe(nextStart);
 		expect(initialBody.openingAnnouncementVersion).toBe(1);
 		expect(t.sentMails.at(-1)?.html).toContain(formatViDateDisplay(nextStart));
+		expect(t.sentMails.at(-1)?.html).toContain(
+			formatViWeekdayDate(addDaysISO(nextStart, 9)),
+		);
 
 		const lessonsAfterInitial = await t.libsql
 			.select({ date: schema.lesson.date })
@@ -572,6 +576,9 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 		expect(allBody.startDate).toBe(thirdStart);
 		expect(allBody.openingAnnouncementVersion).toBe(2);
 		expect(t.sentMails.at(-1)?.html).toContain(formatViDateDisplay(thirdStart));
+		expect(t.sentMails.at(-1)?.html).toContain(
+			formatViWeekdayDate(addDaysISO(thirdStart, 9)),
+		);
 
 		const lessonsAfterAll = await t.libsql
 			.select({ date: schema.lesson.date })
@@ -698,6 +705,10 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 		expect(mailHa).toBeDefined();
 
 		const expectedShortDate = formatViDateDisplay(updatedStart);
+		// 20 sessions on Mon & Wed starting on Monday updatedStart -> 10th week Wed = +65 days
+		const expectedEndDisplay = formatViWeekdayDate(
+			addDaysISO(updatedStart, 65),
+		);
 		for (const [mail, studentName] of [
 			[mailAn, "Nguyễn Văn An"],
 			[mailHa, "Trần Thu Hà"],
@@ -712,7 +723,17 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 			expect(mail.html).toContain("IELTS 6.5 Intensive");
 			expect(mail.html).toContain(expectedShortDate);
 			expect(mail.html).toContain("19:00 – 20:30");
-			expect(mail.html).toContain("20 buổi");
+			expect(mail.html).not.toContain("Trình độ");
+			expect(mail.html).not.toContain("Thời lượng");
+			expect(mail.html).not.toContain("20 buổi");
+			expect(mail.html).not.toContain("Band 6.5");
+			expect(mail.html).toContain("Ngày kết thúc khóa học dự kiến");
+			expect(mail.html).toContain(expectedEndDisplay);
+			expect(mail.text).toContain(
+				`- Ngày kết thúc khóa học dự kiến: ${expectedEndDisplay}`,
+			);
+			expect(mail.text).not.toContain("Trình độ");
+			expect(mail.text).not.toContain("Thời lượng");
 			expect(mail.html).toContain(
 				"Vào lớp sớm 10 phút &lt;script&gt;alert(1)&lt;/script&gt;<br>Mang theo tài liệu",
 			);
@@ -1488,5 +1509,208 @@ describe("POST /api/classes/:id/confirm-opening", () => {
 			.from(schema.classTable)
 			.where(eq(schema.classTable.id, classId));
 		expect(clsAfterCas?.openingNote).toBe("Ghi chú từ tab khác");
+	});
+
+	test("uses post-reschedule date, holiday makeup date, and manual classSession dates for expected end date in sent email", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher EndDate Scenarios");
+
+		// 1. Auto class with active student & holiday makeup lesson later than original end
+		const autoStart = futureMondayISO(7);
+		const autoClassId = await t.createClass(teacher.token, {
+			name: "Auto Holiday Class",
+			schedule: { days: [0, 2], start: "19:00", end: "20:30" },
+			sessionsTotal: 4,
+			startDate: autoStart,
+		});
+		const orgId = await t.getOrgIdForUser(teacher.id);
+		const s1 = await t.seedStudentAndEnroll({
+			orgId,
+			classId: autoClassId,
+			name: "HV Auto",
+			email: "auto-end@example.com",
+			status: "active",
+		});
+		const [enr1] = await t.libsql
+			.select({ id: schema.enrollment.id })
+			.from(schema.enrollment)
+			.where(
+				and(
+					eq(schema.enrollment.classId, autoClassId),
+					eq(schema.enrollment.studentId, s1),
+				),
+			);
+		expect(enr1).toBeDefined();
+		const makeupDate = addDaysISO(autoStart, 14);
+		await t.libsql.insert(schema.lesson).values([
+			{
+				id: crypto.randomUUID(),
+				orgId,
+				classId: autoClassId,
+				enrollmentId: enr1?.id ?? "",
+				day: 1,
+				time: "19:00",
+				dur: 90,
+				date: autoStart,
+				status: "upcoming",
+				topic: "",
+				zoom: "",
+			},
+			{
+				id: crypto.randomUUID(),
+				orgId,
+				classId: autoClassId,
+				enrollmentId: enr1?.id ?? "",
+				day: 3,
+				time: "19:00",
+				dur: 90,
+				date: addDaysISO(autoStart, 9),
+				status: "holiday",
+				topic: "",
+				zoom: "",
+			},
+			{
+				id: crypto.randomUUID(),
+				orgId,
+				classId: autoClassId,
+				enrollmentId: enr1?.id ?? "",
+				day: 1,
+				time: "19:00",
+				dur: 90,
+				date: makeupDate,
+				status: "upcoming",
+				topic: "",
+				zoom: "",
+			},
+		]);
+
+		const autoRes = await t.call(
+			teacher.token,
+			`/api/classes/${autoClassId}/confirm-opening`,
+			{ body: { mode: "initial", expectedVersion: 0 } },
+		);
+		expect(autoRes.status).toBe(200);
+		expect(t.sentMails.at(-1)?.html).toContain(formatViWeekdayDate(makeupDate));
+
+		// 2. Manual class with class_session rows -> uses latest session date; 0 sessions -> omits row
+		const manualStart = futureMondayISO(10);
+		const manualClassId = await t.createClass(teacher.token, {
+			name: "Manual Sessions Class",
+			schedulingMode: "manual",
+			startDate: manualStart,
+		});
+		await t.libsql
+			.update(schema.classTable)
+			.set({ sessionsTotal: 0 })
+			.where(eq(schema.classTable.id, manualClassId));
+		await t.seedStudentAndEnroll({
+			orgId,
+			classId: manualClassId,
+			name: "HV Manual",
+			email: "manual-end@example.com",
+			status: "active",
+		});
+		const manualEnd = addDaysISO(manualStart, 12);
+		await t.libsql.insert(schema.classSession).values([
+			{
+				id: crypto.randomUUID(),
+				orgId,
+				classId: manualClassId,
+				date: manualStart,
+				time: "18:00",
+				dur: 90,
+				topic: "B1",
+			},
+			{
+				id: crypto.randomUUID(),
+				orgId,
+				classId: manualClassId,
+				date: manualEnd,
+				time: "18:00",
+				dur: 90,
+				topic: "B2",
+			},
+		]);
+
+		const manualRes = await t.call(
+			teacher.token,
+			`/api/classes/${manualClassId}/confirm-opening`,
+			{ body: { mode: "initial", expectedVersion: 0 } },
+		);
+		expect(manualRes.status).toBe(200);
+		expect(t.sentMails.at(-1)?.html).toContain(formatViWeekdayDate(manualEnd));
+
+		const emptyManualId = await t.createClass(teacher.token, {
+			name: "Manual Empty Class",
+			schedulingMode: "manual",
+			startDate: manualStart,
+		});
+		await t.libsql
+			.update(schema.classTable)
+			.set({ sessionsTotal: 0 })
+			.where(eq(schema.classTable.id, emptyManualId));
+		await t.seedStudentAndEnroll({
+			orgId,
+			classId: emptyManualId,
+			name: "HV Manual Empty",
+			email: "manual-empty@example.com",
+			status: "active",
+		});
+		const emptyManualRes = await t.call(
+			teacher.token,
+			`/api/classes/${emptyManualId}/confirm-opening`,
+			{ body: { mode: "initial", expectedVersion: 0 } },
+		);
+		expect(emptyManualRes.status).toBe(200);
+		expect(t.sentMails.at(-1)?.html).not.toContain(
+			"Ngày kết thúc khóa học dự kiến",
+		);
+
+		// 3. Auto class where all materialized dated lessons are cancelled -> omits expected end date
+		const cancelledAutoId = await t.createClass(teacher.token, {
+			name: "Auto All Cancelled Class",
+			schedule: { days: [0, 2], start: "19:00", end: "20:30" },
+			sessionsTotal: 2,
+			startDate: autoStart,
+		});
+		const sCancelled = await t.seedStudentAndEnroll({
+			orgId,
+			classId: cancelledAutoId,
+			name: "HV Cancelled",
+			email: "auto-cancelled@example.com",
+			status: "active",
+		});
+		const [enrCancelled] = await t.libsql
+			.select({ id: schema.enrollment.id })
+			.from(schema.enrollment)
+			.where(
+				and(
+					eq(schema.enrollment.classId, cancelledAutoId),
+					eq(schema.enrollment.studentId, sCancelled),
+				),
+			);
+		expect(enrCancelled).toBeDefined();
+		await t.libsql.insert(schema.lesson).values({
+			id: crypto.randomUUID(),
+			orgId,
+			classId: cancelledAutoId,
+			enrollmentId: enrCancelled?.id ?? "",
+			day: 1,
+			time: "19:00",
+			dur: 90,
+			date: autoStart,
+			status: "cancelled",
+			topic: "",
+			zoom: "",
+		});
+		const cancelledRes = await t.call(
+			teacher.token,
+			`/api/classes/${cancelledAutoId}/confirm-opening`,
+			{ body: { mode: "initial", expectedVersion: 0 } },
+		);
+		expect(cancelledRes.status).toBe(200);
+		expect(t.sentMails.at(-1)?.html).not.toContain(
+			"Ngày kết thúc khóa học dự kiến",
+		);
 	});
 });
