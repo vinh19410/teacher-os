@@ -1,8 +1,10 @@
 import { describe, expect, test } from "vitest";
 import {
+	computeExpectedEndDateFromSchedule,
 	escapeEmailHtml,
 	isSafeEmailUrl,
 	renderClassOpeningEmail,
+	resolveClassExpectedEndDate,
 } from "./class-opening-email";
 import {
 	CLASS_ERROR_CODES,
@@ -67,14 +69,13 @@ describe("isSafeEmailUrl", () => {
 });
 
 describe("renderClassOpeningEmail", () => {
-	test("renders initial announcement with subject, heading, inbox fields, weekday date, and email shell", () => {
+	test("renders initial announcement with subject, heading, inbox fields, weekday date, and expected end date", () => {
 		const rendered = renderClassOpeningEmail({
 			className: "IELTS 6.5 — Tối T3/T5",
 			startDate: "2026-09-15",
 			scheduleRaw: STRUCTURED_SCHEDULE,
 			mode: "Online",
 			sessionsTotal: 24,
-			level: "IELTS 6.5",
 			studentName: "Nguyễn Minh Anh",
 			orgName: "Trung tâm Anh ngữ Minh Anh",
 			portalUrl: "https://student.comy.edu.vn/classes/cls-1",
@@ -108,9 +109,11 @@ describe("renderClassOpeningEmail", () => {
 		expect(rendered.html).toContain("T3 &amp; T5 · 19:00–20:30");
 		expect(rendered.html).toContain("Hình thức");
 		expect(rendered.html).toContain("Online");
-		expect(rendered.html).toContain("Trình độ");
-		expect(rendered.html).toContain("Thời lượng");
-		expect(rendered.html).toContain("24 buổi");
+		expect(rendered.html).not.toContain("Trình độ");
+		expect(rendered.html).not.toContain("Thời lượng");
+		expect(rendered.html).not.toContain("24 buổi");
+		expect(rendered.html).toContain("Ngày kết thúc khóa học dự kiến");
+		expect(rendered.html).toContain("Thứ Năm, 03/12/2026");
 		expect(rendered.html).toContain("Mở cổng học viên");
 		expect(rendered.html).toContain(
 			'href="https://student.comy.edu.vn/classes/cls-1"',
@@ -124,8 +127,12 @@ describe("renderClassOpeningEmail", () => {
 			"- Lịch học định kỳ: T3 & T5 · 19:00–20:30",
 		);
 		expect(rendered.text).toContain("- Hình thức: Online");
-		expect(rendered.text).toContain("- Trình độ: IELTS 6.5");
-		expect(rendered.text).toContain("- Thời lượng: 24 buổi");
+		expect(rendered.text).not.toContain("Trình độ");
+		expect(rendered.text).not.toContain("Thời lượng");
+		expect(rendered.text).not.toContain("24 buổi");
+		expect(rendered.text).toContain(
+			"- Ngày kết thúc khóa học dự kiến: Thứ Năm, 03/12/2026",
+		);
 		expect(rendered.text).toContain(
 			"https://student.comy.edu.vn/classes/cls-1",
 		);
@@ -170,6 +177,7 @@ describe("renderClassOpeningEmail", () => {
 		expect(legacy.html).toContain("Tối T2 &amp; T4 (19h - 20h30)");
 		expect(legacy.html).not.toContain("Giờ học");
 		expect(legacy.html).not.toContain("Lịch học định kỳ");
+		expect(legacy.html).not.toContain("Ngày kết thúc khóa học dự kiến");
 		expect(legacy.text).toContain("- Lịch học: Tối T2 & T4 (19h - 20h30)");
 
 		const emptySchedule = renderClassOpeningEmail({
@@ -178,7 +186,6 @@ describe("renderClassOpeningEmail", () => {
 			scheduleRaw: "   ",
 			mode: "",
 			sessionsTotal: 0,
-			level: "   ",
 		});
 
 		expect(emptySchedule.subject).toBe("Thông báo khai giảng lớp Giao tiếp A2");
@@ -189,19 +196,21 @@ describe("renderClassOpeningEmail", () => {
 		expect(emptySchedule.html).not.toContain("Hình thức");
 		expect(emptySchedule.html).not.toContain("Trình độ");
 		expect(emptySchedule.html).not.toContain("Thời lượng");
+		expect(emptySchedule.html).not.toContain("Ngày kết thúc khóa học dự kiến");
 	});
 
-	test("handles optional sessionsTotal > 0 vs 0/negative and avoids duplicating matching orgName", () => {
+	test("handles optional sessionsTotal > 0, explicit expectedEndDate override/null, and avoids duplicating matching orgName", () => {
 		const withZero = renderClassOpeningEmail({
 			className: "IELTS Foundation",
 			startDate: "2026-10-01",
-			scheduleRaw: "",
+			scheduleRaw: STRUCTURED_SCHEDULE,
 			mode: "Online",
 			sessionsTotal: 0,
 			brandName: "Cô Mỹ Dạy Tiếng Anh",
 			orgName: "Cô Mỹ Dạy Tiếng Anh",
 		});
 		expect(withZero.html).not.toContain("Thời lượng");
+		expect(withZero.html).not.toContain("Ngày kết thúc khóa học dự kiến");
 		expect(withZero.html).not.toContain(
 			"Cô Mỹ Dạy Tiếng Anh · Cô Mỹ Dạy Tiếng Anh",
 		);
@@ -209,11 +218,62 @@ describe("renderClassOpeningEmail", () => {
 		const withPositive = renderClassOpeningEmail({
 			className: "IELTS Foundation",
 			startDate: "2026-10-01",
+			scheduleRaw: STRUCTURED_SCHEDULE,
+			mode: "Online",
+			sessionsTotal: 16,
+		});
+		expect(withPositive.html).toContain("Ngày kết thúc khóa học dự kiến");
+		expect(withPositive.html).toContain("Thứ Ba, 24/11/2026");
+
+		const withUnparseableSchedule = renderClassOpeningEmail({
+			className: "IELTS Foundation",
+			startDate: "2026-10-01",
 			scheduleRaw: "",
 			mode: "Online",
 			sessionsTotal: 16,
 		});
-		expect(withPositive.html).toContain("16 buổi");
+		expect(withUnparseableSchedule.html).not.toContain(
+			"Ngày kết thúc khóa học dự kiến",
+		);
+
+		const suppressed = renderClassOpeningEmail({
+			className: "IELTS Foundation",
+			startDate: "2026-10-01",
+			scheduleRaw: STRUCTURED_SCHEDULE,
+			mode: "Online",
+			sessionsTotal: 16,
+			expectedEndDate: null,
+		});
+		expect(suppressed.html).not.toContain("Ngày kết thúc khóa học dự kiến");
+		expect(suppressed.text).not.toContain("Ngày kết thúc khóa học dự kiến");
+
+		const overridden = renderClassOpeningEmail({
+			className: "IELTS Foundation",
+			startDate: "2026-10-01",
+			scheduleRaw: STRUCTURED_SCHEDULE,
+			mode: "Online",
+			sessionsTotal: 16,
+			expectedEndDate: "2026-12-03",
+		});
+		expect(overridden.html).toContain("Thứ Năm, 03/12/2026");
+		expect(overridden.text).toContain(
+			"- Ngày kết thúc khóa học dự kiến: Thứ Năm, 03/12/2026",
+		);
+
+		// Invalid calendar date in expectedEndDate does not roll over via formatViWeekdayDate
+		const invalidRollover = renderClassOpeningEmail({
+			className: "IELTS Foundation",
+			startDate: "2026-10-01",
+			scheduleRaw: STRUCTURED_SCHEDULE,
+			mode: "Online",
+			expectedEndDate: "2026-02-30",
+		});
+		expect(invalidRollover.text).toContain(
+			"- Ngày kết thúc khóa học dự kiến: 30/02/2026",
+		);
+		expect(invalidRollover.text).not.toContain(
+			"- Ngày kết thúc khóa học dự kiến: Thứ",
+		);
 	});
 
 	test("renders multiline teacherNote with <br> and omits callout when blank", () => {
@@ -265,14 +325,14 @@ describe("renderClassOpeningEmail", () => {
 		expect(rendered.inboxTitle.includes("\0")).toBe(false);
 	});
 
-	test("strictly escapes XSS payloads across all text fields", () => {
+	test("strictly escapes XSS payloads and strips control chars across all text fields including expectedEndDate", () => {
 		const xss = `<script>alert("xss")</script><img src=x onerror='evil()'>`;
 		const rendered = renderClassOpeningEmail({
 			className: `Lớp ${xss}`,
 			startDate: "2026-10-05",
 			scheduleRaw: `Lịch ${xss}`,
 			mode: `Online ${xss}`,
-			level: `Band ${xss}`,
+			expectedEndDate: `2026-12-01\r\nFakeLine: ${xss}\0`,
 			studentName: `Học viên ${xss}`,
 			orgName: `Org ${xss}`,
 			brandName: `Brand ${xss}`,
@@ -286,6 +346,9 @@ describe("renderClassOpeningEmail", () => {
 			"&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;&lt;img src=x onerror=&#39;evil()&#39;&gt;",
 		);
 		expect(rendered.html).toContain("<br>Dòng 2");
+		expect(rendered.text).not.toContain("\r");
+		expect(rendered.text.includes("\0")).toBe(false);
+		expect(rendered.text).not.toContain("\nFakeLine:");
 	});
 
 	test("strips unsafe portalUrl and renders CTA + fallback link only for safe URLs", () => {
@@ -338,6 +401,224 @@ describe("renderClassOpeningEmail", () => {
 		expect(rendered.html).not.toMatch(/<img\b[^>]*src=["']?https?:/i);
 		expect(rendered.html).not.toMatch(/<link\b[^>]*href=["']?https?:/i);
 		expect(rendered.html).not.toMatch(/@import/i);
+	});
+});
+
+describe("computeExpectedEndDateFromSchedule", () => {
+	test("computes expected end date for valid schedule and sessionsTotal", () => {
+		// 1 buổi vào đúng ngày khai giảng T3
+		expect(
+			computeExpectedEndDateFromSchedule({
+				startDate: "2026-09-15",
+				scheduleRaw: STRUCTURED_SCHEDULE,
+				sessionsTotal: 1,
+			}),
+		).toBe("2026-09-15");
+
+		// Ngày khai giảng Thứ Hai không nằm trong T3/T5 -> buổi 1 rơi vào T3 15/09, buổi 2 vào T5 17/09
+		expect(
+			computeExpectedEndDateFromSchedule({
+				startDate: "2026-09-14",
+				scheduleRaw: STRUCTURED_SCHEDULE,
+				sessionsTotal: 2,
+			}),
+		).toBe("2026-09-17");
+
+		// Giới hạn biên 52 buổi vẫn tính hợp lệ
+		expect(
+			computeExpectedEndDateFromSchedule({
+				startDate: "2026-09-15",
+				scheduleRaw: STRUCTURED_SCHEDULE,
+				sessionsTotal: 52,
+			}),
+		).toBe("2027-03-11");
+	});
+
+	test("returns null for out-of-range, non-integer, legacy schedule, or invalid startDate", () => {
+		for (const badTotal of [undefined, 0, -3, 1.5, 53, 100000, Number.NaN]) {
+			expect(
+				computeExpectedEndDateFromSchedule({
+					startDate: "2026-09-15",
+					scheduleRaw: STRUCTURED_SCHEDULE,
+					sessionsTotal: badTotal,
+				}),
+			).toBeNull();
+		}
+
+		expect(
+			computeExpectedEndDateFromSchedule({
+				startDate: "2026-02-30",
+				scheduleRaw: STRUCTURED_SCHEDULE,
+				sessionsTotal: 12,
+			}),
+		).toBeNull();
+
+		expect(
+			computeExpectedEndDateFromSchedule({
+				startDate: "2026-09-15",
+				scheduleRaw: "T3 & T5 tối",
+				sessionsTotal: 12,
+			}),
+		).toBeNull();
+	});
+});
+
+describe("resolveClassExpectedEndDate", () => {
+	test("uses latest active dated lesson for auto class including holiday makeup or manual moveDate", () => {
+		// Buổi cuối 2026-09-24 bị dời lễ sang 2026-09-29
+		expect(
+			resolveClassExpectedEndDate({
+				startDate: "2026-09-15",
+				scheduleRaw: STRUCTURED_SCHEDULE,
+				sessionsTotal: 4,
+				isManual: false,
+				lessons: [
+					{ date: "2026-09-15", status: "upcoming" },
+					{ date: "2026-09-17", status: "upcoming" },
+					{ date: "2026-09-22", status: "upcoming" },
+					{ date: "2026-09-24", status: "holiday" },
+					{ date: "2026-09-29", status: "upcoming" },
+				],
+			}),
+		).toBe("2026-09-29");
+
+		// Buổi cuối bị hủy -> lùi về buổi active lớn nhất trước đó
+		expect(
+			resolveClassExpectedEndDate({
+				startDate: "2026-09-15",
+				scheduleRaw: STRUCTURED_SCHEDULE,
+				sessionsTotal: 4,
+				isManual: false,
+				lessons: [
+					{ date: "2026-09-15", status: "completed" },
+					{ date: "2026-09-17", status: "upcoming" },
+					{ date: "2026-09-22", status: "cancelled" },
+				],
+			}),
+		).toBe("2026-09-17");
+	});
+
+	test("returns null when all materialized auto lessons are cancelled or holiday (no skeleton fallback)", () => {
+		expect(
+			resolveClassExpectedEndDate({
+				startDate: "2026-09-15",
+				scheduleRaw: STRUCTURED_SCHEDULE,
+				sessionsTotal: 4,
+				isManual: false,
+				lessons: [
+					{ date: "2026-09-15", status: "cancelled" },
+					{ date: "2026-09-17", status: "holiday" },
+				],
+			}),
+		).toBeNull();
+	});
+
+	test("falls back to schedule estimate when auto class has 0 lessons or only legacy undated lessons", () => {
+		expect(
+			resolveClassExpectedEndDate({
+				startDate: "2026-09-15",
+				scheduleRaw: STRUCTURED_SCHEDULE,
+				sessionsTotal: 4,
+				isManual: false,
+				lessons: [],
+			}),
+		).toBe("2026-09-24");
+
+		expect(
+			resolveClassExpectedEndDate({
+				startDate: "2026-09-15",
+				scheduleRaw: STRUCTURED_SCHEDULE,
+				sessionsTotal: 4,
+				isManual: false,
+				lessons: [
+					{ date: null, status: "upcoming" },
+					{ date: null, status: "upcoming" },
+				],
+			}),
+		).toBe("2026-09-24");
+
+		// Explicit isManual: false must NOT be overridden even if stale classSessions are passed
+		expect(
+			resolveClassExpectedEndDate({
+				startDate: "2026-09-15",
+				scheduleRaw: STRUCTURED_SCHEDULE,
+				sessionsTotal: 4,
+				isManual: false,
+				lessons: [],
+				classSessions: [{ date: "2026-10-30" }],
+			}),
+		).toBe("2026-09-24");
+	});
+
+	test("handles manual classes with classSessions, cancelled lessons, holiday shifts/makeups, and 0 sessions", () => {
+		// Manual class with 0 enrollments (classSessions only)
+		expect(
+			resolveClassExpectedEndDate({
+				startDate: "2026-09-15",
+				scheduleRaw: "",
+				sessionsTotal: 0,
+				isManual: true,
+				lessons: [],
+				classSessions: [{ date: "2026-09-18" }, { date: "2026-09-25" }],
+			}),
+		).toBe("2026-09-25");
+
+		// Manual class where last classSession is cancelled via lesson status
+		expect(
+			resolveClassExpectedEndDate({
+				startDate: "2026-09-15",
+				scheduleRaw: "",
+				sessionsTotal: 0,
+				isManual: true,
+				lessons: [
+					{ date: "2026-09-18", status: "upcoming" },
+					{ date: "2026-09-25", status: "cancelled" },
+				],
+				classSessions: [{ date: "2026-09-18" }, { date: "2026-09-25" }],
+			}),
+		).toBe("2026-09-18");
+
+		// Manual class where holiday shifts last classSession to a makeup lesson date not in class_session
+		expect(
+			resolveClassExpectedEndDate({
+				startDate: "2026-09-15",
+				scheduleRaw: "",
+				sessionsTotal: 0,
+				isManual: true,
+				lessons: [
+					{ date: "2026-09-18", status: "upcoming" },
+					{ date: "2026-09-25", status: "holiday" },
+					{ date: "2026-10-02", status: "upcoming" },
+				],
+				classSessions: [{ date: "2026-09-18" }, { date: "2026-09-25" }],
+				holidayShiftOriginalDates: ["2026-09-25"],
+			}),
+		).toBe("2026-10-02");
+
+		// Manual class with classSession excluded by holidayCancelDates when lessons array is empty
+		expect(
+			resolveClassExpectedEndDate({
+				startDate: "2026-09-15",
+				scheduleRaw: "",
+				sessionsTotal: 0,
+				isManual: true,
+				lessons: [],
+				classSessions: [{ date: "2026-09-18" }, { date: "2026-09-25" }],
+				holidayCancelDates: ["2026-09-25"],
+			}),
+		).toBe("2026-09-18");
+
+		// Manual class with 0 sessions -> null
+		expect(
+			resolveClassExpectedEndDate({
+				startDate: "2026-09-15",
+				scheduleRaw: STRUCTURED_SCHEDULE,
+				sessionsTotal: 12,
+				isManual: true,
+				lessons: [],
+				classSessions: [],
+			}),
+		).toBeNull();
 	});
 });
 

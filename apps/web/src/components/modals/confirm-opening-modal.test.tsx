@@ -189,8 +189,14 @@ describe("ConfirmOpeningModal", () => {
 			"Xem trước email thông báo khai giảng",
 		) as HTMLIFrameElement;
 		expect(iframe.getAttribute("sandbox")).toBe("");
-		expect(iframe.getAttribute("srcdoc")).toContain("IELTS Writing 7.0");
-		expect(iframe.getAttribute("srcdoc")).toContain("Nguyễn Minh Anh");
+		const initialSrcDoc = iframe.getAttribute("srcdoc") ?? "";
+		expect(initialSrcDoc).toContain("IELTS Writing 7.0");
+		expect(initialSrcDoc).toContain("Nguyễn Minh Anh");
+		expect(initialSrcDoc).toContain("Ngày kết thúc khóa học dự kiến");
+		expect(initialSrcDoc).not.toContain("Trình độ");
+		expect(initialSrcDoc).not.toContain("Thời lượng");
+		expect(dialog.textContent).toContain("Tổng số buổi");
+		expect(dialog.textContent).toContain("12 buổi");
 
 		const noteInput = within(dialog).getByLabelText(
 			"Lời nhắn cho học viên (tùy chọn)",
@@ -207,6 +213,83 @@ describe("ConfirmOpeningModal", () => {
 		expect(
 			within(dialog).queryByTitle("Xem trước email thông báo khai giảng"),
 		).toBeNull();
+	});
+
+	it("updates preview expected end date live when startDate changes, honors explicit prop when unchanged, and omits row for empty manual class", () => {
+		const shiftedEnd = addDaysISO(futureDate, 14);
+		const cls = makeClassGroup({
+			startDate: "2026-09-15",
+			schedule: '{"days":[1,3],"start":"19:00","end":"20:30"}',
+			sessionsTotal: 4,
+		});
+		const roster = makeDefaultRoster().slice(0, 2);
+
+		const { rerender } = render(
+			<ConfirmOpeningModal
+				open
+				onClose={vi.fn()}
+				cls={cls}
+				hasRealSessions={false}
+				isManual={false}
+				expectedEndDate={shiftedEnd}
+				roster={roster}
+				onConfirmed={vi.fn(async () => undefined)}
+			/>,
+		);
+
+		const iframe = screen.getByTitle(
+			"Xem trước email thông báo khai giảng",
+		) as HTMLIFrameElement;
+		expect(iframe.getAttribute("srcdoc")).toContain(
+			formatViWeekdayDate(shiftedEnd),
+		);
+
+		// Edit startDate live -> recomputes end date from new startDate + schedule + sessionsTotal
+		// 2026-10-06 (T3) + 4 sessions on T3/T5 [1,3] -> 2026-10-06, 10-08, 10-13, 10-15
+		const nextStart = "2026-10-06";
+		const dateInput = screen.getByLabelText(/Ngày khai giảng/);
+		fireEvent.change(dateInput, {
+			target: { value: formatViDateDisplay(nextStart) },
+		});
+		expect(iframe.getAttribute("srcdoc")).toContain(
+			formatViWeekdayDate("2026-10-15"),
+		);
+
+		// When startDateReadOnly is true (e.g. startDateLocked turns true mid-session), keep prop instead of raw edit
+		rerender(
+			<ConfirmOpeningModal
+				open
+				onClose={vi.fn()}
+				cls={cls}
+				hasRealSessions
+				isManual={false}
+				startDateLocked
+				expectedEndDate={shiftedEnd}
+				roster={roster}
+				onConfirmed={vi.fn(async () => undefined)}
+			/>,
+		);
+		expect(iframe.getAttribute("srcdoc")).toContain(
+			formatViWeekdayDate(shiftedEnd),
+		);
+
+		// Manual class with null expectedEndDate omits the row even when startDate changes
+		rerender(
+			<ConfirmOpeningModal
+				open
+				onClose={vi.fn()}
+				cls={{ ...cls, schedulingMode: "manual", sessionsTotal: 0 }}
+				hasRealSessions={false}
+				isManual
+				startDateLocked={false}
+				expectedEndDate={null}
+				roster={roster}
+				onConfirmed={vi.fn(async () => undefined)}
+			/>,
+		);
+		expect(iframe.getAttribute("srcdoc")).not.toContain(
+			"Ngày kết thúc khóa học dự kiến",
+		);
 	});
 
 	it("truncates missing-email warning list after 5 students", () => {
