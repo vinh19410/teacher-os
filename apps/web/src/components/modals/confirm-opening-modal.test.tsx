@@ -193,6 +193,9 @@ describe("ConfirmOpeningModal", () => {
 		expect(initialSrcDoc).toContain("IELTS Writing 7.0");
 		expect(initialSrcDoc).toContain("Nguyễn Minh Anh");
 		expect(initialSrcDoc).toContain("Ngày kết thúc khóa học dự kiến");
+		expect(initialSrcDoc).toContain(
+			"Link buổi học sẽ được gửi đến bạn trước buổi học 2 tiếng.",
+		);
 		expect(initialSrcDoc).not.toContain("Trình độ");
 		expect(initialSrcDoc).not.toContain("Thời lượng");
 		expect(dialog.textContent).toContain("Tổng số buổi");
@@ -213,6 +216,25 @@ describe("ConfirmOpeningModal", () => {
 		expect(
 			within(dialog).queryByTitle("Xem trước email thông báo khai giảng"),
 		).toBeNull();
+	});
+
+	it("omits the 2-hour session link notice in HTML preview for Offline classes", () => {
+		render(
+			<ConfirmOpeningModal
+				open
+				onClose={vi.fn()}
+				cls={makeClassGroup({ mode: "Offline" })}
+				hasRealSessions={false}
+				roster={makeDefaultRoster().slice(0, 1)}
+				onConfirmed={vi.fn(async () => undefined)}
+			/>,
+		);
+		const iframe = screen.getByTitle(
+			"Xem trước email thông báo khai giảng",
+		) as HTMLIFrameElement;
+		expect(iframe.getAttribute("srcdoc") ?? "").not.toContain(
+			"Link buổi học sẽ được gửi đến bạn trước buổi học 2 tiếng.",
+		);
 	});
 
 	it("updates preview expected end date live when startDate changes, honors explicit prop when unchanged, and omits row for empty manual class", () => {

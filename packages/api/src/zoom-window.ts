@@ -1,3 +1,4 @@
+import { hasControlChars } from "./email-html";
 import {
 	formatViDateDisplay,
 	formatVietnamTimeHHMM,
@@ -68,7 +69,7 @@ const INVALID_SCHEDULE_MESSAGE =
  */
 export function isValidZoomJoinUrl(raw: string | null | undefined): boolean {
 	const trimmed = raw?.trim() ?? "";
-	if (!trimmed || /\s/.test(trimmed)) return false;
+	if (!trimmed || hasControlChars(trimmed) || /\s/.test(trimmed)) return false;
 	try {
 		const parsed = new URL(trimmed);
 		return parsed.protocol === "https:" && parsed.hostname.length > 0;

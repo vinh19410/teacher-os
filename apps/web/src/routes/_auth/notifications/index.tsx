@@ -124,6 +124,7 @@ const EVENT_TYPE_LABELS: Record<NotificationEventType, string> = {
 	schedule_changed: "Đổi lịch",
 	holiday_created: "Nghỉ lễ",
 	class_opening_confirmed: "Thông báo khai giảng",
+	session_link_reminder: "Nhắc link buổi học",
 };
 
 const CHANNEL_LABELS: Record<string, string> = {
