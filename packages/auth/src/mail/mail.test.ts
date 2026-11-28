@@ -217,6 +217,29 @@ describe("createLogMailer", () => {
 
 		infoSpy.mockRestore();
 	});
+
+	test("redacts /pay/<token> capability paths while preserving non-pay URLs", async () => {
+		const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+
+		const mailer = createLogMailer();
+		await mailer.send({
+			to: "parent@example.com",
+			subject: "Hóa đơn học phí",
+			html: "<p>Pay</p>",
+			text: "Thanh toán: https://lms.msmy.io.vn/pay/AbCdEf1234567890_xyz\nXác thực: https://example.com/verify-email?token=123",
+		});
+
+		expect(infoSpy).toHaveBeenCalledWith(
+			"[mail:log] to=%s subject=%s replyTo=%s fromName=%s\n%s",
+			"parent@example.com",
+			"Hóa đơn học phí",
+			"",
+			"",
+			"Thanh toán: https://lms.msmy.io.vn/pay/[redacted]\nXác thực: https://example.com/verify-email?token=123",
+		);
+
+		infoSpy.mockRestore();
+	});
 });
 
 describe("replyTo + fromName (plan TOS-21 D5)", () => {

@@ -52,6 +52,8 @@ export interface Mailer {
 	send(input: MailInput): Promise<void>;
 }
 
+const PAY_TOKEN_PATH = /(\/pay\/)[A-Za-z0-9_-]{10,}/g;
+
 export function createLogMailer(): Mailer {
 	return {
 		async send(input: MailInput): Promise<void> {
@@ -61,7 +63,7 @@ export function createLogMailer(): Mailer {
 				input.subject,
 				input.replyTo ?? "",
 				input.fromName ?? "",
-				input.text,
+				input.text.replace(PAY_TOKEN_PATH, "$1[redacted]"),
 			);
 		},
 	};

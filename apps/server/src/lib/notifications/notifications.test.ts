@@ -25,6 +25,7 @@ import {
 	classOpeningConfirmedEvents,
 	dailyDeadlineReminderEvent,
 	holidayCreatedEvents,
+	invoiceIssuedEvent,
 	placementSubmittedEvent,
 	renderDailyDeadlineReminderHtml,
 	renderDailyDeadlineReminderText,
@@ -1237,6 +1238,60 @@ describe("notifications service (#454 phase 2)", () => {
 		expect(finalRow.status).toBe("sent");
 		expect(finalRow.channels).toBe("email");
 	});
+
+	test("deliverNotifications gửi htmlBody và textBody đầy đủ cho invoiceIssuedEvent", async () => {
+		await seedOrg("org-inv-html", "Minh Anh Academy");
+		await seedStudent("org-inv-html", "stu-inv-html", "inv@example.com");
+
+		const event = invoiceIssuedEvent({
+			id: "inv-html-11223344",
+			studentId: "stu-inv-html",
+			amount: 1_800_000,
+			due: "2026-12-12",
+			studentName: "Nguyễn An",
+			className: "IELTS 6.0",
+			orgName: "Minh Anh Academy",
+			payToken: "tok_deliver_1234567890",
+			studentOrigin: "https://lms.msmy.io.vn/student",
+			payment: {
+				bankBrandName: "Vietcombank",
+				accountNumber: "9988776655",
+				holderName: "CO MY",
+				memo: "MSMY11223344",
+				qrUrl:
+					"https://vietqr.app/img?acc=9988776655&bank=970436&amount=1800000&des=MSMY11223344&template=compact",
+			},
+		});
+
+		const { queuedEmailIds } = await enqueueNotifications(db, "org-inv-html", [
+			event,
+		]);
+		const sentInputs: Parameters<Mailer["send"]>[0][] = [];
+		await deliverNotifications(
+			db,
+			fakeMailer(async (input) => {
+				sentInputs.push(input);
+			}),
+			queuedEmailIds,
+			"https://lms.msmy.io.vn/student",
+		);
+
+		expect(sentInputs).toHaveLength(1);
+		const sent = sentInputs.at(0);
+		if (!sent) throw new Error("mailer was not called");
+		expect(sent.subject).toBe("Hóa đơn học phí INV-11223344 — 1.800.000đ");
+		expect(sent.html).toContain("Thông tin chuyển khoản");
+		expect(sent.html).toContain("https://vietqr.app/img?");
+		expect(sent.html).toContain(
+			"https://lms.msmy.io.vn/pay/tok_deliver_1234567890",
+		);
+		expect(sent.text).toContain("MSMY11223344");
+		expect(sent.text).toContain(
+			"https://lms.msmy.io.vn/pay/tok_deliver_1234567890",
+		);
+		const finalRow = await rowOf("stu-inv-html");
+		expect(finalRow.status).toBe("sent");
+	});
 });
 
 describe("templates builder", () => {
@@ -1256,8 +1311,11 @@ describe("templates builder", () => {
 		expect(event.refType).toBe("invoice");
 		expect(event.refId).toBe("inv-9");
 		expect(event.body).toContain("1.500.000đ");
-		expect(event.body).toContain("2026-11-01");
-		expect(event.title.length).toBeGreaterThan(0);
+		expect(event.body).toContain("01/11/2026");
+		expect(event.body).not.toContain("2026-11-01");
+		expect(event.title.startsWith("Nhắc học phí")).toBe(true);
+		expect(event.htmlBody).toContain("<!DOCTYPE html>");
+		expect(event.textBody).toContain("01/11/2026");
 	});
 
 	test("holidayCreatedEvents: 1 sự kiện mỗi học viên, khóa theo holidayId+studentId", () => {

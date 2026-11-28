@@ -71,6 +71,8 @@ import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import { lessonMaterial } from "@teacher-os/db/schema/material";
 import { notificationRecord } from "@teacher-os/db/schema/notification-record";
+import { orgBankLink } from "@teacher-os/db/schema/org-bank-link";
+import { organization } from "@teacher-os/db/schema/organization";
 import {
 	holidaySessionCancel,
 	holidaySessionShift,
@@ -132,6 +134,7 @@ import {
 	tuitionReminderEvent,
 } from "../lib/notifications/templates";
 import {
+	buildEmailPaymentInfo,
 	ensurePaymentRefs,
 	loadPaymentInstructions,
 } from "../lib/payment-instructions";
@@ -219,6 +222,8 @@ export function kernelRoutes(deps: {
 	runInBackground?: Parameters<typeof emitNotifications>[0]["runInBackground"];
 	/** #454: origin cổng học viên cho link tuyệt đối trong thư (notificationDepsFrom). */
 	studentOrigin?: Parameters<typeof emitNotifications>[0]["studentOrigin"];
+	/** Origin app web cho link `/pay/<token>` khi `studentOrigin` không thuộc unified LMS. */
+	appOrigin?: string;
 	/** #463: khoảng chờ giữa các lượt retry email thông báo (test/E2E truyền [0, 0]). */
 	notificationRetryDelaysMs?: number[];
 	/** #570: cooldown (ms) giữa các lượt gửi lại email lời mời (mặc định 60_000; E2E truyền 0). */
@@ -5220,8 +5225,16 @@ export function kernelRoutes(deps: {
 			.select({
 				studentId: enrollment.studentId,
 				status: enrollment.status,
+				className: classTable.name,
 			})
 			.from(enrollment)
+			.leftJoin(
+				classTable,
+				and(
+					eq(classTable.id, enrollment.classId),
+					eq(classTable.orgId, ctx.orgId),
+				),
+			)
 			.where(
 				and(
 					eq(enrollment.id, input.enrollmentId),
@@ -5235,7 +5248,7 @@ export function kernelRoutes(deps: {
 			return c.json({ error: "Học viên chưa đồng ý tham gia lớp" }, 409);
 		}
 		const [enrolledStudent] = await db
-			.select({ id: student.id })
+			.select({ id: student.id, name: student.name })
 			.from(student)
 			.where(
 				and(
@@ -5252,6 +5265,8 @@ export function kernelRoutes(deps: {
 		if (!due) return c.json({ error: "invalid body" }, 400);
 
 		const invoiceId = crypto.randomUUID();
+		const paymentCode = generatePaymentCode();
+		const payToken = generatePayToken();
 		await db.insert(invoice).values({
 			id: invoiceId,
 			orgId: ctx.orgId,
@@ -5261,15 +5276,54 @@ export function kernelRoutes(deps: {
 			due,
 			note: input.note,
 			// #320: every new invoice gets its transfer code + public pay token.
-			paymentCode: generatePaymentCode(),
-			payToken: generatePayToken(),
+			paymentCode,
+			payToken,
 		});
+		let orgName = "";
+		let payment: ReturnType<typeof buildEmailPaymentInfo> = null;
+		try {
+			const [[orgRow], [bankLink]] = await Promise.all([
+				db
+					.select({ name: organization.name })
+					.from(organization)
+					.where(eq(organization.id, ctx.orgId))
+					.limit(1),
+				db
+					.select()
+					.from(orgBankLink)
+					.where(eq(orgBankLink.orgId, ctx.orgId))
+					.limit(1),
+			]);
+			orgName = orgRow?.name ?? "";
+			payment = buildEmailPaymentInfo(
+				{
+					amount: input.amount,
+					paidAmount: 0,
+					status: "unpaid",
+					paymentCode,
+				},
+				bankLink,
+			);
+		} catch (error) {
+			console.error(
+				"[invoices] failed to load payment email context:",
+				error instanceof Error ? error.message : String(error),
+			);
+		}
 		await notify(ctx.orgId, [
 			invoiceIssuedEvent({
 				id: invoiceId,
 				studentId: enrollmentRow.studentId,
 				amount: input.amount,
 				due,
+				studentName: enrolledStudent.name,
+				className: enrollmentRow.className ?? undefined,
+				note: input.note,
+				orgName,
+				payToken,
+				payment,
+				studentOrigin: deps.studentOrigin,
+				appOrigin: deps.appOrigin,
 			}),
 		]);
 		return c.json({ id: invoiceId } satisfies CreatedResponse, 201);
@@ -5712,6 +5766,29 @@ export function kernelRoutes(deps: {
 
 		const db = deps.getDb();
 		const { studentIds, classId } = body.data;
+		let orgName = "";
+		let bankLink: typeof orgBankLink.$inferSelect | undefined;
+		try {
+			const [[orgRow], [linkRow]] = await Promise.all([
+				db
+					.select({ name: organization.name })
+					.from(organization)
+					.where(eq(organization.id, ctx.orgId))
+					.limit(1),
+				db
+					.select()
+					.from(orgBankLink)
+					.where(eq(orgBankLink.orgId, ctx.orgId))
+					.limit(1),
+			]);
+			orgName = orgRow?.name ?? "";
+			bankLink = linkRow;
+		} catch (error) {
+			console.error(
+				"[debt-reminders] failed to load payment email context:",
+				error instanceof Error ? error.message : String(error),
+			);
+		}
 		const D1_CHUNK = 50;
 		const openInvoices: Array<{
 			id: string;
@@ -5719,6 +5796,11 @@ export function kernelRoutes(deps: {
 			amount: number;
 			paidAmount: number;
 			due: string;
+			note: string;
+			paymentCode: string | null;
+			payToken: string | null;
+			studentName: string;
+			className: string | null;
 		}> = [];
 
 		for (let i = 0; i < studentIds.length; i += D1_CHUNK) {
@@ -5729,15 +5811,21 @@ export function kernelRoutes(deps: {
 				ne(invoice.status, "paid"),
 				sql`${invoice.paidAmount} < ${invoice.amount}`,
 			);
+			const selectFields = {
+				id: invoice.id,
+				studentId: invoice.studentId,
+				amount: invoice.amount,
+				paidAmount: invoice.paidAmount,
+				due: invoice.due,
+				note: invoice.note,
+				paymentCode: invoice.paymentCode,
+				payToken: invoice.payToken,
+				studentName: student.name,
+				className: classTable.name,
+			};
 			const rows = classId
 				? await db
-						.select({
-							id: invoice.id,
-							studentId: invoice.studentId,
-							amount: invoice.amount,
-							paidAmount: invoice.paidAmount,
-							due: invoice.due,
-						})
+						.select(selectFields)
 						.from(invoice)
 						.innerJoin(
 							enrollment,
@@ -5747,32 +5835,81 @@ export function kernelRoutes(deps: {
 								eq(enrollment.classId, classId),
 							),
 						)
+						.innerJoin(
+							student,
+							and(
+								eq(student.id, invoice.studentId),
+								eq(student.orgId, ctx.orgId),
+							),
+						)
+						.leftJoin(
+							classTable,
+							and(
+								eq(classTable.id, enrollment.classId),
+								eq(classTable.orgId, ctx.orgId),
+							),
+						)
 						.where(baseWhere)
 				: await db
-						.select({
-							id: invoice.id,
-							studentId: invoice.studentId,
-							amount: invoice.amount,
-							paidAmount: invoice.paidAmount,
-							due: invoice.due,
-						})
+						.select(selectFields)
 						.from(invoice)
+						.innerJoin(
+							student,
+							and(
+								eq(student.id, invoice.studentId),
+								eq(student.orgId, ctx.orgId),
+							),
+						)
+						.leftJoin(
+							enrollment,
+							and(
+								eq(enrollment.id, invoice.enrollmentId),
+								eq(enrollment.orgId, ctx.orgId),
+							),
+						)
+						.leftJoin(
+							classTable,
+							and(
+								eq(classTable.id, enrollment.classId),
+								eq(classTable.orgId, ctx.orgId),
+							),
+						)
 						.where(baseWhere);
 			openInvoices.push(...rows);
 		}
 
-		const vnToday = vietnamTodayISO();
-		const events = openInvoices.map((inv) =>
-			tuitionReminderEvent(
+		const vnToday = vietnamTodayISO(deps.now?.());
+		const events = openInvoices.map((inv) => {
+			const amountDue = inv.amount - Math.min(inv.paidAmount, inv.amount);
+			const payment = buildEmailPaymentInfo(
+				{
+					amount: inv.amount,
+					paidAmount: inv.paidAmount,
+					status: "unpaid",
+					paymentCode: inv.paymentCode,
+				},
+				bankLink,
+			);
+			return tuitionReminderEvent(
 				{
 					id: inv.id,
 					studentId: inv.studentId,
-					amount: inv.amount - Math.min(inv.paidAmount, inv.amount),
+					amount: amountDue,
+					totalAmount: inv.amount,
+					paidAmount: inv.paidAmount,
 					due: inv.due,
+					studentName: inv.studentName,
+					className: inv.className ?? undefined,
+					note: inv.note,
+					orgName,
+					payToken: inv.payToken,
+					payment,
+					studentOrigin: deps.studentOrigin,
+					appOrigin: deps.appOrigin,
 				},
 				vnToday,
-			),
-		);
+			);
+		});
 
 		const notifDeps = notificationDepsFrom(deps);
 		const { createdIds } = await enqueueNotifications(

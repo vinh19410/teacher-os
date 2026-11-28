@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import { buildEmailPaymentInfo } from "../payment-instructions";
 import {
 	assignmentPublishedEvents,
 	classEnrolledEvent,
@@ -12,7 +13,9 @@ import {
 	placementSubmittedEvent,
 	renderDailyDeadlineReminderHtml,
 	renderDailyDeadlineReminderText,
+	resolvePublicPayOrigin,
 	scheduleChangedEvents,
+	tuitionReminderEvent,
 } from "./templates";
 
 describe("notification template builders (phase 3 #454)", () => {
@@ -83,7 +86,7 @@ describe("notification template builders (phase 3 #454)", () => {
 		expect(eventGroupOf(e.eventType)).toBe("assignment");
 	});
 
-	test("invoiceIssuedEvent — khóa theo hóa đơn, định dạng VND", () => {
+	test("invoiceIssuedEvent — khóa theo hóa đơn, định dạng VND và ngày VN", () => {
 		const e = invoiceIssuedEvent({
 			id: "inv-1",
 			studentId: "s-1",
@@ -93,9 +96,168 @@ describe("notification template builders (phase 3 #454)", () => {
 		expect(e.eventType).toBe("invoice_issued");
 		expect(e.idempotencyKey).toBe("invoice_issued:inv-1");
 		expect(e.linkPath).toBe("/tuition");
+		expect(e.title.startsWith("Hóa đơn học phí")).toBe(true);
 		expect(e.body).toContain("2.500.000đ");
-		expect(e.body).toContain("2026-11-15");
+		expect(e.body).toContain("15/11/2026");
+		expect(e.body).not.toContain("2026-11-15");
+		expect(e.htmlBody).toContain("<!DOCTYPE html>");
+		expect(e.textBody).toContain("15/11/2026");
 		expect(eventGroupOf(e.eventType)).toBe("tuition");
+	});
+
+	test("resolvePublicPayOrigin phân biệt unified /student, appOrigin, và standalone student", () => {
+		expect(
+			resolvePublicPayOrigin({
+				studentOrigin: "https://lms.msmy.io.vn/student/",
+			}),
+		).toBe("https://lms.msmy.io.vn");
+		expect(
+			resolvePublicPayOrigin({
+				studentOrigin: "http://localhost:8003",
+				appOrigin: "http://localhost:8001/teacher",
+			}),
+		).toBe("http://localhost:8001");
+		expect(
+			resolvePublicPayOrigin({
+				studentOrigin: "http://localhost:8003",
+			}),
+		).toBeUndefined();
+	});
+
+	test("invoiceIssuedEvent & tuitionReminderEvent đầy đủ ngữ cảnh sinh /pay/<token>, QR và giữ inboxBody gọn", () => {
+		const issued = invoiceIssuedEvent({
+			id: "11111111-2222-3333-4444-abcdef123456",
+			studentId: "s-1",
+			amount: 2_500_000,
+			due: "2026-12-05",
+			studentName: "Nguyễn Minh Anh",
+			className: "IELTS 6.5",
+			note: "Học phí khóa mới",
+			orgName: "Minh Anh Academy",
+			payToken: "tok_secret_1234567890ab",
+			studentOrigin: "https://lms.msmy.io.vn/student",
+			payment: {
+				bankBrandName: "MBBank",
+				accountNumber: "0987654321",
+				holderName: "CO MY",
+				memo: "TKPMMY MSMY7K2M9QXA",
+				qrUrl:
+					"https://vietqr.app/img?acc=0987654321&bank=970422&amount=2500000&des=TKPMMY+MSMY7K2M9QXA&template=compact",
+			},
+		});
+		expect(issued.title).toBe("Hóa đơn học phí INV-EF123456 — 2.500.000đ");
+		expect(issued.linkPath).toBe("/tuition");
+		expect(issued.htmlBody).toContain(
+			'href="https://lms.msmy.io.vn/pay/tok_secret_1234567890ab"',
+		);
+		expect(issued.htmlBody).toContain(
+			'href="https://lms.msmy.io.vn/student/tuition/11111111-2222-3333-4444-abcdef123456"',
+		);
+		expect(issued.htmlBody).toContain("TKPMMY MSMY7K2M9QXA");
+		expect(issued.textBody).toContain("Học phí khóa mới");
+
+		const reminder = tuitionReminderEvent(
+			{
+				id: "inv-rem-1",
+				studentId: "s-1",
+				amount: 2_500_000,
+				totalAmount: 4_500_000,
+				paidAmount: 2_000_000,
+				due: "2026-11-20",
+				studentName: "Nguyễn Minh Anh",
+				className: "IELTS 6.5",
+				studentOrigin: "http://localhost:8003",
+			},
+			"2026-11-28",
+		);
+		expect(reminder.title.startsWith("Nhắc học phí")).toBe(true);
+		expect(reminder.body).toContain("2.500.000đ");
+		expect(reminder.body).not.toContain("4.500.000đ");
+		expect(reminder.htmlBody).toContain("Quá hạn");
+		expect(reminder.htmlBody).toContain("4.500.000đ");
+		expect(reminder.htmlBody).not.toContain("/pay/");
+		expect(reminder.htmlBody).toContain(
+			'href="http://localhost:8003/tuition/inv-rem-1"',
+		);
+
+		const emptyDueReminder = tuitionReminderEvent(
+			{
+				id: "inv-rem-empty-due",
+				studentId: "s-1",
+				amount: 1_500_000,
+				due: "",
+			},
+			"2026-11-28",
+		);
+		expect(emptyDueReminder.body).toBe(
+			"Hóa đơn học phí 1.500.000đ. Vui lòng thanh toán đúng hạn.",
+		);
+		expect(emptyDueReminder.htmlBody).not.toContain("Hạn thanh toán");
+		expect(emptyDueReminder.htmlBody).not.toContain("Quá hạn");
+		expect(emptyDueReminder.htmlBody).not.toContain("28/11/2026");
+	});
+
+	test("buildEmailPaymentInfo trả null khi đã trả đủ, chưa liên kết bank, hoặc thiếu paymentCode; sinh memo + QR đúng khi đủ điều kiện", () => {
+		const linked = {
+			status: "linked",
+			brandName: "MBBank",
+			bankBin: "970422",
+			bankCode: "MB",
+			accountNumber: "0987654321",
+			vaCode: "MMY",
+			accountHolderName: "NGUYEN THI MY",
+		};
+		expect(
+			buildEmailPaymentInfo(
+				{
+					amount: 1_000_000,
+					paidAmount: 0,
+					status: "unpaid",
+					paymentCode: "MSMY11223344",
+				},
+				linked,
+			),
+		).toEqual({
+			bankBrandName: "MBBank",
+			accountNumber: "0987654321",
+			holderName: "NGUYEN THI MY",
+			memo: "TKPMMY MSMY11223344",
+			qrUrl:
+				"https://vietqr.app/img?acc=0987654321&bank=970422&amount=1000000&des=TKPMMY+MSMY11223344&template=compact",
+		});
+		expect(
+			buildEmailPaymentInfo(
+				{
+					amount: 1_000_000,
+					paidAmount: 0,
+					status: "unpaid",
+					paymentCode: null,
+				},
+				linked,
+			),
+		).toBeNull();
+		expect(
+			buildEmailPaymentInfo(
+				{
+					amount: 1_000_000,
+					paidAmount: 1_000_000,
+					status: "paid",
+					paymentCode: "MSMY11223344",
+				},
+				linked,
+			),
+		).toBeNull();
+		expect(
+			buildEmailPaymentInfo(
+				{
+					amount: 1_000_000,
+					paidAmount: 0,
+					status: "unpaid",
+					paymentCode: "MSMY11223344",
+				},
+				{ ...linked, status: "none" },
+			),
+		).toBeNull();
 	});
 
 	test("scheduleChangedEvents — khóa gồm classId:date:editedAtMs:studentId", () => {

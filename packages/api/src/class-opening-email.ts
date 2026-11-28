@@ -176,7 +176,7 @@ export function escapeEmailHtml(value: string): string {
 		.replace(/'/g, "&#39;");
 }
 
-function hasControlChars(value: string): boolean {
+export function hasControlChars(value: string): boolean {
 	for (let i = 0; i < value.length; i += 1) {
 		const code = value.charCodeAt(i);
 		if (code <= 0x1f || code === 0x7f) return true;
@@ -184,7 +184,7 @@ function hasControlChars(value: string): boolean {
 	return false;
 }
 
-function sanitizeSingleLine(value: string): string {
+export function sanitizeSingleLine(value: string): string {
 	let out = "";
 	for (let i = 0; i < value.length; i += 1) {
 		const code = value.charCodeAt(i);
@@ -199,7 +199,7 @@ function sanitizeSingleLine(value: string): string {
 	return out.replace(/\s+/g, " ").trim();
 }
 
-function normalizeMultilineText(value: string): string {
+export function normalizeMultilineText(value: string): string {
 	const normalized = value.replace(/\r\n?/g, "\n");
 	let out = "";
 	for (let i = 0; i < normalized.length; i += 1) {

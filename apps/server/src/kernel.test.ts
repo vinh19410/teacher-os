@@ -67,6 +67,7 @@ function findEnrollment(
 async function createTestApp(overrides?: {
 	mailer?: Mailer;
 	studentOrigin?: string;
+	appOrigin?: string;
 }) {
 	const client = createClient({ url: "file::memory:" });
 	const libsql = drizzle(client, { schema });
@@ -7703,6 +7704,84 @@ describe("notification events on core writes (#454 phase 3)", () => {
 			(await notifRows()).filter((r) => r.eventType === "invoice_issued"),
 		).toHaveLength(1);
 	});
+
+	test("tạo hóa đơn gửi email HTML giàu thông tin (kèm VietQR/TK ngân hàng khi đã liên kết và không có khi chưa liên kết)", async () => {
+		const sentInputs: Parameters<Mailer["send"]>[0][] = [];
+		const tBank = await createTestApp({
+			mailer: {
+				send: async (input) => {
+					sentInputs.push(input);
+				},
+			},
+			studentOrigin: "https://lms.msmy.io.vn/student",
+		});
+		const bankSession = await tBank.insertUser("Cô Hóa Đơn Đẹp");
+		await tBank.kernel(bankSession);
+		const bankOrgId = await tBank.orgIdOf(bankSession);
+		const classId = await tBank.createClass(bankSession, "IELTS 7.0 Tối");
+		const studentId = await tBank.addActiveStudent(bankSession, "Lê Minh Anh", {
+			classId,
+		});
+		const snap = await tBank.kernel(bankSession);
+		const enId = findEnrollment(snap, classId, studentId)?.id ?? "";
+
+		// Chưa liên kết ngân hàng → gửi email vẫn đầy đủ thông tin nhưng bỏ khối chuyển khoản
+		const resUnlinked = await tBank.call("/api/invoices", {
+			session: bankSession,
+			method: "POST",
+			body: {
+				enrollmentId: enId,
+				amount: 1_500_000,
+				due: "2026-12-15",
+				note: "Học phí đợt 1",
+			},
+		});
+		expect(resUnlinked.status).toBe(201);
+		const { id: unlinkedId } = (await resUnlinked.json()) as { id: string };
+		const unlinkedMail = sentInputs.at(-1);
+		expect(unlinkedMail?.subject).toContain("Hóa đơn học phí INV-");
+		expect(unlinkedMail?.subject).toContain("1.500.000đ");
+		expect(unlinkedMail?.html).toContain("Lê Minh Anh");
+		expect(unlinkedMail?.html).toContain("IELTS 7.0 Tối");
+		expect(unlinkedMail?.html).toContain("15/12/2026");
+		expect(unlinkedMail?.html).toContain("Học phí đợt 1");
+		expect(unlinkedMail?.html).toContain("/pay/");
+		expect(unlinkedMail?.html).toContain(
+			`https://lms.msmy.io.vn/student/tuition/${unlinkedId}`,
+		);
+		expect(unlinkedMail?.html).not.toContain("Thông tin chuyển khoản");
+
+		// Liên kết ngân hàng → kèm VietQR + nội dung chuyển khoản đối soát
+		await tBank.db.insert(schema.orgBankLink).values({
+			orgId: bankOrgId,
+			status: "linked",
+			brandName: "MBBank",
+			bankBin: "970422",
+			bankCode: "MB",
+			accountNumber: "0123456789",
+			vaCode: "MMY",
+			accountHolderName: "CO MY ENGLISH",
+		});
+
+		const resLinked = await tBank.call("/api/invoices", {
+			session: bankSession,
+			method: "POST",
+			body: {
+				enrollmentId: enId,
+				amount: 2_200_000,
+				due: "2026-12-20",
+			},
+		});
+		expect(resLinked.status).toBe(201);
+		const linkedMail = sentInputs.at(-1);
+		expect(linkedMail?.html).toContain("Thông tin chuyển khoản");
+		expect(linkedMail?.html).toContain("MBBank");
+		expect(linkedMail?.html).toContain("0123456789");
+		expect(linkedMail?.html).toContain("TKPMMY ");
+		expect(linkedMail?.html).toContain("https://vietqr.app/img?");
+		expect(linkedMail?.text).toContain("Thông tin chuyển khoản:");
+		expect(linkedMail?.text).toContain("20/12/2026");
+	}, 15_000);
 
 	test("hủy lesson phát 1 schedule_changed; replay 409 không thêm", async () => {
 		const classId = await t.createClass(session, "Lớp hủy buổi");
