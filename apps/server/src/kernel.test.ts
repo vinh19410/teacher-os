@@ -7700,6 +7700,7 @@ describe("notification events on core writes (#454 phase 3)", () => {
 		expect(rows[0]).toMatchObject({
 			studentId,
 			idempotencyKey: `invoice_issued:${invoiceId}`,
+			linkPath: `/tuition/${invoiceId}`,
 		});
 
 		const missing = await t.call("/api/invoices", {

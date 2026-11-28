@@ -84,12 +84,15 @@ export function PaymentQrPanel({
 		? data.reason === "PAID"
 			? "paid"
 			: "nolink"
-		: data.paidAmount > 0
-			? "partial"
-			: "open";
+		: !data.bank
+			? "nolink"
+			: data.paidAmount > 0
+				? "partial"
+				: "open";
+	const showQrInstructions = state === "open" || state === "partial";
 
 	const rows: Array<{ label: string; value: string; mono?: boolean }> =
-		data.payable && data.bank
+		showQrInstructions && data.bank
 			? [
 					{ label: strings.fields.bank, value: data.bank.brandName },
 					{
@@ -109,7 +112,9 @@ export function PaymentQrPanel({
 
 	return (
 		<div className={cn("flex flex-col gap-4 text-left", className)}>
-			<p className="font-medium text-sm">{strings.title}</p>
+			{showQrInstructions && (
+				<p className="font-medium text-sm">{strings.title}</p>
+			)}
 			{state === "paid" && (
 				<p className="rounded-md bg-success-soft p-3 text-center font-medium text-sm text-success">
 					{strings.paidFull}
@@ -125,7 +130,7 @@ export function PaymentQrPanel({
 					{strings.partial(fmt(data.paidAmount), fmt(data.amount))}
 				</p>
 			)}
-			{data.payable && data.bank && (
+			{showQrInstructions && data.bank && (
 				<div className="flex flex-col items-center gap-4">
 					{data.qrUrl ? (
 						// White backing plate: bank scanners need the dark-module

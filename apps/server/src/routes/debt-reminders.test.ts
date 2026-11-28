@@ -328,6 +328,7 @@ describe("POST /api/debt-reminders (TOS-18 #452)", () => {
 		expect(rows).toHaveLength(1);
 		expect(rows[0]?.eventType).toBe("tuition_reminder");
 		expect(rows[0]?.idempotencyKey).toBe(`tuition_reminder:inv-1a:${today}`);
+		expect(rows[0]?.linkPath).toBe("/tuition/inv-1a");
 		// Phải ghi số tiền còn nợ 2.500.000đ chứ không phải tổng gốc 4.500.000đ
 		expect(rows[0]?.body).toContain("2.500.000đ");
 		expect(rows[0]?.body).not.toContain("4.500.000đ");

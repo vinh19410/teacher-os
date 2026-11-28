@@ -1094,11 +1094,12 @@ export function useStudentInvoices() {
 
 export async function fetchStudentInvoicePayment(
 	invoiceId: string,
+	orgId?: string | null,
 ): Promise<PaymentInstructions> {
-	const headers = getStudentHeaders();
+	const headers = getStudentHeaders({}, orgId);
 	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(
-		`${getApiBaseUrl()}/api/student/invoices/${invoiceId}/payment`,
+		`${getApiBaseUrl()}/api/student/invoices/${encodeURIComponent(invoiceId)}/payment`,
 		{
 			method: "GET",
 			headers,

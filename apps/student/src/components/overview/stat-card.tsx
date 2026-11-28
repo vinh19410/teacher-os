@@ -1,9 +1,9 @@
 import { cn } from "@/lib/cn";
 
 /**
- * Stat card của design-v2 (Dashboard học viên): nhãn mono uppercase, số lớn
- * extrabold, dòng chú thích nhỏ. `hot` = nền mực đảo, số cam (số cần chú ý
- * như còn nợ học phí).
+ * Stat card của design-v2 (Dashboard học viên): thẻ sáng `bg-card` + `border`,
+ * nhãn mono uppercase, số lớn extrabold. `hot` = số màu `--destructive`
+ * (số cần chú ý như còn nợ học phí).
  */
 export function StatCard({
 	label,
@@ -21,8 +21,7 @@ export function StatCard({
 	return (
 		<div
 			className={cn(
-				"rounded-lg p-4",
-				hot ? "bg-primary" : "rounded-xl border bg-card shadow-sm",
+				"rounded-xl border bg-card p-4 text-card-foreground shadow-sm",
 				className,
 			)}
 		>
@@ -31,21 +30,14 @@ export function StatCard({
 			</div>
 			<div
 				className={cn(
-					"mt-2 font-extrabold text-2xl leading-none tracking-[-0.02em]",
-					hot ? "text-primary" : "text-foreground",
+					"mt-2 font-extrabold text-2xl tabular-nums leading-none tracking-[-0.02em]",
+					hot ? "text-destructive" : "text-foreground",
 				)}
 			>
 				{value}
 			</div>
 			{sub && (
-				<div
-					className={cn(
-						"mt-1.5 text-[12px]",
-						hot ? "text-primary-foreground/80" : "text-muted-foreground",
-					)}
-				>
-					{sub}
-				</div>
+				<div className="mt-1.5 text-[12px] text-muted-foreground">{sub}</div>
 			)}
 		</div>
 	);
