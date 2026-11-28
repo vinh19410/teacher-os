@@ -15,7 +15,10 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { type Context, Hono } from "hono";
 import { beforeAll, beforeEach, describe, expect, test } from "vitest";
 import { buildApp, type Db, type KernelCtx } from "../app";
-import { dailyDeadlineReminderEvent } from "../lib/notifications/templates";
+import {
+	dailyDeadlineReminderEvent,
+	sessionLinkReminderEvent,
+} from "../lib/notifications/templates";
 import { kernelRoutes } from "./kernel";
 import { notificationLogRoutes } from "./notification-logs";
 
@@ -909,5 +912,74 @@ describe("POST /api/notification-logs resend (#464)", () => {
 		expect(updated?.channels).toBe("email");
 		expect(updated?.retryCount).toBe(0);
 		expect(updated?.lastError).toBeNull();
+	});
+
+	test("session_link_reminder failed hiện ở GET /notification-logs và resend giữ nguyên channels=email cùng link Zoom", async () => {
+		const event = sessionLinkReminderEvent({
+			classId: "cls-1",
+			className: "IELTS Speaking 7.0",
+			dateISO: "2026-11-28",
+			time: "19:00",
+			dur: 90,
+			joinUrl: "https://zoom.us/j/555666777",
+			studentId: "st-1",
+			studentName: "Minh Tran",
+			studentOrigin: "https://student.example.com",
+		});
+
+		await rawDb
+			.insert(schema.notificationRecord)
+			.values({
+				id: "nt-session-link-failed",
+				orgId: "org-1",
+				studentId: "st-1",
+				eventType: event.eventType,
+				eventGroup: "schedule",
+				idempotencyKey: event.idempotencyKey,
+				title: event.title,
+				body: event.body,
+				htmlBody: event.htmlBody ?? null,
+				textBody: event.textBody ?? null,
+				linkPath: event.linkPath,
+				refType: event.refType,
+				refId: event.refId,
+				channels: "email",
+				recipientEmail: "minh@gmail.com",
+				senderName: "Academy 1",
+				replyToEmail: "teacher@academy1.vn",
+				status: "failed",
+				retryCount: 3,
+				lastError: "E-selfomy-alignment-010: temporary smtp error",
+				createdAt: new Date("2026-11-28T10:00:00Z"),
+			})
+			.run();
+
+		const sentCalls: Parameters<Mailer["send"]>[0][] = [];
+		const app = buildResendApp({
+			mailer: {
+				async send(input) {
+					sentCalls.push(input);
+				},
+			},
+		});
+
+		const listRes = await app.request("/?event=schedule&status=failed");
+		expect(listRes.status).toBe(200);
+		const listBody = notificationLogResponseSchema.parse(await listRes.json());
+		const listed = listBody.rows.find((r) => r.id === "nt-session-link-failed");
+		expect(listed?.eventType).toBe("session_link_reminder");
+		expect(listed?.channels).toBe("email");
+
+		const resendRes = await app.request("/nt-session-link-failed/resend", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: "{}",
+		});
+		expect(resendRes.status).toBe(200);
+		expect(sentCalls).toHaveLength(1);
+		expect(sentCalls[0]?.html).toContain("https://zoom.us/j/555666777");
+		expect(sentCalls[0]?.html).toContain(
+			"https://student.example.com/classes/cls-1/sessions/2026-11-28",
+		);
 	});
 });

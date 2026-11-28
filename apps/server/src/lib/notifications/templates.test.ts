@@ -1,3 +1,4 @@
+import { ONLINE_SESSION_LINK_NOTICE } from "@teacher-os/api/class-opening-email";
 import { describe, expect, test } from "vitest";
 import {
 	assignmentPublishedEvents,
@@ -13,6 +14,7 @@ import {
 	renderDailyDeadlineReminderHtml,
 	renderDailyDeadlineReminderText,
 	scheduleChangedEvents,
+	sessionLinkReminderEvent,
 } from "./templates";
 
 describe("notification template builders (phase 3 #454)", () => {
@@ -198,6 +200,8 @@ describe("notification template builders (phase 3 #454)", () => {
 		expect(first.htmlBody).toContain("19:00 – 20:30");
 		expect(first.htmlBody).toContain("Ngày kết thúc khóa học dự kiến");
 		expect(first.htmlBody).toContain("Thứ Sáu, 07/08/2026");
+		expect(first.htmlBody).toContain(ONLINE_SESSION_LINK_NOTICE);
+		expect(first.textBody).toContain(ONLINE_SESSION_LINK_NOTICE);
 		expect(first.htmlBody).not.toContain("Trình độ");
 		expect(first.htmlBody).not.toContain("Thời lượng");
 		expect(first.htmlBody).not.toContain("24 buổi");
@@ -302,6 +306,8 @@ describe("notification template builders (phase 3 #454)", () => {
 		);
 		expect(ev.title).toContain("Cập nhật lịch khai giảng lớp Giao tiếp cơ bản");
 		expect(ev.htmlBody).toContain("Cập nhật lịch khai giảng");
+		expect(ev.htmlBody).not.toContain(ONLINE_SESSION_LINK_NOTICE);
+		expect(ev.textBody).not.toContain(ONLINE_SESSION_LINK_NOTICE);
 		expect(ev.htmlBody).not.toContain('href="/classes"');
 		expect(ev.htmlBody).not.toContain("Mở cổng học viên");
 		expect(ev.textBody).toBeTruthy();
@@ -518,5 +524,62 @@ describe("dailyDeadlineReminderEvent & digest renderers", () => {
 			"javascript:alert(1)",
 		);
 		expect(unsafeText).not.toContain("javascript:");
+	});
+
+	test("sessionLinkReminderEvent — sinh email-only với link Zoom trực tiếp, link phụ cổng học viên và khóa idempotency theo buổi + giờ", () => {
+		const ev = sessionLinkReminderEvent({
+			classId: "cls-1",
+			className: "IELTS Speaking 7.0",
+			dateISO: "2026-11-28",
+			time: "19:00",
+			dur: 90,
+			topic: "Part 2 Cue Cards",
+			joinUrl: "https://zoom.us/j/123456789?pwd=xyz",
+			orgName: "Trung tâm Anh ngữ Minh Anh",
+			studentId: "stu-1",
+			studentName: "Nguyễn Minh Anh",
+			studentOrigin: "https://lms.msmy.io.vn/student///",
+		});
+
+		expect(ev.studentId).toBe("stu-1");
+		expect(ev.eventType).toBe("session_link_reminder");
+		expect(eventGroupOf(ev.eventType)).toBe("schedule");
+		expect(ev.idempotencyKey).toBe(
+			"session_link_reminder:cls-1:2026-11-28:19:00:stu-1",
+		);
+		expect(ev.channels).toBe("email");
+		expect(ev.linkPath).toBe("/classes/cls-1/sessions/2026-11-28");
+		expect(ev.refType).toBe("lesson");
+		expect(ev.refId).toBe("cls-1:2026-11-28");
+		expect(ev.title).toBe(
+			"Link buổi học lớp IELTS Speaking 7.0 — 19:00, 28/11/2026",
+		);
+		expect(ev.body).toContain("IELTS Speaking 7.0");
+		expect(ev.body).toContain("19:00 – 20:30");
+		expect(ev.htmlBody).toContain('href="https://zoom.us/j/123456789?pwd=xyz"');
+		expect(ev.htmlBody).toContain("Tham gia buổi học");
+		expect(ev.htmlBody).toContain(
+			'href="https://lms.msmy.io.vn/student/classes/cls-1/sessions/2026-11-28"',
+		);
+		expect(ev.htmlBody).toContain("Part 2 Cue Cards");
+		expect(ev.textBody).toContain("https://zoom.us/j/123456789?pwd=xyz");
+		expect(ev.textBody).toContain(
+			"https://lms.msmy.io.vn/student/classes/cls-1/sessions/2026-11-28",
+		);
+
+		const withoutOrigin = sessionLinkReminderEvent({
+			classId: "cls-1",
+			className: "IELTS Speaking 7.0",
+			dateISO: "2026-11-28",
+			time: "19:00",
+			dur: 90,
+			joinUrl: "https://zoom.us/j/123456789",
+			studentId: "stu-1",
+			studentName: "An",
+			studentOrigin: "javascript:alert(1)",
+		});
+		expect(withoutOrigin.htmlBody).not.toContain("javascript:");
+		expect(withoutOrigin.htmlBody).not.toContain("Mở trang chi tiết buổi học");
+		expect(withoutOrigin.textBody).not.toContain("javascript:");
 	});
 });
