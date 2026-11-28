@@ -221,7 +221,7 @@ export async function loadClassAssignmentItems(
 				? visibleAssignmentFilter(now)
 				: overviewAssignmentFilter(now);
 
-	const targetRows = await db
+	const enrollmentJoin = db
 		.select({
 			id: classAssignment.id,
 			title: classAssignment.title,
@@ -263,7 +263,20 @@ export async function loadClassAssignmentItems(
 				eq(assignmentPrompt.id, classAssignment.promptId),
 				eq(assignmentPrompt.orgId, orgId),
 			),
-		)
+		);
+	const withEnrollmentScope =
+		mode === "overview"
+			? enrollmentJoin.innerJoin(
+					enrollment,
+					and(
+						eq(enrollment.orgId, orgId),
+						eq(enrollment.classId, classAssignment.classId),
+						eq(enrollment.studentId, studentId),
+						eq(enrollment.status, "active"),
+					),
+				)
+			: enrollmentJoin;
+	const targetRows = await withEnrollmentScope
 		.leftJoin(classTable, eq(classAssignment.classId, classTable.id))
 		.leftJoin(
 			classStudyPack,

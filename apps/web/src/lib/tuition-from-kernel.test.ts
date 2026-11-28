@@ -253,6 +253,27 @@ describe("rosterDebtByStudent (#216)", () => {
 		expect(debts.has("S2")).toBe(false);
 	});
 
+	test("ignores removed enrollments in roster debt even when re-enrolled", () => {
+		const debts = rosterDebtByStudent(
+			"C1",
+			[
+				{ id: "E-OLD", classId: "C1", studentId: "S1", status: "removed" },
+				{ id: "E-NEW", classId: "C1", studentId: "S1", status: "active" },
+			],
+			[
+				{
+					eid: "E-OLD",
+					amount: 900000,
+					paidAmount: 0,
+					status: "unpaid",
+					due: "2026-10-01",
+				},
+			],
+			TODAY,
+		);
+		expect(debts.has("S1")).toBe(false);
+	});
+
 	test("one past-due unpaid invoice marks the whole class debt overdue (#322)", () => {
 		const debts = rosterDebtByStudent(
 			"C1",
@@ -1009,6 +1030,89 @@ describe("studentTuitionSummary (#347)", () => {
 		expect(summary.totalRemaining).toBe(0);
 		expect(summary.countedClasses).toBe(0);
 		expect(summary.unlinkedPaid).toBe(0);
+	});
+
+	test("enrollment removed không có hóa đơn bị ẩn; có hóa đơn chưa thu hoặc trả một phần vẫn giữ dòng 'removed' mà không cộng vào tổng active", () => {
+		const noInv = studentTuitionSummary(
+			"s1",
+			[CLASSES[0]],
+			[{ id: "E1", classId: "C1", studentId: "s1", status: "removed" }],
+			[],
+		);
+		expect(noInv.classes).toEqual([]);
+
+		const unpaid = studentTuitionSummary(
+			"s1",
+			[CLASSES[0]],
+			[{ id: "E1", classId: "C1", studentId: "s1", status: "removed" }],
+			[
+				stuInvoice({
+					eid: "E1",
+					amount: 2_000_000,
+					paidAmount: 500_000,
+					status: "unpaid",
+				}),
+			],
+		);
+		expect(unpaid.countedClasses).toBe(0);
+		expect(unpaid.totalFee).toBe(0);
+		expect(unpaid.totalPaid).toBe(0);
+		expect(unpaid.totalRemaining).toBe(0);
+		expect(unpaid.unlinkedPaid).toBe(0);
+		expect(unpaid.classes).toEqual([
+			{
+				classId: "C1",
+				className: "[TEST] Foundation 2",
+				enrollmentStatus: "removed",
+				fee: 10_000_000,
+				paid: 500_000,
+				remaining: 1_500_000,
+				overpaid: 0,
+				counted: false,
+			},
+		]);
+	});
+
+	test("học viên bị xóa (có hóa đơn) rồi re-enroll cùng lớp → tách 2 dòng không đè hoặc mất thanh toán", () => {
+		const summary = studentTuitionSummary(
+			"s1",
+			[CLASSES[0]],
+			[
+				{ id: "E-OLD", classId: "C1", studentId: "s1", status: "removed" },
+				{ id: "E-NEW", classId: "C1", studentId: "s1", status: "active" },
+			],
+			[
+				stuInvoice({
+					eid: "E-OLD",
+					amount: 2_000_000,
+					paidAmount: 0,
+					status: "unpaid",
+				}),
+				stuInvoice({
+					eid: "E-NEW",
+					amount: 3_000_000,
+					paidAmount: 0,
+					status: "paid",
+				}),
+			],
+		);
+		expect(summary.countedClasses).toBe(1);
+		expect(summary.totalFee).toBe(10_000_000);
+		expect(summary.totalPaid).toBe(3_000_000);
+		expect(summary.totalRemaining).toBe(7_000_000);
+		expect(summary.classes).toHaveLength(2);
+		expect(summary.classes[0]).toMatchObject({
+			enrollmentStatus: "removed",
+			paid: 0,
+			remaining: 2_000_000,
+			counted: false,
+		});
+		expect(summary.classes[1]).toMatchObject({
+			enrollmentStatus: "active",
+			paid: 3_000_000,
+			remaining: 7_000_000,
+			counted: true,
+		});
 	});
 });
 

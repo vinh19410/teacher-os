@@ -105,5 +105,42 @@ describe("enrollments repo", () => {
 			const result = classesByStudent(testData, "st-orphan");
 			expect(result).toEqual([]);
 		});
+
+		test("loại bỏ enrollment removed nhưng giữ trạng thái mới khi re-enroll cùng lớp", () => {
+			const dataWithRemoved: Pick<
+				KernelHydratedData,
+				"classes" | "enrollments"
+			> = {
+				classes: [cls1, cls2],
+				enrollments: [
+					{
+						id: "en-old-removed",
+						classId: "cls-1",
+						studentId: "st-1",
+						status: "removed",
+						removedAt: "2026-09-05T00:00:00.000Z",
+						createdAt: "2026-09-01T00:00:00.000Z",
+					},
+					{
+						id: "en-only-removed",
+						classId: "cls-2",
+						studentId: "st-1",
+						status: "removed",
+						removedAt: "2026-09-06T00:00:00.000Z",
+						createdAt: "2026-09-01T00:00:00.000Z",
+					},
+					{
+						id: "en-re",
+						classId: "cls-1",
+						studentId: "st-1",
+						status: "active",
+						createdAt: "2026-09-10T00:00:00.000Z",
+					},
+				],
+			};
+			expect(classesByStudent(dataWithRemoved, "st-1")).toEqual([
+				{ ...cls1, enrollmentStatus: "active" },
+			]);
+		});
 	});
 });

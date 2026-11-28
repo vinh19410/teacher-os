@@ -501,4 +501,86 @@ describe("mapClasses sessionsDone derive — from real lesson rows (#56)", () =>
 		expect(cls?.studentIds).toEqual(["st-active"]);
 		expect(cls?.invitedStudentIds).toEqual(["st-invited"]);
 	});
+
+	test("mapClasses excludes removed enrollments from studentIds and invitedStudentIds while retaining sessionsDone", () => {
+		const snapshot: KernelSnapshot = {
+			assignmentPrompts: [],
+			classAssignments: [],
+			assignmentTests: [],
+			vocabDecks: [],
+			students: [],
+			classes: [
+				{
+					id: "cl-test",
+					name: "Class Test",
+					level: "B2",
+					type: "ielts",
+					skills: [],
+					mode: "Online",
+					syllabusId: null,
+					schedule: "",
+					sessionsDone: 0,
+					sessionsTotal: 10,
+					status: "active",
+					startDate: "",
+					tuitionFee: null,
+					notes: "",
+				},
+			],
+			syllabi: [],
+			enrollments: [
+				{
+					id: "en-active",
+					classId: "cl-test",
+					studentId: "st-active",
+					status: "active",
+					createdAt: "2026-09-01T00:00:00.000Z",
+				},
+				{
+					id: "en-invited",
+					classId: "cl-test",
+					studentId: "st-invited",
+					status: "invited",
+					createdAt: "2026-09-02T00:00:00.000Z",
+				},
+				{
+					id: "en-removed",
+					classId: "cl-test",
+					studentId: "st-removed",
+					status: "removed",
+					removedAt: "2026-09-05T00:00:00.000Z",
+					createdAt: "2026-09-01T00:00:00.000Z",
+				},
+			],
+			packages: [],
+			lessons: [
+				{
+					id: "l-rem-1",
+					classId: "cl-test",
+					enrollmentId: "en-removed",
+					day: 1,
+					time: "18:00",
+					dur: 60,
+					date: "2026-09-02",
+					type: "1:1",
+					status: "completed",
+					attendance: "present",
+					attendanceNote: null,
+					topic: "",
+					zoom: "",
+				},
+			],
+			assignments: [],
+			invoices: [],
+			reports: [],
+			notifs: [],
+			commentBank: [],
+		};
+
+		const result = mapClasses(snapshot);
+		const cls = result.find((c) => c.id === "cl-test");
+		expect(cls?.studentIds).toEqual(["st-active"]);
+		expect(cls?.invitedStudentIds).toEqual(["st-invited"]);
+		expect(cls?.sessionsDone).toBe(1);
+	});
 });

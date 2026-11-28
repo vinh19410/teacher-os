@@ -2034,11 +2034,27 @@ export interface KernelClassRow {
 export const ENROLLMENT_STATUSES = ["invited", "active"] as const;
 export type EnrollmentStatus = (typeof ENROLLMENT_STATUSES)[number];
 
+export const KERNEL_ENROLLMENT_STATUSES = [
+	"invited",
+	"active",
+	"removed",
+] as const;
+export type KernelEnrollmentStatus =
+	(typeof KERNEL_ENROLLMENT_STATUSES)[number];
+
+export const ENROLLMENT_ERROR_CODES = {
+	ALREADY_REMOVED: "ENROLLMENT_ALREADY_REMOVED",
+	STATUS_CHANGED: "ENROLLMENT_STATUS_CHANGED",
+} as const;
+export type EnrollmentErrorCode =
+	(typeof ENROLLMENT_ERROR_CODES)[keyof typeof ENROLLMENT_ERROR_CODES];
+
 export interface KernelEnrollmentRow {
 	id: string;
 	classId: string;
 	studentId: string;
-	status: EnrollmentStatus | string;
+	status: KernelEnrollmentStatus | string;
+	removedAt?: string | null;
 	createdAt: string;
 }
 

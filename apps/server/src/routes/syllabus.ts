@@ -149,6 +149,16 @@ export async function backfillStuckEnrollments(
 				eq(enrollment.status, "active"),
 				sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.enrollmentId} = ${enrollment.id})`,
 				sql`(${sessionPackage.id} IS NULL OR ${sessionPackage.total} = 0)`,
+				sql`NOT EXISTS (
+					SELECT 1 FROM ${sessionPackage} sp
+					INNER JOIN ${lesson} l2 ON l2.org_id = ${orgId} AND l2.class_id = ${classId}
+					INNER JOIN ${enrollment} e2 ON l2.enrollment_id = e2.id
+						AND e2.org_id = ${orgId}
+						AND e2.class_id = ${classId}
+						AND e2.student_id = ${enrollment.studentId}
+						AND e2.status = 'removed'
+					WHERE sp.enrollment_id = ${enrollment.id} AND sp.org_id = ${orgId}
+				)`,
 			),
 		);
 	let healed = 0;
@@ -953,7 +963,13 @@ export function syllabusRoutes(deps: ZoomRouteDeps) {
 			statements.push(
 				db
 					.delete(lesson)
-					.where(and(eq(lesson.orgId, ctx.orgId), eq(lesson.classId, classId))),
+					.where(
+						and(
+							eq(lesson.orgId, ctx.orgId),
+							eq(lesson.classId, classId),
+							sql`EXISTS (SELECT 1 FROM ${enrollment} e WHERE e.id = ${lesson.enrollmentId} AND e.status = 'active')`,
+						),
+					),
 				db
 					.delete(classSession)
 					.where(
@@ -1453,6 +1469,7 @@ export function syllabusRoutes(deps: ZoomRouteDeps) {
 									and(
 										eq(enrollment.orgId, ctx.orgId),
 										eq(enrollment.classId, classId),
+										eq(enrollment.status, "active"),
 									),
 								),
 						),

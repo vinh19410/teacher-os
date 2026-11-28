@@ -207,6 +207,7 @@ export interface RosterEnrollmentRef {
 	id: string;
 	classId: string;
 	studentId: string;
+	status?: string;
 }
 
 /** Per-student tuition debt scoped to ONE class's enrollments. */
@@ -242,7 +243,9 @@ export function rosterDebtByStudent(
 ): Map<string, RosterDebt> {
 	const eidToSid = new Map<string, string>();
 	for (const e of enrollments) {
-		if (e.classId === classId) eidToSid.set(e.id, e.studentId);
+		if (e.classId === classId && e.status !== "removed") {
+			eidToSid.set(e.id, e.studentId);
+		}
 	}
 	const acc = new Map<string, RosterDebt>();
 	for (const inv of invoices) {
@@ -333,30 +336,45 @@ export function studentTuitionSummary(
 	invoices: Pick<Invoice, "sid" | "eid" | "amount" | "paidAmount" | "status">[],
 ): StudentTuitionSummary {
 	const classById = new Map(classes.map((c) => [c.id, c]));
-	// Một enrollment duy nhất cho mỗi (classId, studentId) — unique index bên
-	// server — nên tra được theo cả eid lẫn classId; enrollment trỏ lớp không
-	// còn trong `classes` bị bỏ qua (không có tên lớp để hiện).
+	// Một học viên có thể có enrollment `removed` trước đó rồi re-enroll trong
+	// cùng lớp — key theo từng enrollment id (`eid`) để không đè nhau.
 	type EnrollRef = RosterEnrollmentRef & { status: string };
 	const enrollmentByEid = new Map<string, EnrollRef>();
-	const enrollmentByClass = new Map<string, EnrollRef>();
+	const enrollmentsByClass = new Map<string, EnrollRef[]>();
 	for (const e of enrollments) {
 		if (e.studentId !== studentId || !classById.has(e.classId)) continue;
 		enrollmentByEid.set(e.id, e);
-		enrollmentByClass.set(e.classId, e);
+		const list = enrollmentsByClass.get(e.classId) ?? [];
+		list.push(e);
+		enrollmentsByClass.set(e.classId, list);
 	}
-	const acc = new Map<string, number>();
+	const paidByEid = new Map<string, number>();
+	const invoicedCountByEid = new Map<string, number>();
+	const unpaidByEid = new Map<string, number>();
 	let unlinkedPaid = 0;
 	for (const inv of invoices) {
 		if (inv.sid !== studentId) continue;
 		const enrollment = enrollmentByEid.get(inv.eid);
+		const received = invoiceReceived(inv);
 		if (!enrollment) {
-			unlinkedPaid += invoiceReceived(inv);
+			unlinkedPaid += received;
 			continue;
 		}
-		acc.set(
-			enrollment.classId,
-			(acc.get(enrollment.classId) ?? 0) + invoiceReceived(inv),
+		paidByEid.set(
+			enrollment.id,
+			(paidByEid.get(enrollment.id) ?? 0) + received,
 		);
+		invoicedCountByEid.set(
+			enrollment.id,
+			(invoicedCountByEid.get(enrollment.id) ?? 0) + 1,
+		);
+		if (inv.status !== "paid") {
+			const unpaid = Math.max(0, inv.amount - received);
+			unpaidByEid.set(
+				enrollment.id,
+				(unpaidByEid.get(enrollment.id) ?? 0) + unpaid,
+			);
+		}
 	}
 	const classRows: StudentClassTuition[] = [];
 	let totalFee = 0;
@@ -364,28 +382,43 @@ export function studentTuitionSummary(
 	let totalRemaining = 0;
 	let countedClasses = 0;
 	for (const cls of classes) {
-		const enrollment = enrollmentByClass.get(cls.id);
-		if (!enrollment) continue;
-		const paid = acc.get(cls.id) ?? 0;
-		const fee = cls.tuitionFee;
-		const counted = enrollment.status === "active" && fee !== null;
-		const remaining = fee === null ? 0 : Math.max(0, fee - paid);
-		const overpaid = fee === null ? 0 : Math.max(0, paid - fee);
-		classRows.push({
-			classId: cls.id,
-			className: cls.name,
-			enrollmentStatus: enrollment.status,
-			fee,
-			paid,
-			remaining,
-			overpaid,
-			counted,
-		});
-		if (enrollment.status === "active" && fee !== null) {
-			countedClasses += 1;
-			totalFee += fee;
-			totalPaid += paid;
-			totalRemaining += remaining;
+		const classEnrollments = enrollmentsByClass.get(cls.id) ?? [];
+		for (const enrollment of classEnrollments) {
+			const paid = paidByEid.get(enrollment.id) ?? 0;
+			const fee = cls.tuitionFee;
+			if (enrollment.status === "removed") {
+				if ((invoicedCountByEid.get(enrollment.id) ?? 0) === 0) continue;
+				classRows.push({
+					classId: cls.id,
+					className: cls.name,
+					enrollmentStatus: "removed",
+					fee,
+					paid,
+					remaining: unpaidByEid.get(enrollment.id) ?? 0,
+					overpaid: 0,
+					counted: false,
+				});
+				continue;
+			}
+			const counted = enrollment.status === "active" && fee !== null;
+			const remaining = fee === null ? 0 : Math.max(0, fee - paid);
+			const overpaid = fee === null ? 0 : Math.max(0, paid - fee);
+			classRows.push({
+				classId: cls.id,
+				className: cls.name,
+				enrollmentStatus: enrollment.status,
+				fee,
+				paid,
+				remaining,
+				overpaid,
+				counted,
+			});
+			if (enrollment.status === "active" && fee !== null) {
+				countedClasses += 1;
+				totalFee += fee;
+				totalPaid += paid;
+				totalRemaining += remaining;
+			}
 		}
 	}
 	return {

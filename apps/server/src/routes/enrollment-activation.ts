@@ -26,17 +26,7 @@ import {
 } from "@teacher-os/db/schema/organization-holiday";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { syllabus } from "@teacher-os/db/schema/syllabus";
-import {
-	and,
-	eq,
-	gt,
-	gte,
-	inArray,
-	isNotNull,
-	isNull,
-	or,
-	sql,
-} from "drizzle-orm";
+import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { Db } from "../app";
 import { isManualClass } from "../lib/class-mode";
@@ -279,11 +269,22 @@ function formatDayMonth(date: Date): string {
 
 export type MaterializeScheduleResult =
 	| { ok: true }
-	| { ok: false; error: "class" | "class-paused" };
+	| {
+			ok: false;
+			error: "class" | "class-paused" | "removed" | "enrollment-status-changed";
+	  };
 
 export type ActivateEnrollmentResult =
 	| { ok: true }
-	| { ok: false; error: "enrollment" | "class" | "class-paused" };
+	| {
+			ok: false;
+			error:
+				| "enrollment"
+				| "class"
+				| "class-paused"
+				| "removed"
+				| "enrollment-status-changed";
+	  };
 
 /**
  * Sinh hoặc bù lịch học + gói buổi cho một enrollment đang ở trạng thái `active`
@@ -395,15 +396,43 @@ export async function materializeScheduleForEnrollment(
 		const parsedSchedule = parseStoredSchedule(cls.schedule);
 		let scheduleShifted = false;
 
-		const [shifts, cancels, existingClassLessons] = await Promise.all([
-			loadClassShifts(db, orgId, cls.id),
-			loadClassCancels(db, orgId, cls.id),
-			db
-				.select({ id: lesson.id })
-				.from(lesson)
-				.where(and(eq(lesson.orgId, orgId), eq(lesson.classId, cls.id)))
-				.limit(1),
-		]);
+		const [shifts, cancels, existingClassLessons, priorDateRows] =
+			await Promise.all([
+				loadClassShifts(db, orgId, cls.id),
+				loadClassCancels(db, orgId, cls.id),
+				db
+					.select({ id: lesson.id })
+					.from(lesson)
+					.innerJoin(
+						enrollment,
+						and(
+							eq(lesson.enrollmentId, enrollment.id),
+							eq(enrollment.status, "active"),
+						),
+					)
+					.where(and(eq(lesson.orgId, orgId), eq(lesson.classId, cls.id)))
+					.limit(1),
+				db
+					.selectDistinct({ date: lesson.date })
+					.from(lesson)
+					.innerJoin(
+						enrollment,
+						and(
+							eq(lesson.enrollmentId, enrollment.id),
+							eq(enrollment.orgId, orgId),
+							eq(enrollment.classId, cls.id),
+							eq(enrollment.studentId, studentId),
+							eq(enrollment.status, "removed"),
+						),
+					)
+					.where(
+						and(
+							eq(lesson.orgId, orgId),
+							eq(lesson.classId, cls.id),
+							isNotNull(lesson.date),
+						),
+					),
+			]);
 		let rows: GeneratorRow[] = generated.map((row) => ({ ...row }));
 		const newShifts: Array<{
 			holidayId: string;
@@ -414,6 +443,10 @@ export async function materializeScheduleForEnrollment(
 			holidayId: string;
 			date: string;
 		}> = [];
+
+		const priorDates = new Set(
+			priorDateRows.map((r) => r.date).filter((d): d is string => Boolean(d)),
+		);
 
 		if (parsedSchedule && rows.length > 0) {
 			const effective: EffectiveShift[] = shifts.map((shift) => ({
@@ -437,13 +470,22 @@ export async function materializeScheduleForEnrollment(
 				}
 			}
 
-			if (
-				shifts.length === 0 &&
-				cancels.length === 0 &&
-				existingClassLessons.length === 0
-			) {
+			// Lọc các ngày học viên đã có/điểm danh ở lần ghi danh `removed` trước
+			// khi lên lịch kỳ nghỉ mới để tránh shift/cancel nhầm ngày đã học.
+			if (priorDates.size > 0) {
+				rows = rows.filter((row) => !row.date || !priorDates.has(row.date));
+			}
+
+			if (existingClassLessons.length === 0 && rows.length > 0) {
 				const holidays = await loadClassHolidays(db, orgId, cls.id);
-				if (holidays.length > 0) {
+				const handledHolidayIds = new Set([
+					...shifts.map((s) => s.holidayId),
+					...cancels.map((c) => c.holidayId),
+				]);
+				const unhandledHolidays = holidays.filter(
+					(h) => !handledHolidayIds.has(h.id),
+				);
+				if (unhandledHolidays.length > 0) {
 					const datesByName = new Map<string, string>();
 					for (const holiday of holidays) {
 						for (
@@ -454,7 +496,7 @@ export async function materializeScheduleForEnrollment(
 							if (!datesByName.has(d)) datesByName.set(d, holiday.name);
 						}
 					}
-					for (const holiday of holidays) {
+					for (const holiday of unhandledHolidays) {
 						const planned = planHolidayShift({
 							range: {
 								fromDate: holiday.fromDate,
@@ -505,6 +547,14 @@ export async function materializeScheduleForEnrollment(
 					}
 				}
 			}
+		} else if (priorDates.size > 0) {
+			rows = rows.filter((row) => !row.date || !priorDates.has(row.date));
+		}
+
+		if (priorDates.size > 0) {
+			packageValues.total = rows.filter(
+				(row) => row.status !== "holiday",
+			).length;
 		}
 
 		const meetingRows = await db
@@ -615,6 +665,11 @@ export async function materializeScheduleForEnrollment(
 					),
 				),
 		];
+		if (scheduleShifted) {
+			for (const shift of shifts) {
+				statements.push(...materialMoveStatements(shift));
+			}
+		}
 		for (const shift of newShifts) {
 			statements.push(
 				db.insert(holidaySessionShift).values({
@@ -625,11 +680,6 @@ export async function materializeScheduleForEnrollment(
 				}),
 			);
 			statements.push(...materialMoveStatements(shift));
-		}
-		if (scheduleShifted) {
-			for (const shift of shifts) {
-				statements.push(...materialMoveStatements(shift));
-			}
 		}
 		for (const cancel of newCancels) {
 			statements.push(
@@ -704,6 +754,15 @@ export async function materializeScheduleForEnrollment(
 						.where(and(eq(classTable.id, classId), eq(classTable.orgId, orgId)))
 						.limit(1),
 				]);
+			if (enrAfter[0]?.status !== "active") {
+				return {
+					ok: false,
+					error:
+						enrAfter[0]?.status === "removed"
+							? "removed"
+							: "enrollment-status-changed",
+				};
+			}
 			if (
 				existingLesson.length > 0 ||
 				(input.mode === "activate" && (existingPkg[0]?.total ?? 0) > 0)
@@ -716,9 +775,6 @@ export async function materializeScheduleForEnrollment(
 			if (clsAfter[0].status !== "active") {
 				return { ok: false, error: "class-paused" };
 			}
-			if (enrAfter[0]?.status !== "active") {
-				return { ok: true };
-			}
 			if (attempt >= 3) {
 				throw err;
 			}
@@ -726,9 +782,6 @@ export async function materializeScheduleForEnrollment(
 	}
 	throw new Error("materializeScheduleForEnrollment: guard retry exhausted");
 }
-
-const D1_TARGET_INSERT_CHUNK = 15;
-const D1_BATCH_STATEMENT_LIMIT = 50;
 
 /**
  * Backfill `class_assignment_target` rows for a student who activates their
@@ -748,72 +801,40 @@ export async function backfillClassAssignmentTargetsForStudent(
 		return 0;
 	}
 	const todayVN = vietnamTodayISO(now);
-	const eligibleAssignments = await db
-		.select({ id: classAssignment.id })
-		.from(classAssignment)
-		.innerJoin(
-			classTable,
-			and(
-				eq(classTable.id, classAssignment.classId),
-				eq(classTable.orgId, orgId),
-				eq(classTable.status, "active"),
-			),
-		)
-		.innerJoin(
-			enrollment,
-			and(
-				eq(enrollment.orgId, orgId),
-				eq(enrollment.classId, classId),
-				eq(enrollment.studentId, studentId),
-				eq(enrollment.status, "active"),
-			),
-		)
-		.where(
-			and(
-				eq(classAssignment.orgId, orgId),
-				eq(classAssignment.classId, classId),
-				isNull(classAssignment.classStudyPackId),
-				eq(classAssignment.targetScope, "class"),
-				or(
-					and(isNotNull(classAssignment.dueAt), gt(classAssignment.dueAt, now)),
-					and(
-						isNull(classAssignment.dueAt),
-						sql`${classAssignment.due} GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'`,
-						gte(classAssignment.due, todayVN),
-					),
-				),
-			),
-		);
+	const nowMs = now.getTime();
+	const result = await db.run(
+		sql`INSERT OR IGNORE INTO ${classAssignmentTarget} (id, org_id, assignment_id, student_id, submitted_at)
+			SELECT 'cat_ca_' || ${classAssignment.id} || '_' || ${studentId}, ${orgId}, ${classAssignment.id}, ${studentId}, NULL
+			FROM ${classAssignment}
+			INNER JOIN ${classTable}
+				ON ${classTable.id} = ${classAssignment.classId}
+				AND ${classTable.orgId} = ${orgId}
+				AND ${classTable.status} = 'active'
+			INNER JOIN ${enrollment}
+				ON ${enrollment.orgId} = ${orgId}
+				AND ${enrollment.classId} = ${classAssignment.classId}
+				AND ${enrollment.studentId} = ${studentId}
+				AND ${enrollment.status} = 'active'
+			WHERE ${classAssignment.orgId} = ${orgId}
+				AND ${classAssignment.classId} = ${classId}
+				AND ${classAssignment.classStudyPackId} IS NULL
+				AND ${classAssignment.targetScope} = 'class'
+				AND (
+					(${classAssignment.dueAt} IS NOT NULL AND ${classAssignment.dueAt} > ${nowMs})
+					OR (
+						${classAssignment.dueAt} IS NULL
+						AND ${classAssignment.due} GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'
+						AND ${classAssignment.due} >= ${todayVN}
+					)
+				)`,
+	);
 
-	if (eligibleAssignments.length === 0) {
-		return 0;
-	}
-
-	const targetValues: Array<typeof classAssignmentTarget.$inferInsert> =
-		eligibleAssignments.map((assignment) => ({
-			id: `cat_ca_${assignment.id}_${studentId}`,
-			orgId,
-			assignmentId: assignment.id,
-			studentId,
-			submittedAt: null,
-		}));
-
-	const statements: BatchItem<"sqlite">[] = [];
-	for (let i = 0; i < targetValues.length; i += D1_TARGET_INSERT_CHUNK) {
-		const chunk = targetValues.slice(i, i + D1_TARGET_INSERT_CHUNK);
-		statements.push(
-			db.insert(classAssignmentTarget).values(chunk).onConflictDoNothing(),
-		);
-	}
-
-	for (let i = 0; i < statements.length; i += D1_BATCH_STATEMENT_LIMIT) {
-		const batch = statements.slice(i, i + D1_BATCH_STATEMENT_LIMIT);
-		const [first, ...rest] = batch;
-		if (!first) continue;
-		await db.batch([first, ...rest]);
-	}
-
-	return targetValues.length;
+	return Number(
+		(result as { rowsAffected?: number; meta?: { changes?: number } })
+			?.rowsAffected ??
+			(result as { meta?: { changes?: number } })?.meta?.changes ??
+			0,
+	);
 }
 
 /**
@@ -857,6 +878,9 @@ export async function activateEnrollment(
 			now,
 		);
 		return { ok: true };
+	}
+	if (existingEnrollment.status === "removed") {
+		return { ok: false, error: "removed" };
 	}
 
 	const [cls] = await db
@@ -930,6 +954,9 @@ export async function activateEnrollment(
 		]);
 		if (!currentEnr[0]) {
 			return { ok: false, error: "enrollment" };
+		}
+		if (currentEnr[0].status === "removed") {
+			return { ok: false, error: "removed" };
 		}
 		if (!clsAfter[0]) {
 			return { ok: false, error: "class" };

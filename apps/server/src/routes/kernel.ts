@@ -24,6 +24,7 @@ import {
 	classTuitionFeeUpdateSchema,
 	classUpdateSchema,
 	debtReminderCreateSchema,
+	ENROLLMENT_ERROR_CODES,
 	enrollStudentSchema,
 	IELTS_SKILLS,
 	INVOICE_PAYMENT_METHOD_LABEL,
@@ -78,6 +79,7 @@ import {
 	holidaySessionShift,
 } from "@teacher-os/db/schema/organization-holiday";
 import { paymentTransaction } from "@teacher-os/db/schema/payment-transaction";
+import { quizAttempt } from "@teacher-os/db/schema/quiz-attempt";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { student } from "@teacher-os/db/schema/student";
 import { studentInvitation } from "@teacher-os/db/schema/student-invitation";
@@ -94,6 +96,7 @@ import {
 	isNull,
 	lte,
 	ne,
+	notInArray,
 	notLike,
 	or,
 	sql,
@@ -470,6 +473,7 @@ export function kernelRoutes(deps: {
 					eq(lesson.orgId, orgId),
 					eq(lesson.classId, classId),
 					eq(lesson.date, dateISO),
+					ne(enrollment.status, "removed"),
 				),
 			);
 		return [...new Set(rows.map((r) => r.studentId))];
@@ -548,6 +552,7 @@ export function kernelRoutes(deps: {
 				classStatus: classTable.status,
 				studentId: enrollment.studentId,
 				enrollmentClassId: enrollment.classId,
+				enrollmentStatus: enrollment.status,
 				day: lesson.day,
 				time: lesson.time,
 				dur: lesson.dur,
@@ -1738,8 +1743,10 @@ export function kernelRoutes(deps: {
 			.from(enrollment)
 			.where(
 				and(
+					eq(enrollment.orgId, ctx.orgId),
 					eq(enrollment.classId, classId),
 					eq(enrollment.studentId, input.studentId),
+					ne(enrollment.status, "removed"),
 				),
 			);
 		if (dupe) {
@@ -1764,8 +1771,10 @@ export function kernelRoutes(deps: {
 						.from(enrollment)
 						.where(
 							and(
+								eq(enrollment.orgId, ctx.orgId),
 								eq(enrollment.classId, classId),
 								eq(enrollment.studentId, input.studentId),
+								ne(enrollment.status, "removed"),
 							),
 						)
 						.limit(1),
@@ -1811,6 +1820,24 @@ export function kernelRoutes(deps: {
 					);
 				if (act.error === "class-paused") {
 					return classPausedResponse(c);
+				}
+				if (act.error === "removed") {
+					return c.json(
+						{
+							error: "Học viên đã bị xóa khỏi lớp.",
+							code: ENROLLMENT_ERROR_CODES.ALREADY_REMOVED,
+						},
+						409,
+					);
+				}
+				if (act.error === "enrollment-status-changed") {
+					return c.json(
+						{
+							error: "Trạng thái ghi danh đã thay đổi.",
+							code: ENROLLMENT_ERROR_CODES.STATUS_CHANGED,
+						},
+						409,
+					);
 				}
 				if (act.error === "class") {
 					return c.json({ error: "class not found" }, 404);
@@ -1868,6 +1895,24 @@ export function kernelRoutes(deps: {
 		if (result.error === "class-paused") {
 			return classPausedResponse(c);
 		}
+		if (result.error === "removed") {
+			return c.json(
+				{
+					error: "Học viên đã bị xóa khỏi lớp.",
+					code: ENROLLMENT_ERROR_CODES.ALREADY_REMOVED,
+				},
+				409,
+			);
+		}
+		if (result.error === "enrollment-status-changed") {
+			return c.json(
+				{
+					error: "Trạng thái ghi danh đã thay đổi.",
+					code: ENROLLMENT_ERROR_CODES.STATUS_CHANGED,
+				},
+				409,
+			);
+		}
 		return c.json(
 			{
 				error:
@@ -1880,19 +1925,29 @@ export function kernelRoutes(deps: {
 	/**
 	 * DELETE /api/enrollments/:enrollmentId
 	 *
-	 * Hủy lời mời tham gia lớp (D5).
-	 * Vùng an toàn: CHỈ cho phép khi status = 'invited' (chưa có package/lesson/invoice).
-	 * Trả 409 nếu status = 'active'.
-	 * Trả 404 nếu không tìm thấy trong org.
+	 * - Với `invited`: xóa cứng nguyên tử khi status vẫn là `invited`.
+	 * - Với `active`: soft delete (`status = 'removed'`, `removed_at = now`)
+	 *   trong 1 `db.batch` dùng forced NOT NULL violation guard ở Statement 0:
+	 *   hủy gói buổi đang active, giữ buổi đã học/điểm danh và xóa buổi chưa
+	 *   điểm danh, xóa draft quiz_attempt + dọn R2 media best-effort qua
+	 *   `.returning()`, xóa target bài tập chưa nộp (`NOT EXISTS` submitted).
 	 */
 	kernel.delete("/enrollments/:enrollmentId", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
+		if (!canManageClassStatusInKernel(ctx.role)) {
+			return c.json({ error: "forbidden", code: "FORBIDDEN" }, 403);
+		}
 		const db = deps.getDb();
 		const enrollmentId = c.req.param("enrollmentId");
 
 		const [row] = await db
-			.select({ id: enrollment.id, status: enrollment.status })
+			.select({
+				id: enrollment.id,
+				classId: enrollment.classId,
+				studentId: enrollment.studentId,
+				status: enrollment.status,
+			})
 			.from(enrollment)
 			.where(
 				and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, ctx.orgId)),
@@ -1900,15 +1955,199 @@ export function kernelRoutes(deps: {
 		if (!row) {
 			return c.json({ error: "enrollment not found" }, 404);
 		}
-		if (row.status !== "invited") {
-			return c.json({ error: "cannot delete active enrollment" }, 409);
+		if (row.status === "removed") {
+			return c.json(
+				{
+					error: "Học viên đã bị xóa khỏi lớp.",
+					code: ENROLLMENT_ERROR_CODES.ALREADY_REMOVED,
+				},
+				409,
+			);
+		}
+		if (row.status === "invited") {
+			const deleted = await db
+				.delete(enrollment)
+				.where(
+					and(
+						eq(enrollment.id, enrollmentId),
+						eq(enrollment.orgId, ctx.orgId),
+						eq(enrollment.status, "invited"),
+					),
+				)
+				.returning({ id: enrollment.id });
+			if (deleted.length === 0) {
+				const [after] = await db
+					.select({ status: enrollment.status })
+					.from(enrollment)
+					.where(
+						and(
+							eq(enrollment.id, enrollmentId),
+							eq(enrollment.orgId, ctx.orgId),
+						),
+					);
+				if (!after) {
+					return c.json({ error: "enrollment not found" }, 404);
+				}
+				return c.json(
+					{
+						error:
+							after.status === "removed"
+								? "Học viên đã bị xóa khỏi lớp."
+								: "Trạng thái ghi danh đã thay đổi.",
+						code:
+							after.status === "removed"
+								? ENROLLMENT_ERROR_CODES.ALREADY_REMOVED
+								: ENROLLMENT_ERROR_CODES.STATUS_CHANGED,
+					},
+					409,
+				);
+			}
+			return c.json({ ok: true });
+		}
+		if (row.status !== "active") {
+			return c.json(
+				{
+					error: "Trạng thái ghi danh đã thay đổi.",
+					code: ENROLLMENT_ERROR_CODES.STATUS_CHANGED,
+				},
+				409,
+			);
 		}
 
-		await db
-			.delete(enrollment)
+		const now = deps.now ? deps.now() : new Date();
+		const classAssignmentIdsSubquery = db
+			.select({ id: classAssignment.id })
+			.from(classAssignment)
 			.where(
-				and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, ctx.orgId)),
+				and(
+					eq(classAssignment.orgId, ctx.orgId),
+					eq(classAssignment.classId, row.classId),
+				),
 			);
+		const removedGuardSql = sql`EXISTS (SELECT 1 FROM ${enrollment} WHERE ${enrollment.id} = ${enrollmentId} AND ${enrollment.orgId} = ${ctx.orgId} AND ${enrollment.status} = 'removed')`;
+
+		let batchResults: unknown[];
+		try {
+			batchResults = await db.batch([
+				db
+					.update(enrollment)
+					.set({
+						status: sql`CASE WHEN ${enrollment.status} = 'active' THEN 'removed' ELSE NULL END`,
+						removedAt: now,
+					})
+					.where(
+						and(
+							eq(enrollment.id, enrollmentId),
+							eq(enrollment.orgId, ctx.orgId),
+						),
+					)
+					.returning({ id: enrollment.id }),
+				db
+					.update(sessionPackage)
+					.set({ status: "cancelled" })
+					.where(
+						and(
+							eq(sessionPackage.orgId, ctx.orgId),
+							eq(sessionPackage.enrollmentId, enrollmentId),
+							eq(sessionPackage.status, "active"),
+						),
+					),
+				db
+					.delete(lesson)
+					.where(
+						and(
+							eq(lesson.orgId, ctx.orgId),
+							eq(lesson.enrollmentId, enrollmentId),
+							notInArray(lesson.status, ["completed", "absent"]),
+							isNull(lesson.attendance),
+							or(isNull(lesson.attendanceNote), eq(lesson.attendanceNote, "")),
+						),
+					),
+				db
+					.delete(quizAttempt)
+					.where(
+						and(
+							eq(quizAttempt.orgId, ctx.orgId),
+							eq(quizAttempt.studentId, row.studentId),
+							eq(quizAttempt.mode, "assignment"),
+							eq(quizAttempt.status, "in_progress"),
+							inArray(quizAttempt.assignmentId, classAssignmentIdsSubquery),
+							removedGuardSql,
+						),
+					)
+					.returning({ mediaKey: quizAttempt.mediaKey }),
+				db
+					.delete(classAssignmentTarget)
+					.where(
+						and(
+							eq(classAssignmentTarget.orgId, ctx.orgId),
+							eq(classAssignmentTarget.studentId, row.studentId),
+							isNull(classAssignmentTarget.submittedAt),
+							inArray(
+								classAssignmentTarget.assignmentId,
+								classAssignmentIdsSubquery,
+							),
+							sql`NOT EXISTS (SELECT 1 FROM ${quizAttempt} qa WHERE qa.org_id = ${ctx.orgId} AND qa.assignment_id = ${classAssignmentTarget.assignmentId} AND qa.student_id = ${row.studentId} AND qa.mode = 'assignment' AND qa.status = 'submitted')`,
+							removedGuardSql,
+						),
+					),
+			]);
+		} catch (err) {
+			if (
+				isRollbackableConstraintError(err) ||
+				(err instanceof Error && isRollbackableConstraintError(err.cause))
+			) {
+				const [after] = await db
+					.select({ status: enrollment.status })
+					.from(enrollment)
+					.where(
+						and(
+							eq(enrollment.id, enrollmentId),
+							eq(enrollment.orgId, ctx.orgId),
+						),
+					);
+				if (!after) {
+					return c.json({ error: "enrollment not found" }, 404);
+				}
+				return c.json(
+					{
+						error:
+							after.status === "removed"
+								? "Học viên đã bị xóa khỏi lớp."
+								: "Trạng thái ghi danh đã thay đổi.",
+						code:
+							after.status === "removed"
+								? ENROLLMENT_ERROR_CODES.ALREADY_REMOVED
+								: ENROLLMENT_ERROR_CODES.STATUS_CHANGED,
+					},
+					409,
+				);
+			}
+			throw err;
+		}
+
+		const updatedEnr = batchResults[0] as Array<{ id: string }> | undefined;
+		if (!updatedEnr || updatedEnr.length === 0) {
+			return c.json({ error: "enrollment not found" }, 404);
+		}
+
+		const deletedAttempts =
+			(batchResults[3] as Array<{ mediaKey: string | null }> | undefined) ?? [];
+		const store = deps.getMediaStore?.();
+		if (store) {
+			for (const attemptRow of deletedAttempts) {
+				if (!attemptRow.mediaKey) continue;
+				const key = attemptRow.mediaKey;
+				const work = store.delete(key).catch((error: unknown) => {
+					console.error("[kernel] cleanup removed enrollment media failed", {
+						key,
+						error,
+					});
+				});
+				if (deps.runInBackground) deps.runInBackground(work);
+			}
+		}
+
 		return c.json({ ok: true });
 	});
 
@@ -2914,6 +3153,7 @@ export function kernelRoutes(deps: {
 								.where(
 									and(
 										eq(sessionPackage.orgId, ctx.orgId),
+										eq(sessionPackage.status, "active"),
 										inArray(
 											sessionPackage.enrollmentId,
 											db
@@ -2923,6 +3163,7 @@ export function kernelRoutes(deps: {
 													and(
 														eq(enrollment.orgId, ctx.orgId),
 														eq(enrollment.classId, classId),
+														ne(enrollment.status, "removed"),
 													),
 												),
 										),
@@ -3415,6 +3656,13 @@ export function kernelRoutes(deps: {
 				db
 					.select({ date: lesson.date, status: lesson.status })
 					.from(lesson)
+					.innerJoin(
+						enrollment,
+						and(
+							eq(lesson.enrollmentId, enrollment.id),
+							ne(enrollment.status, "removed"),
+						),
+					)
 					.where(and(eq(lesson.orgId, ctx.orgId), eq(lesson.classId, classId))),
 				db
 					.select({ date: classSession.date })
@@ -3578,6 +3826,7 @@ export function kernelRoutes(deps: {
 		classId: string,
 		dateISO: string,
 		orgId: string,
+		options?: { includeRemoved?: boolean },
 	): Promise<{ total: number; upcoming: number }> {
 		const rows = await db
 			.select({ status: lesson.status })
@@ -3587,6 +3836,9 @@ export function kernelRoutes(deps: {
 				and(
 					eq(lesson.enrollmentId, enrollment.id),
 					eq(enrollment.classId, lesson.classId),
+					...(options?.includeRemoved
+						? []
+						: [ne(enrollment.status, "removed" as const)]),
 				),
 			)
 			.where(
@@ -3629,7 +3881,12 @@ export function kernelRoutes(deps: {
 						db
 							.select({ id: enrollment.id })
 							.from(enrollment)
-							.where(eq(enrollment.classId, classId)),
+							.where(
+								and(
+									eq(enrollment.classId, classId),
+									ne(enrollment.status, "removed"),
+								),
+							),
 					),
 					// C2 (TOS-11): dòng `holiday` không bao giờ bị ghi đè qua occurrenceUpdate.
 					ne(lesson.status, "holiday"),
@@ -3668,6 +3925,15 @@ export function kernelRoutes(deps: {
 		if (row.enrollmentClassId !== row.classId) {
 			return c.json({ error: "lesson enrollment mismatch" }, 409);
 		}
+		if (row.enrollmentStatus === "removed") {
+			return c.json(
+				{
+					error: "Học viên đã bị xóa khỏi lớp.",
+					code: ENROLLMENT_ERROR_CODES.ALREADY_REMOVED,
+				},
+				409,
+			);
+		}
 		const checkingIn = nextStatus === "completed";
 		if (checkingIn && row.classStatus !== "active") {
 			return classPausedResponse(c);
@@ -3692,6 +3958,7 @@ export function kernelRoutes(deps: {
 					eq(lesson.id, lessonId),
 					eq(lesson.orgId, ctx.orgId),
 					eq(lesson.status, "upcoming"),
+					sql`EXISTS (SELECT 1 FROM ${enrollment} WHERE ${enrollment.id} = ${lesson.enrollmentId} AND ${enrollment.status} != 'removed')`,
 					// Re-assert the date guard in the write itself: the row may have
 					// been moved between the pre-read and this UPDATE.
 					checkingIn
@@ -3790,6 +4057,15 @@ export function kernelRoutes(deps: {
 		if (pre.enrollmentClassId !== pre.classId) {
 			return c.json({ error: "lesson enrollment mismatch" }, 409);
 		}
+		if (pre.enrollmentStatus === "removed") {
+			return c.json(
+				{
+					error: "Học viên đã bị xóa khỏi lớp.",
+					code: ENROLLMENT_ERROR_CODES.ALREADY_REMOVED,
+				},
+				409,
+			);
+		}
 
 		if (pre.date !== null) {
 			const bucketWeekday = isoToLessonWeekday(pre.date);
@@ -3885,6 +4161,7 @@ export function kernelRoutes(deps: {
 					eq(lesson.dur, pre.dur),
 					eq(lesson.topic, pre.topic),
 					eq(lesson.zoom, pre.zoom),
+					sql`EXISTS (SELECT 1 FROM ${enrollment} WHERE ${enrollment.id} = ${lesson.enrollmentId} AND ${enrollment.status} != 'removed')`,
 				),
 			)
 			.returning({ id: lesson.id });
@@ -3960,7 +4237,9 @@ export function kernelRoutes(deps: {
 		// Collision pre-check (reduces races, does not eliminate them — RT6):
 		// the destination bucket must be empty unless it IS this bucket.
 		if (moveDateISO && moveDateISO !== dateISO) {
-			const dest = await bucketCounts(db, classId, moveDateISO, ctx.orgId);
+			const dest = await bucketCounts(db, classId, moveDateISO, ctx.orgId, {
+				includeRemoved: true,
+			});
 			const destCs = await db
 				.select({ id: classSession.id })
 				.from(classSession)
@@ -4092,9 +4371,9 @@ export function kernelRoutes(deps: {
 				// ngày gốc (tránh đụng khoá chính), không xoá link mồ côi khác
 				// ở đích.
 				const bucketMoved = and(
-					sql`not exists (select 1 from ${lesson} where ${lesson.orgId} = ${ctx.orgId} and ${lesson.classId} = ${classId} and ${lesson.date} = ${dateISO})`,
+					sql`not exists (select 1 from ${lesson} l inner join ${enrollment} e on l.enrollment_id = e.id where l.org_id = ${ctx.orgId} and l.class_id = ${classId} and l.date = ${dateISO} and e.status != 'removed')`,
 					or(
-						sql`exists (select 1 from ${lesson} where ${lesson.orgId} = ${ctx.orgId} and ${lesson.classId} = ${classId} and ${lesson.date} = ${moveDateISO})`,
+						sql`exists (select 1 from ${lesson} l inner join ${enrollment} e on l.enrollment_id = e.id where l.org_id = ${ctx.orgId} and l.class_id = ${classId} and l.date = ${moveDateISO} and e.status != 'removed')`,
 						sql`exists (select 1 from ${classSession} where ${classSession.orgId} = ${ctx.orgId} and ${classSession.classId} = ${classId} and ${classSession.date} = ${moveDateISO})`,
 					),
 				);
@@ -4466,6 +4745,7 @@ export function kernelRoutes(deps: {
 			classId,
 			dateISO,
 			kernelCtx.orgId,
+			{ includeRemoved: true },
 		);
 		const destClassSessions = await db
 			.select({ id: classSession.id })
@@ -4584,7 +4864,7 @@ export function kernelRoutes(deps: {
 				db
 					.update(sessionPackage)
 					.set({
-						total: sql`(SELECT count(*) FROM class_session WHERE class_id = ${classId} AND org_id = ${kernelCtx.orgId})`,
+						total: sql`(SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${kernelCtx.orgId} AND ${lesson.enrollmentId} = ${enr.id} AND ${lesson.status} != 'holiday')`,
 					})
 					.where(
 						and(
@@ -4703,6 +4983,7 @@ export function kernelRoutes(deps: {
 				id: lesson.id,
 				status: lesson.status,
 				attendance: lesson.attendance,
+				attendanceNote: lesson.attendanceNote,
 			})
 			.from(lesson)
 			.where(
@@ -4720,7 +5001,13 @@ export function kernelRoutes(deps: {
 		}
 
 		if (
-			lessonRows.some((l) => l.status === "completed" || l.attendance !== null)
+			lessonRows.some(
+				(l) =>
+					l.status === "completed" ||
+					l.status === "absent" ||
+					l.attendance !== null ||
+					(l.attendanceNote !== null && l.attendanceNote !== ""),
+			)
 		) {
 			return c.json(
 				{
@@ -4802,6 +5089,7 @@ export function kernelRoutes(deps: {
 							eq(lesson.orgId, ctx.orgId),
 							eq(lesson.classId, classId),
 							eq(lesson.date, dateISO),
+							sql`EXISTS (SELECT 1 FROM ${enrollment} e WHERE e.id = ${lesson.enrollmentId} AND e.status = 'active')`,
 						),
 					),
 			);
@@ -4851,7 +5139,7 @@ export function kernelRoutes(deps: {
 				db
 					.update(sessionPackage)
 					.set({
-						total: sql`(SELECT count(*) FROM class_session WHERE class_id = ${classId} AND org_id = ${ctx.orgId})`,
+						total: sql`(SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.enrollmentId} = ${enr.id} AND ${lesson.status} != 'holiday')`,
 					})
 					.where(
 						and(
@@ -5243,6 +5531,15 @@ export function kernelRoutes(deps: {
 			);
 		if (!enrollmentRow) {
 			return c.json({ error: "enrollment not found" }, 404);
+		}
+		if (enrollmentRow.status === "removed") {
+			return c.json(
+				{
+					error: "Học viên đã bị xóa khỏi lớp.",
+					code: ENROLLMENT_ERROR_CODES.ALREADY_REMOVED,
+				},
+				409,
+			);
 		}
 		if (enrollmentRow.status !== "active") {
 			return c.json({ error: "Học viên chưa đồng ý tham gia lớp" }, 409);

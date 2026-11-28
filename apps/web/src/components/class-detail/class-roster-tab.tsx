@@ -1,4 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
+import { canManageClassStatus } from "@teacher-os/auth/role";
+import { AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { ResendInviteButton } from "@/components/students/pending-invite-callout";
 import { Avatar } from "@/components/ui/avatar";
@@ -95,12 +97,14 @@ export function ClassRosterTab({
 }: ClassRosterTabProps) {
 	const navigate = useNavigate();
 	const [confirmAction, setConfirmAction] = useState<{
-		type: "activate" | "delete";
+		type: "activate" | "delete" | "remove";
 		enrollmentId: string;
 		studentName: string;
+		debt?: RosterDebt;
 	} | null>(null);
 
 	const isPaused = cls.status === "paused";
+	const canManageRoster = canManageClassStatus(data.viewer?.role ?? "teacher");
 	const hasOtherActiveClass = (studentId: string) =>
 		data.enrollments.some(
 			(e) =>
@@ -133,9 +137,19 @@ export function ClassRosterTab({
 					]}
 					emptyMessage="Chưa có học viên nào trong lớp."
 					rows={rosterEntries.map(({ student: s, isInvited }) => {
+						const targetStatus = isInvited ? "invited" : "active";
 						const en = data.enrollments.find(
-							(e) => e.classId === cls.id && e.studentId === s.id,
+							(e) =>
+								e.classId === cls.id &&
+								e.studentId === s.id &&
+								e.status === targetStatus,
 						);
+						const debt = rosterDebt.get(s.id);
+						const showResendInvite =
+							Boolean(s.email) && (isInvited || s.portalLinked === false);
+						const showInvitedActions = isInvited && Boolean(en);
+						const showRemoveActive =
+							!isInvited && Boolean(en) && canManageRoster;
 						return {
 							onClick: () =>
 								navigate({
@@ -168,13 +182,13 @@ export function ClassRosterTab({
 								<RosterTargetBandCell key="b" targetBand={s.targetBand} />,
 								<RosterTuitionCell
 									key="fee"
-									debt={rosterDebt.get(s.id)}
+									debt={debt}
 									isInvited={isInvited}
 								/>,
-								(isInvited && en) ||
-								(Boolean(s.email) && s.portalLinked === false) ? (
+								showResendInvite || showInvitedActions || showRemoveActive ? (
 									// biome-ignore lint/a11y/noStaticElementInteractions: wrapper chỉ stopPropagation để nút bấm không kích hoạt điều hướng của row
 									<div
+										key="act"
 										className="flex flex-wrap items-center gap-2"
 										onClick={(e) => e.stopPropagation()}
 										onKeyDown={(e) => {
@@ -182,22 +196,20 @@ export function ClassRosterTab({
 												e.stopPropagation();
 										}}
 									>
-										{Boolean(s.email) &&
-											(isInvited || s.portalLinked === false) && (
-												<ResendInviteButton
-													target={{
-														kind: "student",
-														studentId: s.id,
-														...(isInvited && en ? { enrollmentId: en.id } : {}),
-														recipientLabel: s.email,
-													}}
-													compact
-													disabled={
-														isPaused &&
-														(isInvited || !hasOtherActiveClass(s.id))
-													}
-												/>
-											)}
+										{showResendInvite && (
+											<ResendInviteButton
+												target={{
+													kind: "student",
+													studentId: s.id,
+													...(isInvited && en ? { enrollmentId: en.id } : {}),
+													recipientLabel: s.email,
+												}}
+												compact
+												disabled={
+													isPaused && (isInvited || !hasOtherActiveClass(s.id))
+												}
+											/>
+										)}
 										{isInvited && en && (
 											<>
 												<Button
@@ -214,22 +226,42 @@ export function ClassRosterTab({
 												>
 													Kích hoạt
 												</Button>
-												<Button
-													size="sm"
-													variant="secondary"
-													className="text-danger hover:text-danger"
-													disabled={busy}
-													onClick={() =>
-														setConfirmAction({
-															type: "delete",
-															enrollmentId: en.id,
-															studentName: s.name,
-														})
-													}
-												>
-													Hủy lời mời
-												</Button>
+												{canManageRoster && (
+													<Button
+														size="sm"
+														variant="secondary"
+														className="text-danger hover:text-danger"
+														disabled={busy}
+														onClick={() =>
+															setConfirmAction({
+																type: "delete",
+																enrollmentId: en.id,
+																studentName: s.name,
+															})
+														}
+													>
+														Hủy lời mời
+													</Button>
+												)}
 											</>
+										)}
+										{showRemoveActive && en && (
+											<Button
+												size="sm"
+												variant="secondary"
+												className="text-danger hover:text-danger"
+												disabled={busy}
+												onClick={() =>
+													setConfirmAction({
+														type: "remove",
+														enrollmentId: en.id,
+														studentName: s.name,
+														debt,
+													})
+												}
+											>
+												Xóa khỏi lớp
+											</Button>
 										)}
 									</div>
 								) : (
@@ -247,14 +279,38 @@ export function ClassRosterTab({
 				title={
 					confirmAction?.type === "activate"
 						? "Kích hoạt học viên?"
-						: "Hủy lời mời tham gia lớp?"
+						: confirmAction?.type === "remove"
+							? "Xóa học viên khỏi lớp?"
+							: "Hủy lời mời tham gia lớp?"
 				}
 			>
 				<p className="text-muted-foreground text-sm">
 					{confirmAction?.type === "activate"
 						? `Học viên "${confirmAction.studentName}" sẽ chuyển sang trạng thái Đang học và được tạo gói học cùng lịch các buổi học trong lớp.`
-						: `Học viên "${confirmAction?.studentName}" sẽ bị xóa khỏi danh sách mời của lớp này. Bạn có thể mời lại sau.`}
+						: confirmAction?.type === "remove"
+							? `Học viên "${confirmAction.studentName}" sẽ được đưa ra khỏi lớp "${cls.name}". Các buổi chưa điểm danh và bài tập chưa nộp sẽ được dọn khỏi lịch; các buổi đã học/điểm danh, bài đã nộp và hồ sơ học viên vẫn được giữ lại. Bạn có thể thêm lại học viên vào lớp này sau.`
+							: `Học viên "${confirmAction?.studentName}" sẽ bị xóa khỏi danh sách mời của lớp này. Bạn có thể mời lại sau.`}
 				</p>
+				{confirmAction?.type === "remove" &&
+					confirmAction.debt &&
+					confirmAction.debt.status !== "paid" &&
+					confirmAction.debt.outstanding > 0 && (
+						<div className="mt-3 flex items-start gap-2 rounded-md border border-warn/50 bg-warn-soft p-3 text-sm">
+							<AlertTriangle
+								className="mt-0.5 size-4 shrink-0 text-warn"
+								aria-hidden="true"
+							/>
+							<p className="text-foreground">
+								Học viên này hiện còn học phí chưa thu:{" "}
+								<span className="font-semibold tabular-nums">
+									{formatRemainingVND(confirmAction.debt.outstanding)}
+								</span>
+								. Hóa đơn và lịch sử thanh toán vẫn được giữ nguyên trong{" "}
+								<span className="font-medium">Sổ công nợ</span> và{" "}
+								<span className="font-medium">Doanh thu</span>.
+							</p>
+						</div>
+					)}
 				<div className="mt-4 flex justify-end gap-2 border-border border-t border-solid pt-4">
 					<Button
 						variant="secondary"
@@ -281,13 +337,19 @@ export function ClassRosterTab({
 								await run(
 									enrollmentId,
 									{ type: "delete-enrollment", enrollmentId },
-									"Đã hủy lời mời tham gia lớp.",
+									type === "remove"
+										? "Đã xóa học viên khỏi lớp."
+										: "Đã hủy lời mời tham gia lớp.",
 								);
 							}
 							setConfirmAction(null);
 						}}
 					>
-						{confirmAction?.type === "activate" ? "Kích hoạt" : "Hủy lời mời"}
+						{confirmAction?.type === "activate"
+							? "Kích hoạt"
+							: confirmAction?.type === "remove"
+								? "Xóa khỏi lớp"
+								: "Hủy lời mời"}
 					</Button>
 				</div>
 			</Modal>

@@ -1,5 +1,6 @@
 import {
 	CLASS_ERROR_CODES,
+	ENROLLMENT_ERROR_CODES,
 	RECORDING_ERROR_CODES,
 } from "@teacher-os/api/contracts";
 import { toast } from "sonner";
@@ -25,22 +26,20 @@ export const CLASS_PAUSED_MESSAGE =
 export const RECORDING_LOCKED_MESSAGE =
 	"Không thể thực hiện vì buổi học hoặc ngày đích đang có video recording còn hạn lưu trữ.";
 
-function isClassPaused(result: KernelCommandResult): boolean {
+function hasConflictCode(result: KernelCommandResult, code: string): boolean {
 	if (result.kind !== "definite-failure" || result.status !== 409) return false;
 	return (
-		result.code === CLASS_ERROR_CODES.CLASS_PAUSED ||
-		(isHttpError(result.error) &&
-			result.error.code === CLASS_ERROR_CODES.CLASS_PAUSED)
+		result.code === code ||
+		(isHttpError(result.error) && result.error.code === code)
 	);
 }
 
+function isClassPaused(result: KernelCommandResult): boolean {
+	return hasConflictCode(result, CLASS_ERROR_CODES.CLASS_PAUSED);
+}
+
 function isRecordingLocked(result: KernelCommandResult): boolean {
-	if (result.kind !== "definite-failure" || result.status !== 409) return false;
-	return (
-		result.code === RECORDING_ERROR_CODES.LOCKED ||
-		(isHttpError(result.error) &&
-			result.error.code === RECORDING_ERROR_CODES.LOCKED)
-	);
+	return hasConflictCode(result, RECORDING_ERROR_CODES.LOCKED);
 }
 
 function isFutureSession(result: KernelCommandResult): boolean {
@@ -101,7 +100,29 @@ export function planDirectOutcome(
 					reconcile: "check",
 				};
 			}
+			if (result.status === 403) {
+				return {
+					toastKind: "error",
+					message: "Bạn không có quyền thực hiện thao tác này.",
+					reconcile: "check",
+				};
+			}
 			if (result.status === 409) {
+				if (hasConflictCode(result, ENROLLMENT_ERROR_CODES.ALREADY_REMOVED)) {
+					return {
+						toastKind: "info",
+						message:
+							"Học viên đã bị xóa khỏi lớp trước đó — đang tải lại danh sách.",
+						reconcile: "heal-409",
+					};
+				}
+				if (hasConflictCode(result, ENROLLMENT_ERROR_CODES.STATUS_CHANGED)) {
+					return {
+						toastKind: "info",
+						message: "Trạng thái ghi danh vừa thay đổi — đang tải lại dữ liệu.",
+						reconcile: "heal-409",
+					};
+				}
 				if (actionType && SET_MISMATCH_ACTIONS.has(actionType)) {
 					return {
 						toastKind: "info",

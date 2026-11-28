@@ -353,6 +353,21 @@ describe("study-pack-assign (schedule, assign, cancel, backfill)", () => {
 		expect(assigned.assignments.every((a) => a.targetsTotal === 1)).toBe(true);
 
 		// Late student backfilled at 2026-11-13 10:00 VN:
+		// While enrollment is still invited -> 0 targets backfilled.
+		const invitedBackfill = await backfillStudyPackTargetsForStudent(
+			db,
+			"org-assign-1",
+			"cls-assign-1",
+			"stu-assign-late",
+			new Date(vietnamDateTimeMs("2026-11-13", "10:00")),
+		);
+		expect(invitedBackfill).toBe(0);
+
+		await db
+			.update(enrollment)
+			.set({ status: "active" })
+			.where(eq(enrollment.id, "enr-assign-late"));
+
 		// Day 1 due_at was 2026-11-12 17:00 (past due -> NOT backfilled)
 		// Day 2 & Day 3 have due_at > now -> backfilled!
 		const backfilled = await backfillStudyPackTargetsForStudent(

@@ -29,7 +29,7 @@ export function mapClasses(snapshot: KernelSnapshot): ClassGroup[] {
 			const list = invitedRosterByClass.get(row.classId) ?? [];
 			list.push(row.studentId);
 			invitedRosterByClass.set(row.classId, list);
-		} else {
+		} else if (row.status === "active") {
 			const list = activeRosterByClass.get(row.classId) ?? [];
 			list.push(row.studentId);
 			activeRosterByClass.set(row.classId, list);

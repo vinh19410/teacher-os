@@ -28,19 +28,19 @@ export const enrollment = sqliteTable(
 			.notNull()
 			.references(() => student.id, { onDelete: "cascade" }),
 		/**
-		 * Lifecycle: 'invited' (added to class, awaiting accept) -> 'active' (accepted, packages/lessons generated).
+		 * Lifecycle: 'invited' (added to class, awaiting accept) -> 'active' (accepted, packages/lessons generated) -> 'removed' (soft-removed from class, retaining attendance/submitted work/invoices).
 		 * Invariant: default 'active' exists only to backfill pre-existing rows in migrations; new code writes status explicitly.
 		 */
 		status: text("status").notNull().default("active"),
+		removedAt: integer("removed_at", { mode: "timestamp_ms" }),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),
 	},
 	(table) => [
-		uniqueIndex("enrollment_class_student_uq").on(
-			table.classId,
-			table.studentId,
-		),
+		uniqueIndex("enrollment_class_student_uq")
+			.on(table.classId, table.studentId)
+			.where(sql`${table.status} != 'removed'`),
 		index("enrollment_org_idx").on(table.orgId),
 		index("enrollment_student_idx").on(table.studentId),
 	],

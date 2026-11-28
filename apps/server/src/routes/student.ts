@@ -4,6 +4,7 @@ import {
 	CLASS_ERROR_CODES,
 	CURRENT_LEVEL_OPTIONS,
 	DAILY_STUDY_HOUR_OPTIONS,
+	ENROLLMENT_ERROR_CODES,
 	type EssayAnnotation,
 	getTargetScoreOptions,
 	LEARNING_GOAL_OPTIONS,
@@ -120,6 +121,7 @@ import { serveStudyPackAudio } from "../lib/study-pack-audio";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
 import { activateEnrollment } from "./enrollment-activation";
+import { isRollbackableConstraintError } from "./holidays";
 import { parsePin } from "./snapshot";
 import {
 	isValidZoomJoinUrl,
@@ -975,10 +977,22 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	 * `assignment_test` qua `test_id` (đề xoá/set null → skill rỗng, route
 	 * gọi xử lý như attempt lạ).
 	 */
+	const activeAssignmentAccessGuard = (studentId: string, orgId: string) =>
+		sql`(${quizAttempt.mode} = 'practice' OR EXISTS (
+			SELECT 1 FROM ${classAssignmentTarget} cat
+			INNER JOIN ${classAssignment} ca ON ca.id = cat.assignment_id AND ca.org_id = cat.org_id
+			INNER JOIN ${enrollment} enr ON enr.org_id = ca.org_id AND enr.class_id = ca.class_id AND enr.student_id = cat.student_id
+			WHERE cat.org_id = ${orgId}
+				AND cat.assignment_id = ${quizAttempt.assignmentId}
+				AND cat.student_id = ${studentId}
+				AND enr.status = 'active'
+		))`;
+
 	const loadOwnedAttemptWithSkill = async (
 		attemptId: string,
 		studentId: string,
 		orgId: string,
+		opts?: { allowSubmittedWithoutEnrollment?: boolean },
 	) => {
 		const [row] = await deps
 			.getDb()
@@ -987,6 +1001,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				mode: quizAttempt.mode,
 				testId: quizAttempt.testId,
 				assignmentId: classAssignment.id,
+				activeEnrollmentId: enrollment.id,
+				targetId: classAssignmentTarget.id,
 				availableAt: classAssignment.availableAt,
 				classStudyPackId: classAssignment.classStudyPackId,
 				skill: assignmentPrompt.skill,
@@ -1006,6 +1022,23 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				and(
 					eq(classAssignment.id, quizAttempt.assignmentId),
 					eq(classAssignment.orgId, orgId),
+				),
+			)
+			.leftJoin(
+				enrollment,
+				and(
+					eq(enrollment.orgId, orgId),
+					eq(enrollment.classId, classAssignment.classId),
+					eq(enrollment.studentId, studentId),
+					eq(enrollment.status, "active"),
+				),
+			)
+			.leftJoin(
+				classAssignmentTarget,
+				and(
+					eq(classAssignmentTarget.orgId, orgId),
+					eq(classAssignmentTarget.assignmentId, classAssignment.id),
+					eq(classAssignmentTarget.studentId, studentId),
 				),
 			)
 			.leftJoin(
@@ -1040,6 +1073,13 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			(row.classStudyPackId === null &&
 				row.availableAt !== null &&
 				row.availableAt.getTime() > getNow().getTime())
+		) {
+			return undefined;
+		}
+		const hasActiveAccess = Boolean(row.activeEnrollmentId && row.targetId);
+		if (
+			!hasActiveAccess &&
+			!(opts?.allowSubmittedWithoutEnrollment && row.status === "submitted")
 		) {
 			return undefined;
 		}
@@ -1130,7 +1170,13 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				.select(studentClassColumns)
 				.from(enrollment)
 				.innerJoin(classTable, eq(enrollment.classId, classTable.id))
-				.where(and(eq(enrollment.orgId, orgId), eq(enrollment.studentId, s.id)))
+				.where(
+					and(
+						eq(enrollment.orgId, orgId),
+						eq(enrollment.studentId, s.id),
+						inArray(enrollment.status, ["invited", "active"]),
+					),
+				)
 				.orderBy(asc(classTable.createdAt), asc(classTable.id)),
 			loadOrgTeacher(db, orgId),
 		]);
@@ -2324,6 +2370,24 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				409,
 			);
 		}
+		if (result.error === "removed") {
+			return c.json(
+				{
+					error: "Học viên đã bị xóa khỏi lớp.",
+					code: ENROLLMENT_ERROR_CODES.ALREADY_REMOVED,
+				},
+				409,
+			);
+		}
+		if (result.error === "enrollment-status-changed") {
+			return c.json(
+				{
+					error: "Trạng thái ghi danh đã thay đổi.",
+					code: ENROLLMENT_ERROR_CODES.STATUS_CHANGED,
+				},
+				409,
+			);
+		}
 		return c.json(
 			{
 				error:
@@ -2359,6 +2423,15 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					eq(classAssignmentTarget.assignmentId, classAssignment.id),
 					eq(classAssignmentTarget.orgId, orgId),
 					eq(classAssignmentTarget.studentId, s.id),
+				),
+			)
+			.innerJoin(
+				enrollment,
+				and(
+					eq(enrollment.orgId, orgId),
+					eq(enrollment.classId, classAssignment.classId),
+					eq(enrollment.studentId, s.id),
+					eq(enrollment.status, "active"),
 				),
 			)
 			.where(
@@ -2509,6 +2582,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					eq(classAssignment.id, assignmentId),
 					eq(classAssignment.orgId, orgId),
 					accessibleAssignmentFilter(getNow()),
+					sql`(EXISTS (SELECT 1 FROM ${enrollment} e WHERE e.org_id = ${orgId} AND e.class_id = ${classAssignment.classId} AND e.student_id = ${s.id} AND e.status = 'active') OR EXISTS (SELECT 1 FROM ${quizAttempt} qa WHERE qa.org_id = ${orgId} AND qa.assignment_id = ${classAssignment.id} AND qa.student_id = ${s.id} AND qa.status = 'submitted'))`,
 				),
 			)
 			.limit(1);
@@ -2550,7 +2624,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		}
 
 		const [target] = await db
-			.select({ promptId: classAssignment.promptId })
+			.select({
+				promptId: classAssignment.promptId,
+				classId: classAssignment.classId,
+			})
 			.from(classAssignment)
 			.innerJoin(
 				classAssignmentTarget,
@@ -2558,6 +2635,15 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					eq(classAssignmentTarget.assignmentId, classAssignment.id),
 					eq(classAssignmentTarget.orgId, orgId),
 					eq(classAssignmentTarget.studentId, s.id),
+				),
+			)
+			.innerJoin(
+				enrollment,
+				and(
+					eq(enrollment.orgId, orgId),
+					eq(enrollment.classId, classAssignment.classId),
+					eq(enrollment.studentId, s.id),
+					eq(enrollment.status, "active"),
 				),
 			)
 			.where(
@@ -2604,6 +2690,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				orgId,
 				assignmentId,
 				studentId: s.id,
+				mode: sql<string>`CASE WHEN EXISTS (SELECT 1 FROM ${enrollment} WHERE ${enrollment.orgId} = ${orgId} AND ${enrollment.classId} = ${target.classId} AND ${enrollment.studentId} = ${s.id} AND ${enrollment.status} = 'active') AND EXISTS (SELECT 1 FROM ${classAssignmentTarget} WHERE ${classAssignmentTarget.orgId} = ${orgId} AND ${classAssignmentTarget.assignmentId} = ${assignmentId} AND ${classAssignmentTarget.studentId} = ${s.id}) THEN 'assignment' ELSE NULL END`,
 				questionsSnapshot: JSON.stringify(
 					parseQuizQuestions(prompt.questions, target.promptId),
 				),
@@ -2620,6 +2707,12 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					return c.json({ error: "attempt already submitted" }, 409);
 				}
 				return c.json({ attemptId: raced.id }, 200);
+			}
+			if (
+				isRollbackableConstraintError(err) ||
+				(err instanceof Error && isRollbackableConstraintError(err.cause))
+			) {
+				return c.json({ error: "assignment not found" }, 404);
 			}
 			throw err;
 		}
@@ -2684,11 +2777,25 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				// concat and would corrupt the JSON key.
 				answers: sql`json_set(${quizAttempt.answers}, '$."' || ${String(q)} || '"', json_quote(${value}))`,
 			})
-			.where(and(owner, eq(quizAttempt.status, "in_progress")))
+			.where(
+				and(
+					owner,
+					eq(quizAttempt.status, "in_progress"),
+					activeAssignmentAccessGuard(s.id, orgId),
+				),
+			)
 			.returning({ id: quizAttempt.id });
 
 		if (updated.length === 0) {
-			// Submit xảy ra giữa read và write — phân biệt qua status read.
+			// Submit hoặc revoke xảy ra giữa read và write — kiểm tra access trước.
+			const accessible = await loadOwnedAttemptWithSkill(
+				attemptId,
+				s.id,
+				orgId,
+			);
+			if (!accessible) {
+				return c.json({ error: "attempt not found" }, 404);
+			}
 			const [reread] = await db
 				.select({ status: quizAttempt.status })
 				.from(quizAttempt)
@@ -2744,10 +2851,24 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const updated = await db
 			.update(quizAttempt)
 			.set({ essay: parsed.data.text })
-			.where(and(owner, eq(quizAttempt.status, "in_progress")))
+			.where(
+				and(
+					owner,
+					eq(quizAttempt.status, "in_progress"),
+					activeAssignmentAccessGuard(s.id, orgId),
+				),
+			)
 			.returning({ id: quizAttempt.id });
 
 		if (updated.length === 0) {
+			const accessible = await loadOwnedAttemptWithSkill(
+				attemptId,
+				s.id,
+				orgId,
+			);
+			if (!accessible) {
+				return c.json({ error: "attempt not found" }, 404);
+			}
 			// Submit xảy ra giữa read và write — phân biệt qua status read.
 			const [reread] = await db
 				.select({ status: quizAttempt.status })
@@ -2897,6 +3018,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 						oldKey === null
 							? isNull(quizAttempt.mediaKey)
 							: eq(quizAttempt.mediaKey, oldKey),
+						activeAssignmentAccessGuard(s.id, orgId),
 					),
 				)
 				.returning({ id: quizAttempt.id });
@@ -2971,6 +3093,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					ownedAttempt(attemptId, s.id, orgId),
 					eq(quizAttempt.status, "in_progress"),
 					eq(quizAttempt.mediaKey, oldKey),
+					activeAssignmentAccessGuard(s.id, orgId),
 				),
 			)
 			.returning({ id: quizAttempt.id });
@@ -3007,7 +3130,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		if (!store) {
 			return c.json({ error: "media storage unavailable" }, 503);
 		}
-		const attempt = await loadOwnedAttemptWithSkill(attemptId, s.id, orgId);
+		const attempt = await loadOwnedAttemptWithSkill(attemptId, s.id, orgId, {
+			allowSubmittedWithoutEnrollment: true,
+		});
 		if (!attempt) {
 			return c.json({ error: "attempt not found" }, 404);
 		}
@@ -3063,6 +3188,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					owner,
 					eq(quizAttempt.status, "in_progress"),
 					requiresMedia ? isNotNull(quizAttempt.mediaKey) : undefined,
+					activeAssignmentAccessGuard(s.id, orgId),
 				),
 			)
 			.returning({ id: quizAttempt.id });
@@ -3073,6 +3199,16 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		// đã normalize (practice → skill của đề tự luyện).
 		if (flipped.length > 0 && header !== undefined && hasGradableTask(header)) {
 			void scheduleAiGrading(deps, attemptId);
+		}
+		if (flipped.length === 0) {
+			const accessible = await loadOwnedAttemptWithSkill(
+				attemptId,
+				s.id,
+				orgId,
+			);
+			if (!accessible) {
+				return c.json({ error: "attempt not found" }, 404);
+			}
 		}
 
 		const [attempt] = await db

@@ -14,6 +14,10 @@ const EMPTY = "—";
 /** Ô Còn lại: chưa thiết lập phí → "—"; chưa counted (invited/status lạ) →
  * giải thích chưa tính; counted thì đóng đủ (badge), đóng dư, hoặc số thiếu. */
 function remainingCell(row: StudentClassTuition) {
+	if (row.enrollmentStatus === "removed") {
+		if (row.remaining === 0) return <Badge variant="success">Đã đóng đủ</Badge>;
+		return <span className="font-mono">{fmtVND(row.remaining)}</span>;
+	}
 	if (row.fee === null) return EMPTY;
 	if (!row.counted) return "Chưa kích hoạt — chưa tính";
 	if (row.overpaid > 0) return `Dư ${fmtVND(row.overpaid)}`;
@@ -41,11 +45,15 @@ function classCell(row: StudentClassTuition) {
 			>
 				{row.className}
 			</Link>
-			{row.enrollmentStatus !== "active" && (
+			{row.enrollmentStatus === "removed" ? (
+				<Badge variant="muted" className="px-1.5 py-0 text-[10px]">
+					Đã rời lớp
+				</Badge>
+			) : row.enrollmentStatus !== "active" ? (
 				<Badge variant="warn" className="px-1.5 py-0 text-[10px]">
 					Đã mời
 				</Badge>
-			)}
+			) : null}
 		</div>
 	);
 }
@@ -93,7 +101,10 @@ export function StudentTuitionSummary({ summary }: { summary: Summary }) {
 				<>
 					{!counted && (
 						<p className="mt-2 text-muted-foreground text-sm">
-							Chưa lớp nào được thiết lập học phí. Thiết lập ở trang lớp.
+							{summary.classes.length > 0 &&
+							summary.classes.every((r) => r.enrollmentStatus === "removed")
+								? "Học viên hiện không còn lớp đang học — lịch sử học phí của lớp đã rời vẫn được giữ nguyên."
+								: "Chưa lớp nào được thiết lập học phí. Thiết lập ở trang lớp."}
 						</p>
 					)}
 					<Card variant="white" className="mt-5 p-0">

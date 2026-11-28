@@ -4,6 +4,7 @@
  */
 import {
 	CLASS_ERROR_CODES,
+	ENROLLMENT_ERROR_CODES,
 	RECORDING_ERROR_CODES,
 } from "@teacher-os/api/contracts";
 import { beforeEach, describe, expect, test, vi } from "vitest";
@@ -196,5 +197,68 @@ describe("recording-locked rejection (409 RECORDING_LOCKED)", () => {
 		const res = occurrenceSummary(recordingLocked, "Đã xóa buổi học.");
 		expect(res.kind).toBe("error");
 		expect(res.message).toContain("video recording");
+	});
+});
+
+describe("permission & enrollment conflict rejection (403 / 409)", () => {
+	test("403 returns permission error toast and reconcile check", () => {
+		expect(
+			planDirectOutcome(
+				{
+					kind: "definite-failure",
+					status: 403,
+					code: "FORBIDDEN",
+					error: new HttpError(403, "forbidden", { code: "FORBIDDEN" }),
+				},
+				"Đã xóa học viên khỏi lớp.",
+				"delete-enrollment",
+			),
+		).toEqual({
+			toastKind: "error",
+			message: "Bạn không có quyền thực hiện thao tác này.",
+			reconcile: "check",
+		});
+	});
+
+	test("409 ENROLLMENT_ALREADY_REMOVED returns info toast and heal-409", () => {
+		expect(
+			planDirectOutcome(
+				{
+					kind: "definite-failure",
+					status: 409,
+					code: ENROLLMENT_ERROR_CODES.ALREADY_REMOVED,
+					error: new HttpError(409, "removed", {
+						code: ENROLLMENT_ERROR_CODES.ALREADY_REMOVED,
+					}),
+				},
+				"Đã xóa học viên khỏi lớp.",
+				"delete-enrollment",
+			),
+		).toEqual({
+			toastKind: "info",
+			message: "Học viên đã bị xóa khỏi lớp trước đó — đang tải lại danh sách.",
+			reconcile: "heal-409",
+		});
+	});
+
+	test("409 ENROLLMENT_STATUS_CHANGED returns info toast and heal-409", () => {
+		expect(
+			planDirectOutcome(
+				{
+					kind: "definite-failure",
+					status: 409,
+					code: ENROLLMENT_ERROR_CODES.STATUS_CHANGED,
+					error: new HttpError(409, "changed", {
+						code: ENROLLMENT_ERROR_CODES.STATUS_CHANGED,
+					}),
+				},
+				"Đã xóa học viên khỏi lớp.",
+				"delete-enrollment",
+			),
+		).toEqual({
+			toastKind: "info",
+			message: "Trạng thái ghi danh vừa thay đổi — đang tải lại dữ liệu.",
+			reconcile: "heal-409",
+		});
 	});
 });
