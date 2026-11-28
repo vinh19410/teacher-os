@@ -7395,7 +7395,7 @@ describe("enrollment invite -> accept lifecycle (issue #253)", () => {
 		expect(reEnrollRes.status).toBe(201);
 	});
 
-	test("DELETE /api/enrollments/:id returns 409 for active enrollment", async () => {
+	test("DELETE /api/enrollments/:id soft-deletes active enrollment and rejects repeat with 409 ENROLLMENT_ALREADY_REMOVED", async () => {
 		const classId = await t.createClass(session, "Lớp Delete Active");
 		const studentId = await t.addActiveStudent(session, "HV Active Delete", {
 			classId,
@@ -7410,9 +7410,21 @@ describe("enrollment invite -> accept lifecycle (issue #253)", () => {
 			session,
 			method: "DELETE",
 		});
-		expect(deleteRes.status).toBe(409);
-		expect(await deleteRes.json()).toEqual({
-			error: "cannot delete active enrollment",
+		expect(deleteRes.status).toBe(200);
+		expect(await deleteRes.json()).toEqual({ ok: true });
+
+		const snapAfter = await t.kernel(session);
+		const removedEn = snapAfter.enrollments.find((e) => e.id === enId);
+		expect(removedEn?.status).toBe("removed");
+		expect(removedEn?.removedAt).toBeTruthy();
+
+		const repeatRes = await t.call(`/api/enrollments/${enId}`, {
+			session,
+			method: "DELETE",
+		});
+		expect(repeatRes.status).toBe(409);
+		expect(await repeatRes.json()).toMatchObject({
+			code: "ENROLLMENT_ALREADY_REMOVED",
 		});
 	});
 

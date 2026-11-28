@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	CLASS_ERROR_CODES,
+	ENROLLMENT_ERROR_CODES,
 	type StudentClass,
 } from "@teacher-os/api/contracts";
 import { act, renderHook } from "@testing-library/react";
@@ -73,6 +74,22 @@ describe("Student paused class & accept enrollment helpers (#694)", () => {
 				}),
 			),
 		).toBe("Lớp đang tạm dừng — chưa thể tham gia lúc này.");
+
+		expect(
+			resolveAcceptEnrollmentErrorMessage(
+				new HttpError(409, "Already removed", {
+					code: ENROLLMENT_ERROR_CODES.ALREADY_REMOVED,
+				}),
+			),
+		).toBe("Bạn đã được đưa ra khỏi lớp này trước đó.");
+
+		expect(
+			resolveAcceptEnrollmentErrorMessage(
+				new HttpError(409, "Status changed", {
+					code: ENROLLMENT_ERROR_CODES.STATUS_CHANGED,
+				}),
+			),
+		).toBe("Trạng thái ghi danh vừa thay đổi — vui lòng tải lại trang.");
 
 		expect(
 			resolveAcceptEnrollmentErrorMessage(

@@ -105,6 +105,13 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			sessionsTotal: 20,
 			status: "active",
 		});
+		await libsql.insert(schema.enrollment).values({
+			id: "enr-1",
+			orgId: "org-1",
+			classId: "class-1",
+			studentId: "student-1",
+			status: "active",
+		});
 
 		await libsql.insert(schema.assignmentPrompt).values({
 			id: "prompt-quiz",

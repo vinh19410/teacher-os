@@ -145,6 +145,8 @@ async function loadApplicableClasses(
 	return found.map(({ id, name, schedule }) => ({ id, name, schedule }));
 }
 
+const activeEnrollmentLessonSql = sql`EXISTS (SELECT 1 FROM ${enrollment} e WHERE e.id = ${lesson.enrollmentId} AND e.status = 'active')`;
+
 /** Lesson của các lớp (loader bước 2) — chỉ cột planner cần, chunk 50. */
 async function loadClassLessons(
 	db: Db,
@@ -162,6 +164,13 @@ async function loadClassLessons(
 				enrollmentId: lesson.enrollmentId,
 			})
 			.from(lesson)
+			.innerJoin(
+				enrollment,
+				and(
+					eq(lesson.enrollmentId, enrollment.id),
+					eq(enrollment.status, "active"),
+				),
+			)
 			.where(and(eq(lesson.orgId, orgId), inArray(lesson.classId, slice)));
 		rows.push(...chunk);
 	}
@@ -327,7 +336,7 @@ function shiftStatements(
 	shift: PlannedShift,
 	nowMs: number,
 ) {
-	const guard = sql`CASE WHEN (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.originalDate} AND ${lesson.status} = 'upcoming') = ${shift.enrollmentIds.length} AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.makeupDate}) = 0 AND (SELECT count(*) FROM ${holidaySessionShift} WHERE ${holidaySessionShift.classId} = ${shift.classId} AND ${holidaySessionShift.makeupDate} = ${shift.makeupDate}) = 0 AND EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${shift.classId} AND ${classTable.orgId} = ${orgId} AND ${classTable.status} = 'active') AND NOT EXISTS (SELECT 1 FROM ${classSessionMeeting} WHERE ${classSessionMeeting.orgId} = ${orgId} AND ${classSessionMeeting.classId} = ${shift.classId} AND ${classSessionMeeting.date} = ${shift.makeupDate} AND ${liveR2RecordingSql(nowMs)}) THEN ${shift.originalDate} ELSE NULL END`;
+	const guard = sql`CASE WHEN (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.originalDate} AND ${lesson.status} = 'upcoming' AND ${activeEnrollmentLessonSql}) = ${shift.enrollmentIds.length} AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.makeupDate} AND ${activeEnrollmentLessonSql}) = 0 AND (SELECT count(*) FROM ${holidaySessionShift} WHERE ${holidaySessionShift.classId} = ${shift.classId} AND ${holidaySessionShift.makeupDate} = ${shift.makeupDate}) = 0 AND EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${shift.classId} AND ${classTable.orgId} = ${orgId} AND ${classTable.status} = 'active') AND NOT EXISTS (SELECT 1 FROM ${classSessionMeeting} WHERE ${classSessionMeeting.orgId} = ${orgId} AND ${classSessionMeeting.classId} = ${shift.classId} AND ${classSessionMeeting.date} = ${shift.makeupDate} AND ${liveR2RecordingSql(nowMs)}) THEN ${shift.originalDate} ELSE NULL END`;
 	const stmts = [
 		db.insert(holidaySessionShift).values({
 			id: crypto.randomUUID(),
@@ -346,6 +355,7 @@ function shiftStatements(
 					eq(lesson.classId, shift.classId),
 					eq(lesson.date, shift.originalDate),
 					eq(lesson.status, "upcoming"),
+					activeEnrollmentLessonSql,
 				),
 			),
 		db.insert(lesson).select(
@@ -376,6 +386,7 @@ function shiftStatements(
 						eq(lesson.classId, shift.classId),
 						eq(lesson.date, shift.originalDate),
 						eq(lesson.status, "holiday"),
+						activeEnrollmentLessonSql,
 					),
 				),
 		),
@@ -465,7 +476,7 @@ function cancelStatements(
 	holidayId: string,
 	cancellation: PlannedCancellation,
 ) {
-	const guard = sql`CASE WHEN (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${cancellation.classId} AND ${lesson.date} = ${cancellation.date} AND ${lesson.status} = 'upcoming') = ${cancellation.enrollmentIds.length} AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${cancellation.classId} AND ${lesson.date} = ${cancellation.date} AND ${lesson.status} != 'upcoming') = 0 AND (SELECT count(*) FROM ${holidaySessionCancel} WHERE ${holidaySessionCancel.classId} = ${cancellation.classId} AND ${holidaySessionCancel.date} = ${cancellation.date}) = 0 AND EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${cancellation.classId} AND ${classTable.orgId} = ${orgId} AND ${classTable.status} = 'active') THEN ${cancellation.date} ELSE NULL END`;
+	const guard = sql`CASE WHEN (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${cancellation.classId} AND ${lesson.date} = ${cancellation.date} AND ${lesson.status} = 'upcoming' AND ${activeEnrollmentLessonSql}) = ${cancellation.enrollmentIds.length} AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${cancellation.classId} AND ${lesson.date} = ${cancellation.date} AND ${lesson.status} != 'upcoming' AND ${activeEnrollmentLessonSql}) = 0 AND (SELECT count(*) FROM ${holidaySessionCancel} WHERE ${holidaySessionCancel.classId} = ${cancellation.classId} AND ${holidaySessionCancel.date} = ${cancellation.date}) = 0 AND EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${cancellation.classId} AND ${classTable.orgId} = ${orgId} AND ${classTable.status} = 'active') THEN ${cancellation.date} ELSE NULL END`;
 	return [
 		db.insert(holidaySessionCancel).values({
 			id: crypto.randomUUID(),
@@ -483,6 +494,7 @@ function cancelStatements(
 					eq(lesson.classId, cancellation.classId),
 					eq(lesson.date, cancellation.date),
 					eq(lesson.status, "upcoming"),
+					activeEnrollmentLessonSql,
 				),
 			),
 		db
@@ -1103,6 +1115,14 @@ export function holidayRoutes(deps: {
 			const origHolidayRows = origRows.filter(
 				(row) => row.status === "holiday",
 			);
+			if (origRows.length === 0 && makeupRows.length === 0) {
+				shiftCounts.push({
+					shift,
+					origCount: 0,
+					makeupCount: 0,
+				});
+				continue;
+			}
 			if (
 				origHolidayRows.length === 0 ||
 				makeupRows.some((row) => row.status !== "upcoming") ||
@@ -1131,6 +1151,13 @@ export function holidayRoutes(deps: {
 			const cancelledRows = bucketRows.filter(
 				(row) => row.status === "cancelled",
 			);
+			if (bucketRows.length === 0) {
+				cancelCounts.push({
+					cancel,
+					cancelledCount: 0,
+				});
+				continue;
+			}
 			if (
 				cancelledRows.length === 0 ||
 				cancelledRows.length !== bucketRows.length
@@ -1191,11 +1218,11 @@ export function holidayRoutes(deps: {
 			sql`(SELECT count(*) FROM ${holidaySessionCancel} WHERE ${holidaySessionCancel.holidayId} = ${holidayId}) = ${cancels.length}`,
 			...shiftCounts.map(
 				({ shift, origCount, makeupCount }) =>
-					sql`(SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.makeupDate} AND ${lesson.status} = 'upcoming') = ${makeupCount} AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.makeupDate} AND ${lesson.status} != 'upcoming') = 0 AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.originalDate} AND ${lesson.status} = 'holiday') = ${origCount}`,
+					sql`(SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.makeupDate} AND ${lesson.status} = 'upcoming' AND ${activeEnrollmentLessonSql}) = ${makeupCount} AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.makeupDate} AND ${lesson.status} != 'upcoming' AND ${activeEnrollmentLessonSql}) = 0 AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.originalDate} AND ${lesson.status} = 'holiday' AND ${activeEnrollmentLessonSql}) = ${origCount}`,
 			),
 			...cancelCounts.map(
 				({ cancel, cancelledCount }) =>
-					sql`(SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${cancel.classId} AND ${lesson.date} = ${cancel.date} AND ${lesson.status} = 'cancelled') = ${cancelledCount} AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${cancel.classId} AND ${lesson.date} = ${cancel.date} AND ${lesson.status} != 'cancelled') = 0`,
+					sql`(SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${cancel.classId} AND ${lesson.date} = ${cancel.date} AND ${lesson.status} = 'cancelled' AND ${activeEnrollmentLessonSql}) = ${cancelledCount} AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${cancel.classId} AND ${lesson.date} = ${cancel.date} AND ${lesson.status} != 'cancelled' AND ${activeEnrollmentLessonSql}) = 0`,
 			),
 		];
 		const GUARD_CHUNK_SIZE = 6;
@@ -1295,6 +1322,7 @@ export function holidayRoutes(deps: {
 							eq(lesson.classId, shift.classId),
 							eq(lesson.date, shift.makeupDate),
 							eq(lesson.status, "upcoming"),
+							activeEnrollmentLessonSql,
 						),
 					),
 				db
@@ -1306,6 +1334,7 @@ export function holidayRoutes(deps: {
 							eq(lesson.classId, shift.classId),
 							eq(lesson.date, shift.originalDate),
 							eq(lesson.status, "holiday"),
+							activeEnrollmentLessonSql,
 						),
 					),
 			);
@@ -1353,6 +1382,7 @@ export function holidayRoutes(deps: {
 							eq(lesson.classId, cancel.classId),
 							eq(lesson.date, cancel.date),
 							eq(lesson.status, "cancelled"),
+							activeEnrollmentLessonSql,
 						),
 					),
 			);

@@ -28,7 +28,7 @@ import {
 } from "@teacher-os/db/schema/organization-holiday";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { syllabus } from "@teacher-os/db/schema/syllabus";
-import { and, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { Db } from "../app";
 import {
@@ -316,7 +316,11 @@ function buildSyncPackageStatement(
 						.select({ id: enrollment.id })
 						.from(enrollment)
 						.where(
-							and(eq(enrollment.orgId, orgId), eq(enrollment.classId, classId)),
+							and(
+								eq(enrollment.orgId, orgId),
+								eq(enrollment.classId, classId),
+								ne(enrollment.status, "removed"),
+							),
 						),
 				),
 				sql`EXISTS (
@@ -764,6 +768,7 @@ export async function applyClassStartDateChange(
 									eq(lesson.classId, classId),
 									eq(lesson.date, cancel.date),
 									eq(lesson.status, "cancelled"),
+									sql`EXISTS (SELECT 1 FROM ${enrollment} e WHERE e.id = ${lesson.enrollmentId} AND e.status = 'active')`,
 								),
 							),
 					);
@@ -816,6 +821,7 @@ export async function applyClassStartDateChange(
 									eq(lesson.classId, classId),
 									eq(lesson.date, shift.makeupDate),
 									eq(lesson.status, "upcoming"),
+									sql`EXISTS (SELECT 1 FROM ${enrollment} e WHERE e.id = ${lesson.enrollmentId} AND e.status = 'active')`,
 								),
 							),
 						db
@@ -827,6 +833,7 @@ export async function applyClassStartDateChange(
 									eq(lesson.classId, classId),
 									eq(lesson.date, shift.originalDate),
 									eq(lesson.status, "holiday"),
+									sql`EXISTS (SELECT 1 FROM ${enrollment} e WHERE e.id = ${lesson.enrollmentId} AND e.status = 'active')`,
 								),
 							),
 					);
@@ -939,6 +946,7 @@ export async function applyClassStartDateChange(
 											lesson.date,
 											chunk.map((m) => m.oldDate),
 										),
+										sql`EXISTS (SELECT 1 FROM ${enrollment} e WHERE e.id = ${lesson.enrollmentId} AND e.status = 'active')`,
 									),
 								),
 						);

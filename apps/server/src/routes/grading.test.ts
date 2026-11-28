@@ -146,6 +146,13 @@ describe("teacher grading (/api/grading/:attemptId)", () => {
 			sessionsTotal: 20,
 			status: "active",
 		});
+		await libsql.insert(schema.enrollment).values({
+			id: "enr-1",
+			orgId: "org-1",
+			classId: "class-1",
+			studentId: "student-1",
+			status: "active",
+		});
 		await libsql.insert(schema.assignmentPrompt).values([
 			{
 				id: "prompt-writing",
@@ -645,6 +652,13 @@ describe("essay annotations (/api/grading/:attemptId/annotations)", () => {
 			schedule: "T2 & T5 18:30–20:00",
 			sessionsDone: 0,
 			sessionsTotal: 20,
+			status: "active",
+		});
+		await libsql.insert(schema.enrollment).values({
+			id: "enr-1",
+			orgId: "org-1",
+			classId: "class-1",
+			studentId: "student-1",
 			status: "active",
 		});
 		await libsql.insert(schema.assignmentPrompt).values([
@@ -1681,6 +1695,13 @@ describe("grade_returned notification (/api/grading/:attemptId/grade #454)", () 
 			sessionsTotal: 20,
 			status: "active",
 		});
+		await libsql.insert(schema.enrollment).values({
+			id: "enr-1",
+			orgId: "org-1",
+			classId: "class-1",
+			studentId: "student-1",
+			status: "active",
+		});
 		await libsql.insert(schema.assignmentPrompt).values({
 			id: "prompt-g",
 			orgId: "org-1",
@@ -1817,6 +1838,13 @@ describe("AI grading draft (TOS-30 #478)", () => {
 			schedule: "T2 & T5 18:30–20:00",
 			sessionsDone: 0,
 			sessionsTotal: 20,
+			status: "active",
+		});
+		await libsql.insert(schema.enrollment).values({
+			id: "enr-1",
+			orgId: "org-1",
+			classId: "class-1",
+			studentId: "student-1",
 			status: "active",
 		});
 		await libsql.insert(schema.assignmentPrompt).values({
@@ -2211,6 +2239,13 @@ describe("TOS-33 (#481) — vai TA, publish version, ai-retry", () => {
 			schedule: "T2 & T5 18:30–20:00",
 			sessionsDone: 0,
 			sessionsTotal: 20,
+			status: "active",
+		});
+		await libsql.insert(schema.enrollment).values({
+			id: "enr-1",
+			orgId: "org-1",
+			classId: "class-1",
+			studentId: "student-1",
 			status: "active",
 		});
 		await libsql.insert(schema.assignmentPrompt).values({

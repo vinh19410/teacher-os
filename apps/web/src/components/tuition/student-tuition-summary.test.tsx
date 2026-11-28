@@ -288,4 +288,47 @@ describe("StudentTuitionSummary", () => {
 		expect(screen.getByText("Chưa tham gia lớp học nào.")).toBeTruthy();
 		expect(screen.queryByRole("table")).toBeNull();
 	});
+
+	it("lớp removed hiện badge 'Đã rời lớp', hiển thị nợ còn lại / 'Đã đóng đủ', và ghi chú phù hợp khi không còn lớp active", () => {
+		render(
+			<StudentTuitionSummary
+				summary={baseSummary({
+					classes: [
+						{
+							classId: "C1",
+							className: "IELTS Rời",
+							enrollmentStatus: "removed",
+							fee: 10_000_000,
+							paid: 500_000,
+							remaining: 1_500_000,
+							overpaid: 0,
+							counted: false,
+						},
+						{
+							classId: "C2",
+							className: "IELTS Đủ",
+							enrollmentStatus: "removed",
+							fee: 6_000_000,
+							paid: 2_000_000,
+							remaining: 0,
+							overpaid: 0,
+							counted: false,
+						},
+					],
+				})}
+			/>,
+		);
+		const row1 = screen.getByRole("row", { name: /IELTS Rời/ });
+		expect(within(row1).getByText("Đã rời lớp")).toBeTruthy();
+		expect(within(row1).queryByText("Đã mời")).toBeNull();
+		expect(within(row1).getByText("1.500.000đ")).toBeTruthy();
+
+		const row2 = screen.getByRole("row", { name: /IELTS Đủ/ });
+		expect(within(row2).getByText("Đã rời lớp")).toBeTruthy();
+		expect(within(row2).getByText("Đã đóng đủ")).toBeTruthy();
+
+		expect(
+			screen.getByText(/Học viên hiện không còn lớp đang học/),
+		).toBeTruthy();
+	});
 });

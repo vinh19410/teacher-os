@@ -26,7 +26,7 @@ export function classesByStudent(
 	studentId: string,
 ): StudentClassGroup[] {
 	const enrollmentsForStudent = data.enrollments.filter(
-		(e) => e.studentId === studentId,
+		(e) => e.studentId === studentId && e.status !== "removed",
 	);
 	const statusByClass = new Map(
 		enrollmentsForStudent.map((e) => [e.classId, e.status]),

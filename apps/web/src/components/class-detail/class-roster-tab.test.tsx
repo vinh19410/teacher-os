@@ -408,3 +408,166 @@ describe("ClassRosterTab paused gating & confirm async (#694)", () => {
 		expect(keys).toContainEqual(["kernel"]);
 	});
 });
+
+describe("ClassRosterTab soft removal of active students", () => {
+	function setupActiveRoster(
+		opts: {
+			viewerRole?: "teacher" | "owner" | "admin" | "class_teacher" | "ta";
+			omitViewer?: boolean;
+			paused?: boolean;
+			debtMap?: Map<string, RosterDebt>;
+			withPriorRemoved?: boolean;
+			run?: ReturnType<typeof vi.fn>;
+		} = {},
+	) {
+		const snapshot = snapshotFixture({
+			classes: [
+				classRow({
+					id: "cl-1",
+					name: "IELTS 6.5 Alpha",
+					status: opts.paused ? "paused" : "active",
+				}),
+			],
+			students: [
+				studentRow({
+					id: "st-1",
+					name: "Nguyễn An",
+					email: "an@test.local",
+					portalLinked: true,
+				}),
+				studentRow({
+					id: "st-inv",
+					name: "Trần Bình",
+					email: "binh@test.local",
+					portalLinked: false,
+				}),
+			],
+			enrollments: [
+				...(opts.withPriorRemoved
+					? [
+							enrollmentRow({
+								id: "en-old-removed",
+								classId: "cl-1",
+								studentId: "st-1",
+								status: "removed",
+							}),
+						]
+					: []),
+				enrollmentRow({
+					id: "en-active-1",
+					classId: "cl-1",
+					studentId: "st-1",
+					status: "active",
+				}),
+				enrollmentRow({
+					id: "en-inv-1",
+					classId: "cl-1",
+					studentId: "st-inv",
+					status: "invited",
+				}),
+			],
+		});
+		if (!opts.omitViewer) {
+			snapshot.viewer = {
+				role: opts.viewerRole ?? "teacher",
+				canAccessFinance: (opts.viewerRole ?? "teacher") !== "ta",
+			};
+		}
+		const data = mapKernelSnapshot(snapshot);
+		const cls = data.classes.find((c) => c.id === "cl-1");
+		if (!cls) throw new Error("expected cl-1");
+		const studentById = (id: string) => data.students.find((s) => s.id === id);
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const run = (opts.run ??
+			vi
+				.fn()
+				.mockResolvedValue({ kind: "refreshed" })) as unknown as Parameters<
+			typeof ClassRosterTab
+		>[0]["run"];
+		render(
+			<QueryClientProvider client={qc}>
+				<ClassRosterTab
+					cls={cls}
+					data={data}
+					studentById={studentById}
+					rosterDebt={opts.debtMap ?? new Map()}
+					run={run}
+					busy={false}
+				/>
+			</QueryClientProvider>,
+		);
+		return { run };
+	}
+
+	it("renders 'Xóa khỏi lớp' for allowed roles (and omitted viewer) even when paused, and hides removal buttons for ta", () => {
+		setupActiveRoster({ viewerRole: "class_teacher", paused: true });
+		const activeRow = screen
+			.getByText("Nguyễn An")
+			.closest("tr") as HTMLElement;
+		const removeBtn = within(activeRow).getByRole("button", {
+			name: "Xóa khỏi lớp",
+		}) as HTMLButtonElement;
+		expect(removeBtn.disabled).toBe(false);
+
+		cleanup();
+		setupActiveRoster({ omitViewer: true });
+		expect(screen.getByRole("button", { name: "Xóa khỏi lớp" })).toBeTruthy();
+
+		cleanup();
+		setupActiveRoster({ viewerRole: "ta" });
+		expect(screen.queryByRole("button", { name: "Xóa khỏi lớp" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Hủy lời mời" })).toBeNull();
+	});
+
+	it("stops click and Enter/Space propagation on 'Xóa khỏi lớp' and opens modal with debt warning when outstanding > 0", async () => {
+		const runMock = vi.fn().mockResolvedValue({ kind: "refreshed" });
+		setupActiveRoster({
+			withPriorRemoved: true,
+			run: runMock,
+			debtMap: new Map([
+				[
+					"st-1",
+					{ status: "overdue", outstanding: 1_500_000, invoiceCount: 1 },
+				],
+			]),
+		});
+
+		const removeBtn = screen.getByRole("button", { name: "Xóa khỏi lớp" });
+		fireEvent.keyDown(removeBtn, { key: "Enter" });
+		fireEvent.keyDown(removeBtn, { key: " " });
+		fireEvent.click(removeBtn);
+
+		const dialog = screen.getByRole("dialog", {
+			name: "Xóa học viên khỏi lớp?",
+		});
+		expect(within(dialog).getByText(/Nguyễn An/)).toBeTruthy();
+		expect(within(dialog).getByText(/IELTS 6\.5 Alpha/)).toBeTruthy();
+		expect(within(dialog).getByText(/1\.500\.000đ/)).toBeTruthy();
+		expect(within(dialog).getByText(/Sổ công nợ/)).toBeTruthy();
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Xóa khỏi lớp" }),
+		);
+		await waitFor(() => expect(runMock).toHaveBeenCalledTimes(1));
+		expect(runMock).toHaveBeenCalledWith(
+			"en-active-1",
+			{ type: "delete-enrollment", enrollmentId: "en-active-1" },
+			"Đã xóa học viên khỏi lớp.",
+		);
+	});
+
+	it("omits debt warning callout when invoice is paid or absent", () => {
+		setupActiveRoster({
+			debtMap: new Map([
+				["st-1", { status: "paid", outstanding: 0, invoiceCount: 1 }],
+			]),
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Xóa khỏi lớp" }));
+		const dialog = screen.getByRole("dialog", {
+			name: "Xóa học viên khỏi lớp?",
+		});
+		expect(within(dialog).queryByText(/còn học phí chưa thu/)).toBeNull();
+	});
+});

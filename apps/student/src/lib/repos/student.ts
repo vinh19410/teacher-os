@@ -4,6 +4,7 @@ import {
 	CLASS_ERROR_CODES,
 	type ClassmatesResponse,
 	classmatesResponseSchema,
+	ENROLLMENT_ERROR_CODES,
 	type HistoryListResponse,
 	type HistoryMonthResponse,
 	type HistorySkill,
@@ -1016,6 +1017,12 @@ export function resolveAcceptEnrollmentErrorMessage(error: unknown): string {
 	if (isHttpError(error)) {
 		if (error.code === CLASS_ERROR_CODES.CLASS_PAUSED) {
 			return "Lớp đang tạm dừng — chưa thể tham gia lúc này.";
+		}
+		if (error.code === ENROLLMENT_ERROR_CODES.ALREADY_REMOVED) {
+			return "Bạn đã được đưa ra khỏi lớp này trước đó.";
+		}
+		if (error.code === ENROLLMENT_ERROR_CODES.STATUS_CHANGED) {
+			return "Trạng thái ghi danh vừa thay đổi — vui lòng tải lại trang.";
 		}
 		if (error.status === 404) {
 			return "Lời mời tham gia lớp không còn hiệu lực.";

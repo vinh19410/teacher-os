@@ -579,49 +579,31 @@ export async function backfillStudyPackTargetsForStudent(
 	studentId: string,
 	now: Date = new Date(),
 ): Promise<number> {
-	const eligibleAssignments = await db
-		.select({ id: classAssignment.id })
-		.from(classAssignment)
-		.innerJoin(
-			classStudyPack,
-			and(
-				eq(classStudyPack.id, classAssignment.classStudyPackId),
-				eq(classStudyPack.orgId, orgId),
-				eq(classStudyPack.classId, classId),
-				eq(classStudyPack.status, "active"),
-			),
-		)
-		.where(
-			and(
-				eq(classAssignment.orgId, orgId),
-				eq(classAssignment.classId, classId),
-				gt(classAssignment.dueAt, now),
-			),
-		);
-
-	if (eligibleAssignments.length === 0) {
-		return 0;
-	}
-
-	const targetValues: Array<typeof classAssignmentTarget.$inferInsert> =
-		eligibleAssignments.map((assignment) => ({
-			id: buildPackTargetId(assignment.id, studentId),
-			orgId,
-			assignmentId: assignment.id,
-			studentId,
-			submittedAt: null,
-		}));
-
-	const statements: BatchItem<"sqlite">[] = [];
-	for (let i = 0; i < targetValues.length; i += D1_TARGET_INSERT_CHUNK) {
-		const chunk = targetValues.slice(i, i + D1_TARGET_INSERT_CHUNK);
-		statements.push(
-			db.insert(classAssignmentTarget).values(chunk).onConflictDoNothing(),
-		);
-	}
-
-	await executeBatchedStatements(db, statements);
-	return targetValues.length;
+	const nowMs = now.getTime();
+	const result = await db.run(
+		sql`INSERT OR IGNORE INTO ${classAssignmentTarget} (id, org_id, assignment_id, student_id, submitted_at)
+			SELECT 'cat_pk_' || ${classAssignment.id} || '_' || ${studentId}, ${orgId}, ${classAssignment.id}, ${studentId}, NULL
+			FROM ${classAssignment}
+			INNER JOIN ${classStudyPack}
+				ON ${classStudyPack.id} = ${classAssignment.classStudyPackId}
+				AND ${classStudyPack.orgId} = ${orgId}
+				AND ${classStudyPack.classId} = ${classId}
+				AND ${classStudyPack.status} = 'active'
+			INNER JOIN ${enrollment}
+				ON ${enrollment.orgId} = ${orgId}
+				AND ${enrollment.classId} = ${classAssignment.classId}
+				AND ${enrollment.studentId} = ${studentId}
+				AND ${enrollment.status} = 'active'
+			WHERE ${classAssignment.orgId} = ${orgId}
+				AND ${classAssignment.classId} = ${classId}
+				AND ${classAssignment.dueAt} > ${nowMs}`,
+	);
+	return Number(
+		(result as { rowsAffected?: number; meta?: { changes?: number } })
+			?.rowsAffected ??
+			(result as { meta?: { changes?: number } })?.meta?.changes ??
+			0,
+	);
 }
 
 /**
