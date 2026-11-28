@@ -583,6 +583,11 @@ test("server Worker declares a single */10 cron trigger and multiplexes daily de
 		/isDailyDeadlineReminderWindow\(/,
 		"apps/server/src/lib/scheduled.ts must multiplex daily deadline reminders during the 23:00 UTC window of */10 * * * *",
 	);
+	assert.match(
+		scheduledMod,
+		/executeSessionLinkReminder\(/,
+		"apps/server/src/lib/scheduled.ts must run session link reminders before Zoom recording sync on every */10 * * * * tick",
+	);
 });
 
 test("deploy workflows pass ZOOM_HOST_USER and alchemy.run.ts validates via resolveZoomHostUser", () => {

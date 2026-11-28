@@ -239,8 +239,9 @@ export const server = Cloudflare.Worker("server", {
 		date: WORKER_COMPATIBILITY_DATE,
 		flags: ["nodejs_compat"],
 	},
-	// Single 10-minute cron trigger running Zoom recording sync/reup/expiry on every tick
-	// and daily deadline reminder emails during 23:00–23:09 UTC (06:00 Asia/Ho_Chi_Minh).
+	// Single 10-minute cron trigger running daily deadline reminder emails during
+	// 23:00–23:09 UTC (06:00 VN), 2-hour-before Online session link emails, and Zoom
+	// recording sync/reup/expiry on every tick.
 	crons: ["*/10 * * * *"],
 	...(topology && { domain: topology.apiHost, workersDev: false }),
 	env: {

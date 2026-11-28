@@ -519,6 +519,10 @@ describe("isValidZoomJoinUrl", () => {
 		expect(isValidZoomJoinUrl("http://zoom.us/j/123456")).toBe(false);
 		expect(isValidZoomJoinUrl("javascript:alert(1)")).toBe(false);
 		expect(isValidZoomJoinUrl("https://zoom.us/j/123 456")).toBe(false);
+		expect(isValidZoomJoinUrl("https://zoom.us/j/123\u0000456")).toBe(false);
+		expect(isValidZoomJoinUrl("https://zoom.us/j/123\u0007456")).toBe(false);
+		expect(isValidZoomJoinUrl("https://zoom.us/j/123\u001f456")).toBe(false);
+		expect(isValidZoomJoinUrl("https://zoom.us/j/123\u007f456")).toBe(false);
 		expect(isValidZoomJoinUrl("")).toBe(false);
 		expect(isValidZoomJoinUrl(null)).toBe(false);
 		expect(isValidZoomJoinUrl(undefined)).toBe(false);
