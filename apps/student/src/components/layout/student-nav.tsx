@@ -6,6 +6,7 @@ import type {
 	ShellLinkProps,
 } from "@teacher-os/ui/components/app-shell/nav-group";
 import {
+	BookA,
 	BookOpenCheck,
 	CalendarDays,
 	ClipboardList,
@@ -16,14 +17,23 @@ import {
 } from "lucide-react";
 
 /**
- * "Luyện tập" (phase 10) + "Lịch sử" (phase 11, #378) đã có route — mục
- * Luyện tập gồm 5 skill con (KHÔNG có Dictation: chưa có đề trong thư viện).
- * Mặc định tắt trên PROD (#852) vì chưa phát triển xong nội dung;
- * bật lại bằng biến build VITE_STUDENT_PRACTICE_ENABLED=true (e2e tự bật).
+ * Cờ build-time `VITE_STUDENT_PRACTICE_ENABLED`:
+ * - `true` (Staging / E2E): hiển thị đầy đủ "Luyện tập" (5 skill con, không
+ *   Dictation) và "Lịch sử".
+ * - `false` / chưa đặt (mặc định trên PROD): ẩn nhóm "Luyện tập" + "Lịch sử",
+ *   chỉ hiển thị mục cấp 1 "Từ vựng" (/practice/vocabulary) và chặn các path
+ *   tự luyện còn lại tại router.
  */
 export const PRACTICE_ROUTES_LIVE =
 	env.VITE_STUDENT_PRACTICE_ENABLED === "true";
-export const HISTORY_ROUTES_LIVE = true;
+export const HISTORY_ROUTES_LIVE = PRACTICE_ROUTES_LIVE;
+
+export const VOCABULARY_NAV_ITEM: NavItem = {
+	key: "vocabulary",
+	label: "Từ vựng",
+	icon: BookA,
+	href: "/practice/vocabulary",
+};
 
 /** 5 skill luyện tập — thứ tự hiển thị ở nav và redirect trang chủ mục. */
 export const PRACTICE_NAV_SKILLS = [
@@ -74,7 +84,9 @@ export const STUDENT_NAV: NavGroup[] = [
 				icon: ClipboardList,
 				href: "/assignments",
 			},
-			...(PRACTICE_ROUTES_LIVE ? PRACTICE_HISTORY_ITEMS : []),
+			...(PRACTICE_ROUTES_LIVE
+				? PRACTICE_HISTORY_ITEMS
+				: [VOCABULARY_NAV_ITEM]),
 			{ key: "tuition", label: "Học phí", icon: Wallet, href: "/tuition" },
 		],
 	},
@@ -122,6 +134,13 @@ export const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
 export function resolveStudentActiveKey(pathname: string): string {
 	const normalized = pathname.replace(/^\/student(?=\/|$)/, "") || "/";
 	if (normalized === "/") return "overview";
+	if (
+		!PRACTICE_ROUTES_LIVE &&
+		(normalized === "/practice/vocabulary" ||
+			normalized.startsWith("/practice/vocabulary/"))
+	) {
+		return "vocabulary";
+	}
 	for (const [prefix, key] of Object.entries(ACTIVE_KEY_BY_PREFIX)) {
 		if (normalized.startsWith(prefix)) return key;
 	}
@@ -140,6 +159,7 @@ export const STUDENT_PAGE_LABEL: Record<string, string> = {
 	classes: "Lớp học",
 	schedule: "Lịch học",
 	assignments: "Bài tập",
+	vocabulary: "Từ vựng",
 	practice: "Luyện tập",
 	history: "Lịch sử",
 	tuition: "Học phí",

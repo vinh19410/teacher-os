@@ -1,4 +1,5 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
+import { PRACTICE_ROUTES_LIVE } from "@/components/layout/student-nav";
 import {
 	attemptSummaryHref,
 	QuizTakeError,
@@ -12,6 +13,11 @@ import {
 import { type QuizTakeSource, quizDetailQueryOptions } from "@/lib/repos/quiz";
 
 export const Route = createFileRoute("/_auth/learn/quizzes/practice/$testId")({
+	beforeLoad: () => {
+		if (!PRACTICE_ROUTES_LIVE) {
+			throw notFound();
+		}
+	},
 	loader: async ({ params: { testId } }) => {
 		// Cùng luồng với route giao bài — chỉ nguồn đề khác (practice #378).
 		// Dùng fetchQuery staleTime: 0 để trạng thái attempt luôn mới nhất từ server

@@ -44,9 +44,12 @@ describe("STUDENT_NAV v2", () => {
 		expect(ITEM_BY_HREF["/vocab"]).toBeUndefined();
 		expect(ITEM_BY_HREF["/tuition"]?.label).toBe("Học phí");
 		// #584: "Lịch học" đã có route riêng /schedule gộp các buổi của mọi lớp.
-		// #852: Mặc định ẩn "Luyện tập" và "Lịch sử" trên PROD (PRACTICE_ROUTES_LIVE=false).
+		// #852 + #1054: Mặc định trên PROD (PRACTICE_ROUTES_LIVE=false) ẩn "Luyện tập"
+		// và "Lịch sử", đồng thời hiển thị mục cấp 1 "Từ vựng" (/practice/vocabulary).
 		expect(PRACTICE_ROUTES_LIVE).toBe(false);
-		expect(STUDENT_NAV[0].items).toHaveLength(5);
+		expect(STUDENT_NAV[0].items).toHaveLength(6);
+		expect(ITEM_BY_HREF["/practice/vocabulary"]?.label).toBe("Từ vựng");
+		expect(ITEM_BY_HREF["/practice/vocabulary"]?.children).toBeUndefined();
 		expect(ITEM_BY_HREF["/practice"]).toBeUndefined();
 		expect(ITEM_BY_HREF["/history"]).toBeUndefined();
 
@@ -68,8 +71,10 @@ describe("STUDENT_NAV v2", () => {
 				child.label.toLowerCase().includes("dictation"),
 			),
 		).toBe(false);
-		// Phase 11: "Lịch sử" vẫn có enabled=true trong PRACTICE_HISTORY_ITEMS
-		expect(PRACTICE_ITEM_BY_HREF["/history"]?.enabled).toBe(true);
+		// "Lịch sử" chỉ enabled khi PRACTICE_ROUTES_LIVE === true
+		expect(PRACTICE_ITEM_BY_HREF["/history"]?.enabled).toBe(
+			PRACTICE_ROUTES_LIVE,
+		);
 	});
 
 	it("renders links through the router, exact match only for '/'", () => {
