@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import type { HistoryDay, HistorySkill } from "@teacher-os/api/contracts";
 import { HISTORY_SKILLS } from "@teacher-os/api/contracts";
 import {
@@ -13,6 +13,7 @@ import { type ReactNode, useMemo } from "react";
 import { HistoryList } from "@/components/history/history-list";
 import { MonthHeatmap } from "@/components/history/month-heatmap";
 import { WeekTable } from "@/components/history/week-table";
+import { PRACTICE_ROUTES_LIVE } from "@/components/layout/student-nav";
 import { StudentPageGate } from "@/components/layout/student-page-gate";
 import Loader from "@/components/loader";
 import {
@@ -26,6 +27,11 @@ const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 type HistorySearch = { week?: string; skill?: string; page?: number };
 
 export const Route = createFileRoute("/_auth/history")({
+	beforeLoad: () => {
+		if (!PRACTICE_ROUTES_LIVE) {
+			throw notFound();
+		}
+	},
 	validateSearch: (search: Record<string, unknown>): HistorySearch => {
 		const week =
 			typeof search.week === "string" && ISO_DATE_PATTERN.test(search.week)
