@@ -253,7 +253,7 @@ export function classOpeningConfirmedEvents(input: {
 	scheduleRaw: string;
 	mode: string;
 	sessionsTotal?: number;
-	level?: string;
+	expectedEndDate?: string | null;
 	version: number;
 	isUpdate: boolean;
 	teacherNote: string;
@@ -275,7 +275,7 @@ export function classOpeningConfirmedEvents(input: {
 			scheduleRaw: input.scheduleRaw,
 			mode: input.mode,
 			sessionsTotal: input.sessionsTotal,
-			level: input.level,
+			expectedEndDate: input.expectedEndDate,
 			studentName: s.name,
 			orgName: input.orgName,
 			brandName: BRAND_NAME,
